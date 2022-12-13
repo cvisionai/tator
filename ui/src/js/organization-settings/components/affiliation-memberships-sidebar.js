@@ -38,7 +38,6 @@ export class AffiliationMembershipSidebar extends TatorElement {
       this._data = val;
       this.setupSidebar();
     } else {
-      console.log("There are no affiliations....")
       this._data = null;
     }
   }
@@ -56,7 +55,6 @@ export class AffiliationMembershipSidebar extends TatorElement {
     this.projectsCount = this._data.length;
     for (let m of this._data) {
       const membership = await store.getState().getData("Membership", m);
-      console.log(`${count}. Attempting to make sidebar item for membership `, membership);
       count++;
       // 
       const sidebarItem = document.getElementById("memberships-sidebar-item-template");
@@ -64,7 +62,6 @@ export class AffiliationMembershipSidebar extends TatorElement {
       
       const project = await store.getState().getData("Project", membership.project);
       const projectId = project.id;
-      console.log(project);
 
       const currentMemberItem = store.getState().currentUser.membershipsByProject.has(projectId) ? store.getState().currentUser.membershipsByProject.get(projectId) : null;
       const hasControl = currentMemberItem ? (currentMemberItem.permission === "Full Control") : false;
@@ -98,18 +95,15 @@ export class AffiliationMembershipSidebar extends TatorElement {
       //
       const editLink = cloneSidebarItem.getElementById("membership-item--edit");
       editLink.addEventListener("click", () => {
-        console.log("Open membership dialog (existing)");
         this._addNewDialog.setUpEditExisting(membership);
       });
 
       //
-      console.log("Appending...............", cloneSidebarItem);
       this._listDiv.appendChild(cloneSidebarItem);
     }
   }
 
   openAddNew() {
-    console.log("Open up (new)!");
     this._addNewDialog.setUpAddNew();
   }
 }

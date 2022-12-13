@@ -39,12 +39,11 @@ export class ProjectMembershipSidebar extends TatorElement {
     this.affListCount = 0;
     this.nonAffListCount = 0;
 
-    if (val && val !== null && Array.isArray(val)) {
+    if (val && val !== null && Array.isArray(val.data)) {
       this._data = val.data;
       this._projectId = val.projectId
-      this.setupSidebar();
+      this.setupSidebar(val.data);
     } else {
-      console.log("There are no affiliations....")
       this._data = null;
     }
   }
@@ -62,7 +61,7 @@ export class ProjectMembershipSidebar extends TatorElement {
   }
 
   // save and formdata
-  async setupSidebar() {
+  async setupSidebar(data) {
     let even = false
     let affCount = 0;
     let nonAffCount = 0;
@@ -70,25 +69,20 @@ export class ProjectMembershipSidebar extends TatorElement {
     const projectId = this._projectId ? this._projectId : store.getState().selection.typeId;
 
     const currentMemberItem = store.getState().currentUser.membershipsByProject.has(projectId) ? store.getState().currentUser.membershipsByProject.get(projectId) : null;
-    console.log(currentMemberItem);
     const hasControl = currentMemberItem ? (currentMemberItem.permission === "Full Control") : false;
+    console.log(`Does user have control of this projectId ${projectId}? hasControl=${hasControl} (if false, add new should be hidden)`);
 
     if (!hasControl) {
       this._addNew.classList.add("hidden")
     }
-
-    console.log("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::");
-    console.log("Setup sidebar", this._data);
-
-    for (let m of this._data) {
-      console.log(`attempting to make sidebar item for membership `, m);
-      // const projectId = m.project;
+    console.log(`Project has ${data.length} members`, data);
+    for (let m of data) {
       const isAff = store.getState().Project.setList.has(projectId);
 
       if (isAff) {
         affCount++;
       } else {
-        nonAffCount
+        nonAffCount++
       }
 
       // 
@@ -114,15 +108,6 @@ export class ProjectMembershipSidebar extends TatorElement {
       permission.textContent = m.permission
 
       //
-      // const affiliateId = await store.getState().getMembershipData(m.username);
-      // console.log(affiliateId);
-      // const affiliateId = cloneSidebarItem.getElementById("affiliate-id");
-      // affiliateId.textContent = m.affiliationId;
-
-      // const affiliateLink = cloneSidebarItem.getElementById("affiliate-link");
-      // affiliateLink.setAttribute("href", `${m.project}/project-settings#Membership-${m.id}`)
-
-      //
       const projectEditLink = cloneSidebarItem.getElementById("membership-item--edit");
       
       if (hasControl) {
@@ -143,13 +128,12 @@ export class ProjectMembershipSidebar extends TatorElement {
 
     this.affListCount = affCount;
     this.nonAffListCount = nonAffCount;
-    console.log("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::");
+
   }
 
   addNewMembership() {
     // get /{project-id}/project-settings#Membership-New
     const projectId = store.getState().selection.typeId;
-    console.log(`test ${this._projectId} this._projectId ..... ${projectId} projectId`);
     
     // window.location.replace(`/${projectId}/project-settings#Membership-New`);
     this._addNewDialog.setUpAddNew(this._projectId);

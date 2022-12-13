@@ -4,7 +4,6 @@ import { store } from "../store.js";
 export class OrgNewProjectDialog extends OrgTypeFormTemplate {
   constructor() {
     super(); 
-    console.log("Test");
 
     this._name = document.createElement("text-input");
     this._name.setAttribute("name", "Name");

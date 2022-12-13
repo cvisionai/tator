@@ -36,7 +36,6 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
   async _setupFormUnique() {
     if (this._data.id == "New") {
       // TODO
-      console.log("this is new _setupFormUnique " + this._data.id);
       this._newProjectDialog.hidden = false;
 
       // Show the modal for a new project // reuse from dashboard
@@ -47,9 +46,6 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
       this._form.hidden = false;
     }
 
-    // this will all be ready only information about the project
-    // this is where "clone project action will live"
-    //  console.log("Project data ", this._data);
     if (this._data.thumb) {
       this._thumb.setAttribute("src", this._data.thumb);
     } else {

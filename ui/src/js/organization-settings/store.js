@@ -4,7 +4,7 @@ import { ApiClient, getApi } from '../../../../scripts/packages/tator-js/pkg/src
 
 const api = getApi(window.localStorage.getItem('backend'));
 const organizationId = Number(window.location.pathname.split('/')[1]);
-console.log(api);
+
 
 async function configureImageClassification(project) {
    let response = await api.createMediaType(project.id, {
@@ -17,7 +17,6 @@ async function configureImageClassification(project) {
          order: 0,
       }],
    });
-   console.log(response.message);
 }
 
 async function configureObjectDetection(project) {
@@ -26,7 +25,6 @@ async function configureObjectDetection(project) {
       dtype: "image",
       attribute_types: [],
    });
-   console.log(response.message);
    const imageTypeId = response.id;
 
    response = await api.createMediaType(project.id, {
@@ -34,7 +32,6 @@ async function configureObjectDetection(project) {
       dtype: "video",
       attribute_types: [],
    });
-   console.log(response.message);
    const videoTypeId = response.id;
 
    response = await api.createLocalizationType(project.id, {
@@ -48,7 +45,6 @@ async function configureObjectDetection(project) {
          order: 0,
       }],
    });
-   console.log(response.message);
 }
 
 async function configureMultiObjectTracking(project) {
@@ -57,7 +53,6 @@ async function configureMultiObjectTracking(project) {
       dtype: "video",
       attribute_types: [],
    });
-   console.log(response.message);
    const videoTypeId = response.id;
 
    response = await api.createStateType(project.id, {
@@ -72,7 +67,6 @@ async function configureMultiObjectTracking(project) {
          order: 0,
       }],
    });
-   console.log(response.message);
 
    response = await api.createLocalizationType(project.id, {
       name: "Boxes",
@@ -88,7 +82,6 @@ async function configureActivityRecognition(project) {
       dtype: "video",
       attribute_types: [],
    });
-   console.log(response.message);
    const videoTypeId = response.id;
 
    response = await api.createStateType(project.id, {
@@ -103,7 +96,6 @@ async function configureActivityRecognition(project) {
          order: 0,
       }],
    });
-   console.log(response.message);
 }
 
 const getMap = new Map();
@@ -202,7 +194,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       init: false,
       setList: new Set(),
       map: new Map(),
-      usernameMebershipsMap: new Map(),
+      usernameMembershipsMap: new Map(),
       projectIdMembersMap: new Map()
    },
 
@@ -249,15 +241,12 @@ const store = create(subscribeWithSelector((set, get) => ({
    getMembershipData: async (username) => {
       if (!get()["Membership"].init) await get().fetchMemberships();
       const info = get()["Membership"];
-      console.log(info);
-      return info.usernameMebershipsMap.get(username); // returns membershipIds
+      return info.usernameMembershipsMap.get(username); // returns membershipIds
    },
 
    getProjMembershipData: async (projectId) => {
-      await get().fetchMemberships();
-      const info = get()["Membership"];
-      console.log(info);
-      return info.projectIdMembersMap.get(projectId);   
+      if (!get()["Membership"].init) await get().fetchMemberships();
+      return get()["Membership"].projectIdMembersMap.get(projectId);  
    },
 
    initHeader: async () => {
@@ -332,13 +321,11 @@ const store = create(subscribeWithSelector((set, get) => ({
     */
    getVersions: async (projectId) => {
       const type = "Version";
-      console.log("DEBUG: fetchTypeByProject " + type);
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
       try {
          if (get().Project.versionMap.has(projectId)) {
             return get().Project.versionMap.get(projectId);
          } else {
-            console.log("Get with projectId " + projectId);
             const object = await api.getVersionListWithHttpInfo(projectId);
 
             if (object.response.ok) {
@@ -347,7 +334,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                set({ Project: { ...get().Project, versionMap: map } });
                return object.data;
             } else {
-               console.error("Object response not ok for fetchType", object);
+               console.error("Object response not ok...", object);
                return [];
             }
          }
@@ -361,14 +348,13 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    fetchTypeByOrg: async (type) => {
-      console.log("DEBUG: fetchTypeByOrg " + type);
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
       try {
          const fn = getMap.get(type);
          let orgId = organizationId;
 
          const object = (type == "Project") ? await fn({ organization: orgId }) : await fn(orgId);
-         // console.log(`DEBUG: fetchTypeByOrg ${type} response....`, object);
+         console.log(`DEBUG: fetchTypeByOrg ${type} response....`, object);
 
          if (object.response.ok) {
             const setList = new Set();
@@ -392,21 +378,22 @@ const store = create(subscribeWithSelector((set, get) => ({
 
             }
 
-            // Init related types
-            if (type == "Project") {
-               get().fetchMemberships(map);
-            } else if (type == "Invitation") {
-               get().initType("Affiliation");
-            } else if ("Affiliation") {
-               get().initType("Project");
-            }
-
             if (type == "Organization") {
                set({ [type]: { ...get()[type], setList, map, data: object.data, init: true } });
             } else if (type == "Affiliation") {
                set({ [type]: { ...get()[type], setList, map, userMap, emailMap, init: true } });
             } else {
                set({ [type]: { ...get()[type], setList, map, init: true } });
+            }
+
+
+            // Init related types
+            if (type == "Invitation") {
+               await get().initType("Affiliation");
+            } else if ("Affiliation") {
+               await get().initType("Project");
+            } else if (type == "Project") {
+               // await get().fetchMemberships();
             }
 
             // Success: Return status to idle (handles page spinner)
@@ -423,36 +410,35 @@ const store = create(subscribeWithSelector((set, get) => ({
       }
    },
 
-   fetchMemberships: async (projectList = null) => {
-      // if (projectList == null) {
-         await get().initType("Project");
-         projectList = get().Project.map;
-         console.log(projectList);
-      // }
-      if (!projectList) return;
-      set({ status: { ...get().status, name: "bg-fetch", msg: `Adding Memberships...` } });
+   fetchMemberships: async () => {
+      set({ status: { ...get().status, name: "bg-fetch", msg: `Setting up Memberships...` } });
+      
+      await get().initType("Project");
+      const projectList = get().Project.map;
+      const currentUserId = get().currentUser.data.id;
       const fn = getMap.get("Membership");
       const map = new Map();
+      const currentUserMap = new Map();
+      const usernameMembershipsMap = new Map();
+      const projectIdMembersMap = new Map();
       const setList = new Set();
-      for (let [projectId, project] of projectList) {
-         try {
-            // const projectId = project.id;
+      console.log(projectList);
+
+      try{
+      for (const [projectId, project] of projectList) {
+         // try {
+            console.log("WHOOOPS.... projectId " + projectId);
             const object = await fn(projectId);
-            const currentUserId = get().currentUser.data.id;
-            const currenUserMap = new Map();
+            console.log(`fetchMemberships for ${projectId}`,object);
 
             // Get memberships for each project, and loop the data
             if (object.response.ok) {
-               const usernameMebershipsMap = new Map();
-               const projectIdMembersMap = new Map();
-
-               //console.log(`Membership data projectId ${projectId} `, object.data)
-               
-               // To accomplish: get me memberships for project ID X
+               // // To accomplish: get me memberships for project ID X
                const memberList = object.data;
+               console.log(`${projectId} set in projectIdMembersMap to equal`, memberList)
                projectIdMembersMap.set(projectId, memberList);
 
-               /* Add the data via loop to: setList and map */
+               // /* Add the data via loop to: setList and map */
                for (let item of memberList) {
                   const membershipId = item.id;
                   setList.add(membershipId);
@@ -465,33 +451,33 @@ const store = create(subscribeWithSelector((set, get) => ({
                   // I do not want to store the membership object twice just the references to it
                   // If I need the project info it is in the memberships object attr "project"
                   const username = item.username;
-                  let userList = get().Membership.usernameMebershipsMap.has(username) ? get().Membership.usernameMebershipsMap.get(username) : [];
+                  let userList = get().Membership.usernameMembershipsMap.has(username) ? get().Membership.usernameMembershipsMap.get(username) : [];
                   userList.push(membershipId);
                   userList = [...new Set(userList)];
-                  usernameMebershipsMap.set(item.username, userList);
+                  usernameMembershipsMap.set(item.username, userList);
 
                   //
                   if (item.user === currentUserId) {
-                     currenUserMap.set(projectId, item);
+                     currentUserMap.set(projectId, item);
                   }
                }
 
-               set({ Membership : { ...get().Membership, map, setList, usernameMebershipsMap, projectIdMembersMap, init: true } });
-               set({ currentUser: { ...get().currentUser, membershipsByProject: currenUserMap } });
-
-               // Success: Return status to idle (handles page spinner)
-               set({ status: { ...get().status, name: "idle", msg: "" } });
-               return object.data;
             } else {
                console.error("Object response not ok for fetchType", object);
             }
 
-         } catch (err) {
-            // Error: Return status to idle (handles page spinner)
-            console.error("Fetch type hit an issue.", err);
-            set({ status: { ...get().status, name: "idle", msg: "" } });
-            return err;
-         }
+      }
+         
+         set({ Membership : { ...get().Membership, map, setList, usernameMembershipsMap, projectIdMembersMap, init: true } });
+         set({ currentUser: { ...get().currentUser, membershipsByProject: currentUserMap } });
+
+         // Success: Return status to idle (handles page spinner)
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+      } catch (err) {
+         // Error: Return status to idle (handles page spinner)
+         console.error("Fetch type hit an issue.", err);
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
       }
    },
 
@@ -570,7 +556,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       }
    },
    resetInvitation: async (inviteSpec) => {
-      console.log("resetInvitation", inviteSpec);
       set({ status: { ...get().status, name: "pending", msg: "Reseting invitation..." } });
       try {
          const type = "Invitation";
@@ -611,8 +596,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       try {
          const info = await api.createMembershipWithHttpInfo(projectId, formData);
          
-         await get().fetchTypeByOrg("Project");
-         await get().fetchTypeByOrg("Affiliation");
+         await get().fetchMemberships();
          console.log("Returning ", info);
          return info;
       } catch (err) {
@@ -626,9 +610,8 @@ const store = create(subscribeWithSelector((set, get) => ({
       try {
          const info = await api.updateMembershipWithHttpInfo(membershipId, formData);
          
-         await get().fetchTypeByOrg("Project");
-         await get().fetchTypeByOrg("Affiliation");
-         console.log("Returning ", info);
+         await get().fetchMemberships();
+
          return info;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });
@@ -636,11 +619,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       }
    },
    addProject: async (projectSpec, preset) => {
-      console.log({
-         ...projectSpec,
-         organization: get().organizationId,
-         
-      });
       let info = await api.createProjectWithHttpInfo({
          ...projectSpec,
          organization: get().organizationId
@@ -686,7 +664,7 @@ const loopList = ({ list, skip, check, type}) => {
       value: -1,
       label: "Select"
    }];
-   console.log(list);
+
    for (let item of list) {
       const id = item.id;
       if (typeof item !== "undefined" && id !== skip) {
@@ -709,7 +687,7 @@ const loopMap = ({ map, skip, check, type}) => {
       value: -1,
       label: "Select"
    }];
-   console.log(map);
+
    for (let [id, item] of map) {
       if (typeof item !== "undefined" && id !== skip) {
          newList.push({
@@ -738,7 +716,6 @@ const loopMap = ({ map, skip, check, type}) => {
 
     if (state) {
       const map = state.map;
-      console.log(map);
       newList = loopMap({map, skip, check, type});
    }
 
@@ -754,7 +731,6 @@ const loopMap = ({ map, skip, check, type}) => {
  */
 export const getCompiledVersionList = async ({ projectId, skip = null, check = null }) => {
    await store.getState().initType("Project");
-   console.log(projectId);
    const versions = await store.getState().getVersions(projectId);
    let newList = [];
 

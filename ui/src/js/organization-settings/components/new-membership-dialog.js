@@ -84,16 +84,14 @@ export class AffiliationMembershipDialog extends ModalDialog {
    async getUsernames() {
       await store.getState().initType("Affiliation");
       const affiliates = await store.getState().Affiliation.userMap
-      console.log(affiliates);
+
       const choices = [];
       for (let [un, val] of affiliates) {
-         console.log("Test " + un);
          choices.push({
             label: un,
             value: await store.getState().getUser(un)
          });
       }
-      console.log("choices",choices);
       this._affiliates.choices = choices;
    }
 
@@ -107,7 +105,6 @@ export class AffiliationMembershipDialog extends ModalDialog {
    }
 
    async setUserId(un) {
-      console.log("SET USER ID setUserId this._userId=" + this._userId);
       this._user = await store.getState().getUser(un);
       this._userId = this._user.id;
    }
@@ -126,7 +123,6 @@ export class AffiliationMembershipDialog extends ModalDialog {
    async showOptions() {
       // setup version list
       const projectId = this._projects.getValue();
-      console.log("showOptions "+projectId);
 
       this._versions.clear();
       const versionsList = await getCompiledVersionList({ projectId });
@@ -152,7 +148,6 @@ export class AffiliationMembershipDialog extends ModalDialog {
    }
 
    async setUpAddNew(projectId = null) {
-      console.log("setUpAddNew(projectId= " + projectId);
       this.clearDialog();
       this._title.nodeValue = "Add Affiliate to Project";
       this._accept.textContent = "Add Member";
@@ -172,12 +167,10 @@ export class AffiliationMembershipDialog extends ModalDialog {
          await this.showOptions();
       }
       
-      console.log(`this._projects.setValue(${projectId}); this._projects.getValue() => ${this._projects.getValue()}`)
       this.setAttribute("is-open", "true");
    }
 
    async setUpEditExisting(membership) {
-      console.log("setUpEditExisting.........................................", membership);
       this.clearDialog();
       
       this._title.nodeValue = "Edit Affiliate Membership";
@@ -199,7 +192,6 @@ export class AffiliationMembershipDialog extends ModalDialog {
       this._confirm = true;
       let info = null;
       if (this._membershipId.getValue()) {
-         console.log("Editing membership ID ==== this._membershipId.getValue()"+this._membershipId.getValue())
          const formData = {};
 
          if (this._permissionLevels.changed()) formData.permission = this._permissionLevels.getValue();
@@ -212,7 +204,6 @@ export class AffiliationMembershipDialog extends ModalDialog {
 
 
       } else if(this._projects.getValue()) {
-         console.log("Adding user to project...." + this._projects.getValue());
          const formData = {
             permission: this._permissionLevels.getValue(),
             default_version: Number(this._versions.getValue()),
@@ -229,7 +220,6 @@ export class AffiliationMembershipDialog extends ModalDialog {
          return console.error("Some data is missing to complete this edit/add.")
       }
 
-      console.log(info);
       if (info.response) {   
          if (info.response.ok) {
             this._closeCallback();

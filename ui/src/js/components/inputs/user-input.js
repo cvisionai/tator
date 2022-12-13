@@ -148,14 +148,6 @@ export class UserInput extends TatorElement {
     li.appendChild(h3);
   }
 
-  clear() {
-    if (this._pills.length) {
-      for (const pill of this._pills.children) {
-        this._pills.removeChild(pill);
-      }      
-    }
-  }
-
 }
 
 customElements.define("user-input", UserInput);

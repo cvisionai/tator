@@ -136,23 +136,18 @@ export class BucketEdit extends OrgTypeFormTemplate {
   _showBucketFields(type) {
     this._currentBucketType = type;
     let hideType = type == "aws" ? "gcs" : "aws";
-    console.log("SHOW BUCKET FIELdS FOR "+type.toUpperCase());
     this._editBucketType.setValue(type);
     
     // hide non-relevent fields
     // #todo expand to loops list of hideTypes if we have > 2 (ie. Wasabi)
     const hideThese = this._bucketFieldsByType.get(hideType);
-    console.log("hideThese",hideThese);
     for (let field of hideThese) {
-      console.log(this.bucketInputs.get(field));
       this.bucketInputs.get(field).hidden = true;
     }
     
     // show relevent fields
     const showThese = this._bucketFieldsByType.get(type);
-    console.log("showThese",showThese);
     for (let field of showThese) {
-      console.log(this.bucketInputs.get(field));
       this.bucketInputs.get(field).hidden = false;
     }
   }

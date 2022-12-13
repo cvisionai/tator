@@ -65,8 +65,6 @@ export class OrganizationSettings extends TatorPage {
    * @param {} status 
    */
   handleStatusChange(status) {
-    // Debug output, potentially useful as lightbox or all modal handles
-    // console.log(`DEBUG: Status updated to "${status.name}" ${(status.msg !== "") ? " with message: "+status.msg : ""}`);
     if(status.name == "pending"){
       this.showDimmer();
       this.loading.showSpinner();
@@ -103,7 +101,6 @@ export class OrganizationSettings extends TatorPage {
       this._innerSelection = typeof split[2] !== "undefined";
     } else if (val === "") {
       // No hash is home for organization-settings
-      console.log(this.organizationId);
       this._selectedHash = `#Organization-${this.organizationId}`;
       this._selectedType = "Organization";
       this._selectedObjectId = this.organizationId;
@@ -116,7 +113,6 @@ export class OrganizationSettings extends TatorPage {
       this._innerSelection = null;
     }
 
-    // console.log("DEBUG: Hash setup.... " + this._selectedHash);
     store.getState().setSelection({
       typeName: this._selectedType,
       typeId: this._selectedObjectId,
@@ -131,7 +127,6 @@ export class OrganizationSettings extends TatorPage {
 
   /* Organization data required for settings page components are updated */
   updateOrganization(newType) {
-    console.log("New type", newType);
     if (!this.organizationId) {
       // Organization id
       this.organizationId = newType.data.id;

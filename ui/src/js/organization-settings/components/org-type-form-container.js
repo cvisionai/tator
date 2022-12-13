@@ -37,6 +37,10 @@ export class OrgTypeFormContainer extends TatorElement {
     // Side container (attr container)
     this.sideCol = this._shadow.getElementById("type-form-attr-column");
 
+    // Potential sidebar items
+    this.projectMembershipSidebar = document.createElement("project-membership-sidebar");
+    this.membershipSidebar = document.createElement("affiliation-membership-sidebar");
+
     // this is outside the template and references by all parts of page to sync the dimmer
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild(this.modal);
@@ -48,61 +52,80 @@ export class OrgTypeFormContainer extends TatorElement {
     store.subscribe(state => state.projectId, this.setProjectId.bind(this));
     store.subscribe(state => state.status, this.handleButtonsActive.bind(this));
 
+    this.initTypeForm();
+  }
+
+  initTypeForm() {
     // Create in the inner form handles
     const formName = this.getAttribute("form");
     this._form = document.createElement(formName);
     this.typeFormDiv.appendChild(this._form);
 
     // Once we know what type, listen to changes
-    store.subscribe(state => state[this._form.typeName], this._newData.bind(this));
-
-    const canDeleteProject = store.getState().deletePermission;
     const typeName = this._form.typeName;
+    store.subscribe(state => state[typeName], this._newData.bind(this));
     this.typeName = typeName;
-
-    if (typeName === "Project") {
-      this._customButtonPrimary.innerHTML = `View/Edit Project`;
-      this._customButtonPrimary.addEventListener("click", this._linkToProject.bind(this));
-      this.checkCurrentUser();
-
-      this._customButton.hidden = false;
-      this._customButton.innerHTML = `Clone Project`;
-      this._customButton.addEventListener("click", this._cloneProjectDialog.bind(this));
-
-      this.projectMembershipSidebar = document.createElement("project-membership-sidebar");
-      this.sideCol.appendChild(this.projectMembershipSidebar);
-  
-    } else if (typeName == "Invitation") {
-      this._customButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill feather feather-send"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      &nbsp; Reset & Resend Invitation`;
-      this._customButton.addEventListener("click", this._resetInvitation.bind(this));
-
-      this._customButtonPrimary.innerHTML = `View/Edit Affiliation`;
-      this._customButtonPrimary.addEventListener("click", this._linkToAffiliation.bind(this));
-    } else if (typeName == "Affiliation") {
-        
-        this.membershipSidebar = document.createElement("affiliation-membership-sidebar");
-        this.membershipSidebar.hidden = true;
-        this.sideCol.appendChild(this.membershipSidebar);
-    }
 
     // Event listeners for container actions
     this.save.addEventListener("click", this._form._saveData.bind(this._form));
     this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
     this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
+
+    // Custom buttons for certain types (#Todo should these be child elements instead?)
+    if (typeName === "Project") {
+      // We need to get the current user and their permissions
+      this.setupProjectContainer();
+    } else if (typeName == "Invitation") {
+      this.setupInvitationContainer();
+    } else if (typeName == "Affiliation") {
+      this.setupAffiliationContainer();
+    }
   }
 
-  async checkCurrentUser() {
+  async setupProjectContainer() {
+    console.log("setupProjectContainer");
     await store.getState().getCurrentUser();
+
+    // Projects aren't editable here, we can link user there if they have access
+    this._customButtonPrimary.innerHTML = `View/Edit Project`;
+    this._customButtonPrimary.addEventListener("click", this._linkToProject.bind(this));
+    
+    // #TODO hidden until we have a clone endpoint 
+    this._customButton.hidden = true;
+    // this._customButton.innerHTML = `Clone Project`;
+    // this._customButton.addEventListener("click", this._cloneProjectDialog.bind(this));
+
+    // Show a sidebar for all projects
+    // Note: hide/show for +new page is page of typeId set function
+    this.sideCol.appendChild(this.projectMembershipSidebar);
+    this.sideCol.hidden = false;
+    store.subscribe(state => state["Membership"], this.updatedMembershipData.bind(this));
+  }
+
+  setupInvitationContainer() {
+    this._customButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill feather feather-send"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      &nbsp; Reset & Resend Invitation`;
+    this._customButton.addEventListener("click", this._resetInvitation.bind(this));
+
+    this._customButtonPrimary.innerHTML = `View/Edit Affiliation`;
+    this._customButtonPrimary.addEventListener("click", this._linkToAffiliation.bind(this));
+  }
+
+  setupAffiliationContainer() {
+    this.sideCol.appendChild(this.membershipSidebar);
+    this.sideCol.hidden = false;
+    store.subscribe(state => state.Projects, this._getAffiliateMembershipSidebar.bind(this));
   }
 
   handleButtonsActive(newStatus) {
     if (newStatus.name == "idle") {
+      this.typeFormDiv.classList.remove("form-loading-glow");
       this.save.removeAttribute("disabled");
       this.resetLink.removeAttribute("disabled");
       this.delete.removeAttribute("disabled");
     } else {
       this.save.setAttribute("disabled", "true");
+      this.typeFormDiv.classList.add("form-loading-glow");
       this.resetLink.setAttribute("disabled", "true");
       this.delete.setAttribute("disabled", "true");
     }
@@ -131,6 +154,7 @@ export class OrgTypeFormContainer extends TatorElement {
     this.deleteDiv.hidden = (val == "New");
     //this._saveEditSection.hidden = !(val == "New");
     this.sideCol.hidden = (val == "New");
+    
   }
 
   /**
@@ -153,9 +177,7 @@ export class OrgTypeFormContainer extends TatorElement {
     this._form.data = data;
     let objectName = "";
 
-    // Reset to hidden by default
-    this.sideCol.hidden = true;  
-    console.log("this._typeName data.id" + this._typeName + data.id);
+    console.log(`setUpData for ${this._typeName}..`, data);
 
     // Setup object info
     switch (this._typeName) {
@@ -168,13 +190,11 @@ export class OrgTypeFormContainer extends TatorElement {
         this._getAffiliateMembershipSidebar(data.username);
         break;
       case "Project":
-        console.log("Project section with ID " + this._data.id);
-        if (this._data.id === "New") {
+        console.log(`${this._data.id} !== "New"`)
+        if (this._data.id !== "New") {
           
-          
-        } else {
           this._saveEditSection.classList.add("hidden");
-          this._getProjMembershipSidebar(data.id);
+          this.updateSidebar();
         }   
 
       // default and fall-through for Project objectName
@@ -188,7 +208,6 @@ export class OrgTypeFormContainer extends TatorElement {
    * 
    */
   async _setupButtonsInvite(status) {
-    console.log("_setupButtonsInvite status "+status)
     const showReset = ["Expired", "Pending"];
     const showCustomButton = (showReset.includes(status) || status == "Accepted");
     const inviteEmail = this._data.email;
@@ -200,7 +219,7 @@ export class OrgTypeFormContainer extends TatorElement {
       } else if (status == "Accepted") {
         const result = await store.getState().initType("Affiliation");
         const affiliation = store.getState().Affiliation.emailMap.has(inviteEmail) ? store.getState().Affiliation.emailMap.get(inviteEmail) : null;
-        console.log("Email "+inviteEmail, affiliation);
+
         if (affiliation) {
           this._customButtonSectionPrimary.hidden = false;
         } else {
@@ -251,7 +270,6 @@ export class OrgTypeFormContainer extends TatorElement {
       const oldType = oldSelection.typeName;
 
       if (oldType === this._typeName && oldType !== newType) {
-        console.log("New selection requires hidden ", newSelection);
         this.hidden = true;
         return; // If container type was the old type, and not the new one hide and end
       } else {
@@ -273,7 +291,6 @@ export class OrgTypeFormContainer extends TatorElement {
         }
       } else {
         if (this._typeName == "Project") {
-          console.log("REMOVE HIDDEN");
           this._saveEditSection.classList.remove("hidden");
         }
       }
@@ -288,23 +305,6 @@ export class OrgTypeFormContainer extends TatorElement {
   removeAttributeSection() {
     if (this.attributeSection) this.attributeSection.remove();
     this._attributeContainer.hidden = true;
-  }
-
-  /**
-   * Adds an attribute section to pages based on form data
-   */
-  _getAttributeSection() {
-    // Clears
-    this.removeAttributeSection();
-
-    // Setup
-    this.attributeSection = document.createElement("attributes-main");
-    this.attributeSection.setAttribute("data-from-id", `${this._typeId}`)
-    this.attributeSection._init(this._typeName, this._form._data.id, this._form._data.name, this.projectId, this._form._data.attribute_types, this.modal);
-
-    // Append and show
-    this._attributeContainer.appendChild(this.attributeSection);
-    this._attributeContainer.hidden = false;
   }
 
   //
@@ -323,9 +323,9 @@ export class OrgTypeFormContainer extends TatorElement {
     }
   }
 
-  async _cloneProjectDialog() {
-    this.modal._complete("TODO clone dialog");
-  }
+  // async _cloneProjectDialog() {
+  //   this.modal._complete("TODO clone dialog");
+  // }
 
   _linkToAffiliation() {
     //
@@ -346,40 +346,58 @@ export class OrgTypeFormContainer extends TatorElement {
   async _getAffiliateMembershipSidebar(affUsername) {
     // Should return a list of projects memberships
     const data = await store.getState().getMembershipData(affUsername);
-    console.log("Got data for affUsername " + affUsername, data);
     this.membershipSidebar.data = data;
     this.membershipSidebar.username = affUsername;
-
-    // Show the things
-    this.sideCol.hidden = false;
   }
 
-  async _getProjMembershipSidebar(projectId) {
-    // Setting data, should be a list of memberships projects
-    const data = await store.getState().getProjMembershipData(projectId);
-    console.log("Got data for projectId " + projectId, data);
-    this.projectMembershipSidebar.projectId = projectId;
-    this.projectMembershipSidebar.data = {projectId, data};
+  updatedMembershipData(newMembershipData) {
+    console.log("State updated for MEMBERSHIP while we are selected for this._typeId " + this._typeId, newMembershipData);
 
-    // Projects
-    this._customButtonSection.hidden = true;
-    let canDeleteProject = false;
-    if (data) {
-      for (let membership of data) {
-        // if any membership in my user, check against their permssions
-        if (membership.user_id == store.getState().currentUser.data.id && membership.permission == "Full Control") {
-          canDeleteProject = true;
-          this._customButtonSection.hidden = false;
+    // Setting data, should be a list of memberships projects
+    const projectId = Number(this._typeId);
+    const data = newMembershipData.projectIdMembersMap.get(this._typeId);
+    this.updateSidebar(data);
+    
+  }
+
+  async updateSidebar(data = null) {
+   
+
+    if (this._typeId === "New") {
+      this._customButtonSectionPrimary.hidden = true;
+    } else {
+      const projectId = Number(this._typeId);
+      console.log("Update sidebar called with data", data);
+      if (data == null) {
+        data = await store.getState().getProjMembershipData(projectId);
+      }
+
+      this.projectMembershipSidebar.projectId = projectId;
+      console.log("Setting sidebar data to....", { projectId, data });
+      this.projectMembershipSidebar.data = {projectId, data};
+
+      // Projects
+      let canEditProject = false;
+      const currentUserId = store.getState().currentUser.data.id;
+      if (data) {
+        for (let membership of data) {
+          // if any membership in my user, check against their permssions
+          console.log(`Checking for my memb level.... ${membership.user} (${typeof membership.user}) === ${currentUserId}  (${typeof currentUserId}) && ${membership.permission} === "Full Control"`)
+          if (membership.user === currentUserId  && membership.permission === "Full Control") {
+            canEditProject = true;
+            
+          }
         }
       }
+      
+      console.log("canEditProject " + canEditProject);
+      // There are either no affiliations for the project, or there is but user isn't one with control
+      this._customButtonSectionPrimary.hidden = !canEditProject;
+      this.delete.hidden = !canEditProject;
     }
     
-    // Show the things
-    this.sideCol.hidden = false;
-
-    // There are either no affiliations for the project, or there is but user isn't one with control
-    this.delete.hidden = !canDeleteProject;
   }
+  
 }
 
 

@@ -52,3 +52,10 @@ $placeholder-opacity-min:           .2 !default;
    }
  }
  
+.form-loading-glow {
+  opacity: 50%;
+  form:first-child {
+    visibility: hidden;
+  }
+  transition: opacity 300ms linear;
+}

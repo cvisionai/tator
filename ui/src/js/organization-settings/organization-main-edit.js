@@ -36,7 +36,6 @@ export class OrganizationMainEdit extends OrgTypeFormTemplate {
   }
   
   async _setupFormUnique() {
-    console.log("_setupFormUnique ", this._data);
     // Thumb
     const thumbVal = (!this._data.thumb || this._data.thumb === null) ? "" : this._data.thumb;
     this._thumbUpload.default = thumbVal;
@@ -46,7 +45,10 @@ export class OrganizationMainEdit extends OrgTypeFormTemplate {
     // Input for name
     this._editName.default = this._data.name;
     this._editName.setValue(this._data.name);
-    
+
+    // Enum for default project permissions
+    this._defaultPermission.default = this._data.default_membership_permission;
+    this._defaultPermission.setValue(this._data.default_membership_permission);
   }
 
   // save and formdata
@@ -59,6 +61,10 @@ export class OrganizationMainEdit extends OrgTypeFormTemplate {
 
     if (this._editName.changed()) {
       formData.name = this._editName.getValue();
+    }
+
+    if (thisthis._defaultPermission.changed()) {
+      formData.default_membership_permission = this._defaultPermission.getValue();
     }
 
     return formData;
