@@ -228,7 +228,7 @@ def validate_attributes(params, obj):
                 attr_type = attr_types[attr_name]
             else:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {obj.meta.name}")
-            convert_attribute(attr_type, attributes[attr_name])
+            attributes[attr_name] = convert_attribute(attr_type, attributes[attr_name])
     return attributes
 
 def patch_attributes(new_attrs, obj):
