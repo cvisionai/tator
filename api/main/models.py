@@ -405,12 +405,6 @@ class Bucket(Model):
     config = JSONField(null=True, blank=True)
     store_type = EnumField(ObjectStore, max_length=32, null=True, blank=True)
     external_host = CharField(max_length=128, null=True, blank=True)
-    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
-    access_key = CharField(max_length=128, null=True, blank=True)
-    secret_key = CharField(max_length=40, null=True, blank=True)
-    endpoint_url = CharField(max_length=1024, null=True, blank=True)
-    region = CharField(max_length=16, null=True, blank=True)
-    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
     archive_sc = CharField(
         max_length=16,
         choices=[
@@ -420,9 +414,6 @@ class Bucket(Model):
         ],
     )
     live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")])
-    # TODO remove field gcs_key_info ###############################################################
-    gcs_key_info = TextField(null=True, blank=True)
-    # TODO remove field gcs_key_info ###############################################################
 
     def __str__(self):
         return " | ".join(

@@ -20,16 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 def _get_endpoint_url(bucket):
-    # TODO remove conditional once old style bucket access is removed
-    if bucket.config:
-        if bucket.store_type == ObjectStore.GCP:
-            return None
-        if bucket.store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
-            return bucket.config.get("endpoint_url", None)
-        if bucket.store_type == ObjectStore.OCI:
-            return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
-        raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
-    return bucket.endpoint_url
+    if bucket.store_type == ObjectStore.GCP:
+        return None
+    if bucket.store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
+        return bucket.config.get("endpoint_url", None)
+    if bucket.store_type == ObjectStore.OCI:
+        return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
+    raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
 
 
 def serialize_bucket(bucket):

@@ -32,14 +32,6 @@ class ObjectStore(Enum):
     OCI = "OCI"
 
 
-# TODO Deprecated: remove once support for old bucket model is removed
-class OldObjectStore(Enum):
-    AWS = "AmazonS3"
-    MINIO = "MinIO"
-    GCP = "UploadServer"
-    OCI = "OCI"
-
-
 CLIENT_MAP = {
     ObjectStore.AWS: None,
     ObjectStore.MINIO: None,
@@ -118,7 +110,7 @@ class TatorStorage(ABC):
         self.bucket = bucket
         self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
-        self.external_host = external_host
+        self.external_host = external_host and external_host.strip("/")
         self._server = None
         self.remote_type = None
 
@@ -683,7 +675,6 @@ def get_tator_store(
             f"Cannot specify a bucket and set `{'upload' if upload else 'backup'}` to True"
         )
 
-    external_host = None
     if bucket is None:
         if upload and os.getenv("DEFAULT_UPLOAD_CONFIG"):
             bucket_type = "UPLOAD"
