@@ -432,13 +432,13 @@ export class AttributesForm extends TatorElement {
       this._default.setAttribute("name", "Default");
 
       this._default.choices = [
-        { value: null, label: "null" },
-        { value: true, label: "true" },
-        { value: false, label: "false" },
+        { value: "null", label: "null" },
+        { value: "true", label: "true" },
+        { value: "false", label: "false" },
       ];
       
-      this._default.default = value;
-      this._default.setValue(value);
+      this._default.default = String(value);
+      this._default.setValue(String(value));
       
       this._default.addEventListener("change", this._formChanged.bind(this));
 
@@ -899,10 +899,10 @@ export class AttributesForm extends TatorElement {
             formData["default"] = defaultVal;
           } else if (dtype == "bool") {
             // allow for bool value to be changed to null
-            if (String(defaultVal).trim() === "") {
+            if (String(defaultVal).trim() === "null" || String(defaultVal).trim() === "") {
               delete formData["default"];
             } else {
-              formData["default"] = defaultVal;
+              formData["default"] = (defaultVal == "true") ? true : false;
             }
           } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must be the cases above
             formData["default"] = defaultVal;
