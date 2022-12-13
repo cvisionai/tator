@@ -114,7 +114,7 @@ export class OrgTypeFormContainer extends TatorElement {
   setupAffiliationContainer() {
     this.sideCol.appendChild(this.membershipSidebar);
     this.sideCol.hidden = false;
-    store.subscribe(state => state.Projects, this._getAffiliateMembershipSidebar.bind(this));
+    store.subscribe(state => state.Project, this.updatedProjectData.bind(this));
   }
 
   handleButtonsActive(newStatus) {
@@ -187,14 +187,13 @@ export class OrgTypeFormContainer extends TatorElement {
         break;
       case "Affiliation":
         objectName = data.username;
-        this._getAffiliateMembershipSidebar(data.username);
+        this.updateAffiliateSidebar(data.username);
         break;
       case "Project":
         console.log(`${this._data.id} !== "New"`)
         if (this._data.id !== "New") {
-          
           this._saveEditSection.classList.add("hidden");
-          this.updateSidebar();
+          this.updateProjectSidebar();
         }   
 
       // default and fall-through for Project objectName
@@ -343,11 +342,20 @@ export class OrgTypeFormContainer extends TatorElement {
     window.location.href = `${window.location.origin}/${this._data.id}/project-settings`;
   }
 
-  async _getAffiliateMembershipSidebar(affUsername) {
+  updatedProjectData(newProjectData) {
+    const affiliteId = Number(this._typeId);
+    for (let [id, affData] of store.getState().Affiliate.map) {
+      if (id == affiliteId) {
+        return this.updateAffiliateSidebar(affData.username);
+      }
+    }
+  }
+
+  async updateAffiliateSidebar(affUsername) {
     // Should return a list of projects memberships
     const data = await store.getState().getMembershipData(affUsername);
     this.membershipSidebar.data = data;
-    this.membershipSidebar.username = affUsername;
+    this.membershipSidebar.username = affUsername;    
   }
 
   updatedMembershipData(newMembershipData) {
@@ -360,9 +368,7 @@ export class OrgTypeFormContainer extends TatorElement {
     
   }
 
-  async updateSidebar(data = null) {
-   
-
+  async updateProjectSidebar(data = null) {
     if (this._typeId === "New") {
       this._customButtonSectionPrimary.hidden = true;
     } else {

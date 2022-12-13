@@ -393,7 +393,8 @@ const store = create(subscribeWithSelector((set, get) => ({
             } else if ("Affiliation") {
                await get().initType("Project");
             } else if (type == "Project") {
-               // await get().fetchMemberships();
+               // check membership info of Projects
+               await get().fetchMemberships();
             }
 
             // Success: Return status to idle (handles page spinner)
@@ -425,8 +426,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       console.log(projectList);
 
       try{
-      for (const [projectId, project] of projectList) {
-         // try {
+         for (const [projectId, project] of projectList) {
             console.log("WHOOOPS.... projectId " + projectId);
             const object = await fn(projectId);
             console.log(`fetchMemberships for ${projectId}`,object);
@@ -435,7 +435,6 @@ const store = create(subscribeWithSelector((set, get) => ({
             if (object.response.ok) {
                // // To accomplish: get me memberships for project ID X
                const memberList = object.data;
-               console.log(`${projectId} set in projectIdMembersMap to equal`, memberList)
                projectIdMembersMap.set(projectId, memberList);
 
                // /* Add the data via loop to: setList and map */
@@ -451,7 +450,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                   // I do not want to store the membership object twice just the references to it
                   // If I need the project info it is in the memberships object attr "project"
                   const username = item.username;
-                  let userList = get().Membership.usernameMembershipsMap.has(username) ? get().Membership.usernameMembershipsMap.get(username) : [];
+                  let userList = usernameMembershipsMap.has(username) ? usernameMembershipsMap.get(username) : [];
                   userList.push(membershipId);
                   userList = [...new Set(userList)];
                   usernameMembershipsMap.set(item.username, userList);
@@ -466,7 +465,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                console.error("Object response not ok for fetchType", object);
             }
 
-      }
+         }
          
          set({ Membership : { ...get().Membership, map, setList, usernameMembershipsMap, projectIdMembersMap, init: true } });
          set({ currentUser: { ...get().currentUser, membershipsByProject: currentUserMap } });
