@@ -27,6 +27,8 @@ export class ProjectMembershipSidebar extends TatorElement {
     this.modal = document.createElement("modal-dialog");
     this._addNewDialog.pageModal = this.modal;
     this._shadow.appendChild(this.modal);
+
+    store.subscribe(state => state.Membership, this.processNewMemberships.bind(this));
   }
 
   /**
@@ -60,7 +62,18 @@ export class ProjectMembershipSidebar extends TatorElement {
     this._projectId = val;
   }
 
-  // save and formdata
+  processNewMemberships(newMembershipData) {
+    if (newMembershipData.map && newMembershipData.map.values().length > 0) {
+      const projectId = this._projectId ? this._projectId : store.getState().selection.typeId;
+      const newData = newMembershipData.projectIdMembersMap.get(projectId);
+      this.setupSidebar(newData);
+    }
+  }
+
+
+  /**
+   * @data is {Array}  of memberships
+   */
   async setupSidebar(data) {
     let even = false
     let affCount = 0;

@@ -631,7 +631,8 @@ const store = create(subscribeWithSelector((set, get) => ({
          }
    
          //refreshes view
-         get().fetchTypeByOrg("Project");
+         await get().fetchTypeByOrg("Project");
+         await get().fetchMemberships();
       }
          
       return info;

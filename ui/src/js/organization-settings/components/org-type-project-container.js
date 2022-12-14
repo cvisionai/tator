@@ -16,6 +16,8 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
     //
     this._customButtonPrimary.innerHTML = `View/Edit Project`;
     this._customButtonPrimary.addEventListener("click", this._linkToProject.bind(this));
+
+    
   }
 
   connectedCallback() {
