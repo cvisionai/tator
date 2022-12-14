@@ -145,20 +145,34 @@ class TatorBackupManager:
         # Determine if the default bucket is being used for all StoreTypes or none
         use_default_bucket = project.get_bucket() is None
 
-        # Get the `TatorStore` object that connects to object storage for the given type
-        for store_type in StoreType:
-            is_backup = store_type == StoreType.BACKUP
-            project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
-            try:
-                store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
-            except:
-                success = False
-                logger.error(
-                    f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
-                    exc_info=True,
-                )
-                break
+        # Get the `TatorStore` object that connects to object storage for live storage first
+        try:
+            store = get_tator_store(project.get_bucket())
+        except:
+            success = False
+            bucket_str = "default" if use_default_bucket else "project-specific"
+            logger.error(
+                f"Could not get {bucket_str}live bucket for project {project_id}", exc_info=True
+            )
+        else:
+            project_store_info[store_type] = {
+                "store": store,
+                "remote_name": f"{project_id}_{store_type}",
+                "bucket_name": store.bucket_name,
+            }
 
+        # Get the `TatorStore` object that connects to object storage for backup storage, if
+        # applicable
+        project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
+        try:
+            store = get_tator_store(project_bucket, backup=use_default_bucket)
+        except:
+            success = False
+            bucket_str = "default" if use_default_bucket else "project-specific"
+            logger.error(
+                f"Could not get {bucket_str} backup bucket for project {project_id}", exc_info=True
+            )
+        else:
             if store:
                 project_store_info[store_type] = {
                     "store": store,

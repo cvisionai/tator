@@ -686,12 +686,26 @@ def get_tator_store(
         )
 
     if bucket is None:
-        if upload:
+        if upload and os.getenv("DEFAULT_UPLOAD_BUCKET_CONFIG_FILE"):
             bucket_type = "UPLOAD"
         elif backup:
             bucket_type = "BACKUP"
         else:
             bucket_type = "LIVE"
+
+        # Config filename is a required environment variable
+        config_filename = os.getenv(f"DEFAULT_{bucket_type}_CONFIG_FILE")
+        if config_filename and os.path.exists(config_filename):
+            with open(config_filename) as fp:
+                config = json.load(fp)
+        else:
+            # If a backup store was requested but not provided (`bucket` is None and the environment
+            # variables are empty), return `None` to signal no store exists
+            if bucket_type == "BACKUP":
+                return None
+            raise ValueError(
+                f"No config file named '{config_filename}' found for {bucket_type.lower()} bucket!"
+            )
 
         # Bucket name is a required environment variable
         bucket_name = os.getenv(f"DEFAULT_{bucket_type}_BUCKET_NAME")
@@ -708,20 +722,6 @@ def get_tator_store(
         if store_type == ObjectStore.OCI and not external_host:
             raise ValueError(
                 f"No external host found for OCI default {bucket_type.lower()} bucket!"
-            )
-
-        # Config filename is a required environment variable
-        config_filename = os.getenv(f"DEFAULT_{bucket_type}_CONFIG_FILE")
-        if config_filename and os.path.exists(config_filename):
-            with open(config_filename) as fp:
-                config = json.load(fp)
-        else:
-            # If a backup store was requested but not provided (`bucket` is None and the environment
-            # variables are empty), return `None` to signal no store exists
-            if bucket_type == "BACKUP":
-                return None
-            raise ValueError(
-                f"No config file named '{config_filename}' found for {bucket_type.lower()} bucket!"
             )
     elif getattr(bucket, "config", None):
         bucket_name = bucket.name
