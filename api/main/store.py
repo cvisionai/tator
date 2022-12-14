@@ -32,6 +32,14 @@ class ObjectStore(Enum):
     OCI = "OCI"
 
 
+# TODO Deprecated: remove once support for old bucket model is removed
+class OldObjectStore(Enum):
+    AWS = "AmazonS3"
+    MINIO = "MinIO"
+    GCP = "UploadServer"
+    OCI = "OCI"
+
+
 CLIENT_MAP = {
     ObjectStore.AWS: None,
     ObjectStore.MINIO: None,
@@ -82,6 +90,8 @@ def _client_from_config(
             read_timeout=read_timeout,
             retries={"max_attempts": max_attempts},
         )
+        # TODO change back to virtual-host-style access when it works again, as path-style access is
+        # on delayed deprecation
         config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket_name}.", "")
         return boto3.client("s3", **config)
     if store_type == ObjectStore.OCI:
@@ -676,25 +686,43 @@ def get_tator_store(
         )
 
     if bucket is None:
-        if upload and os.getenv("DEFAULT_UPLOAD_CONFIG"):
+        if upload:
             bucket_type = "UPLOAD"
         elif backup:
+            bucket_type = "BACKUP"
+        else:
+            bucket_type = "LIVE"
+
+        # Bucket name is a required environment variable
+        bucket_name = os.getenv(f"DEFAULT_{bucket_type}_BUCKET_NAME")
+        if not bucket_name:
+            raise ValueError(f"No bucket name found for default {bucket_type.lower()} bucket!")
+
+        # Store type is a required environment variable
+        store_type = ObjectStore(os.getenv(f"DEFAULT_{bucket_type}_STORE_TYPE"))
+        if not store_type:
+            raise ValueError(f"No store type found for default {bucket_type.lower()} bucket!")
+
+        # External host is an optional environment variable, except for OCI
+        external_host = os.getenv(f"{bucket_type}_STORAGE_EXTERNAL_HOST")
+        if store_type == ObjectStore.OCI and not external_host:
+            raise ValueError(
+                f"No external host found for OCI default {bucket_type.lower()} bucket!"
+            )
+
+        # Config filename is a required environment variable
+        config_filename = os.getenv(f"DEFAULT_{bucket_type}_CONFIG_FILE")
+        if config_filename and os.path.exists(config_filename):
+            with open(config_filename) as fp:
+                config = json.load(fp)
+        else:
             # If a backup store was requested but not provided (`bucket` is None and the environment
             # variables are empty), return `None` to signal no store exists
-            if not os.getenv(f"DEFAULT_BACKUP_CONFIG"):
+            if bucket_type == "BACKUP":
                 return None
-            bucket_type = "BACKUP"
-        elif os.getenv("DEFAULT_LIVE_CONFIG"):
-            bucket_type = "LIVE"
-        else:
-            raise RuntimeError(
-                f"Project-specific bucket not specified and no default bucket exists for the "
-                f"inputs (upload={upload}, backup={backup})."
+            raise ValueError(
+                f"No config file named '{config_filename}' found for {bucket_type.lower()} bucket!"
             )
-        bucket_name = os.getenv(f"DEFAULT_{bucket_type}_BUCKET_NAME")
-        store_type = ObjectStore(os.getenv(f"DEFAULT_{bucket_type}_STORE_TYPE"))
-        config = json.loads(os.getenv(f"DEFAULT_{bucket_type}_CONFIG"))
-        external_host = os.getenv(f"{bucket_type}_STORAGE_EXTERNAL_HOST")
     elif getattr(bucket, "config", None):
         bucket_name = bucket.name
         store_type = ObjectStore(bucket.store_type)
