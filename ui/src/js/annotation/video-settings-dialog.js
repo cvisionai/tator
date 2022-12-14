@@ -517,6 +517,10 @@ export class VideoSettingsDialog extends ModalDialog {
       this._safeModeOption.setValue(false);
     }
     let sourceList = [];
+    if (!("streaming" in mainVideo.media_files) || mainVideo.media_files["streaming"].length == 0) {
+      console.warn("Expected a streaming file to exist for video, found none.");
+      return;
+    }
     for (let mediaFile of mainVideo.media_files["streaming"])
     {
       let sourceStr = this.createSourceString(mediaFile.resolution[0], mainVideo.fps);
