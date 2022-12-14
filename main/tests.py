@@ -377,31 +377,30 @@ class DefaultCreateTestMixin:
                     self.assertTrue(obj.attributes[field]==default)
             else:
                 if isinstance(self.create_json, dict):
-                    self.assertTrue(obj.attributes[field]==self.create_json[field])
+                    self.assertTrue(obj.attributes[field]==self.create_json['attributes'][field])
                 else:
                     for create_json in self.create_json:
-                        create_json[field]
-                        obj.attributes[field]
-                        self.assertTrue(obj.attributes[field]==create_json[field])
+                        print(obj.attributes)
+                        print(create_json)
+                        self.assertTrue(obj.attributes[field]==create_json.get('attributes',{}).get(field, None))
         # Delete the object
         obj.delete()
 
     def test_create_default(self):
         endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
         # Remove attribute values.
-        def clear_attributes(obj):
-            delete_fields = []
-            cpy = dict(obj)
-            for key in cpy:
-                if key.endswith(' Test'):
-                    delete_fields.append(key)
-            for field in delete_fields:
-                del cpy[field]
-            return cpy
         if isinstance(self.create_json, dict):
-            create_json = clear_attributes(self.create_json)
+            create_json = {**self._create_json}
+            if 'attributes' in create_json:
+                del create_json['attributes']
         else:
-            create_json = [clear_attributes(obj) for obj in self.create_json]
+            temp_create_json = [{**obj} for obj in self.create_json]
+            create_json = []
+            for t in temp_create_json:
+                if 'attributes' in t:
+                    del t['attributes']
+                create_json.append(t)
+
         # Post the json with no attribute values.
         response = self.client.post(endpoint, create_json, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
@@ -1453,13 +1452,16 @@ class LocalizationBoxTestCase(
             'y': 0,
             'width': 0.5,
             'height': 0.5,
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': 'asdf',
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [179.0, -89.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': 'asdf',
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [179.0, -89.0],
+            }
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'box1'}
@@ -1515,13 +1517,16 @@ class LocalizationLineTestCase(
             'y0': 0,
             'x1': 0.5,
             'y1': 0.5,
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': 'asdf',
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': 'asdf',
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0],
+            }
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'line1'}
@@ -1575,13 +1580,16 @@ class LocalizationDotTestCase(
             'frame': 0,
             'x': 0,
             'y': 0,
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': 'asdf',
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': 'asdf',
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0],
+            }
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'dot1'}
@@ -1634,13 +1642,16 @@ class LocalizationPolyTestCase(
             'media_id': self.media_entities[0].pk,
             'frame': 0,
             'points': [[0.0, 0.1], [0.0, 0.2], [0.1, 0.2], [0.0, 0.1]],
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': 'asdf',
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [179.0, -89.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': 'asdf',
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [179.0, -89.0],
+            }
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'box1'}
@@ -1701,13 +1712,16 @@ class StateTestCase(
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_ids': [m.id for m in random.choices(self.media_entities)],
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': 'asdf',
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': 'asdf',
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0],
+            }
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
@@ -1807,13 +1821,16 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
             'type': self.box_type.pk,
             'frame': 0,
             'media_id': media_id1,
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': unique_string_attr_val,
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': unique_string_attr_val,
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0]
+            }
         }]
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
@@ -1894,13 +1911,16 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
             'type': self.box_type.pk,
             'frame': 0,
             'media_id': media_id1,
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': unique_string_attr_val3,
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': unique_string_attr_val3,
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0]
+            }
         }]
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
@@ -2004,13 +2024,16 @@ class StateMediaDeleteCase(TatorTransactionTest):
             'frame': 0,
             'name': 'asdf',
             'media_ids': [media_id],
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': unique_string_attr_val,
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': unique_string_attr_val,
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0]
+            }
         }]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
@@ -2062,26 +2085,32 @@ class StateMediaDeleteCase(TatorTransactionTest):
             'frame': 0,
             'name': 'asdf',
             'media_ids': [media_id1],
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': unique_string_attr_val,
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': unique_string_attr_val,
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0]
+            }
         },{
             'project': self.project.pk,
             'type': self.entity_type.pk,
             'frame': 0,
             'name': 'asdf',
             'media_ids': [media_id2, media_id3],
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': unique_string_attr_val,
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': unique_string_attr_val,
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0]
+            }
         }]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
@@ -2153,13 +2182,16 @@ class LeafTestCase(
             'type': self.entity_type.pk,
             'name': 'asdf',
             'path': 'asdf',
-            'Bool Test': True,
-            'Int Test': 1,
-            'Float Test': 0.0,
-            'Enum Test': 'enum_val1',
-            'String Test': 'asdf',
-            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'Geoposition Test': [0.0, 0.0],
+            'attributes':
+            {
+                'Bool Test': True,
+                'Int Test': 1,
+                'Float Test': 0.0,
+                'Enum Test': 'enum_val1',
+                'String Test': 'asdf',
+                'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'Geoposition Test': [0.0, 0.0]
+            }
         }]
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {'name': 'leaf1'}
