@@ -30,9 +30,12 @@ export class MembershipEdit extends TypeFormTemplate {
       { "label": "Can Execute", "value": "Can Execute" },
       { "label": "Full Control", "value": "Full Control" },
     ];
+
+    store.subscribe(state => state.Version, this.setVersionChoices.bind(this));
   }
 
   async _setupFormUnique() {
+    console.log("_setupFormUnique");
     this._userInput.reset();
     if (this._data.id == "New") {
       this._userInput.init(this._userData);
@@ -67,12 +70,16 @@ export class MembershipEdit extends TypeFormTemplate {
     this._permissionSelect.default = this._data.permission;
 
     // default version
-    this._versionSelect.clear();
-    const versionOptions = await getCompiledList({ type: "Version", check: this._data.default_version });
-    this._versionSelect.choices = versionOptions;
     this._versionSelect._select.required = true;
     this._versionSelect.setValue(this._data.default_version);
     this._versionSelect.default = this._data.default_version;
+  }
+
+  async setVersionChoices() {
+    this._versionSelect.clear();
+    const versionOptions = await getCompiledList({ type: "Version" });
+    console.log("versionOptions", versionOptions);
+    this._versionSelect.choices = versionOptions;
   }
 
   _getFormData() {
