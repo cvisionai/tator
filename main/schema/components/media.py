@@ -160,8 +160,9 @@ media_spec = {
         },
         'attributes': {
             'nullable': True,
-            'description': 'Attributes for the media',
+            'description': 'Object containing attribute values.',
             'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
     },
 }

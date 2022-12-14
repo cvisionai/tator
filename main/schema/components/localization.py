@@ -150,10 +150,14 @@ localization_spec = {
     'description': 'Localization creation spec. Attribute key/values must be '
                    'included in the base object.',
     'required': ['media_id', 'type', 'frame'],
-    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     'properties': {
         **post_properties,
         **localization_properties,
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
     },
 }
 

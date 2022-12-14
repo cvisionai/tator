@@ -36,8 +36,14 @@ leaf_properties = {
 leaf_spec = {
     'type': 'object',
     'required': ['name', 'type'],
-    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-    'properties': leaf_properties,
+    'properties': {
+        **leaf_properties,
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+    }
 }
 
 leaf_update = {
