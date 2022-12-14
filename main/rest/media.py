@@ -223,7 +223,7 @@ def _create_media(params, user):
     # defaults and validate
     attributes = check_required_fields([], # Ignore top-level object
                                        required_fields[2],
-                                       new_attributes if new_attributes else {})
+                                       {'attributes': new_attributes} if new_attributes else {'attributes':{}})
 
     # Set the tator_user_section special attribute, will get
     # dropped if done prior to check_required_fields.
