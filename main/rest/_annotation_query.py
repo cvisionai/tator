@@ -92,11 +92,11 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if after is not None:
         qs = qs.filter(pk__gt=after)
 
-    relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values('media').distinct()
+    relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values_list('media').distinct()
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
-        relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values('media').distinct()
+        relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values_list('media').distinct()
     elif filter_ops or params.get('float_array',None):
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
