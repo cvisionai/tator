@@ -63,7 +63,7 @@ export class OrganizationMainEdit extends OrgTypeFormTemplate {
       formData.name = this._editName.getValue();
     }
 
-    if (thisthis._defaultPermission.changed()) {
+    if (this._defaultPermission.changed()) {
       formData.default_membership_permission = this._defaultPermission.getValue();
     }
 

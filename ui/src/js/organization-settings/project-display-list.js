@@ -30,7 +30,6 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
 
     this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
     this._newProjectDialog.hidden = true;
-    this._form.after(this._newProjectDialog._main);
   }
 
   async _setupFormUnique() {
@@ -40,7 +39,6 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
 
       // Show the modal for a new project // reuse from dashboard
       this._form.hidden = true;
-      return;
     } else {
       this._newProjectDialog.hidden = true;
       this._form.hidden = false;
@@ -67,19 +65,17 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
 
 
   async _saveData() {
+    console.log("THIS IS THE OVERRIDE FOR SAVE DATA....");
     const projectSpec = this._newProjectDialog.getProjectSpec();
     const preset = this._newProjectDialog.getProjectPreset();
 
     try {
       const projectInfo = await store.getState().addProject(projectSpec, preset);
+      console.log("Project response info ", projectInfo);
 
       if (projectInfo.response.ok) {
-        store.setState({
-          selection: {
-            ...store.getState.selection,
-            typeId: projectInfo.data.id,
-          }
-        });
+        this.data = null;
+        window.location.replace(`${window.location.origin}${window.location.pathname}#${this.typeName}-${projectInfo.data.id}`);
         this.modal._success("Project created successfully!",
           "Continue to project settings or close this dialog.",
           "ok",

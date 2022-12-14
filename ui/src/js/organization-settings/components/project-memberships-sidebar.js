@@ -19,7 +19,7 @@ export class ProjectMembershipSidebar extends TatorElement {
     this._nonAffList = this._shadow.getElementById("org-project-memberships--nonaffilate-list");
 
     this._addNew = this._shadow.getElementById("memberships-sidebar--add");
-    this._addNew.addEventListener("click", this.addNewMembership.bind(this));
+    // this._addNew.addEventListener("click", this.addNewMembership.bind(this));
 
     this._addNewDialog = new AffiliationMembershipDialog(); // try doc create element instead?
     this._shadow.appendChild(this._addNewDialog);
@@ -67,17 +67,18 @@ export class ProjectMembershipSidebar extends TatorElement {
     let nonAffCount = 0;
 
     const projectId = this._projectId ? this._projectId : store.getState().selection.typeId;
-
     const currentMemberItem = store.getState().currentUser.membershipsByProject.has(projectId) ? store.getState().currentUser.membershipsByProject.get(projectId) : null;
     const hasControl = currentMemberItem ? (currentMemberItem.permission === "Full Control") : false;
     console.log(`Does user have control of this projectId ${projectId}? hasControl=${hasControl} (if false, add new should be hidden)`);
-
+    await store.getState().initType("Affiliation");
     if (!hasControl) {
       this._addNew.classList.add("hidden")
+    } else {
+      this._addNew.setAttribute("href", `/${projectId}/project-settings#Membership-New`)
     }
-    console.log(`Project has ${data.length} members`, data);
+
     for (let m of data) {
-      const isAff = store.getState().Project.setList.has(projectId);
+      const isAff = store.getState().Affiliation.userMap.has(m.username);
 
       if (isAff) {
         affCount++;
@@ -129,14 +130,6 @@ export class ProjectMembershipSidebar extends TatorElement {
     this.affListCount = affCount;
     this.nonAffListCount = nonAffCount;
 
-  }
-
-  addNewMembership() {
-    // get /{project-id}/project-settings#Membership-New
-    const projectId = store.getState().selection.typeId;
-    
-    // window.location.replace(`/${projectId}/project-settings#Membership-New`);
-    this._addNewDialog.setUpAddNew(this._projectId);
   }
 }
 

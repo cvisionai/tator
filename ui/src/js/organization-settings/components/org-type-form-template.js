@@ -205,9 +205,9 @@ export class OrgTypeFormTemplate extends TatorElement {
       const respData = await store.getState().removeType({ type: this.typeName, id: this._data.id });
       this.handleResponse(respData);
 
-      if (this.typeName == "Project") {
+      if (this.typeName == "Organization") {
         setTimeout(function(){
-          window.location.href = '/projects/';
+          window.location.href = '/organizations/';
        }, 3000);
       } else {
         window.location.replace(`${window.location.origin}${window.location.pathname}#${this.typeName}-New`);

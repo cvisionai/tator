@@ -127,7 +127,8 @@ deleteMap.set("Organization", api.deleteOrganizationWithHttpInfo.bind(api))
    .set("Affiliation", api.deleteAffiliationWithHttpInfo.bind(api))
    .set("Bucket", api.deleteBucketWithHttpInfo.bind(api))
    .set("Invitation", api.deleteInvitationWithHttpInfo.bind(api))
-   .set("JobCluster", api.deleteJobClusterWithHttpInfo.bind(api));
+   .set("JobCluster", api.deleteJobClusterWithHttpInfo.bind(api))
+   .set("Project", api.deleteProjectWithHttpInfo.bind(api));
 
 /**
  * 
@@ -218,16 +219,10 @@ const store = create(subscribeWithSelector((set, get) => ({
             const mapList = new Map();
             setList.add(values[2].id);
             mapList.set(values[2].id, values[2]);
-
+            set({ currentUser: { ...get().currentUser, data: values[0]} });
             set({ Organization: { ...get().Organization, init: true, data, setList, map: mapList } });
          });
    },
-   getCurrentUser: async () => {
-      const user = await api.whoami();
-      set({ currentUser: { ...get().currentUser, data: user} });
-      if (!get()["Membership"].init) await get().fetchMemberships();
-   },
-
 
    /**
     * 
@@ -249,18 +244,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       return get()["Membership"].projectIdMembersMap.get(projectId);  
    },
 
-   initHeader: async () => {
-      Promise.all([
-         api.whoami(),
-         api.getAnnouncementList(),
-      ])
-         .then((values) => {
-            set({
-               user: values[0],
-               announcements: values[1],
-            });
-         });
-   },
 
    /* */
    setSelection: (newSelection) => {
@@ -541,7 +524,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       }
    },
    removeType: async ({ type, id }) => {
-      set({ status: { ...get().status, name: "pending", msg: "Updating version..." } });
+      set({ status: { ...get().status, name: "pending", msg: "Delete type..." } });
       try {
          const fn = deleteMap.get(type);
          const object = await fn(id);
@@ -550,6 +533,7 @@ const store = create(subscribeWithSelector((set, get) => ({
 
          return object;
       } catch (err) {
+         console.log(err);
          set({ status: { ...get().status, name: "idle", msg: "" } });
          return err;
       }

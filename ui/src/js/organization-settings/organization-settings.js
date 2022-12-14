@@ -33,8 +33,6 @@ export class OrganizationSettings extends TatorPage {
   }
 
   connectedCallback() {
-    store.getState().init();
-
     /* Create store subscriptions */
     store.subscribe(state => state.user, this._setUser.bind(this));
     store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
@@ -42,6 +40,9 @@ export class OrganizationSettings extends TatorPage {
 
     /* Update display for any change in data (#todo Organization is different) */
     store.subscribe(state => state.Organization, this.updateOrganization.bind(this));
+
+    //
+    store.getState().init();
   }
 
   /* Get personlized information when we have organization-id, and fill page. */
@@ -80,8 +81,6 @@ export class OrganizationSettings extends TatorPage {
    * Run when organization-id is set to run fetch the page content. 
    */
   async _init() {
-    await store.getState().initHeader();
-    
     // Figure out if something else needs to be shown
     this.moveToCurrentHash();
 
