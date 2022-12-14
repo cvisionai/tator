@@ -155,9 +155,9 @@ class TatorBackupManager:
                 f"Could not get {bucket_str}live bucket for project {project_id}", exc_info=True
             )
         else:
-            project_store_info[store_type] = {
+            project_store_info[StoreType.LIVE] = {
                 "store": store,
-                "remote_name": f"{project_id}_{store_type}",
+                "remote_name": f"{project_id}_{StoreType.LIVE}",
                 "bucket_name": store.bucket_name,
             }
 
@@ -174,9 +174,9 @@ class TatorBackupManager:
             )
         else:
             if store:
-                project_store_info[store_type] = {
+                project_store_info[StoreType.BACKUP] = {
                     "store": store,
-                    "remote_name": f"{project_id}_{store_type}",
+                    "remote_name": f"{project_id}_{StoreType.BACKUP}",
                     "bucket_name": store.bucket_name,
                 }
 
