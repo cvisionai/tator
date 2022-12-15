@@ -190,6 +190,39 @@
   }
 }
 
+.video-settings-info-table {
+  width: 100%;
+  tr:nth-child(odd) {
+    background-color: #0f1116;
+  }
+  tr:nth-child(even) {
+    background-color: #00070d;
+  }
+  tr.selected, tr:hover {
+    background-color: #1e2129;
+    color: #ffffff;
+  }
+  tr.selected, tr:hover {
+    fill: #a2afcd;
+  }
+  th {
+    text-align: center;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border: 1px solid #4b5263;
+    background-color: #262e3d;
+    overflow-wrap: break-word;
+  }
+  td {
+    vertical-align: middle;
+    text-align: left;
+    padding-left: 10px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border: 1px solid #4b5263;
+    overflow-wrap: break-word;
+  }
+}
 
 .file-table {
   width: 100%;

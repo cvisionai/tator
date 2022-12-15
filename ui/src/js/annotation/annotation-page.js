@@ -229,9 +229,7 @@ export class AnnotationPage extends TatorPage {
               this._player.mediaType = type_data;
               player.addDomParent({"object": this._headerDiv,
                                    "alignTo":  this._browser});
-              player.addEventListener("discoveredQualities", (evt) => {
-                this._videoSettingsDialog.mode("single", [evt.detail.media]);
-              });
+              this._videoSettingsDialog.mode("single", data);
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
@@ -295,7 +293,7 @@ export class AnnotationPage extends TatorPage {
                   this._settings._capture.setAttribute("disabled", "");
 
                   var primeMediaData = evt.detail.media;
-                  this._videoSettingsDialog.mode("multiview", [primeMediaData]);
+                  this._videoSettingsDialog.mode("multi", data);
                   this._settings.mediaInfo = primeMediaData;
                   var playbackQuality = data.media_files.quality;
                   if (playbackQuality == undefined)
@@ -325,7 +323,7 @@ export class AnnotationPage extends TatorPage {
                 this._getMetadataTypes(player, live._canvas);
               }
               //this._browser.canvas = player._video;
-              this._videoSettingsDialog.mode("live", [data]);
+              this._videoSettingsDialog.mode("live", data);
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
