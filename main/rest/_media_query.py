@@ -136,7 +136,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
             if sub_qs:
                 queries.append(sub_qs.filter(meta=entity_type))
             else:
-                queries.append(sub_qs.filter(pk=-1)) # no matches
+                queries.append(qs.filter(pk=-1)) # no matches
         logger.info(f"Joining {len(queries)} queries together.")
         
         sub_qs = queries.pop()
