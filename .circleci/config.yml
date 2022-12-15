@@ -279,7 +279,7 @@ workflows:
         filters:
           branches:
             only:
-            - master
+            - rc/0.2.22
     - cleanup-lightsail:
         requires:
         - rest-tests

@@ -236,7 +236,8 @@ class TwoDPlotType(Enum):
 class Organization(Model):
     name = CharField(max_length=128)
     thumb = CharField(max_length=1024, null=True, blank=True)
-    default_membership_permission = EnumField(Permission, max_length=1, default=Permission.NO_ACCESS)
+    # TODO Reinstate the `default=Permission.NO_ACCESS` after the next release
+    default_membership_permission = EnumField(Permission, max_length=1, blank=True, null=True)
     def user_permission(self, user_id):
         permission = None
         qs = self.affiliation_set.filter(user_id=user_id)
@@ -401,10 +402,14 @@ class Bucket(Model):
     """
     organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     name = CharField(max_length=63)
+    config = JSONField(null=True, blank=True)
+    store_type = EnumField(ObjectStore, max_length=32, null=True, blank=True)
+    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
     access_key = CharField(max_length=128, null=True, blank=True)
     secret_key = CharField(max_length=40, null=True, blank=True)
     endpoint_url = CharField(max_length=1024, null=True, blank=True)
     region = CharField(max_length=16, null=True, blank=True)
+    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
     archive_sc = CharField(
         max_length=16,
         choices=[
@@ -414,54 +419,35 @@ class Bucket(Model):
         ],
     )
     live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")])
+    # TODO remove field gcs_key_info ###############################################################
     gcs_key_info = TextField(null=True, blank=True)
+    # TODO remove field gcs_key_info ###############################################################
 
-    @classmethod
-    def validate_kwargs(cls, **kwargs):
-        """ Checks for the existence of keys that define S3 or GCS access, but not both. """
-        gcs_keys = "gcs_key_info" in kwargs
-        s3_keys = all(
-            key in kwargs for key in ["access_key", "secret_key", "endpoint_url", "region"]
-        )
-
-        if gcs_keys == s3_keys:
-            raise ValueError(
-                f"Must specify S3 or GCS params, not {'both' if gcs_keys else 'neither'}."
-            )
-
-        if gcs_keys:
-            try:
-                json.loads(kwargs["gcs_key_info"])
-            except json.JSONDecodeError:
-                msg = f"Received invalid json while creating bucket: {kwargs['gcs_key_info']}"
-                logger.warning(msg)
-                raise ValueError(msg)
-
-    def validate_storage_classes(self, params):
+    def validate_storage_classes(store_type, params):
         """
         Checks for the existence of `live_sc` and `archive_sc` and validates them if they exist. If
         they are invalid for the given `endpoint_url`, raises a `ValueError`. If they do not exist,
         they are set in a copy of the `params` dict and this copy is returned.
         """
-        server = get_tator_store(self).server
         new_params = dict(params)
         storage_type = {
             ObjectStore.AWS: "Amazon S3",
             ObjectStore.MINIO: "MinIO",
             ObjectStore.GCP: "Google Cloud Storage",
+            ObjectStore.OCI: "Oracle Cloud Storage",
         }
 
         for sc_type in ["archive_sc", "live_sc"]:
             try:
-                valid_storage_classes = VALID_STORAGE_CLASSES[sc_type][server]
-                default_storage_class = DEFAULT_STORAGE_CLASSES[sc_type][server]
+                valid_storage_classes = VALID_STORAGE_CLASSES[sc_type][store_type]
+                default_storage_class = DEFAULT_STORAGE_CLASSES[sc_type][store_type]
             except KeyError:
-                raise ValueError(f"Found unknown server type {server}")
+                raise ValueError(f"Found unknown server type {store_type}")
 
             storage_class = new_params.setdefault(sc_type, default_storage_class)
             if storage_class not in valid_storage_classes:
                 raise ValueError(
-                    f"{sc_type[:-3].title()} storage class '{storage_class}' invalid for {storage_type[server]} store"
+                    f"{sc_type[:-3].title()} storage class '{storage_class}' invalid for {storage_type[store_type]} store"
                 )
 
         return new_params
@@ -571,7 +557,9 @@ def add_org_users(project):
     organization = project.organization
     if not organization:
         return
-    permission = organization.default_membership_permission
+
+    # TODO Remove `or ...` when there is a default default_membership_permission
+    permission = organization.default_membership_permission or Permission.NO_ACCESS
 
     # If no access is given by default, don't create memberships
     if permission == Permission.NO_ACCESS:
@@ -1544,6 +1532,14 @@ class Section(Model):
     """ Identifier used to label media that is part of this section via the
         tator_user_sections attribute. If not set, this search is not scoped
         to a "folder".
+    """
+    object_search = JSONField(null=True, blank=True)
+    """
+    Object search using a search structure defined as AttributeOperationSpec
+    """
+    related_object_search = JSONField(null=True, blank=True)
+    """
+    Object search for using a search structure on related metadata and retrieving the media
     """
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.

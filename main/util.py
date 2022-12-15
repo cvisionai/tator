@@ -1032,3 +1032,54 @@ def convert_legacy_sections(filename):
             s.object_search = json.loads(object_search)
             s.save()
             print(f"Updated {s.pk}")
+
+
+def _convert_s3_bucket(bucket, store_type):
+    try:
+        bucket.config = {
+            "endpoint_url": bucket.endpoint_url,
+            "region_name": bucket.region,
+            "aws_access_key_id": bucket.access_key,
+            "aws_secret_access_key": bucket.secret_key,
+        }
+        bucket.store_type = store_type
+        bucket.save()
+    except:
+        logger.warning(f"Could not convert bucket {bucket.id}!")
+        return False
+    return True
+
+
+def _convert_gcp_bucket(bucket, store_type):
+    try:
+        bucket.config = json.loads(bucket.gcs_key_info)
+        bucket.store_type = store_type
+        bucket.save()
+    except:
+        logger.warning(f"Could not convert bucket {bucket.id}!")
+        return False
+    return True
+
+
+def convert_old_buckets():
+    bucket_qs = Bucket.objects.all()
+
+    for bucket in bucket_qs.iterator():
+        if not bucket.config:
+            success = False
+            store = get_tator_store(bucket)
+            store_type = store._server
+
+            if store_type == ObjectStore.AWS:
+                success = _convert_s3_bucket(bucket, store_type)
+            elif store_type == ObjectStore.MINIO:
+                success = _convert_s3_bucket(bucket, store_type)
+            elif store_type == ObjectStore.GCP:
+                success = _convert_gcp_bucket(bucket, store_type)
+            elif store_type == ObjectStore.OCI:
+                logger.warning("OCI buckets must be converted manually, skipping '{bucket.id}'")
+            else:
+                logger.warning(f"Unhandled store type '{store_type}'")
+
+            if success:
+                logger.info(f"Converted {store_type} bucket ({bucket.id})!")

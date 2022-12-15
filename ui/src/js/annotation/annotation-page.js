@@ -1245,7 +1245,7 @@ export class AnnotationPage extends TatorPage {
         this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
 
         canvas.addEventListener("maximize", () => {
-          document.body.requestFullscreen();
+          document.documentElement.requestFullscreen();
         });
 
         canvas.addEventListener("minimize", () => {

@@ -42,8 +42,12 @@ class OrganizationUploadInfoAPI(BaseDetailView):
 
         # Replace host if external host is given.
         if tator_store.external_host:
+            external = urlsplit(tator_store.external_host, scheme=PROTO)
             urls = [
-                urlunsplit(urlsplit(url)._replace(netloc=tator_store.external_host, scheme=PROTO))
+                urlunsplit(urlsplit(url)._replace(
+                    netloc=external.netloc + external.path,
+                    scheme=external.scheme
+                ))
                 for url in urls
             ]
 

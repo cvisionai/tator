@@ -88,10 +88,15 @@ def create_test_bucket(organization):
     return Bucket.objects.create(
         name=str(uuid1()),
         organization=organization,
-        access_key='asdf',
-        secret_key='asdf',
-        endpoint_url='https://asdf.com',
-        region='us-east-2',
+        store_type="AWS",
+        archive_sc="STANDARD",
+        live_sc="STANDARD",
+        config={
+            "aws_access_key_id": "asdf",
+            "aws_secret_access_key": "asdf",
+            "endpoint_url": "https://asdf.com",
+            "region_name": "us-east-2",
+        }
     )
 
 def create_test_project(user, organization=None, backup_bucket=None, bucket=None):
@@ -2766,18 +2771,24 @@ class BucketTestCase(
         self.list_uri = 'Buckets'
         self.detail_uri = 'Bucket'
         self.create_json = {
-            'name': 'my-bucket',
-            'access_key': 'asdf',
-            'secret_key': 'asdf',
-            'endpoint_url': 'https://asdf.com:8000',
-            'region': 'us-east-1',
+            "name": "my-bucket",
+            "store_type": "AWS",
+            "config": {
+                "aws_access_key_id": "asdf",
+                "aws_secret_access_key": "asdf",
+                "endpoint_url": "https://asdf.com:8000",
+                "region_name": "us-east-1",
+            },
         }
         self.patch_json = {
-            'name': 'my-bucket1',
-            'access_key': 'asdf1',
-            'secret_key': 'asdf2',
-            'endpoint_url': 'https://asdf.com:8001',
-            'region': 'us-east-2',
+            "name": "my-bucket1",
+            "store_type": "AWS",
+            "config": {
+                "aws_access_key_id": "asdf1",
+                "aws_secret_access_key": "asdf2",
+                "endpoint_url": "https://asdf.com:8001",
+                "region_name": "us-east-2",
+            },
         }
         self.edit_permission = 'Admin'
         self.get_requires_admin = True

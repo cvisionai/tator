@@ -137,7 +137,7 @@ def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
     elif dtype == 'datetime': #pylint: disable=line-too-long
 
         try:
-            val = dateutil_parse(attr_val) #pylint: disable=line-too-long
+            val = dateutil_parse(attr_val).isoformat() #pylint: disable=line-too-long
 
         except:
             raise Exception(f"Invalid attribute value {attr_val} for datetime attribute {attr_type['name']}") #pylint: disable=line-too-long
@@ -173,7 +173,7 @@ def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
         if (lon > 180.0) or (lon < -180.0):
             raise Exception(f"Invalid longitude string {val} for geoposition attribute {attr_type['name']}, must be in range (-180.0, 180.0).") #pylint: disable=line-too-long
 
-        val = Point(lon, lat) # Lon goes first in postgis
+        val = [lon, lat] # Lon goes first in postgis
     elif dtype == 'float_array':
         if not isinstance(attr_val, list):
             raise Exception(f"Invalid float array {val} for attribute {attr_type['name']}, must be an array.")
@@ -198,7 +198,7 @@ def validate_attributes(params, obj):
                 attr_type = attr_types[attr_name]
             else:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {obj.meta.name}")
-            convert_attribute(attr_type, attributes[attr_name])
+            attributes[attr_name] = convert_attribute(attr_type, attributes[attr_name])
     return attributes
 
 def patch_attributes(new_attrs, obj):
