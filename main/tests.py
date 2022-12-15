@@ -3646,32 +3646,32 @@ class MutateAliasTestCase(TatorTransactionTest):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['bool']):
             value = random.choice([True, False])
             with self.subTest(i=index):
-                self._test_mutation('bool', new_dtype, 'Bool Test', 'Bool\ Test', value)
+                self._test_mutation('bool', new_dtype, 'Bool Test', 'Bool\\ Test', value)
 
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['int']):
             value = random.randint(-100, 100)
             with self.subTest(i=index):
-                self._test_mutation('int', new_dtype, 'Int Test', 'Int\ Test', value)
+                self._test_mutation('int', new_dtype, 'Int Test', 'Int\\ Test', value)
 
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['float']):
             value = random.uniform(0, 1000)
             with self.subTest(i=index):
-                self._test_mutation('float', new_dtype, 'Float Test', 'Float\ Test', value)
+                self._test_mutation('float', new_dtype, 'Float Test', 'Float\\ Test', value)
 
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['enum']):
             value = random_string(10)
             with self.subTest(i=index):
-                self._test_mutation('enum', new_dtype, 'Enum Test', 'Enum\ Test', value)
+                self._test_mutation('enum', new_dtype, 'Enum Test', 'Enum\\ Test', value)
 
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['string']):
             value = random_string(10)
             with self.subTest(i=index):
-                self._test_mutation('string', new_dtype, 'String Test', 'String\ Test', value)
+                self._test_mutation('string', new_dtype, 'String Test', 'String\\ Test', value)
 
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['datetime']):
             value = datetime.datetime.now()
             with self.subTest(i=index):
-                self._test_mutation('datetime', new_dtype, 'Datetime Test', 'Datetime\ Test', value)
+                self._test_mutation('datetime', new_dtype, 'Datetime Test', 'Datetime\\ Test', value)
 
     def test_update_replace_behavior(self):
         project, entity_type, entity = self._setup()
