@@ -3920,7 +3920,7 @@ export class AnnotationCanvas extends TatorElement
     // Make the clone
     let newObject = AnnotationCanvas.updatePositions(localization,objDescription);
     newObject.parent = localization.id;
-    newObject = Object.assign(newObject, localization.attributes);
+    newObject.attributes = {...localization.attributes};
     newObject.version = dest_version;
     newObject.type = Number(localization.meta.split("_")[1]);
     newObject.media_id = localization.media;

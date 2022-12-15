@@ -1453,7 +1453,8 @@ export class AnnotationPage extends TatorPage {
             newLocalization.media_id = baseLocalization.media_id;
           }
 
-          newLocalization = {...newLocalization, ...baseLocalization.attributes};
+          newLocalization = {...newLocalization},
+          newLocalization.attributes = {...baseLocalization.attributes};
 
           if (evt.detail.direction == "Forward") {
             newLocalization.frame = evt.detail.localization.frame + offset;
