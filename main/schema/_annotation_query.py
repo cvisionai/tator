@@ -45,19 +45,6 @@ annotation_filter_parameter_schema = [
         'schema': {'type': 'integer'},
     },
     {
-        'name': 'excludeParents',
-        'in': 'query',
-        'required': False,
-        'description': 'If a clone is present, do not send parent. This parameter will cause an '
-                       'exception if an Elasticsearch query is triggered and pagination parameters '
-                       '(start or stop) are included.',
-        'schema': {'type': 'integer',
-                   'minimum': 0,
-                   'maximum': 1,
-                   'default': 0
-                   }
-    },
-    {
         'name': 'elemental_id',
         'in': 'query',
         'description': 'Elemental ID to search for',
