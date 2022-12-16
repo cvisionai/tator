@@ -36,6 +36,11 @@ export class MembershipEdit extends TypeFormTemplate {
 
   async _setupFormUnique() {
     console.log("_setupFormUnique");
+    if (store.getState().Version.init === false) {
+      await store.getState().initType("Version");
+      await this.setVersionChoices()
+    }
+
     this._userInput.reset();
     if (this._data.id == "New") {
       this._userInput.init(this._userData);

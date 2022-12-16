@@ -150,7 +150,6 @@ export class EnumInput extends TatorElement {
   }
 
   setValue(val) {
-    console.log("Set value " + val);
     let idx = 0;
     if (typeof val === "undefined") {
       this._undefined.setAttribute("selected", "");

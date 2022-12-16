@@ -28,6 +28,11 @@ export class AffiliationMembershipDialog extends ModalDialog {
       this._versions.setAttribute("name", "Versions");
       this._main.appendChild(this._versions);
 
+      this._newVersion = document.createElement("text-input");
+      this._newVersion.setAttribute("name", "New Version Name");
+      this._newVersion.hidden = true;
+      this._main.appendChild(this._newVersion);
+
       this._permissionLevels = document.createElement("enum-input");
       this._permissionLevels.setAttribute("name", "Permission");
       this._permissionLevels.choices = [
@@ -44,7 +49,7 @@ export class AffiliationMembershipDialog extends ModalDialog {
       this._main.appendChild(messages);
 
       this._messageList = document.createElement("ul");
-      this._messageList.setAttribute("class", "form-errors");
+      this._messageList.setAttribute("class", "form-errors text-gray");
       messages.appendChild(this._messageList);
 
       this._accept = document.createElement("button");
@@ -70,6 +75,9 @@ export class AffiliationMembershipDialog extends ModalDialog {
          }
       });
 
+      this._versions.addEventListener("change", this.showHiddenNewFields.bind(this));
+
+
       // TODO get this back in there somehow
       // // this._accept.removeAttribute("disabled");
 
@@ -79,6 +87,19 @@ export class AffiliationMembershipDialog extends ModalDialog {
       this.addEventListener("open", this.setProjects.bind(this));
       this.addEventListener("close", this.clearDialog.bind(this));
 
+   }
+
+   showHiddenNewFields() {
+      const versionChosen = this._versions.getValue();
+      console.log(`Version was chosen! ${versionChosen}`, this._user);
+      if (versionChosen === "__add_custom_version_name" || versionChosen === "__add_user_first_last") {
+         if (versionChosen == "__add_user_first_last" && this._user) {
+            this._newVersion.setValue(`${this._user.first_name} ${this._user.last_name}`);
+         } else {
+            this._newVersion.setValue("");
+         }
+         this._newVersion.hidden = false;
+      }
    }
 
    async getUsernames() {
@@ -116,7 +137,24 @@ export class AffiliationMembershipDialog extends ModalDialog {
    async setProjects() {
       this._projects.clear();
       // todo skip if user doesn't have those project permissions Or if is already in that project
-      const projectChoices = await getCompiledList({ type: "Project" }); 
+      // should only return projects in which user has Full Control
+      // should skip any that the current user is already a member of....
+      console.log("DO WE HAVE A USER ID? "+this._userId+"DO WE HAVE A USER NAME? "+this._username)
+      let skipList = []
+      if (this._username && store.getState().Membership.usernameProjectIdMap.has(this._username)) {
+         skipList = store.getState().Membership.usernameProjectIdMap.get(this._username);
+         console.log(skipList);
+      }
+      
+      console.log(skipList);
+      const projectChoices = await getCompiledList({ type: "Project", skip: Array.from(skipList)}); 
+      console.log("projectChoices.length = " + projectChoices.length);
+      if (projectChoices.length === 1) {
+         
+         this._messageList.innerHTML = `
+            <li>${(skipList.length > 0) ? "User is already a member of all "+skipList.length+" projects." : "No projects available." }</li>
+         `;
+      }
       this._projects.choices = projectChoices;
    }
 
@@ -126,6 +164,13 @@ export class AffiliationMembershipDialog extends ModalDialog {
 
       this._versions.clear();
       const versionsList = await getCompiledVersionList({ projectId });
+      versionsList.push({
+         label: "+ New From First & Last",
+         value: "__add_user_first_last"
+      }, {
+         label: "+ New Custom",
+         value: "__add_custom_version_name"
+      });
       this._versions.choices = versionsList;
 
       // unhide
@@ -145,6 +190,8 @@ export class AffiliationMembershipDialog extends ModalDialog {
       this._membershipId.setValue("");
 
       this._messageList.innerHTML = "";
+
+      this._newVersion.setValue("");
    }
 
    async setUpAddNew(projectId = null) {
@@ -157,10 +204,7 @@ export class AffiliationMembershipDialog extends ModalDialog {
       if (projectId == null) {
          this._projects.hidden = false;
       } else {
-         
-         
          this._projects.setValue(String(projectId));
-         // this._projects.hidden = true;
          await this.getUsernames();
          this._affiliates.hidden = false;
 
@@ -191,6 +235,14 @@ export class AffiliationMembershipDialog extends ModalDialog {
    async saveData() {
       this._confirm = true;
       let info = null;
+      let newVersion = false;
+      let newVersionName = null;
+
+      if (this._newVersion.hidden === false && this._newVersion.getValue()) {
+         newVersion = true;
+         newVersionName = this._newVersion.getValue();
+      }
+
       if (this._membershipId.getValue()) {
          const formData = {};
 
@@ -214,7 +266,9 @@ export class AffiliationMembershipDialog extends ModalDialog {
          
          info = await store.getState().addMembership({
             projectId: this._projects.getValue(),
-            formData
+            formData,
+            newVersion,
+            newVersionName
          });
       } else {
          return console.error("Some data is missing to complete this edit/add.")

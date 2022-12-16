@@ -62,10 +62,12 @@ export class AffiliationMembershipSidebar extends TatorElement {
 
   async setupSidebar() {
     let count = 0;
+    this._listDiv.innerHTML = "";
     this.projectsCount = this._data.length;
     for (let m of this._data) {
       const membership = await store.getState().getData("Membership", m);
       count++;
+      
       // 
       const sidebarItem = document.getElementById("memberships-sidebar-item-template");
       const cloneSidebarItem = document.importNode(sidebarItem.content, true);
@@ -73,8 +75,7 @@ export class AffiliationMembershipSidebar extends TatorElement {
       const project = await store.getState().getData("Project", membership.project);
       const projectId = project.id;
 
-      const currentMemberItem = store.getState().currentUser.membershipsByProject.has(projectId) ? store.getState().currentUser.membershipsByProject.get(projectId) : null;
-      const hasControl = currentMemberItem ? (currentMemberItem.permission === "Full Control") : false;
+      const hasControl = store.getState().currentUser.membershipsByProject.has(projectId) ? true : false;
 
       //
       const projectInfo = cloneSidebarItem.getElementById("projectname");

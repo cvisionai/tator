@@ -133,7 +133,7 @@ deleteMap.set("Organization", api.deleteOrganizationWithHttpInfo.bind(api))
 /**
  * 
 */
-const store = create(subscribeWithSelector((set, get) => ({
+const store = create(subscribeWithSelector(devtools((set, get) => ({
    selection: {
       typeName: "",
       typeId: -1,
@@ -145,7 +145,7 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
    currentUser: {
       data: {},
-      membershipsByProject: new Map()
+      membershipsByProject: new Set()
    },
    organizationId: null,
    emailEnabled: false,
@@ -196,7 +196,8 @@ const store = create(subscribeWithSelector((set, get) => ({
       setList: new Set(),
       map: new Map(),
       usernameMembershipsMap: new Map(),
-      projectIdMembersMap: new Map()
+      projectIdMembersMap: new Map(),
+      usernameProjectIdMap: new Map()
    },
 
    deletePermission: false,
@@ -402,17 +403,15 @@ const store = create(subscribeWithSelector((set, get) => ({
       const currentUserId = get().currentUser.data.id;
       const fn = getMap.get("Membership");
       const map = new Map();
-      const currentUserMap = new Map();
+      const currentUserMap = new Set();
       const usernameMembershipsMap = new Map();
+      const usernameProjectIdMap = new Map();
       const projectIdMembersMap = new Map();
       const setList = new Set();
-      console.log(projectList);
 
       try{
          for (const [projectId, project] of projectList) {
-            console.log("WHOOOPS.... projectId " + projectId);
             const object = await fn(projectId);
-            console.log(`fetchMemberships for ${projectId}`,object);
 
             // Get memberships for each project, and loop the data
             if (object.response.ok) {
@@ -439,8 +438,15 @@ const store = create(subscribeWithSelector((set, get) => ({
                   usernameMembershipsMap.set(item.username, userList);
 
                   //
-                  if (item.user === currentUserId) {
-                     currentUserMap.set(projectId, item);
+                  let projectList = usernameProjectIdMap.has(username) ? usernameProjectIdMap.get(username) : [];
+                  projectList.push(projectId);
+                  projectList = [...new Set(projectList)];
+                  usernameProjectIdMap.set(item.username, projectList);
+
+                  //
+                  console.log(`${item.user} ${typeof item.user} === ${currentUserId} ${typeof currentUserId} `)
+                  if (item.user === currentUserId && item.permission === "Full Control") {
+                     currentUserMap.add(projectId);
                   }
                }
 
@@ -450,7 +456,9 @@ const store = create(subscribeWithSelector((set, get) => ({
 
          }
          
-         set({ Membership : { ...get().Membership, map, setList, usernameMembershipsMap, projectIdMembersMap, init: true } });
+         console.log("membershipsByProject is set to currentUserMap",currentUserMap);
+
+         set({ Membership : { ...get().Membership, map, setList, usernameMembershipsMap, projectIdMembersMap, usernameProjectIdMap, init: true } });
          set({ currentUser: { ...get().currentUser, membershipsByProject: currentUserMap } });
 
          // Success: Return status to idle (handles page spinner)
@@ -573,10 +581,22 @@ const store = create(subscribeWithSelector((set, get) => ({
       const userProjects = info.userMap.has(username) ? info.userMap.has(username) : [];
       return userProjects;
    },
-   addMembership: async ({ projectId, formData }) => {
+   addMembership: async ({ projectId, formData, newVersion=false, newVersionName="" }) => {
       console.log("addMembership to projectId "+projectId);
       set({ status: { ...get().status, name: "pending", msg: "Adding membership..." } });
       try {
+         console.log(`newVersion ${newVersion} newVersionName ${newVersionName}`);
+         if (newVersion) {
+            const info = await api.createVersionWithHttpInfo(projectId, {
+               name: newVersionName
+            });
+            if (info.response.ok) {
+               const newVersionId = info.data.id;
+               formData.default_version = newVersionId;
+            }
+         }
+         console.log("Creating membership with formdata", formData);
+
          const info = await api.createMembershipWithHttpInfo(projectId, formData);
          
          await get().fetchMemberships();
@@ -638,7 +658,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       return info;
 
    },
-})));
+}))));
 
 
 
@@ -673,7 +693,8 @@ const loopMap = ({ map, skip, check, type}) => {
    }];
 
    for (let [id, item] of map) {
-      if (typeof item !== "undefined" && id !== skip) {
+      console.log(`Is this id in skip? id ${id} ${!skip.includes(id)}`, skip);
+      if (typeof item !== "undefined" && (id !== skip && !skip.includes(id))) {
          newList.push({
             id: id,
             value: item.id,

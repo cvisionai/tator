@@ -78,10 +78,11 @@ export class ProjectMembershipSidebar extends TatorElement {
     let even = false
     let affCount = 0;
     let nonAffCount = 0;
+    this._affList.innerHTML = "";
+    this._nonAffList.innerHTML = "";
 
     const projectId = this._projectId ? this._projectId : store.getState().selection.typeId;
-    const currentMemberItem = store.getState().currentUser.membershipsByProject.has(projectId) ? store.getState().currentUser.membershipsByProject.get(projectId) : null;
-    const hasControl = currentMemberItem ? (currentMemberItem.permission === "Full Control") : false;
+    const hasControl = store.getState().currentUser.membershipsByProject.has(projectId) ? true : false;
     console.log(`Does user have control of this projectId ${projectId}? hasControl=${hasControl} (if false, add new should be hidden)`);
     await store.getState().initType("Affiliation");
     if (!hasControl) {
@@ -142,7 +143,6 @@ export class ProjectMembershipSidebar extends TatorElement {
 
     this.affListCount = affCount;
     this.nonAffListCount = nonAffCount;
-
   }
 }
 

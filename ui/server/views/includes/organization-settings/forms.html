@@ -55,9 +55,15 @@
 
 <template id="project-display">
    <form id="project-display--form">
-      <img id="project-thumbnail" class="projects__image px-2 rounded-1" crossorigin="anonymous"
+      <div class="d-flex flex-items-center flex-justify-between pb-3">
+         <div class="text-center">
+            <img id="project-thumbnail" class="projects__image px-2 rounded-1" crossorigin="anonymous"
          style="object-fit:cover">
-      <text-input id="project-display--name" name="Name" type="string" hidden></text-input>
+         </div>
+         <h2 id="project-display--name" class="col-8 h2">Project Name</h2>
+      </div>
+
+      <!-- <text-input id="project-display--name" name="Name" type="string" hidden></text-input> -->
       <text-input id="project-display--summary" name="Summary" type="string"></text-input>
       <text-link id="project-display--edit-link" name="Edit Link">
          </text-input>

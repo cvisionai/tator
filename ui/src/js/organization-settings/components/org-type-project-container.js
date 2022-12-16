@@ -125,23 +125,7 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
       this.projectMembershipSidebar.data = { projectId, data };
       
       // Projects
-      let canEditProject = false;
-      this.currentUser = store.getState().currentUser;
-      const currentUserId = this.currentUser.data.id;
-
-      console.log(this.currentUser);
-
-      if (data) {
-        for (let membership of data) {
-          // if any membership in my user, check against their permssions
-          console.log(`Checking for my memb level.... ${membership.user} (${typeof membership.user}) === ${currentUserId}  (${typeof currentUserId}) && ${membership.permission} === "Full Control"`)
-          if (membership.user === currentUserId && membership.permission === "Full Control") {
-            canEditProject = true;
-          }
-        }
-      }
-      
-      console.log("canEditProject " + canEditProject);
+      const canEditProject = store.getState().currentUser.membershipsByProject.has(projectId) ? true : false;      
       // There are either no affiliations for the project, or there is but user isn't one with control
       this._customButtonSectionPrimary.hidden = !canEditProject;
       this.delete.hidden = !canEditProject;

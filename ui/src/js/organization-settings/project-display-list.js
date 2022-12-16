@@ -51,6 +51,7 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     }
 
     //  this._name.setValue(this._data.name);
+    this._name.innerHTML = this._data.name;
     this._summary.setValue(this._data.summary);
 
     this._editLink.setAttribute("href", `${window.location.origin}/${this._data.id}/project-settings`);
