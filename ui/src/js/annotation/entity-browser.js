@@ -270,7 +270,7 @@ export class EntityBrowser extends TatorElement {
                   let newObject = {};
                   let state = tweakedObj;
                   newObject.parent = state.id;
-                  newObject = Object.assign(newObject, values);
+                  newObject.attributes = {...values};
                   newObject.version = this._data.getVersion().id;
                   newObject.type = Number(state.meta.split("_")[1]);
                   newObject.media_ids = state.media;

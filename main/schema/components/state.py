@@ -82,7 +82,6 @@ state_get_properties = {
 state_spec = {
     'type': 'object',
     'required': ['media_ids', 'type'],
-    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     'properties': {
         'type': {
             'description': 'Unique integer identifying a state type.',
@@ -97,6 +96,11 @@ state_spec = {
             'description': 'List of localization IDs that this state applies to.',
             'type': 'array',
             'items': {'type': 'integer'},
+        },
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
         **version_properties,
         **state_properties,

@@ -306,7 +306,6 @@ export class UndoBuffer extends HTMLElement {
     };
     if (body) {
       if (method == "POST") {
-        delete body.attributes;
         delete body.color;
         obj.body = JSON.stringify([body]);
       } else {

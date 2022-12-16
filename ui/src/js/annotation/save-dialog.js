@@ -142,7 +142,7 @@ export class SaveDialog extends TatorElement {
         version: this._version.id,
         media_id: this._mediaId,
         ...requestObj,
-        ...values,
+        attributes: {...values},
       };
       this._undo.post("Localizations", localizationBody, this._dataType.localizationType)
       .then(localizationResponse => {
@@ -154,7 +154,7 @@ export class SaveDialog extends TatorElement {
             version: this._version.id,
             media_ids: [this._mediaId],
             localization_ids: localizationResponse[0].id,
-            ...values,
+            attributes: {...values},
           };
           return this._undo.post("States", trackBody, this._dataType);
         } else {
@@ -180,7 +180,7 @@ export class SaveDialog extends TatorElement {
         name: this._dataType.name,
         version: this._version.id,
         ...requestObj,
-        ...values,
+        attributes: {...values},
       };
 
       if (this._dataType.dtype.includes("state")) {

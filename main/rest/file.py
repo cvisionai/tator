@@ -94,7 +94,7 @@ class FileListAPI(BaseListView):
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
         attrs = check_required_fields(required_fields[params[fields.meta]][0],
                                       required_fields[params[fields.meta]][2],
-                                      attributes)
+                                      {'attributes': attributes} if attributes else {'attributes':{}})
 
         # Create File object
         new_file = File.objects.create(

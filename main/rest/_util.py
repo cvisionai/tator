@@ -72,9 +72,10 @@ def check_required_fields(datafields, attr_types, body):
     attrs = {}
     for attr_type in attr_types:
         field = attr_type['name']
-        if field in body:
-            body[field] = convert_attribute(attr_type, body[field]) # Validates attr value
-            attrs[field] = body[field];
+        attribute_body = body.get('attributes', {})
+        if field in attribute_body:
+            attribute_body[field] = convert_attribute(attr_type, attribute_body[field]) # Validates attr value
+            attrs[field] = attribute_body[field];
         elif attr_type['dtype'] == 'datetime':
             if 'use_current' in attr_type and attr_type['use_current']:
                 # Fill in current datetime.
