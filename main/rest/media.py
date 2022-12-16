@@ -246,7 +246,7 @@ def _create_media(params, user):
             gid=gid,
             uid=uid,
             source_url=url,
-            elementa_id=elemental_id
+            elemental_id=elemental_id
         )
         media_obj.media_files = {}
 
