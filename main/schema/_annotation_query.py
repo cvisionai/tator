@@ -58,7 +58,7 @@ annotation_filter_parameter_schema = [
                    }
     },
     {
-        'name': 'elementalId',
+        'name': 'elemental_id',
         'in': 'query',
         'description': 'Elemental ID to search for',
         'schema': {'type': 'string'},

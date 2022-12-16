@@ -49,7 +49,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     apply_merge = params.get('merge')
     start = params.get('start')
     stop = params.get('stop')
-    elemental_id = params.get('elementalId')
+    elemental_id = params.get('elemental_id')
 
     qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project, deleted=False)
     media_ids = []
