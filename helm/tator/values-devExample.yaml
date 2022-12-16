@@ -48,7 +48,10 @@ postgresUsername: "django"
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
-objectStorageHost: "minio-master"
+liveBucket:
+  config_file: "<name of config file in configs directory>"
+  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
@@ -179,6 +182,9 @@ minio:
   enabled: true
   accessKey: "AKIAIOSFODNN7EXAMPLE"
   secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  config_file: "<name of config file in configs directory>"
+  store_type: "MINIO"
+  name: tator
   persistence:
     size: "1Ti"
     existingClaim: "main-pv-claim"

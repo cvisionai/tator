@@ -38,11 +38,10 @@ postgresUsername: "<Your postgres username>"
 postgresPassword: "<Your postgres password>"
 redisHost: "<Your ElastiCache endpoint>"
 elasticsearchHost: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
-objectStorageHost: "https://<Your S3 bucket endpoint>"
-objectStorageBucketName: "<Your S3 bucket name>"
-objectStorageRegionName: "<Your S3 bucket region>"
-objectStorageAccessKey: "<Your S3 bucket access key>"
-objectStorageSecretKey: "<Your S3 bucket secret key>"
+liveBucket:
+  config_file: "<name of config file in configs directory>"
+  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
 dockerUsername: "<Your ECR username>"
 dockerPassword: "<Your ECR password>"
 dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
@@ -82,18 +81,14 @@ pv:
   path: "/"
 uploadBucket:
   enabled: true
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  config_file: "<name of config file in configs directory>"
+  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
 backupBucket:
   enabled: false
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  config_file: "<name of config file in configs directory>"
+  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
 hpa:
   nginxMinReplicas: 2
   nginxMaxReplicas: 10

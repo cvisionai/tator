@@ -51,12 +51,12 @@
   value: {{ ternary "https://" "http://" .Values.requireHttps }}{{ .Values.domain }}/objects
 {{- else }}
 - name: DEFAULT_LIVE_CONFIG_FILE
-  value: {{ .Values.objectStorageHost.config_file }}
+  value: {{ .Values.liveBucket.config_file }}
 - name: DEFAULT_LIVE_BUCKET_NAME
-  value: {{ .Values.objectStorageHost.name }}
+  value: {{ .Values.liveBucket.name }}
 - name: DEFAULT_LIVE_STORE_TYPE
-  value: {{ .Values.objectStorageHost.store_type }}
-{{- if hasKey .Values.objectStorageHost "proxy" }}
+  value: {{ .Values.liveBucket.store_type }}
+{{- if hasKey .Values.liveBucket "proxy" }}
 - name: LIVE_STORAGE_EXTERNAL_HOST
   value: {{ .Values.objectStorageProxy }}
 {{- end }}
