@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_extensions',
     'django_admin_json_editor',
-    'django_ltree',
 ]
 
 GRAPH_MODELS = {

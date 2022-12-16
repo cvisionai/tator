@@ -122,7 +122,6 @@ class TatorStorage(ABC):
         self.client = client
         self.external_host = external_host and external_host.strip("/")
         self._server = None
-        self.remote_type = None
 
         self._proto = "https" if os.getenv("REQUIRE_HTTPS") == "TRUE" else "http"
 
@@ -349,7 +348,6 @@ class MinIOStorage(TatorStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.MINIO
-        self.remote_type = "s3"
 
     def check_key(self, path):
         return bool(self.list_objects_v2(self.path_to_key(path)))
@@ -493,7 +491,6 @@ class S3Storage(MinIOStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.AWS
-        self.remote_type = "s3"
 
     def path_to_key(self, path):
         return f"{self.bucket_name}/{path}"
@@ -514,7 +511,6 @@ class OCIStorage(S3Storage):
         self._native_client = client["native_client"]
         self._namespace = self._native_client.get_namespace().data
         self._server = ObjectStore.OCI
-        self.remote_type = "oci"
 
     def path_to_key(self, path):
         return path
@@ -552,7 +548,6 @@ class GCPStorage(TatorStorage):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.GCP
         self.gcs_bucket = self.client.get_bucket(self.bucket_name)
-        self.remote_type = "google cloud storage"
 
     def _get_blob(self, path):
         blob = self.gcs_bucket.get_blob(self.path_to_key(path))
