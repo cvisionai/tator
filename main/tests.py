@@ -6,7 +6,7 @@ import logging
 import string
 import functools
 import time
-from uuid import uuid1
+from uuid import uuid1, uuid4
 from math import sin, cos, sqrt, atan2, radians
 import re
 
@@ -189,6 +189,7 @@ def create_test_video(user, name, entity_type, project):
         codec='H264',
         width='640',
         height='480',
+        elemental_id=str(uuid4())
     )
 
 def create_test_image(user, name, entity_type, project):
@@ -1285,6 +1286,20 @@ class VideoTestCase(
             create_test_video, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
+
+    def test_elemental_id(self):
+        test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
+        existing_uuid = test_video.elemental_id
+        new_uuid = uuid4()
+        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elementalId={existing_uuid}')
+        self.assertEqual(response.data, 1)
+        response = self.client.patch(f'/rest/Media/{test_video.pk}', {'elemental_id': str(new_uuid)}, format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elementalId={new_uuid}')
+        self.assertEqual(response.data, 1)
+        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elementalId={existing_uuid}')
+        self.assertEqual(response.data, 0)
+
 
     def test_annotation_delete(self):
         medias = [

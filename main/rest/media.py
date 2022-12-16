@@ -6,7 +6,7 @@ import shutil
 import mimetypes
 import datetime
 import tempfile
-from uuid import uuid1
+from uuid import uuid1, uuid4
 from urllib.parse import urlparse
 
 from django.contrib.contenttypes.models import ContentType
@@ -172,6 +172,7 @@ def _create_media(params, user):
     uid = params.get('uid', None)
     new_attributes = params.get('attributes', None)
     url = params.get('url')
+    elemental_id = params.get('elemental_id', uuid4())
     if gid is not None:
         gid = str(gid)
     project_obj = Project.objects.get(pk=project)
@@ -245,6 +246,7 @@ def _create_media(params, user):
             gid=gid,
             uid=uid,
             source_url=url,
+            elementa_id=elemental_id
         )
         media_obj.media_files = {}
 
@@ -636,6 +638,9 @@ class MediaDetailAPI(BaseDetailView):
 
             if 'summaryLevel' in params:
                 qs.update(summaryLevel=params['summaryLevel'])
+
+            if 'elemental_id' in params:
+                qs.update(elemental_id=params['elemental_id'])
 
             if 'multi' in params:
                 media_files = media.media_files

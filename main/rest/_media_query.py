@@ -82,6 +82,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
     stop = params.get('stop')
     section_id = params.get('section')
     archive_states = _get_archived_filter(params)
+    elemental_id = params.get('elementalId')
 
     qs = Media.objects.filter(project=project, deleted=False)
     media_ids = []
@@ -103,6 +104,9 @@ def _get_media_psql_queryset(project, filter_ops, params):
 
     if name is not None:
         qs = qs.filter(name__iexact=name)
+
+    if elemental_id is not None:
+        qs = qs.filter(elemental_id=elemental_id)
 
     if dtype is not None:
         qs = qs.filter(meta__dtype=dtype)

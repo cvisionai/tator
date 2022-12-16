@@ -100,4 +100,11 @@ media_filter_parameter_schema = [
                        'This search is applied to child annotations of media only.',
         'schema': {'type': 'string'},
     },
+    {
+        'name': 'elementalId',
+        'in': 'query',
+        'description': 'Elemental ID to search for',
+        'schema': {'type': 'string'},
+        'required': False,
+    },
 ]
