@@ -185,7 +185,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         objects_with_parents=qs.filter(parent__isnull=False)
         qs = qs.exclude(pk__in=objects_with_parents.values('parent'))
 
-    show_deleted = params.get('showDeleted')
+    show_deleted = params.get('show_deleted')
     if not show_deleted:
         qs = qs.filter(variant_deleted=False)
         

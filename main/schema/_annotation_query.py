@@ -72,7 +72,7 @@ annotation_filter_parameter_schema = [
                    }
     },
     {
-        'name': 'showDeleted',
+        'name': 'show_deleted',
         'in': 'query',
         'required': False,
         'description': 'Include in the return set objects that have `variant_deleted` set to True.',
