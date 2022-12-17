@@ -12,7 +12,7 @@ localization_type_properties = {
         'description': 'Shape of this localization type.',
         'enum': ['box', 'line', 'dot', 'poly'],
     },
-    'colorMap': {'$ref': '#/components/schemas/ColorMap'},
+    'color_map': {'$ref': '#/components/schemas/ColorMap'},
     'line_width': {
         'type': 'integer',
         'description': 'Width of the line used to draw the localization.',
@@ -64,7 +64,7 @@ localization_type_update = {
     'properties': {
         'description': localization_type_properties['description'],
         'name': localization_type_properties['name'],
-        'colorMap': localization_type_properties['colorMap'],
+        'color_map': localization_type_properties['color_map'],
         'line_width': localization_type_properties['line_width'],
         'visible': localization_type_properties['visible'],
         'drawable': localization_type_properties['drawable'],

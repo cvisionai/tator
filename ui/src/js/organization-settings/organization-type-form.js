@@ -381,7 +381,7 @@ export class OrganizationTypeForm extends TatorElement {
       "grouping_default": false,
       "media": [],
       "dtype": "",
-      "colorMap": null,
+      "color_map": null,
       "interpolation": "none",
       "association": "Media",
       "line_width": 2,

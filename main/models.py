@@ -792,7 +792,7 @@ class LocalizationType(Model):
     grouping_default = BooleanField(default=True)
     """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
-    colorMap = JSONField(null=True, blank=True)
+    color_map = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
     attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
