@@ -51,7 +51,7 @@ class LeafSuggestionAPI(BaseDetailView):
 
     def _get(self, params):
         project = params.get('project')
-        minLevel=int(params.get('minLevel', 1))
+        min_level=int(params.get('min_level', 1))
         startsWith=params.get('query', None)
         ancestor=params['ancestor']
 
@@ -65,7 +65,7 @@ class LeafSuggestionAPI(BaseDetailView):
                                        meta=type_id, 
                                        name__istartswith=startsWith, 
                                        path__istartswith=ancestor,
-                                       path__depth__gte=minLevel)
+                                       path__depth__gte=min_level)
 
         suggestions=[]
         for idx,match in enumerate(queryset):
