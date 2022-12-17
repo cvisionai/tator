@@ -358,9 +358,9 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       console.info("Launching concat downloader.");
       let frameJump = 0;
-      if (this._mediaInfo.summaryLevel && this._scrub_idx != this._play_idx)
+      if (this._mediaInfo.summary_level && this._scrub_idx != this._play_idx)
       {
-        frameJump = this._mediaInfo.summaryLevel*this._mediaInfo.fps;
+        frameJump = this._mediaInfo.summary_level*this._mediaInfo.fps;
       }
       this._dlWorker = new ConcatDownloadManager(this, this._children, this._videoObject.media_files.concat);
       this._dlWorker.postMessage({"type": "start",
@@ -719,7 +719,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // If summary level is not set, grab it from the media's default.
     if (this._summaryLevel == null)
     {
-      this._summaryLevel = videoObject.summaryLevel;
+      this._summaryLevel = videoObject.summary_level;
     }
 
     if (numGridRows != undefined)

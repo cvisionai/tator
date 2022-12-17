@@ -376,8 +376,8 @@ def _create_media(params, user):
             media_obj.width = params['width']
         if 'height' in params:
             media_obj.height = params['height']
-        if 'summaryLevel' in params:
-            media_obj.summaryLevel = params['summaryLevel']
+        if 'summary_level' in params:
+            media_obj.summary_level = params['summary_level']
 
         # Use thumbnails if they are given.
         thumbnail_url = params.get('thumbnail_url', None)
@@ -636,8 +636,8 @@ class MediaDetailAPI(BaseDetailView):
             if 'height' in params:
                 qs.update(height=params['height'])
 
-            if 'summaryLevel' in params:
-                qs.update(summaryLevel=params['summaryLevel'])
+            if 'summary_level' in params:
+                qs.update(summary_level=params['summary_level'])
 
             if 'elemental_id' in params:
                 qs.update(elemental_id=params['elemental_id'])

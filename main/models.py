@@ -713,7 +713,7 @@ class MediaType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    editTriggers = JSONField(null=True,
+    edit_triggers = JSONField(null=True,
                              blank=True)
     file_format = CharField(max_length=4,
                             null=True,
@@ -1034,7 +1034,7 @@ class Media(Model, ModelDiffMixin):
     )
     source_url = CharField(max_length=2048, blank=True, null=True)
     """ URL where original media was hosted. """
-    summaryLevel = IntegerField(null=True, blank=True)
+    summary_level = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
     """ Unique ID for a media to facilitate cross-cluster sync operations """

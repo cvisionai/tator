@@ -81,7 +81,7 @@ media_get_properties = {
         'type': 'integer',
         'description': 'Vertical resolution in pixels.',
     },
-    'summaryLevel': {
+    'summary_level': {
             'description': 'If supplied, this video is best summarized at this frame interval',
             'type': 'integer',
         },
@@ -159,7 +159,7 @@ media_spec = {
             'description': 'Vertical resolution in pixels.',
             'nullable': True,
         },
-        'summaryLevel': {
+        'summary_level': {
             'description': 'If supplied, this video is best summarized at this frame interval',
             'type': 'integer',
         },
@@ -197,7 +197,7 @@ media_update = {
             'description': 'Pixel height of the video.',
             'type': 'integer',
         },
-        'summaryLevel': {
+        'summary_level': {
             'description': 'If supplied, this video is best summarized at this frame interval',
             'type': 'integer',
         },
