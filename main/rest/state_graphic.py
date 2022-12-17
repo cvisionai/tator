@@ -54,8 +54,8 @@ class StateGraphicAPI(BaseDetailView):
         length = params['length']
         offset = params['offset']
         force_scale = None
-        if 'forceScale' in params:
-            force_scale = params['forceScale'].split('x')
+        if 'force_scale' in params:
+            force_scale = params['force_scale'].split('x')
             assert len(force_scale) == 2
 
         typeObj = state.meta
