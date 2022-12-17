@@ -466,6 +466,31 @@ annotation-player {
   cursor: not-allowed;
 }
 
+.tab-btn {
+  align-items: center;
+  background-color: #262e3d;
+  border: 1px #1e2129;
+  border-radius: 3px;
+  color: #a2afcd;
+  cursor: pointer;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  width: 150px;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  margin-left: 10px;
+}
+.tab-btn:focus {
+  outline: none;
+}
+.tab-btn.active,
+.tab-btn:hover,
+.tab-btn:focus {
+  background-color: #4A4EAE;
+  color: #ffffff;
+}
+
 .video__settings {
   display: grid;
   grid-column-gap: 20px;

@@ -236,7 +236,7 @@ export class AnnotationMulti extends TatorElement {
 
     this._playerPlaybackSettings = document.createElement("div");
     this._playerPlaybackSettings.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2");
-    this._playerPlaybackSettings.textContent = "Playback Settings";
+    this._playerPlaybackSettings.textContent = "Video Settings";
     this._playerSettingsMenu.appendChild(this._playerPlaybackSettings);
 
     this._playerPlaybackSettings.addEventListener("click", () => {
