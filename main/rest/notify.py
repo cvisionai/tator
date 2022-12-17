@@ -23,7 +23,7 @@ class NotifyAPI(APIView):
         try:
             params = parse(request)
 
-            send_as_file = params.get('sendAsFile', 0)
+            send_as_file = params.get('send_as_file', 0)
 
             response = None
             if send_as_file == 1:
