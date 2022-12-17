@@ -166,12 +166,12 @@ def create_test_favorite(name, project, user, meta, entityTypeName):
     if entityTypeName == "Localization":
         return Favorite.objects.create(
             name=name, project=project, user=user,
-            meta=meta.id, localization_meta=meta, values={}, entityTypeName=entityTypeName)
+            meta=meta.id, localization_meta=meta, values={}, entity_type_name=entityTypeName)
 
     elif entityTypeName == "State":
         return Favorite.objects.create(
             name=name, project=project, user=user,
-            meta=meta.id, state_meta=meta, values={}, entityTypeName=entityTypeName)
+            meta=meta.id, state_meta=meta, values={}, entity_type_name=entityTypeName)
 
     else:
         return None
@@ -2595,7 +2595,7 @@ class FavoriteStateTestCase(
             'page': 1,
             'type': self.state_type.pk,
             'values': {'blah': 'asdf'},
-            'entityTypeName': "State",
+            'entity_type_name': "State",
         }
         self.patch_json = {
             'name': 'New name',
@@ -2636,7 +2636,7 @@ class FavoriteLocalizationTestCase(
             'page': 1,
             'type': self.box_type.pk,
             'values': {'blah': 'asdf'},
-            'entityTypeName': "Localization",
+            'entity_type_name': "Localization",
         }
         self.patch_json = {
             'name': 'New name',

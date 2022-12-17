@@ -50,7 +50,7 @@ class FavoriteListAPI(BaseListView):
         """ Saves a new favorite.
         """
 
-        entityTypeName = params.get("entityTypeName", "")
+        entityTypeName = params.get("entity_type_name", "")
         if entityTypeName == "Localization":
             metaObj = LocalizationType.objects.get(pk=params['type'])
 
@@ -62,7 +62,7 @@ class FavoriteListAPI(BaseListView):
                 meta=metaObj.id,
                 page=params['page'],
                 values=params['values'],
-                entityTypeName=entityTypeName
+                entity_type_name=entityTypeName
             )
 
         elif entityTypeName == "State":
@@ -76,7 +76,7 @@ class FavoriteListAPI(BaseListView):
                 meta=metaObj.id,
                 page=params['page'],
                 values=params['values'],
-                entityTypeName=entityTypeName
+                entity_type_name=entityTypeName
             )
 
         # Save the favorite.
@@ -106,7 +106,7 @@ class FavoriteDetailAPI(BaseDetailView):
 
         # Note: The patching of the meta fields using the entityTypeName is here to support
         #       migrating existing Favorites that only had a single meta field to the new style.
-        entityTypeName = params.get('entityTypeName', None)
+        entityTypeName = params.get('entity_type_name', None)
         if entityTypeName == "Localization":
             metaObj = LocalizationType.objects.get(pk=obj.meta)
             obj.state_meta = None

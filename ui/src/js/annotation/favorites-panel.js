@@ -142,7 +142,7 @@ export class FavoritesPanel extends TatorElement {
     }
     for (const favorite of favorites) {
 
-      if (favorite.entityTypeName == null) {
+      if (favorite.entity_type_name == null) {
         // Legacy path
         if (favorite.meta == this._typeId) {
           this._favorites.get(favorite.page).push(favorite);
@@ -150,10 +150,10 @@ export class FavoritesPanel extends TatorElement {
       }
       else {
         // New path supporting multiple entity types
-        if (favorite.entityTypeName == "State" && favorite.meta == this._typeId) {
+        if (favorite.entity_type_name == "State" && favorite.meta == this._typeId) {
           this._favorites.get(favorite.page).push(favorite);
         }
-        else if (favorite.entityTypeName == "Localization" && favorite.meta == this._typeId) {
+        else if (favorite.entity_type_name == "Localization" && favorite.meta == this._typeId) {
           this._favorites.get(favorite.page).push(favorite);
         }
       }
@@ -169,7 +169,7 @@ export class FavoritesPanel extends TatorElement {
       'page': this._page,
       'type': this._typeId,
       'values': values,
-      'entityTypeName': this._entityTypeName
+      'entity_type_name': this._entityTypeName
     };
     fetchRetry("/rest/Favorites/" + this._dataType.project, {
       method: "POST",
