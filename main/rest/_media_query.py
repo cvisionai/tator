@@ -121,7 +121,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
         qs = qs.filter(uid=uid)
 
     if after is not None:
-        qs = qs.filter(name__gt=after)
+        qs = qs.filter(pk__gt=after)
 
     if archive_states is not None:
         qs = qs.filter(archive_state__in=archive_states)

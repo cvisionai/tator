@@ -66,17 +66,6 @@ media_filter_parameter_schema = [
         'name': 'after',
         'in': 'query',
         'required': False,
-        'description': 'DEPRECATED. `after_id` should be used instead to '
-                       'ensure correct results with duplicated filenames. '
-                       'If given, all results returned will be after the '
-                       'file with this filename. The `start` and `stop` '
-                       'parameters are relative to this modified range.',
-        'schema': {'type': 'string'},
-    },
-    {
-        'name': 'after_id',
-        'in': 'query',
-        'required': False,
         'description': 'If given, all results returned will be after the '
                        'media with this ID. The `start` and `stop` '
                        'parameters are relative to this modified range.',
