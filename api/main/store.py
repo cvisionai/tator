@@ -713,7 +713,7 @@ def get_tator_store(
             raise ValueError(f"No store type found for default {bucket_type.lower()} bucket!")
 
         # External host is an optional environment variable, except for OCI
-        external_host = os.getenv(f"{bucket_type}_STORAGE_EXTERNAL_HOST")
+        external_host = os.getenv(f"DEFAULT_{bucket_type}_EXTERNAL_HOST")
         if store_type == ObjectStore.OCI and not external_host:
             raise ValueError(
                 f"No external host found for OCI default {bucket_type.lower()} bucket!"

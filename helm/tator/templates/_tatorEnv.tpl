@@ -47,7 +47,7 @@
   value: {{ .Values.minio.name }}
 - name: DEFAULT_LIVE_STORE_TYPE
   value: {{ .Values.minio.store_type }}
-- name: LIVE_STORAGE_EXTERNAL_HOST
+- name: DEFAULT_LIVE_EXTERNAL_HOST
   value: {{ ternary "https://" "http://" .Values.requireHttps }}{{ .Values.domain }}/objects
 {{- else }}
 - name: DEFAULT_LIVE_CONFIG_FILE
@@ -57,7 +57,7 @@
 - name: DEFAULT_LIVE_STORE_TYPE
   value: {{ .Values.liveBucket.store_type }}
 {{- if hasKey .Values.liveBucket "proxy" }}
-- name: LIVE_STORAGE_EXTERNAL_HOST
+- name: DEFAULT_LIVE_EXTERNAL_HOST
   value: {{ .Values.objectStorageProxy }}
 {{- end }}
 {{- end }}
@@ -70,7 +70,7 @@
 - name: DEFAULT_UPLOAD_STORE_TYPE
   value: {{ .Values.uploadBucket.store_type }}
 {{- if hasKey .Values.uploadBucket "proxy" }}
-- name: UPLOAD_STORAGE_EXTERNAL_HOST
+- name: DEFAULT_UPLOAD_EXTERNAL_HOST
   value: {{ .Values.uploadBucket.proxy }}
 {{- end }}
 {{- end }}
@@ -84,7 +84,7 @@
 - name: DEFAULT_BACKUP_STORE_TYPE
   value: {{ .Values.backupBucket.store_type }}
 {{- if hasKey .Values.backupBucket "proxy" }}
-- name: BACKUP_STORAGE_EXTERNAL_HOST
+- name: DEFAULT_BACKUP_EXTERNAL_HOST
   value: {{ .Values.backupBucket.proxy }}
 {{- end }}
 {{- end }}
