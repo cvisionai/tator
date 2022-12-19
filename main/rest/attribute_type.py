@@ -62,7 +62,7 @@ class AttributeTypeListAPI(BaseListView):
             raise ValueError("float_array attribute type definition missing 'size' field")
         if "default" in attribute_type:
             # Convert default value to this type to validate it.
-            convert_attribute(attribute_type, attribute_type["default"])
+            attribute_type["default"] = convert_attribute(attribute_type, attribute_type["default"])
 
     @staticmethod
     def _get_models(type_name):

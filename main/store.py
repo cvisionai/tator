@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import Enum, unique
 import json
-import os
 import logging
+import os
 from typing import IO, List, Optional, Tuple, Union
 from urllib.parse import urlsplit, urlunsplit
 
@@ -21,13 +21,30 @@ MEDIA_ID_KEY = "media_id"
 PATH_KEYS = ["streaming", "archival", "audio", "image"]
 
 
+@unique
 class ObjectStore(Enum):
+    AWS = "AWS"
+    MINIO = "MINIO"
+    GCP = "GCP"
+    OCI = "OCI"
+
+
+# TODO Deprecated: remove once support for old bucket model is removed
+class OldObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
     GCP = "UploadServer"
     OCI = "OCI"
 
 
+CLIENT_MAP = {
+    ObjectStore.AWS: None,
+    ObjectStore.MINIO: None,
+    ObjectStore.GCP: lambda config: storage.Client(
+        config["project_id"], Credentials.from_service_account_info(config)
+    ),
+    ObjectStore.OCI: None,
+}
 VALID_STORAGE_CLASSES = {
     "archive_sc": {
         ObjectStore.AWS: ["STANDARD", "DEEP_ARCHIVE"],
@@ -58,6 +75,24 @@ DEFAULT_STORAGE_CLASSES = {
         ObjectStore.OCI: "STANDARD",
     },
 }
+
+
+def _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts):
+    # TODO Handle OCI separately with native sdk
+    store_type = ObjectStore(bucket.store_type)
+    config = dict(bucket.config)
+    if store_type in [ObjectStore.AWS, ObjectStore.MINIO, ObjectStore.OCI]:
+        config["config"] = Config(
+            connect_timeout=connect_timeout,
+            read_timeout=read_timeout,
+            retries={"max_attempts": max_attempts},
+        )
+        config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket.name}.", "")
+        return boto3.client("s3", **config)
+    if store_type == ObjectStore.GCP:
+        return storage.Client(config["project_id"], Credentials.from_service_account_info(config))
+
+    raise ValueError(f"Received unhandled store type '{store_type}'")
 
 
 class TatorStorage(ABC):
@@ -605,13 +640,6 @@ def get_tator_store(
             f"Cannot specify a bucket and set `{'upload' if upload else 'backup'}` to True"
         )
 
-    # Google Cloud Storage uses a different client class, handle this case first
-    if getattr(bucket, "gcs_key_info", None):
-        gcs_key_info = json.loads(bucket.gcs_key_info)
-        gcs_project = gcs_key_info["project_id"]
-        client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
-        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
-
     if bucket is None:
         if upload and os.getenv("UPLOAD_STORAGE_HOST"):
             # Configure for upload
@@ -631,6 +659,14 @@ def get_tator_store(
         secret_key = os.getenv(f"{prefix}_STORAGE_SECRET_KEY")
         bucket_name = os.getenv(bucket_env_name)
         external_host = os.getenv(f"{prefix}_STORAGE_EXTERNAL_HOST")
+    elif getattr(bucket, "gcs_key_info", None):
+        gcs_key_info = json.loads(bucket.gcs_key_info)
+        gcs_project = gcs_key_info["project_id"]
+        client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
+        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
+    elif getattr(bucket, "config", None):
+        client = _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts)
+        return TatorStorage.get_tator_store(bucket.store_type, bucket, client, bucket.name)
     else:
         endpoint = bucket.endpoint_url
         region = bucket.region
@@ -679,9 +715,9 @@ def get_tator_store(
     else:
         response_server = response["ResponseMetadata"]["HTTPHeaders"].get("server", "")
         api_id = response["ResponseMetadata"]["HTTPHeaders"].get("x-api-id", "")
-        if ObjectStore.AWS.value in response_server:
+        if OldObjectStore.AWS.value in response_server:
             server = ObjectStore.AWS
-        elif ObjectStore.MINIO.value in response_server:
+        elif OldObjectStore.MINIO.value in response_server:
             server = ObjectStore.MINIO
         elif "s3-compatible" in api_id:
             server = ObjectStore.OCI

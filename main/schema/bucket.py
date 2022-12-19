@@ -52,12 +52,15 @@ class BucketListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/BucketSpec'},
-                'example': {
-                    'name': 'my-bucket',
-                    'access_key': 'ALSDKFOIWEFMLKASDFKJK',
-                    'secret_key': 'LSKDJjksldjfwieoJOASDlkalkdk48+JKF7SDLFIh',
-                    'endpoint_url': 'https://s3.us-east-2.amazonaws.com',
-                    'region': 'us-east-2',
+                "example": {
+                    "name": "my-bucket",
+                    "store_type": "AWS",
+                    "config": {
+                        "aws_access_key_id": "ALSDKFOIWEFMLKASDFKJK",
+                        "aws_secret_access_key": "LSKDJjksldjfwieoJOASDlkalkdk48+JKF7SDLFIh",
+                        "endpoint_url": "https://s3.us-east-2.amazonaws.com",
+                        "region_name": "us-east-2",
+                    }
                 },
             }}}
         return body
