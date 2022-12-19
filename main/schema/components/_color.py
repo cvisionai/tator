@@ -58,7 +58,7 @@ color_map = {
                    'IDs to colors.',
     'properties': {
         'default': {'$ref': '#/components/schemas/Color'},
-        'defaultFill': {'$ref': '#/components/schemas/Fill'},
+        'default_fill': {'$ref': '#/components/schemas/Fill'},
         'key': {
             'type': 'string',
             'description': 'Attribute name.',
@@ -68,7 +68,7 @@ color_map = {
             'description': 'Map of attribute values to colors.',
             'additionalProperties': {'$ref': '#/components/schemas/Color'},
         },
-        'fillMap': {
+        'fill_map': {
             'type': 'object',
             'description': 'Map of attribute values to fill types.',
             'additionalProperties': {'$ref': '#/components/schemas/Fill'},
@@ -130,7 +130,7 @@ color_map_example = {
             'description': 'Color map based on version.',
             'value': {
                 'key': 'Tire',
-                'fillMap': {'Tire': {'style': 'blur'}}
+                'fill_map': {'Tire': {'style': 'blur'}}
             },
         },
     },

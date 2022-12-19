@@ -2308,9 +2308,9 @@ export class AnnotationCanvas extends TatorElement
           decodeColor(meta.color_map.default);
         }
 
-        if (meta.color_map.defaultFill)
+        if (meta.color_map.default_fill)
         {
-          decodeFill(meta.color_map.defaultFill);
+          decodeFill(meta.color_map.default_fill);
         }
 
         if (meta.color_map.version)
@@ -2330,9 +2330,9 @@ export class AnnotationCanvas extends TatorElement
         {
           decodeColor(meta.color_map.map[keyvalue]);
         }
-        if (meta.color_map.fillMap && keyvalue in meta.color_map.fillMap)
+        if (meta.color_map.fill_map && keyvalue in meta.color_map.fill_map)
         {
-          decodeFill(meta.color_map.fillMap[keyvalue]);
+          decodeFill(meta.color_map.fill_map[keyvalue]);
         }
       }
 
