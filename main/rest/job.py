@@ -103,7 +103,7 @@ class JobListAPI(BaseListView):
         gid = params.get('gid', None)
         project = params['project']
 
-        selector = f'project={project}'
+        selector = f'project={project},job_type=algorithm'
         if gid is not None:
             selector += f',gid={gid}'
             cache = TatorCache().get_jobs_by_gid(gid, first_only=True)

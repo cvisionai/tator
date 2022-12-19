@@ -27,7 +27,7 @@ class TranscodeAPI(BaseListView):
     """
     schema = TranscodeSchema()
     permission_classes = [ProjectTransferPermission]
-    http_method_names = ['post']
+    http_method_names = ['post', 'get', 'put', 'delete']
 
     def _post(self, params):
         entity_type = params['type']
@@ -141,3 +141,39 @@ class TranscodeAPI(BaseListView):
         # Send notification that transcode started.
         logger.info(msg)
         return response_data
+
+    def _get(self, params):
+        gid = params.get('gid', None)
+        project = params['project']
+
+        selector = f'project={project},job_type=upload'
+        if gid is not None:
+            selector += f',gid={gid}'
+            cache = TatorCache().get_jobs_by_gid(gid, first_only=True)
+            assert(cache[0]['project'] == project)
+        else:
+            cache = TatorCache().get_jobs_by_project(project)
+        jobs = get_jobs(selector, cache)
+        return [workflow_to_job(job) for job in jobs]
+
+    def _delete(self, params):
+        # Parse parameters
+        gid = params.get('gid', None)
+        project = params['project']
+
+        selector = f'project={project}'
+        if gid is not None:
+            selector += f',gid={gid}'
+            try:
+                cache = TatorCache().get_jobs_by_gid(gid, first_only=True)
+                assert(cache[0]['project'] == project)
+            except:
+                raise Http404
+        else:
+            cache = TatorCache().get_jobs_by_project(project)
+        cancelled = cancel_jobs(selector, cache)
+        return {'message': f"Deleted {cancelled} jobs for project {project}!"}
+
+    def _put(self, params):
+        return self._get(params)
+
