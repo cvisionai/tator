@@ -182,7 +182,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     if apply_merge:
         #parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
-        qs = qs.exclude(pk__in=qs.values('parent'))
+        objects_with_parents=qs.filter(parent__isnull=False)
+        qs = qs.exclude(pk__in=objects_with_parents.values('parent'))
 
     show_deleted = params.get('showDeleted')
     if not show_deleted:
