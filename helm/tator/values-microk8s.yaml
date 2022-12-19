@@ -196,7 +196,7 @@ minio:
   enabled: true
   accessKey: "AKIAIOSFODNN7EXAMPLE"
   secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-  config_file: "<name of config file in configs directory>"
+  config_file: "example_minio_storage_config.json"
   name: tator
   store_type: "MINIO"
   persistence:
