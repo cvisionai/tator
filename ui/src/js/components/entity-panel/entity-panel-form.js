@@ -5,9 +5,9 @@ export class EntityGalleryPanelForm extends TatorElement {
   constructor() {
     super();
 
-    // @TODO what can be reused for this?
-    // this.todo = document.createElement("div");
-    // this._shadow.appendChild(this.todo);
+    this._hookButtonDiv = document.createElement("div");
+    this._hookButtonDiv.hidden = true;
+    this._shadow.appendChild(this._hookButtonDiv);
 
     this._div = document.createElement("div");
     this._shadow.appendChild(this._div);
@@ -20,7 +20,12 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.permission = "View Only"; // start as view only - set to user permission on page
     this._div.appendChild(this._attributes);
 
-    this._attributes.addEventListener("change", this._emitChangedData.bind(this)); 
+    this._attributes.addEventListener("change", this._emitChangedData.bind(this));
+
+    this._hooksPanel = document.createElement("div");
+    this._hooksPanel.setAttribute("class", "col-12");
+    this._hooksPanel.hidden = true;
+    this._shadow.appendChild(this._hooksPanel);
   }
 
   static get observedAttributes() {
@@ -63,8 +68,33 @@ export class EntityGalleryPanelForm extends TatorElement {
     } else {
       console.warn("Missing attributes.", attributePanelData);
     }
+
+    this.setupApplets();
   }
 
+  async setupApplets() {
+    try {
+      const response = await fetch("/rest/Applets/" + projectId, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+      const applets = await response.json();
+
+      for (let applet of applets) {
+        if (applet.categories.includes("annotator-gallery-tools")) {
+          const appletPanel = document.createElement("tools-applet-gallery-panel");
+          appletPanel.saveApplet(applet, this, this._attributes.dataType);
+        }
+      }
+    } catch (err) {
+      console.warn("Applets could not be setup for entity form.", err);
+    }
+  }
   _emitChangedData() {
     var values = this._attributes.getValues();
     if (values !== null) {
@@ -84,6 +114,14 @@ export class EntityGalleryPanelForm extends TatorElement {
 
   setValues(data) {
     this._attributes.setValues(data);
+  }
+
+  /**
+   * @param {*} panel panel to append to hooks panel div
+   * @returns 
+   */
+  addAppletPanel(panel) {
+    this._hooksPanel.appendChild(panel);
   }
 }
 
