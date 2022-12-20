@@ -1214,7 +1214,8 @@ class ProjectDeleteTestCase(TatorTransactionTest):
 
 class AlgorithmLaunchTestCase(
         TatorTransactionTest,
-        PermissionCreateTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2444,7 +2445,8 @@ class ProjectTestCase(TatorTransactionTest):
 
 class TranscodeTestCase(
         TatorTransactionTest,
-        PermissionCreateTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)

@@ -3,6 +3,8 @@ from textwrap import dedent
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
 
@@ -69,13 +71,6 @@ class TranscodeSchema(AutoSchema):
         params = []
         if method in ['GET', 'PUT', 'DELETE']:
             params = media_filter_parameter_schema + attribute_filter_parameter_schema + related_attribute_filter_parameter_schema
-            params.append({
-                'name': 'gid',
-                'in': 'query',
-                'required': False,
-                'description': 'A UUID string identifying a group of jobs.',
-                'schema': {'type': 'string'},
-            })
         return params
 
     def get_request_body(self, path, method):
