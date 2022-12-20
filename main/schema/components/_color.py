@@ -56,6 +56,7 @@ color_map = {
                    '`key` and `map` (optionally `alpha_ranges`) to map an '
                    'attribute value to colors. Use `version` to map version '
                    'IDs to colors.',
+    'nullable': True,
     'properties': {
         'default': {'$ref': '#/components/schemas/Color'},
         'default_fill': {'$ref': '#/components/schemas/Fill'},
