@@ -172,6 +172,10 @@ jobs:
     - run:
         name: Run REST tests
         command: ssh lightsail 'cd tator && make test'
+     - run:
+        name: Run REST tests (retry)
+        command: ssh lightsail 'cd tator && make rq-empty && sleep 30 && make test'
+        when: on_fail
   front-end-tests:
     machine:
       image: ubuntu-2004:202010-01
