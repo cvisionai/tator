@@ -31,51 +31,6 @@ export class ToolsAppletPanel extends TatorElement {
     this._appletView.addEventListener("load", this.initApplet.bind(this));
   }
 
-  // /**
-  //  * @param {string} width - default|wide|extra-wide
-  //  */
-  // _setModalWidth(width) {
-  //   if (width == "default") {
-  //     this._div.classList.remove("modal-wide");
-  //     this._div.classList.remove("modal-extra-wide");
-  //   }
-  //   else if (width == "wide") {
-  //     this._div.classList.add("modal-wide");
-  //     this._div.classList.remove("modal-extra-wide");
-
-  //   }
-  //   else if (width == "extra-wide") {
-  //     this._div.classList.remove("modal-wide");
-  //     this._div.classList.add("modal-extra-wide");
-  //   }
-  // }
-
-  // /**
-  //  * @param {string} title - Title to display in dialog
-  //  */
-  // _setModalTitle(title) {
-  //   this._title.nodeValue = title;
-  // }
-
-  /**
-   * @param {string} msg - Message to display using the window utilities
-   */
-  _displayProgressMessage(msg) {
-    Utilities.showSuccessIcon(msg, "#00000000");
-  }
-  _displayErrorMessage(msg) {
-    Utilities.warningAlert(msg, "#ff3e1d");
-  }
-  _displaySuccessMessage(msg) {
-    Utilities.showSuccessIcon(msg);
-  }
-
-  /**
-   * @param {string} text - Text of accept button
-   */
-  _setAcceptButtonText(text) {
-    this._acceptBtn.textContent = text;
-  }
 
   /**
    * Expected to be done at initialization
