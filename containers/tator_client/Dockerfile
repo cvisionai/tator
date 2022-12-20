@@ -9,8 +9,8 @@ RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sour
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip \
-        python3-setuptools python3-dev gcc git vim curl unzip wget \
-        fastjar libsm6 libxext6 libxrender-dev libx265-179 libx264-155 \
+        python3-setuptools git vim curl unzip wget \
+        fastjar libsm6 libxext6 libxrender1 libx265-179 libx264-155 \
         libpng16-16 libfreetype6 python3-opencv \
         && rm -rf /var/lib/apt/lists
 
