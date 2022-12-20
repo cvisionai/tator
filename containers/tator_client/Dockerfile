@@ -6,9 +6,12 @@ ENV APT_REPO_HOST=${APT_REPO_HOST}
 RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
 
 # Install apt packages
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip \
         python3-setuptools python3-dev gcc git vim curl unzip wget \
+        fastjar libsm6 libxext6 libxrender-dev libx265-179 libx264-155 \
+        libpng16-16 libfreetype6 python3-opencv \
         && rm -rf /var/lib/apt/lists
 
 ENV PATH="/opt/cvision/bin/:$PATH"
@@ -18,9 +21,6 @@ RUN ldconfig
 # Install pip packages
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
 RUN pip3 --no-cache-dir --timeout=1000 install pillow==9.0.0 imageio==2.14.0 progressbar2==4.0.0 boto3==1.20.41 pandas==1.4.0
-
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 libxext6 libxrender-dev libx265-179 libx264-155 libpng16-16 libfreetype6 python3-opencv && rm -rf /var/lib/apt/lists
 
 # Copy over scripts
 COPY scripts/transcoder /scripts
