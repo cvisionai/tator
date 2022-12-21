@@ -58,7 +58,7 @@
   value: {{ .Values.liveBucket.store_type }}
 {{- if hasKey .Values.liveBucket "proxy" }}
 - name: DEFAULT_LIVE_EXTERNAL_HOST
-  value: {{ .Values.objectStorageProxy }}
+  value: {{ .Values.liveBucket.proxy }}
 {{- end }}
 {{- end }}
 {{- if hasKey .Values "uploadBucket" }}
