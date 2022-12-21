@@ -17,7 +17,7 @@ from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'colorMap', 'line_width', 'visible', 'drawable', 'grouping_default']
+          'color_map', 'line_width', 'visible', 'drawable', 'grouping_default']
 
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
@@ -68,8 +68,7 @@ class LocalizationTypeListAPI(BaseListView):
                               "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
-        if 'color_map' in params:
-            params['colorMap'] = params.pop('color_map')
+
         del params['body']
         obj = LocalizationType(**params)
         obj.save()
@@ -132,8 +131,8 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             obj.visible = params['visible']
         if 'drawable' in params:
             obj.drawable = params['drawable']
-        if 'colorMap' in params:
-            obj.colorMap = params['colorMap']
+        if 'color_map' in params:
+            obj.color_map = params['color_map']
         if 'grouping_default' in params:
             obj.grouping_default = params['grouping_default']
         if 'media_types' in params:

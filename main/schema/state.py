@@ -286,7 +286,7 @@ class StateGraphicSchema(AutoSchema):
                 },
             },
             {
-                'name': 'forceScale',
+                'name': 'force_scale',
                 'in': 'query',
                 'required': False,
                 'description': 'wxh to force each tile prior to stich',

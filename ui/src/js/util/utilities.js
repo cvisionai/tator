@@ -142,7 +142,7 @@ export class Utilities
     let request_body = {"message": msg};
     if (sendAsFile == true)
     {
-      request_body["sendAsFile"] = 1;
+      request_body["send_as_file"] = 1;
     }
     return fetch("/rest/Notify",
                  {method: "POST",

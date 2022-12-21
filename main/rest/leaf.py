@@ -51,19 +51,10 @@ class LeafSuggestionAPI(BaseDetailView):
 
     def _get(self, params):
         project = params.get('project')
-        minLevel=int(params.get('minLevel', 1))
+        min_level=int(params.get('min_level', 1))
         startsWith=params.get('query', None)
         ancestor=params['ancestor']
-        """
-        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-        query['size'] = 10
-        query['sort']['_exact_treeleaf_name'] = 'asc'
-        query['query']['bool']['filter'] = [
-            {'match': {'_dtype': {'query': 'leaf'}}},
-            {'range': {'_treeleaf_depth': {'gte': minLevel}}},
-            {'query_string': {'query': f'{startsWith}* AND _treeleaf_path:{ancestor}*'}},
-        ]
-        """
+
         # Try to find root node for type
         root_node = Leaf.objects.filter(project=project, path=ancestor)
         if root_node.count() == 0:
@@ -74,7 +65,7 @@ class LeafSuggestionAPI(BaseDetailView):
                                        meta=type_id, 
                                        name__istartswith=startsWith, 
                                        path__istartswith=ancestor,
-                                       path__depth__gte=minLevel)
+                                       path__depth__gte=min_level)
 
         suggestions=[]
         for idx,match in enumerate(queryset):

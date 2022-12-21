@@ -233,7 +233,7 @@ export class TypeFormTemplate extends TatorElement {
       default_volume: 0,
       media: [],
       dtype: "",
-      colorMap: null,
+      color_map: null,
       interpolation: "none",
       association: "Media",
       line_width: 2,

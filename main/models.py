@@ -713,7 +713,7 @@ class MediaType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    editTriggers = JSONField(null=True,
+    edit_triggers = JSONField(null=True,
                              blank=True)
     file_format = CharField(max_length=4,
                             null=True,
@@ -792,7 +792,7 @@ class LocalizationType(Model):
     grouping_default = BooleanField(default=True)
     """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
-    colorMap = JSONField(null=True, blank=True)
+    color_map = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
     attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
@@ -1034,7 +1034,7 @@ class Media(Model, ModelDiffMixin):
     )
     source_url = CharField(max_length=2048, blank=True, null=True)
     """ URL where original media was hosted. """
-    summaryLevel = IntegerField(null=True, blank=True)
+    summary_level = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
     """ Unique ID for a media to facilitate cross-cluster sync operations """
@@ -1556,7 +1556,7 @@ class Favorite(Model):
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()
-    entityTypeName = CharField(max_length=16, choices=[('Localization', 'Localization'), ('State','State')], null=True, blank=True)
+    entity_type_name = CharField(max_length=16, choices=[('Localization', 'Localization'), ('State','State')], null=True, blank=True)
 
 class Bookmark(Model):
     """ Stores a link saved by a user.

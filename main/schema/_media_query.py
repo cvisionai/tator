@@ -90,7 +90,7 @@ media_filter_parameter_schema = [
         'schema': {'type': 'string'},
     },
     {
-        'name': 'elementalId',
+        'name': 'elemental_id',
         'in': 'query',
         'description': 'Elemental ID to search for',
         'schema': {'type': 'string'},

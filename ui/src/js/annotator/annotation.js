@@ -2303,47 +2303,47 @@ export class AnnotationCanvas extends TatorElement
 
       if (skipDefault == false)
       {
-        if (meta.colorMap.default)
+        if (meta.color_map.default)
         {
-          decodeColor(meta.colorMap.default);
+          decodeColor(meta.color_map.default);
         }
 
-        if (meta.colorMap.defaultFill)
+        if (meta.color_map.default_fill)
         {
-          decodeFill(meta.colorMap.defaultFill);
+          decodeFill(meta.color_map.default_fill);
         }
 
-        if (meta.colorMap.version)
+        if (meta.color_map.version)
         {
-          if (localization.version in meta.colorMap.version)
+          if (localization.version in meta.color_map.version)
           {
-            decodeColor(meta.colorMap.version[localization.version]);
+            decodeColor(meta.color_map.version[localization.version]);
           }
         }
       }
 
-      var keyname = meta.colorMap.key;
+      var keyname = meta.color_map.key;
       if (keyname && keyname in objAttributes)
       {
         var keyvalue = objAttributes[keyname];
-        if (meta.colorMap.map && keyvalue in meta.colorMap.map)
+        if (meta.color_map.map && keyvalue in meta.color_map.map)
         {
-          decodeColor(meta.colorMap.map[keyvalue]);
+          decodeColor(meta.color_map.map[keyvalue]);
         }
-        if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
+        if (meta.color_map.fill_map && keyvalue in meta.color_map.fill_map)
         {
-          decodeFill(meta.colorMap.fillMap[keyvalue]);
+          decodeFill(meta.color_map.fill_map[keyvalue]);
         }
       }
 
       // If we define a alpha_ranges routine
-      if (meta.colorMap.alpha_ranges)
+      if (meta.color_map.alpha_ranges)
       {
-        keyname = meta.colorMap.alpha_ranges.key;
+        keyname = meta.color_map.alpha_ranges.key;
         var keyvalue=localization.attributes[keyname];
         if (keyvalue)
         {
-          for (let ranges of meta.colorMap.alpha_ranges.alphas)
+          for (let ranges of meta.color_map.alpha_ranges.alphas)
           {
             if (keyvalue >= ranges[0] && keyvalue < ranges[1])
             {
@@ -2375,7 +2375,7 @@ export class AnnotationCanvas extends TatorElement
       }
     }
 
-    if (meta.colorMap)
+    if (meta.color_map)
     {
       if (localizationInTrack)
       {

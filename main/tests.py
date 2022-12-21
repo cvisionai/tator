@@ -166,12 +166,12 @@ def create_test_favorite(name, project, user, meta, entityTypeName):
     if entityTypeName == "Localization":
         return Favorite.objects.create(
             name=name, project=project, user=user,
-            meta=meta.id, localization_meta=meta, values={}, entityTypeName=entityTypeName)
+            meta=meta.id, localization_meta=meta, values={}, entity_type_name=entityTypeName)
 
     elif entityTypeName == "State":
         return Favorite.objects.create(
             name=name, project=project, user=user,
-            meta=meta.id, state_meta=meta, values={}, entityTypeName=entityTypeName)
+            meta=meta.id, state_meta=meta, values={}, entity_type_name=entityTypeName)
 
     else:
         return None
@@ -1290,13 +1290,13 @@ class VideoTestCase(
         test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
         existing_uuid = test_video.elemental_id
         new_uuid = uuid4()
-        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elementalId={existing_uuid}')
+        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elemental_id={existing_uuid}')
         self.assertEqual(response.data, 1)
         response = self.client.patch(f'/rest/Media/{test_video.pk}', {'elemental_id': str(new_uuid)}, format='json')
         assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elementalId={new_uuid}')
+        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elemental_id={new_uuid}')
         self.assertEqual(response.data, 1)
-        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elementalId={existing_uuid}')
+        response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elemental_id={existing_uuid}')
         self.assertEqual(response.data, 0)
 
 
@@ -2595,7 +2595,7 @@ class FavoriteStateTestCase(
             'page': 1,
             'type': self.state_type.pk,
             'values': {'blah': 'asdf'},
-            'entityTypeName': "State",
+            'entity_type_name': "State",
         }
         self.patch_json = {
             'name': 'New name',
@@ -2636,7 +2636,7 @@ class FavoriteLocalizationTestCase(
             'page': 1,
             'type': self.box_type.pk,
             'values': {'blah': 'asdf'},
-            'entityTypeName': "Localization",
+            'entity_type_name': "Localization",
         }
         self.patch_json = {
             'name': 'New name',

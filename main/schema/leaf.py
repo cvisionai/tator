@@ -54,7 +54,7 @@ class LeafSuggestionSchema(AutoSchema):
         if method == 'GET':
             params = [
                 {
-                    'name': 'minLevel',
+                    'name': 'min_level',
                     'in': 'query',
                     'required': False,
                     'description': 'Integer specifying level of results that may be returned. '

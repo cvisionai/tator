@@ -32,7 +32,7 @@ class GetClipAPI(BaseDetailView):
         # upon success we can return an image
         video = Media.objects.get(pk=params['id'])
         project = video.project
-        frame_ranges_str = params.get('frameRanges', None)
+        frame_ranges_str = params.get('frame_ranges', None)
         frame_ranges_tuple=[frame_range.split(':') for frame_range in frame_ranges_str]
         frame_ranges=[]
         for t in frame_ranges_tuple:

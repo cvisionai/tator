@@ -82,7 +82,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
     stop = params.get('stop')
     section_id = params.get('section')
     archive_states = _get_archived_filter(params)
-    elemental_id = params.get('elementalId')
+    elemental_id = params.get('elemental_id')
 
     qs = Media.objects.filter(project=project, deleted=False)
     media_ids = []
