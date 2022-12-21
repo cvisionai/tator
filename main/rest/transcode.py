@@ -165,7 +165,7 @@ class TranscodeAPI(BaseListView):
         gid = params.get('gid', None)
         project = params['project']
 
-        selector = f'project={project}'
+        selector = f'project={project},job_type=upload'
         if gid is not None:
             selector += f',gid={gid}'
             try:
