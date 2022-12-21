@@ -1,5 +1,4 @@
-import { Utilities } from "../util/utilities.js";
-import { TatorElement } from "../components/tator-element.js";
+import { TatorElement } from "../tator-element.js";
 
 
 export class ToolsAppletGalleryPanel extends TatorElement {
@@ -27,13 +26,12 @@ export class ToolsAppletGalleryPanel extends TatorElement {
    * Saves the applet object internally
    * @param {Tator.Applet} applet
    */
-  saveApplet(applet, entityForm, type) {
+  saveApplet(applet, entityForm) {
     this._entityForm = entityForm;
-    this._type = type;
 
     // Then populate the panel
     this._appletView.src = applet.html_file;
-    saveDialog.addAppletPanel(this._panel);
+    entityForm.addAppletPanel(this._panel);
   }
 
   /**
@@ -52,7 +50,8 @@ export class ToolsAppletGalleryPanel extends TatorElement {
     if (this._appletElement == null) { return; }
 
     // RUN THIS LAST! listeners need to be in place above first
-    this._appletElement.init({ entityForm: this._entityForm, type: this._type });
+    this._appletElement.init({ entityForm: this._entityForm });
+    this._panel.hidden = false;
 
     //
     this.dispatchEvent(new Event("appletReady"));

@@ -1,7 +1,10 @@
 import { Utilities } from "../util/utilities.js";
 import { TatorElement } from "../components/tator-element.js";
 
-
+/**
+ * To use this applet category must equal:  annotator-save-tools
+ * 
+ */
 export class ToolsAppletSavePanel extends TatorElement {
   constructor() {
     super();
@@ -47,6 +50,7 @@ export class ToolsAppletSavePanel extends TatorElement {
     // RUN THIS LAST! listeners need to be in place above first
     console.log("Run init on applet element.");
     this._appletElement.init({ canvas: this._canvas, page: this._page, saveDialog: this._saveDialog });
+    this._panel.hidden = false;
 
     //
     this.dispatchEvent(new Event("appletReady"));

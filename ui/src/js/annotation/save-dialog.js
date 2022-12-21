@@ -18,6 +18,7 @@ export class SaveDialog extends TatorElement {
     header.appendChild(this._nameDiv);
 
     this._hookButtonDiv = document.createElement("div");
+    this._hookButtonDiv.setAttribute("class", "hooks-button-div");
     this._hookButtonDiv.hidden = true;
     header.appendChild(this._hookButtonDiv);
 
@@ -26,7 +27,7 @@ export class SaveDialog extends TatorElement {
     this._div.appendChild(this._savePanel);
 
     this._hooksPanel = document.createElement("div");
-    this._hooksPanel.setAttribute("class", "col-12");
+    this._hooksPanel.setAttribute("class", "col-12 hooks-panel-div");
     this._hooksPanel.hidden = true;
     this._div.appendChild(this._hooksPanel);
 

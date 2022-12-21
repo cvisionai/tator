@@ -1,5 +1,5 @@
 import { TatorElement } from "../tator-element.js";
-import { AttributePanel } from "../../annotation/attribute-panel.js";
+import "../../annotation/attribute-panel.js";
 
 export class EntityGalleryPanelForm extends TatorElement {
   constructor() {
@@ -26,6 +26,9 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._hooksPanel.setAttribute("class", "col-12");
     this._hooksPanel.hidden = true;
     this._shadow.appendChild(this._hooksPanel);
+
+    // On construction check for applets after everything else is init
+    this.setupApplets();
   }
 
   static get observedAttributes() {
@@ -68,12 +71,11 @@ export class EntityGalleryPanelForm extends TatorElement {
     } else {
       console.warn("Missing attributes.", attributePanelData);
     }
-
-    this.setupApplets();
   }
 
   async setupApplets() {
     try {
+      const projectId = window.location.pathname.split("/")[1];
       const response = await fetch("/rest/Applets/" + projectId, {
         method: "GET",
         credentials: "same-origin",
@@ -86,15 +88,16 @@ export class EntityGalleryPanelForm extends TatorElement {
       const applets = await response.json();
 
       for (let applet of applets) {
-        if (applet.categories.includes("annotator-gallery-tools")) {
+        if (applet.categories.includes("gallery-panel-tools")) {
           const appletPanel = document.createElement("tools-applet-gallery-panel");
-          appletPanel.saveApplet(applet, this, this._attributes.dataType);
+          appletPanel.saveApplet(applet, this);
         }
       }
     } catch (err) {
-      console.warn("Applets could not be setup for entity form.", err);
+      console.warn("Applet could not be setup for entity form.", err);
     }
   }
+
   _emitChangedData() {
     var values = this._attributes.getValues();
     if (values !== null) {

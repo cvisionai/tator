@@ -1184,14 +1184,6 @@ export class AnnotationPage extends TatorPage {
               this._closeModal(save);
             });
 
-            if (this._savesApplet && dataType !== "modifyTrack") {
-              try {
-                const toolAppletSavePanel = document.createElement("tools-applet-save-panel");
-                toolAppletSavePanel.saveApplet(this._savesApplet, this, canvas, save, dataType);
-              } catch (err) {
-                console.warn("SavesApplet: Hit error trying to set applet from saves loop.", err);
-              }
-            }
           }
         }
 
@@ -1333,18 +1325,13 @@ export class AnnotationPage extends TatorPage {
           toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
         }
 
-        if (applet.categories.includes("annotator-save-tools")) {
-          if (this._saves) {
-            for (let [type, saveDialog] of Object.entries(this._saves)) {
-              if (type !== "modifyTrack") {
-                const toolAppletSavePanel = document.createElement("tools-applet-save-panel");
-                toolAppletSavePanel.saveApplet(applet, this, canvas, saveDialog, type);
-              }
+        if (applet.categories.includes("annotator-save-tools") && (this._saves && Object.entries(this._saves).length > 0)) {
+          for (let [type, saveDialog] of Object.entries(this._saves)) {
+            if (type !== "modifyTrack") {
+              const toolAppletSavePanel = document.createElement("tools-applet-save-panel");
+              toolAppletSavePanel.saveApplet(applet, this, canvas, saveDialog, type);
             }
-          } else {
-            this._savesApplet = applet;
           }
-
         }
 
         this._appletMap[applet.name] = applet;
