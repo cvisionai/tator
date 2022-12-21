@@ -108,12 +108,12 @@ class FavoriteDetailAPI(BaseDetailView):
         #       migrating existing Favorites that only had a single type field to the new style.
         entityTypeName = params.get('entity_type_name', None)
         if entityTypeName == "Localization":
-            metaObj = LocalizationType.objects.get(pk=obj.meta)
+            metaObj = LocalizationType.objects.get(pk=obj.type)
             obj.state_type = None
             obj.localization_type = metaObj
 
         elif entityTypeName == "State":
-            metaObj = StateType.objects.get(pk=obj.meta)
+            metaObj = StateType.objects.get(pk=obj.type)
             obj.state_type = metaObj
             obj.localization_type = None
 

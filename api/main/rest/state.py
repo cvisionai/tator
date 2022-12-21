@@ -308,7 +308,7 @@ class StateListAPI(BaseListView):
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
                 obj = qs.first()
-                entity_type = obj.meta
+                entity_type = obj.type
                 bulk_update_and_log_changes(
                 qs,
                 params["project"],
@@ -429,7 +429,7 @@ class StateDetailAPI(BaseDetailView):
         project = state.project
         model_dict = state.model_dict
         delete_localizations = []
-        if state.meta.delete_child_localizations:
+        if state.type.delete_child_localizations:
 
             # Only delete localizations that are not not a part of other states
             for loc in state.localizations.all():

@@ -207,7 +207,7 @@ class LocalizationListAPI(BaseListView):
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
                 obj = qs.first()
-                entity_type = obj.meta
+                entity_type = obj.type
                 bulk_update_and_log_changes(
                 qs,
                 params["project"],
@@ -225,7 +225,7 @@ class LocalizationListAPI(BaseListView):
             # Get the current representation of the object for comparison
             obj = qs.first()
             first_id = obj.id
-            entity_type = obj.meta
+            entity_type = obj.type
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
             if patched_version is not None:
@@ -278,7 +278,7 @@ class LocalizationDetailAPI(BaseDetailView):
         if version is not None:
             obj.version = version
 
-        if obj.meta.dtype == 'box':
+        if obj.type.dtype == 'box':
             x = params.get("x", None)
             y = params.get("y", None)
             height = params.get("height", None)
@@ -303,7 +303,7 @@ class LocalizationDetailAPI(BaseDetailView):
                     obj.thumbnail_image = thumbnail_obj
                 except:
                     logger.error("Bad thumbnail reference given")
-        elif obj.meta.dtype == 'line':
+        elif obj.type.dtype == 'line':
             x = params.get("x", None)
             y = params.get("y", None)
             u = params.get("u", None)
@@ -316,14 +316,14 @@ class LocalizationDetailAPI(BaseDetailView):
                 obj.u = u
             if v:
                 obj.v = v
-        elif obj.meta.dtype == 'dot':
+        elif obj.type.dtype == 'dot':
             x = params.get("x", None)
             y = params.get("y", None)
             if x is not None:
                 obj.x = x
             if y is not None:
                 obj.y = y
-        elif obj.meta.dtype == 'poly':
+        elif obj.type.dtype == 'poly':
             points = params.get("points", None)
             if points:
                 obj.points = points

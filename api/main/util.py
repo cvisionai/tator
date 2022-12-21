@@ -506,11 +506,11 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
                     f"Processed {idx} of {media_count} archived media for project {project.id}"
                 )
 
-            if not media.meta:
+            if not media.type:
                 logger.warning(f"No dtype for '{media.id}'")
                 continue
 
-            media_dtype = media.meta.dtype
+            media_dtype = media.type.dtype
             if media_dtype in ["image", "video"]:
                 success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
             elif media_dtype == "multi":
@@ -672,11 +672,11 @@ def fix_bad_restores(
         if idx % 250 == 0 or idx == media_count:
             logger.info(f"Processed {idx} of {media_count} media")
 
-        if not media.meta:
+        if not media.type:
             logger.warning(f"No dtype for '{media.id}'")
             continue
 
-        media_dtype = media.meta.dtype
+        media_dtype = media.type.dtype
         tator_store = tator_store_lookup[proj_id]
         if media_dtype in ["image", "video"]:
             success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
@@ -821,7 +821,7 @@ def get_clone_info(media: Media) -> dict:
     # Set up the return dict
     media_dict = {"clones": set(), "original": {"project": None, "media": None}}
 
-    dtype = getattr(media.meta, "dtype", None)
+    dtype = getattr(media.type, "dtype", None)
 
     if dtype not in ["image", "video"]:
         raise ValueError(f"get_clone_info expects media dtype `image` or `video`, got '{dtype}'")
@@ -872,7 +872,7 @@ def update_queryset_archive_state(media_qs, target_state):
             continue
 
         # Get clone info
-        media_dtype = getattr(media.meta, "dtype", None)
+        media_dtype = getattr(media.type, "dtype", None)
         if media_dtype in ["image", "video"]:
             clone_info = get_clone_info(media)
 

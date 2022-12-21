@@ -103,11 +103,11 @@ class PermalinkAPI(APIView):
 
         element = params['element']
         if element == 'auto':
-            if qs[0].meta.dtype == 'video':
+            if qs[0].type.dtype == 'video':
                 element = 'streaming'
-            elif qs[0].meta.dtype == 'image':
+            elif qs[0].type.dtype == 'image':
                 element = 'image'
-            elif qs[0].meta.dtype == 'multi':
+            elif qs[0].type.dtype == 'multi':
                 return None
         if element == 'audio':
             return response_data[0].get('media_files',{}).get('audio',[])[0]['path']

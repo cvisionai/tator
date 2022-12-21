@@ -36,7 +36,7 @@ class LocalizationTypeListAPI(BaseListView):
             if len(media_id) != 1:
                 raise Exception('Entity type list endpoints expect only one media ID!')
             media_element = Media.objects.get(pk=media_id[0])
-            localizations = LocalizationType.objects.filter(media=media_element.meta)
+            localizations = LocalizationType.objects.filter(media=media_element.type)
             for localization in localizations:
                 if localization.project.id != self.kwargs['project']:
                     raise Exception('Localization not in project!')

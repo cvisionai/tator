@@ -43,7 +43,7 @@ class StateTypeListAPI(BaseListView):
                 raise Exception(
                     'Entity type list endpoints expect only one media ID!')
             media_element = Media.objects.get(pk=media_id[0])
-            states = StateType.objects.filter(media=media_element.meta)
+            states = StateType.objects.filter(media=media_element.type)
             for state in states:
                 if state.project.id != self.kwargs['project']:
                     raise Exception('State not in project!')

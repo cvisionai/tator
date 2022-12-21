@@ -980,7 +980,7 @@ class Media(Model, ModelDiffMixin):
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                          db_column='project', related_name='media_project')
-    type = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='type')
+    type = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
@@ -1077,7 +1077,7 @@ class Media(Model, ModelDiffMixin):
         """
         Returns True if all resources referenced by the media are backed up.
         """
-        if self.meta.dtype == "multi":
+        if self.type.dtype == "multi":
             media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
             return all(media.is_backed_up() for media in media_qs.iterator())
 
@@ -1175,7 +1175,7 @@ class File(Model, ModelDiffMixin):
     """ Project associated with the file """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     """ Project associated with the file """
-    type = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='type')
+    type = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Type associated with file """
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
@@ -1346,7 +1346,7 @@ def file_post_delete(sender, instance, **kwargs):
 
 class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='type')
+    type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
@@ -1400,7 +1400,7 @@ class State(Model, ModelDiffMixin):
     elements. If a frame is supplied it was collected at that time point.
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='type')
+    type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1464,7 +1464,7 @@ def calc_segments(sender, **kwargs):
 
 class Leaf(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    type = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='type')
+    type = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
