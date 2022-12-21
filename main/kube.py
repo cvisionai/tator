@@ -1062,26 +1062,30 @@ class TatorTranscode(JobManagerMixin):
         # Create the workflow
         response = self.create_workflow(manifest)
 
+        # Update the spec for future reference
+        spec = {
+            'type': entity_type,
+            'gid': gid,
+            'uid': uid,
+            'url': url,
+            'size': upload_size,
+            'section': section,
+            'name': name,
+            'md5': md5,
+            'attributes': attributes,
+            'media_id': media_id,
+        }
+
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,
                               'gid': gid,
                               'user': user,
                               'project': project,
                               'algorithm': -1,
-                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z'})
+                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z',
+                              'spec': spec})
         return {
-            'spec': {
-                'type': entity_type,
-                'gid': gid,
-                'uid': uid,
-                'url': url,
-                'size': upload_size,
-                'section': section,
-                'name': name,
-                'md5': md5,
-                'attributes': attributes,
-                'media_id': media_id,
-            },
+            'spec': spec,
             'job': {
                 'id': response['metadata']['name'],
                 'uid': uid,

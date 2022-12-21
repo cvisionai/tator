@@ -20,6 +20,7 @@ from .media import _create_media
 from ._util import url_to_key
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
+from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +94,7 @@ class TranscodeAPI(BaseListView):
             media_obj, _ = _create_media(params, self.request.user)
             media_id = media_obj.id
         if entity_type == -1:
-            TatorTranscode().start_tar_import(
+            transcode = TatorTranscode().start_tar_import(
                 project,
                 entity_type,
                 token,
@@ -107,7 +108,7 @@ class TranscodeAPI(BaseListView):
                 upload_size,
                 attributes)
         else:
-            TatorTranscode().start_transcode(
+            transcode = TatorTranscode().start_transcode(
                 project,
                 entity_type,
                 token,
@@ -125,9 +126,8 @@ class TranscodeAPI(BaseListView):
         msg = (f"Transcode job {uid} started for file "
                f"{name} on project {type_objects[0].project.name}")
         response_data = {'message': msg,
-                         'uid': uid,
-                         'gid': gid,
-                         'media_id': media_id}
+                         'id': str(uid),
+                         'object': transcode}
 
         # Update Media object with workflow name
         if media_id:
@@ -155,7 +155,10 @@ class TranscodeAPI(BaseListView):
         else:
             cache = TatorCache().get_jobs_by_project(project)
         jobs = get_jobs(selector, cache)
-        return [workflow_to_job(job) for job in jobs]
+        jobs = [workflow_to_job(job) for job in jobs]
+        jobs = {job['uid']:job for job in jobs}
+        specs = {spec['uid']:spec['spec'] for spec in cache}
+        return [{'spec':specs[uid], 'job': jobs[uid]} for uid in jobs.keys()]
 
     def _delete(self, params):
         # Parse parameters
