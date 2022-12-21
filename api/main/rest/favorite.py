@@ -58,8 +58,8 @@ class FavoriteListAPI(BaseListView):
                 name=params['name'],
                 project=Project.objects.get(pk=params['project']),
                 user=self.request.user,
-                localization_meta=metaObj,
-                meta=metaObj.id,
+                localization_type=metaObj,
+                type=metaObj.id,
                 page=params['page'],
                 values=params['values'],
                 entity_type_name=entityTypeName
@@ -72,8 +72,8 @@ class FavoriteListAPI(BaseListView):
                 name=params['name'],
                 project=Project.objects.get(pk=params['project']),
                 user=self.request.user,
-                state_meta=metaObj,
-                meta=metaObj.id,
+                state_type=metaObj,
+                type=metaObj.id,
                 page=params['page'],
                 values=params['values'],
                 entity_type_name=entityTypeName
@@ -104,18 +104,18 @@ class FavoriteDetailAPI(BaseDetailView):
         if name is not None:
             obj.name = name
 
-        # Note: The patching of the meta fields using the entityTypeName is here to support
-        #       migrating existing Favorites that only had a single meta field to the new style.
+        # Note: The patching of the type fields using the entityTypeName is here to support
+        #       migrating existing Favorites that only had a single type field to the new style.
         entityTypeName = params.get('entity_type_name', None)
         if entityTypeName == "Localization":
             metaObj = LocalizationType.objects.get(pk=obj.meta)
-            obj.state_meta = None
-            obj.localization_meta = metaObj
+            obj.state_type = None
+            obj.localization_type = metaObj
 
         elif entityTypeName == "State":
             metaObj = StateType.objects.get(pk=obj.meta)
-            obj.state_meta = metaObj
-            obj.localization_meta = None
+            obj.state_type = metaObj
+            obj.localization_type = None
 
         obj.save()
         return {'message': f'Favorite {obj.id} updated successfully!'}

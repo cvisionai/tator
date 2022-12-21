@@ -67,11 +67,11 @@ class FileListAPI(BaseListView):
         try:
             associated_file_type = FileType.objects.get(pk=int(entity_type))
             if associated_file_type.project.id != project.id:
-                log_msg = f"Provided meta not associated with given project"
+                log_msg = f"Provided type not associated with given project"
                 logging.error(log_msg)
                 raise ValueError(log_msg)
         except:
-            log_msg = f"Invalid meta provided - {entity_type}"
+            log_msg = f"Invalid type provided - {entity_type}"
             logging.error(log_msg)
             raise ValueError(log_msg)
 

@@ -166,12 +166,12 @@ def create_test_favorite(name, project, user, meta, entityTypeName):
     if entityTypeName == "Localization":
         return Favorite.objects.create(
             name=name, project=project, user=user,
-            meta=meta.id, localization_meta=meta, values={}, entity_type_name=entityTypeName)
+            type=meta.id, localization_type=meta, values={}, entity_type_name=entityTypeName)
 
     elif entityTypeName == "State":
         return Favorite.objects.create(
             name=name, project=project, user=user,
-            meta=meta.id, state_meta=meta, values={}, entity_type_name=entityTypeName)
+            type=meta.id, state_type=meta, values={}, entity_type_name=entityTypeName)
 
     else:
         return None
@@ -181,7 +181,7 @@ def create_test_bookmark(name, project, user):
 def create_test_video(user, name, entity_type, project):
     return Media.objects.create(
         name=name,
-        meta=entity_type,
+        type=entity_type,
         project=project,
         md5='',
         num_frames=1,
@@ -195,7 +195,7 @@ def create_test_video(user, name, entity_type, project):
 def create_test_image(user, name, entity_type, project):
     return Media.objects.create(
         name=name,
-        meta=entity_type,
+        type=entity_type,
         project=project,
         md5='',
         width='640',
@@ -209,7 +209,7 @@ def create_test_box(user, entity_type, project, media, frame):
     h = random.uniform(0.0, float(media.height) - y)
     return Localization.objects.create(
         user=user,
-        meta=entity_type,
+        type=entity_type,
         project=project,
         version=project.version_set.all()[0],
         media=media,
@@ -233,7 +233,7 @@ def create_test_line(user, entity_type, project, media, frame):
     y1 = random.uniform(0.0, float(media.height) - y0)
     return Localization.objects.create(
         user=user,
-        meta=entity_type,
+        type=entity_type,
         project=project,
         media=media,
         frame=frame,
@@ -245,7 +245,7 @@ def create_test_dot(user, entity_type, project, media, frame):
     y = random.uniform(0.0, float(media.height))
     return Localization.objects.create(
         user=user,
-        meta=entity_type,
+        type=entity_type,
         project=project,
         media=media,
         frame=frame,
@@ -256,7 +256,7 @@ def create_test_dot(user, entity_type, project, media, frame):
 def create_test_leaf(name, entity_type, project):
     return Leaf.objects.create(
         name=name,
-        meta=entity_type,
+        type=entity_type,
         project=project,
         path=''.join(random.choices(string.ascii_lowercase, k=10)),
     )
@@ -319,7 +319,7 @@ def create_test_version(name, description, number, project, media):
 def create_test_file(name, entity_type, project):
     return File.objects.create(
         name=name,
-        meta=entity_type,
+        type=entity_type,
         project=project,
     )
 
@@ -1205,7 +1205,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         ]
         self.states = [
             State.objects.create(
-                meta=self.state_type,
+                type=self.state_type,
                 project=self.project,
             )
             for _ in range(random.randint(6, 10))
@@ -1710,7 +1710,7 @@ class StateTestCase(
         self.entities = []
         for _ in range(random.randint(6, 10)):
             state = State.objects.create(
-                meta=self.entity_type,
+                type=self.entity_type,
                 project=self.project,
                 version=self.version,
             )
@@ -1720,7 +1720,7 @@ class StateTestCase(
         self.list_uri = 'States'
         self.detail_uri = 'State'
         self.create_entity = functools.partial(State.objects.create,
-            meta=self.entity_type,
+            type=self.entity_type,
             project=self.project,
             version=self.version
         )

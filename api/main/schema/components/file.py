@@ -11,7 +11,7 @@ file_fields = SimpleNamespace(
     name="name",
     project="project",
     attributes="attributes",
-    meta="meta")
+    type="type")
 
 file_shared_properties = {
     file_fields.name: {

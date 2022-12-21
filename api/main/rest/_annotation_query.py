@@ -95,14 +95,14 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values_list('media').distinct()
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
-        qs = qs.filter(meta=filter_type)
+        qs = qs.filter(type=filter_type)
         relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values_list('media').distinct()
     elif filter_ops or params.get('float_array',None):
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if type(sub_qs) != type(None):
-                queries.append(sub_qs.filter(meta=entity_type))
+                queries.append(sub_qs.filter(type=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
         sub_qs = queries.pop()
         if queries:
@@ -121,7 +121,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             section_uuid = section.tator_user_sections
             object_search = section.object_search
             related_object_search = section.related_object_search
-            media_qs = Media.objects.filter(project=project, meta=media_type_id)
+            media_qs = Media.objects.filter(project=project, type=media_type_id)
             if section_uuid:
                 media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
             if object_search:
@@ -162,7 +162,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
         related_matches = []
         for entity_type in related_media_types:
-            media_qs = Media.objects.filter(project=project, meta=entity_type)
+            media_qs = Media.objects.filter(project=project, type=entity_type)
             media_qs =  get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
             if media_qs.count():
                 related_matches.append(media_qs)

@@ -81,7 +81,7 @@ class LocalizationListAPI(BaseListView):
                 filename_dict[media['id']] = media['name']
 
             for element in response_data:
-                del element['meta']
+                del element['type']
 
                 oldAttributes = element['attributes']
                 del element['attributes']
@@ -171,7 +171,7 @@ class LocalizationListAPI(BaseListView):
         objs = (
             Localization(
                 project=project,
-                meta=metas[loc_spec["type"]],
+                type=metas[loc_spec["type"]],
                 media=medias[loc_spec["media_id"]],
                 user=self.request.user,
                 attributes=attrs,

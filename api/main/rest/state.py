@@ -112,7 +112,7 @@ class StateListAPI(BaseListView):
             filename_dict = {media['id']:media['name'] for media in medias}
 
             for element in response_data:
-                del element['meta']
+                del element['type']
 
                 oldAttributes = element['attributes']
                 del element['attributes']
@@ -235,7 +235,7 @@ class StateListAPI(BaseListView):
         objs = (
             State(
                 project=project,
-                meta=metas[state_spec["type"]],
+                type=metas[state_spec["type"]],
                 attributes=attrs,
                 created_by=self.request.user,
                 modified_by=self.request.user,

@@ -56,13 +56,13 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
 
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, LeafType.objects.get(pk=filter_type), qs, params, filter_ops)
-        qs = qs.filter(meta=filter_type)
+        qs = qs.filter(type=filter_type)
     if filter_ops:
         queries = []
         for entity_type in LeafType.objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if sub_qs:
-                queries.append(sub_qs.filter(meta=entity_type))
+                queries.append(sub_qs.filter(type=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
         if queries:
             query = Q(pk__in=sub_qs)

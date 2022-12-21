@@ -26,7 +26,7 @@ state_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying the state.',
     },
-    'meta': {
+    'type': {
         'type': 'integer',
         'description': 'Unique integer identifying the entity type.',
     },

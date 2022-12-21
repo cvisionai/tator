@@ -44,12 +44,12 @@ def _related_search(qs, project, relevant_state_type_ids, relevant_localization_
     related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
     related_matches = []
     for entity_type in related_state_types:
-        state_qs = State.objects.filter(project=project, meta=entity_type)
+        state_qs = State.objects.filter(project=project, type=entity_type)
         state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
         if state_qs.count():
             related_matches.append(state_qs)
     for entity_type in related_localization_types:
-        local_qs = Localization.objects.filter(project=project, meta=entity_type)
+        local_qs = Localization.objects.filter(project=project, type=entity_type)
         local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
         if local_qs.count():
             related_matches.append(local_qs)
@@ -132,13 +132,13 @@ def _get_media_psql_queryset(project, filter_ops, params):
         relevant_state_type_ids = relevant_state_type_ids.filter(media__in=[filter_type])
         relevant_localization_type_ids = relevant_localization_type_ids.filter(media__in=[filter_type])
         qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
-        qs = qs.filter(meta=filter_type)
+        qs = qs.filter(type=filter_type)
     elif filter_ops or params.get('float_array',None):
         queries = []
         for entity_type in MediaType.objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if sub_qs:
-                queries.append(sub_qs.filter(meta=entity_type))
+                queries.append(sub_qs.filter(type=entity_type))
             else:
                 queries.append(qs.filter(pk=-1)) # no matches
         logger.info(f"Joining {len(queries)} queries together.")

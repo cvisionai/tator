@@ -102,7 +102,7 @@ leaf = {
             'type': 'integer',
             'description': 'Unique integer identifying the leaf.',
         },
-        'meta': {
+        'type': {
             'type': 'integer',
             'description': 'Unique integer identifying the entity type.',
         },

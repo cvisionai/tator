@@ -237,7 +237,7 @@ def _create_media(params, user):
         # Create the media object.
         media_obj = Media.objects.create(
             project=project_obj,
-            meta=MediaType.objects.get(pk=entity_type),
+            type=MediaType.objects.get(pk=entity_type),
             name=name,
             md5=md5,
             attributes=attributes,
@@ -354,7 +354,7 @@ def _create_media(params, user):
         # Create the media object.
         media_obj = Media.objects.create(
             project=project_obj,
-            meta=MediaType.objects.get(pk=entity_type),
+            type=MediaType.objects.get(pk=entity_type),
             name=name,
             md5=md5,
             attributes=attributes,
