@@ -109,10 +109,10 @@ export class LocalizationEdit extends TypeFormTemplate {
     }
 
     if (this._colorMap.changed() || isNew) {
-      formData.colorMap = {};
+      formData.color_map = {};
       const colorMapDefaultVal = this._colorMap.getValue();
       if (this._colorMap.getValue() !== null) {
-        formData.colorMap.default = colorMapDefaultVal;
+        formData.color_map.default = colorMapDefaultVal;
       }
     }
 
