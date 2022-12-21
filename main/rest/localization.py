@@ -38,6 +38,7 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
+    construct_elemental_id_from_parent
 )
 from ._permissions import ProjectEditPermission
 
@@ -188,6 +189,7 @@ class LocalizationListAPI(BaseListView):
                 height=loc_spec.get("height", None),
                 points=loc_spec.get("points", None),
                 frame=loc_spec.get("frame", None),
+                elemental_id=construct_elemental_id_from_parent(Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None)
             )
             for loc_spec, attrs in zip(loc_specs, attr_specs)
         )
