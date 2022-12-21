@@ -515,7 +515,7 @@ class OCIStorage(S3Storage):
     def path_to_key(self, path):
         return path
 
-    def _get_archived_key(path):
+    def _get_archived_key(self, path):
         return f"{self.ARCHIVE_PREFIX}/{path}"
 
     def object_tagged_for_archive(self, path):
@@ -535,11 +535,13 @@ class OCIStorage(S3Storage):
         pass  # OCI does not support object tags.
 
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
-        super()._update_storage_class(self._get_archived_key(path), desired_storage_class)
+        key = self.path_to_key(path)
         self._native_client.rename_object(
             namespace_name=self._namespace,
             bucket_name=self.bucket_name,
-            rename_object_details=RenameObjectDetails(source_name=archived_key, new_name=key),
+            rename_object_details=RenameObjectDetails(
+                source_name=self._get_archived_key(path), new_name=key
+            ),
         )
 
 
