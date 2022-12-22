@@ -71,7 +71,7 @@ def make_btree_index(db_name, project_id, entity_type_id, table_name, index_name
         else:
             sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                             USING btree (CAST({col_name} AS {psql_type}))
-                            WHERE project=%s and type=%s""").format(index_name=sql.SQL(index_name),
+                            WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
                                                                     table_name=sql.Identifier(table_name),
                                                                     col_name=sql.SQL(col_name),
                                                                     psql_type=sql.SQL(psql_type))
@@ -101,7 +101,7 @@ def make_string_index(db_name,project_id, entity_type_id, table_name, index_name
         col_name = _get_column_name(attribute)
         sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING {method} (CAST({col_name} AS text) {method}_trgm_ops)
-                                 WHERE project=%s and type=%s""").format(index_name=sql.SQL(index_name),
+                                 WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
                                                                      method=sql.SQL(method.lower()),
                                                                    table_name=sql.Identifier(table_name),
                                                                    col_name=sql.SQL(col_name))
@@ -120,7 +120,7 @@ def make_upper_string_index(db_name,project_id, entity_type_id, table_name, inde
         col_name = _get_column_name(attribute)
         sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING {method} (UPPER(CAST({col_name} AS text)) {method}_trgm_ops)
-                                 WHERE project=%s and type=%s""").format(index_name=sql.SQL(index_name),
+                                 WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
                                                                      method=sql.SQL(method.lower()),
                                                                    table_name=sql.Identifier(table_name),
                                                                    col_name=sql.SQL(col_name))
@@ -171,7 +171,7 @@ def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_na
                 $func$ LANGUAGE sql IMMUTABLE;"""
     col_name = _get_column_name(attribute)
     sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} 
-    USING btree (tator_timestamp({col_name})) WHERE project=%s AND type=%s;""").format(index_name=sql.SQL(index_name),
+    USING btree (tator_timestamp({col_name})) WHERE project=%s AND meta=%s;""").format(index_name=sql.SQL(index_name),
                                                                    table_name=sql.Identifier(table_name),
                                                                    col_name=sql.SQL(col_name)
                                                                    )
@@ -192,7 +192,7 @@ def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name
     attr_name = re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
     sql_str = sql.SQL("""CREATE INDEX {index_name} ON {table_name} 
                          using gist(ST_MakePoint((attributes -> '{attr_name}' -> 1)::float, 
-                         (attributes -> '{attr_name}' -> 0)::float)) WHERE project=%s and type=%s;""").format(
+                         (attributes -> '{attr_name}' -> 0)::float)) WHERE project=%s and meta=%s;""").format(
                             attr_name=sql.SQL(attr_name),
                             index_name=sql.Identifier(index_name),
                             table_name=sql.Identifier(table_name)
@@ -220,7 +220,7 @@ def make_vector_index(db_name, project_id, entity_type_id, table_name, index_nam
         for method in ['l2', 'ip', 'cosine']:
             sql_str = sql.SQL("""CREATE INDEX {index_name}_{method} ON {table_name} 
                                  using ivfflat(CAST(attributes ->> '{attr_name}' AS vector({attr_size})) 
-                                                                   vector_{method}_ops) WHERE project=%s and type=%s;""").format(
+                                                                   vector_{method}_ops) WHERE project=%s and meta=%s;""").format(
                                                                    attr_name=sql.SQL(attr_name),
                                                                    attr_size=sql.SQL(f"{attr_size}"),
                                                                    index_name=sql.SQL(index_name),
