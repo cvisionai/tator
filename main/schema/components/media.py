@@ -21,6 +21,10 @@ media_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+    'elemental_id': {
+        'description': 'Unique ID of an element',
+        'type': 'string'
+    }
 }
 
 media_get_properties = {
@@ -163,6 +167,10 @@ media_spec = {
             'description': 'Attributes for the media',
             'type': 'object',
         },
+        'elemental_id': {
+            'description': 'Unique ID of an element',
+            'type': 'string'
+        }
     },
 }
 
@@ -209,6 +217,10 @@ media_update = {
                            'user.',
             'enum': ['to_archive', 'to_live']
         },
+        'elemental_id': {
+            'description': 'Unique ID of an element',
+            'type': 'string'
+        }
     },
 }
 

@@ -373,8 +373,8 @@ def test_playback_schedule(page_factory, project, count_test):
   page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
 
-  keep_running = True
-  while keep_running:
+  keep_running_count = 0
+  while keep_running_count < 10:
       play_button.click()
       page.wait_for_timeout(5000)
       play_button.click()
@@ -392,11 +392,12 @@ def test_playback_schedule(page_factory, project, count_test):
       monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
 
       if monitor_fps >= 30:
-          keep_running = False
+          break
       else:
           # Re-run because the monitor's FPS is lower than the video's FPS, which will
           # mess up the assert conditions. This test does not account for this scenario.
           page.wait_for_timeout(1000)
+          keep_running_count += 1
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
@@ -408,8 +409,8 @@ def test_playback_schedule(page_factory, project, count_test):
   assert factor == 1
 
   # repeat at 4x
-  keep_running = True
-  while keep_running:
+  keep_running_count = 0
+  while keep_running_count < 10:
       console_msgs=[]
       page.keyboard.press("4")
       play_button.click()
@@ -428,11 +429,12 @@ def test_playback_schedule(page_factory, project, count_test):
       monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
 
       if monitor_fps >= 30:
-          keep_running = False
+          break
       else:
           # Re-run because the monitor's FPS is lower than the video's FPS, which will
           # mess up the assert conditions. This test does not account for this scenario.
           page.wait_for_timeout(1000)
+          keep_running_count += 1
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
