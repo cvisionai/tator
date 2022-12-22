@@ -132,7 +132,7 @@ class TranscodeAPI(BaseListView):
         # Update Media object with workflow name
         if media_id:
             media = Media.objects.get(pk=media_id)
-            cache = TatorCache().get_jobs_by_uid(uid)
+            cache = TatorCache().get_jobs_by_uid(uid, 'transcode')
             jobs = get_jobs(f'uid={uid}', cache)
             workflow_names = media.attributes.get('_tator_import_workflow',[])
             workflow_names.append(jobs[0]['metadata']['name'])
@@ -150,10 +150,10 @@ class TranscodeAPI(BaseListView):
         selector = f'project={project},job_type=upload'
         if gid is not None:
             selector += f',gid={gid}'
-            cache = TatorCache().get_jobs_by_gid(gid, first_only=True)
+            cache = TatorCache().get_jobs_by_gid(gid, 'transcode', first_only=True)
             assert(cache[0]['project'] == project)
         else:
-            cache = TatorCache().get_jobs_by_project(project)
+            cache = TatorCache().get_jobs_by_project(project, 'transcode')
         jobs = get_jobs(selector, cache)
         jobs = [workflow_to_job(job) for job in jobs]
         jobs = {job['uid']:job for job in jobs}
@@ -169,12 +169,12 @@ class TranscodeAPI(BaseListView):
         if gid is not None:
             selector += f',gid={gid}'
             try:
-                cache = TatorCache().get_jobs_by_gid(gid, first_only=True)
+                cache = TatorCache().get_jobs_by_gid(gid, 'transcode', first_only=True)
                 assert(cache[0]['project'] == project)
             except:
                 raise Http404
         else:
-            cache = TatorCache().get_jobs_by_project(project)
+            cache = TatorCache().get_jobs_by_project(project, 'transcode')
         cancelled = cancel_jobs(selector, cache)
         return {'message': f"Deleted {cancelled} jobs for project {project}!"}
 

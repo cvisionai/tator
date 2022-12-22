@@ -1083,7 +1083,7 @@ class TatorTranscode(JobManagerMixin):
                               'project': project,
                               'algorithm': -1,
                               'datetime': datetime.datetime.utcnow().isoformat() + 'Z',
-                              'spec': spec})
+                              'spec': spec}, 'transcode')
         return {
             'spec': spec,
             'job': {
@@ -1220,7 +1220,7 @@ class TatorAlgorithm(JobManagerMixin):
                               'user': user,
                               'project': project,
                               'algorithm': self.alg.pk,
-                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z'})
+                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z'}, 'algorithm')
 
         return response
 

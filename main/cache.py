@@ -36,7 +36,7 @@ class TatorCache:
         group = f'creds_{project_id}'
         self.rds.delete(group)
 
-    def set_job(self, job):
+    def set_job(self, job, hkey):
         """ Stores a job for cancellation or authentication. Job is a dict including
             uid, gid, user id, project id, algorithm id (-1 if not an algorithm), 
             and time created.
@@ -47,7 +47,7 @@ class TatorCache:
         project = job['project']
 
         # Set the job data by UID.
-        self.rds.hset('jobs', uid, val)
+        self.rds.hset(hkey, uid, val)
 
         # Store list of UIDs under GID key.
         if self.rds.exists(gid):
@@ -56,45 +56,45 @@ class TatorCache:
             self.rds.set(gid, uid)
 
         # Store list of UIDs under project key.
-        project_key = f'jobs_{project}'
+        project_key = f'{hkey}_{project}'
         if self.rds.exists(project_key):
             self.rds.append(project_key, f',{uid}')
         else:
             self.rds.set(project_key, uid)
 
-    def get_jobs_by_uid(self, uid):
+    def get_jobs_by_uid(self, uid, hkey):
         """ Retrieves job using UID.
         """
         val = None
-        if self.rds.hexists('jobs', uid):
-            val = [json.loads(self.rds.hget('jobs', uid).decode())]
+        if self.rds.hexists(hkey, uid):
+            val = [json.loads(self.rds.hget(hkey, uid).decode())]
         return val
 
-    def get_jobs_by_gid(self, gid, first_only=False):
+    def get_jobs_by_gid(self, gid, hkey, first_only=False):
         """ Retrieves jobs using GID. Set first_only=True to only retrieve first job.
         """
         uids = self.rds.get(gid)
         if uids:
             uids = uids.decode().split(',')
             if first_only:
-                jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+                jobs = [json.loads(self.rds.hget(hkey, uids[0]).decode())]
             else:
-                jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
+                jobs = [json.loads(self.rds.hget(hkey, uid).decode()) for uid in uids]
         else:
             jobs = []
         return jobs
 
-    def get_jobs_by_project(self, project, first_only=False):
+    def get_jobs_by_project(self, project, hkey, first_only=False):
         """ Retrieves jobs using project ID. Set first_only=True to only retrieve first job.
         """
-        project_key = f'jobs_{project}'
+        project_key = f'{hkey}_{project}'
         uids = self.rds.get(project_key)
         if uids:
             uids = uids.decode().split(',')
             if first_only:
-                jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+                jobs = [json.loads(self.rds.hget(hkey, uids[0]).decode())]
             else:
-                jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
+                jobs = [json.loads(self.rds.hget(hkey, uid).decode()) for uid in uids]
         else:
             jobs = []
         return jobs

@@ -52,7 +52,9 @@ class ProjectPermissionBase(BasePermission):
         elif 'uid' in view.kwargs:
             uid = view.kwargs['uid']
             try:
-                cache = TatorCache().get_jobs_by_uid(uid)
+                cache = TatorCache().get_jobs_by_uid(uid, 'algorithm')
+                if not cache:
+                    cache = TatorCache().get_jobs_by_uid(uid, 'transcode')
                 project = cache[0]['project']
             except:
                 raise Http404
