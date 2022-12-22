@@ -938,7 +938,7 @@ class TatorTranscode(JobManagerMixin):
                 'name': name,
                 'md5': md5,
                 'attributes': attributes,
-                'media_id': media_id,
+                'media_id': -1,
             },
             'job': {
                 'id': response['metadata']['name'],
