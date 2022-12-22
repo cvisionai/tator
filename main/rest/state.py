@@ -243,7 +243,7 @@ class StateListAPI(BaseListView):
                 version=versions[state_spec.get("version", None)],
                 frame=state_spec.get("frame", None),
                 parent=State.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None,
-                elemental_id=construct_elemental_id_from_parent(State.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None)
+                elemental_id=construct_elemental_id_from_parent(State.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None, state_spec.get('elemental_id', None))
             )
             for state_spec, attrs in zip(state_specs, attr_specs)
         )
@@ -417,6 +417,9 @@ class StateDetailAPI(BaseDetailView):
         obj = patch_attributes(new_attrs, obj)
         # Update modified_by to be the last user
         obj.modified_by = self.request.user
+
+        if 'elemental_id' in params:
+            obj.elemental_id = params['elemental_id']
 
         obj.save()
         log_changes(obj, model_dict, obj.project, self.request.user)
