@@ -8,7 +8,7 @@ from ._message import message_with_id_schema
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
 
-class TranscodeSchema(AutoSchema):
+class TranscodeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
@@ -32,8 +32,6 @@ class TranscodeSchema(AutoSchema):
             it to the proper format, upload the transcoded video, and save the video using the 
             `VideoFile`, `AudioFile`, and `ImageFile` endpoints. The transcode can be launched on an
             existing media object, or a media object will be created.
-
-            Transcodes may be cancelled via the `Job` or `JobGroup` endpoints.
             """)
         elif method == 'GET':
             short_desc = "Get transcode list."
@@ -116,3 +114,55 @@ class TranscodeSchema(AutoSchema):
             responses['200'] = message_schema('deletion', 'transcode list')
         return responses
 
+class TranscodeDetailSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetTranscode'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteTranscode'
+        operation['tags'] = ['Tator']
+        return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get transcode job.'
+            long_desc = dedent("""\
+            This method allows the user to get a transcode's status using the `uid` returned
+            by `Transcode` create method.
+            """)
+        elif method == 'DELETE':
+            short_desc = 'Delete transcode job.'
+            long_desc = dedent("""\
+            This method allows the user to cancel a transcode using the `uid` returned
+            by `Transcode` create method.
+            """)
+        return f"{short_desc}\n\n{long_desc}"
+
+    def get_path_parameters(self, path, method):
+        return [{
+            'name': 'uid',
+            'in': 'path',
+            'required': True,
+            'description': 'A uuid1 string identifying to single Job.',
+            'schema': {'type': 'string'},
+        }]
+
+    def get_filter_parameters(self, path, method):
+        return []
+
+    def get_request_body(self, path, method):
+        return {}
+
+    def get_responses(self, path, method):
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of transcode job.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Transcode',
+                }}},
+            }
+        elif method == 'DELETE':
+            responses['200'] = message_schema('deletion', 'transcode')
+        return responses

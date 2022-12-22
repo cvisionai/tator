@@ -13,21 +13,23 @@ from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
 from ..models import Media
-from ..schema import TranscodeSchema
+from ..schema import TranscodeListSchema
+from ..schema import TranscodeDetailSchema
 from ..notify import Notify
 
 from .media import _create_media
 from ._util import url_to_key
 from ._base_views import BaseListView
+from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
 from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
 
-class TranscodeAPI(BaseListView):
+class TranscodeListAPI(BaseListView):
     """ Start a transcode.
     """
-    schema = TranscodeSchema()
+    schema = TranscodeListSchema()
     permission_classes = [ProjectTransferPermission]
     http_method_names = ['post', 'get', 'put', 'delete']
 
@@ -181,3 +183,28 @@ class TranscodeAPI(BaseListView):
     def _put(self, params):
         return self._get(params)
 
+class TranscodeDetailAPI(BaseDetailView):
+    schema = TranscodeDetailSchema()
+    permission_classes = [ProjectTransferPermission]
+    http_method_names = ['get', 'delete']
+
+    def _get(self, params):
+        uid = params['uid']
+        cache = TatorCache().get_jobs_by_uid(uid, 'transcode')
+        if cache is None:
+            raise Http404
+        jobs = get_jobs(f'uid={uid}', cache)
+        if len(jobs) != 1:
+            raise Http404
+        return {'job': workflow_to_job(job), 'spec': cache[0]}
+
+    def _delete(self, params):
+        uid = params['uid']
+        cache = TatorCache().get_jobs_by_uid(uid, 'transcode')
+        if cache is None:
+            raise Http404
+        cancelled = cancel_jobs(f'uid={uid}', cache)
+        if cancelled != 1:
+            raise Http404
+
+        return {'message': f"Job with UID {uid} deleted!"}
