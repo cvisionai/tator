@@ -669,6 +669,9 @@ class MediaDetailAPI(BaseDetailView):
             if 'summaryLevel' in params:
                 qs.update(summaryLevel=params['summaryLevel'])
 
+            if 'elemental_id' in params:
+                qs.update(summaryLevel=params['elemental_id'])
+
             if 'multi' in params:
                 media_files = media.media_files
                 # If this object already contains non-multi media definitions, raise an exception.
