@@ -69,6 +69,10 @@ localization_properties = {
         'type': 'number',
         'nullable': True,
     },
+    'elemental_id': {
+        'description': 'Unique ID of an element',
+        'type': 'string'
+    }
 }
 
 post_properties = {

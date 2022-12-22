@@ -21,6 +21,10 @@ media_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+    'elemental_id': {
+        'description': 'Unique ID of an element',
+        'type': 'string'
+    }
 }
 
 media_get_properties = {
