@@ -109,7 +109,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
         qs = qs.filter(elemental_id=elemental_id)
 
     if dtype is not None:
-        qs = qs.filter(meta__dtype=dtype)
+        qs = qs.filter(type__dtype=dtype)
 
     if md5 is not None:
         qs = qs.filter(md5=md5)

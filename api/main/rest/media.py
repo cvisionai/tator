@@ -530,7 +530,7 @@ class MediaListAPI(BaseListView):
                     # Add all single media ids that are part of a multiview that has requested a
                     # state change
                     multi_constituent_ids = _single_ids_from_multi_qs(
-                        archive_qs.filter(meta__dtype="multi")
+                        archive_qs.filter(type__dtype="multi")
                     )
                     multi_constituent_ids.update(ids_to_update)
                     archive_qs = Media.objects.filter(pk__in=multi_constituent_ids).exclude(
@@ -720,7 +720,7 @@ class MediaDetailAPI(BaseDetailView):
 
                     # Update the archive state of all videos if this is a multiview
                     multi_constituent_ids = _single_ids_from_multi_qs(
-                        qs.filter(meta__dtype="multi")
+                        qs.filter(type__dtype="multi")
                     )
                     multi_constituent_ids.add(params["id"])
                     archive_state_qs = Media.objects.select_for_update().filter(

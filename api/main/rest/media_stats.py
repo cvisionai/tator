@@ -37,7 +37,7 @@ class MediaStatsAPI(BaseDetailView):
         total_size = 0
 
         # Run aggregations
-        agg = qs.filter(meta__dtype='video').aggregate(total_frames=Sum('num_frames'), total_fps=Sum('fps'))
+        agg = qs.filter(type__dtype='video').aggregate(total_frames=Sum('num_frames'), total_fps=Sum('fps'))
 
         extracted=qs.annotate(image=Func(F('media_files__image'), function='jsonb_array_elements'),
                                 streaming=Func(F('media_files__streaming'), function='jsonb_array_elements'),
@@ -57,7 +57,7 @@ class MediaStatsAPI(BaseDetailView):
             if type_agg[k]:
                 total_size+=type_agg[k]
 
-        num_vids = qs.filter(meta__dtype='video').count()
+        num_vids = qs.filter(type__dtype='video').count()
         if num_vids > 0:
             avg_fps = agg['total_fps'] / num_vids
             duration = agg['total_frames'] / avg_fps
