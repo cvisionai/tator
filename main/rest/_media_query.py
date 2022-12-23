@@ -221,7 +221,6 @@ def _get_media_psql_queryset(project, filter_ops, params):
 
 def _get_section_and_params(project, params):
     filter_type = params.get('type')
-    filter_type = params.get('type')
     filter_ops=[]
     if filter_type:
         types = MediaType.objects.filter(pk=filter_type)
@@ -233,7 +232,6 @@ def _get_section_and_params(project, params):
     return filter_ops
 
 def get_media_queryset(project, params):
-    # Determine whether to use ES or not.
     filter_ops = _get_section_and_params(project, params)
     # If using PSQL, construct the queryset.
     qs = _get_media_psql_queryset(project, filter_ops, params)

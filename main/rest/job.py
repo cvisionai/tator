@@ -89,7 +89,7 @@ class JobListAPI(BaseListView):
 
         # Retrieve the jobs so we have a list
         selector = f"project={project_id},gid={gid}"
-        cache = TatorCache().get_jobs_by_gid(gid, 'algorithm', first_only=False)
+        cache = TatorCache().get_jobs_by_gid(gid, first_only=False)
         jobs = get_jobs(selector, cache)
         jobs = [workflow_to_job(job) for job in jobs]
 
@@ -106,8 +106,11 @@ class JobListAPI(BaseListView):
         selector = f'project={project},job_type=algorithm'
         if gid is not None:
             selector += f',gid={gid}'
-            cache = TatorCache().get_jobs_by_gid(gid, 'algorithm', first_only=True)
-            assert(cache[0]['project'] == project)
+            cache = TatorCache().get_jobs_by_gid(gid)
+            if not cache:
+                cache = []
+            else:
+                assert(cache[0]['project'] == project)
         else:
             cache = TatorCache().get_jobs_by_project(project, 'algorithm')
         jobs = get_jobs(selector, cache)
@@ -121,11 +124,11 @@ class JobListAPI(BaseListView):
         selector = f'project={project},job_type=algorithm'
         if gid is not None:
             selector += f',gid={gid}'
-            try:
-                cache = TatorCache().get_jobs_by_gid(gid, 'algorithm', first_only=True)
+            cache = TatorCache().get_jobs_by_gid(gid)
+            if not cache:
+                cache = []
+            else:
                 assert(cache[0]['project'] == project)
-            except:
-                raise Http404
         else:
             cache = TatorCache().get_jobs_by_project(project, 'algorithm')
         cancelled = cancel_jobs(selector, cache)
@@ -145,7 +148,7 @@ class JobDetailAPI(BaseDetailView):
 
     def _get(self, params):
         uid = params['uid']
-        cache = TatorCache().get_jobs_by_uid(uid, 'algorithm')
+        cache = TatorCache().get_jobs_by_uid(uid)
         if cache is None:
             raise Http404
         jobs = get_jobs(f'uid={uid}', cache)
@@ -155,7 +158,7 @@ class JobDetailAPI(BaseDetailView):
 
     def _delete(self, params):
         uid = params['uid']
-        cache = TatorCache().get_jobs_by_uid(uid, 'algorithm')
+        cache = TatorCache().get_jobs_by_uid(uid)
         if cache is None:
             raise Http404
         cancelled = cancel_jobs(f'uid={uid}', cache)

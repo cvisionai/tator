@@ -22,10 +22,28 @@ from ._util import url_to_key
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+from ._media_query import get_media_queryset
 from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
 
+def _filter_cache_by_media(params, cache):
+    """ Checks if a params dict has media filters.
+    """
+    keys = list(params.keys())
+    if 'project' in keys:
+        keys.remove('project')
+    if 'gid' in keys:
+        keys.remove('gid')
+    if len(keys) > 0:
+        filtered = []
+        qs = get_media_queryset(params)
+        media_ids = list(qs.values_list('id', flat=True))
+        filtered = [item for item in cache if item['spec']['media_id'] in media_ids]
+    else:
+        filtered = cache
+    return filtered
+        
 class TranscodeListAPI(BaseListView):
     """ Start a transcode.
     """
@@ -134,7 +152,7 @@ class TranscodeListAPI(BaseListView):
         # Update Media object with workflow name
         if media_id:
             media = Media.objects.get(pk=media_id)
-            cache = TatorCache().get_jobs_by_uid(uid, 'transcode')
+            cache = TatorCache().get_jobs_by_uid(uid)
             jobs = get_jobs(f'uid={uid}', cache)
             workflow_names = media.attributes.get('_tator_import_workflow',[])
             workflow_names.append(jobs[0]['metadata']['name'])
@@ -145,6 +163,7 @@ class TranscodeListAPI(BaseListView):
         logger.info(msg)
         return response_data
 
+
     def _get(self, params):
         gid = params.get('gid', None)
         project = params['project']
@@ -152,17 +171,22 @@ class TranscodeListAPI(BaseListView):
         selector = f'project={project},job_type=upload'
         if gid is not None:
             selector += f',gid={gid}'
-            cache = TatorCache().get_jobs_by_gid(gid, 'transcode', first_only=True)
-            assert(cache[0]['project'] == project)
+            cache = TatorCache().get_jobs_by_gid(gid)
+            if not cache:
+                cache = []
+            else:
+                assert(cache[0]['project'] == project)
         else:
             cache = TatorCache().get_jobs_by_project(project, 'transcode')
+        cache = _filter_cache_by_media(params, cache)
+        specs = {spec['uid']:spec['spec'] for spec in cache}
         jobs = get_jobs(selector, cache)
         jobs = [workflow_to_job(job) for job in jobs]
         jobs = {job['uid']:job for job in jobs}
-        specs = {spec['uid']:spec['spec'] for spec in cache}
         return [{'spec':specs[uid], 'job': jobs[uid]} for uid in jobs.keys()]
 
     def _delete(self, params):
+        logger.info(f"PARAMS KEYS: {params.keys()}")
         # Parse parameters
         gid = params.get('gid', None)
         project = params['project']
@@ -170,13 +194,14 @@ class TranscodeListAPI(BaseListView):
         selector = f'project={project},job_type=upload'
         if gid is not None:
             selector += f',gid={gid}'
-            try:
-                cache = TatorCache().get_jobs_by_gid(gid, 'transcode', first_only=True)
+            cache = TatorCache().get_jobs_by_gid(gid)
+            if not cache:
+                cache = []
+            else:
                 assert(cache[0]['project'] == project)
-            except:
-                raise Http404
         else:
             cache = TatorCache().get_jobs_by_project(project, 'transcode')
+        cache = _filter_cache_by_media(params, cache)
         cancelled = cancel_jobs(selector, cache)
         return {'message': f"Deleted {cancelled} jobs for project {project}!"}
 
@@ -189,18 +214,22 @@ class TranscodeDetailAPI(BaseDetailView):
     http_method_names = ['get', 'delete']
 
     def _get(self, params):
+        logger.info(f"GOT HERE")
+        return {}
         uid = params['uid']
-        cache = TatorCache().get_jobs_by_uid(uid, 'transcode')
+        cache = TatorCache().get_jobs_by_uid(uid)
         if cache is None:
             raise Http404
         jobs = get_jobs(f'uid={uid}', cache)
         if len(jobs) != 1:
             raise Http404
+        logger.info(f"CACHE: {cache}")
         return {'job': workflow_to_job(jobs[0]), 'spec': cache[0]['spec']}
 
     def _delete(self, params):
+        logger.info(f"GOT HERE DEL")
         uid = params['uid']
-        cache = TatorCache().get_jobs_by_uid(uid, 'transcode')
+        cache = TatorCache().get_jobs_by_uid(uid)
         if cache is None:
             raise Http404
         cancelled = cancel_jobs(f'uid={uid}', cache)

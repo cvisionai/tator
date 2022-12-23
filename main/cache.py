@@ -5,6 +5,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+EXPIRE_TIME=60*60*24*30
+
 class TatorCache:
     """Interface for caching responses.
     """
@@ -47,39 +49,40 @@ class TatorCache:
         project = job['project']
 
         # Set the job data by UID.
-        self.rds.hset(hkey, uid, val)
+        self.rds.set(uid, val, ex=EXPIRE_TIME)
 
         # Store list of UIDs under GID key.
+        logger.info(f"SETTING UID {uid} IN GID KEY {gid}")
         if self.rds.exists(gid):
             self.rds.append(gid, f',{uid}')
         else:
-            self.rds.set(gid, uid)
+            self.rds.set(gid, uid, ex=EXPIRE_TIME)
 
         # Store list of UIDs under project key.
         project_key = f'{hkey}_{project}'
         if self.rds.exists(project_key):
             self.rds.append(project_key, f',{uid}')
         else:
-            self.rds.set(project_key, uid)
+            self.rds.set(project_key, uid, ex=EXPIRE_TIME)
 
-    def get_jobs_by_uid(self, uid, hkey):
+    def get_jobs_by_uid(self, uid):
         """ Retrieves job using UID.
         """
         val = None
-        if self.rds.hexists(hkey, uid):
-            val = [json.loads(self.rds.hget(hkey, uid).decode())]
+        if self.rds.exists(uid):
+            val = [json.loads(self.rds.get(uid).decode())]
         return val
 
-    def get_jobs_by_gid(self, gid, hkey, first_only=False):
+    def get_jobs_by_gid(self, gid, first_only=False):
         """ Retrieves jobs using GID. Set first_only=True to only retrieve first job.
         """
         uids = self.rds.get(gid)
         if uids:
             uids = uids.decode().split(',')
             if first_only:
-                jobs = [json.loads(self.rds.hget(hkey, uids[0]).decode())]
+                jobs = [json.loads(self.rds.get(uids[0]).decode())]
             else:
-                jobs = [json.loads(self.rds.hget(hkey, uid).decode()) for uid in uids]
+                jobs = [json.loads(self.rds.get(uid).decode()) for uid in uids]
         else:
             jobs = []
         return jobs
@@ -92,9 +95,9 @@ class TatorCache:
         if uids:
             uids = uids.decode().split(',')
             if first_only:
-                jobs = [json.loads(self.rds.hget(hkey, uids[0]).decode())]
+                jobs = [json.loads(self.rds.get(uids[0]).decode())]
             else:
-                jobs = [json.loads(self.rds.hget(hkey, uid).decode()) for uid in uids]
+                jobs = [json.loads(self.rds.get(uid).decode()) for uid in uids]
         else:
             jobs = []
         return jobs

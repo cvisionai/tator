@@ -174,6 +174,7 @@ def cancel_jobs(selector, cache):
     """ Deletes argo workflows by selector.
     """
     clusters = _get_clusters(cache)
+    cache_uids = [item['uid'] for item in cache]
     cancelled = 0
     for cluster in clusters:
         api = _get_api(cluster)
@@ -189,17 +190,19 @@ def cancel_jobs(selector, cache):
         # Patch the workflow with shutdown=Stop.
         if len(response['items']) > 0:
             for job in response['items']:
-                name = job['metadata']['name']
-                response = api.delete_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    name=name,
-                    body={},
-                )
-                if response['status'] == 'Success':
-                    cancelled += 1
+                uid = job['metadata']['labels']['uid']
+                if uid in cache_uids:
+                    name = job['metadata']['name']
+                    response = api.delete_namespaced_custom_object(
+                        group='argoproj.io',
+                        version='v1alpha1',
+                        namespace='default',
+                        plural='workflows',
+                        name=name,
+                        body={},
+                    )
+                    if response['status'] == 'Success':
+                        cancelled += 1
     return cancelled
 
 class JobManagerMixin:
