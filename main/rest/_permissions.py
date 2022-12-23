@@ -51,12 +51,10 @@ class ProjectPermissionBase(BasePermission):
                 raise Http404
         elif 'uid' in view.kwargs:
             uid = view.kwargs['uid']
-            try:
-                cache = TatorCache().get_jobs_by_uid(uid)
-                if not cache:
-                    cache = TatorCache().get_jobs_by_uid(uid)
-                project = cache[0]['project']
-            except:
+            cache = TatorCache().get_jobs_by_uid(uid)
+            if len(cache) == 1: 
+                project = get_object_or_404(Project, pk=cache[0]['project'])
+            else:
                 raise Http404
         else:
             # If this is a request from schema view, show all endpoints.

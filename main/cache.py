@@ -52,7 +52,6 @@ class TatorCache:
         self.rds.set(uid, val, ex=EXPIRE_TIME)
 
         # Store list of UIDs under GID key.
-        logger.info(f"SETTING UID {uid} IN GID KEY {gid}")
         if self.rds.exists(gid):
             self.rds.append(gid, f',{uid}')
         else:
