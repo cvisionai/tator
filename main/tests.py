@@ -1219,7 +1219,8 @@ class ProjectDeleteTestCase(TatorTransactionTest):
 
 class AlgorithmLaunchTestCase(
         TatorTransactionTest,
-        PermissionCreateTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2504,7 +2505,8 @@ class TranscodeTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.list_uri = 'Transcode'
+        self.list_uri = 'Transcodes'
+        self.detail_uri = 'Transcode'
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',

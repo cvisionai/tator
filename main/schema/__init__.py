@@ -84,7 +84,8 @@ from .state_type import StateTypeDetailSchema
 from .temporary_file import TemporaryFileDetailSchema
 from .temporary_file import TemporaryFileListSchema
 from .token import TokenSchema
-from .transcode import TranscodeSchema
+from .transcode import TranscodeListSchema
+from .transcode import TranscodeDetailSchema
 from .upload_completion import UploadCompletionSchema
 from .upload_info import UploadInfoSchema
 from .user import UserExistsSchema

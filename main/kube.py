@@ -174,6 +174,7 @@ def cancel_jobs(selector, cache):
     """ Deletes argo workflows by selector.
     """
     clusters = _get_clusters(cache)
+    cache_uids = [item['uid'] for item in cache]
     cancelled = 0
     for cluster in clusters:
         api = _get_api(cluster)
@@ -189,17 +190,19 @@ def cancel_jobs(selector, cache):
         # Patch the workflow with shutdown=Stop.
         if len(response['items']) > 0:
             for job in response['items']:
-                name = job['metadata']['name']
-                response = api.delete_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    name=name,
-                    body={},
-                )
-                if response['status'] == 'Success':
-                    cancelled += 1
+                uid = job['metadata']['labels']['uid']
+                if uid in cache_uids:
+                    name = job['metadata']['name']
+                    response = api.delete_namespaced_custom_object(
+                        group='argoproj.io',
+                        version='v1alpha1',
+                        namespace='default',
+                        plural='workflows',
+                        name=name,
+                        body={},
+                    )
+                    if response['status'] == 'Success':
+                        cancelled += 1
     return cancelled
 
 class JobManagerMixin:
@@ -927,6 +930,31 @@ class TatorTranscode(JobManagerMixin):
 
         # Create the workflow
         response = self.create_workflow(manifest)
+        return {
+            'spec': {
+                'type': entity_type,
+                'gid': gid,
+                'uid': uid,
+                'url': url,
+                'size': upload_size,
+                'section': section,
+                'name': name,
+                'md5': md5,
+                'attributes': attributes,
+                'media_id': -1,
+            },
+            'job': {
+                'id': response['metadata']['name'],
+                'uid': uid,
+                'gid': gid,
+                'user': user,
+                'project': project,
+                'nodes': [],
+                'status': 'Pending',
+                'start_time': response['metadata']['creationTimestamp'],
+                'stop_time': None
+            },
+        }
 
     def start_transcode(self, project,
                         entity_type, token, url, name,
@@ -1037,13 +1065,44 @@ class TatorTranscode(JobManagerMixin):
         # Create the workflow
         response = self.create_workflow(manifest)
 
+        # Update the spec for future reference
+        spec = {
+            'type': entity_type,
+            'gid': gid,
+            'uid': uid,
+            'url': url,
+            'size': upload_size,
+            'section': section,
+            'name': name,
+            'md5': md5,
+            'attributes': attributes,
+            'media_id': media_id,
+        }
+
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,
                               'gid': gid,
                               'user': user,
                               'project': project,
                               'algorithm': -1,
-                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z'})
+                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z',
+                              'spec': spec}, 'transcode')
+        return {
+            'spec': spec,
+            'job': {
+                'id': response['metadata']['name'],
+                'uid': uid,
+                'gid': gid,
+                'user': user,
+                'project': project,
+                'nodes': [],
+                'status': 'Pending',
+                'start_time': response['metadata']['creationTimestamp'],
+                'stop_time': None
+            },
+        }
+                
+                 
 
 class TatorAlgorithm(JobManagerMixin):
     """ Interface to kubernetes REST API for starting algorithms.
@@ -1164,7 +1223,7 @@ class TatorAlgorithm(JobManagerMixin):
                               'user': user,
                               'project': project,
                               'algorithm': self.alg.pk,
-                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z'})
+                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z'}, 'algorithm')
 
         return response
 

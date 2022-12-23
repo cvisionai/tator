@@ -409,8 +409,12 @@ urlpatterns += [
          TokenAPI.as_view(),
          ),
     path(
-        'rest/Transcode/<int:project>',
-        TranscodeAPI.as_view(),
+        'rest/Transcodes/<int:project>',
+        TranscodeListAPI.as_view(),
+    ),
+    path(
+        'rest/Transcode/<str:uid>',
+        TranscodeDetailAPI.as_view(),
     ),
     path(
         'rest/UploadCompletion/<int:project>',
