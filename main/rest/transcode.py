@@ -196,7 +196,7 @@ class TranscodeDetailAPI(BaseDetailView):
         jobs = get_jobs(f'uid={uid}', cache)
         if len(jobs) != 1:
             raise Http404
-        return {'job': workflow_to_job(job), 'spec': cache[0]}
+        return {'job': workflow_to_job(jobs[0]), 'spec': cache[0]['spec']}
 
     def _delete(self, params):
         uid = params['uid']
