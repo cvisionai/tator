@@ -52,7 +52,7 @@ class ProjectPermissionBase(BasePermission):
         elif 'uid' in view.kwargs:
             uid = view.kwargs['uid']
             cache = TatorCache().get_jobs_by_uid(uid)
-            if len(cache) == 1: 
+            if cache is not None and len(cache) == 1: 
                 project = get_object_or_404(Project, pk=cache[0]['project'])
             else:
                 raise Http404
