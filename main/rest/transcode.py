@@ -183,7 +183,8 @@ class TranscodeListAPI(BaseListView):
         jobs = get_jobs(selector, cache)
         jobs = [workflow_to_job(job) for job in jobs]
         jobs = {job['uid']:job for job in jobs}
-        return [{'spec':specs[uid], 'job': jobs[uid]} for uid in jobs.keys()]
+        return [{'spec':specs[uid], 'job': jobs[uid]} for uid in jobs.keys()
+                if uid in jobs and uid in specs]
 
     def _delete(self, params):
         # Parse parameters
