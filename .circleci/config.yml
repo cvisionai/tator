@@ -54,7 +54,7 @@ jobs:
     - run:
         name: Make version.py
         command: |
-          ssh lightsail 'cd tator && make main/version.py';
+          ssh lightsail 'cd tator && make api/main/version.py';
     - run:
         name: Make docker images
         command: |
