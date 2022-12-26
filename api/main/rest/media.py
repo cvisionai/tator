@@ -363,6 +363,7 @@ def _create_media(params, user):
             gid=gid,
             uid=uid,
             source_url=url,
+            elemental_id=elemental_id
         )
 
         # Add optional parameters.
@@ -641,6 +642,9 @@ class MediaDetailAPI(BaseDetailView):
 
             if 'elemental_id' in params:
                 qs.update(elemental_id=params['elemental_id'])
+
+            if 'elemental_id' in params:
+                qs.update(summaryLevel=params['elemental_id'])
 
             if 'multi' in params:
                 media_files = media.media_files

@@ -187,7 +187,7 @@ class LocalizationListAPI(BaseListView):
                 height=loc_spec.get("height", None),
                 points=loc_spec.get("points", None),
                 frame=loc_spec.get("frame", None),
-                elemental_id=construct_elemental_id_from_parent(Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None)
+                elemental_id=construct_elemental_id_from_parent(Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None, loc_spec.get('elemental_id', None))
             )
             for loc_spec, attrs in zip(loc_specs, attr_specs)
         )
@@ -339,6 +339,9 @@ class LocalizationDetailAPI(BaseDetailView):
 
         # Update modified_by to be the last user
         obj.modified_by = self.request.user
+
+        if 'elemental_id' in params:
+            obj.elemental_id = params['elemental_id']
 
         # Patch the thumbnail attributes
         if obj.thumbnail_image:

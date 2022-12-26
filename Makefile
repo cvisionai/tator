@@ -137,7 +137,7 @@ status:
 check-migration:
 	scripts/check-migration.sh $(pwd)
 
-cluster: main/version.py clean_schema
+cluster: api/main/version.py clean_schema
 	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-deps cluster-install
 
 cluster-deps:
@@ -147,7 +147,7 @@ cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: check-migration main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
+cluster-upgrade: check-migration api/main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-update: 
@@ -262,15 +262,15 @@ braw-image:
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
 
 
-ifeq ($(shell cat main/version.py), $(shell ./scripts/version.sh))
-.PHONY: main/version.py
-main/version.py:
+ifeq ($(shell cat api/main/version.py), $(shell ./scripts/version.sh))
+.PHONY: api/main/version.py
+api/main/version.py:
 	@echo "Version file already generated"
 else
-.PHONY: main/version.py
-main/version.py:
-	./scripts/version.sh > main/version.py
-	chmod +x main/version.py
+.PHONY: api/main/version.py
+api/main/version.py:
+	./scripts/version.sh > api/main/version.py
+	chmod +x api/main/version.py
 endif
 
 collect-static: webpack
@@ -327,7 +327,7 @@ images: ${IMAGES}
 	@echo "Built ${IMAGES}"
 
 lazyPush:
-	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
+	rsync -a -e ssh --exclude api/main/migrations --exclude api/main/__pycache__ main adamant:/home/brian/working/tator_online
 
 $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
@@ -434,7 +434,7 @@ markdown-docs:
 
 
 # Only run if schema changes
-doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
+doc/_build/schema.yaml: $(shell find api/main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
 	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
 	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
