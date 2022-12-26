@@ -46,8 +46,8 @@ RUN mv kubectl /usr/local/bin/.
 WORKDIR /tator_online
 # Copy over the project
 COPY api/main /tator_online/main
-COPY api/scripts /tator_online/scripts
-COPY tator_online /tator_online/tator_online
+COPY api/tator_online /tator_online/tator_online
+COPY scripts /tator_online/scripts
 COPY workflows /tator_online/workflows
 COPY manage.py /tator_online/manage.py
 
