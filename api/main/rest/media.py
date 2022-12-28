@@ -363,6 +363,7 @@ def _create_media(params, user):
             gid=gid,
             uid=uid,
             source_url=url,
+            elemental_id=elemental_id
         )
 
         # Add optional parameters.

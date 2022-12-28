@@ -323,9 +323,9 @@ def bulk_log_creation(objects, project, user):
     bulk_create_from_generator(objs, ChangeToObject)
     return ids
 
-def construct_elemental_id_from_parent(parent):
+def construct_elemental_id_from_parent(parent, requested_uuid=None):
     """ Return the parent's elemental id or make a new one """
-    if parent is None:
+    if parent is None and requested_uuid is None:
         return uuid.uuid4()
     elif parent.elemental_id:
         return parent.elemental_id
