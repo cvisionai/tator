@@ -334,26 +334,10 @@ python-bindings:
 	make $(TATOR_PY_WHEEL_FILE)
 
 $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
-	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
-	cp doc/_build/schema.yaml scripts/packages/tator-js/.
-	cd scripts/packages/tator-js
-	rm -rf pkg && mkdir pkg && mkdir pkg/src
-	./codegen.py tator-openapi-schema.yaml
-	docker run --rm \
-		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
-		openapitools/openapi-generator-cli:v6.1.0 \
-		generate -c /pwd/config.json \
-		-i /pwd/tator-openapi-schema.yaml \
-		-g javascript -o /pwd/pkg -t /pwd/templates
-	docker run --rm \
-		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
-		openapitools/openapi-generator-cli:v6.1.0 \
-		chmod -R 777 /pwd/pkg
-	cp -r examples pkg/examples
-	cp -r utils pkg/src/utils
-	cd pkg && npm install
-	npm install -D @playwright/test \
-		isomorphic-fetch fetch-retry spark-md5 uuid querystring
+	cp doc/_build/schema.yaml scripts/packages/tator-js/tator-openapi-schema.yaml
+	cd scripts/packages/tator-js && $(MAKE) build && cd ../../..
+	cp scripts/packages/tator-js/pkg/dist/tator.min.js ui/server/static/.
+	cp scripts/packages/tator-js/pkg/dist/tator.js ui/server/static/.
 
 .PHONY: js-bindings
 js-bindings: .token/tator_online_$(GIT_VERSION)
