@@ -4,7 +4,7 @@ CONTAINERS=ui postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=ui-image graphql-image postgis-image client-image
+IMAGES=ui-image graphql-image postgis-image client-image transcode-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -233,7 +233,7 @@ endif
 
 .PHONY: client-amd64
 client-amd64: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
 
 .PHONY: client-aarch64
 client-aarch64: $(TATOR_PY_WHEEL_FILE)
@@ -241,13 +241,8 @@ client-aarch64: $(TATOR_PY_WHEEL_FILE)
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: experimental_docker client-vpl client-amd64 client-aarch64
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
-	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
-	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
-	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
-	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
+client-image: experimental_docker client-amd64
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
 
 .PHONY: client-latest
 client-latest: client-image
@@ -260,6 +255,11 @@ braw-image:
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
+
+.PHONY: transcode-image
+transcode-image:
+	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_transcode:$(GIT_VERSION) -f containers/tator_transcode/Dockerfile containers/tator_transcode || exit 255
+	docker push $(DOCKERHUB_USER)/tator_transcode:$(GIT_VERSION)
 
 
 ifeq ($(shell cat api/main/version.py), $(shell ./scripts/version.sh))
