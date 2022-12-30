@@ -23,7 +23,7 @@ SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 
-TATOR_JS_MODULE_FILE=scripts/packages/tator-js/pkg/src/index.js
+TATOR_JS_MODULE_FILE=ui/server/static/tator.min.js
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
@@ -335,7 +335,7 @@ python-bindings:
 
 $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-js/tator-openapi-schema.yaml
-	cd scripts/packages/tator-js && $(MAKE) build && cd ../../..
+	cd scripts/packages/tator-js && $(MAKE) all && cd ../../..
 	cp scripts/packages/tator-js/pkg/dist/tator.min.js ui/server/static/.
 	cp scripts/packages/tator-js/pkg/dist/tator.js ui/server/static/.
 
