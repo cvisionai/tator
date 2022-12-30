@@ -9,6 +9,8 @@ ui/node_modules/*
 ui/package-lock.json
 ui/dist/*
 ui/**/index.js
+ui/server/static/tator.js
+ui/server/static/tator.min.js
 containers/nginx/nginx.conf
 examples/algorithms/groundfish_demo/fishtrackingdata
 api/main/version.py
@@ -16,7 +18,6 @@ tator-image
 tator-transcoder
 tus-image
 postgis-image
-*.min.js
 .min_js
 helm/tator/charts/*
 helm/tator/Chart.lock
