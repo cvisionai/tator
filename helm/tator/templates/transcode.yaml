@@ -81,6 +81,7 @@ spec:
           - "redis://{{ .Values.redisHost }}"
           - "--max-jobs"
           - "1"
+          - "--reload"
           - "transcodes"
           resources:
             limits:
