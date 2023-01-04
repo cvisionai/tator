@@ -28,7 +28,8 @@ from ._job import workflow_to_job
 logger = logging.getLogger(__name__)
 
 SCHEME = 'https://' if os.getenv('REQUIRE_HTTPS') == 'TRUE' else 'http://'
-ENDPOINT = f"{scheme}{os.getenv('MAIN_HOST')}/jobs"
+HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
+ENDPOINT = f"{os.getenv('TRANSCODE_HOST')}/jobs"
 
 def _filter_jobs_by_media(project, params, job_list):
     """ Checks if a params dict has media filters.
@@ -145,10 +146,11 @@ class TranscodeListAPI(BaseListView):
         else:
             media_obj, _ = _create_media(params, self.request.user)
             media_id = media_obj.id
-        job_list = requests.post(ENDPOINT, data=[{
+        response = requests.post(ENDPOINT, json=[{
             'url': url,
-            'host': host,
-            'token': token,
+            'size': upload_size,
+            'host': HOST,
+            'token': str(token),
             'project': project,
             'type': entity_type,
             'name': name,
@@ -159,6 +161,8 @@ class TranscodeListAPI(BaseListView):
             'uid': uid,
             'attributes': attributes,
         }])
+        job_list = response.json()
+        logger.info(f"JOB LIST: {job_list}")
         msg = (f"Transcode job {uid} started for file "
                f"{name} on project {type_objects[0].project.name}")
         response_data = {'message': msg,
@@ -194,7 +198,8 @@ class TranscodeListAPI(BaseListView):
             params1 = {'gid': gid}
         else:
             params1 = {'project': project}
-        job_list = requests.get(ENDPOINT, params=params1)
+        response = requests.get(ENDPOINT, params=params1)
+        job_list = response.json()
         for job in job_list:
             assert(job.project == project)
         job_list = _filter_jobs_by_media(project, params, job_list)
@@ -209,12 +214,13 @@ class TranscodeListAPI(BaseListView):
             params1 = {'gid': gid}
         else:
             params1 = {'project': project}
-        job_list = requests.get(ENDPOINT, params=params1)
+        response = requests.get(ENDPOINT, params=params1)
+        job_list = response.json()
         for job in job_list:
             assert(job.project == project)
         job_list = _filter_jobs_by_media(project, params, job_list)
         uid_list = [job['uid'] for job in job_list]
-        response = requests.delete(ENDPOINT, data=uid_list)
+        response = requests.delete(ENDPOINT, json=uid_list)
         return {'message': response['message']}
 
     def _put(self, params):
@@ -230,8 +236,9 @@ class TranscodeDetailAPI(BaseDetailView):
         cache = TatorCache().get_jobs_by_uid(uid)
         if cache is None:
             raise Http404
-        job_list = requests.put(ENDPOINT, body=[uid])
-        if len(jobs) != 1:
+        response = requests.put(ENDPOINT, body=[uid])
+        job_list = response.json()
+        if len(job_list) != 1:
             raise Http404
         return [_job_to_transcode(job) for job in job_list]
 
@@ -240,5 +247,5 @@ class TranscodeDetailAPI(BaseDetailView):
         cache = TatorCache().get_jobs_by_uid(uid)
         if cache is None:
             raise Http404
-        response = requests.delete(ENDPOINT, data=[uid])
+        response = requests.delete(ENDPOINT, json=[uid])
         return {'message': response['message']}

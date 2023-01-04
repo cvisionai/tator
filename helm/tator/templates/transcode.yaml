@@ -28,8 +28,10 @@ spec:
           - uvicorn
           args:
           - "main:app"
+          - "--host"
+          - "0.0.0.0"
           - "--port"
-          - "80"
+          - "8080"
           resources:
             limits:
               cpu: {{ .Values.transcodeServiceCpuLimit | default "1000m" }}
@@ -41,7 +43,7 @@ spec:
             - name: REDIS_HOST
               value: {{ .Values.redisHost }}
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               name: transcode
 ---
 apiVersion: apps/v1
@@ -76,9 +78,10 @@ spec:
           - "worker"
           - "--with-scheduler"
           - "--url"
-          - {{ .Values.redisHost }}
+          - "redis://{{ .Values.redisHost }}"
           - "--max-jobs"
           - "1"
+          - "transcodes"
           resources:
             limits:
               cpu: {{ .Values.transcoderCpuLimit | default "4000m" }}
@@ -92,9 +95,9 @@ metadata:
     app: transcode
 spec:
   ports:
-    - port: 80
+    - port: 8080
       protocol: TCP
-      targetPort: 80
+      targetPort: 8080
       name: transcode-port
   selector:
     app: transcode
