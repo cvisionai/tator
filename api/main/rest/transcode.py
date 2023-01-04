@@ -1,5 +1,6 @@
 import os
 import logging
+import datetime
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
@@ -73,8 +74,8 @@ def _job_to_transcode(job):
             'project': job['project'],
             'nodes': [],
             'status': job['status'],
-            'start_time': response['metadata']['creationTimestamp'],
-            'stop_time': None
+            'start_time': job['start_time'],
+            'stop_time': job['stop_time']
         },
     }
 class TranscodeListAPI(BaseListView):
@@ -162,7 +163,6 @@ class TranscodeListAPI(BaseListView):
             'attributes': attributes,
         }])
         job_list = response.json()
-        logger.info(f"JOB LIST: {job_list}")
         msg = (f"Transcode job {uid} started for file "
                f"{name} on project {type_objects[0].project.name}")
         response_data = {'message': msg,
@@ -172,11 +172,11 @@ class TranscodeListAPI(BaseListView):
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,
                               'gid': gid,
-                              'user': user,
+                              'user': self.request.user.pk,
                               'project': project,
                               'algorithm': -1,
-                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z',
-                              'spec': spec}, 'transcode')
+                              'datetime': datetime.datetime.utcnow().isoformat() + 'Z'},
+                             'transcode')
 
         # Update Media object with workflow name
         media = Media.objects.get(pk=media_id)
@@ -198,10 +198,11 @@ class TranscodeListAPI(BaseListView):
             params1 = {'gid': gid}
         else:
             params1 = {'project': project}
-        response = requests.get(ENDPOINT, params=params1)
+        response = requests.put(ENDPOINT, params=params1)
         job_list = response.json()
+        logger.info(f"JOB LIST: {job_list}")
         for job in job_list:
-            assert(job.project == project)
+            assert(job['project'] == project)
         job_list = _filter_jobs_by_media(project, params, job_list)
         return [_job_to_transcode(job) for job in job_list]
 
@@ -214,14 +215,14 @@ class TranscodeListAPI(BaseListView):
             params1 = {'gid': gid}
         else:
             params1 = {'project': project}
-        response = requests.get(ENDPOINT, params=params1)
+        response = requests.put(ENDPOINT, params=params1)
         job_list = response.json()
         for job in job_list:
-            assert(job.project == project)
+            assert(job['project'] == project)
         job_list = _filter_jobs_by_media(project, params, job_list)
         uid_list = [job['uid'] for job in job_list]
         response = requests.delete(ENDPOINT, json=uid_list)
-        return {'message': response['message']}
+        return {'message': response.json()['message']}
 
     def _put(self, params):
         return self._get(params)
@@ -236,11 +237,11 @@ class TranscodeDetailAPI(BaseDetailView):
         cache = TatorCache().get_jobs_by_uid(uid)
         if cache is None:
             raise Http404
-        response = requests.put(ENDPOINT, body=[uid])
+        response = requests.put(ENDPOINT, json=[uid])
         job_list = response.json()
         if len(job_list) != 1:
             raise Http404
-        return [_job_to_transcode(job) for job in job_list]
+        return _job_to_transcode(job_list[0])
 
     def _delete(self, params):
         uid = params['uid']
@@ -248,4 +249,4 @@ class TranscodeDetailAPI(BaseDetailView):
         if cache is None:
             raise Http404
         response = requests.delete(ENDPOINT, json=[uid])
-        return {'message': response['message']}
+        return {'message': response.json()['message']}
