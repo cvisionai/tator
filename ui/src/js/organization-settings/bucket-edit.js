@@ -82,32 +82,28 @@ export class BucketEdit extends OrganizationTypeForm {
     this._form.appendChild(this._editExternalHost);
 
     // archive storage class
-    this._editArchiveSc = document.createElement("text-input");
+    let archiveScTypes = [
+      { name: "STANDARD", id: "STANDARD", checked: this.data.archive_sc == "STANDARD" },
+      { name: "DEEP_ARCHIVE", id: "DEEP_ARCHIVE", checked: this.data.archive_sc == "DEEP_ARCHIVE" },
+      { name: "COLDLINE", id: "COLDLINE", checked: this.data.archive_sc == "COLDLINE" }
+    ];
+
+    this._editArchiveSc = document.createElement("radio-set");
     this._editArchiveSc.setAttribute("name", "Archive Storage Class");
-    this._editArchiveSc.setAttribute("type", "string");
-    // if (this.data.id == "New") {
-    //   this._editArchiveSc.setValue("STANDARD");
-    //   this._editArchiveSc.default = "STANDARD";
-    // } else {
-    this._editArchiveSc.setValue(this.data.archive_sc);
-    this._editArchiveSc.default = this.data.archive_sc;
-    // }
-    this._editArchiveSc.hidden = false;
+    this._editArchiveSc.setValue(archiveScTypes);
+    this._editArchiveSc.default = archiveScTypes;
     this._editArchiveSc.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._editArchiveSc);
 
     // live storage class
-    this._editLiveSc = document.createElement("text-input");
+    let liveScTypes = [
+      { name: "STANDARD", id: "STANDARD", checked: true }
+    ];
+
+    this._editLiveSc = document.createElement("radio-set");
     this._editLiveSc.setAttribute("name", "Live Storage Class");
-    this._editLiveSc.setAttribute("type", "string");
-    // if (this.data.id == "New") {
-    //   this._editLiveSc.setValue("STANDARD");
-    //   this._editLiveSc.default = "STANDARD";
-    // } else {
-    this._editLiveSc.setValue(this.data.live_sc);
-    this._editLiveSc.default = this.data.live_sc;
-    // }
-    this._editLiveSc.hidden = false;
+    this._editLiveSc.setValue(liveScTypes);
+    this._editLiveSc.default = liveScTypes;
     this._editLiveSc.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._editLiveSc);
 
@@ -129,6 +125,11 @@ export class BucketEdit extends OrganizationTypeForm {
     let formData = {};
     const isNew = this.data.id == "New";
 
+    // Cannot edit bucket type after creation, so only consider isNew
+    if (isNew) {
+      formData.store_type = this._editBucketType.getValue();
+    }
+
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
     }
@@ -142,11 +143,10 @@ export class BucketEdit extends OrganizationTypeForm {
     }
 
     if (this._editConfig.changed() || isNew) {
-      formData.config = JSON.parse(this._editConfig.getValue());
-    }
-
-    if (this._editBucketType.changed() || isNew) {
-      formData.store_type = this._editBucketType.getValue();
+      const newConfig = JSON.parse(this._editConfig.getValue());
+      if (newConfig != null) {
+        formData.config = newConfig;
+      }
     }
 
     if (this._editExternalHost.changed() || isNew) {
