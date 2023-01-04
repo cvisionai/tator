@@ -197,7 +197,7 @@ export class AttributePanel extends TatorElement {
         widget.setValue(values.frame);
       }
       else if (name == "Type") {
-        widget.setValue(values.meta);
+        widget.setValue(values.type);
       }
       else if (name == "Created Datetime") {
         widget.setValue(values.created_datetime);

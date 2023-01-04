@@ -1721,7 +1721,7 @@ export class AnnotationCanvas extends TatorElement
         // Reset auto track
         this._lastAutoTrackColor = null;
         this._data._trackDb.forEach((trackObj, localizationIdx, map) => {
-          if (trackObj.meta == typeObj.id) {
+          if (trackObj.type == typeObj.id) {
             this._data._trackDb.delete(localizationIdx);
           }
         }, this);
@@ -3228,7 +3228,7 @@ export class AnnotationCanvas extends TatorElement
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
       // all localizations to find the track
       this._data._dataByType.forEach((value, key, map) => {
-        if (key != track.meta) {
+        if (key != track.type) {
           for (const localization of value) {
             if (localization.id in this._data._trackDb) {
               const sameId = this._data._trackDb[localization.id].id == track.id;
@@ -3653,7 +3653,7 @@ export class AnnotationCanvas extends TatorElement
   getObjectDescription(localization)
   {
     var objDescription = null;
-    const key = localization.meta;
+    const key = localization.type;
     if (key in this._data._dataTypes)
     {
       return objDescription=this._data._dataTypes[key];
@@ -3871,7 +3871,7 @@ export class AnnotationCanvas extends TatorElement
   cloneToNewVersion(localization, dest_version)
   {
     const objDescription = this.getObjectDescription(localization);
-    let original_meta = localization.meta;
+    let original_meta = localization.type;
     let frame = localization.frame;
     let current = [];
     try
@@ -3922,7 +3922,7 @@ export class AnnotationCanvas extends TatorElement
     newObject.parent = localization.id;
     newObject.attributes = {...localization.attributes};
     newObject.version = dest_version;
-    newObject.type = Number(localization.meta.split("_")[1]);
+    newObject.type = Number(localization.type.split("_")[1]);
     newObject.media_id = localization.media;
     newObject.frame = localization.frame;
     console.info(newObject);
@@ -3963,7 +3963,7 @@ export class AnnotationCanvas extends TatorElement
       localization.frame = frame;
     }
     const objDescription = this.getObjectDescription(localization);
-    let original_meta = localization.meta;
+    let original_meta = localization.type;
     if (this._data.getVersion().bases.indexOf(localization.version) >= 0)
     {
       console.info("Modifying a localization from another layer!");
@@ -4890,10 +4890,10 @@ export class AnnotationCanvas extends TatorElement
   }
 
   moveToLocalization(localization) {
-    if (localization.meta.startsWith('box')) {
+    if (localization.type.startsWith('box')) {
       this.moveOffscreenBuffer([localization.x, localization.y,
                                 localization.width, localization.height]);
-    } else if (localization.meta.startsWith('line')) {
+    } else if (localization.type.startsWith('line')) {
       const x0 = localization.x;
       const y0 = localization.y;
       const x1 = localization.x + localization.u;
@@ -4903,13 +4903,13 @@ export class AnnotationCanvas extends TatorElement
       const x = Math.min(x0, x1);
       const y = Math.min(y0, y1);
       this.moveOffscreenBuffer([x, y, width, height]);
-    } else if (localization.meta.startsWith('dot')) {
+    } else if (localization.type.startsWith('dot')) {
       const width = 0.2;
       const height = 0.2;
       const x = Math.min(Math.max(0, localization.x - 0.1), 0.8);
       const y = Math.min(Math.max(0, localization.y - 0.1), 0.8);
       this.moveOffscreenBuffer([x, y, width, height]);
-    } else if (localization.meta.startsWith('poly')) {
+    } else if (localization.type.startsWith('poly')) {
       let x0 = 1.0;
       let y0 = 1.0;
       let x1 = 0.0;

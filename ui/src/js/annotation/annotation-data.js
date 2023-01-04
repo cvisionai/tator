@@ -210,7 +210,7 @@ export class AnnotationData extends HTMLElement {
     const attributeNames = typeObj.attribute_types.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
-      obj.meta = typeId;
+      obj.type = typeId;
       obj.attributes = {};
       for (const key in body) {
         if (attributeNames.includes(key)) {
@@ -297,7 +297,7 @@ export class AnnotationData extends HTMLElement {
       }
     })
     .then(json => {
-      json.forEach(obj => {obj.meta = typeId});
+      json.forEach(obj => {obj.type = typeId});
       this._dataByType.set(typeId, json);
       this.dispatchEvent(new CustomEvent("freshData", {
         detail: {

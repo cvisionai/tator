@@ -76,8 +76,8 @@ export class AnnotationCardData extends HTMLElement {
 
       for (let [i, l] of localizations.entries()) {
         let id = l.id;
-        let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.meta, l.version);
-        let entityType = this.localizationTypeMap.get(l.meta);
+        let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.type, l.version);
+        let entityType = this.localizationTypeMap.get(l.type);
 
         let attributes = l.attributes;
         let created = new Date(l.created_datetime);
@@ -97,7 +97,7 @@ export class AnnotationCardData extends HTMLElement {
 
         let mediaInfo = {
           id: mediaId,
-          entityType: this.mediaTypeMap.get(media.meta),
+          entityType: this.mediaTypeMap.get(media.type),
           attributes: media.attributes,
           media: media,
         }
@@ -197,7 +197,7 @@ export class AnnotationCardData extends HTMLElement {
 
     let mediaInfo = {
       id: mediaId,
-      entityType: this.mediaTypeMap.get(media.meta),
+      entityType: this.mediaTypeMap.get(media.type),
       attributes: media.attributes,
       media: media,
     }

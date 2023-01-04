@@ -141,8 +141,8 @@ export class GalleryPanelLocalization extends TatorElement {
     // the localization is in that format.
     this._locDataType = null;
     for (let dataType of dataTypes) {
-      if (this._localization != null && dataType.id.split("_")[1] == this._localization.meta) {
-        this._localization.meta = dataType.id;
+      if (this._localization != null && dataType.id.split("_")[1] == this._localization.type) {
+        this._localization.type = dataType.id;
         this._locDataType = dataType;
         break;
       }

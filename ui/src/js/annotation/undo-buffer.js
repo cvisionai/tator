@@ -113,13 +113,13 @@ export class UndoBuffer extends HTMLElement {
           other = {
             media_id: data.media,
             frame: data.frame,
-            type: data.meta,
+            type: data.type,
           };
         } else if (detailUri == "State") {
           other = {
             media_ids: data.media,
             frame: data.frame,
-            type: data.meta,
+            type: data.type,
             localization_ids: data.localizations,
           };
         }

@@ -74,7 +74,7 @@ export class CollectionsData extends HTMLElement {
       );
 
       this._states = this._states.map(state => {
-        return { ...state, typeData: this._stateTypesMap.get(state.meta) }
+        return { ...state, typeData: this._stateTypesMap.get(state.type) }
       });
     } else {
       this._states = [];

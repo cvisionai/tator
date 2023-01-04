@@ -307,7 +307,7 @@ export class CollectionsGallery extends EntityCardSlideGallery {
 
             const slider = document.createElement("entity-gallery-slider");
             slider.setAttribute("id", state.id);
-            slider.setAttribute("meta", state.meta);
+            slider.setAttribute("meta", state.type);
             slider._cardAttributeLabels = this._cardAttributeLabels;
             slider._cardAtributeSort = this._cardAtributeSort;
             slider._resizeCards = this._resizeCards;
