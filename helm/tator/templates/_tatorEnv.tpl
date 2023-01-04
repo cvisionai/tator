@@ -17,6 +17,8 @@
   value: {{ .Values.redisHost }}
 - name: ELASTICSEARCH_HOST
   value: {{ .Values.elasticsearchHost }}
+- name: TRANSCODE_HOST
+  value: {{ .Values.transcodeHost }}
 - name: MAIN_HOST
   value: {{ .Values.domain }}
 {{- if hasKey .Values "aliases" }}

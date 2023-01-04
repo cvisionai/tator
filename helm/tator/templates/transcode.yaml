@@ -29,7 +29,7 @@ spec:
           args:
           - "main:app"
           - "--port"
-          - "8080"
+          - "80"
           resources:
             limits:
               cpu: {{ .Values.transcodeServiceCpuLimit | default "1000m" }}
@@ -41,7 +41,7 @@ spec:
             - name: REDIS_HOST
               value: {{ .Values.redisHost }}
           ports:
-            - containerPort: 8080
+            - containerPort: 80
               name: transcode
 ---
 apiVersion: apps/v1
@@ -92,9 +92,9 @@ metadata:
     app: transcode
 spec:
   ports:
-    - port: 8080
+    - port: 80
       protocol: TCP
-      targetPort: 8080
+      targetPort: 80
       name: transcode-port
   selector:
     app: transcode
