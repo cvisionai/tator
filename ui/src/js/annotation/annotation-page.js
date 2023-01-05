@@ -206,7 +206,7 @@ export class AnnotationPage extends TatorPage {
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
 
-          fetchRetry("/rest/MediaType/" + data.meta, {
+          fetchRetry("/rest/MediaType/" + data.type, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -1039,8 +1039,8 @@ export class AnnotationPage extends TatorPage {
         canvas.addEventListener("select", evt => {
           this._browser.selectEntity(evt.detail);
           this._settings.setAttribute("entity-id", evt.detail.id);
-          this._settings.setAttribute("entity-type", evt.detail.meta);
-          this._settings.setAttribute("type-id", evt.detail.meta);
+          this._settings.setAttribute("entity-type", evt.detail.type);
+          this._settings.setAttribute("type-id", evt.detail.type);
         });
         this._undo.addEventListener("update", evt => {
           // Force selecting this new entity in the browser if a new object was created
@@ -1083,8 +1083,8 @@ export class AnnotationPage extends TatorPage {
             }
           }
           this._settings.setAttribute("entity-id", evt.detail.data.id);
-          this._settings.setAttribute("entity-type", evt.detail.data.meta);
-          this._settings.setAttribute("type-id", evt.detail.data.meta);
+          this._settings.setAttribute("entity-type", evt.detail.data.type);
+          this._settings.setAttribute("type-id", evt.detail.data.type);
         });
         this._browser.addEventListener("capture", evt => {
           if ('_video' in canvas)
@@ -1414,7 +1414,7 @@ export class AnnotationPage extends TatorPage {
           `Filling gaps in track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
           (jobSuccessful) => {
             if (jobSuccessful) {
-              this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+              this._data.updateType(this._data._dataTypes[evt.detail.localization.type]);
               this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
               Utilities.showSuccessIcon(`Filled gaps in track ${evt.detail.trackId}`);
               //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
@@ -1437,7 +1437,7 @@ export class AnnotationPage extends TatorPage {
 
           var newLocalization = {
             media_id: baseLocalization.media,
-            type: Number(baseLocalization.meta.split("_")[1]),
+            type: Number(baseLocalization.type.split("_")[1]),
             x: baseLocalization.x,
             y: baseLocalization.y,
             u: baseLocalization.u,
@@ -1509,7 +1509,7 @@ export class AnnotationPage extends TatorPage {
           }
         })
         .then(() => {
-          this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+          this._data.updateType(this._data._dataTypes[evt.detail.localization.type]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
           Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
           canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
@@ -1557,7 +1557,7 @@ export class AnnotationPage extends TatorPage {
             `Extending track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
             (jobSuccessful) => {
               if (jobSuccessful) {
-                this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+                this._data.updateType(this._data._dataTypes[evt.detail.localization.type]);
                 this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
                 Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
                 //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);

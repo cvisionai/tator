@@ -60,9 +60,9 @@ class LeafSuggestionAPI(BaseDetailView):
         if root_node.count() == 0:
             return []
         
-        type_id = root_node[0].meta
+        type_id = root_node[0].type
         queryset = Leaf.objects.filter(project=project, 
-                                       meta=type_id, 
+                                       type=type_id, 
                                        name__istartswith=startsWith, 
                                        path__istartswith=ancestor,
                                        path__depth__gte=min_level)
@@ -126,7 +126,7 @@ class LeafListAPI(BaseListView):
 
             leaf = Leaf(
                 project=project,
-                meta=metas[leaf_spec["type"]],
+                type=metas[leaf_spec["type"]],
                 attributes=attrs,
                 created_by=user,
                 modified_by=user,

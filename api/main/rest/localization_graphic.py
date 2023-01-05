@@ -126,7 +126,7 @@ class LocalizationGraphicAPI(BaseDetailView):
         """
 
         # Get the initial image based on the localization type and requested margins
-        localization_type = obj.meta.dtype
+        localization_type = obj.type.dtype
         margins_pixels = self._getMargins(localization_type=localization_type, params=params)
 
         # The roi input is done with normalized arguments. But the margins provided

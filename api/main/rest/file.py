@@ -63,15 +63,15 @@ class FileListAPI(BaseListView):
             raise ValueError(log_msg)
 
         # Does the FileType ID exist?
-        entity_type = params[fields.meta]
+        entity_type = params[fields.type]
         try:
             associated_file_type = FileType.objects.get(pk=int(entity_type))
             if associated_file_type.project.id != project.id:
-                log_msg = f"Provided meta not associated with given project"
+                log_msg = f"Provided type not associated with given project"
                 logging.error(log_msg)
                 raise ValueError(log_msg)
         except:
-            log_msg = f"Invalid meta provided - {entity_type}"
+            log_msg = f"Invalid type provided - {entity_type}"
             logging.error(log_msg)
             raise ValueError(log_msg)
 
@@ -92,8 +92,8 @@ class FileListAPI(BaseListView):
         if attributes is None:
             attributes = []
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
-        attrs = check_required_fields(required_fields[params[fields.meta]][0],
-                                      required_fields[params[fields.meta]][2],
+        attrs = check_required_fields(required_fields[params[fields.type]][0],
+                                      required_fields[params[fields.type]][2],
                                       {'attributes': attributes} if attributes else {'attributes':{}})
 
         # Create File object
@@ -101,7 +101,7 @@ class FileListAPI(BaseListView):
             project=project,
             name=params[fields.name],
             description=description,
-            meta=associated_file_type,
+            type=associated_file_type,
             created_by=self.request.user,
             modified_by=self.request.user,
             attributes=attrs)

@@ -980,7 +980,7 @@ class Media(Model, ModelDiffMixin):
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                          db_column='project', related_name='media_project')
-    meta = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
@@ -1077,7 +1077,7 @@ class Media(Model, ModelDiffMixin):
         """
         Returns True if all resources referenced by the media are backed up.
         """
-        if self.meta.dtype == "multi":
+        if self.type.dtype == "multi":
             media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
             return all(media.is_backed_up() for media in media_qs.iterator())
 
@@ -1175,7 +1175,7 @@ class File(Model, ModelDiffMixin):
     """ Project associated with the file """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     """ Project associated with the file """
-    meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Type associated with file """
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
@@ -1346,7 +1346,7 @@ def file_post_delete(sender, instance, **kwargs):
 
 class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
@@ -1400,7 +1400,7 @@ class State(Model, ModelDiffMixin):
     elements. If a frame is supplied it was collected at that time point.
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1464,7 +1464,7 @@ def calc_segments(sender, **kwargs):
 
 class Leaf(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1550,9 +1550,9 @@ class Favorite(Model):
     """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
-    localization_meta = ForeignKey(LocalizationType, on_delete=CASCADE, null=True, blank=True)
-    state_meta = ForeignKey(StateType, on_delete=CASCADE, null=True, blank=True)
-    meta = PositiveIntegerField()
+    localization_type = ForeignKey(LocalizationType, on_delete=CASCADE, null=True, blank=True)
+    state_type = ForeignKey(StateType, on_delete=CASCADE, null=True, blank=True)
+    type = PositiveIntegerField()
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()

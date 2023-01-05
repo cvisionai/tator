@@ -85,7 +85,7 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
     """
     count = 1
     if section in CLASS_MAPPING:
-        qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
+        qs = CLASS_MAPPING[section].objects.filter(project=project_number, type__isnull=False)
         if max_age_days:
             min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
             qs = qs.filter(modified_datetime__gte=min_modified)
@@ -143,7 +143,7 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None, max_ag
 
     # Get queryset based on selected section.
     logger.info(f"Building documents for {section}...")
-    qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
+    qs = CLASS_MAPPING[section].objects.filter(project=project_number, type__isnull=False)
 
     # Apply max age filter.
     if max_age_days:
@@ -214,7 +214,7 @@ def make_video_definition(disk_file, url_path):
         return video_def
 
 def migrateVideosToNewSchema(project):
-    videos = Media.objects.filter(project=project, meta__dtype='video')
+    videos = Media.objects.filter(project=project, type__dtype='video')
     for video in progressbar(videos):
         streaming_definition = make_video_definition(
             os.path.join(settings.MEDIA_ROOT,
@@ -235,7 +235,7 @@ def migrateVideosToNewSchema(project):
         video.save()
 
 def fixVideoDims(project):
-    videos = Media.objects.filter(project=project, meta__dtype='video')
+    videos = Media.objects.filter(project=project, type__dtype='video')
     for video in progressbar(videos):
         try:
             if video.original:
@@ -506,11 +506,11 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
                     f"Processed {idx} of {media_count} archived media for project {project.id}"
                 )
 
-            if not media.meta:
+            if not media.type:
                 logger.warning(f"No dtype for '{media.id}'")
                 continue
 
-            media_dtype = media.meta.dtype
+            media_dtype = media.type.dtype
             if media_dtype in ["image", "video"]:
                 success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
             elif media_dtype == "multi":
@@ -672,11 +672,11 @@ def fix_bad_restores(
         if idx % 250 == 0 or idx == media_count:
             logger.info(f"Processed {idx} of {media_count} media")
 
-        if not media.meta:
+        if not media.type:
             logger.warning(f"No dtype for '{media.id}'")
             continue
 
-        media_dtype = media.meta.dtype
+        media_dtype = media.type.dtype
         tator_store = tator_store_lookup[proj_id]
         if media_dtype in ["image", "video"]:
             success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
@@ -821,7 +821,7 @@ def get_clone_info(media: Media) -> dict:
     # Set up the return dict
     media_dict = {"clones": set(), "original": {"project": None, "media": None}}
 
-    dtype = getattr(media.meta, "dtype", None)
+    dtype = getattr(media.type, "dtype", None)
 
     if dtype not in ["image", "video"]:
         raise ValueError(f"get_clone_info expects media dtype `image` or `video`, got '{dtype}'")
@@ -872,7 +872,7 @@ def update_queryset_archive_state(media_qs, target_state):
             continue
 
         # Get clone info
-        media_dtype = getattr(media.meta, "dtype", None)
+        media_dtype = getattr(media.type, "dtype", None)
         if media_dtype in ["image", "video"]:
             clone_info = get_clone_info(media)
 
@@ -1000,13 +1000,13 @@ def add_elemental_id(project, metadata_type):
         obj_obj = State
 
     types = type_obj.objects.filter(project=project)
-    parents_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=True, elemental_id__isnull=True)
+    parents_to_change = obj_obj.objects.filter(project=project, type__in=types, parent__isnull=True, elemental_id__isnull=True)
     print(f"Updating {parents_to_change.count()} parents ")
     for parent in progressbar.progressbar(parents_to_change):
         parent.elemental_id = uuid.uuid4()
         parent.save()
 
-    children_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=False)
+    children_to_change = obj_obj.objects.filter(project=project, type__in=types, parent__isnull=False)
     for child in progressbar.progressbar(children_to_change):
         child.elemental_id = child.parent.elemental_id
         child.save()

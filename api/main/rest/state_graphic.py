@@ -58,7 +58,7 @@ class StateGraphicAPI(BaseDetailView):
             force_scale = params['force_scale'].split('x')
             assert len(force_scale) == 2
 
-        typeObj = state.meta
+        typeObj = state.type
         if typeObj.association != 'Localization':
             raise Exception('Not a localization association state')
 

@@ -25,13 +25,13 @@ class Command(BaseCommand):
                                                   modified_datetime__lte=max_datetime)
             null_project = Localization.objects.filter(project__isnull=True,
                                                        modified_datetime__lte=max_datetime)
-            null_meta = Localization.objects.filter(meta__isnull=True,
+            null_type = Localization.objects.filter(type__isnull=True,
                                                     modified_datetime__lte=max_datetime)
             null_version = Localization.objects.filter(version__isnull=True,
                                                        modified_datetime__lte=max_datetime)
             null_media = Localization.objects.filter(media__isnull=True,
                                                      modified_datetime__lte=max_datetime)
-            loc_ids = (deleted | null_project | null_meta | null_version | null_media)\
+            loc_ids = (deleted | null_project | null_type | null_version | null_media)\
                       .distinct()\
                       .values_list('pk', flat=True)[:BATCH_SIZE]
             localizations = Localization.objects.filter(pk__in=loc_ids)

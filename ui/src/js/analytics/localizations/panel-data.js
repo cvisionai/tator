@@ -16,7 +16,7 @@ export class AnnotationPanelData extends HTMLElement {
     */
     async getMediaData(mediaId) {
         this.mediaInfo = await this._modelData.getMedia( mediaId );
-        this.mediaTypeData = await this._modelData.getMediaType( this.mediaInfo.meta );
+        this.mediaTypeData = await this._modelData.getMediaType( this.mediaInfo.type );
 
         const mediaData = {
             mediaInfo : this.mediaInfo,

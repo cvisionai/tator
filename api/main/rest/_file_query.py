@@ -27,7 +27,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
     file_id = params.get('file_id')
     file_id_put = params.get('ids', None) # PUT request only
     project = params['project']
-    filter_type = params.get('meta')
+    filter_type = params.get('type')
     name = params.get('name')
     start = params.get('start')
     stop = params.get('stop')
@@ -47,13 +47,13 @@ def _get_file_psql_queryset(project, filter_ops, params):
 
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, FileType.objects.get(pk=filter_type), qs, params, filter_ops)
-        qs = qs.filter(meta=filter_type)
+        qs = qs.filter(type=filter_type)
     else:
         queries = []
         for entity_type in FileType.objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if sub_qs:
-                queries.append(sub_qs.filter(meta=entity_type))
+                queries.append(sub_qs.filter(type=entity_type))
             else:
                 queries.append(qs.filter(pk=-1)) # no matches
         logger.info(f"Joining {len(queries)} queries together.")

@@ -36,7 +36,7 @@ class CloneMediaListAPI(BaseListView):
             new_obj = media
             new_obj.pk = None
             new_obj.project = Project.objects.get(pk=dest_project)
-            new_obj.meta = MediaType.objects.get(pk=dest_type)
+            new_obj.type = MediaType.objects.get(pk=dest_type)
             if section:
                 new_obj.attributes['tator_user_sections'] = section.tator_user_sections
             yield new_obj
@@ -59,10 +59,10 @@ class CloneMediaListAPI(BaseListView):
 
         # If given media type is not part of destination project, raise an exception.
         if params['dest_type'] == -1:
-            meta = MediaType.objects.filter(project=dest)[0]
+            type_obj = MediaType.objects.filter(project=dest)[0]
         else:
-            meta = MediaType.objects.get(pk=params['dest_type'])
-            if meta.project.pk != dest:
+            type_obj = MediaType.objects.get(pk=params['dest_type'])
+            if type_obj.project.pk != dest:
                 raise Exception('Destination media type is not part of destination project!')
 
         # Look for destination section, if given.

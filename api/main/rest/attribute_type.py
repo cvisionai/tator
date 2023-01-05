@@ -86,7 +86,7 @@ class AttributeTypeListAPI(BaseListView):
         models = AttributeTypeListAPI._get_models(params["entity_type"])
         entity_type = models[0].objects.select_for_update(nowait=True).get(pk=parent_id)
         model = models[1]
-        obj_qs = model.objects.filter(meta=parent_id)
+        obj_qs = model.objects.filter(type=parent_id)
         return entity_type, obj_qs
 
     @staticmethod

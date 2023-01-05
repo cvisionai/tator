@@ -37,7 +37,7 @@ media_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying project of this media.',
     },
-    'meta': {
+    'type': {
         'type': 'integer',
         'description': 'Unique integer identifying entity type of this media.',
     },

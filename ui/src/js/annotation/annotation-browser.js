@@ -211,7 +211,7 @@ export class AnnotationBrowser extends TatorElement {
    */
   selectEntity(obj, forceOpen = false, forceLocalization = false) {
 
-    var typeId = obj.meta;
+    var typeId = obj.type;
     var objDataType = this._data._dataTypes[typeId];
     var selectObj = obj;
 
@@ -238,7 +238,7 @@ export class AnnotationBrowser extends TatorElement {
         const dataType = this._data._dataTypes[key];
         if (dataType.isTrack && panel.style.display == "block" && associatedState != null)
         {
-          typeId = associatedState.meta;
+          typeId = associatedState.type;
           selectObj = associatedState;
           selectTrackInstead = false;
           break;
@@ -253,7 +253,7 @@ export class AnnotationBrowser extends TatorElement {
 
     if (selectTrackInstead && associatedState != null)
     {
-      typeId = associatedState.meta;
+      typeId = associatedState.type;
       selectObj = associatedState;
     }
 

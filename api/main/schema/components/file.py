@@ -11,7 +11,7 @@ file_fields = SimpleNamespace(
     name="name",
     project="project",
     attributes="attributes",
-    meta="meta")
+    type="type")
 
 file_shared_properties = {
     file_fields.name: {
@@ -31,7 +31,7 @@ file_shared_properties = {
 
 file_post_properties = {
     **file_shared_properties,
-    file_fields.meta: {
+    file_fields.type: {
         'type': 'integer',
         'description': 'Unique integer identifying FileType of this File object.',
     },
@@ -98,7 +98,7 @@ file = {
 
 file_filter_parameter_schema = [
     {
-        'name': file_fields.meta,
+        'name': file_fields.type,
         'in': 'query',
         'required': False,
         'description': 'Unique integer identifying a FileType.',

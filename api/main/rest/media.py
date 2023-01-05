@@ -237,7 +237,7 @@ def _create_media(params, user):
         # Create the media object.
         media_obj = Media.objects.create(
             project=project_obj,
-            meta=MediaType.objects.get(pk=entity_type),
+            type=MediaType.objects.get(pk=entity_type),
             name=name,
             md5=md5,
             attributes=attributes,
@@ -354,7 +354,7 @@ def _create_media(params, user):
         # Create the media object.
         media_obj = Media.objects.create(
             project=project_obj,
-            meta=MediaType.objects.get(pk=entity_type),
+            type=MediaType.objects.get(pk=entity_type),
             name=name,
             md5=md5,
             attributes=attributes,
@@ -530,7 +530,7 @@ class MediaListAPI(BaseListView):
                     # Add all single media ids that are part of a multiview that has requested a
                     # state change
                     multi_constituent_ids = _single_ids_from_multi_qs(
-                        archive_qs.filter(meta__dtype="multi")
+                        archive_qs.filter(type__dtype="multi")
                     )
                     multi_constituent_ids.update(ids_to_update)
                     archive_qs = Media.objects.filter(pk__in=multi_constituent_ids).exclude(
@@ -720,7 +720,7 @@ class MediaDetailAPI(BaseDetailView):
 
                     # Update the archive state of all videos if this is a multiview
                     multi_constituent_ids = _single_ids_from_multi_qs(
-                        qs.filter(meta__dtype="multi")
+                        qs.filter(type__dtype="multi")
                     )
                     multi_constituent_ids.add(params["id"])
                     archive_state_qs = Media.objects.select_for_update().filter(
@@ -739,7 +739,7 @@ class MediaDetailAPI(BaseDetailView):
 
         obj = Media.objects.get(pk=params['id'], deleted=False)
         if 'attributes' in params:
-            if obj.meta.dtype == 'image':
+            if obj.type.dtype == 'image':
                 for localization in obj.localization_thumbnail_image.all():
                     localization = patch_attributes(new_attrs, localization)
                     localization.save()

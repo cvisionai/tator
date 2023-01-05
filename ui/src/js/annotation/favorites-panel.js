@@ -144,16 +144,16 @@ export class FavoritesPanel extends TatorElement {
 
       if (favorite.entity_type_name == null) {
         // Legacy path
-        if (favorite.meta == this._typeId) {
+        if (favorite.type == this._typeId) {
           this._favorites.get(favorite.page).push(favorite);
         }
       }
       else {
         // New path supporting multiple entity types
-        if (favorite.entity_type_name == "State" && favorite.meta == this._typeId) {
+        if (favorite.entity_type_name == "State" && favorite.type == this._typeId) {
           this._favorites.get(favorite.page).push(favorite);
         }
-        else if (favorite.entity_type_name == "Localization" && favorite.meta == this._typeId) {
+        else if (favorite.entity_type_name == "Localization" && favorite.type == this._typeId) {
           this._favorites.get(favorite.page).push(favorite);
         }
       }

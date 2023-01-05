@@ -55,7 +55,7 @@ favorite = {
             'type': 'integer',
             'minimum': 1,
         },
-        'meta': {
+        'type': {
             'type': 'integer',
             'description': 'Unique integer identifying entity type of this entry.',
         },

@@ -100,7 +100,7 @@ localization_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying project of this localization.',
     },
-    'meta': {
+    'type': {
         'type': 'integer',
         'description': 'Unique integer identifying entity type of this localization.',
     },
