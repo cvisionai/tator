@@ -491,6 +491,10 @@ class Project(Model):
 
     """ Default media type for uploads.
     """
+
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
@@ -772,6 +776,8 @@ class MediaType(Model):
     """ Dot type used as default in UI. """
     default_poly = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
                               related_name='+')
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -819,6 +825,8 @@ class LocalizationType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -876,6 +884,8 @@ class StateType(Model):
     """ If this is a track type, this is the default localization that is created when
         a track is created via the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -915,6 +925,8 @@ class LeafType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -1149,6 +1161,8 @@ class FileType(Model):
     dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
     """ Required as part of building the TatorSearch documents
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 @receiver(post_save, sender=FileType)
 def file_type_save(sender, instance, **kwargs):
@@ -1180,6 +1194,8 @@ class File(Model, ModelDiffMixin):
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     deleted = BooleanField(default=False, db_index=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
@@ -1544,6 +1560,8 @@ class Section(Model):
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Favorite(Model):
     """ Stores an annotation saved by a user.
@@ -1565,6 +1583,7 @@ class Bookmark(Model):
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
     name = CharField(max_length=128)
     uri = CharField(max_length=1024)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class ChangeLog(Model):
     """ Stores individual changesets for entities """
