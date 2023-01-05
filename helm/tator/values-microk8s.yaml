@@ -47,6 +47,7 @@ postgresUsername: "django"
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
+transcodeHost: "http://transcode-svc:8080"
 objectStorageHost: "minio-master"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
