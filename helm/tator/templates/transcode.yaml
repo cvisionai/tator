@@ -77,11 +77,8 @@ spec:
           - rq
           args:
           - "worker"
-          - "--with-scheduler"
           - "--url"
           - "redis://{{ .Values.redisHost }}"
-          - "--max-jobs"
-          - "1"
           - "transcodes"
           resources:
             limits:
