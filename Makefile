@@ -233,7 +233,7 @@ endif
 
 .PHONY: client-amd64
 client-amd64: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
 
 .PHONY: client-aarch64
 client-aarch64: $(TATOR_PY_WHEEL_FILE)
@@ -241,8 +241,13 @@ client-aarch64: $(TATOR_PY_WHEEL_FILE)
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: experimental_docker client-amd64
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
+client-image: experimental_docker client-vpl client-amd64 client-aarch64
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
+	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
+	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
+	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 
 .PHONY: client-latest
 client-latest: client-image
