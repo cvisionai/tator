@@ -4,6 +4,7 @@ import datetime
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
+from django.http import Http404
 import requests
 
 from ..kube import TatorTranscode
