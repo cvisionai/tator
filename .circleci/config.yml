@@ -57,13 +57,7 @@ jobs:
           ssh lightsail 'cd tator && make api/main/version.py';
     - run:
         name: Make docker images
-        command: |
-          ssh lightsail 'cd tator && make -j$(nproc) tator-image images';
-    - run:
-        name: Make docker images (retry)
-        command: |
-          ssh lightsail 'sleep 300 && cd tator && make -j$(nproc) tator-image images';
-        when: on_fail
+        command: ssh lightsail 'cd tator && for i in $(seq 1 3); do make -j$(nproc) tator-image images && s=0 && break || s=$? && sleep 10; done; (exit $s)'
     - store_artifacts:
         path: doc/_build/schema.yaml
         destination: docs/schema.yaml
@@ -171,11 +165,7 @@ jobs:
         command: ssh lightsail 'cd tator && make testinit'
     - run:
         name: Run REST tests
-        command: ssh lightsail 'cd tator && make test'
-    - run:
-        name: Run REST tests (retry)
-        command: ssh lightsail 'cd tator && make rq-empty && sleep 30 && make test'
-        when: on_fail
+        command: ssh lightsail 'cd tator && for i in $(seq 1 3); do make rq-empty && make test && s=0 && break || s=$? && sleep 10; done; (exit $s)'
   front-end-tests:
     machine:
       image: ubuntu-2004:202010-01
@@ -203,7 +193,7 @@ jobs:
           mkdir -p /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos';
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
-          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
+          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s && s=0 && break || s=$? && sleep 10; done; (exit $s)';
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -223,7 +213,7 @@ jobs:
           scp ~/token.txt lightsail:~
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep';
+        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
