@@ -1300,6 +1300,14 @@ class VideoTestCase(
         response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elemental_id={existing_uuid}')
         self.assertEqual(response.data, 0)
 
+        # Test on type object
+        new_uuid = uuid4()
+        response = self.client.get(f'/rest/MediaType/{test_video.type}')
+        assert(response.data['elemental_id'] == test_video.elemental_id)
+        response = self.client.patch(f'/rest/MediaType/{test_video.type}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/MediaType/{test_video.type}')
+        assert(response.data['elemental_id'] == new_uuid)
+
 
     def test_annotation_delete(self):
         medias = [
