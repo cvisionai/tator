@@ -17,13 +17,13 @@ class AttributeTypeListSchema(AutoSchema):
         operation = super().get_operation(path, method)
 
         if method == "POST":
-            operation["operationId"] = "AddAttribute"
+            operation["operationId"] = "CreateAttributeType"
         elif method == "PATCH":
-            operation["operationId"] = "RenameAttribute"
+            operation["operationId"] = "UpdateAttributeType"
         elif method == "PUT":
-            operation["operationId"] = "ReplaceAttribute"
+            operation["operationId"] = "ReplaceAttributeType"
         elif method == "DELETE":
-            operation["operationId"] = "DeleteAttribute"
+            operation["operationId"] = "DeleteAttributeType"
 
         operation["tags"] = ["Tator"]
 
