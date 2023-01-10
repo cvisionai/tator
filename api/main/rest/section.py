@@ -1,4 +1,5 @@
 import logging
+from uuid import uuid4
 
 from django.db import transaction
 
@@ -39,6 +40,7 @@ class SectionListAPI(BaseListView):
         related_search = params.get('related_search', None)
         tator_user_sections = params.get('tator_user_sections', None)
         visible = params.get("visible", True)
+        elemental_id = params.get('elemental_id', uuid4())
 
         if Section.objects.filter(
             project=project, name__iexact=params['name']).exists():
@@ -52,6 +54,7 @@ class SectionListAPI(BaseListView):
             related_object_search=related_search,
             tator_user_sections=tator_user_sections,
             visible=visible,
+            elemental_id=elemental_id
         )
         return {'message': f"Section {name} created!",
                 'id': section.id}
@@ -90,6 +93,9 @@ class SectionDetailAPI(BaseDetailView):
             section.tator_user_sections = params['tator_user_sections']
         if "visible" in params:
             section.visible = params["visible"]
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id:
+            section.elemental_id = elemental_id
         section.save()
         return {'message': f"Section {section.name} updated successfully!"}
 

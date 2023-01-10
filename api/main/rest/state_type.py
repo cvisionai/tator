@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.contrib.postgres.aggregates import ArrayAgg
 
+from uuid import uuid4 
+
 from ..models import Media
 from ..models import MediaType
 from ..models import StateType
@@ -76,6 +78,8 @@ class StateTypeListAPI(BaseListView):
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
         del params['body']
+        if params['elemental_id'] is None:
+            params['elemental_id'] = uuid4()
         obj = StateType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(
@@ -133,6 +137,7 @@ class StateTypeDetailAPI(BaseDetailView):
         association = params.get('association', None)
         interpolation = params.get('interpolation', None)
         media_types = params.get('media_types', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = StateType.objects.get(pk=params['id'])
         if name is not None:
@@ -154,7 +159,8 @@ class StateTypeDetailAPI(BaseDetailView):
                 project=obj.project.pk, pk__in=media_types)
             for media in media_ids:
                 obj.media.add(media)
-
+        if elemental_id:
+            obj.elemental_id = elemental_id
         obj.save()
         return {'message': 'State type updated successfully!'}
 

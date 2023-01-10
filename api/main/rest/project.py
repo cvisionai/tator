@@ -5,6 +5,8 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
+from uuid import uuid4
+
 from ..cache import TatorCache
 from ..models import Project
 from ..models import Membership
@@ -127,6 +129,8 @@ class ProjectListAPI(BaseListView):
 
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
+        if params['elemental_id'] is None:
+            params['elemental_id'] = uuid4()
         project = Project.objects.create(
             **params,
             creator=self.request.user,
@@ -187,6 +191,7 @@ class ProjectDetailAPI(BaseDetailView):
     def _patch(self, params):
         made_changes = False
         project = Project.objects.get(pk=params['id'])
+        elemental_id = params.get('elemental_id', None)
         if 'name' in params:
             if Project.objects.filter(
                 membership__user=self.request.user).filter(name__iexact=params['name']).exists():
@@ -250,6 +255,9 @@ class ProjectDetailAPI(BaseDetailView):
             project.backup_bucket = get_object_or_404(Bucket, pk=params['backup_bucket'])
             if project.backup_bucket.organization != project.organization:
                 raise PermissionDenied
+            made_changes = True
+        if elemental_id:
+            project.elemental_id = elemental_id
             made_changes = True
 
         # Save the project if any changes were made, otherwise error

@@ -2,6 +2,8 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 
+from uuid import uuid4 
+
 from ..models import Media
 from ..models import MediaType
 from ..models import LocalizationType
@@ -70,6 +72,8 @@ class LocalizationTypeListAPI(BaseListView):
         media_types = params.pop('media_types')
 
         del params['body']
+        if params['elemental_id'] is None:
+            params['elemental_id'] = uuid4()
         obj = LocalizationType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
@@ -119,7 +123,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
         """
         name = params.get('name', None)
         description = params.get('description', None)
-
+        elemental_id = params.get('elemental_id', None)
         obj = LocalizationType.objects.get(pk=params['id'])
         if name is not None:
             obj.name = name
@@ -140,6 +144,8 @@ class LocalizationTypeDetailAPI(BaseDetailView):
                 project=obj.project.pk, pk__in=params['media_types'])
             for media in media_types:
                 obj.media.add(media)
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         obj.save()
         return {'message': 'Localization type updated successfully!'}

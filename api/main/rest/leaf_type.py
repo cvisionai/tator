@@ -1,5 +1,7 @@
 from django.db import transaction
 
+from uuid import uuid4 
+
 from ..models import LeafType
 from ..models import Leaf
 from ..models import Project
@@ -35,6 +37,8 @@ class LeafTypeListAPI(BaseListView):
                               "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
+        if params['elemental_id'] is None:
+            params['elemental_id'] = uuid4()
         obj = LeafType(**params)
         obj.save()
         return {'message': 'Leaf type created successfully!', 'id': obj.id}
@@ -57,12 +61,15 @@ class LeafTypeDetailAPI(BaseDetailView):
     def _patch(self, params):
         name = params.get('name', None)
         description = params.get('description', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = LeafType.objects.get(pk=params['id'])
         if name is not None:
             obj.name = name
         if description is not None:
             obj.description = description
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         obj.save()
         return {'message': f'Leaf type {obj.id} updated successfully!'}

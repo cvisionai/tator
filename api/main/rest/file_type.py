@@ -1,5 +1,7 @@
 from django.db import transaction
 
+from uuid import uuid4 
+
 from ..models import FileType
 from ..models import File
 from ..models import Project
@@ -41,6 +43,8 @@ class FileTypeListAPI(BaseListView):
                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
+        if params['elemental_id'] is None:
+            params['elemental_id'] = uuid4()
         obj = FileType(**params)
         obj.save()
         return {'id': obj.id, 'message': 'File type created successfully!'}
@@ -73,12 +77,15 @@ class FileTypeDetailAPI(BaseDetailView):
         """
         name = params.get('name', None)
         description = params.get('description', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = FileType.objects.get(pk=params['id'])
         if name is not None:
             obj.name = name
         if description is not None:
             obj.description = description
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         obj.save()
         return {'message': 'File type updated successfully!'}

@@ -128,6 +128,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         default_box = params.get('default_box', None)
         default_line = params.get('default_line', None)
         default_dot = params.get('default_dot', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = MediaType.objects.get(pk=params['id'])
         if name is not None:
@@ -146,6 +147,8 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.visible = visible
         if default_volume is not None:
             obj.default_volume = default_volume
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         if default_box is not None:
             default_box = LocalizationType.objects.get(pk=default_box)
