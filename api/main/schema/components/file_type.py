@@ -8,6 +8,11 @@ file_type_update_properties = {
         'type': 'string',
         'default': '',
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 file_type_properties = {
