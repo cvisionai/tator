@@ -38,7 +38,7 @@ class AttributeTypeListSchema(AutoSchema):
             short_desc = """
 Replaces the definition of an existing attribute on Type.\n\nWARNING This completely replaces the
 existing definition and will delete any existing fields that are not present in the
-`new_attribute_type` definition.
+`attribute_type_update` definition.
             """
         elif method == "DELETE":
             short_desc = "Deletes an existing attribute on Type."
@@ -80,8 +80,8 @@ existing definition and will delete any existing fields that are not present in 
                         "schema": {"$ref": "#/components/schemas/AttributeTypeUpdate"},
                         "example": {
                             "entity_type": "LocalizationType",
-                            "old_attribute_type_name": "My Old Attribute",
-                            "new_attribute_type": attribute_type_example[3],
+                            "current_name": "My Old Attribute",
+                            "attribute_type_update": attribute_type_example[3],
                         },
                     }
                 },
@@ -94,7 +94,7 @@ existing definition and will delete any existing fields that are not present in 
                         "schema": {"$ref": "#/components/schemas/AttributeTypeDelete"},
                         "example": {
                             "entity_type": "LocalizationType",
-                            "attribute_to_delete": "My Old Attribute",
+                            "name": "My Old Attribute",
                         },
                     }
                 },

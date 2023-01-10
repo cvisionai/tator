@@ -376,7 +376,7 @@ class TatorSearch:
             raise(f'Index already exists with the specified name. ID={entity_type.id} {old_name}->{new_name}')
         
 
-    def check_mutation(self, entity_type, name, new_attribute_type):
+    def check_mutation(self, entity_type, name, attribute_type_update):
         """
         Checks mutation operation and raises if it is invalid. See `mutate_alias` for argument
         description.
@@ -396,12 +396,12 @@ class TatorSearch:
             raise ValueError(f"Could not find attribute name {name} in entity type "
                              f"{type(entity_type).__name__} ID {entity_type.id}")
 
-        new_dtype = new_attribute_type["dtype"]
+        new_dtype = attribute_type_update["dtype"]
         if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
             raise RuntimeError(f"Attempted mutation of {name} from {old_dtype} to {new_dtype} is "
                                 "not allowed!")
 
-    def mutate_alias(self, entity_type, name, new_attribute_type, mod_type, new_style=None):
+    def mutate_alias(self, entity_type, name, attribute_type_update, mod_type, new_style=None):
         """
         Sets alias to new mapping type.
 
@@ -409,10 +409,10 @@ class TatorSearch:
                             Field attribute_types will be updated with new dtype and style. Entity
                             type will not be saved.
         :param name: Name of attribute type being mutated.
-        :param new_attribute_type: New attribute type for the attribute being mutated.
+        :param attribute_type_update: New attribute type for the attribute being mutated.
         :param mod_type: The type of modification to perform on the attribute: `update` will add
                          missing keys and update values of existing keys; `replace` will replace the
-                         definition with `new_attribute_type`, which will result in deletion of
+                         definition with `attribute_type_update`, which will result in deletion of
                          existing keys if they are not present in the new definition.
         :param new_style: [Optional] New display style of attribute type. Used to determine if
                           string attributes should be indexed as keyword or text.
@@ -428,14 +428,14 @@ class TatorSearch:
             names = [a['name'] for a in entity_type.attribute_types]
             raise(Exception(f"Couldn't find {name} in {entity_type.name} {names}"))
 
-        if element['dtype'] != new_attribute_type['dtype']:
-            self.create_psql_index(entity_type, new_attribute_type, True)
+        if element['dtype'] != attribute_type_update['dtype']:
+            self.create_psql_index(entity_type, attribute_type_update, True)
 
         # Update DB record for dtype and return it
         if mod_type == "update":
-            entity_type.attribute_types[el_idx].update(new_attribute_type)
+            entity_type.attribute_types[el_idx].update(attribute_type_update)
         elif mod_type == "replace":
-            entity_type.attribute_types[el_idx] = new_attribute_type
+            entity_type.attribute_types[el_idx] = attribute_type_update
         return entity_type
 
     def delete_alias(self, entity_type, name):
