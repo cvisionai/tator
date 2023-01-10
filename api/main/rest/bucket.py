@@ -117,7 +117,7 @@ class BucketDetailAPI(BaseDetailView):
             mutated = True
             bucket.store_type = params["store_type"]
         if "config" in params:
-            if params["store_type"] == ObjectStore.OCI:
+            if store_type == ObjectStore.OCI:
                 validate_config(params["config"]["native_config"])
             mutated = True
             bucket.config = params["config"]

@@ -114,11 +114,11 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.wait_for_selector(f'text=updated permissions updated to Admin!')
     # page.click('modal-dialog modal-close .modal__close')
 
-    print("Testing aws bucket creation...")
+    print("Testing bucket creation...")
     page.click('.heading-for-Bucket')
     page.click('.heading-for-Bucket .Nav-action')
     page.fill('bucket-edit text-input[name="Name"] input', f"Bucket for {name}")
-    page.click('text="AWS"')
+    page.get_by_label("AWS").check()
     page.fill('bucket-edit text-area[name="Config"] textarea', '{"aws_access_key_id": "123456", "aws_secret_access_key": "ABCDEFG", "endpoint_url": "https://www.google.com", "region_name": "Northeast"}')
     url = base_url + "/rest/Buckets/" + str(organization_id)
     with page.expect_response(url) as response_info:
@@ -129,11 +129,10 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     bucketId = respObject["id"]
     print(f"Created bucket id {bucketId}")
     # OK without modal close
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
 
-    print(f'Testing aws bucket editing...')
-    page.click(f'text="Bucket for {name}"')
-    page.click('text="DEEP_ARCHIVE"')
+    print(f'Testing bucket editing...')
+    page.click('role=radio[name="DEEP_ARCHIVE"]')
     page.fill(f'div[id="itemDivId-Bucket-{bucketId}"] text-area[name="Config"] textarea', '{"aws_access_key_id": "NewKey654321", "aws_secret_access_key": "HIJKLMN", "endpoint_url": "https://www.bing.com", "region_name": "Southwest"}')
     page.click(f'div[id="itemDivId-Bucket-{bucketId}"] input[type="submit"]')
     page.wait_for_selector(f'text="Bucket {bucketId} updated successfully!"')
