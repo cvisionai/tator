@@ -2,6 +2,7 @@ import os
 import logging
 from uuid import uuid1
 
+from django.http import Http404
 from rest_framework.authtoken.models import Token
 import requests
 

@@ -8,6 +8,7 @@ import base64
 
 from django.db.models.functions import Coalesce
 from django.db.models import Q
+from django.http import Http404
 
 from ..search import TatorSearch
 from ..models import Section
