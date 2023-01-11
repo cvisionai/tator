@@ -440,3 +440,8 @@ endif
 announce:
 	kubectl cp $(FILE) $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///'):/tmp/announce.md
 	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- $(ANNOUNCE_CMD) 
+
+.PHONY: convert-old-buckets
+convert-old-buckets:
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- \
+			python3 manage.py shell -c 'from main.util import convert_old_buckets; convert_old_buckets()'

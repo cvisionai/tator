@@ -983,6 +983,7 @@ export class AttributePanel extends TatorElement {
     this._setHiddenAttributes(values);
 
     this._emitChanges = true;
+    this.dispatchEvent(new Event("values-set"));
   }
 
   reset() {
