@@ -14,7 +14,7 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
-fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'visible']
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'visible', 'elemental_id']
 
 class LeafTypeListAPI(BaseListView):
     """ Interact with leaf type list.

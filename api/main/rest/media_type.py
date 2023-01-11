@@ -17,7 +17,7 @@ from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
           'default_volume', 'visible', 'archive_config', 'streaming_config', 'overlay_config',
-          'default_box', 'default_line', 'default_dot']
+          'default_box', 'default_line', 'default_dot', 'elemental_id']
 
 
 class MediaTypeListAPI(BaseListView):
@@ -83,6 +83,8 @@ class MediaTypeListAPI(BaseListView):
                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
+        if params['elemental_id'] is None:
+            params['elemental_id'] = uuid4()
         obj = MediaType(**params)
         obj.save()
         return {'id': obj.id, 'message': 'Media type created successfully!'}

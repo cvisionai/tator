@@ -19,7 +19,7 @@ from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible', 'grouping_default',
-          'delete_child_localizations', 'default_localization']
+          'delete_child_localizations', 'default_localization', 'elemental_id']
 
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.

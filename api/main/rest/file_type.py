@@ -15,7 +15,7 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
-fields = ['id', 'project', 'name', 'description', 'attribute_types']
+fields = ['id', 'project', 'name', 'description', 'attribute_types', 'elemental_id']
 
 class FileTypeListAPI(BaseListView):
     """ Create or retrieve file types.

@@ -19,7 +19,7 @@ from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'color_map', 'line_width', 'visible', 'drawable', 'grouping_default']
+          'color_map', 'line_width', 'visible', 'drawable', 'grouping_default', 'elemental_id']
 
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
