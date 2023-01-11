@@ -78,7 +78,7 @@ class StateTypeListAPI(BaseListView):
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
         del params['body']
-        if params['elemental_id'] is None:
+        if params.get('elemental_id',None) is None:
             params['elemental_id'] = uuid4()
         obj = StateType(**params)
         obj.save()

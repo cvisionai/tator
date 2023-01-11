@@ -83,7 +83,7 @@ class MediaTypeListAPI(BaseListView):
                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
-        if params['elemental_id'] is None:
+        if params.get('elemental_id',None) is None:
             params['elemental_id'] = uuid4()
         obj = MediaType(**params)
         obj.save()
