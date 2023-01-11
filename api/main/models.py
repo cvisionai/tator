@@ -492,7 +492,7 @@ class Project(Model):
     """ Default media type for uploads.
     """
 
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
     def has_user(self, user_id):
@@ -776,7 +776,7 @@ class MediaType(Model):
     """ Dot type used as default in UI. """
     default_poly = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
                               related_name='+')
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
@@ -825,7 +825,7 @@ class LocalizationType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
@@ -884,7 +884,7 @@ class StateType(Model):
     """ If this is a track type, this is the default localization that is created when
         a track is created via the UI.
     """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
@@ -925,7 +925,7 @@ class LeafType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
@@ -1048,7 +1048,7 @@ class Media(Model, ModelDiffMixin):
     """ URL where original media was hosted. """
     summary_level = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a media to facilitate cross-cluster sync operations """
 
     def get_file_sizes(self):
@@ -1161,7 +1161,7 @@ class FileType(Model):
     dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
     """ Required as part of building the TatorSearch documents
     """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
 @receiver(post_save, sender=FileType)
@@ -1194,7 +1194,7 @@ class File(Model, ModelDiffMixin):
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     deleted = BooleanField(default=False, db_index=True)
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Resource(Model):
@@ -1400,7 +1400,7 @@ class Localization(Model, ModelDiffMixin):
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False, db_index=True)
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
 
@@ -1444,7 +1444,7 @@ class State(Model, ModelDiffMixin):
                            related_name='extracted',
                            db_column='extracted')
     deleted = BooleanField(default=False, db_index=True)
-    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
     def selectOnMedia(media_id):
@@ -1560,7 +1560,7 @@ class Section(Model):
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.
     """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Favorite(Model):

@@ -1182,7 +1182,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         self.video_type = MediaType.objects.create(
             name="video",
             dtype='video',
-            project=self.project,
+            project=self.project
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1301,12 +1301,12 @@ class VideoTestCase(
         self.assertEqual(response.data, 0)
 
         # Test on type object
-        new_uuid = uuid4()
-        response = self.client.get(f'/rest/MediaType/{test_video.type}')
-        assert(response.data['elemental_id'] == test_video.elemental_id)
-        response = self.client.patch(f'/rest/MediaType/{test_video.type}', {'elemental_id': str(new_uuid)}, format='json')
-        response = self.client.get(f'/rest/MediaType/{test_video.type}')
-        assert(response.data['elemental_id'] == new_uuid)
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/MediaType/{test_video.type.id}')
+        assert(str(response.data['elemental_id']) == str(test_video.type.elemental_id))
+        response = self.client.patch(f'/rest/MediaType/{test_video.type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/MediaType/{test_video.type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
 
 
     def test_annotation_delete(self):
