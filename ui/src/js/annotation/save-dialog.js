@@ -13,27 +13,43 @@ export class SaveDialog extends TatorElement {
     header.setAttribute("class", "d-flex flex-items-center flex-justify-between py-3");
     this._div.appendChild(header);
 
-    this._span = document.createElement("span");
-    this._span.setAttribute("class", "text-semibold");
-    header.appendChild(this._span);
+    this._nameDiv = document.createElement("div");
+    this._nameDiv.setAttribute("class", "text-semibold");
+    header.appendChild(this._nameDiv);
+
+    this._hookButtonDiv = document.createElement("div");
+    this._hookButtonDiv.setAttribute("class", "hooks-button-div");
+    this._hookButtonDiv.hidden = true;
+    header.appendChild(this._hookButtonDiv);
+
+    this._savePanel = document.createElement("div");
+    this._savePanel.setAttribute("class", "col-12");
+    this._div.appendChild(this._savePanel);
+
+    this._hooksPanel = document.createElement("div");
+    this._hooksPanel.setAttribute("class", "col-12 hooks-panel-div");
+    this._hooksPanel.hidden = true;
+    this._div.appendChild(this._hooksPanel);
 
     this._type = document.createElement("enum-input");
     this._type.setAttribute("name", "Type");
-    this._div.appendChild(this._type);
+    this._savePanel.appendChild(this._type);
 
     this._attributes = document.createElement("attribute-panel");
-    this._div.appendChild(this._attributes);
+    this._savePanel.appendChild(this._attributes);
+    this._attributes._idWidget.style.display = "none";
+    this._attributes._createdByWidget.style.display = "none";
 
     const favesDiv = document.createElement("div");
-    favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
-    this._div.appendChild(favesDiv);
+    favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2 top-border mt-3");
+    this._savePanel.appendChild(favesDiv);
 
     this._favorites = document.createElement("favorites-panel");
     favesDiv.appendChild(this._favorites);
 
     const buttons = document.createElement("div");
     buttons.setAttribute("class", "d-flex flex-items-center py-4");
-    this._div.appendChild(buttons);
+    this._savePanel.appendChild(buttons);
 
     this._save = document.createElement("button");
     this._save.setAttribute("class", "btn btn-clear");
@@ -86,7 +102,6 @@ export class SaveDialog extends TatorElement {
   }
 
   init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
-
     this._projectId = projectId;
     this._mediaId = mediaId;
     this._undo = undo;
@@ -98,6 +113,7 @@ export class SaveDialog extends TatorElement {
     this._attributes.displaySlider(false);
     this._attributes.displayGoToLocalization(false);
     this._attributes.displayGoToTrack(false);
+    this._attributes._versionWidget.setValue(this._version.name);
 
     // Set choices on type selector.
     this._type.choices = dataTypes.map(type => {return {label: type.name,
@@ -198,6 +214,7 @@ export class SaveDialog extends TatorElement {
 
   set version(val) {
     this._version = val;
+    this._attributes._versionWidget.setValue(this._version.name);
   }
 
   set canvasPosition(val) {
@@ -264,9 +281,17 @@ export class SaveDialog extends TatorElement {
 
   _setDataType() {
     this._dataType = JSON.parse(this._type.getValue());
-    this._span.textContent = this._dataType.name;
+    this._nameDiv.textContent = this._dataType.name;
     this._attributes.dataType = this._dataType;
     this._favorites.init(this._dataType, this._favoritesData);
+  }
+
+  /**
+   * @param {*} panel panel to append to hooks panel div
+   * @returns 
+   */
+  addAppletPanel(panel) {
+    this._hooksPanel.appendChild(panel);
   }
 }
 

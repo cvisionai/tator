@@ -17,6 +17,9 @@ export class SeekBar extends TatorElement {
     this._visualType = "";
     this._active = false;
 
+    this._timeStore = null;
+    this._timeMode = "relative"; "utc" | "relative"
+
     var that = this;
     var clickHandler=(evt)=>
     {
@@ -58,15 +61,26 @@ export class SeekBar extends TatorElement {
 
       if (proposed_value > 0)
       {
-        this.preview.info = {frame:proposed_value,
-                             margin:evt.clientX-startX,
-                             time: frameToTime(proposed_value, this._fps)};
+        if (this._timeMode == "utc") {
+
+          let timeStr = this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+          timeStr = timeStr.split("T")[1].split(".")[0];
+
+          this.preview.info = {frame: proposed_value,
+                               margin: evt.clientX-startX,
+                               time: timeStr};
+        }
+        else {
+          this.preview.info = {frame:proposed_value,
+                               margin:evt.clientX-startX,
+                               time: frameToTime(proposed_value, this._fps)};
+        }
       }
       else
       {
         this.preview.hide();
       }
-      
+
       evt.stopPropagation();
       return false;
     }
@@ -132,7 +146,7 @@ export class SeekBar extends TatorElement {
                                         return;
                                       }
                                       //console.info(`Checking scrub bar @ ${this.value}`);
-                                      if (this._value == this._lastValue)
+                                      if (this._value == this._lastValue || this._loadedPercentage == 0.00)
                                       {
                                         return;
                                       }
@@ -220,6 +234,17 @@ export class SeekBar extends TatorElement {
   get value()
   {
     return this._value;
+  }
+
+  useUtcTime(timeStore)
+  {
+    this._timeStore = timeStore;
+    this._timeMode = "utc";
+  }
+
+  useRelativeTime()
+  {
+    this._timeMode = "relative";
   }
 
   setPair(other)

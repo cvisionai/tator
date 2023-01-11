@@ -6,7 +6,6 @@ export class AttributesForm extends TatorElement {
 
     // Flag values
     this._changed = false;
-    this._global = false;
 
     // 
     this._data = null;
@@ -18,24 +17,12 @@ export class AttributesForm extends TatorElement {
     return this._changed = val;
   }
 
-  set global(val) {
-    return this._global = val;
-  }
-
   isChanged() {
     return this._changed;
   }
 
-  isGlobal() {
-    return this._global;
-  }
-
   changeReset() {
     return this._changed = false;
-  }
-
-  globalReset() {
-    return this._global = false;
   }
 
   _initEmptyForm() {
@@ -43,12 +30,6 @@ export class AttributesForm extends TatorElement {
     this.form = form;
 
     this.form.addEventListener("change", this._formChanged.bind(this));
-    // this.form.addEventListener("change", (event) => {
-    //   console.log("Attribute form changed");
-    //   this.changed = true;
-    //   return this.form.classList.add("changed");
-    // });   
-
 
     // Fields for this form
     // name
@@ -208,7 +189,6 @@ export class AttributesForm extends TatorElement {
   }
 
   _formChanged() {
-    console.log("Attribute form changed");
     this.changed = true;
     return this.form.classList.add("changed");
   }
@@ -439,25 +419,30 @@ export class AttributesForm extends TatorElement {
     dtype, // required
     value = "", // keep this
   }) {
+
     if (this.placeholderDefault.children.length > 0) {
       this.placeholderDefault.innerHTML = ""; // @TODO best practice to remove all children?
       this._default = null;
     }
 
     // this will be a slider true/false - false == default // tmp removing this to allow for unset
-    // if (dtype == "bool") {
-    //   this._default = document.createElement("bool-input");
-    //   this.placeholderDefault.appendChild(this._default);
-    //   this._default.setAttribute("name", "Default");
+    if (dtype == "bool") {
+      this._default = document.createElement("enum-input");
+      this.placeholderDefault.appendChild(this._default);
+      this._default.setAttribute("name", "Default");
 
-    //   this._default.setAttribute("on-text", "Yes");
-    //   this._default.setAttribute("off-text", "No");
-    //   this._default.default = value;
-    //   this._default.setValue(value);
+      this._default.choices = [
+        { value: null, label: "null" },
+        { value: true, label: "true" },
+        { value: false, label: "false" },
+      ];
+      
+      this._default.default = value;
+      this._default.setValue(value);
+      
+      this._default.addEventListener("change", this._formChanged.bind(this));
 
-    //   this._default.addEventListener("change", this._formChanged.bind(this));
-    // } else
-    if (dtype == "enum") {
+    } else if (dtype == "enum") {
       // enum default set in place, hide default input
       this.placeholderDefault.classList.add("hidden");
       this._default = document.createElement("text-input");
@@ -475,8 +460,6 @@ export class AttributesForm extends TatorElement {
 
       this._default.addEventListener("change", this._formChanged.bind(this));
     }
-
-
 
     return this._default;
   }
@@ -619,7 +602,6 @@ export class AttributesForm extends TatorElement {
       const child = currentDefault;
       const parent = child.parentNode;
       const index = Array.prototype.indexOf.call(parent.children, child);
-      //console.log( "New enum default : " + this._choices._inputs[index].getValue() );
       this._enumDefault.value = this._choices._inputs[index].getValue();
       this._enumDefault.changed = true;
     });
@@ -627,7 +609,7 @@ export class AttributesForm extends TatorElement {
 
   //
   _showDynamicFields(dtype) {
-    this._getDefaultInput({ dtype });
+    // this._getDefaultInput({ dtype });
     this._showDefault({ dtype });
     this._showUseCurrent({ dtype });
     this._showMin({ dtype });
@@ -639,6 +621,7 @@ export class AttributesForm extends TatorElement {
   }
 
   _getDtypeSelectBox(dtype) {
+    this.currentDtype = dtype;
     // remove options if the exist
     if (this.dataTypeSelectDiv.children.length > 0) {
       this.dataTypeSelectDiv.innerHTML = "";
@@ -662,15 +645,7 @@ export class AttributesForm extends TatorElement {
       this._dtype.default = dtype;
       this._dtype.setValue(dtype);
 
-      this._dtype.addEventListener("change", (e) => {
-        this._formChanged();
-        // get new type, and check fields are all OK
-        let newType = this._dtype.getValue();
-        this._showDynamicFields(newType);
-
-        // when changed check if we need to show a warning.
-        this._dispatchWarningEvents({ dtype, newType });
-      });
+      this._dtype.addEventListener("change", this.compareDtype.bind(this));
 
     } else {
       // ELSE there was no prior value user is selecting dtype for the first time
@@ -694,7 +669,17 @@ export class AttributesForm extends TatorElement {
     return this._dtype;
   }
 
-  _dispatchWarningEvents({ dtype, newType }) {
+  compareDtype(e) {
+    this._formChanged();
+    // get new type, and check fields are all OK
+    let newType = this._dtype.getValue();
+    this._showDynamicFields(newType);
+
+  //   // when changed check if we need to show a warning.
+  //   this._dispatchWarningEvents({ dtype: this._dtype, newType });
+  // }
+    const dtype = this.currentDtype;
+  // _dispatchWarningEvents({ dtype, newType }) {
     if (this._irreversibleCheck({ dtype, newType })) {
       this.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
       this._dtype._select.dispatchEvent(new CustomEvent("input-caution", {
@@ -893,29 +878,38 @@ export class AttributesForm extends TatorElement {
 
       // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
       // Don't send if the value is null => invalid
-      // Don't send "" because it will fail as valid type for the default in some cases
-      // - String: can be ""
-      // - Int, or Float: Don't convert "" to Number or it will be 0; #TODO BUG backend will not allow "" -> Invalid attribute value for float attribute; Invalid attribute value for integer attribute
-      // - 
+      // String: can be ""
+      // - Int, or Float: If "" will be nulled out
+      // 
       if (dtype !== "enum" && (this.isClone || this._dtype.changed() || this._default.changed())) {
-        // check enum.default.changed value
-        if (this._default.getValue() !== null) { //&& this._default.getValue() !== ""
-          let defaultVal = this._default.getValue();
+        let defaultVal = this._default.getValue();
 
+        if (defaultVal !== null && defaultVal !== "null") {
           // backend does this but not when value is ""
-          if ((dtype == "int" || dtype == "float")) { // #TODO see above error on backend, etc... && defaultVal !== ""
-            defaultVal = Number(defaultVal);
-            formData["default"] = defaultVal;
+          if ((dtype == "int" || dtype == "float")) {
+            if (String(defaultVal).trim() === "") {
+              delete formData["default"];
+            } else {
+              formData["default"] = defaultVal;
+            }
+            
           } else if (dtype == "datetime" && defaultVal != "" && this._useCurrent.getValue() != true) {
             formData["default"] = defaultVal;
           } else if (dtype == "geopos" && defaultVal != "") {
             formData["default"] = defaultVal;
-          } else if (dtype == "bool" && (defaultVal.toLowerCase().trim() == "false" || defaultVal.toLowerCase().trim() == "true")) {
-            defaultVal = defaultVal.toLowerCase().trim();
-            formData["default"] = defaultVal;
-          } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must me the cases above
+          } else if (dtype == "bool") {
+            // allow for bool value to be changed to null
+            if (String(defaultVal).trim() === "") {
+              delete formData["default"];
+            } else {
+              formData["default"] = defaultVal;
+            }
+          } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must be the cases above
             formData["default"] = defaultVal;
           }
+        } else {
+           // Using PUT anything null is removed by not being sent!
+          delete formData["default"];
         }
       }
 
@@ -970,7 +964,6 @@ export class AttributesForm extends TatorElement {
       console.error("Formdata for attributes error.", err);
     }
 
-    // console.log(formData);
     return {formData};
   }
 
@@ -990,7 +983,7 @@ export class AttributesForm extends TatorElement {
     warningRow.setAttribute("class", "warning-row offset-lg-4 col-lg-8 pb-3");
     labelDiv.appendChild(warningRow);
 
-    const warning = new InlineWarning();
+    const warning = document.createElement("inline-warning");
     warningRow.appendChild(warning.div());
 
     // Dispatch events to validate, and listen for errors
@@ -1037,15 +1030,12 @@ export class AttributesForm extends TatorElement {
 
   _attributeFormData({ form = this.form, id = -1, entityType = null } = {}) {
     const data = {};
-    const global = this.isGlobal() ? "true" : "false";
     const attrFormObj = this._getAttributeFormData();
     const formData = {
       "entity_type": entityType,
-      "global": global,
       "old_attribute_type_name": this.dataset.oldName,
       "new_attribute_type": attrFormObj.formData
     };
-    console.log(attrFormObj.formData);
 
     data.newName = this._name.getValue();
     data.oldName = this.dataset.oldName;
@@ -1056,10 +1046,8 @@ export class AttributesForm extends TatorElement {
 
   async _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
     const promiseInfo = {};
-    const global = this.isGlobal() ? "true" : "false";
     const formData = {
       "entity_type": entityType,
-      "global": global,
       "old_attribute_type_name": this.dataset.oldName,
       "new_attribute_type": {}
     };
@@ -1067,11 +1055,7 @@ export class AttributesForm extends TatorElement {
     promiseInfo.newName = this._name.getValue();
     promiseInfo.oldName = this.dataset.oldName;
 
-    // console.log("formData");
-    // console.log(formData);
-
     // Hand of the data, and call this form unchanged
-    console.log(this._getAttributeFormData());
     formData.new_attribute_type = this._getAttributeFormData();
     this.form.classList.remove("changed");
     this.changeReset();

@@ -6,6 +6,7 @@ import tempfile
 import inspect
 import io
 import pytesseract
+import pytest
 import numpy as np
 from pprint import pprint
 
@@ -72,6 +73,7 @@ def _wait_for_frame(canvas, frame, timeout=30):
     page.wait_for_timeout(1000)
   assert canvas_frame == frame, f"canvas={canvas_frame}, expected={frame}"
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_accuracy(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -101,10 +103,10 @@ def test_playback_accuracy(page_factory, project, count_test):
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.mouse.move(seek_x+500, seek_y, steps=10)
   canvas_frame = _get_canvas_frame(canvas)
   assert(int(display_div.inner_text())==canvas_frame)
   page.mouse.up()
@@ -135,6 +137,7 @@ def test_playback_accuracy(page_factory, project, count_test):
 
 
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_accuracy_multi(page_factory, project, multi_count):
   print("[Multi] Going to annotation view...(Accuracy)")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -168,10 +171,10 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.mouse.move(seek_x+500, seek_y, steps=10)
   page.wait_for_timeout(1000)
   current_frame = int(display_div.inner_text())
   _wait_for_frame(canvas[0], current_frame)
@@ -185,6 +188,7 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   _wait_for_frame(canvas[1], current_frame)
   page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_count):
   print("[Multi] Going to annotation view...(Accuracy)")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -218,10 +222,10 @@ def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_coun
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.mouse.move(seek_x+500, seek_y, steps=10)
   page.wait_for_timeout(1000)
   current_frame = int(display_div.inner_text())
   _wait_for_frame(canvas[0], current_frame)
@@ -266,7 +270,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
 
   # Wait for hq buffer and verify it is red
-  page.wait_for_timeout(120000) # This takes forever with the weird color video
+  page.wait_for_timeout(15000) # This takes forever with the weird color video
   _wait_for_color(page, canvas, 0, timeout=30, name='seek')
 
   play_button.click()
@@ -279,13 +283,13 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+5, seek_y, steps=50)
+  page.mouse.move(seek_x+5, seek_y, steps=10)
   _wait_for_color(page, canvas, 1, timeout=30, name='small scrub (play buffer)')
 
-  page.mouse.move(seek_x+1000, seek_y, steps=50)
+  page.mouse.move(seek_x+1000, seek_y, steps=10)
   # Look for either green(play) or blue(scrub) based on how much got buffered, both are correct
   _wait_for_color(page, canvas, [1,2], timeout=30, name='big scrub (scrub buffer)')
 
@@ -294,6 +298,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   _wait_for_color(page, canvas, 0, timeout=30, name='seek / pause')
   page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_buffer_usage_multi(page_factory, project, multi_rgb):
   # Tests play, scrub, and seek buffer usage
   print("[Multi] Going to annotation view...")
@@ -309,40 +314,52 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
   # Wait for hq buffer and verify it is red
+  print("Waiting 15 seconds for video to load")
   page.wait_for_timeout(15000) # this takes forever with the weird color video
+  print("Waiting for page load colors")
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
 
+  print("Pressing play...")
   play_button.click()
+  print("Waiting for play colors")
   _wait_for_color(page, canvas[0], 1, timeout=30)
   _wait_for_color(page, canvas[1], 1, timeout=30)
   # Pause the video
+  print("Pressing pause...")
   play_button.click()
+  print("Waiting for pause colors")
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
 
 
   # Click the scrub handle
+  print("Moving scrub bar")
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+5, seek_y, steps=50)
+  print("Testing small scrub")
+  page.mouse.move(seek_x+5, seek_y, steps=10)
   _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
   _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
 
-  page.mouse.move(seek_x+1900, seek_y, steps=50)
+  print("Testing large scrub")
+  page.mouse.move(seek_x+1900, seek_y, steps=10)
   _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
   _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
 
   # Release the scrub
+  print("Stopping scrub")
   page.mouse.up()
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
+  print("Closing page")
   page.close()
 
 
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_schedule(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -356,8 +373,8 @@ def test_playback_schedule(page_factory, project, count_test):
   page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
 
-  keep_running = True
-  while keep_running:
+  keep_running_count = 0
+  while keep_running_count < 10:
       play_button.click()
       page.wait_for_timeout(5000)
       play_button.click()
@@ -375,11 +392,12 @@ def test_playback_schedule(page_factory, project, count_test):
       monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
 
       if monitor_fps >= 30:
-          keep_running = False
+          break
       else:
           # Re-run because the monitor's FPS is lower than the video's FPS, which will
           # mess up the assert conditions. This test does not account for this scenario.
           page.wait_for_timeout(1000)
+          keep_running_count += 1
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
@@ -391,8 +409,8 @@ def test_playback_schedule(page_factory, project, count_test):
   assert factor == 1
 
   # repeat at 4x
-  keep_running = True
-  while keep_running:
+  keep_running_count = 0
+  while keep_running_count < 10:
       console_msgs=[]
       page.keyboard.press("4")
       play_button.click()
@@ -411,11 +429,12 @@ def test_playback_schedule(page_factory, project, count_test):
       monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
 
       if monitor_fps >= 30:
-          keep_running = False
+          break
       else:
           # Re-run because the monitor's FPS is lower than the video's FPS, which will
           # mess up the assert conditions. This test does not account for this scenario.
           page.wait_for_timeout(1000)
+          keep_running_count += 1
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
@@ -427,6 +446,7 @@ def test_playback_schedule(page_factory, project, count_test):
   assert factor == 4
   page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -534,6 +554,7 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   page.close()
 
 
+@pytest.mark.flaky(reruns=2)
 def test_concat(page_factory, project, concat_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")

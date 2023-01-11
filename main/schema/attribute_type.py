@@ -80,7 +80,6 @@ existing definition and will delete any existing fields that are not present in 
                         "schema": {"$ref": "#/components/schemas/AttributeTypeUpdate"},
                         "example": {
                             "entity_type": "LocalizationType",
-                            "global": "true",
                             "old_attribute_type_name": "My Old Attribute",
                             "new_attribute_type": attribute_type_example[3],
                         },

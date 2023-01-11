@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "buildDev": "webpack --config webpack.dev.js",
+    "serve": "nodemon -e js,html,json server/server.js",
+    "watch": "python3 make_index_files.py && webpack --config webpack.dev.js --watch",
+    "buildDev": "python3 make_index_files.py && webpack --config webpack.dev.js",
     "build": "webpack --config webpack.prod.js"
   },
   "keywords": [],
@@ -18,8 +20,8 @@
     "sass": "1.49.0",
     "sass-loader": "12.4.0",
     "style-loader": "3.3.1",
-    "webpack": "5.67.0",
-    "webpack-cli": "4.9.2",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
     "webpack-merge": "5.8.0",
     "webpack-shell-plugin-next": "2.2.2"
   },
@@ -27,6 +29,8 @@
     "autocompleter": "6.1.2",
     "construct-style-sheets-polyfill": "3.1.0",
     "d3": "7.3.0",
+    "express": "^4.18.2",
+    "express-http-proxy": "^1.6.3",
     "fetch-retry": "5.0.3",
     "hls.js": "1.2.3",
     "isomorphic-fetch": "3.0.0",
@@ -34,9 +38,14 @@
     "jszip": "3.7.1",
     "marked": "4.0.12",
     "mp4box": "0.4.9",
+    "nodemon": "^2.0.20",
+    "nunjucks": "^3.2.3",
+    "serve-favicon": "^2.5.0",
     "spark-md5": "3.0.2",
+    "underwater-image-color-correction": "1.0.3",
     "uuid": "8.3.2",
     "webrtc-streamer": "0.6.5-9-g0031565",
-    "underwater-image-color-correction": "1.0.3"
+    "yargs": "^17.6.0",
+    "zustand": "^4.1.1"
   }
 }

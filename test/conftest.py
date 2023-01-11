@@ -13,8 +13,7 @@ import tator
 from ._common import get_video_path, download_file, create_media, upload_media_file
 
 class PageFactory:
-    def __init__(self, base_url, browser, browser_context_args, storage, base_path):
-        self.base_url = base_url
+    def __init__(self, browser, browser_context_args, storage, base_path):
         self.browser = browser
         self.browser_context_args = browser_context_args
         self.storage = storage
@@ -26,7 +25,6 @@ class PageFactory:
         os.makedirs(artifact_path, exist_ok=True)
         page = self.browser.new_page(
             **self.browser_context_args,
-            base_url=self.base_url,
             record_video_dir=artifact_path,
             record_har_path=os.path.join(artifact_path, 'har.json'),
             locale='en-us',
@@ -75,17 +73,16 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     os.makedirs(videos, exist_ok=True)
     context = chrome.new_context(
         **browser_context_args,
-        base_url=base_url,
         record_video_dir=videos,
         locale="en-US",
     )
     page = context.new_page()
     page.goto('/', wait_until='networkidle')
-    page.wait_for_url('/accounts/login/')
+    page.wait_for_url('/accounts/login/*')
     page.fill('input[name="username"]', username)
     page.fill('input[name="password"]', password)
     page.click('input[type="submit"]')
-    page.wait_for_url('/projects/')
+    page.wait_for_url('/projects')
     yield context
     context.close()
 
@@ -93,7 +90,7 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
 def page_factory(request, launch_time, base_url, chrome, browser_context_args, authenticated):
     base_path = os.path.join(request.config.option.videos, launch_time)
     storage = authenticated.storage_state(path="/tmp/state.json")
-    yield PageFactory(base_url, chrome, browser_context_args, storage, base_path)
+    yield PageFactory(chrome, browser_context_args, storage, base_path)
 
 @pytest.fixture(scope='session')
 def token(request, page_factory):
@@ -203,6 +200,19 @@ def image_section(request, page_factory, project):
     page.fill('name-dialog input', 'Images')
     page.click('text="Save"')
     page.click('text="Images"')
+    section = int(page.url.split('=')[-1])
+    page.close()
+    yield section
+
+@pytest.fixture(scope='session')
+def image_section1(request, page_factory, project):
+    print("Creating image section...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.goto(f'/{project}/project-detail', wait_until='networkidle')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Images 1')
+    page.click('text="Save"')
+    page.click('text="Images 1"')
     section = int(page.url.split('=')[-1])
     page.close()
     yield section
@@ -356,6 +366,28 @@ def image(request, page_factory, project, image_section, image_file):
     print("Uploading an image...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={image_section}", wait_until='networkidle')
+    page.wait_for_selector('section-upload')
+    page.set_input_files('section-upload input', image_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.locator('.project__header reload-button').click()
+        page.wait_for_load_state('networkidle')
+        cards = page.query_selector_all('entity-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    image = int(cards[0].get_attribute('media-id'))
+    page.close()
+    yield image
+
+@pytest.fixture(scope='session')
+def image1(request, page_factory, project, image_section1, image_file):
+    print("Uploading an image...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.goto(f"/{project}/project-detail?section={image_section1}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', image_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()

@@ -43,31 +43,40 @@ class MediaUtil:
                     if delta < max_delta:
                         max_delta = delta
                         quality_idx = idx
-            self._video_file = video.media_files["streaming"][quality_idx]["path"]
-            self._storage = store_lookup[self._video_file]
-            self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
-            self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
-            segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-            f_p = io.BytesIO()
-            self._storage.download_fileobj(segment_file, f_p)
-            self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
-            self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
-                                                          ['segments']) if x['name'] == 'moof']
-            self._start_bias_frame = 0
-            if self._moof_data[0][1]["frame_start"] > 0:
-                self._start_bias_frame = self._moof_data[0][1]["frame_start"]
+            if 'hls' in video.media_files["streaming"][quality_idx]:
+                self._external_fetch = 'hls'
+                self._video_file = video.media_files["streaming"][quality_idx]["hls"]
+                self._storage = None # no buckets here
+            else:
+                self._external_fetch = None
+                self._video_file = video.media_files["streaming"][quality_idx]["path"]
+                self._storage = store_lookup[self._video_file]
+                self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
+                self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+                segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
+                f_p = io.BytesIO()
+                self._storage.download_fileobj(segment_file, f_p)
+                self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
+                self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
+                                                            ['segments']) if x['name'] == 'moof']
+                self._start_bias_frame = 0
+                if self._moof_data[0][1]["frame_start"] > 0:
+                    self._start_bias_frame = self._moof_data[0][1]["frame_start"]
 
         elif "image" in video.media_files:
-            if quality is None:
-                # Select highest quality if not specified
-                highest_res = -1
-                quality_idx = 0
-                for idx, media_info in enumerate(video.media_files["image"]):
-                    if media_info['resolution'][0] > highest_res:
-                        highest_res = media_info['resolution'][0]
-                        quality_idx = idx
+            # Select highest quality image that is non AVIF (no ffmpeg support)
+            highest_res = -1
+            quality_idx = 0
+            # only process non AVIF sources
+            images = video.media_files["image"]
+            images = [i for i in images if i['mime'] != 'image/avif']
+            logger.info(images)
+            for idx, media_info in enumerate(images):
+                if media_info['resolution'][0] > highest_res:
+                    highest_res = media_info['resolution'][0]
+                    quality_idx = idx
             # Image
-            self._video_file = video.media_files["image"][quality_idx]["path"]
+            self._video_file = images[quality_idx]["path"]
             self._storage = store_lookup[self._video_file]
             self._height = video.height
             self._width = video.width
@@ -77,7 +86,7 @@ class MediaUtil:
 
     def _get_impacted_segments(self, frames):
         """ TODO: add documentation for this """
-        if self._segment_info is None:
+        if self._segment_info is None and self._external_fetch != None:
             return None
 
         segment_list = []
@@ -257,6 +266,10 @@ class MediaUtil:
                 if frame in lookup:
                     inputs.extend(["-ss", self._frame_to_time_str(frame, lookup[frame][0]),
                                                                   "-i", lookup[frame][1]])
+                elif self._external_fetch == 'hls':
+                     inputs.extend(["-ss", self._frame_to_time_str(frame, None),
+                                    "-f", "hls",
+                                    "-i", self._video_file])
                 else:
                     raise ValueError("Failed to find frame {frame} in segmented mp4!")
                 frame_idx += 1
@@ -268,6 +281,34 @@ class MediaUtil:
             procs.append(subprocess.run(args, check=True, capture_output=True))
         return any([proc.returncode == 0 for proc in procs])
 
+    def get_image(self, roi=None, render_format="jpg", force_scale=None):
+        crop_filter = None
+        scale_filter = None
+        if roi:
+            w = max(0,min(round(roi[0]*self._width),self._width)) #pylint: disable=invalid-name
+            h = max(0,min(round(roi[1]*self._height),self._height)) #pylint: disable=invalid-name
+            x = max(0,min(round(roi[2]*self._width),self._width)) #pylint: disable=invalid-name
+            y = max(0,min(round(roi[3]*self._height),self._height)) #pylint: disable=invalid-name
+            crop_filter = f"crop={w}:{h}:{x}:{y}"
+        if force_scale:
+            scale_filter = f"scale={force_scale[0]}:{force_scale[1]}"
+
+        args = ["ffmpeg", "-i", self._storage.get_download_url(self._video_file,  3600)]
+        video_filters = []
+        if crop_filter:
+            video_filters.append(crop_filter)
+        if scale_filter:
+            video_filters.append(scale_filter)
+        if video_filters:
+            args.extend(["-vf", ",".join(video_filters)])
+        output = os.path.join(self._temp_dir, f"temp.{render_format}")
+        args.append(output)
+        proc = subprocess.run(args, check=True, capture_output=True)
+        if proc.returncode == 0:
+            return output
+        else:
+            return None
+
     def get_clip(self, frame_ranges):
         """ Given a list of frame ranges generate a temporary mp4
 
@@ -276,10 +317,23 @@ class MediaUtil:
         """
         if isinstance(frame_ranges, tuple):
             frame_ranges = [frame_ranges]
-
-        impacted_segments = self._get_impacted_segments_from_ranges(frame_ranges)
-        assert not impacted_segments is None, "Unable to calculate impacted video segments"
-        lookup, segment_info = self.make_temporary_videos(impacted_segments)
+        if self._external_fetch == 'hls':
+            lookup ={}
+            segment_info=[] # There are no segment
+            for idx,frange in enumerate(frame_ranges):
+                temp_out=os.path.join(self._temp_dir, f"{frange[0]}_{frange[1]}.mp4")
+                ffmpeg_args = ["ffmpeg",
+                               "-f", "hls",
+                               "-i", self._video_file,
+                               "-ss", self._frame_to_time_str(frange[0], None),
+                               "-frames:v", str(frange[1]-frange[0]),
+                               temp_out]
+                proc = subprocess.run(ffmpeg_args, check=True, capture_output=True)
+                lookup = {"{frange[0]}_{frange[1]}.mp4": (None,temp_out)}
+        else:
+            impacted_segments = self._get_impacted_segments_from_ranges(frame_ranges)
+            assert not impacted_segments is None, "Unable to calculate impacted video segments"
+            lookup, segment_info = self.make_temporary_videos(impacted_segments)
 
         logger.info(f"Lookup = {lookup}")
         with open(os.path.join(self._temp_dir, "vid_list.txt"), "w") as vid_list:
@@ -428,12 +482,13 @@ class MediaUtil:
             proc = subprocess.run(gif_args, check=True, capture_output=True)
             return os.path.join(self._temp_dir, "animation.gif")
 
-    def generate_error_image(self, code, message, img_format="png"):
+    def generate_error_image(code, message, img_format="png"):
         """ TODO: add documentation for this """
         font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
         font = ImageFont.truetype("DejaVuSans.ttf", 28)
         img = Image.open(os.path.join(settings.STATIC_ROOT,
                                       "images/computer.jpg"))
+        img = img.resize([1024,1024])
         draw = ImageDraw.Draw(img)
         W, H = img.size #pylint: disable=invalid-name
 
@@ -444,15 +499,15 @@ class MediaUtil:
         offset = font.getoffset(header)
         logger.info(f"Offset = {offset}")
 
-        draw.text((W/2-((w/2)+x_bias), 80), header, (255, 62, 29), font=font_bold)
+        draw.text((W/2-((w/2)+x_bias), 160), header, (255, 62, 29), font=font_bold)
 
 
         _, line_height = draw.textsize(message)
         line_height *= 3
-        start_height = 200-line_height
-        lines = textwrap.wrap(message, 17)
+        start_height = 300-line_height
+        lines = textwrap.wrap(message, 40)
         for line_idx, line in enumerate(lines):
-            draw.text((100, start_height+(line_height*line_idx)), line, (255, 62, 29), font=font)
+            draw.text((200, start_height+(line_height*line_idx)), line, (255, 62, 29), font=font)
 
         img_buf = io.BytesIO()
         if img_format == "jpg":

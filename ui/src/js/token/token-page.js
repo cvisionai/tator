@@ -1,5 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { getCookie } from "../util/get-cookie.js";
+import { store } from "./store.js";
 
 export class TokenPage extends TatorPage {
   constructor() {
@@ -85,6 +86,10 @@ export class TokenPage extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+
     form.addEventListener("submit", evt => {
       evt.preventDefault();
       const body = {
@@ -121,6 +126,12 @@ export class TokenPage extends TatorPage {
         this.setAttribute("has-open-modal", "");
       })
     });
+  }
+
+  connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
+    // Initialize store data
+    store.getState().init();
   }
 
   _validateForm() {

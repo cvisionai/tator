@@ -13,6 +13,7 @@ export class MediaPanel extends TatorElement {
     div.appendChild(this._name);
 
     this._attrs = document.createElement("attribute-panel");
+    this._attrs._versionWidget.style.display = "none";
 
     div.appendChild(this._attrs); // TODO: Fill this in with attribute data
 

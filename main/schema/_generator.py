@@ -57,6 +57,9 @@ class CustomGenerator(SchemaGenerator):
                 'BucketSpec': bucket_spec,
                 'BucketUpdate': bucket_update,
                 'Bucket': bucket,
+                'BucketGCPConfig': gcp_config,
+                'BucketOCIConfig': oci_config,
+                'BucketS3Config': s3_config,
                 'ConcatDefinition': concat_definition,
                 'ChangeLog': change_log,
                 'CloneMediaSpec': clone_media_spec,
@@ -188,15 +191,15 @@ class CustomGenerator(SchemaGenerator):
                     'in': 'header',
                     'name': 'Authorization',
                 },
-                'CookieAuth': {
+                'SessionAuth': {
                     'type': 'apiKey',
-                    'in': 'cookie',
-                    'name': 'csrftoken',
+                    'in': 'header',
+                    'name': 'X-CSRFToken',
                 },
             }
             schema['security'] = [
                 {'TokenAuth': []},
-                {'CookieAuth': []},
+                {'SessionAuth': []},
             ]
 
             # Set server entry.

@@ -61,6 +61,7 @@ def test_basic(request, page_factory, project): #video
                   f.write(chunk)
 
    page.set_input_files('section-upload input', [nasa_space_photo_1,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_2,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1])
+   page.wait_for_timeout(5000)
    page.query_selector('upload-dialog').query_selector('text=Close').click()
 
    page.locator('.project__header reload-button').click()
@@ -190,13 +191,6 @@ def test_basic(request, page_factory, project): #video
    print(f"Cards in saved section {cardLength} == 2")
    assert cardLength == 2
    print("Complete!") 
-
-# def test_bulk_edit(request, page_factory, project): #video
-   # print("Project Detail Page tests...")
-   # page = page_factory(
-   #     f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-   # page.goto(f"/{project}/project-detail")
-   # page.on("pageerror", print_page_error)
 
    ## Test multiple edit.....
    print("Start: Test media labels and mult edit")

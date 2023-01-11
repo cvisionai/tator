@@ -2,6 +2,7 @@ import datetime
 from itertools import islice
 import logging
 from urllib.parse import urlparse
+import uuid
 
 from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
@@ -44,6 +45,12 @@ def computeRequiredFields(typeObj):
     for field in newObjType._meta.get_fields(include_parents=False):
         if not field.is_relation and not field.blank and field.default is None:
             datafields[field.name] = field.description
+        elif (
+            field.name == "frame"
+            and hasattr(typeObj, "association")
+            and typeObj.association == "Frame"
+        ):
+            datafields[field.name] = field.description
 
     attributes={}
     for column in typeObj.attribute_types:
@@ -66,7 +73,7 @@ def check_required_fields(datafields, attr_types, body):
     for attr_type in attr_types:
         field = attr_type['name']
         if field in body:
-            convert_attribute(attr_type, body[field]) # Validates attr value
+            body[field] = convert_attribute(attr_type, body[field]) # Validates attr value
             attrs[field] = body[field];
         elif attr_type['dtype'] == 'datetime':
             if 'use_current' in attr_type and attr_type['use_current']:
@@ -198,6 +205,7 @@ def bulk_update_and_log_changes(queryset, project, user, update_kwargs=None, new
     # Get prior state data for ChangeLog creation
     updated_ids = list(queryset.values_list("id", flat=True))
     first_obj = queryset.first()
+    queryset = type(first_obj).objects.filter(pk__in=updated_ids)
     ref_table = ContentType.objects.get_for_model(first_obj)
     model_dict = first_obj.model_dict
 
@@ -313,3 +321,12 @@ def bulk_log_creation(objects, project, user):
     )
     bulk_create_from_generator(objs, ChangeToObject)
     return ids
+
+def construct_elemental_id_from_parent(parent, requested_uuid=None):
+    """ Return the parent's elemental id or make a new one """
+    if parent is None and requested_uuid is None:
+        return uuid.uuid4()
+    elif parent.elemental_id:
+        return parent.elemental_id
+    else:
+        return requested_uuid

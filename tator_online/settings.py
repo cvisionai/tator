@@ -321,9 +321,9 @@ if OKTA_ENABLED:
 
 SAML_ENABLED = os.getenv("SAML_ENABLED")
 SAML_ENABLED = SAML_ENABLED and SAML_ENABLED.lower() == "true"
+PROTO = "https" if REQUIRE_HTTPS else "http"
 
 if SAML_ENABLED:
-    PROTO = "https" if REQUIRE_HTTPS else "http"
     SAML2_AUTH = {
         'METADATA_AUTO_CONF_URL': os.getenv("SAML_METADATA_URL"),
         'DEFAULT_NEXT_URL': LOGIN_REDIRECT_URL,

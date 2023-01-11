@@ -1,71 +1,54 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
 
-export class AppletEdit extends TypeForm {
+export class AppletEdit extends TypeFormTemplate {
    constructor() {
       super();
       this.typeName = "Applet";
       this.readableTypeName = "Applet";
-      this.icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="SideNav-icon icon-cpu no-fill"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
+      
       this._hideAttributes = true;
-      this.versionId = null;
 
-      // To show who algo is registered to
-      // this._userData = document.createElement("user-data");
+      // 
+      var templateInner = document.getElementById("applet-edit");
+      var innerClone = document.importNode(templateInner.content, true);
+      this._shadow.appendChild(innerClone);
+
+      this._form = this._shadow.getElementById("applet-edit--form");
+      this._editName = this._shadow.getElementById("applet-edit--name");
+      this._linkToDashboard = this._shadow.getElementById("applet-edit--link");
+      this._editDescription = this._shadow.getElementById("applet-edit--description");
+      this._htmlFilePath = this._shadow.getElementById("applet-edit--html-file");
+      this._categoriesList = this._shadow.getElementById("applet-edit--categories");
    }
 
-   async _getSectionForm(data) {
-      this.data = data;
-      this.appletId = data.id;
-      this._setForm();
-      let current = this.boxHelper.boxWrapDefault({
-         "children": ""
-      });
+   /** These override template to set additional info to the form */   
+    setProjectIds(newProject) {
+      this.projectId = newProject.data.id;
+      this.organizationId = newProject.data.organization;
+      this._htmlFilePath.projectId = newProject.data.id;
+      this._htmlFilePath.organizationId = newProject.data.organization;
+    }
 
-
-      // append input for name
-      this._editName = document.createElement("text-input");
-      this._editName.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._editName.setAttribute("name", "Name");
-      this._editName.setAttribute("type", "string");
-      this._editName.setValue(this.data.name);
-      this._editName.default = this.data.name;
-      this._editName.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._editName);
-
+   async _setupFormUnique() {
       // append link
-      if (this.appletId && this.appletId !== "New") {
-         this._linkToDashboard = document.createElement("link-input");
-         this._linkToDashboard.setAttribute("name", "Link");
-         this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this.projectId}/dashboards/${this.appletId}`);
-         this._form.appendChild(this._linkToDashboard); 
+      if (this._data.id && this._data.id !== "New") {
+         this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this.projectId}/dashboards/${this._data.id}`);
+      } else {
+         this._linkToDashboard.hidden = true;
       }
 
       // description
-      this._editDescription = document.createElement("text-input");
-      this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._editDescription.setAttribute("name", "Description");
-      this._editDescription.setAttribute("type", "string");
-      this._editDescription.setValue(this.data.description);
-      this._editDescription.default = this.data.description;
-      this._editDescription.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._editDescription);
+      this._editDescription.setValue(this._data.description);
+      this._editDescription.default = this._data.description;
 
-      // Path to html file
-      this._htmlFilePath = document.createElement("file-input");
-      // this._htmlFilePath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._htmlFilePath.setAttribute("name", "HTML File");
-      this._htmlFilePath.setAttribute("for", "applet");
-      this._htmlFilePath.setAttribute("type", "html");
-      this._htmlFilePath.projectId = this.projectId;
-
-      if (typeof this.data.html_file == "undefined") {
-         this.data.html_file = [];
+      if (typeof this._data.html_file == "undefined") {
+         this._data.html_file = [];
       }
 
-      this._htmlFilePath.setValue(this.data.html_file);
-      this._htmlFilePath.default = this.data.html_file;
+      this._htmlFilePath.setValue(this._data.html_file);
+      this._htmlFilePath.default = this._data.html_file;
 
       this._htmlFilePath._fetchCall = (bodyData) => {
          fetch(`/rest/SaveGenericFile/${this.projectId}`,
@@ -90,30 +73,15 @@ export class AppletEdit extends TypeForm {
          });
       };
 
-      this._htmlFilePath.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._htmlFilePath);
-
       // Categories
-      this._categoriesList = document.createElement("array-input");
-      // this._categoriesList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._categoriesList.setAttribute("name", "Categories");
-      this._categoriesList.setValue(this.data.categories);
-      this._categoriesList.default = this.data.categories;
-      this._categoriesList.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._categoriesList);
-
-      current.appendChild(this._form);
-
-      return current;
+      this._categoriesList.setValue(this._data.categories);
+      this._categoriesList.default = this._data.categories;
    }
 
 
    _getFormData() {
       const formData = {};
-
-      // console.log(`Data ID: ${this.data.id}`);
-      const isNew = this.data.id == "New" ? true : false;
-      // const isNew = true;
+      const isNew = this._data.id == "New" ? true : false;
 
       if (this._editName.changed() || isNew) {
          formData.name = this._editName.getValue();

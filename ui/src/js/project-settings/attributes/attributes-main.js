@@ -1,10 +1,10 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
-import { SettingsBox } from "../settings-box-helpers.js";
-import { ProjectTypesData } from "../data/data-project-types.js";
 import { AttributesClone } from "./attributes-clone.js";
-import { AttributesData } from "../data/data-attributes-clone.js";
+import { AttributesData } from "./data-attributes-clone.js";
 import { AttributesDelete } from "./attributes-delete.js";
+import { store, getAttributeDataByType } from "../store.js";
+
 /**
  * Main Attribute section for type forms
  * 
@@ -28,9 +28,7 @@ export class AttributesMain extends HTMLElement {
     this.hasChanges = false;
   }
 
-  _init(typeName, fromId, fromName, projectId, data, modal){
-    //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
-
+  _init(typeName, fromId, fromName, projectId, data, modal) {
     // Init object global vars
     this.fromId = fromId;
     this.fromName = fromName;
@@ -45,7 +43,6 @@ export class AttributesMain extends HTMLElement {
     this.appendChild(this.loadingImg);
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( this.modal );
     this.refreshTypeEvent = new Event('settings-refresh');
 
     // Section h1.
@@ -56,35 +53,9 @@ export class AttributesMain extends HTMLElement {
     this.attributeDiv.appendChild(this._h2);
 
     // Create a styled box & Add box to page
-    this.attributeBox = this.boxHelper.boxWrapDefault( {"children" : ""} );
+    this.attributeBox = document.createElement("div");
+    this.attributeBox.setAttribute("class", `py-3 rounded-2 edit-project__config`); // 
     this.attributeDiv.appendChild(this.attributeBox);
-
- 
-
-    // this.separate_span = document.createElement("span");
-    // this.separate_span.setAttribute("class", "px-2");
-    // h2.appendChild(this.separate_span);
-    // const h2_separate_span = document.createTextNode(`|`);
-    // this.separate_span.appendChild(h2_separate_span);
-
-    // const span = document.createElement("span");
-    // span.setAttribute("class", "text-gray text-normal")
-    // span.appendChild( document.createTextNode(`${this.fromName}`) );
-    // h2.appendChild(span);
-
-    // this.separate_span2 = document.createElement("span");
-    // this.separate_span2.setAttribute("class", "px-2 text-gray text-normal");
-    // h2.appendChild(this.separate_span2);
-    // const h2_separate_span2 = document.createTextNode(`|`);
-    // this.separate_span2.appendChild(h2_separate_span2);
-
-    // const span2 = document.createElement("span");
-    // span2.setAttribute("class", "text-gray text-normal")
-    // span2.appendChild( document.createTextNode(`${this.typeName} (ID ${this.fromId})`) );
-    // h2.appendChild(span2);
-
-    
-
 
     // Add the form and +Add links
     this.attributeBox.appendChild( this._getAttributesSection(data) );
@@ -98,22 +69,8 @@ export class AttributesMain extends HTMLElement {
     let attributesSection = document.createElement("div");
 
     if(attributeTypes && attributeTypes.length > 0){
-      // Attributes list main heading and trigger
-      // let heading = this.boxHelper.headingWrap({
-      //     "headingText" : `Edit Attributes (${attributeTypes.length})`,
-      //     "descriptionText" : "Edit media type.",
-      //     "level": 2,
-      //     "collapsed": true
-      //   });
-      // heading.setAttribute("class", `py-4 toggle-attribute text-semibold`);
-
       const heading = document.createElement("h3");
       heading.setAttribute("class", "f1 text-gray pb-3");
-  
-      // const addPlus = document.createElement("span");
-      // addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
-      // const editSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>`;
-      // addPlus.innerHTML = editSvg;
   
       const addText = document.createElement("span");
       addText.setAttribute("class", "");
@@ -144,13 +101,6 @@ export class AttributesMain extends HTMLElement {
 
   // Add Attribute
   _getNewAttributesTrigger(){
-    // New attribute link
-    // let newAttributeTrigger = this.boxHelper.headingWrap({
-    //     "headingText" : `+ New Attribute`,
-    //     "descriptionText" : "",
-    //     "level": 3,
-    //     "collapsed": false
-    // });
     const newAttributeTrigger = document.createElement("a");
     newAttributeTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
 
@@ -175,7 +125,7 @@ export class AttributesMain extends HTMLElement {
         this._postAttribute( afObj.attrForm );
       });
 
-      this.boxHelper._modalConfirm({
+      this.modal._confirm({
         "titleText" : "New Attribute",
         "mainText" : afObj.attrForm.form,
         "buttonSave" : afObj.submitAttribute,
@@ -201,7 +151,7 @@ export class AttributesMain extends HTMLElement {
   }
 
   _postAttribute(formObj){
-    this.modal._closeCallback();
+    this.modal._modalCloseAndClear();
     this.loading.showSpinner();
 
     let formJSON = {
@@ -218,39 +168,27 @@ export class AttributesMain extends HTMLElement {
     .then(data => {
       let currentMessage = data.message;
 
-      this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
-        once : true
-      });
-
       if (status == 201) {
         // iconWrap.appendChild(succussIcon);
         this.loading.hideSpinner();
-        this.boxHelper._modalSuccess(currentMessage);
+        this.modal._success(currentMessage);
+
+        // Replaces dispatchRefresh
+        store.getState().fetchType(this.typeName);
+
       } else if(status == 400) {
         // iconWrap.appendChild(warningIcon);
         this.loading.hideSpinner();
-        this.boxHelper._modalError(`${currentMessage}`);
+       this.modal._error(`${currentMessage}`);
       }
     }).catch((error) => {
       this.loading.hideSpinner();
-      this.boxHelper._modalError(`Error: ${error}`);
+     this.modal._error(`Error: ${error}`);
     });
-  }
-
-  _dispatchRefresh(e){
-    //console.log("modal complete closed");
-    this.dispatchEvent(this.refreshTypeEvent);   
   }
 
   // Clone Attribute
   _getCopyAttributesTrigger(){
-    // New attribute link
-    // let newCopyTrigger = this.boxHelper.headingWrap({
-    //     "headingText" : `+ Clone Attribute(s)`,
-    //     "descriptionText" : "",
-    //     "level": 3,
-    //     "collapsed": false
-    //   });
     const newCopyTrigger = document.createElement("a");
     newCopyTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
 
@@ -273,58 +211,57 @@ export class AttributesMain extends HTMLElement {
     return newCopyTrigger;
   }
 
-  _getCloneModal(){
+  async _getCloneModal() {
     this.loading.showSpinner();
-    let typesData = new ProjectTypesData(this.projectId);
 
-    typesData._getAttributeDataByType().then((attributeDataByType) => {
-      // console.log("did it come back from typesData ok? ");
-      // console.log(attributeDataByType);
+    const attributeDataByType = await getAttributeDataByType();
+    this.clone = new AttributesClone(attributeDataByType);
+    const cloneForm = this.clone._init();
+
+    const cloneSave = document.createElement("input");
+    cloneSave.setAttribute("type", "submit");
+    cloneSave.setAttribute("value", "Save");
+    cloneSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
       
-      const clone = new AttributesClone( attributeDataByType );
-      const cloneForm = clone._init();
+    cloneSave.addEventListener("click", this._saveClone.bind(this)); 
 
-      const cloneSave = document.createElement("input");
-      cloneSave.setAttribute("type", "submit");
-      cloneSave.setAttribute("value", "Save");
-      cloneSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
-      
-      cloneSave.addEventListener("click", (e) => {
-        e.preventDefault();
-        const selectedData = clone.getInputData();
-        //console.log(selectedData);
-        
-        let cloneData = new AttributesData({
-          projectId: this.projectId,
-          typeId: this.fromId,
-          typeName: this.typeName,
-          selectedData
-        });
-        return cloneData.createClones().then((resp) => {
-          if(resp.ok){
-            this.boxHelper._modalSuccess(resp.message);
-          } else {
-            this.boxHelper._modalComplete(resp.message);
-          }
-          this.dispatchEvent(this.refreshTypeEvent);
-          
-        });               
-      });
-
-      this.loading.hideSpinner();
-      this.boxHelper.modal._div.classList.add("modal-wide");
-      return this.boxHelper._modalConfirm({
-        "titleText" : "Clone Attribute(s)",
-        "mainText" : cloneForm,
-        "buttonSave" : cloneSave,
-        "scroll" : true
-      });
-    }).catch((error) => {
-      this.loading.hideSpinner();
-      this.boxHelper._modalError(`Error: ${error}`);
-    });
-    
+    this.loading.hideSpinner();
+    this.modal._div.classList.add("modal-wide");
+    return this.modal._confirm({
+      "titleText": "Clone Attribute(s)",
+      "mainText": cloneForm,
+      "buttonSave": cloneSave,
+      "scroll": true
+    });  
   }
+
+  async _saveClone(evt) {
+    evt.preventDefault();
+    this.modal._modalCloseAndClear();
+    this.loading.showSpinner();
+    const selectedData = this.clone.getInputData();
+      
+    let cloneData = new AttributesData({
+      projectId: this.projectId,
+      typeId: this.fromId,
+      typeName: this.typeName,
+      selectedData
+    });
+
+    const resp = await cloneData.createClones();
+    if (resp.ok) {
+      this.loading.hideSpinner();
+      this.modal._success(resp.message);
+    } else {
+      this.loading.hideSpinner();
+      this.modal._complete(resp.message);
+    }
+
+    // Refetch the type is a refresh event
+    store.getState().fetchType( this.typeName );
+  }
+
+  
 
   _toggleAttributes(el){
     let hidden = el.hidden
@@ -341,12 +278,6 @@ export class AttributesMain extends HTMLElement {
     attributes = [],
     attributeId = undefined
   } = {}){
-    // let attributeCurrent = this.boxHelper.headingWrap({
-    //   "headingText" : `${attributes.name}`,
-    //   "descriptionText" : "Edit attribute.",
-    //   "level":3,
-    //   "collapsed":true
-    // });
     let innerAttributeBox = document.createElement("div");
     innerAttributeBox.setAttribute("class", "attributes-edit flex-items-center rounded-2 d-flex flex-row");
     this.attributeBox.appendChild(innerAttributeBox);
@@ -399,27 +330,6 @@ export class AttributesMain extends HTMLElement {
       this._deleteAttrConfirm(attributes.name);
     });
 
-
-    // create box with heading for this form
-    // let boxOnPage = this.boxHelper.boxWrapDefault( {
-    //   "children" : attributeCurrent,
-    //   "level":2
-    // } );
-
-    // let hiddenInnerBox = document.createElement("div");
-    // hiddenInnerBox.appendChild(attrForm);
-    // hiddenInnerBox.appendChild(this.deleteAttr(attributes.name));
-    // hiddenInnerBox.hidden = true;
-    // boxOnPage.appendChild(hiddenInnerBox);
-
-    // // add listener
-    // attributeCurrent.addEventListener("click", (e) => {
-    //   e.preventDefault();
-    //   this._toggleAttributes(hiddenInnerBox);
-    //   this._toggleChevron(e);
-    // });
-
-    // return boxOnPage;
     return innerAttributeBox;
   }
 
@@ -444,27 +354,23 @@ export class AttributesMain extends HTMLElement {
     attrSave.setAttribute("value", "Save");
     attrSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
     
-    attrSave.addEventListener("click", (e) => {
+    attrSave.addEventListener("click", async (e) => {
       e.preventDefault();
+      this.modal._modalCloseAndClear();
+      this.loading.showSpinner();
       const attributeFormData = attrForm._attributeFormData({ entityType: this.typeName, id: this.fromId });
-
-      
-      return this._fetchAttributePutPromise(this.fromId, attributeFormData);               
+      await this._fetchAttributePutPromise(this.fromId, attributeFormData);
+      this.loading.hideSpinner();
     });
 
-    // form export class listener
-    // attrForm.addEventListener("change", () => {
-    //   this.hasChanges = true;
-    // });
-
-    // this.attrForms.push(attrForm);
-    this.boxHelper._modalConfirm({
+    this.modal._div.classList.add("modal-wide");
+    this.modal._confirm({
       "titleText" : "Edit Attribute",
       "mainText" : attrForm,
       "buttonSave" : attrSave,
       "scroll" : true
     });
-    this.modal._div.classList.add("modal-wide");
+    
   }
 
   /**
@@ -496,9 +402,9 @@ export class AttributesMain extends HTMLElement {
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
-    this.deleteBox = this.boxHelper.boxWrapDelete( {
-      "children" : headingDiv
-    } );
+    this.deleteBox = document.createElement("div");
+    deleteBox.setAttribute("class", `py-3 rounded-2 edit-project__config`);
+    deleteBox.appendChild(headingDiv);
 
     this.deleteBox.style.backgroundColor = "transparent";
 
@@ -521,7 +427,7 @@ export class AttributesMain extends HTMLElement {
       this._deleteAttrType(name);
     });
 
-    this.boxHelper._modalConfirm({
+    this.modal._confirm({
       "titleText" : `Delete Confirmation`,
       "mainText" : `Pressing confirm will delete attribute "${name}". Do you want to continue?`,
       "buttonSave" : button,
@@ -530,7 +436,7 @@ export class AttributesMain extends HTMLElement {
   }
 
   _deleteAttrType(name){
-    this.modal._closeCallback();;
+    this.modal._modalCloseAndClear();;
     this.loading.showSpinner();
 
     let deleteAttribute = new AttributesDelete({
@@ -542,21 +448,24 @@ export class AttributesMain extends HTMLElement {
     if(name != "undefined"){
       deleteAttribute.deleteFetch().then((data) => {
         this.loading.hideSpinner();
-        this.dispatchEvent(this.refreshTypeEvent);
+        // this.dispatchEvent(this.refreshTypeEvent);
         
         if (data.status == 200) {
-          this.boxHelper._modalSuccess(data.message);
+          this.modal._success(data.message);
         } else {
-          this.boxHelper._modalError(data.message);
+         this.modal._error(data.message);
         }
+        
+        // Refetch the type is a refresh event
+        store.getState().fetchType( this.typeName );
       }).catch((err) => {
         console.error(err);
         this.loading.hideSpinner();
-        return this.boxHelper._modalError("Error with delete.");
+        returnthis.modal._error("Error with delete.");
       });
     } else {
       this.loading.hideSpinner();
-      return this.boxHelper._modalError("Error with delete.");
+      returnthis.modal._error("Error with delete.");
     }
 
   }
@@ -579,7 +488,7 @@ export class AttributesMain extends HTMLElement {
     }
   }
 
-  _fetchAttributePutPromise(parentTypeId, dataObject, global = false) {
+  _fetchAttributePutPromise(parentTypeId, dataObject) {
     let promise = Promise.resolve();
     this.successMessages = "";
     this.failedMessages = "";
@@ -589,10 +498,6 @@ export class AttributesMain extends HTMLElement {
     const formData = dataObject.formData;
     const attributeNewName = dataObject.newName;
     const attributeOldName = dataObject.oldName;
-
-    if (global === "true") {
-      formData.global = "true";
-    }
 
     promise = promise.then(() => {
       return fetch("/rest/AttributeType/" + parentTypeId, {
@@ -616,25 +521,12 @@ export class AttributesMain extends HTMLElement {
       let iconWrap = document.createElement("span");
       let warningIcon = document.createElement("modal-warning");
 
-      // console.log(`currentMessage::::: ${currentMessage}`);
-
       if (response.status == 200) {
-        //console.log("Return Message - It's a 200 response.");
         iconWrap.appendChild(succussIcon);
         this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
       } else if (response.status != 200) {
-        if (currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-          //console.log("Return Message - It's a 400 response for attr form.");
-          let input = `<input type="checkbox" checked name="global" data-old-name="${attributeOldName}" class="checkbox"/>`;
-          let newNameText = (attributeOldName == attributeNewName) ? "" : ` new name "${attributeNewName}"`
-          this.confirmMessages += `<div class="py-2">${input} Attribute "${attributeOldName}" ${newNameText}</div>`
-          this.requiresConfirmation = true;
-        } else {
-          iconWrap.appendChild(warningIcon);
-          //console.log("Return Message - It's a 400 response for main form.");
-          // this.failedMessages += `<div class="py-2"><span class="v-align-top">${currentMessage}</span></div>`;
-          this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
-        }
+        iconWrap.appendChild(warningIcon);
+        this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
       }
     }).then(() => {
       if (this.successMessages !== "") {
@@ -646,29 +538,17 @@ export class AttributesMain extends HTMLElement {
         this.saveModalMessage += heading + this.failedMessages;
       }
 
-      if (this.requiresConfirmation) {
-        let buttonSave = this._getAttrGlobalTrigger(dataObject);
-        let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-        let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-        let mainText = `${this.saveModalMessage}${confirmHeading}${subText}${this.confirmMessages}`;
-        this.loading.hideSpinner();
-        this.boxHelper._modalConfirm({
-          "titleText": "Confirm Edit",
-          mainText,
-          buttonSave
-        });
+      let mainText = `${this.saveModalMessage}`;     
+      
+      if (this.failedMessages !== "") {
+        this.modal._complete(mainText);
       } else {
-        let mainText = `${this.saveModalMessage}`;     
-        
-        if (this.failedMessages !== "") {
-          this.boxHelper._modalComplete(mainText);
-        } else {
-          this.boxHelper._modalSuccess(mainText);
-        }
-        // Reset forms to the saved data from model
-        return this.dispatchEvent(this.refreshTypeEvent);
+        this.modal._success(mainText);
       }
+      // Reset forms to the saved data from model
+      // return this.dispatchEvent(this.refreshTypeEvent);
+      // Refetch the type is a refresh event
+      store.getState().fetchType( this.typeName );
     }).then(() => {
       this.loading.hideSpinner();
     }).catch(err => {
@@ -678,17 +558,6 @@ export class AttributesMain extends HTMLElement {
     return promise;
   }
 
-  _getAttrGlobalTrigger(formData) {
-    let buttonSave = document.createElement("button")
-    buttonSave.setAttribute("class", "btn btn-clear f1 text-semibold");
-    buttonSave.innerHTML = "Confirm";
-
-    buttonSave.addEventListener("click", (e) => {
-      return this._fetchAttributePutPromise(this.typeId, formData, "true");
-    });
-
-    return buttonSave;
-  }
 }
 
 customElements.define("attributes-main", AttributesMain);

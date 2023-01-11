@@ -31,10 +31,10 @@ export class UploadDialog extends ModalDialog {
     this._errors.setAttribute("class", "modal__errors d-flex flex-column");
     this._main.appendChild(this._errors);
 
-    this._cancel = document.createElement("button");
-    this._cancel.setAttribute("class", "btn btn-clear btn-red");
-    this._cancel.textContent = "Cancel";
-    this._footer.appendChild(this._cancel);
+    this._cancelButton = document.createElement("button");
+    this._cancelButton.setAttribute("class", "btn btn-clear btn-red");
+    this._cancelButton.textContent = "Cancel";
+    this._footer.appendChild(this._cancelButton);
 
     this._close = document.createElement("button");
     this._close.setAttribute("class", "btn btn-clear btn-purple");
@@ -42,17 +42,25 @@ export class UploadDialog extends ModalDialog {
     this._close.style.display = "none";
     this._footer.appendChild(this._close);
 
-    this._cancel.addEventListener("click", () => {
+    this._closeButton = this._shadow.querySelector("modal-close");
+    this._closeButton.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this._cancelled = true;
       this.dispatchEvent(new Event("cancel"));
-      this.reset();
+      setTimeout(this._reset.bind(this), 1000);
+    });
+
+    this._cancelButton.addEventListener("click", () => {
+      this.removeAttribute("is-open");
+      this._cancelled = true;
+      this.dispatchEvent(new Event("cancel"));
+      setTimeout(this._reset.bind(this), 1000);
     });
 
     this._close.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this.dispatchEvent(new Event("close"));
-      this.reset();
+      setTimeout(this._reset.bind(this), 1000);
     });
 
     this._doneFiles = 0;
@@ -71,24 +79,36 @@ export class UploadDialog extends ModalDialog {
     }
   }
 
-  setTotalFiles(numFiles) {
+  init(store) {
+    // Create store subscriptions
+    store.subscribe(state => state.uploadChunkProgress, this._setChunkProgress.bind(this));
+    store.subscribe(state => state.uploadTotalFiles, this._setTotalFiles.bind(this));
+    store.subscribe(state => state.uploadFilesComplete, this._setFilesCompleted.bind(this));
+    store.subscribe(state => state.uploadCurrentFile, this._setFilename.bind(this));
+    store.subscribe(state => state.uploadError, this._addError.bind(this));
+  }
+
+  _setTotalFiles(numFiles) {
     this._cancelled = false;
     this._fileProgress.setAttribute("max", numFiles);
     this._totalFiles = numFiles;
     this._fileText.textContent = `Uploaded 0/${this._totalFiles} Files`;
   }
 
-  uploadFinished() {
-    this._doneFiles++;
-    this.fileComplete();
+  _setFilesCompleted(doneFiles) {
+    this._doneFiles = doneFiles;
+    this._fileComplete();
   }
 
-  setProgress(percent, message) {
+  _setFilename(currentFile) {
+    this._uploadText.textContent = `Uploading ${currentFile}...`;
+  }
+
+  _setChunkProgress(percent) {
     this._uploadProgress.setAttribute("value", percent);
-    this._uploadText.textContent = message;
   }
 
-  addError(message) {
+  _addError(message) {
     this._failFiles++;
     const li = document.createElement("li");
     this._errors.appendChild(li);
@@ -104,23 +124,23 @@ export class UploadDialog extends ModalDialog {
     const text = document.createTextNode(message);
     div.appendChild(text);
 
-    this.fileComplete();
+    this._fileComplete();
   }
 
-  fileComplete() {
+  _fileComplete() {
     this._fileProgress.setAttribute("value", this._doneFiles + this._failFiles);
     this._fileText.textContent = `Uploaded ${this._doneFiles}/${this._totalFiles} Files`;
     if (this._failFiles > 0) {
       this._fileText.textContent += ` (${this._failFiles} Failed)`
     }
     if (this._doneFiles + this._failFiles == this._totalFiles) {
-      this.finish();
+      this._finish();
     }
   }
 
-  finish() {
+  _finish() {
     if (!this._cancelled) {
-      this._cancel.style.display = "none";
+      this._cancelButton.style.display = "none";
       this._close.style.display = "flex";
       if (this._failFiles == 0) {
         this._uploadText.textContent = "Upload complete! Monitor video transcodes with the \"Activity\" button.";
@@ -132,8 +152,8 @@ export class UploadDialog extends ModalDialog {
     }
   }
 
-  reset() {
-    this._cancel.style.display = "flex";
+  _reset() {
+    this._cancelButton.style.display = "flex";
     this._close.style.display = "none";
     this._title.nodeValue = "Uploading Files";
     this._fileText.textContent = "";
@@ -141,6 +161,7 @@ export class UploadDialog extends ModalDialog {
     this._uploadText.textContent = "";
     this._uploadProgress.setAttribute("value", 0);
     this._doneFiles = 0;
+    this._failFiles = 0;
     
     while (this._errors.firstChild) {
       this._errors.removeChild(this._errors.firstChild);

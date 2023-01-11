@@ -1,27 +1,23 @@
 from collections import defaultdict
-from functools import reduce
 import logging
-from operator import or_
 import os
-import time
+from time import sleep
 import subprocess
 import json
 import datetime
-import shutil
-import math
+from math import ceil
 from typing import List
+from pprint import pformat, pprint
 
-from progressbar import progressbar,ProgressBar
+from progressbar import progressbar, ProgressBar
 from dateutil.parser import parse
 from boto3.s3.transfer import S3Transfer
-from PIL import Image
 
 from main.models import *
 from main.search import TatorSearch
 from main.store import get_tator_store
 
 from django.conf import settings
-from django.db.models import F, Q
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import streaming_bulk
@@ -73,7 +69,7 @@ def waitForMigrations():
             list(Project.objects.all())
             break
         except:
-            time.sleep(10)
+            sleep(10)
 
 INDEX_CHUNK_SIZE = 50000
 CLASS_MAPPING = {'media': Media,
@@ -91,7 +87,7 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
         if max_age_days:
             min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
             qs = qs.filter(modified_datetime__gte=min_modified)
-        count = math.ceil(qs.count() / INDEX_CHUNK_SIZE)
+        count = ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
 def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
@@ -191,8 +187,6 @@ def makeDefaultVersion(project_number):
     logger.info("Updating states...")
     qs = State.objects.filter(project=project)
     qs.update(version=version)
-
-from pprint import pprint
 
 def make_video_definition(disk_file, url_path):
         cmd = [
@@ -371,9 +365,17 @@ def set_default_versions():
     logger.info(f"Set all default versions!")
 
 def move_backups_to_s3():
-    store = get_tator_store().store
-    transfer = S3Transfer(store)
-    bucket_name = os.getenv('BUCKET_NAME')
+    # Try to use the default backup bucket
+    store = get_tator_store(backup=True)
+    if store is None:
+        # Fall back to the default live bucket
+        store = get_tator_store()
+        bucket_name = os.getenv("BUCKET_NAME")
+    else:
+        bucket_name = os.getenv("BACKUP_STORAGE_BUCKET_NAME")
+
+    client = store.client
+    transfer = S3Transfer(client)
     num_moved = 0
     for backup in os.listdir('/backup'):
         logger.info(f"Moving {backup} to S3...")
@@ -385,8 +387,8 @@ def move_backups_to_s3():
     logger.info(f"Finished moving {num_moved} files!")
 
 
+ARCHIVE_MEDIA_KEYS = ["streaming", "archival", "audio", "image", "attachment"]
 def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False):
-    from pprint import pformat
     media_to_update = set()
     path_filename = "manifest_spec.txt"
 
@@ -434,7 +436,7 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
         success = True
         sc_needs_updating = False
         tag_needs_updating = False
-        for key in ["streaming", "archival", "audio", "image"]:
+        for key in ARCHIVE_MEDIA_KEYS:
             if not (key in single.media_files and single.media_files[key]):
                 continue
 
@@ -540,7 +542,6 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
 def fix_bad_restores(
         *, media_id_list, live_run=False, force_update=False, restored_by_date=None
 ):
-    from pprint import pformat
     update_sc = set()
     update_tag = set()
     archived_resources = set()
@@ -625,7 +626,7 @@ def fix_bad_restores(
         sc_needs_updating = False
         tag_needs_updating = False
         if single.media_files:
-            for key in ["streaming", "archival", "audio", "image"]:
+            for key in ARCHIVE_MEDIA_KEYS:
                 if key in single.media_files and single.media_files[key]:
                     for file_info in single.media_files[key]:
                         has_segment_info = key == "streaming"
@@ -778,7 +779,7 @@ def update_media_archive_state(
     update_success = True
     if media.media_files:
         if dtype in ["image", "video"]:
-            for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
+            for path in media.path_iterator(keys=ARCHIVE_MEDIA_KEYS):
                 update_success = update_success and update_operator(path, **op_kwargs)
         elif dtype == "multi":
             if not _archive_state_comp(media):
@@ -826,25 +827,30 @@ def get_clone_info(media: Media) -> dict:
 
     # Set media_dict["original"] to the part of the path that is the media id to which this object
     # was originally uploaded
-    paths = [path for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"])]
-    id0 = paths[0].split("/")[2]
-    for path in paths[1:]:
-        id1 = path.split("/")[2]
-        if id0 != id1:
-            logger.error(
-                f"Got at least two 'original ids' for media '{media.id}': {id0} and {id1}"
-            )
-            return media_dict
-        id0 = id1
+    paths = [path for path in media.path_iterator(keys=ARCHIVE_MEDIA_KEYS)]
+    if paths:
+        id0 = paths[0].split("/")[2]
+        for path in paths[1:]:
+            id1 = path.split("/")[2]
+            if id0 != id1:
+                logger.error(
+                    f"Got at least two 'original ids' for media '{media.id}': {id0} and {id1}"
+                )
+                return media_dict
+            id0 = id1
 
-    project_id, media_id = [int(part) for part in paths[0].split("/")[1:3]]
-    media_dict["original"]["project"] = project_id
-    media_dict["original"]["media"] = Media.objects.get(pk=media_id)
+        project_id, media_id = [int(part) for part in paths[0].split("/")[1:3]]
+        media_dict["original"]["project"] = project_id
+        media_dict["original"]["media"] = Media.objects.get(pk=media_id)
 
-    # Shared base queryset
-    media_qs = Media.objects.filter(resource_media__path__in=paths)
-    media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
-    media_dict["clones"].remove(media_dict["original"]["media"].id)
+        # Shared base queryset
+        media_qs = Media.objects.filter(resource_media__path__in=paths)
+        media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
+        media_dict["clones"].remove(media_dict["original"]["media"].id)
+    else:
+        media_dict["original"]["media"] = media
+        if media.project:
+            media_dict["original"]["project"] = media.project.id
 
     return media_dict
 
@@ -982,3 +988,54 @@ def notify_admins(not_ready, ses=None):
                 title=f"Nightly archive for {project.name} ({project.id}) failed",
                 text="\n\n".join(email_text_list),
             )
+
+
+def _convert_s3_bucket(bucket, store_type):
+    try:
+        bucket.config = {
+            "endpoint_url": bucket.endpoint_url,
+            "region_name": bucket.region,
+            "aws_access_key_id": bucket.access_key,
+            "aws_secret_access_key": bucket.secret_key,
+        }
+        bucket.store_type = store_type
+        bucket.save()
+    except:
+        logger.warning(f"Could not convert bucket {bucket.id}!")
+        return False
+    return True
+
+
+def _convert_gcp_bucket(bucket, store_type):
+    try:
+        bucket.config = json.loads(bucket.gcs_key_info)
+        bucket.store_type = store_type
+        bucket.save()
+    except:
+        logger.warning(f"Could not convert bucket {bucket.id}!")
+        return False
+    return True
+
+
+def convert_old_buckets():
+    bucket_qs = Bucket.objects.all()
+
+    for bucket in bucket_qs.iterator():
+        if not bucket.config:
+            success = False
+            store = get_tator_store(bucket)
+            store_type = store._server
+
+            if store_type == ObjectStore.AWS:
+                success = _convert_s3_bucket(bucket, store_type)
+            elif store_type == ObjectStore.MINIO:
+                success = _convert_s3_bucket(bucket, store_type)
+            elif store_type == ObjectStore.GCP:
+                success = _convert_gcp_bucket(bucket, store_type)
+            elif store_type == ObjectStore.OCI:
+                logger.warning("OCI buckets must be converted manually, skipping '{bucket.id}'")
+            else:
+                logger.warning(f"Unhandled store type '{store_type}'")
+
+            if success:
+                logger.info(f"Converted {store_type} bucket ({bucket.id})!")

@@ -262,7 +262,7 @@ def get_media_queryset(project, params):
         # If using ES, do the search and construct the queryset.
         query = get_media_es_query(project, params)
         media_ids, _  = TatorSearch().search(project, query)
-        qs = Media.objects.filter(pk__in=media_ids).order_by('name', 'id')
+        qs = Media.objects.filter(pk__in=media_ids, deleted=False).order_by('name', 'id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)

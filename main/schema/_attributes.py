@@ -134,7 +134,7 @@ attribute_filter_parameter_schema = [
         'name': 'stop',
         'in': 'query',
         'required': False,
-        'description': 'Pagination start index. Non-inclusive ndex of the last item in a '
+        'description': 'Pagination stop index. Non-inclusive index of the last item in a '
                        'larger list to return.',
         'schema': {'type': 'integer'},
     },

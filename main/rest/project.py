@@ -119,6 +119,12 @@ class ProjectListAPI(BaseListView):
             if params['upload_bucket'].organization.pk != params['organization']:
                 raise PermissionDenied
 
+        # Make sure backup bucket can be set by this user.
+        if "backup_bucket" in params:
+            params["backup_bucket"] = get_object_or_404(Bucket, pk=params["backup_bucket"])
+            if params["backup_bucket"].organization.pk != params["organization"]:
+                raise PermissionDenied
+
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
         project = Project.objects.create(
@@ -129,13 +135,29 @@ class ProjectListAPI(BaseListView):
         )
         project.save()
 
-        member = Membership(
-            project=project,
-            user=self.request.user,
-            permission=Permission.FULL_CONTROL,
-        )
+        member_qs = Membership.objects.filter(project=project, user=self.request.user)
+        if member_qs.count() > 1:
+            raise RuntimeError(
+                f"Found {member_qs.count()} memberships for user {self.request.user} in project "
+                f"{project}, there should be at most one"
+            )
+        elif member_qs.count() == 1:
+            member = member_qs.first()
+            member.permission = Permission.FULL_CONTROL
+        else:
+            member = Membership(
+                project=project,
+                user=self.request.user,
+                permission=Permission.FULL_CONTROL,
+            )
         member.save()
-        return {'message': f"Project {params['name']} created!", 'id': project.id}
+
+        projects = Project.objects.filter(pk=project.id)
+        return {
+            'message': f"Project {params['name']} created!",
+            'id': project.id,
+            'object': _serialize_projects(projects, self.request.user.pk)[0],
+        }
 
     def get_queryset(self):
         memberships = Membership.objects.filter(user=self.request.user)
@@ -236,7 +258,11 @@ class ProjectDetailAPI(BaseDetailView):
         else:
             raise ValueError(f"No recognized keys in request!")
 
-        return {'message': f"Project {params['id']} updated successfully!"}
+        projects = Project.objects.filter(pk=project.id)
+        return {
+            'message': f"Project {params['id']} updated successfully!",
+            'object': _serialize_projects(projects, self.request.user.pk)[0],
+        }
 
     def _delete(self, params):
         # Check for permission to delete first.

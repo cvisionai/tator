@@ -1,49 +1,27 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
+import { store } from "./store.js";
 import TatorSymbol from "../../images/tator-logo-symbol-only.png";
 
 export class ProjectSummary extends TatorElement {
   constructor() {
     super();
 
-    const div = document.createElement("div");
-    div.setAttribute("class", "projects d-flex flex-items-center rounded-2");
-    this._shadow.appendChild(div);
+    const template = document.getElementById("project-summary").content;
+    this._shadow.appendChild(template.cloneNode(true));
 
-    this._link = document.createElement("a");
-    this._link.setAttribute("class", "projects__link d-flex flex-items-center text-white");
-    div.appendChild(this._link);
-
-    this._img = document.createElement("img");
-    this._img.setAttribute("class", "projects__image px-2 rounded-1");
-    this._img.setAttribute("crossorigin", "anonymous");
-    this._link.appendChild(this._img);
-
-    const text = document.createElement("div");
-    text.setAttribute("class", "projects__text px-3");
-    this._link.appendChild(text);
-
-    const h2 = document.createElement("h2");
-    h2.setAttribute("class", "text-semibold py-2");
-    text.appendChild(h2);
-
-    this._text = document.createTextNode("");
-    h2.appendChild(this._text);
-
-    this._description = document.createElement("project-description");
-    text.appendChild(this._description);
-
-    this._collaborators = document.createElement("project-collaborators");
-    this._collaborators.setAttribute("class", "d-flex flex-grow");
-    div.appendChild(this._collaborators);
-
-    this._nav = document.createElement("project-nav");
-    div.appendChild(this._nav);
+    this._link = this._shadow.getElementById("project-link");
+    this._img = this._shadow.getElementById("thumbnail");
+    this._name = this._shadow.getElementById("name");
+    this._numFiles = this._shadow.getElementById("num-files");
+    this._duration = this._shadow.getElementById("duration");
+    this._avatars = this._shadow.getElementById("avatars");
+    this._moreButton = this._shadow.getElementById("more-button");
+    this._settingsButton = this._shadow.getElementById("settings-button");
+    this._removeButton = this._shadow.getElementById("remove-button");
   }
 
   set info(val) {
-    this._text.nodeValue = val.name;
-    this._projectId = val.id;
     if (val.thumb) {
       this._img.setAttribute("src", val.thumb);
       this._img.setAttribute("style", "object-fit:cover");
@@ -51,18 +29,27 @@ export class ProjectSummary extends TatorElement {
       this._img.setAttribute("src", TatorSymbol);
       this._img.setAttribute("style", "object-fit:contain");
     }
-    const url = window.location.origin + "/" + val.id + "/project-detail";
+    
+    const url = `/${val.id}/project-detail`;
     this._link.setAttribute("href", url);
-    this._description.init(val);
-    if (!hasPermission(val.permission, "Full Control")) {
-      this._nav.style.display = "none";
-    }
-    this._nav.setAttribute("project-id", val.id);
-    this._nav.setAttribute("permission", val.permission);
-    let first = true;
-    this._collaborators.usernames = val.usernames;
 
-    this._nav.addEventListener("remove", evt => {
+    const settingsUrl = `/${val.id}/project-settings`;
+    this._settingsButton.setAttribute("href", settingsUrl);
+
+    this._name.textContent = val.name;
+    this._makeAvatars(val.usernames);
+    this._setNumFiles(val.num_files);
+    this._setDuration(val.duration); 
+
+    // Hide buttons if permissions too low
+    if (!hasPermission(val.permission, "Full Control")) {
+      this._moreButton.style.display = "none";
+    }
+    if (!hasPermission(val.permission, "Creator")) {
+      this._removeButton.style.display = "none";
+    }
+
+    this._removeButton.addEventListener("click", evt => {
       const remove = new CustomEvent("remove", {
         detail: {
           projectId: val.id,
@@ -71,6 +58,53 @@ export class ProjectSummary extends TatorElement {
       });
       this.dispatchEvent(remove);
     });
+  }
+
+  _makeAvatars(usernames) {
+    // Populate avatars
+    let first = true;
+    const maxAvatars = 4;
+    for (const [index, username] of usernames.entries()) {
+      const span = document.createElement("span");
+      span.setAttribute("class", "avatar circle d-flex flex-items-center flex-justify-center f3");
+      if (!first) {
+        span.setAttribute("style", "background-color: #696cff");
+      }
+      let initials;
+      if (index >= maxAvatars) {
+        initials = "+" + String(usernames.length - maxAvatars);
+      } else {
+        initials = username.match(/\b\w/g) || [];
+        initials = ((initials.shift() || '') + (initials.pop() || '')).toUpperCase();
+      }
+      span.textContent = initials;
+      this._avatars.appendChild(span);
+      first = false;
+      if (index >= maxAvatars) {
+        break;
+      }
+    }
+  }
+
+  _setDuration(seconds) {
+    let duration = seconds;
+    let label1 = "seconds";
+    if (duration > 3600) {
+      duration = duration / 3600;
+      label1 = "hours";
+    } else if (duration > 60) {
+      duration = duration / 60;
+      label1 = "minutes";
+    }
+    this._duration.textContent = Number(duration).toFixed(1) + " " + label1;
+  }
+
+  _setNumFiles(numFiles) {
+    let fileLabel = " files";
+    if (numFiles == 1) {
+      fileLabel = " file";
+    }
+    this._numFiles.textContent = numFiles + fileLabel;
   }
 }
 

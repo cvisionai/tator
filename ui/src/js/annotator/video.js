@@ -160,7 +160,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._fpsLoadDiag=0;
 
     this._playCb = [this.onPlay.bind(this)];
-    this._pauseCb = [this.onPause.bind(this), this.onDemandDownloadPrefetch.bind(this)];
+    this._pauseCb = [this.onPause.bind(this), this.onDemandDownloadPrefetch.bind(this), this.videoOnPause.bind(this)];
 
     // This flag is used to force a vertex reload
     this._dirty = true;
@@ -373,10 +373,19 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else if (streaming_files[0].hls)
     {
-      this._videoElement[0].hls(streaming_files[0].hls).then(() => {
+      let promises=[];
+      for (let idx = 0; idx < streaming_files.length; idx++)
+      {
+        if (streaming_files[idx].hls == undefined)
+        {
+          console.error("If HLS is used, all sources must be HLS.");
+        }
+        promises.push(this._videoElement[idx].hls(streaming_files[idx].hls));
+      }
+      Promise.all(promises).then(() => {
         this.dispatchEvent(new CustomEvent("bufferLoaded",
                                             {composed: true,
-                                            detail: {"percent_complete":1.00}
+                                            detail: {"percent_complete":0.00}
                                             }));
         this.dispatchEvent(new CustomEvent("playbackReady",
                                           {composed: true,
@@ -2278,6 +2287,16 @@ export class VideoCanvas extends AnnotationCanvas {
   get length()
   {
     return this._numFrames;
+  }
+
+  videoOnPause()
+  {
+    var search_params = new URLSearchParams(window.location.search);
+    search_params.set("frame", this._dispFrame);
+    const path = document.location.pathname;
+    const searchArgs = search_params.toString();
+    var newUrl = path + "?" + searchArgs;
+    window.history.replaceState({}, "", newUrl);
   }
 
   onDemandDownloadPrefetch(reqFrame)

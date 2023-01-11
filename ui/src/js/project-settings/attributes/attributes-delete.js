@@ -17,8 +17,6 @@ export class AttributesDelete {
     }
 
     _fetchPromise(){
-        console.log(`Deleting ${this.type} id ${this.typeId} attribute with name ${this.attributeName}`);
-
         let formData = {
             "entity_type": this.type,
             "attribute_to_delete": this.attributeName

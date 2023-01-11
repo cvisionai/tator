@@ -385,10 +385,6 @@ export class EntityCard extends TatorElement {
     if (typeof this.cardObj.image !== "undefined" && this.cardObj.image !== null) {
       //this.setAttribute("thumb", obj.image);
       this.setImageStatic(obj.image);
-    } else if (typeof obj.graphic !== "undefined" && obj.graphic !== null) {
-      this.reader = new FileReader();
-      this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
-      this.reader.addEventListener("load", this._setImgSrc.bind(this));
     } else if (!mediaInit) {
       //this.setAttribute("thumb", Spinner);
       this.setImageStatic(Spinner);
@@ -535,9 +531,9 @@ export class EntityCard extends TatorElement {
       for (let [attr, value] of Object.entries(data.attributes)) {
         if (typeof this.attributeDivs[attr] !== "undefined") {
           if (this.attributeDivs[attr] != null) {
-            this.attributeDivs[attr].value.innerHTML = value;
+            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray">${attr}</span>: ${value}`;
           } else {
-            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray"><span class="text-dark-gray">${attr}</span>: <<span class="text-italics ">not set</span>></span>`;
           }
         }
       }
@@ -697,14 +693,9 @@ export class EntityCard extends TatorElement {
    * @param {image} image
    */
   setImage(image) {
-    this.reader = new FileReader();
-    this.reader.readAsDataURL(image); // converts the blob to base64
-    this.reader.addEventListener("load", this._setImgSrcReader.bind(this));
-  }
-
-  _setImgSrcReader() {
-    this._img.setAttribute("src", this.reader.result);
-    this._img.onload = () => { this.dispatchEvent(new Event("loaded")) };
+   const url = URL.createObjectURL(image);
+   this._img.src = url;
+   this._img.onload = () => URL.revokeObjectURL(url);
   }
 
   setImageStatic(image) {

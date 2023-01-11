@@ -6,7 +6,7 @@ import shutil
 import mimetypes
 import datetime
 import tempfile
-from uuid import uuid1
+from uuid import uuid1, uuid4
 from urllib.parse import urlparse
 
 from django.contrib.contenttypes.models import ContentType
@@ -15,6 +15,8 @@ from django.db.models import Case, When
 from django.http import Http404
 from PIL import Image
 import pillow_avif # add AVIF support to pillow
+import rawpy
+import imageio
 
 from ..models import (
     Media,
@@ -170,6 +172,7 @@ def _create_media(params, user):
     uid = params.get('uid', None)
     new_attributes = params.get('attributes', None)
     url = params.get('url')
+    elemental_id = params.get('elemental_id', uuid4())
     if gid is not None:
         gid = str(gid)
     project_obj = Project.objects.get(pk=project)
@@ -195,6 +198,8 @@ def _create_media(params, user):
                 ext = os.path.splitext(name)[1].lower()
                 if ext in ['.mts', '.m2ts']:
                     mime = 'video/MP2T'
+                elif ext in [".dng"]:
+                    mime = "image/dng"
             if mime.startswith('image'):
                 for media_type in media_types:
                     if media_type.dtype == 'image':
@@ -241,14 +246,26 @@ def _create_media(params, user):
             gid=gid,
             uid=uid,
             source_url=url,
+            elemental_id=elemental_id
         )
         media_obj.media_files = {}
 
         alt_image = None
         if url:
             # Download the image file and load it.
-            temp_image = tempfile.NamedTemporaryFile(delete=False)
-            download_file(url, temp_image.name)
+            ext = os.path.splitext(name)[1].lower()
+            if ext in [".dng"]:
+                # Digital Negative files need conversion
+                temp_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                temp_dng = tempfile.NamedTemporaryFile(delete=False, suffix=".dng")
+                download_file(url, temp_dng.name, 5)
+                with rawpy.imread(temp_dng.name) as raw:
+                    rgb = raw.postprocess()
+                imageio.imwrite(temp_image.name, rgb)
+                os.remove(temp_dng.name)
+            else:
+                temp_image = tempfile.NamedTemporaryFile(delete=False)
+                download_file(url, temp_image.name, 5)
             image = Image.open(temp_image.name)
             media_obj.width, media_obj.height = image.size
             image_format = image.format
@@ -346,6 +363,7 @@ def _create_media(params, user):
             gid=gid,
             uid=uid,
             source_url=url,
+            elemental_id=elemental_id
         )
 
         # Add optional parameters.
@@ -650,6 +668,9 @@ class MediaDetailAPI(BaseDetailView):
 
             if 'summaryLevel' in params:
                 qs.update(summaryLevel=params['summaryLevel'])
+
+            if 'elemental_id' in params:
+                qs.update(summaryLevel=params['elemental_id'])
 
             if 'multi' in params:
                 media_files = media.media_files

@@ -170,11 +170,12 @@ settings-nav {
 .SideNav-subItem {
   position: relative;
   display: block;
-  padding: 15px 0;
+  margin: 15px 0 15px 44px;
   color: $color-gray--light;
   text-align: left;
   background-color: transparent;
   border: 0;
+  width: fit-content;
   @extend .f2;
 
   &[selected="true"] {

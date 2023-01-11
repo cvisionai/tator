@@ -1,5 +1,6 @@
 import { ModalDialog } from "../components/modal-dialog.js";
 import { getCookie } from "../util/get-cookie.js";
+import { store } from "./store.js";
 
 export class DeleteProject extends ModalDialog {
   constructor() {
@@ -56,16 +57,7 @@ export class DeleteProject extends ModalDialog {
 
     this._accept.addEventListener("click", evt => {
       const projectId = this.getAttribute("project-id");
-      fetch("/rest/Project/" + projectId, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-        headers: {
-          'X-CSRFToken': getCookie('csrftoken'),
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-      })
-      .catch(err => console.log(err));
+      store.getState().removeProject(projectId);
       this.dispatchEvent(new CustomEvent("confirmDeleteProject", {
         detail: {projectId: projectId}
       }));

@@ -2,6 +2,7 @@ import { TatorPage } from "../components/tator-page.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
 import { OrganizationData } from "./organization-data.js";
 import { OrganizationMainEdit } from "./organization-main-edit.js";
+import { store } from "./store.js";
 
 export class OrganizationSettings extends TatorPage {
   constructor() {
@@ -43,7 +44,7 @@ export class OrganizationSettings extends TatorPage {
     this._shadow.appendChild(this.main);
 
     // Navigation panels main for item settings.
-    this.settingsNav =  document.createElement("settings-nav");
+    this.settingsNav =  document.createElement("settings-nav-no-template");
     this.main.appendChild( this.settingsNav );
 
     // Web Components for this page
@@ -59,6 +60,11 @@ export class OrganizationSettings extends TatorPage {
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
 
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.organization, this._init.bind(this));
+
     // Error catch all
     window.addEventListener("error", (evt) => {
       //
@@ -66,31 +72,32 @@ export class OrganizationSettings extends TatorPage {
 
   }
 
+  connectedCallback() {
+    store.getState().init();
+  }
+
   /* Get personlized information when we have project-id, and fill page. */
   static get observedAttributes() {
-    return ["organization-id", "project-name", "email_enabled"].concat(TatorPage.observedAttributes);
+    return ["email_enabled"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
-      case "organization-id":
-        this._init();
-        this._breadcrumbs._projectText.textContent = "Organizations";
-        this._breadcrumbs._projectText.setAttribute("href", `/organizations`);
-        this._breadcrumbs._settingsText.textContent = `Organization ${newValue} settings`;
-
-        break;
       case "email_enabled":
         this._emailEnabled = newValue === "False" ? false : true;
+        break;
     }
   }
 
   /* 
    * Run when organization-id is set to run fetch the page content. 
    */
-  _init() {
+  _init(organization) {
     // Organization data
-    this.organizationId = this.getAttribute("organization-id");
+    this._breadcrumbs._projectText.textContent = "Organizations";
+    this._breadcrumbs._projectText.setAttribute("href", `/organizations`);
+    this._breadcrumbs._settingsText.textContent = `Organization ${organization.id} settings`;
+    this.organizationId = organization.id;
     this.organizationData = new OrganizationData(this.organizationId);
     this.organizationEdit = new OrganizationMainEdit();
     const organizationPromise = this.organizationData.getOrganization();
