@@ -683,7 +683,7 @@ def get_tator_store(
         )
 
     if bucket is None:
-        if upload and os.getenv("DEFAULT_UPLOAD_BUCKET_CONFIG_FILE"):
+        if upload and os.getenv("DEFAULT_UPLOAD_BUCKET_CONFIG"):
             bucket_type = "UPLOAD"
         elif backup:
             bucket_type = "BACKUP"
@@ -691,18 +691,21 @@ def get_tator_store(
             bucket_type = "LIVE"
 
         # Config filename is a required environment variable
-        config_filename = os.getenv(f"DEFAULT_{bucket_type}_CONFIG_FILE")
-        if config_filename and os.path.exists(config_filename):
-            with open(config_filename) as fp:
-                config = json.load(fp)
+        config = os.getenv(f"DEFAULT_{bucket_type}_CONFIG")
+        if config:
+            # Quoted json string needs to be json-loaded twice
+            for _ in range(2):
+                try:
+                    config = json.loads(config)
+                except Exception:
+                    logger.error(f"Could not parse json string:\n'{config_str}'", exc_info=True)
+                    raise
         else:
             # If a backup store was requested but not provided (`bucket` is None and the environment
             # variables are empty), return `None` to signal no store exists
             if bucket_type == "BACKUP":
                 return None
-            raise ValueError(
-                f"No config file named '{config_filename}' found for {bucket_type.lower()} bucket!"
-            )
+            raise ValueError("No config found for {bucket_type.lower()} bucket!")
 
         # Bucket name is a required environment variable
         bucket_name = os.getenv(f"DEFAULT_{bucket_type}_BUCKET_NAME")

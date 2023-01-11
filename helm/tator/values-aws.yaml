@@ -39,9 +39,16 @@ postgresPassword: "<Your postgres password>"
 redisHost: "<Your ElastiCache endpoint>"
 elasticsearchHost: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
 liveBucket:
-  config_file: "<name of config file in configs directory>"
-  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  config: >-
+    {
+      "endpoint_url": "fill me in",
+      "region_name": "fill me in",
+      "aws_access_key_id": "fill me in",
+      "aws_secret_access_key": "fill me in"
+    }
+  store_type: "AWS"
   name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 dockerUsername: "<Your ECR username>"
 dockerPassword: "<Your ECR password>"
 dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
@@ -80,15 +87,17 @@ pv:
     - noresvport
   path: "/"
 uploadBucket:
-  enabled: true
-  config_file: "<name of config file in configs directory>"
+  enabled: false
+  config: "json in folded block (>- ...)"
   store_type: "<one of AWS, MINIO, GCP, or OCI>"
   name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 backupBucket:
   enabled: false
-  config_file: "<name of config file in configs directory>"
+  config: "json in folded block (>- ...)"
   store_type: "<one of AWS, MINIO, GCP, or OCI>"
   name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 hpa:
   nginxMinReplicas: 2
   nginxMaxReplicas: 10

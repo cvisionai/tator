@@ -41,8 +41,8 @@
 - name: SYSTEM_IMAGES_REGISTRY
   value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
 {{- if .Values.minio.enabled }}
-- name: DEFAULT_LIVE_CONFIG_FILE
-  value: {{ .Values.minio.config_file }}
+- name: DEFAULT_LIVE_CONFIG
+  value: {{ .Values.minio.config | toJson | quote }}
 - name: DEFAULT_LIVE_BUCKET_NAME
   value: {{ .Values.minio.name }}
 - name: DEFAULT_LIVE_STORE_TYPE
@@ -50,8 +50,8 @@
 - name: DEFAULT_LIVE_EXTERNAL_HOST
   value: {{ ternary "https://" "http://" .Values.requireHttps }}{{ .Values.domain }}/objects
 {{- else }}
-- name: DEFAULT_LIVE_CONFIG_FILE
-  value: {{ .Values.liveBucket.config_file }}
+- name: DEFAULT_LIVE_CONFIG
+  value: {{ .Values.liveBucket.config | toJson | quote }}
 - name: DEFAULT_LIVE_BUCKET_NAME
   value: {{ .Values.liveBucket.name }}
 - name: DEFAULT_LIVE_STORE_TYPE
@@ -63,8 +63,8 @@
 {{- end }}
 {{- if hasKey .Values "uploadBucket" }}
 {{- if .Values.uploadBucket.enabled }}
-- name: DEFAULT_UPLOAD_CONFIG_FILE
-  value: {{ .Values.uploadBucket.config_file }}
+- name: DEFAULT_UPLOAD_CONFIG
+  value: {{ .Values.uploadBucket.config | toJson | quote }}
 - name: DEFAULT_UPLOAD_BUCKET_NAME
   value: {{ .Values.uploadBucket.name }}
 - name: DEFAULT_UPLOAD_STORE_TYPE
@@ -77,8 +77,8 @@
 {{- end }}
 {{- if hasKey .Values "backupBucket" }}
 {{- if .Values.backupBucket.enabled }}
-- name: DEFAULT_BACKUP_CONFIG_FILE
-  value: {{ .Values.backupBucket.config_file }}
+- name: DEFAULT_BACKUP_CONFIG
+  value: {{ .Values.backupBucket.config | toJson | quote }}
 - name: DEFAULT_BACKUP_BUCKET_NAME
   value: {{ .Values.backupBucket.name }}
 - name: DEFAULT_BACKUP_STORE_TYPE
