@@ -30,6 +30,9 @@ class SectionListAPI(BaseListView):
         qs = Section.objects.filter(project=params['project'])
         if 'name' in params:
             qs = qs.filter(name__iexact=f"\'{params['name']}\'")
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            qs = qs.filter(elemental_id=elemental_id)
         qs = qs.order_by('name')
         return database_qs(qs)
 

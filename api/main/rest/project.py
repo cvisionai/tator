@@ -93,6 +93,9 @@ class ProjectListAPI(BaseListView):
         organization = params.get('organization')
         if organization is not None:
             projects = projects.filter(organization=organization)
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            projects = projects.filter(elemental_id=elemental_id)
         return _serialize_projects(projects, self.request.user.pk)
 
     def _post(self, params):

@@ -48,12 +48,16 @@ class MediaTypeListAPI(BaseListView):
             media_element = Media.objects.get(pk=media_id[0])
             if media_element.project.id != self.kwargs['project']:
                 raise Exception('Media not in project!')
-            response_data = MediaType.objects.filter(
-                pk=media_element.type.pk).order_by('name').values(*fields)
+            qs = MediaType.objects.filter(
+                pk=media_element.type.pk)
         else:
-            response_data = MediaType.objects.filter(
-                project=self.kwargs['project']).order_by('name').values(*fields)
-        return list(response_data)
+            qs = MediaType.objects.filter(
+                project=self.kwargs['project'])
+
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            qs = qs.filter(elemental_id=elemental_id)
+        return list(qs.order_by('name').values(*fields))
 
     def _post(self, params):
         """ Create media type.

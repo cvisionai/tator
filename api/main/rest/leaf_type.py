@@ -28,8 +28,11 @@ class LeafTypeListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params):
-        return list(LeafType.objects.filter(project=params['project'])\
-                    .order_by('name').values(*fields))
+        qs = LeafType.objects.filter(project=params['project'])
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            qs = qs.filter(elemental_id=elemental_id)
+        return list(qs.order_by('name').values(*fields))
 
     def _post(self, params):
         if params['name'] in attribute_keywords:

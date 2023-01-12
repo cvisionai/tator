@@ -27,7 +27,11 @@ class FileTypeListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params: dict) -> dict:
-        qs = FileType.objects.filter(project=params['project']).order_by('id')
+        qs = FileType.objects.filter(project=params['project'])
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            qs = qs.filter(elemental_id=elemental_id)
+        qs = qs.order_by('id')
         return database_qs(qs)
 
     def get_queryset(self) -> dict:

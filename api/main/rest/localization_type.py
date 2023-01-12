@@ -42,10 +42,15 @@ class LocalizationTypeListAPI(BaseListView):
             for localization in localizations:
                 if localization.project.id != self.kwargs['project']:
                     raise Exception('Localization not in project!')
-            response_data = localizations.order_by('name').values(*fields)
+            qs = localizations
         else:
-            response_data = LocalizationType.objects.filter(project=params['project'])\
-                            .order_by('name').values(*fields)
+            qs = LocalizationType.objects.filter(project=params['project'])
+
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            qs = qs.filter(elemental_id=elemental_id)
+
+        response_data = qs.order_by('name').values(*fields)
         # Get many to many fields.
         loc_ids = [loc['id'] for loc in response_data]
         media = {obj['localizationtype_id']:obj['media'] for obj in 
