@@ -1,5 +1,5 @@
 from django.db import transaction
-from uuid import uuid4
+import uuid
 
 from ..models import (
     LocalizationType,
@@ -56,7 +56,11 @@ class MediaTypeListAPI(BaseListView):
 
         elemental_id = params.get('elemental_id', None)
         if elemental_id is not None:
-            qs = qs.filter(elemental_id=elemental_id)
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
         return list(qs.order_by('name').values(*fields))
 
     def _post(self, params):
@@ -89,7 +93,7 @@ class MediaTypeListAPI(BaseListView):
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
         if params.get('elemental_id',None) is None:
-            params['elemental_id'] = uuid4()
+            params['elemental_id'] = uuid.uuid4()
         obj = MediaType(**params)
         obj.save()
         return {'id': obj.id, 'message': 'Media type created successfully!'}

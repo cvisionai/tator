@@ -5,7 +5,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
-from uuid import uuid4
+import uuid
 
 from ..cache import TatorCache
 from ..models import Project
@@ -94,8 +94,14 @@ class ProjectListAPI(BaseListView):
         if organization is not None:
             projects = projects.filter(organization=organization)
         elemental_id = params.get('elemental_id', None)
+        logger.info(f'{elemental_id} = {type(elemental_id)}')
         if elemental_id is not None:
-            projects = projects.filter(elemental_id=elemental_id)
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            projects = projects.extra(where=[f"elemental_id='{str(safe)}'"])
+        logger.info(projects.query)
         return _serialize_projects(projects, self.request.user.pk)
 
     def _post(self, params):
@@ -133,7 +139,7 @@ class ProjectListAPI(BaseListView):
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
         if params.get('elemental_id',None) is None:
-            params['elemental_id'] = uuid4()
+            params['elemental_id'] = uuid.uuid4()
         project = Project.objects.create(
             **params,
             creator=self.request.user,

@@ -2,7 +2,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 
-from uuid import uuid4 
+import uuid
 
 from ..models import Media
 from ..models import MediaType
@@ -48,7 +48,11 @@ class LocalizationTypeListAPI(BaseListView):
 
         elemental_id = params.get('elemental_id', None)
         if elemental_id is not None:
-            qs = qs.filter(elemental_id=elemental_id)
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
 
         response_data = qs.order_by('name').values(*fields)
         # Get many to many fields.
@@ -78,7 +82,7 @@ class LocalizationTypeListAPI(BaseListView):
 
         del params['body']
         if params.get('elemental_id',None) is None:
-            params['elemental_id'] = uuid4()
+            params['elemental_id'] = uuid.uuid4()
         obj = LocalizationType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
