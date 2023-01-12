@@ -119,4 +119,11 @@ file_filter_parameter_schema = [
                        'parameters are relative to this modified range.',
         'schema': {'type': 'integer'},
     },
+    {
+        'name': 'elemental_id',
+        'in': 'query',
+        'description': 'Elemental ID to search for',
+        'schema': {'type': 'string'},
+        'required': False,
+    },
 ]

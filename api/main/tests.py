@@ -3170,6 +3170,15 @@ class ResourceTestCase(TatorTransactionTest):
         response = self.client.get(f"/rest/File/{file1.id}")
         self.assertTrue(self._store_obj_exists(response.data["path"]))
 
+        # verify retrieval via elemental_id
+        response = self.client.get(f"/rest/Files/{file1.project.id}?elemental_id={file1.elemental_id}")
+        assert(len(response.data) == 1)
+        new_uuid = uuid4()
+        response = self.client.patch(f'/rest/File/{file1.id}', {'elemental_id': str(new_uuid)}, format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/Files/{file1.project.id}?elemental_id={new_uuid}")
+        assert(len(response.data) == 1)
+
         key2 = self._random_file_store_obj(file2)
         file_patch_spec = {
             "path": key2
