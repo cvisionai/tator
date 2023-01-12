@@ -6,6 +6,7 @@ from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
+from ._type_query import type_filter_parameter_schema
 
 boilerplate = dedent("""\
 A file type is the metadata definition object for non-media FIle objects.
@@ -39,7 +40,10 @@ class FileTypeListSchema(AutoSchema):
         }]
 
     def get_filter_parameters(self, path, method):
-        return {}
+        params = {}
+        if method == 'GET':
+            params = type_filter_parameter_schema
+        return params
 
     def get_request_body(self, path, method):
         body = {}
