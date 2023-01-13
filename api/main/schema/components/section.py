@@ -15,6 +15,11 @@ section_post_properties = {
         "type": "boolean",
         "description": "Determines the visibility in the UI.",
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 section_spec = {

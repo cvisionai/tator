@@ -63,6 +63,11 @@ media_type_properties = {
         'description': 'Unique integer identifying default dot type for drawing.',
         'type': 'integer',
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 media_type_spec = {
@@ -87,6 +92,7 @@ media_type_update = {
         'default_box': media_type_properties['default_box'],
         'default_line': media_type_properties['default_line'],
         'default_dot': media_type_properties['default_dot'],
+        'elemental_id': media_type_properties['elemental_id'],
     },
 }
 

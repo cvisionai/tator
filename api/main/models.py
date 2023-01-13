@@ -45,6 +45,7 @@ from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
 from django.db import transaction
+from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
 from .search import TatorSearch
@@ -491,6 +492,10 @@ class Project(Model):
 
     """ Default media type for uploads.
     """
+
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
@@ -772,6 +777,8 @@ class MediaType(Model):
     """ Dot type used as default in UI. """
     default_poly = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
                               related_name='+')
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -819,6 +826,8 @@ class LocalizationType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -876,6 +885,8 @@ class StateType(Model):
     """ If this is a track type, this is the default localization that is created when
         a track is created via the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -915,6 +926,8 @@ class LeafType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -1036,7 +1049,7 @@ class Media(Model, ModelDiffMixin):
     """ URL where original media was hosted. """
     summary_level = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a media to facilitate cross-cluster sync operations """
 
     def get_file_sizes(self):
@@ -1149,6 +1162,8 @@ class FileType(Model):
     dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
     """ Required as part of building the TatorSearch documents
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 @receiver(post_save, sender=FileType)
 def file_type_save(sender, instance, **kwargs):
@@ -1180,6 +1195,8 @@ class File(Model, ModelDiffMixin):
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     deleted = BooleanField(default=False, db_index=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
@@ -1384,9 +1401,11 @@ class Localization(Model, ModelDiffMixin):
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False, db_index=True)
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
 
 @receiver(pre_delete, sender=Localization)
 def localization_delete(sender, instance, **kwargs):
@@ -1428,9 +1447,11 @@ class State(Model, ModelDiffMixin):
                            related_name='extracted',
                            db_column='extracted')
     deleted = BooleanField(default=False, db_index=True)
-    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
@@ -1544,6 +1565,8 @@ class Section(Model):
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Favorite(Model):
     """ Stores an annotation saved by a user.
@@ -1565,6 +1588,7 @@ class Bookmark(Model):
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
     name = CharField(max_length=128)
     uri = CharField(max_length=1024)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class ChangeLog(Model):
     """ Stores individual changesets for entities """
@@ -1681,3 +1705,60 @@ def database_query_ids(table, ids, order):
              f'(VALUES ({"), (".join([str(id_) for id_ in ids])})) '
              f'ORDER BY {order}')
     return database_query(query)
+
+class Group(Model):
+    """ Represents a group of users in an organization, presumably that share access levels """
+    organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    """ Organization that the group belongs to """
+    name = CharField(max_length=128)
+    """ Descriptive name for the group """
+
+class GroupMembership(Model):
+    """ Associates a user to a group """
+    project = ForeignKey(Project, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
+    group = ForeignKey(Group, on_delete=CASCADE)
+    group_admin = BooleanField(default=False)
+    """ Can add/remove people from the group if set to true """
+    name = CharField(max_length=128, blank=True, null=True)
+    """ Descriptive name for the role of this user in the group """
+
+
+class RowProtection(Model):
+    # Pointer to protected row element, one of the following should be non-null.
+    # Note: Currently type objects are protected by project membership status
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
+
+    # One of the following must be non-null
+    user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the user this permission/rule refers to """
+    organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the organization this permission/rule refers to """
+    group = ForeignKey(Group, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the group this permission/rule refers to """
+
+    permission = BigIntegerField(default=0, db_index=True)
+    """ Permission bitmask for the row in question
+        0 - Can not see
+        0x1 - Exist
+        0x2 - Read
+        0x4 - Write
+        0x8 - Full control (ability to delete)
+        bits above this are reserved for future use.
+    """
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['project',
+                                     'media',
+                                     'localization',
+                                     'state',
+                                     'file',
+                                     'user',
+                                     'organization',
+                                     'group'], name='permission_uniqueness_check')
+        ]

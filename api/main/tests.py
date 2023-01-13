@@ -1182,7 +1182,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         self.video_type = MediaType.objects.create(
             name="video",
             dtype='video',
-            project=self.project,
+            project=self.project
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1299,6 +1299,31 @@ class VideoTestCase(
         self.assertEqual(response.data, 1)
         response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elemental_id={existing_uuid}')
         self.assertEqual(response.data, 0)
+
+        project = test_video.project.id
+        # Test on type object
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/MediaTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/MediaType/{test_video.type.id}')
+        assert(str(response.data['elemental_id']) == str(test_video.type.elemental_id))
+        response = self.client.patch(f'/rest/MediaType/{test_video.type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/MediaType/{test_video.type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/MediaTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
+
+        # Test on Project object
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/Projects?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/Project/{test_video.project.id}')
+        assert(str(response.data['elemental_id']) == str(test_video.project.elemental_id))
+        response = self.client.patch(f'/rest/Project/{test_video.project.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/Project/{test_video.project.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/Projects?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
 
 
     def test_annotation_delete(self):
@@ -1742,7 +1767,20 @@ class StateTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
 
-
+    def test_elemental_id(self):
+        # Test on type object
+        new_uuid = str(uuid4())
+        project = self.entity_type.project.id
+        response = self.client.get(f'/rest/StateTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/StateTypes/{self.entity_type.id}')
+        response = self.client.get(f'/rest/StateType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == str(self.entity_type.elemental_id))
+        response = self.client.patch(f'/rest/StateType/{self.entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/StateType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/StateTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
 
     def test_frame_association(self):
         media = self.media_entities[0]
@@ -2212,6 +2250,20 @@ class LeafTestCase(
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {'name': 'leaf1'}
 
+    def test_elemental_id(self):
+        project = self.entity_type.project.id
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/LeafTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        # Test on type object
+        response = self.client.get(f'/rest/LeafType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == str(self.entity_type.elemental_id))
+        response = self.client.patch(f'/rest/LeafType/{self.entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/LeafType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/LeafTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
+
 class LeafTypeTestCase(
         TatorTransactionTest,
         PermissionCreateTestMixin,
@@ -2371,6 +2423,21 @@ class LocalizationTypeTestCase(
         }
         self.patch_json = {'name': 'box asdf'}
         self.edit_permission = Permission.FULL_CONTROL
+
+    def test_elemental_id(self):
+        # Test on type object
+        for entity_type in self.entities:
+            project = entity_type.project.id
+            new_uuid = str(uuid4())
+            response = self.client.get(f'/rest/LocalizationTypes/{project}?elemental_id={new_uuid}')
+            assert(len(response.data) == 0)
+            response = self.client.get(f'/rest/LocalizationType/{entity_type.id}')
+            assert(str(response.data['elemental_id']) == str(entity_type.elemental_id))
+            response = self.client.patch(f'/rest/LocalizationType/{entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+            response = self.client.get(f'/rest/LocalizationType/{entity_type.id}')
+            assert(str(response.data['elemental_id']) == new_uuid)
+            response = self.client.get(f'/rest/LocalizationTypes/{project}?elemental_id={new_uuid}')
+            assert(len(response.data) == 1)
 
 class MembershipTestCase(
         TatorTransactionTest,
@@ -3013,6 +3080,20 @@ class ResourceTestCase(TatorTransactionTest):
         self.store = get_tator_store()
         self.backup_bucket = None
 
+    def test_elemental_id(self):
+        # Test on type object
+        project = self.file_entity_type.project.id
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/FileTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/FileType/{self.file_entity_type.id}')
+        assert(str(response.data['elemental_id']) == str(self.file_entity_type.elemental_id))
+        response = self.client.patch(f'/rest/FileType/{self.file_entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/FileType/{self.file_entity_type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/FileTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
+
     def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
         """
@@ -3088,6 +3169,15 @@ class ResourceTestCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file1.id}")
         self.assertTrue(self._store_obj_exists(response.data["path"]))
+
+        # verify retrieval via elemental_id
+        response = self.client.get(f"/rest/Files/{file1.project.id}?elemental_id={file1.elemental_id}")
+        assert(len(response.data) == 1)
+        new_uuid = uuid4()
+        response = self.client.patch(f'/rest/File/{file1.id}', {'elemental_id': str(new_uuid)}, format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/Files/{file1.project.id}?elemental_id={new_uuid}")
+        assert(len(response.data) == 1)
 
         key2 = self._random_file_store_obj(file2)
         file_patch_spec = {

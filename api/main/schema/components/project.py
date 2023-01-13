@@ -33,6 +33,11 @@ project_properties = {
         'type': 'integer',
         'minimum': 1,
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 project_spec = {
@@ -60,6 +65,7 @@ project_update = {
         'bucket': project_properties['bucket'],
         'upload_bucket': project_properties['upload_bucket'],
         'backup_bucket': project_properties['backup_bucket'],
+        'elemental_id': project_properties['elemental_id'],
     },
 }
 

@@ -92,84 +92,31 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
         count = ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
-def rebuildAllSearchIndices(project_number):
-    try:
-        TatorSearch().es.indices.delete(f"project_{project_number}")
-    except:
-        pass
-    for section in ['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves', 'files']:
-        buildSearchIndices(project_number, section)
-def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
+
+def buildSearchIndices(project_number, flush=False):
     """ Builds search index for a project.
-        section must be one of:
-        'mappings' - create mappings for the project if they do not exist
-        'media' - create documents for media
-        'states' - create documents for states
-        'localizations' - create documents for localizations
-        'treeleaves' - create documents for treeleaves
-        'files' - create documents for files
+        flush - whether to clear existing indices
     """
     project_name = Project.objects.get(pk=project_number).name
     logger.info(f"Building search indices for project {project_number}: {project_name}")
 
-    if section == 'mappings':
-        # Create mappings
-        logger.info("Building mappings for media types...")
-        for type_ in progressbar.progressbar(list(MediaType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for localization types...")
-        for type_ in progressbar.progressbar(list(LocalizationType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for state types...")
-        for type_ in progressbar.progressbar(list(StateType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for leaf types...")
-        for type_ in progressbar.progressbar(list(LeafType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for file types...")
-        for type_ in progressbar.progressbar(list(FileType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Build mappings complete!")
-        return
-
-    class DeferredCall:
-        def __init__(self, qs):
-            self._qs = qs
-        def __call__(self):
-            for entity in self._qs.iterator():
-                if not entity.deleted:
-                    for doc in TatorSearch().build_document(entity, mode):
-                        yield doc
-
-    # Get queryset based on selected section.
-    logger.info(f"Building documents for {section}...")
-    qs = CLASS_MAPPING[section].objects.filter(project=project_number, type__isnull=False)
-
-    # Apply max age filter.
-    if max_age_days:
-        min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
-        qs = qs.filter(modified_datetime__gte=min_modified)
-
-    # Apply limit/offset if chunk parameter given.
-    if chunk is not None:
-        offset = INDEX_CHUNK_SIZE * chunk
-        qs = qs.order_by('id')[offset:offset+INDEX_CHUNK_SIZE]
-
-    batch_size = 500
-    count = 0
-    bar = ProgressBar(redirect_stderr=True, redirect_stdout=True)
-    dc = DeferredCall(qs)
-    total = qs.count()
-    bar.start(max_value=total)
-    for ok, result in streaming_bulk(TatorSearch().es, dc(),chunk_size=batch_size, raise_on_error=False):
-        action, result = result.popitem()
-        if not ok:
-            print(f"Failed to {action} document! {result}")
-        bar.update(min(count, total))
-        count += 1
-        if count > total:
-            print(f"Count exceeds list size by {total - count}")
-    bar.finish()
+    # Create mappings
+    logger.info("Building mappings for media types...")
+    for type_ in progressbar.progressbar(list(MediaType.objects.filter(project=project_number))):
+        TatorSearch().create_mapping(type_, flush)
+    logger.info("Building mappings for localization types...")
+    for type_ in progressbar.progressbar(list(LocalizationType.objects.filter(project=project_number))):
+        TatorSearch().create_mapping(type_, flush)
+    logger.info("Building mappings for state types...")
+    for type_ in progressbar.progressbar(list(StateType.objects.filter(project=project_number))):
+        TatorSearch().create_mapping(type_, flush)
+    logger.info("Building mappings for leaf types...")
+    for type_ in progressbar.progressbar(list(LeafType.objects.filter(project=project_number))):
+        TatorSearch().create_mapping(type_, flush)
+    logger.info("Building mappings for file types...")
+    for type_ in progressbar.progressbar(list(FileType.objects.filter(project=project_number))):
+        TatorSearch().create_mapping(type_, flush)
+    logger.info("Build mappings complete!")
 
 def makeDefaultVersion(project_number):
     """ Creates a default version for a project and sets all localizations

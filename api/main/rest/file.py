@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from uuid import uuid4
 
 from django.db import transaction
 from django.conf import settings
@@ -48,6 +49,7 @@ class FileListAPI(BaseListView):
     def _post(self, params: dict) -> dict:
         # Does the project ID exist?
         project_id = params[fields.project]
+        elemental_id = params.get('elemental_id', uuid4())
         try:
             project = Project.objects.get(pk=project_id)
         except Exception as exc:
@@ -104,7 +106,8 @@ class FileListAPI(BaseListView):
             type=associated_file_type,
             created_by=self.request.user,
             modified_by=self.request.user,
-            attributes=attrs)
+            attributes=attrs,
+            elemental_id=elemental_id)
 
         return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
@@ -143,6 +146,10 @@ class FileDetailAPI(BaseDetailView):
         name = params.get(fields.name, None)
         if name is not None:
             obj.name = name
+
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         description = params.get(fields.description, None)
         if description is not None:
