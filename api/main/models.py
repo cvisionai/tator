@@ -1404,6 +1404,8 @@ class Localization(Model, ModelDiffMixin):
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
 
 @receiver(pre_delete, sender=Localization)
 def localization_delete(sender, instance, **kwargs):
@@ -1448,6 +1450,8 @@ class State(Model, ModelDiffMixin):
     elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
