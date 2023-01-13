@@ -3530,8 +3530,8 @@ class AttributeTestCase(TatorTransactionTest):
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {
             "entity_type": "LocalizationType",
-            "old_attribute_type_name": 'Int Test',
-            "new_attribute_type": {
+            "current_name": 'Int Test',
+            "attribute_type_update": {
                 "name": "Renamed Int Test",
                 "dtype": "float",
             },
@@ -3548,7 +3548,7 @@ class AttributeTestCase(TatorTransactionTest):
         }
         self.delete_json = {
             "entity_type": "LocalizationType",
-            "attribute_to_delete": 'Int Test',
+            "name": 'Int Test',
         }
 
 
@@ -3731,16 +3731,16 @@ class MutateAliasTestCase(TatorTransactionTest):
 
         for attr_name, attr_type in attribute_types:
             # Make a copy of the attribute type and remove a random field that isn't required
-            new_attribute_type = attr_type.copy()
+            attribute_type_update = attr_type.copy()
             fields = [
-                key for key in new_attribute_type.keys() if key not in ["name", "dtype", "choices"]
+                key for key in attribute_type_update.keys() if key not in ["name", "dtype", "choices"]
             ]
             key_to_remove = random.choice(fields)
-            new_attribute_type.pop(key_to_remove)
+            attribute_type_update.pop(key_to_remove)
 
             # Perform an update, check that no fields were removed
             self.search.mutate_alias(
-                entity_type, attr_name, new_attribute_type, "update"
+                entity_type, attr_name, attribute_type_update, "update"
             ).save()
             entity_type = MediaType.objects.get(pk=entity_type_id)
 
@@ -3757,7 +3757,7 @@ class MutateAliasTestCase(TatorTransactionTest):
 
             # Perform a replace, check that no fields were removed
             self.search.mutate_alias(
-                entity_type, attr_name, new_attribute_type, "replace"
+                entity_type, attr_name, attribute_type_update, "replace"
             ).save()
             entity_type = MediaType.objects.get(pk=entity_type_id)
 

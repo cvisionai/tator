@@ -1033,8 +1033,8 @@ export class AttributesForm extends TatorElement {
     const attrFormObj = this._getAttributeFormData();
     const formData = {
       "entity_type": entityType,
-      "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": attrFormObj.formData
+      "current_name": this.dataset.oldName,
+      "attribute_type_update": attrFormObj.formData
     };
 
     data.newName = this._name.getValue();
@@ -1048,15 +1048,15 @@ export class AttributesForm extends TatorElement {
     const promiseInfo = {};
     const formData = {
       "entity_type": entityType,
-      "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": {}
+      "current_name": this.dataset.oldName,
+      "attribute_type_update": {}
     };
 
     promiseInfo.newName = this._name.getValue();
     promiseInfo.oldName = this.dataset.oldName;
 
     // Hand of the data, and call this form unchanged
-    formData.new_attribute_type = this._getAttributeFormData();
+    formData.attribute_type_update = this._getAttributeFormData();
     this.form.classList.remove("changed");
     this.changeReset();
 

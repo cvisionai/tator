@@ -114,18 +114,18 @@ attribute_type_properties_no_defaults = {
 
 attribute_type_update = {
     "type": "object",
-    "required": ["entity_type", "old_attribute_type_name", "new_attribute_type"],
+    "required": ["entity_type", "current_name", "attribute_type_update"],
     "description": "Renames an attribute of a type.",
     "properties": {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
         },
-        "old_attribute_type_name": {
+        "current_name": {
             "type": "string",
             "description": "The attribute to rename.",
         },
-        "new_attribute_type": {
+        "attribute_type_update": {
             'type': 'object',
             'properties': attribute_type_properties_no_defaults,
         }
@@ -140,7 +140,7 @@ attribute_type_delete = {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
         },
-        "attribute_to_delete": {
+        "name": {
             "type": "string",
             "description": "The attribute to delete.",
         },

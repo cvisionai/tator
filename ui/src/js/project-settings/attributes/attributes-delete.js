@@ -19,7 +19,7 @@ export class AttributesDelete {
     _fetchPromise(){
         let formData = {
             "entity_type": this.type,
-            "attribute_to_delete": this.attributeName
+            "name": this.attributeName
         };
     
         return fetch(`/rest/AttributeType/${this.typeId}`, {

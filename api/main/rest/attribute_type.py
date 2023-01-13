@@ -117,12 +117,12 @@ class AttributeTypeListAPI(BaseListView):
             raise ValueError(f"Expected `mod_type` in {valid_mod_types}, received '{mod_type}'")
 
         ts = TatorSearch()
-        old_name = params["old_attribute_type_name"]
+        old_name = params["current_name"]
         old_dtype = None
         old_attribute_type = None
-        new_attribute_type = params["new_attribute_type"]
+        attribute_type_update = params["attribute_type_update"]
 
-        new_name = new_attribute_type["name"]
+        new_name = attribute_type_update["name"]
         attribute_renamed = old_name != new_name
 
         # Get the old and new dtypes
@@ -145,8 +145,8 @@ class AttributeTypeListAPI(BaseListView):
             attribute_mutated = False
             dtype_mutated = False
 
-            # Check all keys present in `new_attribute_type`
-            keys = set(new_attribute_type.keys())
+            # Check all keys present in `attribute_type_update`
+            keys = set(attribute_type_update.keys())
             if mod_type == "replace":
                 # Also check all keys present in `old_attribute_type` if this is a replacement
                 keys.update(old_attribute_type.keys())
@@ -156,7 +156,7 @@ class AttributeTypeListAPI(BaseListView):
                 if key == "name":
                     continue
 
-                if new_attribute_type.get(key) != old_attribute_type.get(key):
+                if attribute_type_update.get(key) != old_attribute_type.get(key):
                     attribute_mutated = True
                     if key == "dtype":
                         dtype_mutated = True
@@ -166,9 +166,9 @@ class AttributeTypeListAPI(BaseListView):
             if attribute_renamed:
                 ts.check_rename(entity_type, old_name, new_name)
             if attribute_mutated:
-                cls._check_attribute_type(new_attribute_type)
+                cls._check_attribute_type(attribute_type_update)
                 if dtype_mutated:
-                    ts.check_mutation(entity_type, old_name, new_attribute_type)
+                    ts.check_mutation(entity_type, old_name, attribute_type_update)
 
             # List of success messages to return
             messages = []
@@ -193,7 +193,7 @@ class AttributeTypeListAPI(BaseListView):
 
             if attribute_mutated:
                 # Update entity type attribute type
-                ts.mutate_alias(entity_type, new_name, new_attribute_type, mod_type).save()
+                ts.mutate_alias(entity_type, new_name, attribute_type_update, mod_type).save()
 
                 # Convert entity values
                 if dtype_mutated:
@@ -208,9 +208,9 @@ class AttributeTypeListAPI(BaseListView):
                 if mod_type == "update":
                     # An update is a combination of the new and old states
                     final_attribute_type = old_attribute_type.copy()
-                    final_attribute_type.update(new_attribute_type)
+                    final_attribute_type.update(attribute_type_update)
                 else:
-                    final_attribute_type = new_attribute_type
+                    final_attribute_type = attribute_type_update
 
                 messages.append(
                     f"Attribute '{new_name}' mutated from:\n{pformat(old_attribute_type)}\nto:\n"
@@ -221,15 +221,15 @@ class AttributeTypeListAPI(BaseListView):
 
     def _delete(self, params: Dict) -> Dict:
         """Delete an existing attribute on a type."""
-        attribute_to_delete = params["attribute_to_delete"]
+        name = params["name"]
         with transaction.atomic():
             entity_type, obj_qs = self._get_objects(params)
-            TatorSearch().delete_alias(entity_type, attribute_to_delete).save()
+            TatorSearch().delete_alias(entity_type, name).save()
 
         if obj_qs.exists():
-            bulk_delete_attributes([attribute_to_delete], obj_qs)
+            bulk_delete_attributes([name], obj_qs)
 
-        return {"message": f"Attribute '{attribute_to_delete}' deleted"}
+        return {"message": f"Attribute '{name}' deleted"}
 
     def _patch(self, params: Dict) -> Dict:
         """Updates an attribute on a type."""
@@ -241,29 +241,29 @@ class AttributeTypeListAPI(BaseListView):
 
     def _post(self, params: Dict) -> Dict:
         """Adds an attribute to a type."""
-        new_attribute_type = params["addition"]
-        new_name = new_attribute_type["name"]
+        attribute_type_update = params["addition"]
+        new_name = attribute_type_update["name"]
         with transaction.atomic():
             entity_type, obj_qs = self._get_objects(params)
 
             # Check that the attribute type is valid and it is valid to add it to the desired entity
             # type
-            self._check_attribute_type(new_attribute_type)
+            self._check_attribute_type(attribute_type_update)
 
             # Add the attribute to the desired entity type
             if entity_type.attribute_types:
                 existing_names = [a['name'] for a in entity_type.attribute_types]
-                if new_attribute_type['name'] in existing_names:
+                if attribute_type_update['name'] in existing_names:
                     raise ValueError(f"{a['name']} is already an attribute.")
-                entity_type.attribute_types.append(new_attribute_type)
+                entity_type.attribute_types.append(attribute_type_update)
             else:
                 entity_type.attribute_types = []
-                entity_type.attribute_types.append(new_attribute_type)
+                entity_type.attribute_types.append(attribute_type_update)
             entity_type.save()
 
         # Add new field to all existing attributes if there is a default value
-        if obj_qs.exists() and "default" in new_attribute_type:
-            new_attr = {new_name: new_attribute_type["default"]}
+        if obj_qs.exists() and "default" in attribute_type_update:
+            new_attr = {new_name: attribute_type_update["default"]}
 
             # Add default value to PSQL
             bulk_patch_attributes(new_attr, obj_qs)
