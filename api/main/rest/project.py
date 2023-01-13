@@ -173,8 +173,7 @@ class ProjectListAPI(BaseListView):
         }
 
     def get_queryset(self):
-        memberships = Membership.objects.filter(user=self.request.user)
-        projects = memberships.select_related('project').order_by('id')
+        projects = Project.objects.filter(membership__user=self.request.user).order_by('id')
         return projects
 
 class ProjectDetailAPI(BaseDetailView):
