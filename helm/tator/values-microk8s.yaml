@@ -47,7 +47,12 @@ postgresUsername: "django"
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
-objectStorageHost: "minio-master"
+# liveBucket may be left unconfigured if using local minio
+liveBucket:
+  config: "json in folded block (>- ...)"
+  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
@@ -92,18 +97,16 @@ pvc:
   size: 10Ti
 uploadBucket:
   enabled: false
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  config: "json in folded block (>- ...)"
+  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 backupBucket:
   enabled: false
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  config: "json in folded block (>- ...)"
+  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 hpa:
   nginxMinReplicas: 1
   nginxMaxReplicas: 1
@@ -195,6 +198,15 @@ minio:
   enabled: true
   accessKey: "AKIAIOSFODNN7EXAMPLE"
   secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  config: >-
+    {
+      "aws_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+      "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      "endpoint_url": "http://tator-minio:9000",
+      "region_name": "us-east-2"
+    }
+  name: tator
+  store_type: "MINIO"
   persistence:
     size: "1Ti"
     existingClaim: "main-pv-claim"
