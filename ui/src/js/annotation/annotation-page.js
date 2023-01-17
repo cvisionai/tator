@@ -842,6 +842,15 @@ export class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+    const userPromise = fetchRetry(`/rest/User/GetCurrent`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
       return fetchRetry(url, {
@@ -860,16 +869,18 @@ export class AnnotationPage extends TatorPage {
       versionPromise,
       favoritePromise,
       membershipPromise,
+      userPromise,
     ])
     .then(([localizationResponse, stateResponse, versionResponse, favoriteResponse,
-            membershipResponse]) => {
+            membershipResponse, userResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
       const versionData = versionResponse.json();
       const favoriteData = favoriteResponse.json();
       const membershipData = membershipResponse.json();
-      Promise.all([localizationData, stateData, versionData, favoriteData, membershipData])
-      .then(([localizationTypes, stateTypes, versions, favorites, memberships]) => {
+      const userData = userResponse.json();
+      Promise.all([localizationData, stateData, versionData, favoriteData, membershipData, userData])
+      .then(([localizationTypes, stateTypes, versions, favorites, memberships, user]) => {
         // Only display positive version numbers.
         versions = versions.filter(version => version.number >= 0);
 
@@ -879,6 +890,7 @@ export class AnnotationPage extends TatorPage {
 
         // If there is a default version pick that one, otherwise use the first one.
         this._version == null;
+        this.setAttribute("user-id", user.id);
         let default_version = versions[0].id;
         for (const membership of memberships) {
           if (membership.user == this.getAttribute("user-id")) {
