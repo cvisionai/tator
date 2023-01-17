@@ -23,7 +23,7 @@ SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 
-TATOR_JS_MODULE_FILE=scripts/packages/tator-js/pkg/src/index.js
+TATOR_JS_MODULE_FILE=ui/server/static/tator.min.js
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
@@ -125,7 +125,7 @@ status:
 check-migration:
 	scripts/check-migration.sh $(pwd)
 
-cluster: main/version.py clean_schema
+cluster: api/main/version.py clean_schema
 	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-deps cluster-install
 
 cluster-deps:
@@ -135,7 +135,7 @@ cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: check-migration main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
+cluster-upgrade: check-migration api/main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-update: 
@@ -158,7 +158,7 @@ dashboard-token:
 # GIT-based diff for image generation
 # Available for tator-image, change dep to ".token/tator_online_$(GIT_VERSION)"
 # Will cause a rebuild on any dirty working tree OR if the image has been built with a token generated
-ifeq ($(shell git diff main | wc -l), 0)
+ifeq ($(shell git diff api | wc -l), 0)
 .token/tator_online_$(GIT_VERSION):
 	@echo "No git changes detected"
 	make tator-image
@@ -250,15 +250,15 @@ braw-image:
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
 
 
-ifeq ($(shell cat main/version.py), $(shell ./scripts/version.sh))
-.PHONY: main/version.py
-main/version.py:
+ifeq ($(shell cat api/main/version.py), $(shell ./scripts/version.sh))
+.PHONY: api/main/version.py
+api/main/version.py:
 	@echo "Version file already generated"
 else
-.PHONY: main/version.py
-main/version.py:
-	./scripts/version.sh > main/version.py
-	chmod +x main/version.py
+.PHONY: api/main/version.py
+api/main/version.py:
+	./scripts/version.sh > api/main/version.py
+	chmod +x api/main/version.py
 endif
 
 collect-static: webpack
@@ -312,7 +312,7 @@ images: ${IMAGES}
 	@echo "Built ${IMAGES}"
 
 lazyPush:
-	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
+	rsync -a -e ssh --exclude api/main/migrations --exclude api/main/__pycache__ main adamant:/home/brian/working/tator_online
 
 $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
@@ -334,26 +334,10 @@ python-bindings:
 	make $(TATOR_PY_WHEEL_FILE)
 
 $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
-	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
-	cp doc/_build/schema.yaml scripts/packages/tator-js/.
-	cd scripts/packages/tator-js
-	rm -rf pkg && mkdir pkg && mkdir pkg/src
-	./codegen.py tator-openapi-schema.yaml
-	docker run --rm \
-		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
-		openapitools/openapi-generator-cli:v6.1.0 \
-		generate -c /pwd/config.json \
-		-i /pwd/tator-openapi-schema.yaml \
-		-g javascript -o /pwd/pkg -t /pwd/templates
-	docker run --rm \
-		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
-		openapitools/openapi-generator-cli:v6.1.0 \
-		chmod -R 777 /pwd/pkg
-	cp -r examples pkg/examples
-	cp -r utils pkg/src/utils
-	cd pkg && npm install
-	npm install -D @playwright/test \
-		isomorphic-fetch fetch-retry spark-md5 uuid querystring
+	cp doc/_build/schema.yaml scripts/packages/tator-js/tator-openapi-schema.yaml
+	cd scripts/packages/tator-js && $(MAKE) all && cd ../../..
+	cp scripts/packages/tator-js/pkg/dist/tator.min.js ui/server/static/.
+	cp scripts/packages/tator-js/pkg/dist/tator.js ui/server/static/.
 
 .PHONY: js-bindings
 js-bindings: .token/tator_online_$(GIT_VERSION)
@@ -419,7 +403,7 @@ markdown-docs:
 
 
 # Only run if schema changes
-doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
+doc/_build/schema.yaml: $(shell find api/main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
 	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
 	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
@@ -456,3 +440,8 @@ endif
 announce:
 	kubectl cp $(FILE) $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///'):/tmp/announce.md
 	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- $(ANNOUNCE_CMD) 
+
+.PHONY: convert-old-buckets
+convert-old-buckets:
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- \
+			python3 manage.py shell -c 'from main.util import convert_old_buckets; convert_old_buckets()'

@@ -1181,6 +1181,7 @@ export class AnnotationPage extends TatorPage {
             save.addEventListener("save", () => {
               this._closeModal(save);
             });
+
           }
         }
 
@@ -1320,6 +1321,15 @@ export class AnnotationPage extends TatorPage {
           // This puts the tools html into a panel next to the sidebar
           const toolAppletPanel = document.createElement("tools-applet-panel");
           toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
+        }
+
+        if (applet.categories.includes("annotator-save-tools") && (this._saves && Object.entries(this._saves).length > 0)) {
+          for (let [type, saveDialog] of Object.entries(this._saves)) {
+            if (type !== "modifyTrack") {
+              const toolAppletSavePanel = document.createElement("tools-applet-save-panel");
+              toolAppletSavePanel.saveApplet(applet, this, canvas, saveDialog, type);
+            }
+          }
         }
 
         this._appletMap[applet.name] = applet;

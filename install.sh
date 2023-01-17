@@ -142,7 +142,7 @@ sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
 
 # Install tator.
 echo "Installing tator."
-make main/version.py
+make api/main/version.py
 make cluster-deps
 make cluster-install
 

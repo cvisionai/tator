@@ -7,6 +7,10 @@ state_properties = {
         'description': 'If a clone, the pk of the parent.',
         'type': 'number',
         'nullable': True,
+    },
+    'elemental_id': {
+        'description': 'Unique ID of an element',
+        'type': 'string'
     }
 }
 
