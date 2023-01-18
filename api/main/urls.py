@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 schema_view = get_schema_view(
     title='Tator REST API',
-    version='v1',
+    version='DEVELOPMENT_VERSION',
     generator_class=CustomGenerator,
     renderer_classes=[NoAliasRenderer],
 )
