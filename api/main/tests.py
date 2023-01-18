@@ -1172,6 +1172,13 @@ class CurrentUserTestCase(TatorTransactionTest):
         response = self.client.get('/rest/User/GetCurrent')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.user.id)
+        response = self.client.get(f'/rest/Users?elemental_id={self.user.elemental_id}')
+        self.assertEqual(len(response.data), 1)
+        response = self.client.get(f'/rest/User/Exists?elemental_id={self.user.elemental_id}')
+        self.assertEqual(response.data, True)
+        random_uuid=uuid.uuid4()
+        response = self.client.get(f'/rest/Users?elemental_id={random_uuid}')
+        self.assertEqual(len(response.data), 0)
 
 class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
