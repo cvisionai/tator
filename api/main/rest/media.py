@@ -440,7 +440,7 @@ class MediaListAPI(BaseListView):
             _, response = _create_media(project, media_spec_list[0], self.request.user)
         elif media_spec_list:
             # TODO handle multiple image creation
-            response = {'message': "Multiple image creation", 'id': -1}
+            raise NotImplementedError("Multiple image creation not implemented yet!")
         else:
             raise ValueError(f"Expected one or more media specs, received zero!")
         return response
