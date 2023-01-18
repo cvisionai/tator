@@ -108,8 +108,7 @@ jobs:
     - run:
         name: Publish tator-js
         command: |
-          ssh lightsail 'cd tator/scripts/packages/tator-js/pkg && npm install -g npm-cli-login';
-          ssh lightsail 'export NPM_USER='"'$NPM_USER'"';export NPM_PASS='"'$NPM_PASS'"'; export NPM_EMAIL='"'$NPM_EMAIL'"';cd tator/scripts/packages/tator-js/pkg && npm-cli-login && npm publish --dry-run';
+          ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish --dry-run';
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
