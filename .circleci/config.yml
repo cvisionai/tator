@@ -82,6 +82,28 @@ jobs:
         name: Push backend images to AWS
         command: |
           ssh lightsail 'export AWS_REGISTRY='"'$AWS_REGISTRY'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_aws.sh';
+  set-versions:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - run:
+        name: Set version in tator-py, tator-js, and REST interface
+        command: |
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-py/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-js/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/api/main/urls.py';
+  publish-clients:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - run:
+        name: Publish tator-py
+        command: |
+          ssh lightsail 'cd tator/scripts/packages/tator-py && python3 -m twine upload -r testpypi dist/*';
+    - run:
+        name: Publish tator-js
+        command: |
+          ssh lightsail 'cd tator/scripts/packages/tator-js/pkg && npm publish --dry-run';
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
@@ -234,13 +256,30 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - build-docker-images:
+    - set-versions:
         requires:
         - setup-lightsail
         context: cd
         filters:
+          branches:
+            only:
+            - dev/1013-ci-client-publish
+    - build-docker-images:
+        requires:
+        - setup-lightsail
+        - set-versions
+        context: cd
+        filters:
           tags:
             only: /.*/
+    - publish-clients:
+        requires:
+        - build-docker-images
+        context: cd
+        filters:
+          branches:
+            only:
+            - dev/1013-ci-client-publish
     - install-tator:
         requires:
         - build-docker-images
