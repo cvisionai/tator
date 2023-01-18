@@ -52,12 +52,15 @@ class UserListAPI(BaseListView):
     def _get(self, params):
         email = params.get('email', None)
         username = params.get('username', None)
+        elemental_id = params.get('elemental_id', None)
         if email is None and username is None:
             raise Exception("One of username or email must be supplied!")
         elif email is not None:
             users = User.objects.filter(email=email)
         elif username is not None:
             users = User.objects.filter(username=username)
+        elif elemental_id is not None:
+            users = User.objects.filter(elemental_id=elemental_id)
         else:
             users = User.objects.filter(username=username, email=email)
         return UserSerializerBasic(users, many=True).data
