@@ -261,9 +261,10 @@ workflows:
         - setup-lightsail
         context: cd
         filters:
+          tags:
+            only: /.*/
           branches:
-            only:
-            - dev/1013-ci-client-publish
+            ignore: /.*/
     - build-docker-images:
         requires:
         - setup-lightsail
@@ -277,9 +278,10 @@ workflows:
         - build-docker-images
         context: cd
         filters:
+          tags:
+            only: /.*/
           branches:
-            only:
-            - dev/1013-ci-client-publish
+            ignore: /.*/
     - install-tator:
         requires:
         - build-docker-images
