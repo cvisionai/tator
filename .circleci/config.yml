@@ -86,6 +86,8 @@ jobs:
     machine:
       image: ubuntu-2004:202010-01
     steps:
+    - attach_workspace:
+        at: ~/
     - run:
         name: Set version in tator-py, tator-js, and REST interface
         command: |
@@ -96,6 +98,8 @@ jobs:
     machine:
       image: ubuntu-2004:202010-01
     steps:
+    - attach_workspace:
+        at: ~/
     - run:
         name: Publish tator-py
         command: |
