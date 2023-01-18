@@ -103,6 +103,7 @@ jobs:
     - run:
         name: Publish tator-py
         command: |
+          ssh lightsail 'pip3 install twine';
           ssh lightsail 'cd tator/scripts/packages/tator-py && python3 -m twine upload -r testpypi dist/*';
     - run:
         name: Publish tator-js
