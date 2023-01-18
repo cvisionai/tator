@@ -112,7 +112,7 @@ class TranscodeListAPI(BaseListView):
             if media_obj.project.pk != project:
                 raise Exception(f"Media not part of specified project!")
         elif entity_type != -1:
-            media_obj, _ = _create_media(params, self.request.user)
+            media_obj, _ = _create_media(project, params, self.request.user)
             media_id = media_obj.id
         if entity_type == -1:
             transcode = TatorTranscode().start_tar_import(
