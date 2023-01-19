@@ -68,11 +68,11 @@ class TatorBackupManager:
                         break
                     except Exception as e:
                         logger.warning(
-                            f"Upload of {path} chunk {chunk_count} failed ({e})! Attempt "
+                            f"Upload of {upload_id} chunk {chunk_count} failed ({e})! Attempt "
                             f"{attempt + 1}/{MAX_RETRIES}"
                         )
                         if attempt == MAX_RETRIES - 1:
-                            raise RuntimeError(f"Upload of {path} failed!")
+                            raise RuntimeError(f"Upload of {upload_id} failed!")
                         else:
                             time.sleep(10 * attempt)
                             logger.warning(f"Backing off for {10 * attempt} seconds...")
@@ -92,20 +92,24 @@ class TatorBackupManager:
                     return True
                 else:
                     logger.warning(
-                        f"Upload of {path} failed ({response.text}) size={len(data)}! Attempt "
-                        f"{attempt + 1}/{MAX_RETRIES}"
+                        f"Upload of '{upload_url}' failed ({response.text}) size={len(data)}! "
+                        f"Attempt {attempt + 1}/{MAX_RETRIES}"
                     )
                     if attempt < MAX_RETRIES - 1:
                         logger.warning("Backing off for 5 seconds...")
                         time.sleep(5)
             else:
-                logger.error(f"Upload of {path} failed!")
+                logger.error(f"Upload of '{upload_url}' failed!")
         return False
 
     @classmethod
     def _upload_from_url(cls, store, path, url, size, domain):
         num_chunks = math.ceil(size / cls.chunk_size)
         urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
+
+        if not urls:
+            logger.warning(f"Could not get upload urls for key '{path}'")
+            return False
 
         if num_chunks > 1:
             parts = cls._multipart_upload(urls, upload_id, url)
