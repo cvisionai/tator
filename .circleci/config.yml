@@ -82,6 +82,33 @@ jobs:
         name: Push backend images to AWS
         command: |
           ssh lightsail 'export AWS_REGISTRY='"'$AWS_REGISTRY'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_aws.sh';
+  set-versions:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - run:
+        name: Set version in tator-py, tator-js, and REST interface
+        command: |
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-py/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-js/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/api/main/urls.py';
+  publish-clients:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - run:
+        name: Publish tator-py
+        command: |
+          ssh lightsail 'pip3 install twine';
+          ssh lightsail 'export TWINE_USERNAME='"'$TWINE_USERNAME'"';export TWINE_PASSWORD='"'$TWINE_PASSWORD'"';export TWINE_NON_INTERACTIVE='"'$TWINE_NON_INTERACTIVE'"';cd tator/scripts/packages/tator-py && python3 -m twine upload dist/*';
+    - run:
+        name: Publish tator-js
+        command: |
+          ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
@@ -115,7 +142,7 @@ jobs:
     - run:
         name: Clone source on lightsail
         command: |
-          ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; rm -fr tator; git clone -b ${CIRCLE_BRANCH:-stable} --recurse-submodules https://github.com/cvisionai/tator';
+          ssh lightsail 'export CIRCLE_SHA1='"'$CIRCLE_SHA1'"'; rm -fr tator; git clone https://github.com/cvisionai/tator; cd tator && git checkout $CIRCLE_SHA1 && git submodule update --init';
     - persist_to_workspace:
         root: ~/
         paths:
@@ -234,13 +261,32 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - build-docker-images:
+    - set-versions:
         requires:
         - setup-lightsail
         context: cd
         filters:
           tags:
             only: /.*/
+          branches:
+            ignore: /.*/
+    - build-docker-images:
+        requires:
+        - setup-lightsail
+        - set-versions
+        context: cd
+        filters:
+          tags:
+            only: /.*/
+    - publish-clients:
+        requires:
+        - build-docker-images
+        context: cd
+        filters:
+          tags:
+            only: /.*/
+          branches:
+            ignore: /.*/
     - install-tator:
         requires:
         - build-docker-images
@@ -279,6 +325,8 @@ workflows:
           branches:
             only:
             - main
+          tags:
+            only: /.*/
     - cleanup-lightsail:
         requires:
         - rest-tests
