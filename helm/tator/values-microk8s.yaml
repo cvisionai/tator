@@ -50,7 +50,7 @@ elasticsearchHost: "elasticsearch-master"
 # liveBucket may be left unconfigured if using local minio
 liveBucket:
   config: "json in folded block (>- ...)"
-  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
   name: "<your bucket name>"
   # proxy: "<proxy domain, if required>"
 # If you are using the docker registry container for your registry, you can
@@ -98,13 +98,13 @@ pvc:
 uploadBucket:
   enabled: false
   config: "json in folded block (>- ...)"
-  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
   name: "<your bucket name>"
   # proxy: "<proxy domain, if required>"
 backupBucket:
   enabled: false
   config: "json in folded block (>- ...)"
-  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
   name: "<your bucket name>"
   # proxy: "<proxy domain, if required>"
 hpa:
@@ -206,7 +206,7 @@ minio:
       "region_name": "us-east-2"
     }
   name: tator
-  store_type: "MINIO"
+  storeType: "MINIO"
   persistence:
     size: "1Ti"
     existingClaim: "main-pv-claim"

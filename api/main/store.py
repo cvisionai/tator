@@ -698,7 +698,7 @@ def get_tator_store(
                 try:
                     config = json.loads(config)
                 except Exception:
-                    logger.error(f"Could not parse json string:\n'{config_str}'", exc_info=True)
+                    logger.error(f"Could not parse json string:\n'{config}'", exc_info=True)
                     raise
         else:
             # If a backup store was requested but not provided (`bucket` is None and the environment

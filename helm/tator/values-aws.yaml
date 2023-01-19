@@ -46,7 +46,7 @@ liveBucket:
       "aws_access_key_id": "fill me in",
       "aws_secret_access_key": "fill me in"
     }
-  store_type: "AWS"
+  storeType: "AWS"
   name: "<your bucket name>"
   # proxy: "<proxy domain, if required>"
 dockerUsername: "<Your ECR username>"
@@ -89,13 +89,13 @@ pv:
 uploadBucket:
   enabled: false
   config: "json in folded block (>- ...)"
-  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
   name: "<your bucket name>"
   # proxy: "<proxy domain, if required>"
 backupBucket:
   enabled: false
   config: "json in folded block (>- ...)"
-  store_type: "<one of AWS, MINIO, GCP, or OCI>"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
   name: "<your bucket name>"
   # proxy: "<proxy domain, if required>"
 hpa:
