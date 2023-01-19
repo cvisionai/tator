@@ -683,7 +683,7 @@ def get_tator_store(
         )
 
     if bucket is None:
-        if upload and os.getenv("DEFAULT_UPLOAD_BUCKET_CONFIG"):
+        if upload and os.getenv("DEFAULT_UPLOAD_CONFIG"):
             bucket_type = "UPLOAD"
         elif backup:
             bucket_type = "BACKUP"
