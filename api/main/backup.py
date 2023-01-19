@@ -7,6 +7,7 @@ import os
 import math
 import requests
 from uuid import uuid4
+import time
 from typing import Generator, Tuple
 
 from django.db import transaction
