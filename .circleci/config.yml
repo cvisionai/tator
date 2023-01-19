@@ -104,11 +104,11 @@ jobs:
         name: Publish tator-py
         command: |
           ssh lightsail 'pip3 install twine';
-          ssh lightsail 'export TWINE_USERNAME='"'$TWINE_USERNAME'"';export TWINE_PASSWORD='"'$TWINE_PASSWORD'"';export TWINE_NON_INTERACTIVE='"'$TWINE_NON_INTERACTIVE'"';cd tator/scripts/packages/tator-py && python3 -m twine upload -r testpypi dist/*';
+          ssh lightsail 'export TWINE_USERNAME='"'$TWINE_USERNAME'"';export TWINE_PASSWORD='"'$TWINE_PASSWORD'"';export TWINE_NON_INTERACTIVE='"'$TWINE_NON_INTERACTIVE'"';cd tator/scripts/packages/tator-py && python3 -m twine upload dist/*';
     - run:
         name: Publish tator-js
         command: |
-          ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish --dry-run';
+          ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
