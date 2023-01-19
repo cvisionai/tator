@@ -159,7 +159,7 @@ def _save_image(url, media_obj, project_obj, role):
     Resource.add_resource(image_key, media_obj)
     return media_obj
 
-def _create_media(params, user):
+def _create_media(project, params, user):
     """ Media POST method in its own function for reuse by Transcode endpoint.
     """
     # Get common parameters (between video/image).
@@ -167,7 +167,6 @@ def _create_media(params, user):
     section = params['section']
     name = params['name']
     md5 = params['md5']
-    project = params['project']
     gid = params.get('gid', None)
     uid = params.get('uid', None)
     new_attributes = params.get('attributes', None)
@@ -367,18 +366,9 @@ def _create_media(params, user):
         )
 
         # Add optional parameters.
-        if 'fps' in params:
-            media_obj.fps = params['fps']
-        if 'num_frames' in params:
-            media_obj.num_frames = params['num_frames']
-        if 'codec' in params:
-            media_obj.codec = params['codec']
-        if 'width' in params:
-            media_obj.width = params['width']
-        if 'height' in params:
-            media_obj.height = params['height']
-        if 'summary_level' in params:
-            media_obj.summary_level = params['summary_level']
+        for opt_key in ["fps", "num_frames", "codec", "width", "height", "summary_level"]:
+            if opt_key in params:
+                setattr(media_obj, opt_key, params[opt_key])
 
         # Use thumbnails if they are given.
         thumbnail_url = params.get('thumbnail_url', None)
@@ -444,7 +434,15 @@ class MediaListAPI(BaseListView):
         return response_data
 
     def _post(self, params):
-        _, response = _create_media(params, self.request.user)
+        project = params["project"]
+        media_spec_list = params["body"]
+        if len(media_spec_list) == 1:
+            _, response = _create_media(project, media_spec_list[0], self.request.user)
+        elif media_spec_list:
+            # TODO handle multiple image creation
+            raise NotImplementedError("Multiple image creation not implemented yet!")
+        else:
+            raise ValueError(f"Expected one or more media specs, received zero!")
         return response
 
     def _delete(self, params):

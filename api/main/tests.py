@@ -1856,11 +1856,15 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         # localization must also be deleted. Delete via the endpoint.
         unique_string_attr_val = 'super_unique_string_to_search_for_1'
         attr_search = f"String Test::{unique_string_attr_val}"
-        body = {'type': self.image_type.pk,
-                'section': 'asdf',
-                'name': 'asdf',
-                'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+        body = [
+            {
+                "type": self.image_type.pk,
+                "section": "asdf",
+                "name": "asdf",
+                "md5": "asdf",
+                "attributes": {"String Test": unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id1 = response.data['id']
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
@@ -1944,19 +1948,27 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         unique_string_attr_val1 = 'super_unique_string_to_search_for_1'
         unique_string_attr_val2 = 'super_unique_string_to_search_for_2'
         unique_string_attr_val3 = 'super_unique_string_to_search_for_3'
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val1}}
+                'attributes': {'String Test': unique_string_attr_val1},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id1 = response.data['id']
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val2}}
+                'attributes': {'String Test': unique_string_attr_val2},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id2 = response.data['id']
 
@@ -2064,11 +2076,15 @@ class StateMediaDeleteCase(TatorTransactionTest):
 
         unique_string_attr_val = 'super_unique_string_to_search_for_1'
         attr_search = f"String Test::{unique_string_attr_val}"
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id = response.data['id']
 
@@ -2109,27 +2125,39 @@ class StateMediaDeleteCase(TatorTransactionTest):
         unique_string_attr_val = 'super_unique_string_to_search_for_2'
         attr_search = f'String Test::{unique_string_attr_val}'
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id1 = response.data['id']
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id2 = response.data['id']
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id3 = response.data['id']
 
@@ -3330,11 +3358,15 @@ class ResourceTestCase(TatorTransactionTest):
             attribute_types=create_test_attribute_types(),
         )
         wait_for_indices(image_type)
-        body = {'url': TEST_IMAGE,
+        body = [
+            {
+                'url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
-                'md5': 'asdf'}
+                'md5': 'asdf',
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
         image_id = response.data['id']
@@ -3356,12 +3388,16 @@ class ResourceTestCase(TatorTransactionTest):
         self.assertFalse(self._store_obj_exists(thumb_key))
 
         # Create an image with thumbnail_url included.
-        body = {'url': TEST_IMAGE,
+        body = [
+            {
+                'url': TEST_IMAGE,
                 'thumbnail_url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
-                'md5': 'asdf'}
+                'md5': 'asdf',
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
         image_id = response.data['id']
@@ -3383,12 +3419,16 @@ class ResourceTestCase(TatorTransactionTest):
         self.assertFalse(self._store_obj_exists(thumb_key))
 
         # Create a video that has thumbnails.
-        body = {'thumbnail_url': TEST_IMAGE,
+        body = [
+            {
+                'thumbnail_url': TEST_IMAGE,
                 'thumbnail_gif_url': TEST_IMAGE,
                 'type': self.entity_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
-                'md5': 'asdf'}
+                'md5': 'asdf',
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
         video_id = response.data['id']
