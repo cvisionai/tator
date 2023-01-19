@@ -97,9 +97,16 @@ class MediaListSchema(AutoSchema):
                 'content': {
                     'application/json': {
                         'schema': {
-                            'type': 'array',
-                            'items': {'$ref': '#/components/schemas/MediaSpec'},
-                            'maxItems': 500,
+                            'oneOf': [  # Workaround to support legacy deployments that send a single spec instead of an array
+                                {
+                                    'type': 'array',
+                                    'items': {'$ref': '#/components/schemas/MediaSpec'},
+                                    'maxItems': 500
+                                },
+                                {
+                                    '$ref': '#/components/schemas/MediaSpec',
+                                },
+                            ],
                         },
                     }
                 }
