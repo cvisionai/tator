@@ -102,6 +102,10 @@ state_spec = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
         **version_properties,
         **state_properties,
     },
@@ -115,7 +119,11 @@ state_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-        },        
+        },     
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },   
         'localization_ids_add': {
             'description': 'List of new localization IDs that this state applies to.',
             'type': 'array',
@@ -182,6 +190,10 @@ state_bulk_update = {
         'new_version': {
             'type': 'integer',
             'description': 'Unique integer identifying a new version for these objects',
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
         },
         **state_id_query['properties'],
     },

@@ -172,7 +172,11 @@ media_spec = {
         'elemental_id': {
             'description': 'Unique ID of an element',
             'type': 'string'
-        }
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
     },
 }
 
@@ -222,7 +226,11 @@ media_update = {
         'elemental_id': {
             'description': 'Unique ID of an element',
             'type': 'string'
-        }
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
     },
 }
 
@@ -278,6 +286,10 @@ media_bulk_update = {
                            'to `live` or `archived`, the system performs that transition for the '
                            'user.',
             'enum': ['to_archive', 'to_live']
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
         },
         'ids': {
             'description': 'Specific IDs to update. This is applied in addition to query '
