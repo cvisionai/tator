@@ -17,7 +17,7 @@ class MediaListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateMedia'
+            operation['operationId'] = 'CreateMediaList'
         elif method == 'GET':
             operation['operationId'] = 'GetMediaList'
         elif method == 'PATCH':
