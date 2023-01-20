@@ -18,7 +18,7 @@ export class SaveDialog extends TatorElement {
     this._div.appendChild(header);
 
     this._nameDiv = document.createElement("div");
-    this._nameDiv.setAttribute("class", "text-semibold");
+    this._nameDiv.setAttribute("class", "h2 text-semibold");
     header.appendChild(this._nameDiv);
 
     const close = document.createElement("modal-close");
@@ -84,7 +84,8 @@ export class SaveDialog extends TatorElement {
     });
 
     this._favorites.addEventListener("load", evt => {
-      this._attributes.setValues({ attributes: evt.detail });
+      this._attributes._track = null;
+      this._attributes.setValues({ attributes: evt.detail, id: -1 });
       console.log(evt.detail);
     });
 
@@ -126,12 +127,6 @@ export class SaveDialog extends TatorElement {
     this._undo = undo;
     this._version = version;
     this._favoritesData = favorites;
-
-    // For the save dialog, the track search bar doesn't need to be shown.
-    // The user only needs to modify the attributes in the dialog window.
-    this._attributes.displaySlider(false);
-    this._attributes.displayGoToLocalization(false);
-    this._attributes.displayGoToTrack(false);
     this._attributes._versionWidget.setValue(this._version.name);
 
     // Set choices on type selector.
@@ -293,6 +288,14 @@ export class SaveDialog extends TatorElement {
     }
   }
 
+  /**
+   * Change the dialog to match the current datatype
+   *
+   * 1. Update the title
+   * 2. Update the attribute panel
+   * 3. Update the favorites
+   * 4. Set the save button's disabled status
+   */
   _setDataType() {
     this._dataType = JSON.parse(this._type.getValue());
     var category = "Localization";
@@ -304,7 +307,10 @@ export class SaveDialog extends TatorElement {
     }
 
     this._nameDiv.textContent = `Save ${category}`;
+
+    this._attributes._track = null;
     this._attributes.dataType = this._dataType;
+    this._attributes.displayTrackUI(false);
 
     if (!this._dataType.hasOwnProperty("attribute_types") || this._dataType.attribute_types.length < 1) {
       this._favesDiv.style.display = "none";
@@ -314,6 +320,13 @@ export class SaveDialog extends TatorElement {
     }
 
     this._favorites.init(this._dataType, this._favoritesData);
+
+    this._values = this._attributes.getValues();
+    if (this._values === null) {
+      this._save.setAttribute("disabled", "");
+    } else {
+      this._save.removeAttribute("disabled");
+    }
   }
 
   /**

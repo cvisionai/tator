@@ -314,6 +314,7 @@ export class AttributePanel extends TatorElement {
 
   set dataType(val) {
     this._dataType = val;
+    this._widgets = [];
 
     // Remove existing attribute widgets.
     while (true) {
@@ -331,6 +332,7 @@ export class AttributePanel extends TatorElement {
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
       this._shadow.insertBefore(div, this._div);
+      this._trackDiv = div;
 
       var sliderDiv = document.createElement("div");
       sliderDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between py-1");
@@ -757,6 +759,17 @@ export class AttributePanel extends TatorElement {
       }
       else {
         this._slider.style.display = "none";
+      }
+    }
+  }
+
+  displayTrackUI(display) {
+    if (this._trackDiv) {
+      if (display) {
+        this._trackDiv.style.display = "block";
+      }
+      else {
+        this._trackDiv.style.display = "none";
       }
     }
   }
