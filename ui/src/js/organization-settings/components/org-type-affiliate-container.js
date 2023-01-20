@@ -8,6 +8,7 @@ export class OrgTypeAffiliateContainer extends OrgTypeFormContainer {
     // Side container (attr container)
     this.sideCol = this._shadow.getElementById("type-form-attr-column");
     this.sideCol.hidden = false;
+    this.sideCol.classList.remove("hidden");
 
     // Sidebar items
     this.membershipSidebar = document.createElement("affiliation-membership-sidebar");
@@ -43,14 +44,12 @@ export class OrgTypeAffiliateContainer extends OrgTypeFormContainer {
     this._data = data;
     this._form.data = data;
 
-    console.log(`setUpData for ${this._typeName}..`, data);
     // Setup object info
     this.objectName = data.username;
     this.updateAffiliateSidebar(data.username);
   }
 
   async updatedProjectData(newProjectData) {
-    console.log("Let affiliation page know about updated project data");
     const currentAffiliateId = Number(this._typeId);
     await store.getState().initType("Affiliation");
     for (let [id, affData] of newProjectData.map) {

@@ -23,6 +23,8 @@ export class OrgTypeFormContainer extends TatorElement {
     this._addLeaves = this._shadow.getElementById("type-form--add-edit-leaves");
     this._addLeavesLink = this._shadow.getElementById("type-form--add-edit-leaves_link");
     this._leavesFormHeading = this._shadow.getElementById("type-form--leaves-active");
+    this.sideCol = this._shadow.getElementById("type-form-attr-column");
+    this.sideCol.classList.add("hidden");
 
     // Buttons below form
     this._saveEditSection = this._shadow.getElementById("type-form--save-reset-section");
@@ -111,10 +113,12 @@ export class OrgTypeFormContainer extends TatorElement {
     if (this._typeId === "New") {
       this.editH1.hidden = true;
       this.newH1.hidden = false;
+      this.sideCol.hidden = true;
     } else {
       this.editH1.hidden = false;
       this.newH1.hidden = true;
       this.objectNameDisplay.innerHTML = val;
+      this.sideCol.hidden = false;
     }
   }
 

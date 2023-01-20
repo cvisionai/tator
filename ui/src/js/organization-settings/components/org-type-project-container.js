@@ -8,6 +8,7 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
     // Side container (attr container)
     this.sideCol = this._shadow.getElementById("type-form-attr-column");
     this.sideCol.hidden = false;
+    this.sideCol.classList.remove("hidden");
 
     // Sidebar
     this.projectMembershipSidebar = document.createElement("project-membership-sidebar");
