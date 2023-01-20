@@ -240,13 +240,18 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ projectId: id });
       set({ organizationId: object.data.organization });
       set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
-      
+
+
+
       set({
          status: {
             name: "idle",
             msg: ""
          }
       });
+
+      // As soon as we have the org ID
+      await store.getState().setJobClusterPermissions();
 
    },
 

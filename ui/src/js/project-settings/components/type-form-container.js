@@ -15,6 +15,7 @@ export class TypeFormContainer extends TatorElement {
     this.typeNameSet = this._shadow.querySelectorAll(".type-form-typeName");
     this.objectNameDisplay = this._shadow.getElementById("type-form-objectName");
     this.idDisplay = this._shadow.getElementById("type-form-id");
+    this.saveResetDiv = this._shadow.getElementById("type-form--save-reset-section");
     this.save = this._shadow.getElementById("type-form-save");
     this.resetLink = this._shadow.getElementById("type-form-reset");
     this.deleteDiv = this._shadow.getElementById("type-form-delete-div");
@@ -53,6 +54,10 @@ export class TypeFormContainer extends TatorElement {
     this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
     this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
     this.deleteDiv.hidden = (this._typeName === "Project" && !canDeleteProject);
+
+    this._form.addEventListener("hide-save", () => {
+      this.saveResetDiv.classList.add("hidden");
+    });
   }
 
   handleButtonsActive(newStatus) {
