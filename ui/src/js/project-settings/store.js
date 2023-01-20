@@ -483,8 +483,9 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
 
    for (let type of Object.keys(attributeDataByType)) {
       const data = await store.getState().initType(type);
-      const list = Array.isArray(data) ? data :  data.map.entries();
+      const list = Array.isArray(data) ? data : data.map.values();
       for (let entity of list) {
+         console.log(` attributeDataByType[${type}][${entity.name}] = entity.attribute_types`, entity.attribute_types);
          attributeDataByType[type][entity.name] = entity.attribute_types;
       }
    }
