@@ -64,7 +64,7 @@ export class SectionMore extends TatorElement {
     this._otherButtons.appendChild(this._deleteMedia);
 
     window.addEventListener("click", (e) => {
-      if (e.path[0].id != "icon-more-horizontal") {
+      if (e.composedPath()[0].id != "icon-more-horizontal") {
         details.removeAttribute("open");   
       }
     });
