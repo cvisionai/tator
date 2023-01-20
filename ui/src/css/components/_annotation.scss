@@ -260,6 +260,17 @@ favorite-button {
   margin-right: $spacing-2;
 }
 
+.favorites-panel {
+  border: 1px solid $color-charcoal--medium70;
+  background-color: $color-charcoal--dark;
+}
+
+.entity-panel {
+  border: 1px solid $color-charcoal--light;
+  background-color: $color-charcoal--medium-dark;
+  overflow: auto;
+}
+
 .annotation__multi-grid {
   display: grid;
 }
