@@ -1,5 +1,4 @@
-import { TatorElement } from "../../components/tator-element.js";
-import { store } from "../store.js";
+import { TatorElement } from "../tator-element.js";
 
 export class SettingsNav extends TatorElement {
   constructor() {
@@ -16,9 +15,6 @@ export class SettingsNav extends TatorElement {
   connectedCallback() {
     this.setupMap();
   }
-
-
-
 
   setupMap() {
     this.navByName = new Map();

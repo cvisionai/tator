@@ -3,7 +3,7 @@ import { hasPermission } from "../../../util/has-permission.js";
 import { getCookie } from "../../../util/get-cookie.js";
 import { InputValidation } from "../input-validation.js";
 import { InlineWarning } from "../../../components/inline-warning.js";
-import { SingleUpload } from "../../../project-settings/components/single-upload.js";
+import { SingleUpload } from "./single-upload.js";
 import TatorSymbol from "../../../../images/tator-logo-symbol-only.png";
 
 export class ThumbInput extends TatorElement {
@@ -190,14 +190,17 @@ export class ThumbInput extends TatorElement {
     }
 
   _preview(img) {
+    console.log("Preview this image string --- " + img);
     if (typeof img !== "string") {
       try {
         this._previewImg.src = URL.createObjectURL( img );
        } catch (e) {
         this._previewImg.src = TatorSymbol;
       }    
-    } else {
+    } else if (img !== "") {
       this._previewImg.src = img;
+    } else {
+      this._previewImg.src = TatorSymbol;
     }
   }
   

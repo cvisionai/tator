@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 import { getCompiledList } from "../store.js";
 
 export class LocalizationEdit extends TypeFormTemplate {
@@ -27,18 +27,20 @@ export class LocalizationEdit extends TypeFormTemplate {
 
     this._groupingDefault = this._shadow.getElementById("localization-type-edit--grouping-default");
     this._mediaCheckboxes = this._shadow.getElementById("localization-type-edit--media");
-  }
 
-  async _setupFormUnique() {
-    // dtype
-    const dTypeOptions = [
+
+    // Set enum choices onces
+    this.dtypeSelect.choices = [
       { "label": "Select", "value": "" },
       { "label": "Box", "value": "box" },
       { "label": "Line", "value": "line" },
       { "label": "Dot", "value": "dot" },
       { "label": "Poly", "value": "poly" }
     ];
-    if(typeof this.dtypeSelect._choices == "undefined") this.dtypeSelect.choices = dTypeOptions;
+  }
+
+  async _setupFormUnique() {
+    // dtype
     if (!this._data.dtype || this._data.dtype === "") {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.setValue("");
