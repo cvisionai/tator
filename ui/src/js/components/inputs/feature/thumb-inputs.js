@@ -197,8 +197,10 @@ export class ThumbInput extends TatorElement {
        } catch (e) {
         this._previewImg.src = TatorSymbol;
       }    
-    } else {
+    } else if (img !== "") {
       this._previewImg.src = img;
+    } else {
+      this._previewImg.src = TatorSymbol;
     }
   }
   
