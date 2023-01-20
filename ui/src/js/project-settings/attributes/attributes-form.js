@@ -830,10 +830,10 @@ export class AttributesForm extends TatorElement {
         formData.required = this._required.getValue();
       }
 
-      // Visible: Only when changed, or when it is a Clone pass the value along
-      if ((this._visible.changed() || this.isClone)) {
-        formData.visible = this._visible.getValue();
-      }
+      // Visible: Always send
+      const visible = this._visible.getValue();
+      formData.visible = (!visible || visible == null) ? false : true;
+
 
       // Dtype: Always sent
       formData.dtype = this._dtype.getValue();
