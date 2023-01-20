@@ -97,7 +97,7 @@ class MediaListSchema(AutoSchema):
                 'content': {
                     'application/json': {
                         'schema': {
-                            'oneOf': [  # Workaround to support legacy deployments that send a single spec instead of an array
+                            'oneOf': [
                                 {
                                     'type': 'array',
                                     'items': {'$ref': '#/components/schemas/MediaSpec'},
