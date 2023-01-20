@@ -50,9 +50,9 @@ export class BucketEdit extends OrgTypeFormTemplate {
   
   _ignoreConfigField() {
     return !(
-      this.data.config
-      && Object.keys(this.data.config).length === 0
-      && this.data.config.constructor === Object
+      this._data.config
+      && Object.keys(this._data.config).length === 0
+      && this._data.config.constructor === Object
     )
   }
 
@@ -77,22 +77,22 @@ export class BucketEdit extends OrgTypeFormTemplate {
 
     // access key
     if (this._ignoreConfigField()) {
-      this._editAccessKey.setValue(this.data.access_key);
-      this._editAccessKey.default = this.data.access_key;
+      this._editAccessKey.setValue(this._data.access_key);
+      this._editAccessKey.default = this._data.access_key;
     } else {
-      this._editAccessKey.setValue(this.data.config.aws_access_key_id);
-      this._editAccessKey.default = this.data.config.aws_access_key_id;
+      this._editAccessKey.setValue(this._data.config.aws_access_key_id);
+      this._editAccessKey.default = this._data.config.aws_access_key_id;
     }
     this._editAccessKey.hidden = true;
    
 
     // secret key
     if (this._ignoreConfigField()) {
-      this._editSecretKey.setValue(this.data.secret_key);
-      this._editSecretKey.default = this.data.secret_key;
+      this._editSecretKey.setValue(this._data.secret_key);
+      this._editSecretKey.default = this._data.secret_key;
     } else {
-      this._editSecretKey.setValue(this.data.config.aws_secret_access_key);
-      this._editSecretKey.default = this.data.config.aws_secret_access_key;
+      this._editSecretKey.setValue(this._data.config.aws_secret_access_key);
+      this._editSecretKey.default = this._data.config.aws_secret_access_key;
     }
     this._editSecretKey.hidden = true;
     
@@ -102,8 +102,8 @@ export class BucketEdit extends OrgTypeFormTemplate {
       this._editEndpointUrl.setValue(this._data.endpoint_url);
       this._editEndpointUrl.default = this._data.endpoint_url;
     } else {
-      this._editEndpointUrl.setValue(this.data.config.endpoint_url);
-      this._editEndpointUrl.default = this.data.config.endpoint_url;
+      this._editEndpointUrl.setValue(this._data.config.endpoint_url);
+      this._editEndpointUrl.default = this._data.config.endpoint_url;
     }
     this._editEndpointUrl.hidden = true;
     
@@ -113,8 +113,8 @@ export class BucketEdit extends OrgTypeFormTemplate {
       this._editRegion.setValue(this._data.region);
       this._editRegion.default = this._data.region;
     } else {
-      this._editRegion.setValue(this.data.config.region_name);
-      this._editRegion.default = this.data.config.region_name;
+      this._editRegion.setValue(this._data.config.region_name);
+      this._editRegion.default = this._data.config.region_name;
     }
     this._editRegion.hidden = true;
     
@@ -140,16 +140,16 @@ export class BucketEdit extends OrgTypeFormTemplate {
   }
 
   _showBestGuess() {
-    let hasGcsInfo = (this.data.gcs_key_info !== null);
-    let hasAwsInfo = (this.data.region !== null || this.data.aws_secret_access_key !== null || this.data.aws_access_key_id !== null);
+    let hasGcsInfo = (this._data.gcs_key_info && this._data.gcs_key_info !== null);
+    let hasAwsInfo = (this._data.store_type == "AWS");
 
-    if (hasGcsInfo && !hasAwsInfo) {
+    if (hasGcsInfo) {
       this._showBucketFields("gcs");
-    } else if (hasAwsInfo && !hasGcsInfo) {
+    } else if (hasAwsInfo) {
       this._showBucketFields("aws");
     } else  { //if (hasGcsInfo && hasAwsInfo), or for some other reason
+      this._currentBucketType = "none";
       for (let field of this._allFields) {
-        this._currentBucketType = "none";
         this.bucketInputs.get(field).hidden = false;
       }
     }
