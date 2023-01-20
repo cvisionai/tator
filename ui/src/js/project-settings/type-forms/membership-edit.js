@@ -24,7 +24,7 @@ export class MembershipEdit extends TypeFormTemplate {
 
     // Set enum options once
     this._permissionSelect.choices = [
-      { "label": "View Only", "value": "View Only" },
+      { "label": "View Only", "value": "View Only", "selected": true },
       { "label": "Can Edit", "value": "Can Edit" },
       { "label": "Can Transfer", "value": "Can Transfer" },
       { "label": "Can Execute", "value": "Can Execute" },
@@ -124,7 +124,7 @@ export class MembershipEdit extends TypeFormTemplate {
     return {
       "id" : `New`,
       "user" : "",
-      "permission": "",
+      "permission": "View Only",
       "default_version": null,
       "project" : this.projectId,
       "form" : "empty"
