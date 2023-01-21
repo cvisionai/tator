@@ -115,7 +115,7 @@ export class SaveDialog extends TatorElement {
       cancel.blur();
       this.dispatchEvent(new Event("cancel"));
       this._attributes.reset();
-    })
+    });
 
     // Used for continuous track append.
     this._trackId = null;
