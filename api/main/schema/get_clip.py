@@ -56,6 +56,16 @@ class GetClipSchema(AutoSchema):
                         'minimum': 0,
                     },
                 },
+                {
+                    'name': 'reencode',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Re-encode to a h264 codec (assumes veryfast) profile (>0 = true, 0 == false)',
+                    'schema': {
+                        'type': 'integer',
+                        'minimum': 0,
+                    },
+                },
             ]
         return params
 
