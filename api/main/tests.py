@@ -189,6 +189,7 @@ def create_test_video(user, name, entity_type, project):
         codec='H264',
         width='640',
         height='480',
+        created_by=user,
         elemental_id=str(uuid4())
     )
 
@@ -1272,9 +1273,11 @@ class VideoTestCase(
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1293,6 +1296,35 @@ class VideoTestCase(
             create_test_video, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
+
+    def test_author_change(self):
+        test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
+        response = self.client.get(f'/rest/Media/{test_video.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/Media/{test_video.pk}', 
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/Media/{test_video.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        response = self.client.post(f'/rest/Medias/{self.project.pk}',
+                               {'type': self.entity_type.pk,
+                               'section': "test cross author",
+                               'name': 'test cross author',
+                               'md5': 'b81e32eb9957ea4e965ca36680d4adfb',
+                               'user_elemental_id': self.user_two.elemental_id}, format='json')
+        new_id = response.data['id']
+        response = self.client.get(f'/rest/Media/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        # test bulk patch authorship change (back to original)
+        response = self.client.patch(f'/rest/Medias/{self.project.pk}',
+                               {'ids': [new_id, test_video.id],
+                               'user_elemental_id': self.user.elemental_id}, format='json')
+        response = self.client.get(f'/rest/Media/{new_id}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.get(f'/rest/Media/{test_video.id}')
+        assert(response.data['created_by'] == self.user.pk)
 
     def test_elemental_id(self):
         test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
