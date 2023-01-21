@@ -51,7 +51,7 @@ class GetClipAPI(BaseDetailView):
         #else:
         with tempfile.TemporaryDirectory() as temp_dir:
             media_util = MediaUtil(video, temp_dir, quality)
-            fp, segments = media_util.get_clip(frame_ranges)
+            fp, segments = media_util.get_clip(frame_ranges, params.get('reencode', 0) > 0)
             temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, self.request.user, lookup=lookup, hours=24)
 
         start_frames = []
