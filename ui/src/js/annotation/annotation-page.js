@@ -792,6 +792,7 @@ export class AnnotationPage extends TatorPage {
 
     this._player.addEventListener("setTimelineDisplayMode", (evt) => {
       this._settings.setAttribute("timeline-display", evt.detail.mode);
+      this._updateURL();
     });
 
     this._player.addEventListener("setPlayQuality", (evt) => {
@@ -1047,13 +1048,28 @@ export class AnnotationPage extends TatorPage {
         canvas.addEventListener("frameChange", evt => {
           this._browser.frameChange(evt.detail.frame);
           this._settings.setAttribute("frame", evt.detail.frame);
+
+          // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
         });
         canvas.addEventListener("select", evt => {
           this._browser.selectEntity(evt.detail);
           this._settings.setAttribute("entity-id", evt.detail.id);
           this._settings.setAttribute("entity-type", evt.detail.meta);
           this._settings.setAttribute("type-id", evt.detail.meta);
+
+          //Update the URL
+          this._updateURL();
         });
+
+        canvas.addEventListener("unselect", () => {
+          this._settings.removeAttribute("entity-id");
+          this._settings.removeAttribute("entity-type");
+          this._settings.removeAttribute("type-id");
+
+          //Update the URL
+          this._updateURL();
+        });
+
         this._undo.addEventListener("update", evt => {
           // Force selecting this new entity in the browser if a new object was created
           // when the data is retrieved (ie freshData event)
@@ -1070,6 +1086,11 @@ export class AnnotationPage extends TatorPage {
         });
         this._browser.addEventListener("select", evt => {
           if (evt.detail.byUser) {
+            // Remove attribute here, will be reset by canvas, if appropriate.
+            this._settings.removeAttribute("entity-id");
+            this._settings.removeAttribute("entity-type");
+            this._settings.removeAttribute("type-id");
+
             if (evt.detail.dataType.isLocalization) {
               canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
             }
@@ -1093,10 +1114,9 @@ export class AnnotationPage extends TatorPage {
                 this._player.goToFrame(evt.detail.data.frame);
               }
             }
+
+            this._updateURL();
           }
-          this._settings.setAttribute("entity-id", evt.detail.data.id);
-          this._settings.setAttribute("entity-type", evt.detail.data.meta);
-          this._settings.setAttribute("type-id", evt.detail.data.meta);
         });
         this._browser.addEventListener("capture", evt => {
           if ('_video' in canvas)
@@ -1705,6 +1725,11 @@ export class AnnotationPage extends TatorPage {
       this._menuAppletDialog.setApplet(evt.detail.appletName, data);
     });
 
+    // Handle replacing the URL when the canvas emits a signal
+    canvas.addEventListener("updateURL", evt => {
+      this._updateURL();
+    });
+
     this._menuAppletDialog.addEventListener("appletReady", () => {
       this._menuAppletDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
@@ -1797,6 +1822,25 @@ export class AnnotationPage extends TatorPage {
     document.body.classList.add("shortcuts-disabled");
   }
 
+  _updateURL()
+  {
+    let existingSearchParams = new URLSearchParams(window.location.search);
+    var newSearchParams = this._settings._queryParams(existingSearchParams);
+    const path = document.location.pathname;
+    const searchArgs = newSearchParams.toString();
+    var newUrl = path + "?" + searchArgs;
+    if (this._annotationPageHistoryState)
+    {
+      window.history.replaceState(this._annotationPageHistoryState, "", newUrl);
+    }
+    else
+    {
+      this._annotationPageHistoryState = {'state':1};
+      window.history.pushState(this._annotationPageHistoryState, "", newUrl);
+    }
+
+    
+  }
   _getSave(objDescription) {
     let save;
     if (["poly", "box", "line", "dot"].includes(objDescription.dtype)) {
