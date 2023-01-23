@@ -98,6 +98,8 @@ class LocalizationListAPI(BaseListView):
         # Check that we are getting a localization list.
         if 'body' in params:
             loc_specs = params['body']
+            if type(loc_specs) != list:
+                loc_specs = [loc_specs]
         else:
             raise Exception('Localization creation requires list of localizations!')
 
