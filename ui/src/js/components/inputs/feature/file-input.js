@@ -229,6 +229,7 @@ export class FileInput extends TatorElement {
           
           // _fetchCall is defined in the instantiating page or parent element
           this._fetchCall(bodyData);
+          this._editInput.value = "";
         });
       }
     });
