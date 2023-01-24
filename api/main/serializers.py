@@ -62,4 +62,4 @@ class UserSerializerBasic(serializers.ModelSerializer):
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
-        fields = ['id', 'name', 'description', 'number', 'project', 'show_empty', 'bases']
+        fields = ['id', 'name', 'description', 'number', 'project', 'show_empty', 'bases', 'elemental_id']

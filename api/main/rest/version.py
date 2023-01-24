@@ -3,6 +3,7 @@ from collections import defaultdict
 from django.db import transaction
 from django.utils import timezone
 import datetime
+import uuid
 
 from ..models import Version
 from ..models import Project
@@ -47,6 +48,7 @@ class VersionListAPI(BaseListView):
             number=number,
             project=Project.objects.get(pk=project),
             created_by=self.request.user,
+            elemental_id=params.get('elemental_id', uuid.uuid4())
         )
         obj.save()
 
@@ -98,6 +100,9 @@ class VersionDetailAPI(BaseDetailView):
             version.description = params['description']
         if 'show_empty' in params:
             version.show_empty = params['show_empty']
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id:
+            version.elemental_id = params['elemental_id']
         version.save()
         if 'bases' in params:
             qs = Version.objects.filter(pk__in=params['bases'])

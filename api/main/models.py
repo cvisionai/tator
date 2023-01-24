@@ -546,6 +546,8 @@ class Version(Model):
         for each generation of a state-based inference algorithm; all referencing localizations
         in another layer.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
     def __str__(self):
         out = f"{self.name}"

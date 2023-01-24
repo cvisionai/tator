@@ -2719,6 +2719,15 @@ class VersionTestCase(
         }
         self.edit_permission = Permission.CAN_EDIT
 
+    def test_elemental_id(self):
+        # Test on type object
+        test_version = create_test_version(f'asdf', f'desc', 10, self.project, self.media)
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/Version/{test_version.pk}')
+        response = self.client.patch(f'/rest/Version/{test_version.pk}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/Version/{test_version.pk}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+
 class FavoriteStateTestCase(
         TatorTransactionTest,
         PermissionCreateTestMixin,
