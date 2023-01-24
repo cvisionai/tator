@@ -210,6 +210,8 @@ def create_test_box(user, entity_type, project, media, frame):
     h = random.uniform(0.0, float(media.height) - y)
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
@@ -234,6 +236,8 @@ def create_test_line(user, entity_type, project, media, frame):
     y1 = random.uniform(0.0, float(media.height) - y0)
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         media=media,
@@ -246,6 +250,8 @@ def create_test_dot(user, entity_type, project, media, frame):
     y = random.uniform(0.0, float(media.height))
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         media=media,
@@ -361,6 +367,34 @@ affiliation_levels = [
     'Member',
     'Admin',
 ]
+
+class EntityAuthorChangeMixin:
+    def test_author_change(self):
+        test_entity = self.entities[0]
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{test_entity.pk}',
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        new_json = {**self.create_json[0], **{'user_elemental_id': self.user_two.elemental_id}}
+
+        response = self.client.post(f'/rest/{self.list_uri}/{self.project.pk}',
+                                    [new_json], format='json')
+        new_id = response.data['id'][0]
+        response = self.client.get(f'/rest/{self.detail_uri}/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        # test bulk patch authorship change (back to original)
+        response = self.client.patch(f'/rest/{self.list_uri}/{self.project.pk}',
+                               {'ids': [new_id, test_entity.id],
+                               'user_elemental_id': self.user.elemental_id}, format='json')
+        response = self.client.get(f'/rest/{self.detail_uri}/{new_id}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.id}')
+        assert(response.data['created_by'] == self.user.pk)
 
 class DefaultCreateTestMixin:
     def _check_object(self, response, is_default):
@@ -1490,14 +1524,17 @@ class LocalizationBoxTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1555,14 +1592,17 @@ class LocalizationLineTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1620,14 +1660,17 @@ class LocalizationDotTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1683,14 +1726,17 @@ class LocalizationPolyTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
