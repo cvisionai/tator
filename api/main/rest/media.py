@@ -437,10 +437,9 @@ class MediaListAPI(BaseListView):
         project = params["project"]
         media_spec_list = params["body"]
 
-        # Workaround to support legacy deployments that send a single spec instead of an array
-        if type(media_spec_list) == dict:
-            _, response = _create_media(project, media_spec_list, self.request.user)
-        elif len(media_spec_list) == 1:
+        if not isinstance(media_spec_list, list):
+            media_spec_list = [media_spec_list]
+        if len(media_spec_list) == 1:
             _, response = _create_media(project, media_spec_list[0], self.request.user)
         elif media_spec_list:
             # TODO handle multiple image creation
