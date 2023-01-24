@@ -140,6 +140,8 @@ class LeafListAPI(BaseListView):
         # Check that we are getting a leaf list.
         if 'body' in params:
             leaf_specs = params['body']
+            if not isinstance(leaf_specs, list):
+                leaf_specs = [leaf_specs]
         else:
             raise Exception('Leaf creation requires list of leaves!')
 

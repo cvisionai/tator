@@ -436,6 +436,9 @@ class MediaListAPI(BaseListView):
     def _post(self, params):
         project = params["project"]
         media_spec_list = params["body"]
+
+        if not isinstance(media_spec_list, list):
+            media_spec_list = [media_spec_list]
         if len(media_spec_list) == 1:
             _, response = _create_media(project, media_spec_list[0], self.request.user)
         elif media_spec_list:

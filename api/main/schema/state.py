@@ -77,44 +77,54 @@ class StateListSchema(AutoSchema):
         if method == 'POST':
             body = {
                 'required': True,
-                'content': {'application/json': {
-                'schema': {
-                    'type': 'array',
-                    'items': {'$ref': '#/components/schemas/StateSpec'},
-                    'maxItems': 500,
-                },
-                'examples': {
-                    'frame': {
-                        'summary': 'Frame associated state',
-                        'value': [{
-                            'type': 1,
-                            'media_ids': [1],
-                            'frame': 1000,
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'localization': {
-                        'summary': 'Localization associated state',
-                        'value': [{
-                            'type': 1,
-                            'media_ids': [1],
-                            'localization_ids': [1, 5, 10],
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'media': {
-                        'summary': 'Media associated state',
-                        'value': [{
-                            'type': 1,
-                            'media_ids': [1, 5, 10],
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                },
-            }}}
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'oneOf': [
+                                {
+                                    'type': 'array',
+                                    'items': {'$ref': '#/components/schemas/StateSpec'},
+                                    'maxItems': 500
+                                },
+                                {
+                                    '$ref': '#/components/schemas/StateSpec',
+                                },
+                            ],
+                        },
+                        'examples': {
+                            'frame': {
+                                'summary': 'Frame associated state',
+                                'value': {
+                                    'type': 1,
+                                    'media_ids': [1],
+                                    'frame': 1000,
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                },
+                            },
+                            'localization': {
+                                'summary': 'Localization associated state',
+                                'value': {
+                                    'type': 1,
+                                    'media_ids': [1],
+                                    'localization_ids': [1, 5, 10],
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                },
+                            },
+                            'media': {
+                                'summary': 'Media associated state',
+                                'value': {
+                                    'type': 1,
+                                    'media_ids': [1, 5, 10],
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                },
+                            },
+                        },
+                    }
+                }
+            }
         if method == 'PATCH':
             body = {
                 'required': True,

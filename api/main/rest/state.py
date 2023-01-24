@@ -150,6 +150,8 @@ class StateListAPI(BaseListView):
         # Check that we are getting a state list.
         if 'body' in params:
             state_specs = params['body']
+            if not isinstance(state_specs, list):
+                state_specs = [state_specs]
         else:
             raise Exception('State creation requires list of states!')
 

@@ -17,7 +17,7 @@ class MediaListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateMedia'
+            operation['operationId'] = 'CreateMediaList'
         elif method == 'GET':
             operation['operationId'] = 'GetMediaList'
         elif method == 'PATCH':
@@ -97,9 +97,16 @@ class MediaListSchema(AutoSchema):
                 'content': {
                     'application/json': {
                         'schema': {
-                            'type': 'array',
-                            'items': {'$ref': '#/components/schemas/MediaSpec'},
-                            'maxItems': 500,
+                            'oneOf': [
+                                {
+                                    'type': 'array',
+                                    'items': {'$ref': '#/components/schemas/MediaSpec'},
+                                    'maxItems': 500
+                                },
+                                {
+                                    '$ref': '#/components/schemas/MediaSpec',
+                                },
+                            ],
                         },
                     }
                 }
