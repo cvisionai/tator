@@ -1825,6 +1825,10 @@ export class AnnotationPage extends TatorPage {
   _updateURL()
   {
     let existingSearchParams = new URLSearchParams(window.location.search);
+    if (this._canvas._rate) // annotation-player or annotation-image
+    {
+      existingSearchParams.set("playbackRate", this._canvas._rate);
+    }
     var newSearchParams = this._settings._queryParams(existingSearchParams);
     const path = document.location.pathname;
     const searchArgs = newSearchParams.toString();
