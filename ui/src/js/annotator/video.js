@@ -2291,12 +2291,8 @@ export class VideoCanvas extends AnnotationCanvas {
 
   videoOnPause()
   {
-    var search_params = new URLSearchParams(window.location.search);
-    search_params.set("frame", this._dispFrame);
-    const path = document.location.pathname;
-    const searchArgs = search_params.toString();
-    var newUrl = path + "?" + searchArgs;
-    window.history.replaceState({}, "", newUrl);
+    // Emit an event to update the URL on video pause.
+    this.dispatchEvent(new CustomEvent("updateURL",{composed:true}));
   }
 
   onDemandDownloadPrefetch(reqFrame)
