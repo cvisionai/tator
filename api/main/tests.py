@@ -1791,15 +1791,18 @@ class StateTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1820,6 +1823,8 @@ class StateTestCase(
         self.entities = []
         for _ in range(random.randint(6, 10)):
             state = State.objects.create(
+                created_by=self.user,
+                modified_by=self.user,
                 type=self.entity_type,
                 project=self.project,
                 version=self.version,
