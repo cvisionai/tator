@@ -323,11 +323,13 @@ def create_test_version(name, description, number, project, media):
         project=project,
     )
 
-def create_test_file(name, entity_type, project):
+def create_test_file(name, entity_type, project, user):
     return File.objects.create(
         name=name,
         type=entity_type,
         project=project,
+        created_by=user,
+        modified_by=user
     )
 
 def random_string(length):
@@ -3149,11 +3151,13 @@ class ResourceTestCase(TatorTransactionTest):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
         self.project = create_test_project(self.user, self.organization)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -3247,9 +3251,9 @@ class ResourceTestCase(TatorTransactionTest):
         """
 
         file1 = create_test_file(
-            name="File1", entity_type=self.file_entity_type, project=self.project)
+            name="File1", entity_type=self.file_entity_type, project=self.project, user=self.user)
         file2 = create_test_file(
-            name="File2", entity_type=self.file_entity_type, project=self.project)
+            name="File2", entity_type=self.file_entity_type, project=self.project, user=self.user)
 
         key1 = self._random_file_store_obj(file1)
         file_patch_spec = {
@@ -3296,6 +3300,26 @@ class ResourceTestCase(TatorTransactionTest):
         response = self.client.delete(f"/rest/File/{file2.id}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertFalse(self._store_obj_exists(key2))
+
+    def test_author_change(self):
+        test_file = create_test_file(name="File1", entity_type=self.file_entity_type, project=self.project, user=self.user)
+        response = self.client.get(f'/rest/File/{test_file.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/File/{test_file.pk}', 
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/File/{test_file.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        response = self.client.post(f'/rest/Files/{self.project.pk}',
+                               {'type': self.file_entity_type.pk,
+                               'name': 'test cross author',
+                               'description': 'Testing changing authorship on files.',
+                               'attributes': {},
+                               'user_elemental_id': self.user_two.elemental_id}, format='json')
+        new_id = response.data['id']
+        response = self.client.get(f'/rest/File/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
 
     def test_files(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)

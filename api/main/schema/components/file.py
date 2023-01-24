@@ -12,7 +12,8 @@ file_fields = SimpleNamespace(
     project="project",
     attributes="attributes",
     type="type",
-    elemental_id="elemental_id")
+    elemental_id="elemental_id",
+    user_elemental_id="user_elemental_id")
 
 file_shared_properties = {
     file_fields.name: {
@@ -29,6 +30,11 @@ file_shared_properties = {
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
     file_fields.elemental_id: {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
+    file_fields.user_elemental_id: {
         'description': 'The elemental ID of the object.',
         'type': 'string',
         'nullable': True,

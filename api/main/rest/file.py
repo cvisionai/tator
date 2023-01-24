@@ -30,6 +30,7 @@ from ._permissions import ProjectExecutePermission
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._util import check_file_resource_prefix
+from ._util import compute_user
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +105,8 @@ class FileListAPI(BaseListView):
             name=params[fields.name],
             description=description,
             type=associated_file_type,
-            created_by=self.request.user,
-            modified_by=self.request.user,
+            created_by=compute_user(project, self.request.user, params.get('user_elemental_id', None)),
+            modified_by=compute_user(project, self.request.user, params.get('user_elemental_id', None)),
             attributes=attrs,
             elemental_id=elemental_id)
 
@@ -150,6 +151,10 @@ class FileDetailAPI(BaseDetailView):
         elemental_id = params.get('elemental_id', None)
         if elemental_id:
             obj.elemental_id = elemental_id
+
+        if params.get('user_elemental_id', None):
+            computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
+            obj.created_by = computed_author
 
         description = params.get(fields.description, None)
         if description is not None:
