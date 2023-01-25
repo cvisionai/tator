@@ -34,18 +34,18 @@ file_shared_properties = {
         'type': 'string',
         'nullable': True,
     },
-    file_fields.user_elemental_id: {
-        'description': 'The elemental ID of the object.',
-        'type': 'string',
-        'nullable': True,
+    file_fields.type: {
+        'type': 'integer',
+        'description': 'Unique integer identifying FileType of this File object.',
     },
 }
 
 file_post_properties = {
     **file_shared_properties,
-    file_fields.type: {
-        'type': 'integer',
-        'description': 'Unique integer identifying FileType of this File object.',
+    file_fields.user_elemental_id: {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
     },
 }
 
@@ -104,7 +104,7 @@ file = {
             "type": "string",
             "description": "Relative URL to the file"
         },
-        **file_post_properties
+        **file_shared_properties
     },
 }
 
