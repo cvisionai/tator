@@ -442,11 +442,6 @@ export class AnnotationMulti extends TatorElement {
     if (searchParams.has("safeMode")) {
       this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
     }
-    if (searchParams.has("playbackRate"))
-    {
-      this._rateControl.setValue(Number(searchParams.get("playbackRate")));
-      this.setRate(Number(searchParams.get("playbackRate")));
-    }
 
     this._timelineMore.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -1437,6 +1432,12 @@ export class AnnotationMulti extends TatorElement {
               currentIndex++;
             }
           }
+        }
+
+        if (searchParams.has("playbackRate"))
+        {
+          this._rateControl.setValue(Number(searchParams.get("playbackRate")));
+          this.setRate(Number(searchParams.get("playbackRate")));
         }
 
         this.dispatchEvent(new Event("canvasReady", {
