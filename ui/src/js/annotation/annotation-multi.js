@@ -1226,6 +1226,11 @@ export class AnnotationMulti extends TatorElement {
         else {
           this._allowSafeMode = false;
         }
+        if (searchParams.has("playbackRate"))
+        {
+          this._rateControl.setValue(Number(searchParams.get("playbackRate")));
+          this.setRate(Number(searchParams.get("playbackRate")));
+        }
         this.setDefaultVideoSettings(idx);
         this.handleNotReadyEvent(idx);
         if (idx == 0) {

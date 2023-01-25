@@ -495,11 +495,6 @@ export class AnnotationPlayer extends TatorElement {
     if (searchParams.has("safeMode")) {
       this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
     }
-    if (searchParams.has("playbackRate"))
-    {
-      this._rateControl.setValue(Number(searchParams.get("playbackRate")));
-      this.setRate(Number(searchParams.get("playbackRate")));
-    }
 
     this._timelineMore.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -1083,6 +1078,7 @@ export class AnnotationPlayer extends TatorElement {
   }
 
   set mediaInfo(val) {
+    const searchParams = new URLSearchParams(window.location.search);
     this._video.mediaInfo = val;
     this._mediaInfo = val;
     const dims = [val.width, val.height];
@@ -1100,6 +1096,11 @@ export class AnnotationPlayer extends TatorElement {
         }
         else {
           this._allowSafeMode = false;
+        }
+        if (searchParams.has("playbackRate"))
+        {
+          this._rateControl.setValue(Number(searchParams.get("playbackRate")));
+          this.setRate(Number(searchParams.get("playbackRate")));
         }
         const seekInfo = this._video.getQuality("seek");
         const scrubInfo = this._video.getQuality("scrub");
