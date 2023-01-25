@@ -1672,7 +1672,7 @@ class LocalizationDotTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.membership = create_test_membership(self.user_two, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
