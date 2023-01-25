@@ -37,7 +37,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    construct_elemental_id_from_parent
+    construct_elemental_id_from_parent,
+    compute_user
 )
 from ._permissions import ProjectEditPermission
 
@@ -102,6 +103,8 @@ class LocalizationListAPI(BaseListView):
                 loc_specs = [loc_specs]
         else:
             raise Exception('Localization creation requires list of localizations!')
+
+        project = params['project']
 
         # Get a default version.
         membership = Membership.objects.get(user=self.request.user, project=params['project'])
@@ -175,10 +178,10 @@ class LocalizationListAPI(BaseListView):
                 project=project,
                 type=metas[loc_spec["type"]],
                 media=medias[loc_spec["media_id"]],
-                user=self.request.user,
+                user=compute_user(project, self.request.user, loc_spec.get('user_elemental_id', None)),
                 attributes=attrs,
-                created_by=self.request.user,
-                modified_by=self.request.user,
+                created_by=compute_user(project, self.request.user, loc_spec.get('user_elemental_id', None)),
+                modified_by=compute_user(project, self.request.user, loc_spec.get('user_elemental_id', None)),
                 version=versions[loc_spec.get("version", None)],
                 parent=Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None,
                 x=loc_spec.get("x", None),
@@ -230,6 +233,9 @@ class LocalizationListAPI(BaseListView):
             entity_type = obj.type
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
+            if params.get('user_elemental_id', None):
+                computed_author = compute_user(params['project'], self.request.user, params.get('user_elemental_id', None))
+                update_kwargs['created_by'] = computed_author
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
 
@@ -279,6 +285,11 @@ class LocalizationDetailAPI(BaseDetailView):
             obj.frame = frame
         if version is not None:
             obj.version = version
+
+        if params.get('user_elemental_id', None):
+            computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
+            obj.created_by = computed_author
+            obj.user = computed_author
 
         if obj.type.dtype == 'box':
             x = params.get("x", None)

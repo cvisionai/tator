@@ -38,16 +38,18 @@ from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
 
-from ._util import url_to_key
 from ._util import (
     bulk_update_and_log_changes,
     bulk_delete_and_log_changes,
+    compute_user,
     delete_and_log_changes,
     log_changes,
     log_creation,
     computeRequiredFields,
     check_required_fields,
+    url_to_key
 )
+
 from ._base_views import BaseListView, BaseDetailView
 from ._media_query import get_media_queryset
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
@@ -176,6 +178,8 @@ def _create_media(project, params, user):
         gid = str(gid)
     project_obj = Project.objects.get(pk=project)
 
+    computed_author = compute_user(project, user, params.get('user_elemental_id', None))
+
     # If section does not exist and is not an empty string, create a section.
     tator_user_sections = ""
     if section:
@@ -240,8 +244,8 @@ def _create_media(project, params, user):
             name=name,
             md5=md5,
             attributes=attributes,
-            created_by=user,
-            modified_by=user,
+            created_by=computed_author,
+            modified_by=computed_author,
             gid=gid,
             uid=uid,
             source_url=url,
@@ -357,8 +361,8 @@ def _create_media(project, params, user):
             name=name,
             md5=md5,
             attributes=attributes,
-            created_by=user,
-            modified_by=user,
+            created_by=computed_author,
+            modified_by=computed_author,
             gid=gid,
             uid=uid,
             source_url=url,
@@ -491,9 +495,10 @@ class MediaListAPI(BaseListView):
             Only attributes are eligible for bulk patch operations.
         """
         desired_archive_state = params.pop("archive_state", None)
-        if desired_archive_state is None and params.get("attributes") is None:
-            raise ValueError("Must specify 'attributes' and/or property to patch, but none found")
+        if desired_archive_state is None and params.get("attributes") is None and params.get('user_elemental_id') == None:
+            raise ValueError("Must specify 'attributes', 'user_elemental_id', and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
+
         count = 0
         if qs.exists():
             ts = TatorSearch()
@@ -502,10 +507,14 @@ class MediaListAPI(BaseListView):
             # Get the current representation of the object for comparison
             obj = qs.first()
             new_attrs = validate_attributes(params, obj)
-            if new_attrs is not None:
+            update_kwargs=None
+            if params.get('user_elemental_id', None):
+                computed_author = compute_user(params['project'], self.request.user, params.get('user_elemental_id', None))
+                update_kwargs = {'created_by': computed_author}
+            if new_attrs is not None or update_kwargs is not None:
                 attr_count = len(ids_to_update)
                 bulk_update_and_log_changes(
-                    qs, params["project"], self.request.user, new_attributes=new_attrs
+                    qs, params["project"], self.request.user, new_attributes=new_attrs, update_kwargs=update_kwargs
                 )
                 count = max(count, attr_count)
 
@@ -610,6 +619,9 @@ class MediaDetailAPI(BaseDetailView):
             qs = Media.objects.select_for_update().filter(pk=params['id'], deleted=False)
             media = qs[0]
             model_dict = media.model_dict
+            computed_author = compute_user(media.project.pk, self.request.user, params.get('user_elemental_id', None))
+            if params.get('user_elemental_id', None):
+                qs.update(created_by=computed_author)
             if 'attributes' in params:
                 new_attrs = validate_attributes(params, media)
                 bulk_patch_attributes(new_attrs, qs)

@@ -189,6 +189,7 @@ def create_test_video(user, name, entity_type, project):
         codec='H264',
         width='640',
         height='480',
+        created_by=user,
         elemental_id=str(uuid4())
     )
 
@@ -209,6 +210,8 @@ def create_test_box(user, entity_type, project, media, frame):
     h = random.uniform(0.0, float(media.height) - y)
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
@@ -233,6 +236,8 @@ def create_test_line(user, entity_type, project, media, frame):
     y1 = random.uniform(0.0, float(media.height) - y0)
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         media=media,
@@ -245,6 +250,8 @@ def create_test_dot(user, entity_type, project, media, frame):
     y = random.uniform(0.0, float(media.height))
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         media=media,
@@ -316,11 +323,13 @@ def create_test_version(name, description, number, project, media):
         project=project,
     )
 
-def create_test_file(name, entity_type, project):
+def create_test_file(name, entity_type, project, user):
     return File.objects.create(
         name=name,
         type=entity_type,
         project=project,
+        created_by=user,
+        modified_by=user
     )
 
 def random_string(length):
@@ -360,6 +369,34 @@ affiliation_levels = [
     'Member',
     'Admin',
 ]
+
+class EntityAuthorChangeMixin:
+    def test_author_change(self):
+        test_entity = self.entities[0]
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{test_entity.pk}',
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        new_json = {**self.create_json[0], **{'user_elemental_id': self.user_two.elemental_id}}
+
+        response = self.client.post(f'/rest/{self.list_uri}/{self.project.pk}',
+                                    [new_json], format='json')
+        new_id = response.data['id'][0]
+        response = self.client.get(f'/rest/{self.detail_uri}/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        # test bulk patch authorship change (back to original)
+        response = self.client.patch(f'/rest/{self.list_uri}/{self.project.pk}',
+                               {'ids': [new_id, test_entity.id],
+                               'user_elemental_id': self.user.elemental_id}, format='json')
+        response = self.client.get(f'/rest/{self.detail_uri}/{new_id}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.id}')
+        assert(response.data['created_by'] == self.user.pk)
 
 class DefaultCreateTestMixin:
     def _check_object(self, response, is_default):
@@ -1172,6 +1209,13 @@ class CurrentUserTestCase(TatorTransactionTest):
         response = self.client.get('/rest/User/GetCurrent')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.user.id)
+        response = self.client.get(f'/rest/Users?elemental_id={self.user.elemental_id}')
+        self.assertEqual(len(response.data), 1)
+        response = self.client.get(f'/rest/User/Exists?elemental_id={self.user.elemental_id}')
+        self.assertEqual(response.data, True)
+        random_uuid=uuid.uuid4()
+        response = self.client.get(f'/rest/Users?elemental_id={random_uuid}')
+        self.assertEqual(len(response.data), 0)
 
 class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
@@ -1265,9 +1309,11 @@ class VideoTestCase(
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1286,6 +1332,35 @@ class VideoTestCase(
             create_test_video, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
+
+    def test_author_change(self):
+        test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
+        response = self.client.get(f'/rest/Media/{test_video.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/Media/{test_video.pk}', 
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/Media/{test_video.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        response = self.client.post(f'/rest/Medias/{self.project.pk}',
+                               {'type': self.entity_type.pk,
+                               'section': "test cross author",
+                               'name': 'test cross author',
+                               'md5': 'b81e32eb9957ea4e965ca36680d4adfb',
+                               'user_elemental_id': self.user_two.elemental_id}, format='json')
+        new_id = response.data['id']
+        response = self.client.get(f'/rest/Media/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        # test bulk patch authorship change (back to original)
+        response = self.client.patch(f'/rest/Medias/{self.project.pk}',
+                               {'ids': [new_id, test_video.id],
+                               'user_elemental_id': self.user.elemental_id}, format='json')
+        response = self.client.get(f'/rest/Media/{new_id}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.get(f'/rest/Media/{test_video.id}')
+        assert(response.data['created_by'] == self.user.pk)
 
     def test_elemental_id(self):
         test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
@@ -1451,14 +1526,17 @@ class LocalizationBoxTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1516,14 +1594,17 @@ class LocalizationLineTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1581,14 +1662,17 @@ class LocalizationDotTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1644,14 +1728,17 @@ class LocalizationPolyTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1706,15 +1793,18 @@ class StateTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1735,6 +1825,8 @@ class StateTestCase(
         self.entities = []
         for _ in range(random.randint(6, 10)):
             state = State.objects.create(
+                created_by=self.user,
+                modified_by=self.user,
                 type=self.entity_type,
                 project=self.project,
                 version=self.version,
@@ -2655,6 +2747,15 @@ class VersionTestCase(
         }
         self.edit_permission = Permission.CAN_EDIT
 
+    def test_elemental_id(self):
+        # Test on type object
+        test_version = create_test_version(f'asdf', f'desc', 10, self.project, self.media)
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/Version/{test_version.pk}')
+        response = self.client.patch(f'/rest/Version/{test_version.pk}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/Version/{test_version.pk}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+
 class FavoriteStateTestCase(
         TatorTransactionTest,
         PermissionCreateTestMixin,
@@ -3087,11 +3188,13 @@ class ResourceTestCase(TatorTransactionTest):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
         self.project = create_test_project(self.user, self.organization)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -3185,9 +3288,9 @@ class ResourceTestCase(TatorTransactionTest):
         """
 
         file1 = create_test_file(
-            name="File1", entity_type=self.file_entity_type, project=self.project)
+            name="File1", entity_type=self.file_entity_type, project=self.project, user=self.user)
         file2 = create_test_file(
-            name="File2", entity_type=self.file_entity_type, project=self.project)
+            name="File2", entity_type=self.file_entity_type, project=self.project, user=self.user)
 
         key1 = self._random_file_store_obj(file1)
         file_patch_spec = {
@@ -3234,6 +3337,26 @@ class ResourceTestCase(TatorTransactionTest):
         response = self.client.delete(f"/rest/File/{file2.id}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertFalse(self._store_obj_exists(key2))
+
+    def test_author_change(self):
+        test_file = create_test_file(name="File1", entity_type=self.file_entity_type, project=self.project, user=self.user)
+        response = self.client.get(f'/rest/File/{test_file.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/File/{test_file.pk}', 
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/File/{test_file.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        response = self.client.post(f'/rest/Files/{self.project.pk}',
+                               {'type': self.file_entity_type.pk,
+                               'name': 'test cross author',
+                               'description': 'Testing changing authorship on files.',
+                               'attributes': {},
+                               'user_elemental_id': self.user_two.elemental_id}, format='json')
+        new_id = response.data['id']
+        response = self.client.get(f'/rest/File/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
 
     def test_files(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
@@ -3597,6 +3720,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
@@ -3606,6 +3730,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
             self.user, self.organization, bucket=self.store.bucket, backup_bucket=self.store.bucket
         )
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',

@@ -7,6 +7,7 @@ fields = SimpleNamespace(
     last_name='last_name',
     email='email',
     is_staff='is_staff',
+    elemental_id='elemental_id'
 )
 
 user_properties = {
@@ -26,6 +27,10 @@ user_properties = {
         'type': 'string',
         'description': 'Email address of user.',
     },
+    fields.elemental_id: {
+        'type': 'string',
+        'description': 'Unique ID for a user across clusters/deployments'
+    }
 }
 
 user_spec = {
@@ -50,6 +55,7 @@ user_update = {
         fields.first_name: user_properties[fields.first_name],
         fields.last_name: user_properties[fields.last_name],
         fields.email: user_properties[fields.email],
+        fields.elemental_id: user_properties[fields.elemental_id],
         'password': {
             'type': 'string',
             'description': 'Account password.',

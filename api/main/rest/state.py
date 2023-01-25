@@ -41,7 +41,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    construct_elemental_id_from_parent
+    construct_elemental_id_from_parent,
+    compute_user
 )
 from ._permissions import ProjectEditPermission
 
@@ -239,8 +240,8 @@ class StateListAPI(BaseListView):
                 project=project,
                 type=metas[state_spec["type"]],
                 attributes=attrs,
-                created_by=self.request.user,
-                modified_by=self.request.user,
+                created_by=compute_user(project, self.request.user, state_spec.get('user_elemental_id', None)),
+                modified_by=compute_user(project, self.request.user, state_spec.get('user_elemental_id', None)),
                 version=versions[state_spec.get("version", None)],
                 frame=state_spec.get("frame", None),
                 parent=State.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None,
@@ -327,6 +328,9 @@ class StateListAPI(BaseListView):
         if count > 0:
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
+            if params.get('user_elemental_id', None):
+                computed_author = compute_user(params['project'], self.request.user, params.get('user_elemental_id', None))
+                update_kwargs['created_by'] = computed_author
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
             bulk_update_and_log_changes(
@@ -392,6 +396,10 @@ class StateDetailAPI(BaseDetailView):
         if 'localization_ids_remove' in params:
             localizations = Localization.objects.filter(pk__in=params['localization_ids_remove'])
             obj.localizations.remove(*list(localizations))
+        
+        if params.get('user_elemental_id', None):
+            computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
+            obj.created_by = computed_author
 
         # Make sure media and localizations are part of this project.
         media_qs = Media.objects.filter(pk__in=obj.media.all())

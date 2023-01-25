@@ -37,6 +37,12 @@ class UserExistsSchema(AutoSchema):
                 'description': 'Email address associated with user. Either this or email must be '
                                'supplied.',
                 'schema': {'type': 'string'},
+            }, {
+                'name': 'elemental_id',
+                'in': 'query',
+                'required': False,
+                'description': 'Elemental_id of user',
+                'schema': {'type': 'string'},
             }]
         return params
 
@@ -98,6 +104,13 @@ class UserListSchema(AutoSchema):
                 'required': False,
                 'description': 'Email address associated with user. Either this or email must be '
                                'supplied.',
+                'schema': {'type': 'string'},
+            },
+            {
+                'name': 'elemental_id',
+                'in': 'query',
+                'required': False,
+                'description': 'Elemental_id of user',
                 'schema': {'type': 'string'},
             }]
         return params
