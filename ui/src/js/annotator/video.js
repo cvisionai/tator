@@ -718,6 +718,10 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       this._localMode = Number(searchParams.get("localMode"));
     }
+    if (this._dispFrame >= videoObject.num_frames - 1) {
+      this._dispFrame = videoObject.num_frames - 2;
+    }
+    this._numFrames = videoObject.num_frames;
 
     // If summary level is not set, grab it from the media's default.
     if (this._summaryLevel == null)
