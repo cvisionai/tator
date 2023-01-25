@@ -3680,6 +3680,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
@@ -3689,6 +3690,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
             self.user, self.organization, bucket=self.store.bucket, backup_bucket=self.store.bucket
         )
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
