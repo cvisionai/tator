@@ -1,173 +1,140 @@
 import { TatorElement } from "../tator-element.js";
-import { AnnotationImage } from "../../annotation/annotation-image.js";
-import { AnnotationData } from "../../annotation/annotation-data.js";
-import { UndoBuffer } from "../../annotation/undo-buffer.js";
 
 export class GalleryPanelLocalization extends TatorElement {
   constructor() {
     super();
 
-    this._main = document.createElement("main");
-    this._versionLookup = {};
-    this.panelData = document.createElement("annotation-panel-data");
-    this.savedMediaData = {};
-    this._imageCanvas = document.createElement("annotation-image");
-    this._player = this._imageCanvas;
-    this._player.addDomParent({
-      "object": this.panelContainer,
-      "alignTo": this._shadow
-    });
-    this._shadow.appendChild(this._imageCanvas);
+    this._panelImage = document.createElement("entity-panel-image");
+    this._shadow.appendChild(this._panelImage);
+
+    this.savedMediaData = new Map();
+
+    this._supportsAvif=false;
+
+    // There is no browser API call for 'is format supported' for images like for video content
+    /// This attempts to load a small AVIF file as a test
+    this._avifCheckDone=false; //Sequence variable to allow for out of order execution.
+    var avif_test = new Image();
+    avif_test.src = "data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=";
+    try
+    {
+      avif_test.decode().then(() =>
+      {
+        this._supportsAvif = true;
+        this._avifCheckDone = true;
+        if (this._mediaFiles)
+        {
+          this._loadFromMediaFiles();
+        }
+      }).catch(()=>
+      {
+        this._supportsAvif = false;
+        this._avifCheckDone = true;
+        if (this._mediaFiles)
+        {
+          this._loadFromMediaFiles();
+        }
+      }
+      );
+    }
+    catch(e)
+    {
+      // Console doesn't supporot AVIF
+    }
   }
 
   init({ pageModal, modelData, panelContainer }) {
     this.pageModal = pageModal;
     this.modelData = modelData;
     this.panelContainer = panelContainer;
-    this.panelData.init(modelData);
   }
 
-  initAndShowData({ cardObj }) {
+  async initAndShowData({ cardObj }) {
+    console.log("Show cardObj", cardObj);
     // Identitifier used to get the canvas' media data
     const mediaId = cardObj.mediaId;
+    let mediaData = null;
+    let localizationData = null;
 
     // Make a copy since we will be modifying this for annotator object
     if (cardObj.localization != null) {
-      this._localization = Object.assign({}, cardObj.localization);
+      localizationData = Object.assign({}, cardObj.localization);
     }
-    else {
-      this._localization = null;
-    }
-
-    if (typeof this.savedMediaData[mediaId] !== "undefined" && this.savedMediaData[mediaId] !== null) {
+    
+    if (this.savedMediaData.has(mediaId)) {
       //  --> init the canvas from saved data
-      let mediaData = this.savedMediaData[mediaId];
-      this._setupCanvas(mediaData);
-
+      mediaData = this.savedMediaData.get(mediaId)
     } else {
       // --> Get mediaData and save it to this card object
-      this.panelData.getMediaData(mediaId).then((data) => {
-        this._setupCanvas(data);
-        // save this data in local memory until we need it again
-        this.savedMediaData[mediaId] = data;
-      });
+      const resp = await fetch(`/rest/Media/${mediaId}?presigned=28800`);
+      mediaData = await resp.json();
+
+      // save this data in local memory until we need it again
+      this.savedMediaData.set(mediaId, mediaData);
     }
+    this._setupImage(mediaData, localizationData);
   }
 
-  _setupCanvas(mediaData) {
-    this._setupImageCanvas();
-    this._getData(mediaData);
+  _clearImage() {
+    this._panelImage.data = null;
   }
 
-  _clearExistingCanvas() {
-    delete this._undo;
-    delete this._data;
-  }
+  async _setupImage(mediaData, localizationData) {
+    this._clearImage();
+    let imageSource = null;
 
-  _setupImageCanvas() {
-
-    this._clearExistingCanvas();
-
-    this._undo = document.createElement("undo-buffer");
-    this._data = document.createElement("annotation-data");
-    this._imageCanvas.annotationData = this._data;
-    this._imageCanvas.undoBuffer = this._undo;
-  }
-
-  _popModalWithPlayer(e, modal = this.pageModal) {
-    e.preventDefault();
-
-    if (typeof modal == "undefined") this.pageModal = document.createElement("modal-dialog");
-
-    // Title
-    let text = document.createTextNode("test");
-    this.pageModal._titleDiv.append(text);
-
-    // Main Body
-    this.pageModal._main.appendChild(this._shadow);
-
-    // When we close modal, remove the player
-    this.pageModal.addEventListener("close", this._removePlayer.bind(this));
-
-    this.pageModal.setAttribute("is-open", "true")
-  }
-
-  _removePlayer() {
-    // Clear this panel player and title from modal
-    this.pageModal._titleDiv.innerHTML = "";
-    this.pageModal._main.innerHTML = "";
-  }
-
-  _getData(mediaData) {
-
-    var dataTypes = [];
-    var locTypes = this.modelData.getStoredLocalizationTypes();
-    for (const locType of locTypes) {
-      dataTypes.push(Object.assign({}, locType));
-    }
-    var versions = this.modelData.getStoredVersions();
-
-    // Replace the data type IDs so they are guaranteed to be unique.
-    for (let dataType of dataTypes) {
-      dataType.id = dataType.dtype + "_" + dataType.id;
-      dataType.isLocalization = true;
-      dataType.isTrack = false;
-      dataType.isTLState = false;
-    }
-
-    // Get the version object associated with this localization
-    versions = versions.filter(version => version.number >= 0);
-    for (const version of versions) {
-      this._versionLookup[version.id] = version;
-    }
-
-    let selected_version = null;
-    for (const version of versions) {
-      if (this._localization != null && version.id == this._localization.version) {
-        selected_version = this._versionLookup[version.id];
-      }
-    }
-    if (selected_version == null) {
-      for (const version of versions) {
-        if (version.name == "Baseline") {
-          selected_version = version;
-          break;
-        }
+    // Get mediaTypes
+    let mediaType = null;
+    for (let m of this.modelData._mediaTypes) {
+      if (m.id == mediaData.meta) {
+        mediaType = m.dtype
       }
     }
 
-    // Annotation data acquires the localization slightly differently.
-    // Retrieve the localization from this buffer because the annotator assumes
-    // the localization is in that format.
-    this._locDataType = null;
-    for (let dataType of dataTypes) {
-      if (this._localization != null && dataType.id.split("_")[1] == this._localization.meta) {
-        this._localization.meta = dataType.id;
-        this._locDataType = dataType;
+    // Get localizationTypes
+    let localizationType = null;
+    for (let l of this.modelData._localizationTypes) {
+      if (l.id == localizationData.meta) {
+        localizationType = l.dtype
+      }
+    }
+    
+    mediaData.typeName = mediaType;
+    localizationData.typeName = localizationType;
+
+    if (mediaData.typeName === "video") {
+      // get the frame
+      const resp = await fetch(`/rest/GetFrame/${mediaData.id}?frames=${localizationData.frame}`);
+      const sourceBlob = await resp.blob();
+      imageSource = URL.createObjectURL(sourceBlob);
+    } else {
+      imageSource = this.getImageUrl(mediaData);
+    }
+
+    const data = {
+      mediaData,
+      localizationData,
+      imageSource
+    }
+
+    this._panelImage.data = data;
+  }
+
+  getImageUrl(mediaData){
+    let url = null;
+
+    // Discover all image files that we support
+    let best_idx = 0;
+    for (let idx = 0; idx < mediaData.media_files.image.length; idx++){
+      if (mediaData.media_files.image[idx].mime == "image/avif" && this._supportsAvif == true){
+        best_idx = idx;
         break;
+      } else if (mediaData.media_files.image[idx].mime != "image/avif") {
+        best_idx = idx;
       }
     }
-
-    this._data.init(dataTypes, selected_version, this.modelData.getProjectId(), mediaData.mediaInfo.id, false, false);
-    if (mediaData.mediaTypeData.dtype == "video") {
-      if (this._localization != null) {
-        this._player.videoFrame = this._localization.frame;
-      }
-      else {
-        this._player.videoFrame = 0;
-      }
-    }
-    this._player.mediaInfo = mediaData.mediaInfo;
-
-    this._player.addEventListener("canvasReady", () => {
-        this._player.undoBuffer = this._undo;
-        this._player.annotationData = this._data;
-
-        if (this._localization != null) {
-          this._data.updateTypeWithData(this._locDataType, this._localization)
-          this._player.selectLocalization(this._localization);
-        }
-    });
+    
+    return mediaData.media_files.image[best_idx].path;
   }
 }
 customElements.define("entity-panel-localization", GalleryPanelLocalization);
