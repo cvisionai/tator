@@ -853,6 +853,7 @@ export class AnnotationMulti extends TatorElement {
           video.displayLatest(true);
         }
         this._videoStatus = "paused";
+        this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
       });
     }
   }
@@ -915,6 +916,7 @@ export class AnnotationMulti extends TatorElement {
         }
         this._videoStatus = "paused";
         setTimeout(()=>{this.checkReady();},33);
+        this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
       });
 
   }
@@ -1132,7 +1134,8 @@ export class AnnotationMulti extends TatorElement {
           alert_sent = true;
         }
       });
-      if (idx == this._longest_idx)
+      var isPrime = idx == this._longest_idx;
+      if (isPrime)
       {
         let prime = this._videos[idx];
         this.parent._browser.canvas = prime;
@@ -1217,7 +1220,7 @@ export class AnnotationMulti extends TatorElement {
       this._videos[idx].overlayTextStyle = smallTextStyle;
 
       this._videos[idx].loadFromVideoObject(
-        video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
+        video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject, this._seekQuality, this._scrubQuality, isPrime)
       .then(() => {
         if (this._videos[idx].allowSafeMode) {
           this._videos[idx].allowSafeMode = this._allowSafeMode;
