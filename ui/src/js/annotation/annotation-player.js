@@ -946,6 +946,7 @@ export class AnnotationPlayer extends TatorElement {
       this._video.stopPlayerThread();
       this._video.shutdownOnDemandDownload();
       this._video.seekFrame(frame, this._video.drawFrame);
+      this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
     }
   }
 
@@ -975,6 +976,7 @@ export class AnnotationPlayer extends TatorElement {
       this._videoStatus = "paused";
       this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
+      this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
     });/*;.catch((e) => {
       console.error(`"ERROR: ${e}`)
       throw e;

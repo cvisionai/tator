@@ -853,6 +853,7 @@ export class AnnotationMulti extends TatorElement {
           video.displayLatest(true);
         }
         this._videoStatus = "paused";
+        this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
       });
     }
   }
@@ -915,6 +916,7 @@ export class AnnotationMulti extends TatorElement {
         }
         this._videoStatus = "paused";
         setTimeout(()=>{this.checkReady();},33);
+        this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
       });
 
   }
