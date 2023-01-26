@@ -3059,6 +3059,7 @@ export class AnnotationCanvas extends TatorElement
         this.deselectTrack()
         this.refresh();
         this._mouseMode = MouseMode.QUERY;
+        this.dispatchEvent(new CustomEvent("unselect", {composed:true}));
       }
     }
     if (this._mouseMode == MouseMode.ZOOM_ROI)

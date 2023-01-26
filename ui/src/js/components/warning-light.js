@@ -51,6 +51,30 @@ export class WarningLight extends TatorElement {
     this._message_span.setAttribute("class", "px-4 py-4");
     this._message_div.appendChild(this._message_span);
 
+    const button = document.createElement("button");
+    button.setAttribute("class", "btn-clear mx-2 my-2 d-flex text-gray");
+    this._message_div.appendChild(button);
+    button.style.height="fit-content"; // else button blows up
+
+    const svg2 = document.createElementNS(svgNamespace, "svg");
+    svg2.setAttribute("id", "icon-x");
+    svg2.setAttribute("viewBox", "0 0 24 24");
+    svg2.setAttribute("height", "1em");
+    svg2.setAttribute("width", "1em");
+    button.appendChild(svg2);
+    const title = document.createElementNS(svgNamespace, "title");
+    title.textContent = "Close";
+    button.appendChild(title);
+    const path2 = document.createElementNS(svgNamespace, "path");
+    path2.setAttribute("d", "M5.293 6.707l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l5.293-5.293 5.293 5.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5.293-5.293 5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
+    svg2.appendChild(path2);
+
+    this._message_div.appendChild(button);
+    button.addEventListener("click", () => {
+      this.hide();
+    });
+
+
     this.hide();
     this.fade_stage = 0; // 0, 1, 2 or 3
 

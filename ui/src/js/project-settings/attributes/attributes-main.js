@@ -215,6 +215,7 @@ export class AttributesMain extends HTMLElement {
     this.loading.showSpinner();
 
     const attributeDataByType = await getAttributeDataByType();
+    console.log("attributeDataByType ", attributeDataByType);
     this.clone = new AttributesClone(attributeDataByType);
     const cloneForm = this.clone._init();
 

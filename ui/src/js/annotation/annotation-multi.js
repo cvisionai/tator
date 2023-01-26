@@ -1434,6 +1434,12 @@ export class AnnotationMulti extends TatorElement {
           }
         }
 
+        if (searchParams.has("playbackRate"))
+        {
+          this._rateControl.setValue(Number(searchParams.get("playbackRate")));
+          this.setRate(Number(searchParams.get("playbackRate")));
+        }
+
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
         }));
@@ -2287,7 +2293,7 @@ export class AnnotationMulti extends TatorElement {
       }
       this.checkReady();
     }
-
+    this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
   }
 
   setQuality(quality, buffer, isDefault) {

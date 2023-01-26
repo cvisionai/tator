@@ -72,8 +72,16 @@ export class AnnotationSettings extends TatorElement {
     if (this.hasAttribute("entity-id")) {
       params.set("selected_entity", this.getAttribute("entity-id"));
     }
+    else
+    {
+      params.delete("selected_entity");
+    }
     if (this._typeParams()) {
       params.set("selected_type", this._typeParams());
+    }
+    else
+    {
+      params.delete("selected_type");
     }
     if (this.hasAttribute("frame")) {
       params.set("frame", this.getAttribute("frame"));
@@ -98,6 +106,10 @@ export class AnnotationSettings extends TatorElement {
     }
     if (this.hasAttribute("timeline-display")) {
       params.set("timeline-display", this.getAttribute("timeline-display"));
+    }
+    else
+    {
+      params.delete("timeline-display");
     }
     return params;
   }
