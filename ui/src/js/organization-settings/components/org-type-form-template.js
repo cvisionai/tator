@@ -237,6 +237,9 @@ export class OrgTypeFormTemplate extends TatorElement {
       "live_sc": "",
       "gcs_key_info": null,
       "form": "empty",
+      "store_type": null,
+      "external_host": null,
+      "config": null,
     };
   }
 

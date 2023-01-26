@@ -31,14 +31,10 @@
    <form id="bucket-edit--form">
       <text-input id="bucket-edit--name" name="Name" type="string"></text-input>
       <radio-set id="bucket-edit--bucket-type" name="Bucket Type"></radio-set>
-      <text-input id="bucket-edit--access-key" hidden name="AWS Access Key ID" type="string"></text-input>
-      <text-input id="bucket-edit--secret-key" hidden name="AWS Secret Access Key" type="password"></text-input>
-      <text-input id="bucket-edit--endpoint-url" hidden name="Endpoint URL" type="string"></text-input>
-      <text-input id="bucket-edit--region" hidden name="Region Name" type="string"></text-input>
-      <text-input id="bucket-edit--archive-storage-class" hidden name="Archive Storage Class" type="string">
-      </text-input>
-      <text-input id="bucket-edit--live-storage-class" hidden name="Live Storage Class" type="string"></text-input>
-      <text-area id="bucket-edit--gcs-key-info" hidden name="GCS Key Info" type="json" hidden=""></text-area>
+      <text-input id="bucket-edit--external-host" name="External Host" type="string"></text-input>
+      <radio-set id="bucket-edit--archive-storage-class" name="Archive Storage Class"></radio-set>
+      <radio-set id="bucket-edit--live-storage-class" name="Live Storage Class"></radio-set>
+      <text-area id="bucket-edit--edit-config" name="Config" type="json"></text-area>
    </form>
 </template>
 
