@@ -495,8 +495,13 @@ class MediaListAPI(BaseListView):
             Only attributes are eligible for bulk patch operations.
         """
         desired_archive_state = params.pop("archive_state", None)
-        if desired_archive_state is None and params.get("attributes") is None and params.get('user_elemental_id') == None:
-            raise ValueError("Must specify 'attributes', 'user_elemental_id', and/or property to patch, but none found")
+        if desired_archive_state is None and \
+           params.get("attributes") is None and \
+           params.get('user_elemental_id') == None and \
+           params.get('reset_attributes') is None and \
+           params.get('null_attributes') is None:
+            raise ValueError("Must specify 'attributes', 'reset_attributes', 'null_attributes', 'user_elemental_id',"
+                             " and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
 
         count = 0
