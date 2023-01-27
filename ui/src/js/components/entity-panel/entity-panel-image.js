@@ -13,6 +13,7 @@ export class EntityPanelImage extends TatorElement {
       this._previewImg = this._shadow.getElementById("entity-panel-image--preview");
       this._svgDiv = this._shadow.getElementById("entity-panel-image--svgDiv");
       this._viewBox = null;
+      this._drawColor = '#fff';
    }
 
    /**
@@ -25,16 +26,14 @@ export class EntityPanelImage extends TatorElement {
    set data(val) {
       this._data = val;
 
-      console.log("Entity panel image data",this._data);
-
       if (this._data !== null && this._data.imageSource) {
          // Setup the image, and overlay the annotation
          this._previewImg.src = this._data.imageSource;
+         this._drawColor = this._data.drawColor !== null ? `${this._data.drawColor}` : 'rgb(64, 224, 208)';
             
          // show the box
          this._previewImg.onload = (e) => {
             this._imagePane.hidden = false;
-            console.log("New preview loaded.....")
             this._viewBox = {
                width: this._previewImg.naturalWidth,
                height: this._previewImg.naturalHeight
@@ -69,23 +68,20 @@ export class EntityPanelImage extends TatorElement {
       this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       this._currentSvg.setAttribute("viewBox", viewBoxSize);
 
-      this._strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
-      this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
-      const strokeWidth = this._strokeWidth;
-
+      const strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
       const imageWidth = this._viewBox.width;
       const imageHeight = this._viewBox.height;
 
-      const bounding_x1 = ((this._data.localizationData.x) * imageWidth) + (strokeWidth / 2);
-      const bounding_y1 = ((this._data.localizationData.y) * imageHeight) + (2 * strokeWidth);
-      const bounding_width = (this._data.localizationData.width * imageWidth ) + (strokeWidth / 2);
-      const bounding_height = (this._data.localizationData.height * imageHeight) + (2 * strokeWidth);
-      const colorString = `#fff`;
+      const bounding_x1 = ((this._data.localizationData.x) * imageWidth);
+      const bounding_y1 = ((this._data.localizationData.y) * imageHeight);
+      const bounding_width = (this._data.localizationData.width * imageWidth );
+      const bounding_height = (this._data.localizationData.height * imageHeight);
+
 
       /* Box */
       const rect = document.createElement("rect");
       rect.setAttribute("id", `Box`);
-      rect.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth}px; fill: none;`);
+      rect.setAttribute("style", `color: ${this._drawColor}; stroke: ${this._drawColor}; stroke-width: ${strokeWidth}px; fill: none;`);
       rect.setAttribute("x", `${bounding_x1}`);
       rect.setAttribute("y", `${bounding_y1}`);
       rect.setAttribute("width", `${bounding_width}`);
@@ -104,23 +100,19 @@ export class EntityPanelImage extends TatorElement {
       this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       this._currentSvg.setAttribute("viewBox", viewBoxSize);
 
-      this._strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
-      this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
-      const strokeWidth = this._strokeWidth;
-
+      const strokeWidth = 5;
       const imageWidth = this._viewBox.width;
       const imageHeight = this._viewBox.height;
 
-      const bounding_x = Number(this._data.localizationData.x * imageWidth) + (strokeWidth / 2);
-      const bounding_y = Number(this._data.localizationData.y * imageHeight) + (2 * strokeWidth);
-      const bounding_u = Number(this._data.localizationData.u * imageWidth) + (strokeWidth / 2);
-      const bounding_v = Number(this._data.localizationData.v * imageHeight) + (2 * strokeWidth);
-      const colorString = `#fff`;
+      const bounding_x = Number(this._data.localizationData.x * imageWidth);
+      const bounding_y = Number(this._data.localizationData.y * imageHeight);
+      const bounding_u = Number(this._data.localizationData.u * imageWidth);
+      const bounding_v = Number(this._data.localizationData.v * imageHeight);
 
       /* Line */
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.setAttribute("id", `Line`);
-      line.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth}px;`);
+      line.setAttribute("style", `color: ${this._drawColor}; stroke: ${this._drawColor}; stroke-width: ${strokeWidth}px;`);
       line.setAttribute("x1", `${bounding_x}`);
       line.setAttribute("y1", `${bounding_y}`);
       line.setAttribute("x2", `${bounding_u+bounding_x}`);
@@ -139,24 +131,21 @@ export class EntityPanelImage extends TatorElement {
       this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       this._currentSvg.setAttribute("viewBox", viewBoxSize);
 
-      this._strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
-      this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
-      const strokeWidth = this._strokeWidth;
-
+      const strokeWidth =  Math.min(this._previewImg.naturalHeight, 1080) / 200;
       const imageWidth = this._viewBox.width;
       const imageHeight = this._viewBox.height;
 
-      const bounding_x = Number(this._data.localizationData.x * imageWidth) + (strokeWidth / 2);
-      const bounding_y = Number(this._data.localizationData.y * imageHeight) + (2 * strokeWidth);
-      const colorString = `#fff`;
+      const bounding_x = Number(this._data.localizationData.x * imageWidth);
+      const bounding_y = Number(this._data.localizationData.y * imageHeight);
+
 
       /* Dot */
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("id", `Dot`);
-      circle.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth * 5}px;`);
-      circle.setAttribute("cx", `${bounding_x - 2}`);
-      circle.setAttribute("cy", `${bounding_y - 2}`);
-      circle.setAttribute("r", `4`);
+      circle.setAttribute("style", `color: ${this._drawColor}; fill: ${this._drawColor}; stroke: ${this._drawColor}; stroke-width: ${strokeWidth * 5}px;`);
+      circle.setAttribute("cx", `${bounding_x}`);
+      circle.setAttribute("cy", `${bounding_y}`);
+      circle.setAttribute("r", `1`);
       circle.setAttribute("class", `concepts-figure__svg-group`);
       circle.setAttribute("active", `true`);
       circle.setAttribute("ref", `group`);
@@ -171,11 +160,7 @@ export class EntityPanelImage extends TatorElement {
       this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       this._currentSvg.setAttribute("viewBox", viewBoxSize);
 
-      this._strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
-      this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
-      const strokeWidth = this._strokeWidth;
-      const colorString = `#fff`;
-
+      const strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
       const imageWidth = this._viewBox.width;
       const imageHeight = this._viewBox.height;
 
@@ -188,12 +173,11 @@ export class EntityPanelImage extends TatorElement {
       }
 
       const points = String(polyPoints.join(" "));
-      console.log(points);
 
       /* Poly */
       const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
       poly.setAttribute("id", `Poly`);
-      poly.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth}px; fill: none;`);
+      poly.setAttribute("style", `color: ${this._drawColor}; stroke: ${this._drawColor}; stroke-width: ${strokeWidth}px; fill: none;`);
       poly.setAttribute("points", `${points}`);
       this._currentSvg.appendChild(poly);
 

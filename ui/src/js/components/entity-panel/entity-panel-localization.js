@@ -51,7 +51,6 @@ export class GalleryPanelLocalization extends TatorElement {
   }
 
   async initAndShowData({ cardObj }) {
-    console.log("Show cardObj", cardObj);
     // Identitifier used to get the canvas' media data
     const mediaId = cardObj.mediaId;
     let mediaData = null;
@@ -84,6 +83,7 @@ export class GalleryPanelLocalization extends TatorElement {
   async _setupImage(mediaData, localizationData) {
     this._clearImage();
     let imageSource = null;
+    let drawColor = "rgb(64, 224, 208)";
 
     // Get mediaTypes
     let mediaType = null;
@@ -98,6 +98,9 @@ export class GalleryPanelLocalization extends TatorElement {
     for (let l of this.modelData._localizationTypes) {
       if (l.id == localizationData.meta) {
         localizationType = l.dtype
+        if (l.colorMap && l.colorMap.default) {
+          drawColor = Array.isArray(l.colorMap.default) ? `rgb(${l.colorMap.default.join(", ")})` : l.colorMap.default
+        }
       }
     }
     
@@ -120,7 +123,8 @@ export class GalleryPanelLocalization extends TatorElement {
     const data = {
       mediaData,
       localizationData,
-      imageSource
+      imageSource,
+      drawColor
     }
 
     this._panelImage.data = data;

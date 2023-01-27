@@ -14,10 +14,6 @@ export class EntityPanelContainer extends TatorElement {
 
       // this element (aside)
       this.el = null;
-
-
-
-
    }
 
    //
@@ -212,10 +208,6 @@ export class EntityPanelContainer extends TatorElement {
 
       this._resizer.addEventListener('mousedown', initResizePanel, false);
    }
-
-   
-
-
    
 }
 
