@@ -802,6 +802,22 @@ class AttributeTestMixin:
             format='json'
         )
         self.assertEqual(len(response.data), 0)
+
+        # Nullify all the Bool Tests
+        for idx, test_val in enumerate(test_vals):
+            pk = self.entities[idx].pk
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': ['Bool Test']},
+                                         format='json')
+            assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get(
+            f'/rest/{self.list_uri}/{self.project.pk}?attribute_null=Bool Test::true'
+            f'&type={self.entity_type.pk}', # needed for localizations
+            format='json'
+        )
+        self.assertEqual(len(response.data), len(self.entities))
+
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_null=asdf::true'
             f'&type={self.entity_type.pk}', # needed for localizations
@@ -903,6 +919,25 @@ class AttributeTestMixin:
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Int Test::false&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
+        pk = self.entities[0].pk
+        attribute_name='Int Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes']['Int Test'] == 42)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
+
     def test_float_attr(self):
         test_vals = [random.uniform(-1000.0, 1000.0) for _ in range(len(self.entities))]
         # Test setting an invalid float
@@ -948,6 +983,24 @@ class AttributeTestMixin:
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Float Test::false&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
+        pk = self.entities[0].pk
+        attribute_name='Float Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == 42.0)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
     def test_enum_attr(self):
         test_vals = [random.choice(['enum_val1', 'enum_val2', 'enum_val3']) for _ in range(len(self.entities))]
         # Test setting an invalid choice
@@ -983,6 +1036,24 @@ class AttributeTestMixin:
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Enum Test::0&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
+        pk = self.entities[0].pk
+        attribute_name='Enum Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == 'enum_val1')
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
     def test_string_attr(self):
         test_vals = [''.join(random.choices(string.ascii_uppercase + string.digits, k=random.randint(1, 64)))
             for _ in range(len(self.entities))]
@@ -1011,6 +1082,24 @@ class AttributeTestMixin:
             self.assertEqual(len(response.data), sum([subs.lower() in t.lower() for t in test_vals]))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=String Test::0&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        pk = self.entities[0].pk
+        attribute_name='String Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == 'asdf_default')
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
 
     def test_datetime_attr(self):
         def to_string(dt):
@@ -1084,6 +1173,24 @@ class AttributeTestMixin:
             f'type={self.entity_type.pk}&format=json'
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        pk = self.entities[0].pk
+        attribute_name='Datetime Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
 
     def test_geoposition_attr(self):
         test_vals = [(40.712776,-74.005974), # new york
@@ -1162,6 +1269,26 @@ class AttributeTestMixin:
                 latlon_distance(test_lat, test_lon, lat, lon) < dist
                 for lat, lon in test_vals
             ]))
+
+        pk = self.entities[0].pk
+        attribute_name='Geoposition Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == [-179.0,-89.0])
+
+        # Of note, geopositions can't be null so -1.0,-1.0 is used instead.
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == [-1.0,-1.0])
 
 class FileMixin:
     def _test_methods(self, role):
