@@ -40,10 +40,17 @@ export class EntityPanelImage extends TatorElement {
                height: this._previewImg.naturalHeight
             };
 
-            if (this._data.localizationData.typeName = "Box") {
-               this.showBoundingBox(this._data.localizationData);
+            if (this._data.localizationData.typeName === "box") {
+               this.showBoundingBox();
+            } else if (this._data.localizationData.typeName === "poly") {
+               this.showPoly();
+            } else if (this._data.localizationData.typeName === "line") {
+               this.showLine();
+            } else if (this._data.localizationData.typeName === "dot") {
+               this.showDot();
             } else {
                // TODO
+               this.showLine();
             }
             
          } 
@@ -56,7 +63,7 @@ export class EntityPanelImage extends TatorElement {
 
    }
 
-   showBoundingBox(data) {
+   showBoundingBox() {
       const viewBoxSize = `0 0 ${this._viewBox.width} ${this._viewBox.height}`;
       this._currentSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -66,43 +73,132 @@ export class EntityPanelImage extends TatorElement {
       this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
       const strokeWidth = this._strokeWidth;
 
-      const imageWidth = this._data.mediaData.width;
-      const imageHeight = this._data.mediaData.height;
+      const imageWidth = this._viewBox.width;
+      const imageHeight = this._viewBox.height;
 
-      const bounding_x1 = Number(this._data.localizationData.x * imageWidth) + (strokeWidth / 2);
-      const bounding_y1 = Number(this._data.localizationData.y * imageHeight) + (2 * strokeWidth);
-      const bounding_width = data.width  * imageWidth;
-      const bounding_height = data.height * imageHeight;
+      const bounding_x1 = ((this._data.localizationData.x) * imageWidth) + (strokeWidth / 2);
+      const bounding_y1 = ((this._data.localizationData.y) * imageHeight) + (2 * strokeWidth);
+      const bounding_width = (this._data.localizationData.width * imageWidth ) + (strokeWidth / 2);
+      const bounding_height = (this._data.localizationData.height * imageHeight) + (2 * strokeWidth);
       const colorString = `#fff`;
 
-      const box_G = document.createElement("g");
-      box_G.setAttribute("id", `Box__${bounding_x1}__${bounding_x1}`);
-      box_G.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth}px;`);
-      box_G.setAttribute("x", `${bounding_x1}`);
-      box_G.setAttribute("y", `${bounding_y1}`);
-      box_G.setAttribute("transform", `translate(${bounding_x1}, ${bounding_y1})`);
-      box_G.setAttribute("class", `concepts-figure__svg-group`);
-      box_G.setAttribute("active", `true`);
-      box_G.setAttribute("ref", `group`);
-      this._currentSvg.appendChild(box_G);
-
-      const box_path = document.createElement("path");
-      // box_path.setAttribute("data-v-601a8666", "");
-      box_path.setAttribute("stroke", colorString);
-      box_path.setAttribute("stroke-width", `${strokeWidth}px`);
-      box_path.setAttribute("fill", "transparent");
-      box_path.setAttribute("class", "concepts-figure__svg-shape");
-      box_path.setAttribute("d", `m 0 0
-                        h ${Math.floor(bounding_width)}
-                        v ${Math.floor(bounding_height)}
-                        h ${-Math.floor(bounding_width)}
-                        z`);
-      box_G.appendChild(box_path);
-
+      /* Box */
+      const rect = document.createElement("rect");
+      rect.setAttribute("id", `Box`);
+      rect.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth}px; fill: none;`);
+      rect.setAttribute("x", `${bounding_x1}`);
+      rect.setAttribute("y", `${bounding_y1}`);
+      rect.setAttribute("width", `${bounding_width}`);
+      rect.setAttribute("height", `${bounding_height}`);
+      rect.setAttribute("class", `concepts-figure__svg-group`);
+      rect.setAttribute("active", `true`);
+      rect.setAttribute("ref", `group`);
+      this._currentSvg.appendChild(rect);
 
       this._svgDiv.innerHTML = this._currentSvg.outerHTML;
    }
 
+   showLine() {
+      const viewBoxSize = `0 0 ${this._viewBox.width} ${this._viewBox.height}`;
+      this._currentSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      this._currentSvg.setAttribute("viewBox", viewBoxSize);
+
+      this._strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
+      this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
+      const strokeWidth = this._strokeWidth;
+
+      const imageWidth = this._viewBox.width;
+      const imageHeight = this._viewBox.height;
+
+      const bounding_x = Number(this._data.localizationData.x * imageWidth) + (strokeWidth / 2);
+      const bounding_y = Number(this._data.localizationData.y * imageHeight) + (2 * strokeWidth);
+      const bounding_u = Number(this._data.localizationData.u * imageWidth) + (strokeWidth / 2);
+      const bounding_v = Number(this._data.localizationData.v * imageHeight) + (2 * strokeWidth);
+      const colorString = `#fff`;
+
+      /* Line */
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("id", `Line`);
+      line.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth}px;`);
+      line.setAttribute("x1", `${bounding_x}`);
+      line.setAttribute("y1", `${bounding_y}`);
+      line.setAttribute("x2", `${bounding_u+bounding_x}`);
+      line.setAttribute("y2", `${bounding_v+bounding_y}`);
+      line.setAttribute("class", `concepts-figure__svg-group`);
+      line.setAttribute("active", `true`);
+      line.setAttribute("ref", `group`);
+      this._currentSvg.appendChild(line);
+
+      this._svgDiv.innerHTML = this._currentSvg.outerHTML;
+   }
+
+   showDot() {
+      const viewBoxSize = `0 0 ${this._viewBox.width} ${this._viewBox.height}`;
+      this._currentSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      this._currentSvg.setAttribute("viewBox", viewBoxSize);
+
+      this._strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
+      this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
+      const strokeWidth = this._strokeWidth;
+
+      const imageWidth = this._viewBox.width;
+      const imageHeight = this._viewBox.height;
+
+      const bounding_x = Number(this._data.localizationData.x * imageWidth) + (strokeWidth / 2);
+      const bounding_y = Number(this._data.localizationData.y * imageHeight) + (2 * strokeWidth);
+      const colorString = `#fff`;
+
+      /* Dot */
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("id", `Dot`);
+      circle.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth * 5}px;`);
+      circle.setAttribute("cx", `${bounding_x - 2}`);
+      circle.setAttribute("cy", `${bounding_y - 2}`);
+      circle.setAttribute("r", `4`);
+      circle.setAttribute("class", `concepts-figure__svg-group`);
+      circle.setAttribute("active", `true`);
+      circle.setAttribute("ref", `group`);
+      this._currentSvg.appendChild(circle);
+
+      this._svgDiv.innerHTML = this._currentSvg.outerHTML;      
+   }
+
+   showPoly() {
+      const viewBoxSize = `0 0 ${this._viewBox.width} ${this._viewBox.height}`;
+      this._currentSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      this._currentSvg.setAttribute("viewBox", viewBoxSize);
+
+      this._strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
+      this._fontSize = Math.min(this._previewImg.naturalHeight, 1080) / 333 * 12;
+      const strokeWidth = this._strokeWidth;
+      const colorString = `#fff`;
+
+      const imageWidth = this._viewBox.width;
+      const imageHeight = this._viewBox.height;
+
+      const polyPoints = []
+      for (let [x,y] of this._data.localizationData.points) {
+         const newX = x * imageWidth;
+         const newY = y * imageHeight;
+
+         polyPoints.push([newX, newY]);
+      }
+
+      const points = String(polyPoints.join(" "));
+      console.log(points);
+
+      /* Poly */
+      const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      poly.setAttribute("id", `Poly`);
+      poly.setAttribute("style", `color: ${colorString}; stroke: ${colorString}; stroke-width: ${strokeWidth}px; fill: none;`);
+      poly.setAttribute("points", `${points}`);
+      this._currentSvg.appendChild(poly);
+
+      this._svgDiv.innerHTML = this._currentSvg.outerHTML;
+   }
 }
 
 customElements.define("entity-panel-image", EntityPanelImage);

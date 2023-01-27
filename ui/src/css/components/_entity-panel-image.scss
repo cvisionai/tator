@@ -2,6 +2,9 @@
    grid-column: 1 / 2;
    grid-row: 1 / span 2;
    min-height: 150px;
+
+   width: 100%;
+   
  }
 
  .image-details__figure {
@@ -45,10 +48,6 @@
    /* Scale to fit the available width and height */
    width: min(calc(var(--image-width, 1920) * var(--figure-width-basis)), calc(var(--image-width, 1920) * var(--figure-height-basis)));
    height: min(calc(var(--image-height, 1080) * var(--figure-width-basis)), calc(var(--image-height, 1080) * var(--figure-height-basis)));
- }
-
- .concepts-figure__image {
-   /* border: 2px solid blue; */
  }
 
  .concepts-figure__svg {

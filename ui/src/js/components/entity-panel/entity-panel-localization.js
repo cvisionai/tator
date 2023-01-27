@@ -8,6 +8,7 @@ export class GalleryPanelLocalization extends TatorElement {
     this._shadow.appendChild(this._panelImage);
 
     this.savedMediaData = new Map();
+    this.savedImageSource = new Map();
 
     this._supportsAvif=false;
 
@@ -72,6 +73,7 @@ export class GalleryPanelLocalization extends TatorElement {
       // save this data in local memory until we need it again
       this.savedMediaData.set(mediaId, mediaData);
     }
+
     this._setupImage(mediaData, localizationData);
   }
 
@@ -102,13 +104,17 @@ export class GalleryPanelLocalization extends TatorElement {
     mediaData.typeName = mediaType;
     localizationData.typeName = localizationType;
 
-    if (mediaData.typeName === "video") {
+    if (mediaData.typeName === "video" && !this.savedImageSource.has(localizationData.id)) {
       // get the frame
       const resp = await fetch(`/rest/GetFrame/${mediaData.id}?frames=${localizationData.frame}`);
       const sourceBlob = await resp.blob();
       imageSource = URL.createObjectURL(sourceBlob);
+      this.savedImageSource.set(localizationData.id, imageSource);
+    } else if (this.savedImageSource.has(localizationData.id)) {
+      imageSource = this.savedImageSource.get(localizationData.id, imageSource); 
     } else {
       imageSource = this.getImageUrl(mediaData);
+      this.savedImageSource.set(localizationData.id, imageSource);
     }
 
     const data = {
@@ -121,8 +127,6 @@ export class GalleryPanelLocalization extends TatorElement {
   }
 
   getImageUrl(mediaData){
-    let url = null;
-
     // Discover all image files that we support
     let best_idx = 0;
     for (let idx = 0; idx < mediaData.media_files.image.length; idx++){
