@@ -100,7 +100,7 @@ export class EntityPanelImage extends TatorElement {
       this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       this._currentSvg.setAttribute("viewBox", viewBoxSize);
 
-      const strokeWidth = 5;
+      const strokeWidth = Math.min(this._previewImg.naturalHeight, 1080) / 200;
       const imageWidth = this._viewBox.width;
       const imageHeight = this._viewBox.height;
 
@@ -131,7 +131,8 @@ export class EntityPanelImage extends TatorElement {
       this._currentSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       this._currentSvg.setAttribute("viewBox", viewBoxSize);
 
-      const strokeWidth =  Math.min(this._previewImg.naturalHeight, 1080) / 200;
+      
+      const strokeWidth = 5;
       const imageWidth = this._viewBox.width;
       const imageHeight = this._viewBox.height;
 
@@ -142,7 +143,7 @@ export class EntityPanelImage extends TatorElement {
       /* Dot */
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("id", `Dot`);
-      circle.setAttribute("style", `color: ${this._drawColor}; fill: ${this._drawColor}; stroke: ${this._drawColor}; stroke-width: ${strokeWidth * 5}px;`);
+      circle.setAttribute("style", `color: ${this._drawColor}; fill: ${this._drawColor}; stroke: ${this._drawColor}; stroke-width: ${strokeWidth}px;`);
       circle.setAttribute("cx", `${bounding_x}`);
       circle.setAttribute("cy", `${bounding_y}`);
       circle.setAttribute("r", `1`);
