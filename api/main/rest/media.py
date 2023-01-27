@@ -622,8 +622,9 @@ class MediaDetailAPI(BaseDetailView):
             computed_author = compute_user(media.project.pk, self.request.user, params.get('user_elemental_id', None))
             if params.get('user_elemental_id', None):
                 qs.update(created_by=computed_author)
-            if 'attributes' in params:
+            if 'attributes' in params or 'null_attributes' in params or 'reset_attributes' in params:
                 new_attrs = validate_attributes(params, media)
+                logger.info(f"new_attrs={new_attrs}")
                 bulk_patch_attributes(new_attrs, qs)
 
             if 'name' in params:
