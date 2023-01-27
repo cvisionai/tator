@@ -46,7 +46,7 @@ def _transcode_name(project, user, media_name, media_id=None):
     else:
         out = f"transcode-proj-{project}-usr-{user}-name-{slug_name}-"
 
-    # Make sure the generated name is fewer than 56 characters long
+    # Make sure the generated name is 56 characters or fewer
     out = out[:56] + "-"
     return out
 
@@ -55,7 +55,7 @@ def _algo_name(algorithm_id, project, user, name):
     """
     slug_name = re.sub('[^0-9a-zA-Z.]+', '-', name).lower()
     out = f"alg-{algorithm_id}-proj-{project}-usr-{user}-name-{slug_name}-"
-    # Make sure the generated name is fewer than 56 characters long
+    # Make sure the generated name is 56 characters or fewer
     out = out[:56] + "-"
     return out
 
