@@ -566,9 +566,9 @@ export class MultiAttributeEditPanel extends TatorElement {
                widget = document.createElement("text-input");
                widget.setAttribute("name", attributeDef.name);
                widget.setAttribute("type", attributeDef.dtype);
-               // widget.autocomplete = attributeDef.autocomplete;
+               widget.autocomplete = attributeDef.autocomplete;
             }
-            //widget.autocomplete = attributeDef.autocomplete; #TODO can this use autocomplete?
+            
             if (attributeDef.style) {
                const style_options = attributeDef.style.split(' ');
                if (style_options.includes("disabled")) {
@@ -588,7 +588,7 @@ export class MultiAttributeEditPanel extends TatorElement {
                widget = document.createElement("text-input");
                widget.setAttribute("name", attributeDef.name);
                widget.setAttribute("type", attributeDef.dtype);
-               // widget.autocomplete = attributeDef.autocomplete;
+               widget.autocomplete = attributeDef.autocomplete;
             }
 
             if (style_options.includes("disabled")) {
@@ -602,7 +602,7 @@ export class MultiAttributeEditPanel extends TatorElement {
             widget = document.createElement("text-input");
             widget.setAttribute("name", attributeDef.name);
             widget.setAttribute("type", attributeDef.dtype);
-            // widget.autocomplete = attributeDef.autocomplete;
+            widget.autocomplete = attributeDef.autocomplete;
          }
 
          // Set whether this widget is required
