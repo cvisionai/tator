@@ -199,6 +199,10 @@ def validate_attributes(params, obj):
             else:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {obj.type.name}")
             attributes[attr_name] = convert_attribute(attr_type, attributes[attr_name])
+    for attr in params.get("reset_attributes", []):
+        attributes[attr] = attr_types[attr].get('default',None)
+    for attr in params.get("null_attributes", []):
+        attributes[attr] = None
     return attributes
 
 def patch_attributes(new_attrs, obj):
