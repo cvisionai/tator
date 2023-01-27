@@ -7,10 +7,8 @@ section_post_properties = {
         'type': 'string',
         'description': 'Attribute that is applied to media to identify membership to a section.',
     },
-    'object_search' : {'type': 'object',
-                       'description': 'Must be a #/components/schemas/AttributeOperationSpec'},
-    'related_search' : {'type': 'object',
-                       'description': 'Must be a #/components/schemas/AttributeOperationSpec'},
+    'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
+    'related_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     "visible": {
         "type": "boolean",
         "description": "Determines the visibility in the UI.",
