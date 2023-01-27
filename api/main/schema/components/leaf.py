@@ -106,6 +106,22 @@ leaf_bulk_update = {
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
         **leaf_id_query['properties'],
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
     },
 }
 
