@@ -196,6 +196,7 @@ class TatorBackupManager:
         """
         successful_backups = set()
         project_store_map = {}
+        Resource = type(resource_qs.first())
         for resource in resource_qs.iterator():
             success = True
             path = resource.path
@@ -242,12 +243,18 @@ class TatorBackupManager:
             if success:
                 successful_backups.add(resource.id)
 
+            if len(successful_backups) > 500:
+                with transaction.atomic():
+                    resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                    resource_qs.update(backed_up=True)
+                successful_backups.clear()
+
             yield success, resource
 
-        with transaction.atomic():
-            Resource = type(resource_qs.first())
-            resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
-            resource_qs.update(backed_up=True)
+        if successful_backups:
+            with transaction.atomic():
+                resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                resource_qs.update(backed_up=True)
 
     @classmethod
     def request_restore_resource(cls, path, project, min_exp_days) -> bool:
