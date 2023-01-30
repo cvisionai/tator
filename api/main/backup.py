@@ -36,7 +36,7 @@ class TatorBackupManager:
         return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
 
     @classmethod
-    def _multipart_upload(cls, upload_urls, upload_id, source_url):
+    def _multipart_upload(cls, path, upload_urls, upload_id, source_url):
         num_chunks = len(upload_urls)
         parts = []
         last_progress = 0
@@ -83,7 +83,7 @@ class TatorBackupManager:
         return parts
 
     @staticmethod
-    def _single_upload(upload_url, source_url):
+    def _single_upload(path, upload_url, source_url):
         with requests.get(source_url, stream=True).raw as f:
             data = f.read()
             for attempt in range(MAX_RETRIES):
@@ -108,9 +108,9 @@ class TatorBackupManager:
         urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
 
         if num_chunks > 1:
-            parts = cls._multipart_upload(urls, upload_id, url)
+            parts = cls._multipart_upload(path, urls, upload_id, url)
             return store.complete_multipart_upload(path, parts, upload_id)
-        return cls._single_upload(urls[0], url)
+        return cls._single_upload(path, urls[0], url)
 
     @staticmethod
     def get_backup_store(store_info):
