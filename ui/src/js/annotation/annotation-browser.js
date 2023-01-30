@@ -4,9 +4,38 @@ export class AnnotationBrowser extends TatorElement {
   constructor() {
     super();
 
+    var wrapper = document.createElement("div");
+    wrapper.setAttribute("class", "mt-3 ml-3 annotation_browser_wrapper rounded-2");
+    this._shadow.appendChild(wrapper);
+
+    var header = document.createElement("div");
+    header.setAttribute("class", "annotation_browser_header_panel d-flex flex-grow px-3 py-1 rounded-2 flex-justify-center")
+    wrapper.appendChild(header);
+
+    this._minimizeButton = document.createElement("button");
+    this._minimizeButton.setAttribute("class", "annotation-browser-btn flex-justify-left");
+    header.appendChild(this._minimizeButton);
+
+    this._headerLabel = document.createElement("div");
+    this._headerLabel.setAttribute("class", "px-3 f2 text-bold d-flex flex-items-center flex-justify-center flex-grow");
+    this._headerLabel.textContent = "Annotation Browser";
+    header.appendChild(this._headerLabel);
+
+    this._settingsButton = document.createElement("button");
+    this._settingsButton.setAttribute("class", "annotation-browser-btn");
+    header.appendChild(this._settingsButton);
+
+    this._settingsButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"></path>
+        <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
+        </svg>`;
+    this._settingsButton.style.display = "none";
+
     this._panels = document.createElement("div");
-    this._panels.setAttribute("class", "annotation__panels py-3 px-3");
-    this._shadow.appendChild(this._panels);
+    this._panels.setAttribute("class", "annotation__panels px-3");
+    this._panels.style.display = "none";
+    wrapper.appendChild(this._panels);
 
     this._media = document.createElement("media-panel");
     this._media.style.display = "block";
@@ -20,6 +49,43 @@ export class AnnotationBrowser extends TatorElement {
       const typeId = evt.detail.typeId;
       this._openForTypeId(typeId);
     });
+
+    this._minimizeButton.addEventListener("click", () => {
+      this._minimizeButton.blur();
+      if (this._panels.style.display == "none") {
+        this._expandBrowser();
+      }
+      else {
+        this._collapseBrowser();
+      }
+    });
+
+    this._expandBrowser();
+  }
+
+  _expandBrowser() {
+
+    if (this._panels.style.display != "none") {
+      return;
+    }
+
+    this._panels.style.display = "block";
+    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>`;
+    this._headerLabel.style.display = "flex";
+    this._settingsButton.style.display = "none";
+    window.dispatchEvent(new Event("resize"));
+  }
+
+  _collapseBrowser() {
+    this._panels.style.display = "none";
+    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>`;
+    this._headerLabel.style.display = "none";
+    this._settingsButton.style.display = "none";
+    window.dispatchEvent(new Event("resize"));
   }
 
   init(dataTypes, version, stateMediaIds, isVideo) {
@@ -107,6 +173,7 @@ export class AnnotationBrowser extends TatorElement {
     for (const typeId in this._entityPanels) {
       if (typeId == entityTypeId) {
         this._entityPanels[typeId].selectEntityOnUpdate(entityId);
+        this._expandBrowser();
       }
     }
   }
@@ -210,6 +277,8 @@ export class AnnotationBrowser extends TatorElement {
    * @param {bool} forceLocalization - only valid if forceOpen is true
    */
   selectEntity(obj, forceOpen = false, forceLocalization = false) {
+
+    this._expandBrowser();
 
     var typeId = obj.meta;
     var objDataType = this._data._dataTypes[typeId];

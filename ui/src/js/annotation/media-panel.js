@@ -14,13 +14,16 @@ export class MediaPanel extends TatorElement {
 
     this._attrs = document.createElement("attribute-panel");
     this._attrs._versionWidget.style.display = "none";
+    div.appendChild(this._attrs);
 
-    div.appendChild(this._attrs); // TODO: Fill this in with attribute data
+    const browserDiv = document.createElement("div");
+    browserDiv.setAttribute("class", "annotation__panel px-4 rounded-2");
+    this._shadow.appendChild(browserDiv);
 
     this._entities = document.createElement("div");
     this._entities.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
     this._entities.style.display = "none";
-    div.appendChild(this._entities);
+    browserDiv.appendChild(this._entities);
 
     this._annotationData = null;
     this._dataTypes = null;

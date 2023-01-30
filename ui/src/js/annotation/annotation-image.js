@@ -12,6 +12,7 @@ export class AnnotationImage extends TatorElement {
     this._shadow.appendChild(imageDiv);
 
     this._image = document.createElement("image-canvas");
+    this._image.domParents.push({"object":this});
     imageDiv.appendChild(this._image);
   }
 

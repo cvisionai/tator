@@ -100,6 +100,7 @@ export class FavoriteButton extends TatorElement {
     this._favorite = favorite;
 
     this._button.addEventListener("click", () => {
+      this._button.blur();
       this.dispatchEvent(new CustomEvent("load", {
         detail: favorite.values,
         composed: true,

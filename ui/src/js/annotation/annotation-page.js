@@ -226,9 +226,8 @@ export class AnnotationPage extends TatorPage {
             if (type_data.dtype == "video") {
               player = document.createElement("annotation-player");
               this._player = player;
+              this._player.parent = this;
               this._player.mediaType = type_data;
-              player.addDomParent({"object": this._headerDiv,
-                                   "alignTo":  this._browser});
               this._videoSettingsDialog.mode("single", data);
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
@@ -247,10 +246,8 @@ export class AnnotationPage extends TatorPage {
             } else if (type_data.dtype == "image" ){
               player = document.createElement("annotation-image");
               this._player = player;
+              this._player.parent = this;
               this._player.mediaType = type_data;
-              //player.style.minWidth="63%";
-              player.addDomParent({"object": this._headerDiv,
-                                   "alignTo":  this._browser});
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);

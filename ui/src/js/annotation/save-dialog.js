@@ -39,7 +39,7 @@ export class SaveDialog extends TatorElement {
     this._div.appendChild(this._hooksPanel);
 
     const buttons = document.createElement("div");
-    buttons.setAttribute("class", "d-flex flex-items-center flex-justify-between py-3 mb-3");
+    buttons.setAttribute("class", "d-flex flex-items-center flex-justify-between py-3 save-dialog-bottom-border");
     this._savePanel.appendChild(buttons);
 
     this._save = document.createElement("button");
@@ -54,23 +54,28 @@ export class SaveDialog extends TatorElement {
     buttons.appendChild(cancel);
 
     this._entityPanel = document.createElement("div");
-    this._entityPanel.setAttribute("class", "entity-panel py-3 px-3 rounded-2 mb-3");
+    this._entityPanel.setAttribute("class", "py-3 px-3 rounded-2 mb-3");
     this._outerDiv.appendChild(this._entityPanel);
 
     this._type = document.createElement("enum-input");
     this._type.setAttribute("name", "Select Type");
     this._type.setAttribute("class", "text-white f2 py-2 text-semibold");
+    this._type.label.classList.add("mb-3");
     this._entityPanel.appendChild(this._type);
 
     this._favesDiv = document.createElement("div");
-    this._favesDiv.setAttribute("class", "annotation__panel-group py-2 px-3 text-gray f2 favorites-panel my-3");
+    this._favesDiv.setAttribute("class", "annotation__panel-group py-2 px-3 text-gray f2 favorites-panel mb-3");
     this._entityPanel.appendChild(this._favesDiv);
 
     this._favorites = document.createElement("favorites-panel");
     this._favesDiv.appendChild(this._favorites);
 
+    const attrDiv = document.createElement("div");
+    attrDiv.setAttribute("class", "save-dialog-attribute-panel px-3 py-1")
+    this._entityPanel.appendChild(attrDiv);
+
     this._attributes = document.createElement("attribute-panel");
-    this._entityPanel.appendChild(this._attributes);
+    attrDiv.appendChild(this._attributes);
     this._attributes._idWidget.style.display = "none";
     this._attributes._createdByWidget.style.display = "none";
 
@@ -86,7 +91,12 @@ export class SaveDialog extends TatorElement {
     this._favorites.addEventListener("load", evt => {
       this._attributes._track = null;
       this._attributes.setValues({ attributes: evt.detail, id: -1 });
-      console.log(evt.detail);
+      this._values = this._attributes.getValues();
+      if (this._values === null) {
+        this._save.setAttribute("disabled", "");
+      } else {
+        this._save.removeAttribute("disabled");
+      }
     });
 
     this._favorites.addEventListener("store", evt => {
