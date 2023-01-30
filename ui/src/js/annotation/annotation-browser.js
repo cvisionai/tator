@@ -5,7 +5,7 @@ export class AnnotationBrowser extends TatorElement {
     super();
 
     var wrapper = document.createElement("div");
-    wrapper.setAttribute("class", "mt-3 ml-3 annotation_browser_wrapper rounded-2");
+    wrapper.setAttribute("class", "mt-3 mx-3 annotation_browser_wrapper rounded-2");
     this._shadow.appendChild(wrapper);
 
     var header = document.createElement("div");

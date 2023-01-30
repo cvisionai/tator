@@ -8,13 +8,28 @@ export class MediaPanel extends TatorElement {
     div.setAttribute("class", "annotation__panel px-4 rounded-2");
     this._shadow.appendChild(div);
 
+    const headerDiv = document.createElement("div");
+    headerDiv.setAttribute("class", "d-flex flex-grow py-3 rounded-2 flex-justify-between flex-items-center");
+    div.appendChild(headerDiv);
+
     this._name = document.createElement("h3");
-    this._name.setAttribute("class", "py-3 text-semibold css-truncate");
-    div.appendChild(this._name);
+    this._name.setAttribute("class", "text-semibold css-truncate");
+    headerDiv.appendChild(this._name);
+
+    this._moreLessButton = document.createElement("div");
+    this._moreLessButton.setAttribute("class", "f3 text-dark-gray px-3");
+    this._moreLessButton.style.cursor = "pointer";
+    this._moreLessButton.textContent = "Less -";
+    headerDiv.appendChild(this._moreLessButton);
+
+    const attrDiv = document.createElement("div");
+    div.appendChild(attrDiv);
 
     this._attrs = document.createElement("attribute-panel");
+    this._attrs._idWidget.style.display = "none";
+    this._attrs._createdByWidget.style.display = "none";
     this._attrs._versionWidget.style.display = "none";
-    div.appendChild(this._attrs);
+    attrDiv.appendChild(this._attrs);
 
     const browserDiv = document.createElement("div");
     browserDiv.setAttribute("class", "annotation__panel px-4 rounded-2");
@@ -27,6 +42,18 @@ export class MediaPanel extends TatorElement {
 
     this._annotationData = null;
     this._dataTypes = null;
+
+    this._moreLessButton.addEventListener("click", () => {
+      this._moreLessButton.blur();
+      if (attrDiv.style.display == "none") {
+        attrDiv.style.display = "block";
+        this._moreLessButton.textContent = "Less -";
+      }
+      else {
+        attrDiv.style.display = "none";
+        this._moreLessButton.textContent = "More +";
+      }
+    });
   }
 
   set permission(val) {
