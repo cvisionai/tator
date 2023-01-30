@@ -7,6 +7,7 @@ import os
 import math
 import requests
 from uuid import uuid4
+from time import sleep
 from typing import Generator, Tuple
 
 from django.db import transaction
@@ -74,7 +75,7 @@ class TatorBackupManager:
                         if attempt == MAX_RETRIES - 1:
                             raise RuntimeError(f"Upload of {path} failed!")
                         else:
-                            time.sleep(10 * attempt)
+                            sleep(10 * attempt)
                             logger.warning(f"Backing off for {10 * attempt} seconds...")
                 this_progress = round((chunk_count / num_chunks) * 100, 1)
                 if this_progress != last_progress:
@@ -97,7 +98,7 @@ class TatorBackupManager:
                     )
                     if attempt < MAX_RETRIES - 1:
                         logger.warning("Backing off for 5 seconds...")
-                        time.sleep(5)
+                        sleep(5)
             else:
                 logger.error(f"Upload of {path} failed!")
         return False
