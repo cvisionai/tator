@@ -17,8 +17,8 @@ export class ArrayObjectInput extends TatorElement {
     this.label.appendChild(this._name);
 
     //
-    this._inputs = []
-    this._rows = []
+    this._inputs = [];
+    this._rows = [];
 
     // Add new
     this.addNewButton = this.addNewRow({
@@ -256,6 +256,17 @@ export class ArrayObjectInput extends TatorElement {
 
   changed() {
     return this.getValue() !== this._default;
+  }
+
+  clear() {
+    if (this._rows.length > 0) {
+      for (let x of this._rows) {
+        x.remove();
+      }
+
+      this._inputs = [];
+      this._rows = [];
+    }
   }
 }
 

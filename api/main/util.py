@@ -1024,7 +1024,7 @@ def convert_old_buckets():
             elif store_type == ObjectStore.GCP:
                 success = _convert_gcp_bucket(bucket, store_type)
             elif store_type == ObjectStore.OCI:
-                logger.warning(f"OCI buckets must be converted manually, skipping '{bucket.id}'")
+                logger.warning("OCI buckets must be converted manually, skipping '{bucket.id}'")
             else:
                 logger.warning(f"Unhandled store type '{store_type}'")
 

@@ -1,12 +1,12 @@
 import { TatorElement } from "../../components/tator-element.js";
 import { store } from "../store.js";
 
-export class TypeFormContainer extends TatorElement {
+export class OrgTypeFormContainer extends TatorElement {
   constructor() {
     super();
 
     // Header: This is adds the breadcrumb and successLight-spacer to the header
-    const template = document.getElementById("typeFormContainer").content;
+    const template = document.getElementById("type-form-container").content;
     this._shadow.appendChild(template.cloneNode(true));
 
     // Main parts of page
@@ -17,12 +17,23 @@ export class TypeFormContainer extends TatorElement {
     this.idDisplay = this._shadow.getElementById("type-form-id");
     this.save = this._shadow.getElementById("type-form-save");
     this.resetLink = this._shadow.getElementById("type-form-reset");
+    this.deleteDiv = this._shadow.getElementById("type-form-delete-div");
     this.delete = this._shadow.getElementById("type-form-delete");
     this.typeFormDiv = this._shadow.getElementById("type-form-div");
-    this._attributeContainer = this._shadow.getElementById("type-form-attr-column");
     this._addLeaves = this._shadow.getElementById("type-form--add-edit-leaves");
     this._addLeavesLink = this._shadow.getElementById("type-form--add-edit-leaves_link");
     this._leavesFormHeading = this._shadow.getElementById("type-form--leaves-active");
+    this.sideCol = this._shadow.getElementById("type-form-attr-column");
+    this.sideCol.classList.add("hidden");
+
+    // Buttons below form
+    this._saveEditSection = this._shadow.getElementById("type-form--save-reset-section");
+    
+    this._customButtonSection = this._shadow.getElementById("type-form--custom-button-section");
+    this._customButton = this._shadow.getElementById("type-form--custom-button");
+    
+    this._customButtonSectionPrimary = this._shadow.getElementById("type-form--custom-button-section-primary");
+    this._customButtonPrimary = this._shadow.getElementById("type-form--custom-button-primary");
 
     // this is outside the template and references by all parts of page to sync the dimmer
     this.modal = document.createElement("modal-dialog");
@@ -34,33 +45,38 @@ export class TypeFormContainer extends TatorElement {
     store.subscribe((state) => state.selection, this._updateFormSelection.bind(this));
     store.subscribe(state => state.projectId, this.setProjectId.bind(this));
     store.subscribe(state => state.status, this.handleButtonsActive.bind(this));
-    
+
+    this.initTypeForm();
+  }
+
+  initTypeForm() {
     // Create in the inner form handles
     const formName = this.getAttribute("form");
     this._form = document.createElement(formName);
     this.typeFormDiv.appendChild(this._form);
 
     // Once we know what type, listen to changes
-    store.subscribe(state => state[this._form.typeName], this._newData.bind(this));
-    
-    const canDeleteProject = store.getState().deletePermission;
-    this.typeName = this._form.typeName;
-    this._addLeaves.hidden = !(this._typeName == "LeafType");
+    const typeName = this._form.typeName;
+    store.subscribe(state => state[typeName], this._newData.bind(this));
+    this.typeName = typeName;
 
     // Event listeners for container actions
     this.save.addEventListener("click", this._form._saveData.bind(this._form));
     this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
     this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
-    this.delete.hidden = (this._typeName === "Project" && !canDeleteProject);
   }
+
+
 
   handleButtonsActive(newStatus) {
     if (newStatus.name == "idle") {
+      this.typeFormDiv.classList.remove("form-loading-glow");
       this.save.removeAttribute("disabled");
       this.resetLink.removeAttribute("disabled");
       this.delete.removeAttribute("disabled");
     } else {
       this.save.setAttribute("disabled", "true");
+      this.typeFormDiv.classList.add("form-loading-glow");
       this.resetLink.setAttribute("disabled", "true");
       this.delete.setAttribute("disabled", "true");
     }
@@ -70,72 +86,59 @@ export class TypeFormContainer extends TatorElement {
     this.projectId = newId;
   }
 
-   /**
-   * @param {string} val
-   */
-    set typeName(val) {
-      this._typeName = val;
-      for (let span of this.typeNameSet) {
-        span.textContent = val;
-      }
+  /**
+  * @param {string} val
+  */
+  set typeName(val) {
+    this._typeName = val;
+    for (let span of this.typeNameSet) {
+      span.textContent = val;
     }
-  
-    /**
-     * @param {int} val
-     */
-    set typeId(val) {
-      this._typeId = val;
-      this.idDisplay.textContent = val;
-      if (!this._addLeaves.hidden) {
-        this._addLeavesLink.setAttribute("href", `#Leaf-${this._typeId}`)
-      }   
-    }
-  
-    /**
+  }
+
+  /**
    * @param {int} val
    */
-    set attributeTypes(val) {
-      this._attributeTypes = val;
+  set typeId(val) {
+    this._typeId = val;
+    this.idDisplay.textContent = val;
+    this.deleteDiv.hidden = (val == "New");    
+  }
 
-      if (val && val !== null) {
-        // Creates/Re-creates this.attributeSection & appends it
-        this._getAttributeSection();       
-      }
-
-    }
-
-    /**
- * @param {int} val
- */
+  /**
+   * @param {int} val
+  */
   set objectName(val) {
     this._objectName = val;
     if (this._typeId === "New") {
       this.editH1.hidden = true;
       this.newH1.hidden = false;
+      this.sideCol.hidden = true;
     } else {
       this.editH1.hidden = false;
       this.newH1.hidden = true;
-      this.objectNameDisplay.textContent = val;
+      this.objectNameDisplay.innerHTML = val;
+      this.sideCol.hidden = false;
     }
   }
 
   setUpData(data) {
+    this._data = data;
     this._form.data = data;
-    this.objectName = (this._typeName === "Membership") ? data.username : data.name;
+    let objectName = "";
 
-    // attribute section
-    if (!this._hideAttributes && typeof data.attribute_types !== "undefined") {
-      this.attributeTypes = data.attribute_types;
-    } else {
-      this.removeAttributeSection();
-    }
+    // Setup object info
+    this.objectName = data.name
   }
+
+  
 
   /**
    * Subscription callback for [type] updates
    * @param {*} newData 
    */
   _newData(newData) {
+    // console.log("newData", newData);
     // Nothing new or deleted
     if (this._typeName == store.getState().selection.typeName && this._typeId !== "New") {
       if (newData.setList.has(Number(this._typeId))) {
@@ -158,7 +161,7 @@ export class TypeFormContainer extends TatorElement {
    */
   async _updateFormSelection(newSelection, oldSelection) {
     const affectsMe = (this._typeName == newSelection.typeName || this._typeName == oldSelection.typeName);
-    
+
     if (affectsMe) {
       const newType = newSelection.typeName;
       const oldType = oldSelection.typeName;
@@ -174,15 +177,15 @@ export class TypeFormContainer extends TatorElement {
       const newId = newSelection.typeId;
       this.typeId = newId;
 
-      if (newId !== "New") {        
+      if (newId !== "New") {
         const data = await store.getState().getData(this._typeName, this._typeId);
         // console.log(`DEBUG: selection found newData for  ${this._typeName}, id: ${this._typeId}`, data);
-        
+
         if (data) {
           this.setUpData(data);
           this._form.data = data;
           return;
-        }    
+        }
       }
 
       /* Clear container in any other case */
@@ -191,39 +194,15 @@ export class TypeFormContainer extends TatorElement {
     }
   }
 
-  // Removes the attribute main form, and hides the container
-  removeAttributeSection() {
-    if (this.attributeSection) this.attributeSection.remove();
-    this._attributeContainer.hidden = true;
-  }
-
-  /**
-   * Adds an attribute section to pages based on form data
-   */
-  _getAttributeSection() {
-    // Clears
-    this.removeAttributeSection();
-
-    // Setup
-    this.attributeSection = document.createElement("attributes-main");
-    this.attributeSection.setAttribute("data-from-id", `${this._typeId}`)
-    this.attributeSection._init(this._typeName, this._form._data.id, this._form._data.name, this.projectId, this._form._data.attribute_types, this.modal);
-    
-    // Append and show
-    this._attributeContainer.appendChild(this.attributeSection);
-    this._attributeContainer.hidden = false;
-  }
-
   //
   resetToNew() {
     this._form.data = null;
     this.objectName = "";
-    this.removeAttributeSection();
   }
 }
 
 
 
-if (!customElements.get("type-form-container")) {
-  customElements.define("type-form-container", TypeFormContainer);
+if (!customElements.get("org-type-form-container")) {
+  customElements.define("org-type-form-container", OrgTypeFormContainer);
 }

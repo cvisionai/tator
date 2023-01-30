@@ -31,51 +31,6 @@ export class ToolsAppletPanel extends TatorElement {
     this._appletView.addEventListener("load", this.initApplet.bind(this));
   }
 
-  // /**
-  //  * @param {string} width - default|wide|extra-wide
-  //  */
-  // _setModalWidth(width) {
-  //   if (width == "default") {
-  //     this._div.classList.remove("modal-wide");
-  //     this._div.classList.remove("modal-extra-wide");
-  //   }
-  //   else if (width == "wide") {
-  //     this._div.classList.add("modal-wide");
-  //     this._div.classList.remove("modal-extra-wide");
-
-  //   }
-  //   else if (width == "extra-wide") {
-  //     this._div.classList.remove("modal-wide");
-  //     this._div.classList.add("modal-extra-wide");
-  //   }
-  // }
-
-  // /**
-  //  * @param {string} title - Title to display in dialog
-  //  */
-  // _setModalTitle(title) {
-  //   this._title.nodeValue = title;
-  // }
-
-  /**
-   * @param {string} msg - Message to display using the window utilities
-   */
-  _displayProgressMessage(msg) {
-    Utilities.showSuccessIcon(msg, "#00000000");
-  }
-  _displayErrorMessage(msg) {
-    Utilities.warningAlert(msg, "#ff3e1d");
-  }
-  _displaySuccessMessage(msg) {
-    Utilities.showSuccessIcon(msg);
-  }
-
-  /**
-   * @param {string} text - Text of accept button
-   */
-  _setAcceptButtonText(text) {
-    this._acceptBtn.textContent = text;
-  }
 
   /**
    * Expected to be done at initialization
@@ -113,6 +68,11 @@ export class ToolsAppletPanel extends TatorElement {
 
   togglePanel() {
     this._panel.hidden = !this._panel.hidden;
+
+    if (this._panel.hidden && this._page?._sidebar?._edit) {
+      this._page._sidebar._edit.click();
+    }
+
   }
 
   /**
@@ -146,52 +106,6 @@ export class ToolsAppletPanel extends TatorElement {
         console.warn("Event icon ready heard, but not enough data to set icon.")
       }
     });
-
-    // this._appletElement.addEventListener("refreshDataType", (evt) => {
-    //   // Get the key expected by the annotation data interface (e.g. box_1)
-    //   // and use that to get the data type object
-    //   const dataType = evt.detail.dataType;
-    //   const dataTypeKey = `${dataType.dtype}_${dataType.id}`;
-    //   const typeToUpdate = this._dataInterface._dataTypes[dataTypeKey];
-    //   this._dataInterface.updateType(typeToUpdate);
-    // });
-
-    // this._appletElement.addEventListener("updateAcceptText", (evt) => {
-    //   this._setAcceptButtonText(evt.detail.text);
-    // });
-
-    // this._appletElement.addEventListener("displayAcceptButton", () => {
-    //   this._acceptBtn.style.display = "flex";
-    // });
-
-    // this._appletElement.addEventListener("hideAcceptButton", () => {
-    //   this._acceptBtn.style.display = "none";
-    // });
-
-    // this._appletElement.addEventListener("updateHeight", (evt) => {
-    //   this._appletView.style.height = evt.detail.height;
-    // });
-
-    // // Listen for URL param events
-    // console.log(window.history.state);
-    // window.document.addEventListener('bookmark-update', handleEvent, false)
-    // function handleEvent(e) {
-    //   let params = ""; // e.detail { paramsList: [ { name: "foo", value: "bar"} ] }
-    //   for (let pair of e.detail.paramsList) {
-    //     params += `${pair.name}=${pair.value}&`
-    //   }
-
-    //   window.history.pushState(e.detail.state, '', `${window.location.origin}${window.location.pathname}?${params}`);
-    // }
-
-    // window.addEventListener('hashchange', this.hashHandler.bind(this), false);
-    
-
-    // Set the applet data
-    // this._appletElement.updateData(this._appletData);
-
-    // // Update the UI
-    // this._appletElement.updateUI();
 
     // RUN THIS LAST! listeners need to be in place above first
     this._appletElement.init({ canvas: this._canvas, canvasElement: this._canvasElement, data: this._page._data });

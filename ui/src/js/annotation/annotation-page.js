@@ -792,6 +792,7 @@ export class AnnotationPage extends TatorPage {
 
     this._player.addEventListener("setTimelineDisplayMode", (evt) => {
       this._settings.setAttribute("timeline-display", evt.detail.mode);
+      this._updateURL();
     });
 
     this._player.addEventListener("setPlayQuality", (evt) => {
@@ -842,6 +843,15 @@ export class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+    const userPromise = fetchRetry(`/rest/User/GetCurrent`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
       return fetchRetry(url, {
@@ -860,16 +870,18 @@ export class AnnotationPage extends TatorPage {
       versionPromise,
       favoritePromise,
       membershipPromise,
+      userPromise,
     ])
     .then(([localizationResponse, stateResponse, versionResponse, favoriteResponse,
-            membershipResponse]) => {
+            membershipResponse, userResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
       const versionData = versionResponse.json();
       const favoriteData = favoriteResponse.json();
       const membershipData = membershipResponse.json();
-      Promise.all([localizationData, stateData, versionData, favoriteData, membershipData])
-      .then(([localizationTypes, stateTypes, versions, favorites, memberships]) => {
+      const userData = userResponse.json();
+      Promise.all([localizationData, stateData, versionData, favoriteData, membershipData, userData])
+      .then(([localizationTypes, stateTypes, versions, favorites, memberships, user]) => {
         // Only display positive version numbers.
         versions = versions.filter(version => version.number >= 0);
 
@@ -879,6 +891,7 @@ export class AnnotationPage extends TatorPage {
 
         // If there is a default version pick that one, otherwise use the first one.
         this._version == null;
+        this.setAttribute("user-id", user.id);
         let default_version = versions[0].id;
         for (const membership of memberships) {
           if (membership.user == this.getAttribute("user-id")) {
@@ -1035,13 +1048,28 @@ export class AnnotationPage extends TatorPage {
         canvas.addEventListener("frameChange", evt => {
           this._browser.frameChange(evt.detail.frame);
           this._settings.setAttribute("frame", evt.detail.frame);
+
+          // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
         });
         canvas.addEventListener("select", evt => {
           this._browser.selectEntity(evt.detail);
           this._settings.setAttribute("entity-id", evt.detail.id);
           this._settings.setAttribute("entity-type", evt.detail.type);
           this._settings.setAttribute("type-id", evt.detail.type);
+
+          //Update the URL
+          this._updateURL();
         });
+
+        canvas.addEventListener("unselect", () => {
+          this._settings.removeAttribute("entity-id");
+          this._settings.removeAttribute("entity-type");
+          this._settings.removeAttribute("type-id");
+
+          //Update the URL
+          this._updateURL();
+        });
+
         this._undo.addEventListener("update", evt => {
           // Force selecting this new entity in the browser if a new object was created
           // when the data is retrieved (ie freshData event)
@@ -1058,6 +1086,11 @@ export class AnnotationPage extends TatorPage {
         });
         this._browser.addEventListener("select", evt => {
           if (evt.detail.byUser) {
+            // Remove attribute here, will be reset by canvas, if appropriate.
+            this._settings.removeAttribute("entity-id");
+            this._settings.removeAttribute("entity-type");
+            this._settings.removeAttribute("type-id");
+
             if (evt.detail.dataType.isLocalization) {
               canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
             }
@@ -1081,6 +1114,8 @@ export class AnnotationPage extends TatorPage {
                 this._player.goToFrame(evt.detail.data.frame);
               }
             }
+
+            this._updateURL();
           }
           this._settings.setAttribute("entity-id", evt.detail.data.id);
           this._settings.setAttribute("entity-type", evt.detail.data.type);
@@ -1181,6 +1216,7 @@ export class AnnotationPage extends TatorPage {
             save.addEventListener("save", () => {
               this._closeModal(save);
             });
+
           }
         }
 
@@ -1320,6 +1356,15 @@ export class AnnotationPage extends TatorPage {
           // This puts the tools html into a panel next to the sidebar
           const toolAppletPanel = document.createElement("tools-applet-panel");
           toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
+        }
+
+        if (applet.categories.includes("annotator-save-tools") && (this._saves && Object.entries(this._saves).length > 0)) {
+          for (let [type, saveDialog] of Object.entries(this._saves)) {
+            if (type !== "modifyTrack") {
+              const toolAppletSavePanel = document.createElement("tools-applet-save-panel");
+              toolAppletSavePanel.saveApplet(applet, this, canvas, saveDialog, type);
+            }
+          }
         }
 
         this._appletMap[applet.name] = applet;
@@ -1684,6 +1729,11 @@ export class AnnotationPage extends TatorPage {
       this._menuAppletDialog.setApplet(evt.detail.appletName, data);
     });
 
+    // Handle replacing the URL when the canvas emits a signal
+    canvas.addEventListener("updateURL", evt => {
+      this._updateURL();
+    });
+
     this._menuAppletDialog.addEventListener("appletReady", () => {
       this._menuAppletDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
@@ -1776,6 +1826,29 @@ export class AnnotationPage extends TatorPage {
     document.body.classList.add("shortcuts-disabled");
   }
 
+  _updateURL()
+  {
+    let existingSearchParams = new URLSearchParams(window.location.search);
+    if (this._canvas._rate) // annotation-player or annotation-image
+    {
+      existingSearchParams.set("playbackRate", this._canvas._rate);
+    }
+    var newSearchParams = this._settings._queryParams(existingSearchParams);
+    const path = document.location.pathname;
+    const searchArgs = newSearchParams.toString();
+    var newUrl = path + "?" + searchArgs;
+    if (this._annotationPageHistoryState)
+    {
+      window.history.replaceState(this._annotationPageHistoryState, "", newUrl);
+    }
+    else
+    {
+      this._annotationPageHistoryState = {'state':1};
+      window.history.pushState(this._annotationPageHistoryState, "", newUrl);
+    }
+
+    
+  }
   _getSave(objDescription) {
     let save;
     if (["poly", "box", "line", "dot"].includes(objDescription.dtype)) {

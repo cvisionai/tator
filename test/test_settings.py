@@ -316,24 +316,24 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     page.goto(f"/{organization_id}/organization-settings", wait_until='networkidle')
 
     # Creating cluster
-    print("Testing job cluster create...")
+    print("Creating job cluster for algorithm upload...")
     url = base_url + "/rest/JobClusters/" + str(organization_id)
-    page.click('.toggle-subitems-JobCluster')
-    page.click('.heading-for-JobCluster .Nav-action')
-    page.fill('div[id="itemDivId-JobCluster-New"] text-input[name="Name"] input', 'Test Cluster')
-    page.fill('div[id="itemDivId-JobCluster-New"] text-input[name="Host"] input', 'host')
-    page.fill('div[id="itemDivId-JobCluster-New"] text-input[name="Port"] input', '1236')
-    page.fill('div[id="itemDivId-JobCluster-New"] text-input[name="Name"] input', 'TokenTest')
-    page.fill('div[id="itemDivId-JobCluster-New"] text-area[name="Cert"] textarea', 'testing')
-    with page.expect_response(url) as response_info:
-        page.click('div[id="itemDivId-JobCluster-New"] button[value="Save"]')
-        page.wait_for_selector(f'text="Successfully registered job cluster."')
-        # page.click('modal-dialog modal-close .modal__close')
+    page.click('#nav-for-JobCluster')
+    page.click('#nav-for-JobCluster #sub-nav--plus-link')
+    page.fill('org-type-form-container[form="job-cluster-edit"] text-input[name="Name"] input', 'Test Cluster')
+    page.fill('org-type-form-container[form="job-cluster-edit"] text-input[name="Host"] input', 'host')
+    page.fill('org-type-form-container[form="job-cluster-edit"] text-input[name="Port"] input', '1236')
+    page.fill('org-type-form-container[form="job-cluster-edit"] text-input[name="Name"] input', 'TokenTest')
+    page.fill('org-type-form-container[form="job-cluster-edit"] text-area[name="Cert"] textarea', 'testing')
+
+    with page.expect_response(lambda response: response.url==url) as response_info:
+        page.click('org-type-form-container[form="job-cluster-edit"] input[value="Save"]')
+    page.wait_for_selector(f'text="Successfully registered job cluster."')
+
     response = response_info.value
     respObject = response.json()
-    print(respObject)
     newClusterId = respObject["id"]
-    print(f"Cluster id {newClusterId} created!")
+    print(f"Cluster {newClusterId} created!")
 
     # Back to settings
     url = base_url + "/rest/Project/" + str(project)

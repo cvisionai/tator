@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
 
@@ -74,6 +74,7 @@ export class AppletEdit extends TypeFormTemplate {
       };
 
       // Categories
+      this._categoriesList.clear();
       this._categoriesList.setValue(this._data.categories);
       this._categoriesList.default = this._data.categories;
    }

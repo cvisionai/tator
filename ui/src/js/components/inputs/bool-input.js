@@ -122,6 +122,17 @@ export class BoolInput extends TatorElement {
   }
 
   setValue(val) {
+    if (typeof val == "string") {
+      console.warn("Setting bool-input from string value=" + val);
+      if (val == "true") {
+        val = true;
+      } else if (val == "false") {
+        val = false;
+      } else {
+        // which returns true for any string in JS
+        val = Boolean(val); 
+      }
+    }
     if (val) {
       this._on.checked = true;
       this._off.checked = false;

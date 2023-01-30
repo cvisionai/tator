@@ -195,7 +195,7 @@ export class EnumInput extends TatorElement {
             idx++;
           }
         }
-      } else {
+      } else {        
         for (const option of this._select.options) {
           if (option.value == val) {
             this._select.selectedIndex = idx;

@@ -240,13 +240,18 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ projectId: id });
       set({ organizationId: object.data.organization });
       set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
-      
+
+
+
       set({
          status: {
             name: "idle",
             msg: ""
          }
       });
+
+      // As soon as we have the org ID
+      await store.getState().setJobClusterPermissions();
 
    },
 
@@ -478,8 +483,9 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
 
    for (let type of Object.keys(attributeDataByType)) {
       const data = await store.getState().initType(type);
-      const list = Array.isArray(data) ? data :  data.map.entries();
+      const list = Array.isArray(data) ? data : data.map.values();
       for (let entity of list) {
+         console.log(` attributeDataByType[${type}][${entity.name}] = entity.attribute_types`, entity.attribute_types);
          attributeDataByType[type][entity.name] = entity.attribute_types;
       }
    }
