@@ -107,6 +107,10 @@ class TatorBackupManager:
         num_chunks = math.ceil(size / cls.chunk_size)
         urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
 
+        if not urls:
+            logger.warning(f"Could not get upload urls for key '{path}'")
+            return False
+
         if num_chunks > 1:
             parts = cls._multipart_upload(path, urls, upload_id, url)
             return store.complete_multipart_upload(path, parts, upload_id)
