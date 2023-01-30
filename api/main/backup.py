@@ -7,6 +7,7 @@ import os
 import math
 import requests
 from uuid import uuid4
+from time import sleep
 from typing import Generator, Tuple
 
 from django.db import transaction
@@ -36,7 +37,7 @@ class TatorBackupManager:
         return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
 
     @classmethod
-    def _multipart_upload(cls, upload_urls, upload_id, source_url):
+    def _multipart_upload(cls, path, upload_urls, upload_id, source_url):
         num_chunks = len(upload_urls)
         parts = []
         last_progress = 0
@@ -74,7 +75,7 @@ class TatorBackupManager:
                         if attempt == MAX_RETRIES - 1:
                             raise RuntimeError(f"Upload of {path} failed!")
                         else:
-                            time.sleep(10 * attempt)
+                            sleep(10 * attempt)
                             logger.warning(f"Backing off for {10 * attempt} seconds...")
                 this_progress = round((chunk_count / num_chunks) * 100, 1)
                 if this_progress != last_progress:
@@ -83,7 +84,7 @@ class TatorBackupManager:
         return parts
 
     @staticmethod
-    def _single_upload(upload_url, source_url):
+    def _single_upload(path, upload_url, source_url):
         with requests.get(source_url, stream=True).raw as f:
             data = f.read()
             for attempt in range(MAX_RETRIES):
@@ -97,7 +98,7 @@ class TatorBackupManager:
                     )
                     if attempt < MAX_RETRIES - 1:
                         logger.warning("Backing off for 5 seconds...")
-                        time.sleep(5)
+                        sleep(5)
             else:
                 logger.error(f"Upload of {path} failed!")
         return False
@@ -107,10 +108,14 @@ class TatorBackupManager:
         num_chunks = math.ceil(size / cls.chunk_size)
         urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
 
+        if not urls:
+            logger.warning(f"Could not get upload urls for key '{path}'")
+            return False
+
         if num_chunks > 1:
-            parts = cls._multipart_upload(urls, upload_id, url)
+            parts = cls._multipart_upload(path, urls, upload_id, url)
             return store.complete_multipart_upload(path, parts, upload_id)
-        return cls._single_upload(urls[0], url)
+        return cls._single_upload(path, urls[0], url)
 
     @staticmethod
     def get_backup_store(store_info):
@@ -191,6 +196,7 @@ class TatorBackupManager:
         """
         successful_backups = set()
         project_store_map = {}
+        Resource = type(resource_qs.first())
         for resource in resource_qs.iterator():
             success = True
             path = resource.path
@@ -237,12 +243,18 @@ class TatorBackupManager:
             if success:
                 successful_backups.add(resource.id)
 
+            if len(successful_backups) > 500:
+                with transaction.atomic():
+                    resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                    resource_qs.update(backed_up=True)
+                successful_backups.clear()
+
             yield success, resource
 
-        with transaction.atomic():
-            Resource = type(resource_qs.first())
-            resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
-            resource_qs.update(backed_up=True)
+        if successful_backups:
+            with transaction.atomic():
+                resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                resource_qs.update(backed_up=True)
 
     @classmethod
     def request_restore_resource(cls, path, project, min_exp_days) -> bool:
