@@ -291,7 +291,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "x") {
         if (values.x != undefined) {
           let val = `${values.x.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.x*this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
@@ -300,7 +300,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "y") {
         if (values.y != undefined) {
           let val = `${values.y.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.y*this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
@@ -309,7 +309,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "u") {
         if (values.u != undefined) {
           let val = `${values.u.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.u*this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
@@ -318,7 +318,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "v") {
         if (values.v != undefined) {
           let val = `${values.v.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.v*this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
@@ -331,7 +331,7 @@ export class AttributePanel extends TatorElement {
         );
         let val = `${lineL2norm.toFixed(4)}`;
 
-        if (this._associatedMedia) {
+        if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
           let lineL2norm_pixels = Math.sqrt(
             Math.pow((values.x - (values.x + values.u)) * this._associatedMedia.width, 2) +
             Math.pow((values.y - (values.y + values.v)) * this._associatedMedia.height, 2)
@@ -343,7 +343,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "Box Width") {
         if (values.width != undefined) {
           let val = `${values.width.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.width*this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
@@ -352,7 +352,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "Box Height") {
         if (values.height != undefined) {
           let val = `${values.height.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.height*this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
