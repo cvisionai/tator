@@ -9,7 +9,7 @@ RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sour
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \
         python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
-        ffmpeg wget xmlsec1 && rm -rf /var/lib/apt/lists
+        ffmpeg wget xmlsec1 python3-magic && rm -rf /var/lib/apt/lists
 
 # Install fork of openapi-core that works in DRF views
 WORKDIR /working
@@ -37,7 +37,7 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
         kubernetes==21.7.0 minio==7.1.5 okta-jwt-verifier==0.2.3 jsonschema==4.9.1 \
         rawpy==0.17.2 grafana-django-saml2-auth==3.9.0 pgvector==0.1.6 rq==1.11.1 \
-        pytest-django==4.5.2 pytest-xdist==3.1.0 oci==2.89.0 python-magic==0.4.27
+        pytest-django==4.5.2 pytest-xdist==3.1.0 oci==2.89.0
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
