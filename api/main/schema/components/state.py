@@ -134,6 +134,22 @@ state_update = {
             'type': 'array',
             'items': {'type': 'integer'},
         },
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
     },
 }
 
@@ -175,7 +191,7 @@ state_id_query = {
             'type': 'array',
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
-        'object_search' : {'type': 'object'},
+        'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     }
 }
 
@@ -196,6 +212,22 @@ state_bulk_update = {
             'type': 'string'
         },
         **state_id_query['properties'],
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
     },
 }
 

@@ -192,6 +192,8 @@ class LeafListAPI(BaseListView):
         qs = get_leaf_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             new_attrs = validate_attributes(params, qs[0])
             bulk_update_and_log_changes(
                 qs, params["project"], self.request.user, new_attributes=new_attrs

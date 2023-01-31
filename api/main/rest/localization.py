@@ -227,6 +227,8 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             # Get the current representation of the object for comparison
             obj = qs.first()
             first_id = obj.id

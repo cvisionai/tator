@@ -495,15 +495,21 @@ class MediaListAPI(BaseListView):
             Only attributes are eligible for bulk patch operations.
         """
         desired_archive_state = params.pop("archive_state", None)
-        if desired_archive_state is None and params.get("attributes") is None and params.get('user_elemental_id') == None:
-            raise ValueError("Must specify 'attributes', 'user_elemental_id', and/or property to patch, but none found")
+        if desired_archive_state is None and \
+           params.get("attributes") is None and \
+           params.get('user_elemental_id') == None and \
+           params.get('reset_attributes') is None and \
+           params.get('null_attributes') is None:
+            raise ValueError("Must specify 'attributes', 'reset_attributes', 'null_attributes', 'user_elemental_id',"
+                             " and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
 
         count = 0
         if qs.exists():
             ts = TatorSearch()
             ids_to_update = list(qs.values_list("pk", flat=True).distinct())
-
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             # Get the current representation of the object for comparison
             obj = qs.first()
             new_attrs = validate_attributes(params, obj)
@@ -622,8 +628,9 @@ class MediaDetailAPI(BaseDetailView):
             computed_author = compute_user(media.project.pk, self.request.user, params.get('user_elemental_id', None))
             if params.get('user_elemental_id', None):
                 qs.update(created_by=computed_author)
-            if 'attributes' in params:
+            if 'attributes' in params or 'null_attributes' in params or 'reset_attributes' in params:
                 new_attrs = validate_attributes(params, media)
+                logger.info(f"new_attrs={new_attrs}")
                 bulk_patch_attributes(new_attrs, qs)
 
             if 'name' in params:

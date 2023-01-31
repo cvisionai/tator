@@ -70,7 +70,7 @@ attribute_operation_schema = {
   {'method': 'AND', 'operations': [{'method':'OR', 'operations': [{'attribute': 'name', 'operation': 'icontains', 'value': 'Fred' },{'attribute': 'name', 'operation': 'icontains', 'value': 'Robert' }]}, {'attribute': 'age', 'operation': 'gte', 'value': 30 }]}
   ```
    """,
-    'oneOf': [
+    'anyOf': [
         {'$ref': '#/components/schemas/AttributeCombinatorSpec'},
         {'$ref': '#/components/schemas/AttributeFilterSpec'},
     ],
