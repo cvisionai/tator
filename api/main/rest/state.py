@@ -326,6 +326,8 @@ class StateListAPI(BaseListView):
         patched_version = params.pop("new_version", None)
         count = qs.count()
         if count > 0:
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
             if params.get('user_elemental_id', None):

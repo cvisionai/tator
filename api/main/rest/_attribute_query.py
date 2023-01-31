@@ -241,7 +241,12 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         for kv in attribute_null:
             key, value = kv.split(KV_SEPARATOR)
             value = _convert_boolean(value)
-            qs = qs.filter(**{f"attributes__{key}__isnull": value})
+            if value:
+                qs = qs.filter(Q(**{f"attributes__contains": {key:None}}) | ~Q(**{f"attributes__has_key": key}))
+            else:
+                # Returns true if the attributes both have a key and it is not set to null
+                qs = qs.filter(**{f"attributes__has_key": key})
+                qs = qs.filter(~Q(**{f"attributes__contains": {key:None}}))
             found_it = True
 
     for query in float_queries:
