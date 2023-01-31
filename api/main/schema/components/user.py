@@ -78,7 +78,10 @@ user_update = {
         'new_avatar':
         {
             'type': 'string',
-            'description': 'b64 encoded image to use for the avatar of the user'
+            'description': 'b64 encoded image to use for the avatar of the user.'
+                           'This file is verified to meet system constraints:'
+                           '    - Less than 1Mb '
+                           '    - a mimetype of image/png or image/jpg'
         },
         'clear_avatar':
         {

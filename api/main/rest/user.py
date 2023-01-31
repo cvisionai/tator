@@ -1,4 +1,7 @@
 from uuid import uuid1
+import base64
+import magic
+import mimetypes
 
 from django.db import transaction
 from django.conf import settings
@@ -14,11 +17,44 @@ from ..schema import UserExistsSchema
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema
 from ..schema import CurrentUserSchema
+from ..store import get_tator_store
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import UserPermission
 from ._permissions import UserListPermission
+
+MAX_PROFILE_IMAGE_SIZE = 1*1024*1024
+ACCEPTABLE_PROFILE_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png']
+
+def handle_avatar_management(user, params):
+    new_avatar = params.get('new_avatar', None)
+    clear_avatar = params.get('clear_avatar', 0)
+    if new_avatar == None and clear_avatar == 0:
+        return
+
+    generic_store = get_tator_store()
+    existing_avatar = user.profile.get('avatar')
+    # Handle deleting an avatar
+    if clear_avatar and existing_avatar:
+        generic_store.delete_object(existing_avatar)
+        del user.profile['avatar']
+        user.save()
+
+    if new_avatar:
+        if existing_avatar:
+            generic_store.delete_object(existing_avatar)
+        img_data = base64.b64decode(new_avatar)
+        if len(img_data) > MAX_PROFILE_IMAGE_SIZE:
+            raise ValueError(f"Supplied profile image is too large {len(img_data)} > {MAX_PROFILE_IMAGE_SIZE}")
+        mime_type = magic.from_buffer(img_data, mime=True)
+        if not mime_type in ACCEPTABLE_PROFILE_IMAGE_MIME_TYPES:
+            raise ValueError(f'Supplied image is not an acceptable mime format {mime_type}')
+        file_extension = mimetypes.guess_extension(mime_type)
+        avatar_keypath = f"user_data/{user.pk}/avatar{file_extension}"
+        generic_store.put_object(avatar_keypath, img_data)
+        user.profile['avatar'] = avatar_keypath
+        user.save()
 
 class UserExistsAPI(BaseDetailView):
     """ Determine whether user exists.
@@ -121,6 +157,9 @@ class UserListAPI(BaseListView):
                 Affiliation.objects.create(organization=invite.organization,
                                            permission=invite.permission,
                                            user=user)
+
+        handle_avatar_management(user, params)
+
         return {'message': f"User {username} created!",
                 'id': user.id}
 
@@ -164,6 +203,8 @@ class UserDetailAPI(BaseDetailView):
                 user.set_password(params['password'])
                 user.failed_login_count = 0
         user.save()
+
+        handle_avatar_management(user, params)
         return {'message': f'Updated user {params["id"]} successfully!'}
 
 class CurrentUserAPI(BaseDetailView):
