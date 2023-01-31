@@ -177,7 +177,7 @@ export class FramePanel extends TatorElement {
         break;
       //TODO: Implement other interpolation methods
     }
-    return {attributes: attrs, id: id, version: version,created_by:created_by};
+    return data[beforeIdx];
   }
 
   getEntityCount() {

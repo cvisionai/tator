@@ -1,6 +1,8 @@
 import { TatorElement } from "../components/tator-element.js";
 import { getCookie } from "../util/get-cookie.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { frameToTime } from "./annotation-common.js";
+import { TimeStore} from "./time-store.js"
 
 export class AttributePanel extends TatorElement {
   constructor() {
@@ -8,22 +10,41 @@ export class AttributePanel extends TatorElement {
 
     this._widgets = [];
 
-    this._div = document.createElement("div");
-    this._div.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
-    this._shadow.appendChild(this._div);
+    this._topDiv = document.createElement("div");
+    this._topDiv.setAttribute("class", "annotation__panel-group pt-2 text-gray f2");
+    this._shadow.appendChild(this._topDiv);
+
+    this._userDiv = document.createElement("div");
+    this._userDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    this._shadow.appendChild(this._userDiv);
     this._emitChanges=true;
 
     this._idWidget = document.createElement("text-input");
     this._idWidget.permission = "View Only";
     this._idWidget.setAttribute("name", "ID");
-    this._div.appendChild(this._idWidget);
+    this._topDiv.appendChild(this._idWidget);
     this._widgets.push(this._idWidget);
 
-    this._createdByWidget = document.createElement("text-input");
-    this._createdByWidget.permission = "View Only";
-    this._createdByWidget.setAttribute("name", "Created By");
-    this._div.appendChild(this._createdByWidget);
-    this._widgets.push(this._createdByWidget);
+    this._frameWidget = document.createElement("text-input");
+    this._frameWidget.permission = "View Only";
+    this._frameWidget.setAttribute("name", "Frame");
+    this._topDiv.appendChild(this._frameWidget);
+    this._widgets.push(this._frameWidget);
+
+    this._versionWidget = document.createElement("text-input");
+    this._versionWidget.setAttribute("name", "Version");
+    this._versionWidget.permission = "View Only";
+    this._topDiv.appendChild(this._versionWidget);
+    this._widgets.push(this._versionWidget);
+
+    this._builtInAttrLabel = document.createElement("div");
+    this._builtInAttrLabel.setAttribute("class", "f2 text-gray clickable pt-2 pb-1");
+    this._builtInAttrLabel.textContent = "Built-in Attributes";
+    this._topDiv.appendChild(this._builtInAttrLabel);
+
+    this._builtInAttrsDiv = document.createElement("div");
+    this._builtInAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
+    this._topDiv.appendChild(this._builtInAttrsDiv);
 
     this._parentAttrGroupDiv = document.createElement("div");
     this._parentAttrGroupDiv.setAttribute("class", "d-flex flex-column px-4 mb-2");
@@ -43,26 +64,6 @@ export class AttributePanel extends TatorElement {
     this._innerDiv.appendChild(this._innerDiv2);
 
     this._attrColumns = 1;
-    this._versionWidget = document.createElement("text-input");
-    this._versionWidget.setAttribute("name", "Version");
-    this._versionWidget.permission = "View Only";
-    this._div.appendChild(this._versionWidget);
-    this._widgets.push(this._versionWidget);
-
-    this._builtInAttrLabel = document.createElement("div");
-    this._builtInAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
-    this._builtInAttrLabel.textContent = "Built-in Attributes";
-    this._shadow.appendChild(this._builtInAttrLabel);
-
-    this._builtInAttrsDiv = document.createElement("div");
-    this._builtInAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
-    this._shadow.appendChild(this._builtInAttrsDiv);
-
-    this._builtInAttrLabel.appendChild(this._chevron());
-    this._builtInAttrLabel.addEventListener("click", evt => {
-      this._toggleAttributes(this._builtInAttrsDiv);
-      this._toggleChevron(evt);
-    });
 
     this._hiddenAttrLabel = document.createElement("div");
     this._hiddenAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
@@ -72,6 +73,12 @@ export class AttributePanel extends TatorElement {
     this._hiddenAttrsDiv = document.createElement("div");
     this._hiddenAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
     this._shadow.appendChild(this._hiddenAttrsDiv);
+
+    this._builtInAttrLabel.appendChild(this._chevron());
+    this._builtInAttrLabel.addEventListener("click", evt => {
+      this._toggleAttributes(this._builtInAttrsDiv);
+      this._toggleChevron(evt);
+    });
 
     this._hiddenAttrLabel.appendChild(this._chevron());
     this._hiddenAttrLabel.addEventListener("click", evt => {
@@ -87,6 +94,7 @@ export class AttributePanel extends TatorElement {
     // #TODO refactor this to tator-data
     this._userList = [];
     this._versionList = [];
+    this._timeStore = null;
   }
 
   static get observedAttributes() {
@@ -121,7 +129,8 @@ export class AttributePanel extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "in-entity-browser":
-        this._div.classList.add("px-4");
+        this._userDiv.classList.add("px-4");
+        this._topDiv.classList.add("px-4");
     }
   }
 
@@ -137,7 +146,7 @@ export class AttributePanel extends TatorElement {
     this._permission = val;
     for (const widget of this._widgets) {
       // Specific attribute fields in this panel are always disabled
-      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By" && widget.getAttribute("name") != "Version") {
+      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Frame" && widget.getAttribute("name") != "Version") {
         // Widget may have been marked as disabled, and its permission have already been
         // set appropriately.
         if (!widget.disabled) {
@@ -150,9 +159,23 @@ export class AttributePanel extends TatorElement {
   /**
    * @param {Tator.Media} media - Media associated with localization. Optional and only useful
    *                              with the built in attributes.
+   *
+   * @param {Tator.MediaType} mediaType - Media type associated with media param
+   *
+   * Execute this prior to setting the dataType of this attribute panel. This will ensure
+   * that the widgets that utilize this are created.
    */
-  set associatedMedia(media) {
+  setAssociatedMedia(media, mediaType) {
+
     this._associatedMedia = media;
+    this._associatedMediaType = mediaType;
+
+    if (mediaType.dtype == "video") {
+      this._timeStore = new TimeStore(this._associatedMedia, this._associatedMediaType);
+    }
+    else if (mediaType.dtype == "image") {
+      this._frameWidget.style.display = "none";
+    }
   }
 
   /**
@@ -163,12 +186,7 @@ export class AttributePanel extends TatorElement {
     var widget;
 
     widget = document.createElement("text-input");
-    widget.setAttribute("name", "Frame");
-    widget.permission = "View Only";
-    this._builtInAttrsDiv.appendChild(widget);
-
-    widget = document.createElement("text-input");
-    widget.setAttribute("name", "Type");
+    widget.setAttribute("name", "Created By");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
 
@@ -186,18 +204,58 @@ export class AttributePanel extends TatorElement {
     widget.setAttribute("name", "Modified Datetime");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
+
+    if (this._timeStore) {
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "Video Time");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      if (this._timeStore.utcEnabled()) {
+        widget = document.createElement("text-input");
+        widget.setAttribute("name", "UTC Time");
+        widget.permission = "View Only";
+        this._builtInAttrsDiv.appendChild(widget);
+      }
+    }
   }
 
+  /**
+   * @precondition frameWidget must have been set
+   * @precondition timeStore must have been set for relative time / UTC time to pop up
+   * @precondtion associatedMedia must have been set to apply pixel information
+   */
   _setBuiltInAttributes(values) {
+
+    var frame = parseInt(this._frameWidget.getValue());
 
     for (const widget of this._builtInAttrsDiv.children) {
       const name = widget.getAttribute("name");
 
-      if (name == "Frame") {
-        widget.setValue(values.frame);
-      }
-      else if (name == "Type") {
-        widget.setValue(values.meta);
+      if (name == "Created By") {
+
+        let userKey = "created_by";
+        if (values.created_by == null) {
+          userKey = "user";
+        }
+
+        let username = null;
+        let foundUser = false;
+        for (let index = 0; index < this._userList.length; index++) {
+          if (this._userList[index].result.id == values[userKey]) {
+            foundUser = true;
+            username = this._userList[index].result.username;
+            break;
+          }
+        }
+
+        if (!foundUser) {
+          this._getUsername(values[userKey], widget);
+        }
+        else {
+          widget.setValue(username);
+        }
+
       }
       else if (name == "Created Datetime") {
         widget.setValue(values.created_datetime);
@@ -223,6 +281,12 @@ export class AttributePanel extends TatorElement {
       }
       else if (name == "Modified Datetime") {
         widget.setValue(values.modified_datetime);
+      }
+      else if (name == "Video Time") {
+        widget.setValue(this._timeStore.getRelativeTimeFromFrame(frame));
+      }
+      else if (name == "UTC Time") {
+        widget.setValue(this._timeStore.getAbsoluteTimeFromFrame(frame));
       }
       else if (name == "x") {
         if (values.x != undefined) {
@@ -260,7 +324,23 @@ export class AttributePanel extends TatorElement {
           widget.setValue(val);
         }
       }
-      else if (name == "width") {
+      else if (name == "Line Length") {
+        let lineL2norm = Math.sqrt(
+          Math.pow((values.x - (values.x + values.u)) * 1, 2) +
+          Math.pow((values.y - (values.y + values.v)) * 1, 2)
+        );
+        let val = `${lineL2norm.toFixed(4)}`;
+
+        if (this._associatedMedia) {
+          let lineL2norm_pixels = Math.sqrt(
+            Math.pow((values.x - (values.x + values.u)) * this._associatedMedia.width, 2) +
+            Math.pow((values.y - (values.y + values.v)) * this._associatedMedia.height, 2)
+          );
+          val += ` | ${lineL2norm_pixels.toFixed(4)} px`;
+        }
+        widget.setValue(val);
+      }
+      else if (name == "Box Width") {
         if (values.width != undefined) {
           let val = `${values.width.toFixed(4)}`;
           if (this._associatedMedia) {
@@ -269,7 +349,7 @@ export class AttributePanel extends TatorElement {
           widget.setValue(val);
         }
       }
-      else if (name == "height") {
+      else if (name == "Box Height") {
         if (values.height != undefined) {
           let val = `${values.height.toFixed(4)}`;
           if (this._associatedMedia) {
@@ -317,12 +397,8 @@ export class AttributePanel extends TatorElement {
     this._widgets = [];
 
     // Remove existing attribute widgets.
-    while (true) {
-      const child = this._div.lastChild;
-      if (child === this._idWidget || child === this._createdByWidget || child == this._versionWidget) {
-        break;
-      }
-      this._div.removeChild(child);
+    while (this._userDiv.firstChild) {
+      this._userDiv.removeChild(this._userDiv.firstChild);
     }
 
     this._removeBuiltInAttributes();
@@ -331,7 +407,7 @@ export class AttributePanel extends TatorElement {
     if (val.isTrack) {
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
-      this._shadow.insertBefore(div, this._div);
+      this._shadow.insertBefore(div, this._userDiv);
       this._trackDiv = div;
 
       var sliderDiv = document.createElement("div");
@@ -395,7 +471,7 @@ export class AttributePanel extends TatorElement {
     else {
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
-      this._shadow.insertBefore(div, this._div);
+      this._shadow.insertBefore(div, this._userDiv);
 
       var goToTrackDiv = document.createElement("div");
       goToTrackDiv.setAttribute("class", "d-flex flex-items-center py-1");
@@ -434,12 +510,12 @@ export class AttributePanel extends TatorElement {
       this._builtInAttrsDiv.appendChild(widget);
 
       widget = document.createElement("text-input");
-      widget.setAttribute("name", "width");
+      widget.setAttribute("name", "Box Width");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
 
       widget = document.createElement("text-input");
-      widget.setAttribute("name", "height");
+      widget.setAttribute("name", "Box Height");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
     }
@@ -463,6 +539,11 @@ export class AttributePanel extends TatorElement {
 
       widget = document.createElement("text-input");
       widget.setAttribute("name", "v");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "Line Length");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
     }
@@ -660,7 +741,7 @@ export class AttributePanel extends TatorElement {
           }
         }
         else {
-          this._div.appendChild(widget);
+          this._userDiv.appendChild(widget);
         }
       }
 
@@ -887,33 +968,7 @@ export class AttributePanel extends TatorElement {
   setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
     this._idWidget.setValue(values.id);
-
-    // Set the user widget
-    var createdByUsername = null;
-    var foundUser = false;
-
-    var creatorMatchId = values.created_by;
-    if (creatorMatchId == null) {
-      creatorMatchId = values.user;
-    }
-
-    for (let index = 0; index < this._userList.length; index++) {
-      let storedId = this._userList[index].result.id;
-      if (storedId == creatorMatchId) {
-        foundUser = true;
-        createdByUsername = this._userList[index].result.username;
-        break;
-      }
-
-    }
-
-    if (!foundUser) {
-      this._getUsername(creatorMatchId, this._createdByWidget);
-    }
-    else {
-      this._createdByWidget.setValue(createdByUsername);
-    }
-
+    this._frameWidget.setValue(values.frame);
 
     let version = null;
     let foundVersion = false;
@@ -987,7 +1042,7 @@ export class AttributePanel extends TatorElement {
       // Only set the name if it is defined
       if (value != undefined) {
         widget.setValue(values.attributes[name]);
-      } else if (!["ID", "Created By", "Version"].includes(name)) {
+      } else if (!["ID", "Frame", "Version"].includes(name)) {
         widget.reset();
       }
     }

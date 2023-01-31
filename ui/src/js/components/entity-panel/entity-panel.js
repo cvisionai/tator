@@ -51,6 +51,8 @@ export class EntityGalleryPanel extends TatorElement {
     this._main.appendChild(mediaSubHeading)
 
     this.mediaData = document.createElement("entity-panel-form");
+    this.mediaData._attributes._frameWidget.style.display = "none";
+    this.mediaData._attributes._versionWidget.style.display = "none";
     this._main.appendChild(this.mediaData);
   }
 
@@ -84,6 +86,7 @@ export class EntityGalleryPanel extends TatorElement {
         data: this.cardObj,
         attributePanelData: this.cardObj.localization,
         associatedMedia: this.cardObj.mediaInfo.media,
+        associatedMediaType: this.cardObj.mediaInfo.entityType,
         allowDelete: true
       });
     }

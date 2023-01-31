@@ -39,9 +39,6 @@ export class EntityGalleryPanelForm extends TatorElement {
     switch (name) {
       case "permission":
         this._attributes.permission = newValue;
-        if (newValue == "View Only") {
-          this._lowerDiv.hidden = false;
-        }
         break;
     }
   }
@@ -51,16 +48,16 @@ export class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    * @param {Media/Localization} attributePanelData
    */
-  _init({ data, attributePanelData, associatedMedia, allowDelete = false }) {
+  _init({ data, attributePanelData, associatedMedia, associatedMediaType, allowDelete = false }) {
+    if (associatedMedia && associatedMediaType) {
+      this._attributes.setAssociatedMedia(associatedMedia, associatedMediaType);
+    }
+
     if (data.entityType) data.entityType.isTrack = false;
     this._attributes.dataType = data.entityType;
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);
     this._attributes.displayGoToLocalization(false);
-
-    if (associatedMedia) {
-      this._attributes.associatedMedia = associatedMedia;
-    }
 
     this._data = data;
 
@@ -121,7 +118,7 @@ export class EntityGalleryPanelForm extends TatorElement {
 
   /**
    * @param {*} panel panel to append to hooks panel div
-   * @returns 
+   * @returns
    */
   addAppletPanel(panel) {
     this._hooksPanel.appendChild(panel);

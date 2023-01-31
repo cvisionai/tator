@@ -9,7 +9,7 @@ export class AnnotationBrowser extends TatorElement {
     this._shadow.appendChild(wrapper);
 
     var header = document.createElement("div");
-    header.setAttribute("class", "annotation_browser_header_panel d-flex flex-grow px-3 py-1 rounded-2 flex-justify-center")
+    header.setAttribute("class", "d-flex flex-grow px-3 py-1 rounded-2 flex-justify-center")
     wrapper.appendChild(header);
 
     this._minimizeButton = document.createElement("button");
@@ -33,7 +33,7 @@ export class AnnotationBrowser extends TatorElement {
     this._settingsButton.style.display = "none";
 
     this._panels = document.createElement("div");
-    this._panels.setAttribute("class", "annotation__panels px-3");
+    this._panels.setAttribute("class", "annotation__panels px-3 pt-2");
     this._panels.style.display = "none";
     wrapper.appendChild(this._panels);
 
@@ -97,6 +97,9 @@ export class AnnotationBrowser extends TatorElement {
         entity.dataType = dataType;
         entity.canvas = this._canvas;
         entity.noFrames = !isVideo;
+        entity.mediaType = this._media._mediaType;
+        entity.media = this._media._mediaData;
+
         if (typeof this._permission !== "undefined") {
           entity.permission = this._permission;
         }

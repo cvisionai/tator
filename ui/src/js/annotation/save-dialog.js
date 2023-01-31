@@ -77,7 +77,7 @@ export class SaveDialog extends TatorElement {
     this._attributes = document.createElement("attribute-panel");
     attrDiv.appendChild(this._attributes);
     this._attributes._idWidget.style.display = "none";
-    this._attributes._createdByWidget.style.display = "none";
+    this._attributes._frameWidget.style.display = "none";
 
     this._attributes.addEventListener("change", () => {
       this._values = this._attributes.getValues();
@@ -90,7 +90,7 @@ export class SaveDialog extends TatorElement {
 
     this._favorites.addEventListener("load", evt => {
       this._attributes._track = null;
-      this._attributes.setValues({ attributes: evt.detail, id: -1 });
+      this._attributes.setValues({ attributes: evt.detail, id: -1, frame: this._requestObj.frame });
       this._values = this._attributes.getValues();
       if (this._values === null) {
         this._save.setAttribute("disabled", "");
@@ -268,6 +268,7 @@ export class SaveDialog extends TatorElement {
     if (this._dataType.interpolation == "attr_style_range") {
       this._attributes.setFrameRange(val.frame, val.frame);
     }
+    this._attributes._frameWidget.setValue(val.frame);
   }
 
   addRecent(val) {

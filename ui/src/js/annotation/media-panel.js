@@ -27,7 +27,7 @@ export class MediaPanel extends TatorElement {
 
     this._attrs = document.createElement("attribute-panel");
     this._attrs._idWidget.style.display = "none";
-    this._attrs._createdByWidget.style.display = "none";
+    this._attrs._frameWidget.style.display = "none";
     this._attrs._versionWidget.style.display = "none";
     attrDiv.appendChild(this._attrs);
 
@@ -72,6 +72,7 @@ export class MediaPanel extends TatorElement {
   set mediaType(val)
   {
     // Setup the attribute display for the media
+    this._mediaType = val;
     this._attrs.dataType = val;
     this._attrs.setValues(this._mediaData);
     this._attrs.addEventListener("change", () => {
