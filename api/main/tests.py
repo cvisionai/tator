@@ -9,6 +9,9 @@ import time
 from uuid import uuid1, uuid4
 from math import sin, cos, sqrt, atan2, radians
 import re
+import requests
+import io
+import base64
 
 from main.models import *
 
@@ -62,7 +65,7 @@ def assertResponse(self, response, expected_code):
 
 def create_test_user(is_staff=False):
     return User.objects.create(
-        username=random.choices(string.ascii_lowercase, k=10),
+        username=''.join(random.choices(string.ascii_lowercase, k=10)),
         password="jsnow",
         first_name="Jon",
         last_name="Snow",
@@ -1460,9 +1463,11 @@ class FileMixin:
         return f'{self.organization.pk}/{self.project.pk}/{self.media.pk}/{uuid1()}'
 
 class CurrentUserTestCase(TatorTransactionTest):
-    def test_get(self):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
+    def test_get(self):
         response = self.client.get('/rest/User/GetCurrent')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.user.id)
@@ -1473,6 +1478,74 @@ class CurrentUserTestCase(TatorTransactionTest):
         random_uuid=uuid.uuid4()
         response = self.client.get(f'/rest/Users?elemental_id={random_uuid}')
         self.assertEqual(len(response.data), 0)
+
+    def test_avatar(self):
+        response = self.client.get('/rest/User/GetCurrent')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, False)
+        ben_url = 'https://tator-ci.s3.amazonaws.com/avatar_images/ben_franklin.jpg'
+        white_house_url = 'https://tator-ci.s3.amazonaws.com/avatar_images/white_house.jpg'
+        video_url = 'https://tator-ci.s3.amazonaws.com/AudioVideoSyncTest_BallastMedia.mp4'
+        user_id = response.data['id']
+
+
+        # Verify Ben Franklin works
+        fp = io.BytesIO()
+        with requests.get(ben_url, stream=True) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    fp.write(chunk)
+        fp.seek(0)
+        encoded = base64.b64encode(fp.read())
+
+        # .decode() is required to convert the bytes to a string for JSON.
+        response = self.client.patch(f'/rest/User/{user_id}', {'new_avatar': encoded.decode()},format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        # Verify white house image is rejected, because it is too big.
+        fp = io.BytesIO()
+        with requests.get(white_house_url, stream=True) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    fp.write(chunk)
+        fp.seek(0)
+        encoded = base64.b64encode(fp.read())
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'new_avatar': encoded.decode()},format='json')
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        # Verify video image fails, because it is a bad mime type
+        fp = io.BytesIO()
+        with requests.get(video_url, stream=True) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    fp.write(chunk)
+        fp.seek(0)
+        encoded = base64.b64encode(fp.read(512*1024))
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'new_avatar': encoded.decode()},format='json')
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        # Verify we get a profile image now
+        response = self.client.get('/rest/User/GetCurrent')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, True)
+
+        # Verify it is true over the other access method as well
+        response = self.client.get(f'/rest/User/{user_id}')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, True)
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'clear_avatar': 1},format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get('/rest/User/GetCurrent')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, False)
+
 
 class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
