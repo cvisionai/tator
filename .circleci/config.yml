@@ -50,7 +50,7 @@ jobs:
     - run:
         name: Install node packages
         command: |
-          ssh lightsail 'cd tator/ui && npm install';
+          ssh lightsail 'cd tator/ui && /usr/local/bin/npm install';
     - run:
         name: Make version.py
         command: |
