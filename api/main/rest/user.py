@@ -2,10 +2,12 @@ from uuid import uuid1
 import base64
 import magic
 import mimetypes
+import logging
 
 from django.db import transaction
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
+from rest_framework.utils.serializer_helpers import ReturnList
 
 from ..models import User
 from ..models import Invitation
@@ -23,6 +25,8 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import UserPermission
 from ._permissions import UserListPermission
+
+logger = logging.getLogger(__name__)
 
 MAX_PROFILE_IMAGE_SIZE = 1*1024*1024
 ACCEPTABLE_PROFILE_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png']
@@ -55,6 +59,23 @@ def handle_avatar_management(user, params):
         generic_store.put_object(avatar_keypath, img_data)
         user.profile['avatar'] = avatar_keypath
         user.save()
+
+def user_serializer_helper(response_data, presigned_ttl):
+    """ Presign any object keys provided in the user object
+        :param presigned_ttl: Number of seconds to presign the object.
+    """
+    if presigned_ttl == None:
+        return response_data
+    generic_store = get_tator_store()
+ 
+    if type(response_data) == ReturnList:
+        for row in response_data:
+            avatar_key = row['profile'].get('avatar')
+            row['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+    else:
+        avatar_key = response_data['profile'].get('avatar')
+        response_data['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+    return response_data
 
 class UserExistsAPI(BaseDetailView):
     """ Determine whether user exists.
@@ -98,7 +119,7 @@ class UserListAPI(BaseListView):
             users = User.objects.filter(username=username)
         if elemental_id is not None:
             users = User.objects.filter(elemental_id=elemental_id)
-        return UserSerializerBasic(users, many=True).data
+        return user_serializer_helper(UserSerializerBasic(users, many=True).data, params.get('presigned', None))
 
     def _post(self, params):
         first_name = params['first_name']
@@ -174,7 +195,7 @@ class UserDetailAPI(BaseDetailView):
 
     def _get(self, params):
         user = User.objects.get(pk=params['id'])
-        return UserSerializerBasic(user).data
+        return user_serializer_helper(UserSerializerBasic(user).data, params.get('presigned', None))
 
     @transaction.atomic
     def _patch(self, params):
@@ -216,4 +237,4 @@ class CurrentUserAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
-        return UserSerializerBasic(self.request.user).data
+        return user_serializer_helper(UserSerializerBasic(self.request.user).data, params.get('presigned', None))
