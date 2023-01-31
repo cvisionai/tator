@@ -226,6 +226,7 @@ class UserDetailAPI(BaseDetailView):
         user.save()
 
         handle_avatar_management(user, params)
+        user = User.objects.get(pk=params['id'])
         return {'message': f'Updated user {params["id"]} successfully!'}
 
 class CurrentUserAPI(BaseDetailView):
@@ -237,4 +238,5 @@ class CurrentUserAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
-        return user_serializer_helper(UserSerializerBasic(self.request.user).data, params.get('presigned', None))
+        user = User.objects.get(pk=self.request.user.pk)
+        return user_serializer_helper(UserSerializerBasic(user).data, params.get('presigned', None))
