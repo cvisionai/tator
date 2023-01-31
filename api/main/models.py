@@ -297,6 +297,9 @@ class User(AbstractUser):
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    profile = JSONField(default=dict)
+    """ Store user specific information (avatar image, tbd elements) """
+
     def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
         response = cognito.create_user(self, email_verified, temp_pw)
@@ -341,6 +344,17 @@ def user_save(sender, instance, created, **kwargs):
             Affiliation.objects.create(organization=organization,
                                        user=instance,
                                        permission='Admin')
+
+@receiver(post_delete, sender=User)
+def user_post_delete(sender, instance, **kwargs):
+    """ Clean up avatar on user deletion. """
+    if instance.profile.get('avatar'):
+        avatar_key = instance.profile.get('avatar')
+        # Out of an abundance of caution check to make sure the object key
+        # matches the user's scope
+        if avatar_key.startswith(f"user_data/{instance.pk}"):
+            generic_store = get_tator_store()
+            generic_store.delete_object(avatar_key)
 
 class PasswordReset(Model):
     user = ForeignKey(User, on_delete=CASCADE)
