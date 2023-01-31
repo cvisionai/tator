@@ -178,7 +178,7 @@ export class OrgTypeFormTemplate extends TatorElement {
   // Use the most recently set data to update the values of form
   _resetForm(evt) {
     evt.preventDefault();
-    this.setupForm(this._data);
+    this.data = null;
   }
 
   
@@ -229,13 +229,11 @@ export class OrgTypeFormTemplate extends TatorElement {
       "token": "",
       "cert": "",
       "name": "",
-      "access_key": "",
-      "secret_key": "",
-      "endpoint_url": null,
-      "region": "",
+      "config": "",
+      "external_host": null,
       "archive_sc": "",
       "live_sc": "",
-      "gcs_key_info": null,
+      "store_type": "MINIO",
       "form": "empty",
     };
   }

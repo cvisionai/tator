@@ -113,7 +113,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('.heading-for-Bucket')
     page.click('.heading-for-Bucket .Nav-action')
     page.fill('bucket-edit text-input[name="Name"] input', f"Bucket for {name}")
-    page.get_by_label("AWS").check()
+    page.get_by_label("AWS S3").check()
     page.fill('bucket-edit text-area[name="Config"] textarea', '{"aws_access_key_id": "123456", "aws_secret_access_key": "ABCDEFG", "endpoint_url": "https://www.google.com", "region_name": "Northeast"}')
     url = base_url + "/rest/Buckets/" + str(organization_id)
     with page.expect_response(lambda response: response.url==url) as response_info:
@@ -124,7 +124,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     print(f"Created bucket id {bucketId}")
 
     print(f'Testing bucket editing...')
-    page.click('role=radio[name="DEEP_ARCHIVE"]')
+    page.click('role=radio[name="Deep Archive"]')
     page.fill(f'div[id="itemDivId-Bucket-{bucketId}"] text-area[name="Config"] textarea', '{"aws_access_key_id": "NewKey654321", "aws_secret_access_key": "HIJKLMN", "endpoint_url": "https://www.bing.com", "region_name": "Southwest"}')
     page.click(f'div[id="itemDivId-Bucket-{bucketId}"] input[type="submit"]')
     page.wait_for_selector(f'text="Bucket {bucketId} updated successfully!"')
