@@ -88,6 +88,8 @@ def _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts):
             retries={"max_attempts": max_attempts},
         )
         config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket.name}.", "")
+        if 'external_host' in config:
+            del config['external_host']
         return boto3.client("s3", **config)
     if store_type == ObjectStore.GCP:
         return storage.Client(config["project_id"], Credentials.from_service_account_info(config))
@@ -666,7 +668,7 @@ def get_tator_store(
         return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
     elif getattr(bucket, "config", None):
         client = _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts)
-        return TatorStorage.get_tator_store(bucket.store_type, bucket, client, bucket.name)
+        return TatorStorage.get_tator_store(bucket.store_type, bucket, client, bucket.name,bucket.config.get('external_host'))
     else:
         endpoint = bucket.endpoint_url
         region = bucket.region
