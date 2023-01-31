@@ -345,6 +345,17 @@ def user_save(sender, instance, created, **kwargs):
                                        user=instance,
                                        permission='Admin')
 
+@receiver(post_delete, sender=User)
+def user_post_delete(sender, instance, **kwargs):
+    """ Clean up avatar on user deletion. """
+    if instance.profile.get('avatar'):
+        avatar_key = instance.profile.get('avatar')
+        # Out of an abundance of caution check to make sure the object key
+        # matches the user's scope
+        if avatar_key.startswith(f"user_data/{instance.pk}"):
+            generic_store = get_tator_store()
+            generic_store.delete_object(avatar_key)
+
 class PasswordReset(Model):
     user = ForeignKey(User, on_delete=CASCADE)
     reset_token = UUIDField(primary_key=False, db_index=True, editable=False,

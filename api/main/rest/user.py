@@ -41,19 +41,27 @@ def handle_avatar_management(user, params):
     existing_avatar = user.profile.get('avatar')
     # Handle deleting an avatar
     if clear_avatar and existing_avatar:
-        generic_store.delete_object(existing_avatar)
-        del user.profile['avatar']
-        user.save()
+        if existing_avatar.startswith(f'user_data/{user.pk}'):
+            generic_store.delete_object(existing_avatar)
+            del user.profile['avatar']
+            user.save()
+        else:
+            raise ValueError(f"Unable to clear avatar image")
 
     if new_avatar:
-        if existing_avatar:
-            generic_store.delete_object(existing_avatar)
         img_data = base64.b64decode(new_avatar)
         if len(img_data) > MAX_PROFILE_IMAGE_SIZE:
             raise ValueError(f"Supplied profile image is too large {len(img_data)} > {MAX_PROFILE_IMAGE_SIZE}")
         mime_type = magic.from_buffer(img_data, mime=True)
         if not mime_type in ACCEPTABLE_PROFILE_IMAGE_MIME_TYPES:
             raise ValueError(f'Supplied image is not an acceptable mime format {mime_type}')
+
+        if existing_avatar:
+            if existing_avatar.startswith(f'user_data/{user.pk}'):
+                generic_store.delete_object(existing_avatar)
+                del user.profile['avatar']
+            else:
+                raise ValueError(f"Unable to clear old avatar image")
         file_extension = mimetypes.guess_extension(mime_type)
         avatar_keypath = f"user_data/{user.pk}/avatar{file_extension}"
         generic_store.put_object(avatar_keypath, img_data)
