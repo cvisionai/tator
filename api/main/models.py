@@ -297,6 +297,9 @@ class User(AbstractUser):
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    profile = JSONField(default=dict)
+    """ Store user specific information (avatar image, tbd elements) """
+
     def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
         response = cognito.create_user(self, email_verified, temp_pw)
