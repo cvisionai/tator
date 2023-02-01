@@ -313,15 +313,13 @@ workflows:
     - tator-py-tests:
         requires:
         - install-tator
-        - rest-tests
         context: cvisionai
         filters:
           tags:
             only: /.*/
     - front-end-tests:
         requires:
-        - rest-tests
-        - tator-py-tests
+        - install-tator
         context: cvisionai
         filters:
           tags:
