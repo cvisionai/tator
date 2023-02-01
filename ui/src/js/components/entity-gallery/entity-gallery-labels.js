@@ -156,8 +156,6 @@ export class EntityGalleryLabels extends TatorElement {
       const projectPreference = [];
       const cacheTypeList = this.getLocalStorage(typeData.id);
       const listToApply = [...projectPreference, ...cacheTypeList];
-      console.log(typeData.id);
-      console.log(listToApply);
       this._setValue({ typeId: typeData.id, values: listToApply });
       
       
@@ -197,8 +195,6 @@ export class EntityGalleryLabels extends TatorElement {
   }
 
   _setValue({ typeId, values }) {
-    console.log("LABELS SET VALUES");
-    console.log(values);
     this._selectionValues[typeId].updateValue(values);
   }
 
@@ -259,7 +255,7 @@ export class EntityGalleryLabels extends TatorElement {
   getLocalStorage(typeId) {
     const storageKey = `project-${this.projectId}__${this._titleEntityTypeName}-labels__type-${typeId}`;
     const storedData = localStorage.getItem(storageKey);
-    console.log(`GET storedData for ${storageKey} = ${storedData}`);
+    // console.log(`GET storedData for ${storageKey} = ${storedData}`);
 
     if (storedData) {
       const data = JSON.parse(storedData);
@@ -273,7 +269,7 @@ export class EntityGalleryLabels extends TatorElement {
   setLocalStorage(typeId) {
     const storageKey = `project-${this.projectId}__${this._titleEntityTypeName}-labels__type-${typeId}`;
     const newValue = JSON.stringify({ values: this._getValue(typeId) });
-    console.log(`SET storedData for ${storageKey} set to newValue = ${newValue}`);
+    // console.log(`SET storedData for ${storageKey} set to newValue = ${newValue}`);
 
     localStorage.setItem(storageKey, newValue);
   }

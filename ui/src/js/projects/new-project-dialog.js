@@ -2,7 +2,8 @@ import { ModalDialog } from "../components/modal-dialog.js";
 
 export class NewProjectDialog extends ModalDialog {
   constructor() {
-    super();
+    super(); 
+    console.log("Test");
 
     this._title.nodeValue = "Create new project";
     this._main.style.marginBottom = "0";

@@ -59,6 +59,10 @@ invitation = {
             'type': 'string',
             'enum': ['Pending', 'Expired', 'Accepted'],
         },
+        'registration_token': {
+            'description': 'Registration token.',
+            'type': 'string',
+        },
         **invitation_properties,
     },
 }

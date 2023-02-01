@@ -946,6 +946,7 @@ export class AnnotationPlayer extends TatorElement {
       this._video.stopPlayerThread();
       this._video.shutdownOnDemandDownload();
       this._video.seekFrame(frame, this._video.drawFrame);
+      this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
     }
   }
 
@@ -975,6 +976,7 @@ export class AnnotationPlayer extends TatorElement {
       this._videoStatus = "paused";
       this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
+      this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
     });/*;.catch((e) => {
       console.error(`"ERROR: ${e}`)
       throw e;
@@ -1078,6 +1080,7 @@ export class AnnotationPlayer extends TatorElement {
   }
 
   set mediaInfo(val) {
+    const searchParams = new URLSearchParams(window.location.search);
     this._video.mediaInfo = val;
     this._mediaInfo = val;
     const dims = [val.width, val.height];
@@ -1095,6 +1098,11 @@ export class AnnotationPlayer extends TatorElement {
         }
         else {
           this._allowSafeMode = false;
+        }
+        if (searchParams.has("playbackRate"))
+        {
+          this._rateControl.setValue(Number(searchParams.get("playbackRate")));
+          this.setRate(Number(searchParams.get("playbackRate")));
         }
         const seekInfo = this._video.getQuality("seek");
         const scrubInfo = this._video.getQuality("scrub");
@@ -1487,6 +1495,7 @@ export class AnnotationPlayer extends TatorElement {
   setRate(val) {
     this._rate = val;
     this._video.rateChange(this._rate);
+    this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
   }
 
   setQuality(quality, buffer) {

@@ -1,140 +1,164 @@
-import { OrganizationTypeForm } from "./organization-type-form.js";
+import { OrgTypeFormTemplate } from "./components/org-type-form-template.js";
 
-export class BucketEdit extends OrganizationTypeForm {
+export class BucketEdit extends OrgTypeFormTemplate {
   constructor() {
     super();
     this.typeName = "Bucket";
     this.readableTypeName = "Bucket";
-    this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 20 20" ><path d="M11 1c-4.908 0-7.998 1.592-7.79 2.95 0.060 0.389 0.225 1.945 0.434 3.273-2.405 0.934-3.202 2.449-3.095 3.684 0.127 1.461 1.441 3.025 4.328 3.295 1.648 0.154 3.631-0.75 4.916-2.295-0.122-0.207-0.193-0.45-0.193-0.707 0-0.774 0.627-1.4 1.4-1.4s1.4 0.627 1.4 1.4c0 0.762-0.61 1.381-1.369 1.398-1.529 1.973-3.858 3.164-6.064 3.025 0.051 0.324 0.070 0.947 0.096 1.113 0.090 0.579 2.347 2.26 5.937 2.264 3.59-0.004 5.847-1.685 5.938-2.263 0.088-0.577 1.641-11.409 1.852-12.787 0.208-1.358-2.883-2.95-7.79-2.95zM1.943 10.785c-0.055-0.643 0.455-1.498 1.924-2.139 0.211 1.34 0.441 2.797 0.643 4.074-1.604-0.313-2.498-1.149-2.567-1.935zM11 6.024c-3.59-0.002-6.137-1.334-6.137-1.832-0.002-0.494 2.547-1.79 6.137-1.788 3.59-0.002 6.139 1.294 6.137 1.788 0 0.498-2.547 1.83-6.137 1.832z"></path></svg>';
+    this._hideAttributes = true;
+  
+
+    // 
+    var templateInner = document.getElementById("bucket-edit");
+    var innerClone = document.importNode(templateInner.content, true);
+    this._shadow.appendChild(innerClone);
+
+    this._form = this._shadow.getElementById("bucket-edit--form");
+    this._editName = this._shadow.getElementById("bucket-edit--name");
+    this._editStoreType = this._shadow.getElementById("bucket-edit--store-type");
+    this._editExternalHost = this._shadow.getElementById("bucket-edit--external-host");
+    this._editArchiveScDefault = this._shadow.getElementById("bucket-edit--archive-storage-class-default");
+    this._editArchiveScAws = this._shadow.getElementById("bucket-edit--archive-storage-class-aws");
+    this._editArchiveScGcs = this._shadow.getElementById("bucket-edit--archive-storage-class-gcs");
+    this._editLiveSc = this._shadow.getElementById("bucket-edit--live-storage-class");
+    this._editConfig = this._shadow.getElementById("bucket-edit--config");
+
+    this._editStoreType.choices = [
+      { name: "AWS S3", value: "AWS", checked: false },
+      { name: "Google Cloud Storage", value: "GCP", checked: false },
+      { name: "Minio", value: "MINIO", checked: false },
+      { name: "Oracle Cloud Storage", value: "OCI", checked: false }
+    ];
+
+    // archive storage class
+    this._editArchiveScDefault.choices = [
+      { name: "Standard", value: "STANDARD", checked: true },
+    ];
+    this._editArchiveScAws.choices = [
+      { name: "Standard", value: "STANDARD", checked: true },
+      { name: "Deep Archive", value: "DEEP_ARCHIVE", checked: false },
+    ];
+    this._editArchiveScGcs.choices = [
+      { name: "Standard", value: "STANDARD", checked: true },
+      { name: "Coldline", value: "COLDLINE", checked: false }
+    ];
+
+    this._editLiveSc.choices = [
+      { name: "Standard", value: "STANDARD", checked: true }
+    ];
+
   }
 
-  init(data) {
-    this._data = data;
+  _showArchiveScField() {
+    const storeType = this._editStoreType.getValue();
+
+    switch (storeType) {
+      case "AWS":
+        this._editArchiveScDefault.hidden = true;
+        this._editArchiveScAws.hidden = false;
+        this._editArchiveScGcs.hidden = true;
+        this._editArchiveSc = this._editArchiveScAws;
+        break;
+      case "GCP":
+        this._editArchiveScDefault.hidden = true;
+        this._editArchiveScAws.hidden = true;
+        this._editArchiveScGcs.hidden = false;
+        this._editArchiveSc = this._editArchiveScGcs;
+        break;
+      case "MINIO":
+      case "OCI":
+        this._editArchiveScDefault.hidden = false;
+        this._editArchiveScAws.hidden = true;
+        this._editArchiveScGcs.hidden = true;
+        this._editArchiveSc = this._editArchiveScDefault;
+        break;
+    }
   }
 
-  _getEmptyData() {
-    return {
-      "id": `New`,
-      "organization": this.organizationId,
-      "name": "",
-      "store_type": null,
-      "external_host": null,
-      "archive_sc": "STANDARD",
-      "live_sc": "STANDARD",
-      "config": null,
-      "form": "empty"
-    };
-  }
-
-  _getAttributeSection() {
-    return document.createElement("div");
-  }
-
-  _getSectionForm(data = null) {
-    this.data = data;
-    console.log(this.data);
-
-    let current = document.createElement("div");
-    current.setAttribute("class", `py-3 rounded-2 edit-project__config`);
-
-    //
-    this._setForm();
-
+  async _setupFormUnique() {
     // name
-    this._editName = document.createElement("text-input");
-    this._editName.setAttribute("name", "Name");
-    this._editName.setAttribute("type", "string");
-
-    if (this.data.name == "+ Add new") {
+    if (this._data.id === "New") {
       this._editName.setValue("");
       this._editName.default = ""; 
     } else {
-      this._editName.setValue(this.data.name);
-      this._editName.default = this.data.name; 
+      this._editName.setValue(this._data.name);
+      this._editName.default = this._data.name; 
     }
-    this._editName.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._editName);
 
     // type
-    if (this.data.id == "New") {
-      let bucketTypes = [
-        { name: "AWS", id: "AWS", checked: false },
-        { name: "GCP", id: "GCP", checked: false },
-        { name: "MINIO", id: "MINIO", checked: false },
-        { name: "OCI", id: "OCI", checked: false },
-      ];
-
-      this._editBucketType = document.createElement("radio-set");
-      this._editBucketType.setAttribute("name", "Bucket Type");
-      this._editBucketType.setValue(bucketTypes);
-      this._editBucketType.default = bucketTypes;
-      this._form.appendChild(this._editBucketType);
-    } 
+    if (this._data.id == "New") {
+      this._editStoreType.setValue("MINIO");
+      this._editStoreType.default ="MINIO";
+      this._editStoreType.hidden = false;
+    } else {
+      // type cannot be changed after bucket creation, so hide this field
+      this._editStoreType.setValue(this._data.store_type);
+      this._editStoreType.default = this._data.store_type;
+      this._editStoreType.hidden = true;
+    }
+    this._editStoreType.addEventListener("change", this._showArchiveScField.bind(this));
 
     // external host
-    this._editExternalHost = document.createElement("text-input");
-    this._editExternalHost.setAttribute("name", "External Host");
-    this._editExternalHost.setAttribute("type", "string");
-    this._editExternalHost.setValue(this.data.external_host);
-    this._editExternalHost.default = this.data.external_host;
-    this._editExternalHost.hidden = false;
-    this._editExternalHost.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._editExternalHost);
-
+    if (this._data.id == "New") {
+      this._editExternalHost.setValue("");
+      this._editExternalHost.default ="";
+    } else {
+      this._editExternalHost.setValue(this._data.external_host);
+      this._editExternalHost.default = this._data.external_host;
+    }
+    
     // archive storage class
-    let archiveScTypes = [
-      { name: "STANDARD", id: "STANDARD", checked: this.data.archive_sc == "STANDARD" },
-      { name: "DEEP_ARCHIVE", id: "DEEP_ARCHIVE", checked: this.data.archive_sc == "DEEP_ARCHIVE" },
-      { name: "COLDLINE", id: "COLDLINE", checked: this.data.archive_sc == "COLDLINE" }
-    ];
-
-    this._editArchiveSc = document.createElement("radio-set");
-    this._editArchiveSc.setAttribute("name", "Archive Storage Class");
-    this._editArchiveSc.setValue(archiveScTypes);
-    this._editArchiveSc.default = archiveScTypes;
-    this._editArchiveSc.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._editArchiveSc);
+    this._showArchiveScField();
+    if (this._data.id == "New") {
+      this._editArchiveSc.setValue("STANDARD");
+      this._editArchiveSc.default ="STANDARD";
+    } else {
+      this._editArchiveSc.setValue(this._data.archive_sc);
+      this._editArchiveSc.default = this._data.archive_sc;
+    }
 
     // live storage class
-    let liveScTypes = [
-      { name: "STANDARD", id: "STANDARD", checked: true }
-    ];
-
-    this._editLiveSc = document.createElement("radio-set");
-    this._editLiveSc.setAttribute("name", "Live Storage Class");
-    this._editLiveSc.setValue(liveScTypes);
-    this._editLiveSc.default = liveScTypes;
-    this._editLiveSc.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._editLiveSc);
-
+    if (this._data.id == "New") {
+      this._editLiveSc.setValue("STANDARD");
+      this._editLiveSc.default ="STANDARD";
+    } else {
+      this._editLiveSc.setValue(this._data.live_sc);
+      this._editLiveSc.default = this._data.live_sc;
+    }
+   
     // config
-    this._editConfig = document.createElement("text-area");
-    this._editConfig.setAttribute("name", "Config");
-    this._editConfig.setAttribute("type", "json");
     this._editConfig.setValue("");
-    this._editConfig.default = "";
-    this._editConfig.hidden = false;
-    this._editConfig.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._editConfig);
-
-    current.appendChild(this._form);
-    return current;
+    this._editConfig.default ="";
   }
 
-  _getFormData(id) {
+  _getFormData() {
     let formData = {};
-    const isNew = this.data.id == "New";
+    const isNew = this._data.id == "New";
 
-    // Cannot edit bucket type after creation, so only consider isNew
+    // Cannot edit bucket type after creation, so only consider if isNew
     if (isNew) {
-      formData.store_type = this._editBucketType.getValue();
+      formData.store_type = this._editStoreType.getValue();
     }
 
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
     }
 
-    if (this._editArchiveSc.changed() || isNew)  {
+    let archiveSc;
+    switch (this._editStoreType.getValue()) {
+      case "AWS":
+        archiveSc = this._editArchiveScAws;
+        break;
+      case "GCP":
+        archiveSc = this._editArchiveScGcs;
+        break;
+      case "MINIO":
+      case "OCI":
+        archiveSc = this._editArchiveScDefault;
+        break;
+    }
+
+    if (this._editArchiveSc.changed() || isNew) {
       formData.archive_sc = this._editArchiveSc.getValue();
     }
 
@@ -150,7 +174,10 @@ export class BucketEdit extends OrganizationTypeForm {
     }
 
     if (this._editExternalHost.changed() || isNew) {
-      formData.external_host = this._editExternalHost.getValue();
+      const externalHost = this._editExternalHost.getValue();
+      if (externalHost) {
+        formData.external_host = externalHost;
+      }
     }
 
     return formData;

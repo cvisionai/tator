@@ -87,6 +87,10 @@ attribute_type_properties = {
                        'When associated with a bool, these checks will result in Tator GUI changes with the corresponding start_frame and end_frame attributes.',
         'type': 'string',
     },
+    'visible': {
+        'description': 'True to make attribute visible.',
+        'type': 'boolean',
+    }
 }
 
 attribute_type = {

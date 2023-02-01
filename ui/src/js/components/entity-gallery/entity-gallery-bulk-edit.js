@@ -383,7 +383,7 @@ export class GalleryBulkEdit extends TatorElement {
             // Are there any selected cards this MediaType?
             // - Note: To handle if we put info in an input, but no media selected to apply it to
             const mediaTypeInSelection = typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
-            console.log("Is this media type in the selection? ...... "+mediaTypeInSelection);
+            // console.log("Is this media type in the selection? ...... "+mediaTypeInSelection);
 
             // What are the inputes related to this type?
             // - Note: To handle if we selected some media, but no input applies to it
@@ -491,7 +491,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _patchLocalizations(formData) {
-      console.log("Bulk edit this._projectId" + this._projectId);
+      // console.log("Bulk edit this._projectId" + this._projectId);
       return fetch(`/rest/Localizations/${this._projectId}`, {
          method: "PATCH",
          mode: "cors",
@@ -548,7 +548,7 @@ export class GalleryBulkEdit extends TatorElement {
       }
 
       return promise.then(() => {
-         console.log("Then clean up");
+         // console.log("Then clean up");
          this._editPanel.resetWidgets()
          this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
          this._clearSelection();
@@ -575,7 +575,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _editLocalization(e, formData) {
-      console.log("_editLocalization");
+      // console.log("_editLocalization");
       // button.addEventListener("click", (e) => {
       e.preventDefault();
       this._page.modal._closeCallback();
@@ -614,7 +614,6 @@ export class GalleryBulkEdit extends TatorElement {
          this._page.hideDimmer();
 
          if (errorText === "" && text !== "") {
-            console.log(this._page.modal);
             this._page.modal._success(text);
          } else if (errorText !== "" && text === "") {
             this._page.modal._error(errorText, "Error");
