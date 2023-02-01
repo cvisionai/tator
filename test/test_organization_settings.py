@@ -110,11 +110,12 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.wait_for_selector(f'text=updated permissions updated to Admin!')
 
     print("Testing bucket creation...")
-    page.click('.heading-for-Bucket')
-    page.click('.heading-for-Bucket .Nav-action')
-    page.fill('bucket-edit text-input[name="Name"] input', f"Bucket for {name}")
-    page.get_by_label("AWS S3").check()
-    page.fill('bucket-edit text-area[name="Config"] textarea', '{"aws_access_key_id": "123456", "aws_secret_access_key": "ABCDEFG", "endpoint_url": "https://www.google.com", "region_name": "Northeast"}')
+    page.click('#nav-for-Bucket')
+    page.click('#nav-for-Bucket #sub-nav--plus-link')
+    page.fill('org-type-form-container[form="bucket-edit"] text-input[name="Name"] input', f"Bucket for {name}")
+    page.click('text="AWS S3"')
+    page.wait_for_selector(f'text="Deep Archive"')
+    page.fill('org-type-form-container[form="bucket-edit"] text-area[name="Bucket access configuration JSON"] textarea', '{"aws_access_key_id": "123456", "aws_secret_access_key": "ABCDEFG", "endpoint_url": "https://www.google.com", "region_name": "Northeast"}')
     url = base_url + "/rest/Buckets/" + str(organization_id)
     with page.expect_response(lambda response: response.url==url) as response_info:
         page.click('org-type-form-container[form="bucket-edit"] input[value="Save"]')
@@ -125,10 +126,9 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
 
     print(f'Testing bucket editing...')
     page.click('role=radio[name="Deep Archive"]')
-    page.fill(f'div[id="itemDivId-Bucket-{bucketId}"] text-area[name="Config"] textarea', '{"aws_access_key_id": "NewKey654321", "aws_secret_access_key": "HIJKLMN", "endpoint_url": "https://www.bing.com", "region_name": "Southwest"}')
-    page.click(f'div[id="itemDivId-Bucket-{bucketId}"] input[type="submit"]')
+    page.fill('org-type-form-container[form="bucket-edit"] text-area[name="Bucket access configuration JSON"] textarea', '{"aws_access_key_id": "NewKey654321", "aws_secret_access_key": "HIJKLMN", "endpoint_url": "https://www.bing.com", "region_name": "Southwest"}')
+    page.click('org-type-form-container[form="bucket-edit"] input[type="submit"]')
     page.wait_for_selector(f'text="Bucket {bucketId} updated successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
 
     print("Testing job cluster create...")
     url = base_url + "/rest/JobClusters/" + str(organization_id)
