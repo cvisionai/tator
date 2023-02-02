@@ -85,7 +85,7 @@ def make_bool_index(db_name,project_id, entity_type_id, table_name, index_name, 
     make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'boolean', flush)
 
 def make_int_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush):
-    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'integer', flush)
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'bigint', flush)
 
 def make_float_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, flush):
     make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'float', flush)
