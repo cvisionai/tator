@@ -22,9 +22,9 @@ const store = create(subscribeWithSelector((set, get) => ({
         user: values[0],
         announcements: values[1],
         project: values[2],
+        mediaId: window.location.pathname.split("/")[3],
       });
     });
-    set({mediaId: window.location.pathname.split("/")[3]});
   },
 })));
 
