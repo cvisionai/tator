@@ -29,8 +29,9 @@ jobs:
         command: |
           ssh lightsail 'wget -O get_docker.sh https://get.docker.com';
           ssh lightsail 'chmod +x get_docker.sh';
-          ssh lightsail './get_docker.sh';
+          ssh lightsail 'VERSION=20.10.23 ./get_docker.sh';
           ssh lightsail 'sudo usermod -aG docker ubuntu';
+          ssh lightsail 'docker --version';
     - run:
         name: Add Node repo
         command: |
@@ -147,7 +148,7 @@ jobs:
     - run:
         name: Clone source on lightsail
         command: |
-          ssh lightsail 'export CIRCLE_SHA1='"'$CIRCLE_SHA1'"'; rm -fr tator; git clone https://github.com/cvisionai/tator; cd tator && git checkout $CIRCLE_SHA1 && git submodule update --init';
+          ssh lightsail 'export CIRCLE_SHA1='"'$CIRCLE_SHA1'"'; sudo rm -fr tator; git clone https://github.com/cvisionai/tator; cd tator && git checkout $CIRCLE_SHA1 && git submodule update --init';
     - persist_to_workspace:
         root: ~/
         paths:
