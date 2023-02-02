@@ -30,6 +30,18 @@ def _get_endpoint_url(bucket):
     return bucket.endpoint_url
 
 
+def _get_store_type(bucket):
+    if bucket.store_type:
+        return bucket.store_type.value
+    if bucket.gcs_key_info:
+        return ObjectStore.GCP.value
+    if "amazonaws" in bucket.endpoint_url:
+        return ObjectStore.AWS.value
+    if "oci" in bucket.endpoint_url:
+        return ObjectStore.OCI.value
+    return ObjectStore.MINIO.value
+
+
 def serialize_bucket(bucket):
     return {
         "id": bucket.id,
@@ -38,7 +50,7 @@ def serialize_bucket(bucket):
         "endpoint_url": _get_endpoint_url(bucket),
         "archive_sc": bucket.archive_sc,
         "live_sc": bucket.live_sc,
-        "store_type": bucket.store_type.value,
+        "store_type": _get_store_type(bucket),
     }
 
 
