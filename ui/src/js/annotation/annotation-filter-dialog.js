@@ -1,4 +1,4 @@
-import { ModalDialog } from "./modal-dialog.js";
+import { ModalDialog } from "../components/modal-dialog.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
 
 /**
@@ -40,6 +40,7 @@ export class AnnotationFilterDialog extends ModalDialog {
 
     // Handler when user hits the apply button.
     apply.addEventListener("click", () => {
+      /// @TODO _convertFilterForTator in TatorData fed into annotation-data somehow.
       this.dispatchEvent(new Event("newFilterSet"));
     });
 

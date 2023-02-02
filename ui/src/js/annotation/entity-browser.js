@@ -44,10 +44,13 @@ export class EntityBrowser extends TatorElement {
 
     const searchDiv = document.createElement("div");
     searchDiv.setAttribute("class", "annotation__panel-group py-3");
+    searchDiv.style.width = 'fit-content';
     spacer.appendChild(searchDiv);
 
     this._search = document.createElement("filter-data-button");
+    this._filterModal = document.createElement("annotation-filter-dialog");
     searchDiv.appendChild(this._search);
+    searchDiv.appendChild(this._filterModal);
 
     const groupDiv = document.createElement("div");
     groupDiv.setAttribute("class", "text-gray f2");
@@ -141,9 +144,17 @@ export class EntityBrowser extends TatorElement {
         }
       }
     });
+    this._filterModal.data = val;
     this._search.addEventListener("click", evt => {
-      window.alert("Attempting to filter annotation data.");
+      this._filterModal.setAttribute("is-open", "");
+      document.body.classList.add("shortcuts-disabled");
     });
+
+    this._filterModal.addEventListener("close", evt => {
+      this._filterModal.removeAttribute("is-open");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
     this._group.addEventListener("change", evt => {
       this._drawControls();
     });
