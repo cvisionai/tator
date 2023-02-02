@@ -11,7 +11,7 @@ from django.db.models.functions import Cast
 from django.db.models import Func, F, Q
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import BooleanField
-from django.contrib.gis.db.models import IntegerField
+from django.contrib.gis.db.models import BigIntegerField
 from django.contrib.gis.db.models import FloatField
 from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
@@ -95,7 +95,7 @@ def _get_info_for_attribute(project, entity_type, key):
 def _get_field_for_attribute(project, entity_type, key):
     """ Returns the field type for a given key in a project/annotation_type """
     lookup_map = {'bool': BooleanField,
-                  'int': IntegerField,
+                  'int': BigIntegerField,
                   'float': FloatField,
                   'enum': CharField,
                   'string': CharField,
