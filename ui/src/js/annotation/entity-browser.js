@@ -46,7 +46,7 @@ export class EntityBrowser extends TatorElement {
     searchDiv.setAttribute("class", "annotation__panel-group py-3");
     spacer.appendChild(searchDiv);
 
-    this._search = document.createElement("annotation-search");
+    this._search = document.createElement("filter-data-button");
     searchDiv.appendChild(this._search);
 
     const groupDiv = document.createElement("div");
@@ -141,8 +141,8 @@ export class EntityBrowser extends TatorElement {
         }
       }
     });
-    this._search.addEventListener("filterAnnotations", evt => {
-      this._data.updateType(this._dataType, null, evt.detail.query);
+    this._search.addEventListener("click", evt => {
+      window.alert("Attempting to filter annotation data.");
     });
     this._group.addEventListener("change", evt => {
       this._drawControls();
