@@ -119,6 +119,11 @@ export class EnumInput extends TatorElement {
       let groups = Object.keys(val);
       for (const group of groups)
       {
+        // Skip over empty groups
+        if (val[group].length == 0)
+        {
+          continue;
+        }
         const optgroup = document.createElement("optgroup");
         optgroup.setAttribute("label", group);
         optgroup.setAttribute("class", "form-control");
