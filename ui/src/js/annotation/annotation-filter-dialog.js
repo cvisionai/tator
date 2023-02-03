@@ -30,6 +30,9 @@ class FakeModelData
         this._localizationTypes.push(dataType);
       }
     }
+
+    this._memberships = data._memberships;
+    this._versions = data._versions;
   }
 
   getStoredMediaStateTypes()
@@ -54,7 +57,7 @@ class FakeModelData
 
   getStoredVersions()
   {
-    return [];
+    return this._versions;
   }
   getStoredSections()
   {
@@ -62,7 +65,7 @@ class FakeModelData
   }
   getStoredMemberships()
   {
-    return [];
+    return this._memberships;
   }
   getStoredAlgorithms()
   {
