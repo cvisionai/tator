@@ -112,6 +112,10 @@ export class EnumInput extends TatorElement {
     }
     else // use groups
     {
+      while(this._select.firstChild)
+      {
+        this._select.removeChild(this._select.firstChild);
+      }
       let groups = Object.keys(val);
       for (const group of groups)
       {
