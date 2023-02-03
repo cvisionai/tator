@@ -13,7 +13,9 @@ export class AnnotationData extends HTMLElement {
     this._localizationMediaIds = new Array();
   }
 
-  init(dataTypes, version, projectId, mediaId, update, allowNonTrackStateData) {
+  init(dataTypes, version, projectId, mediaId, update, allowNonTrackStateData, versions, memberships) {
+    this._versions = versions;
+    this._memberships = memberships;
     // Update defaults to true
     if (update == undefined)
     {

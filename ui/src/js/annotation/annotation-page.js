@@ -969,7 +969,7 @@ export class AnnotationPage extends TatorPage {
                                                                   || Number(type.id.split('_')[1]) == localizationTypeId))[0];
           }
         }
-        this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
+        this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals, versions, memberships);
         this._data.addEventListener("freshData", evt => {
           if (this._newEntityId) {
             for (const elem of evt.detail.data) {
