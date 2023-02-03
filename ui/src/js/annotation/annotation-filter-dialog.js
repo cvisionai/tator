@@ -1,6 +1,7 @@
+import { FilterData } from "../components/filter-data.js";
 import { ModalDialog } from "../components/modal-dialog.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
-
+import { TatorData } from "../util/tator-data.js";
 /**
  * Element used to encapsulate the filter modal dialog.
  */
@@ -14,7 +15,7 @@ export class AnnotationFilterDialog extends ModalDialog {
     this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
     this._header.setAttribute("class", "px-3 py-3");
     this._titleDiv.setAttribute("class", "h2");
-    this._title.nodeValue = "Apply filter conditions";
+    this._title.nodeValue = "Apply a data filter";
     this._titleDiv.style.marginBottom = "10px";
     this._main.remove();
 
@@ -41,7 +42,22 @@ export class AnnotationFilterDialog extends ModalDialog {
     // Handler when user hits the apply button.
     apply.addEventListener("click", () => {
       /// @TODO _convertFilterForTator in TatorData fed into annotation-data somehow.
-      this.dispatchEvent(new Event("newFilterSet"));
+      var searchObject = {'method': 'and', 'operations': []};
+      let clear = true;
+      for (let condition of this._filterConditionGroup.getConditions())
+      {
+        searchObject.operations.push(this._td._convertFilterForTator(condition));
+        clear = false;
+      }
+      if (clear == false)
+      {
+        console.info(`Constructed search object = ${JSON.stringify(searchObject)}`);
+        this.dispatchEvent(new CustomEvent("annotationFilter", {detail: {filterObject: searchObject}}));
+      }
+      if (clear == true)
+      {
+        this.dispatchEvent(new CustomEvent("annotationFilter", {detail: {filterObject: null}}));
+      }
     });
 
     // Handler when user hits the cancel button.
@@ -54,35 +70,28 @@ export class AnnotationFilterDialog extends ModalDialog {
   /**
    * Sets the available dataset that can be selected by the user
    *
-   * @param {array} val - List of objects with the following fields
-   *   .name - str - Name of attribute type
-   *   .attribute_types - array - Array of objects with the following fields
-   *     .name - str - Name of attribute
-   *     .dtype - str - string|bool|float|int|datetime|geopos|enum
-   *     .choices - array - Valid only if enum was provided
+   * @param {int} project to load
    */
-  set data(val)
+  set project(project)
   {
-    if (this._data != null)
+    if (this._project != null)
     {
       console.warn("filter-dialog already binded with a dataset");
     }
+    // @TODO It'd be great to be able to use 'annotation-data' directly in Filter data
+    //       or rewire entity browser to use tator-data.
+    this._project = project;
+    this._td = new TatorData(project);
+    this._td.init().then(() => {
+      this._filterData = new FilterData(this._td, [], ['Medias']);
+      this._filterData.init();
 
-    this._data = val;
-
-    // In annotation view all types are scoped to annotation data.
-    let typedData = [];
-    for (let idx = 0; idx < this._data._dataTypesRaw.length; idx++)
-    {
-      let typedType = {...this._data._dataTypesRaw[idx]};
-      typedType.typeGroupName = 'Annotation';
-      typedData.push(typedType)
-    }
-    // Set the GUI elements
-    this._filterConditionGroup = document.createElement("filter-condition-group");
-    this._filterConditionGroup.data = typedData;
-    this._filterConditionGroup._div.style.marginTop = "10px";
-    this._conditionsDiv.appendChild(this._filterConditionGroup);
+      // Set the GUI elements
+      this._filterConditionGroup = document.createElement("filter-condition-group");
+      this._filterConditionGroup.data = this._filterData.getAllTypes();
+      this._filterConditionGroup._div.style.marginTop = "10px";
+      this._conditionsDiv.appendChild(this._filterConditionGroup);
+    });
   }
 
   /**

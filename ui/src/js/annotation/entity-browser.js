@@ -52,6 +52,10 @@ export class EntityBrowser extends TatorElement {
     searchDiv.appendChild(this._search);
     searchDiv.appendChild(this._filterModal);
 
+    const filterNotificationSpan = document.createElement("span");
+    filterNotificationSpan.setAttribute("class", "f3");
+    searchDiv.appendChild(filterNotificationSpan);
+    this._filterNotificationSpan = filterNotificationSpan;
     const groupDiv = document.createElement("div");
     groupDiv.setAttribute("class", "text-gray f2");
     spacer.appendChild(groupDiv);
@@ -144,7 +148,7 @@ export class EntityBrowser extends TatorElement {
         }
       }
     });
-    this._filterModal.data = val;
+    this._filterModal.project = this._data._projectId;
     this._search.addEventListener("click", evt => {
       this._filterModal.setAttribute("is-open", "");
       document.body.classList.add("shortcuts-disabled");
@@ -155,6 +159,23 @@ export class EntityBrowser extends TatorElement {
       document.body.classList.remove("shortcuts-disabled");
     });
 
+    this._filterModal.addEventListener("annotationFilter", evt => {
+      if (evt.detail.filterObject)
+      {
+        const encoded_query = btoa(JSON.stringify(evt.detail.filterObject));
+        this._data.updateType(this._dataType, null, encoded_query);
+        this._filterNotificationSpan.textContent = "Filters applied";
+      }
+      else
+      {
+        this._data.updateType(this._dataType, null);
+        this._filterNotificationSpan.textContent = null;
+      }
+
+      // Close after filter is applied
+      this._filterModal.removeAttribute("is-open");
+      document.body.classList.remove("shortcuts-disabled");
+    });
     this._group.addEventListener("change", evt => {
       this._drawControls();
     });
