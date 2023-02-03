@@ -37,6 +37,7 @@ from ..notify import Notify
 from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
+from ..pool import TatorThreadPool
 
 from ._util import (
     bulk_update_and_log_changes,
@@ -161,6 +162,49 @@ def _save_image(url, media_obj, project_obj, role):
     Resource.add_resource(image_key, media_obj)
     return media_obj
 
+
+def get_media_type(project, entity_type, name):
+    if int(entity_type) == -1:
+        media_types = MediaType.objects.filter(project=project)
+        if media_types.count():
+            mime, _ = mimetypes.guess_type(name)
+            if mime is None:
+                ext = os.path.splitext(name)[1].lower()
+                if ext in [".mts", ".m2ts"]:
+                    mime = "video/MP2T"
+                elif ext in [".dng"]:
+                    mime = "image/dng"
+            if mime.startswith("image"):
+                for media_type in media_types:
+                    if media_type.dtype == "image":
+                        break
+            else:
+                for media_type in media_types:
+                    if media_type.dtype == "video":
+                        break
+            entity_type = media_type.pk
+        else:
+            raise RuntimeError("No media types for project")
+    else:
+        media_type = MediaType.objects.get(pk=int(entity_type))
+        if media_type.project.pk != project:
+            raise ValueError("Media type is not part of project")
+
+    return media_type, entity_type
+
+
+def assert_list_of_image_specs(project, param_list):
+    """ Checks that all media creation specs are of dtype "image" """
+    for params in param_list:
+        entity_type = params["type"]
+        name = params['name']
+        media_type, entity_type = get_media_type(project, entity_type, name)
+        if media_type.dtype != "image":
+            raise ValueError(
+                f"Multiple media creation only supports images, found at least one spec with dtype "
+                f"{media_type.dtype}"
+            )
+
 def _create_media(project, params, user):
     """ Media POST method in its own function for reuse by Transcode endpoint.
     """
@@ -193,31 +237,7 @@ def _create_media(project, params, user):
                                    tator_user_sections=tator_user_sections)
 
     # Get the media type.
-    if int(entity_type) == -1:
-        media_types = MediaType.objects.filter(project=project)
-        if media_types.count() > 0:
-            mime, _ = mimetypes.guess_type(name)
-            if mime is None:
-                ext = os.path.splitext(name)[1].lower()
-                if ext in ['.mts', '.m2ts']:
-                    mime = 'video/MP2T'
-                elif ext in [".dng"]:
-                    mime = "image/dng"
-            if mime.startswith('image'):
-                for media_type in media_types:
-                    if media_type.dtype == 'image':
-                        break
-            else:
-                for media_type in media_types:
-                    if media_type.dtype == 'video':
-                        break
-            entity_type = media_type.pk
-        else:
-            raise Exception('No media types for project')
-    else:
-        media_type = MediaType.objects.get(pk=int(entity_type))
-        if media_type.project.pk != project:
-            raise Exception('Media type is not part of project')
+    media_type, entity_type = get_media_type(project, entity_type, name)
 
     # Compute the required fields for posting a media object
     # of this type
@@ -447,7 +467,10 @@ class MediaListAPI(BaseListView):
             _, response = _create_media(project, media_spec_list[0], self.request.user)
         elif media_spec_list:
             # TODO handle multiple image creation
-            raise NotImplementedError("Multiple image creation not implemented yet!")
+            assert_list_of_image_specs(project, media_spec_list)
+            for media_spec in media_spec_list:
+                TatorThreadPool.submit(_create_media, project, media_spec, self.request.user)
+            response = {"message": f"Started import of {len(media_spec_list)} images!"}
         else:
             raise ValueError(f"Expected one or more media specs, received zero!")
         return response
