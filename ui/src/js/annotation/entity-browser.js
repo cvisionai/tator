@@ -148,7 +148,8 @@ export class EntityBrowser extends TatorElement {
         }
       }
     });
-    this._filterModal.project = this._data._projectId;
+
+    this._filterModal.data = this._data;
     this._search.addEventListener("click", evt => {
       this._filterModal.setAttribute("is-open", "");
       document.body.classList.add("shortcuts-disabled");

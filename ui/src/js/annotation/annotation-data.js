@@ -310,6 +310,11 @@ export class AnnotationData extends HTMLElement {
       }
     });
   }
+
+  get project()
+  {
+    return this._projectId;
+  }
 }
 
 if (!customElements.get("annotation-data")) {

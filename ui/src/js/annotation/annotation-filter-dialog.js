@@ -2,6 +2,82 @@ import { FilterData } from "../components/filter-data.js";
 import { ModalDialog } from "../components/modal-dialog.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
 import { TatorData } from "../util/tator-data.js";
+
+/// Class to fake out not needing to load a full up tator-data object and use what is in
+/// annotation-data. Basically convert a annotation-data to a tator-data for filter-data
+class FakeModelData
+{
+  constructor(projectId, data)
+  {
+    this._projectId = projectId;
+    this._stateTypeAssociations = {media: [], frame: [], localization: []};
+    this._localizationTypes = [];
+    for (const dataType of data._dataTypesRaw) {
+      if (dataType.dtype == "state")
+      {
+        if (dataType.association == "Media") {
+          this._stateTypeAssociations.media.push(dataType);
+        }
+        else if (dataType.association == "Localization") {
+          this._stateTypeAssociations.localization.push(dataType);
+        }
+        else if (dataType.association == "Frame") {
+          this._stateTypeAssociations.frame.push(dataType);
+        }
+      }
+      else 
+      {
+        this._localizationTypes.push(dataType);
+      }
+    }
+  }
+
+  getStoredMediaStateTypes()
+  {
+    return this._stateTypeAssociations.media;
+  }
+
+  getStoredLocalizationStateTypes()
+  {
+    return this._stateTypeAssociations.localization;
+  }
+
+  getStoredLocalizationTypes()
+  {
+    return this._localizationTypes;
+  }
+
+  getStoredMediaTypes()
+  {
+    return [];
+  }
+
+  getStoredVersions()
+  {
+    return [];
+  }
+  getStoredSections()
+  {
+    return [];
+  }
+  getStoredMemberships()
+  {
+    return [];
+  }
+  getStoredAlgorithms()
+  {
+    return [];
+  }
+  getProjectId()
+  {
+    return this._projectId;
+  }
+  launchAlgorithm()
+  {
+    // No implement 
+  }
+}
+
 /**
  * Element used to encapsulate the filter modal dialog.
  */
@@ -76,22 +152,24 @@ export class AnnotationFilterDialog extends ModalDialog {
   {
     if (this._project != null)
     {
-      console.warn("filter-dialog already binded with a dataset");
+      console.warn("filter-dialog already bound with a dataset");
     }
     // @TODO It'd be great to be able to use 'annotation-data' directly in Filter data
     //       or rewire entity browser to use tator-data.
-    this._project = project;
-    this._td = new TatorData(project);
-    this._td.init().then(() => {
-      this._filterData = new FilterData(this._td, [], ['Medias']);
-      this._filterData.init();
+    
+  }
 
-      // Set the GUI elements
-      this._filterConditionGroup = document.createElement("filter-condition-group");
-      this._filterConditionGroup.data = this._filterData.getAllTypes();
-      this._filterConditionGroup._div.style.marginTop = "10px";
-      this._conditionsDiv.appendChild(this._filterConditionGroup);
-    });
+  set data(data)
+  {
+    this._td = new FakeModelData(data.project, data);
+    this._filterData = new FilterData(this._td, [], ['Medias']);
+    this._filterData.init();
+
+    // Set the GUI elements
+    this._filterConditionGroup = document.createElement("filter-condition-group");
+    this._filterConditionGroup.data = this._filterData.getAllTypes();
+    this._filterConditionGroup._div.style.marginTop = "10px";
+    this._conditionsDiv.appendChild(this._filterConditionGroup);
   }
 
   /**
