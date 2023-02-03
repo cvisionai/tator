@@ -3,15 +3,12 @@ import { ModalDialog } from "../components/modal-dialog.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
 import { TatorData } from "../util/tator-data.js";
 
-/// Class to fake out not needing to load a full up tator-data object and use what is in
-/// annotation-data. Basically convert a annotation-data to a tator-data for filter-data
-class FakeModelData
+/// Class to wrap a TatorData with values from annotation-data.
+class ModelDataConverter extends TatorData
 {
   constructor(projectId, data)
   {
-    this._projectId = projectId;
-    this._stateTypeAssociations = {media: [], frame: [], localization: []};
-    this._localizationTypes = [];
+    super(projectId);
     for (const dataType of data._dataTypesRaw) {
       if (dataType.dtype == "state")
       {
@@ -33,51 +30,6 @@ class FakeModelData
 
     this._memberships = data._memberships;
     this._versions = data._versions;
-  }
-
-  getStoredMediaStateTypes()
-  {
-    return this._stateTypeAssociations.media;
-  }
-
-  getStoredLocalizationStateTypes()
-  {
-    return this._stateTypeAssociations.localization;
-  }
-
-  getStoredLocalizationTypes()
-  {
-    return this._localizationTypes;
-  }
-
-  getStoredMediaTypes()
-  {
-    return [];
-  }
-
-  getStoredVersions()
-  {
-    return this._versions;
-  }
-  getStoredSections()
-  {
-    return [];
-  }
-  getStoredMemberships()
-  {
-    return this._memberships;
-  }
-  getStoredAlgorithms()
-  {
-    return [];
-  }
-  getProjectId()
-  {
-    return this._projectId;
-  }
-  launchAlgorithm()
-  {
-    // No implement 
   }
 }
 
@@ -120,7 +72,6 @@ export class AnnotationFilterDialog extends ModalDialog {
 
     // Handler when user hits the apply button.
     apply.addEventListener("click", () => {
-      /// @TODO _convertFilterForTator in TatorData fed into annotation-data somehow.
       var searchObject = {'method': 'and', 'operations': []};
       let clear = true;
       for (let condition of this._filterConditionGroup.getConditions())
@@ -157,14 +108,11 @@ export class AnnotationFilterDialog extends ModalDialog {
     {
       console.warn("filter-dialog already bound with a dataset");
     }
-    // @TODO It'd be great to be able to use 'annotation-data' directly in Filter data
-    //       or rewire entity browser to use tator-data.
-    
   }
 
   set data(data)
   {
-    this._td = new FakeModelData(data.project, data);
+    this._td = new ModelDataConverter(data.project, data);
     this._filterData = new FilterData(this._td, [], ['Medias']);
     this._filterData.init();
 
