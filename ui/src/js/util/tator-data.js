@@ -14,7 +14,7 @@ export class TatorData {
     this._mediaTypes = [];
     this._mediaTypeNames = [];
     this._localizationTypes = [];
-    this._localizaitonTypeNames = [];
+    this._localizationTypeNames = [];
     this._versions = [];
     this._sections = [];
     this._algorithms = [];

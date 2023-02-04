@@ -13,7 +13,9 @@ export class AnnotationData extends HTMLElement {
     this._localizationMediaIds = new Array();
   }
 
-  init(dataTypes, version, projectId, mediaId, update, allowNonTrackStateData) {
+  init(dataTypes, version, projectId, mediaId, update, allowNonTrackStateData, versions, memberships) {
+    this._versions = versions;
+    this._memberships = memberships;
     // Update defaults to true
     if (update == undefined)
     {
@@ -274,7 +276,7 @@ export class AnnotationData extends HTMLElement {
     let url = new URL(this._updateUrls.get(typeId), location.protocol + '//' + location.host);
     let searchParams = new URLSearchParams(url.search.slice(1));
     if (query) {
-        searchParams.set('search',query);
+        searchParams.set('encoded_search',query);
     }
 
     let requested_versions=[...this._version.bases,this._version.id];
@@ -309,6 +311,11 @@ export class AnnotationData extends HTMLElement {
         callback();
       }
     });
+  }
+
+  get project()
+  {
+    return this._projectId;
   }
 }
 
