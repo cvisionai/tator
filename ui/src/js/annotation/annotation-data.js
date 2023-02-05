@@ -213,12 +213,6 @@ export class AnnotationData extends HTMLElement {
     const setupObject = obj => {
       obj.id = id;
       obj.type = typeId;
-      obj.attributes = {};
-      for (const key in body) {
-        if (attributeNames.includes(key)) {
-          obj.attributes[key] = body[key];
-        }
-      }
       if (typeObj.isTLState) {
         obj = {
           ...obj,
