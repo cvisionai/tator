@@ -172,7 +172,7 @@ export class AttributePanel extends TatorElement {
   /**
    * @param {AnnotationBrowserSettings} val
    */
-  set settings(val) {
+  set browserSettings(val) {
     this._browserSettings = val;
   }
 
@@ -984,17 +984,17 @@ export class AttributePanel extends TatorElement {
   }
 
   /**
-   * @param {string} val - "id" | "frame" | "version" for the built-in attributes
+   * @param {string} val - "ID" | "Frame" | "Version" for the built-in attributes
    */
   disableWidget(val) {
     this._disableWidgets.add(val);
-    if (val == "id") {
+    if (val == "ID") {
       this._idWidget.style.display = "none";
     }
-    if (val == "frame") {
+    if (val == "Frame") {
       this._frameWidget.style.display = "none";
     }
-    if (val == "version") {
+    if (val == "Version") {
       this._versionWidget.style.display = "none";
     }
   }
@@ -1011,13 +1011,13 @@ export class AttributePanel extends TatorElement {
     }
     this._groupDiv.style.display = "block";
 
-    if (!this._disableWidgets.has("id")) {
+    if (!this._disableWidgets.has("ID")) {
       this._idWidget.style.display = "block";
     }
-    if (!this._disableWidgets.has("frame")) {
+    if (!this._disableWidgets.has("Frame")) {
       this._frameWidget.style.display = "block";
     }
-    if (!this._disableWidgets.has("version")) {
+    if (!this._disableWidgets.has("Version")) {
       this._versionWidget.style.display = "block";
     }
   }
@@ -1027,7 +1027,7 @@ export class AttributePanel extends TatorElement {
       widget.style.display = "none";
       if (this._browserSettings) {
         const attrName = widget.getAttribute("name");
-        if (this._browserSettings.alwaysVisible(this._dataType, attrName)) {
+        if (this._browserSettings.isAlwaysVisible(this._dataType, attrName)) {
           widget.style.display = "block";
         }
       }
@@ -1035,16 +1035,16 @@ export class AttributePanel extends TatorElement {
     this._groupDiv.style.display = "none";
 
     var standardWidgets = [
-      {attrName: "id", widget: this._idWidget},
-      {attrName: "frame", widget: this._frameWidget},
-      {attrName: "version", widget: this._versionWidget},
+      {attrName: "ID", widget: this._idWidget},
+      {attrName: "Frame", widget: this._frameWidget},
+      {attrName: "Version", widget: this._versionWidget},
     ]
     for (const info of standardWidgets) {
-      var attrName = info["id"];
+      var attrName = info["attrName"];
       var widget = info["widget"];
       widget.style.display = "none";
       if (!this._disableWidgets.has(attrName) && this._browserSettings) {
-        if (this._browserSettings.alwaysVisible(this._dataType, attrName)) {
+        if (this._browserSettings.isAlwaysVisible(this._dataType, attrName)) {
           widget.style.display = "block";
         }
       }

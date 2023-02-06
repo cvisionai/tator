@@ -1032,7 +1032,7 @@ export class AnnotationPage extends TatorPage {
 
         this._browserSettings = new AnnotationBrowserSettings(projectId, dataTypes, this._mediaType);
         this._browserSettingsDialog.init(this._browserSettings, dataTypes, this._mediaType);
-        this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
+        this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image", this._browserSettings);
 
         this._sidebar.localizationTypes = byType;
         this._sidebar.trackTypes = trackTypes;

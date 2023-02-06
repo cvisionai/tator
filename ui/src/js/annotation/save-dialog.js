@@ -76,8 +76,8 @@ export class SaveDialog extends TatorElement {
 
     this._attributes = document.createElement("attribute-panel");
     attrDiv.appendChild(this._attributes);
-    this._attributes.disableWidget("id");
-    this._attributes.disableWidget("frame");
+    this._attributes.disableWidget("ID");
+    this._attributes.disableWidget("Frame");
 
     this._attributes.addEventListener("change", () => {
       this._values = this._attributes.getValues();

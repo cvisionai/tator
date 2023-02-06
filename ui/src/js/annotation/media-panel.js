@@ -26,9 +26,9 @@ export class MediaPanel extends TatorElement {
     div.appendChild(attrDiv);
 
     this._attrs = document.createElement("attribute-panel");
-    this._attrs.disableWidget("id");
-    this._attrs.disableWidget("frame");
-    this._attrs.disableWidget("version");
+    this._attrs.disableWidget("ID");
+    this._attrs.disableWidget("Frame");
+    this._attrs.disableWidget("Version");
     attrDiv.appendChild(this._attrs);
 
     const browserDiv = document.createElement("div");
@@ -96,6 +96,10 @@ export class MediaPanel extends TatorElement {
   set dataTypes(val) {
     this._dataTypes = val;
     this._makeButtons();
+  }
+  set browserSettings(val) {
+    this._browserSettings = val;
+    this._attrs.browserSettings = this._browserSettings;
   }
 
   _makeButtons() {

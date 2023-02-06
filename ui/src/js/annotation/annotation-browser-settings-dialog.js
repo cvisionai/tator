@@ -153,7 +153,13 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     //
     var visibleAttributes = [];
     var hiddenAttributes = [];
-    var builtInAttributes = ["ID", "Version", "Frame"];
+
+    if (dataType.dtype == "video" || dataType.dtype == "image" || dataType.dtype == "multi") {
+      var builtInAttributes = [];
+    }
+    else {
+      var builtInAttributes = ["ID", "Version", "Frame"];
+    }
 
     const allSortedAttrTypes = dataType.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
@@ -198,8 +204,12 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
 
     for (const attrName of builtInAttributes) {
       let checkbox = this._makeCheckbox(attrName);
-      checkbox.setValue(false);
+      checkbox._checked = this._browserSettings.isAlwaysVisible(dataType, attrName);
       builtinInfoDiv.appendChild(checkbox);
+
+      checkbox.addEventListener("change", () => {
+        this._browserSettings.setAlwaysVisible(dataType, attrName, checkbox.getChecked());
+      });
     }
 
     //
@@ -226,8 +236,12 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
 
     for (const attrName of visibleAttributes) {
       let checkbox = this._makeCheckbox(attrName);
-      checkbox.setValue(false);
+      checkbox._checked = this._browserSettings.isAlwaysVisible(dataType, attrName);
       visibleInfoDiv.appendChild(checkbox);
+
+      checkbox.addEventListener("change", () => {
+        this._browserSettings.setAlwaysVisible(dataType, attrName, checkbox.getChecked());
+      });
     }
 
     labelDiv.addEventListener("click", evt => {
@@ -333,17 +347,11 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
   }
 
   /**
-   *
+   * @param {AnnotationBrowserSettings} browserSettings
    */
-  init(browserSettings, dataTypes, mediaType) {
+  init(browserSettings) {
     this._browserSettings = browserSettings;
-    this._dataTypes = dataTypes;
-    this._dataTypeIdMap = {};
-    this._dataTypeIdMap[`${mediaType.dtype}_{mediaType.id}`] = mediaType;
-    for (const dataType of dataTypes) {
-      this._dataTypeIdMap[dataType.id] = dataType;
-    }
-
+    this._dataTypeIdMap = this._browserSettings.getDataTypeIdMap();
     this._createViewSettingsPage();
   }
 }

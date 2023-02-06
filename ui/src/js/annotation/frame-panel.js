@@ -61,6 +61,11 @@ export class FramePanel extends TatorElement {
     this._version = val;
   }
 
+  set browserSettings(val) {
+    this._browserSettings = val;
+    this._attributes.browserSettings = this._browserSettings;
+  }
+
   set dataType(val) {
     this._name.textContent = val.name;
     this._typeId = val.id;

@@ -94,9 +94,11 @@ export class AnnotationBrowser extends TatorElement {
     window.dispatchEvent(new Event("resize"));
   }
 
-  init(dataTypes, version, stateMediaIds, isVideo) {
+  init(dataTypes, version, stateMediaIds, isVideo, browserSettings) {
+    this._browserSettings = browserSettings;
     this._version = version;
     this._media.dataTypes = dataTypes;
+    this._media.browserSettings = this._browserSettings;
     for (const dataType of dataTypes) {
       if (dataType.visible) {
         const entity = document.createElement("entity-browser");
@@ -105,6 +107,7 @@ export class AnnotationBrowser extends TatorElement {
         entity.noFrames = !isVideo;
         entity.mediaType = this._media._mediaType;
         entity.media = this._media._mediaData;
+        entity.browserSettings = this._browserSettings;
 
         if (typeof this._permission !== "undefined") {
           entity.permission = this._permission;
@@ -143,7 +146,7 @@ export class AnnotationBrowser extends TatorElement {
       if (isFrameState && isInterpolated) {
         if (dataType.interpolation === "latest"){
           const frame = document.createElement("frame-panel");
-
+          frame.browserSettings = this._browserSettings;
           frame.style.display = "none";
 
           frame.addEventListener("dataUpdated", () => {

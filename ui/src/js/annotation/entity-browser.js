@@ -172,6 +172,10 @@ export class EntityBrowser extends TatorElement {
   set mediaType(val) {
     this._mediaType = val;
   }
+  
+  set browserSettings(val) {
+    this._browserSettings = val;
+  }
 
   _drawControls() {
     const evt = this._evt;
@@ -240,6 +244,7 @@ export class EntityBrowser extends TatorElement {
         if (!this._dataType.isTLState) {
           const attributes = document.createElement("attribute-panel");
           attributes.showHeader();
+          attributes.browserSettings = this._browserSettings;
           attributes.enableBuiltInAttributes = true;
           attributes.setAssociatedMedia(this._media, this._mediaType);
           attributes.dataType = evt.detail.typeObj;
