@@ -30,7 +30,6 @@ export class AnnotationBrowser extends TatorElement {
         <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"></path>
         <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
         </svg>`;
-    this._settingsButton.style.display = "none";
 
     this._panels = document.createElement("div");
     this._panels.setAttribute("class", "annotation__panels px-3 pt-2");
@@ -60,6 +59,13 @@ export class AnnotationBrowser extends TatorElement {
       }
     });
 
+    this._settingsButton.addEventListener("click", () => {
+      this._settingsButton.blur();
+      this.dispatchEvent(new CustomEvent("openBrowserSettings", {
+        composed: true
+      }));
+    });
+
     this._expandBrowser();
   }
 
@@ -74,7 +80,7 @@ export class AnnotationBrowser extends TatorElement {
       <polyline points="15 18 9 12 15 6"></polyline>
       </svg>`;
     this._headerLabel.style.display = "flex";
-    this._settingsButton.style.display = "none";
+    this._settingsButton.style.display = "flex";
     window.dispatchEvent(new Event("resize"));
   }
 
@@ -232,8 +238,6 @@ export class AnnotationBrowser extends TatorElement {
         else {
           this._framePanels[key].style.display = "none";
         }
-      } else {
-        this._framePanels[key].style.display = "none";
       }
     }
     for (const key in this._entityPanels) {

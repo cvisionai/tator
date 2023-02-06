@@ -518,6 +518,35 @@ annotation-player {
   color: #262e3d;
 }
 
+.page-tab {
+  align-items: center;
+  background-color: #262e3d;
+  border: 1px #1e2129;
+  color: #a2afcd;
+  cursor: pointer;
+  display: flex;
+  height: 46px;
+  justify-content: center;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+}
+.page-tab:focus {
+  outline: none;
+}
+.page-tab.active,
+.page-tab:hover,
+.page-tab:focus {
+  background-color: #4A4EAE;
+  color: #ffffff;
+}
+
+.box-border {
+  border: 1px solid #262e3d;
+}
+.purple-box-border {
+  border: 2px solid #4A4EAE;
+}
+
 .tab-btn {
   align-items: center;
   background-color: #262e3d;

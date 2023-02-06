@@ -239,6 +239,7 @@ export class EntityBrowser extends TatorElement {
 
         if (!this._dataType.isTLState) {
           const attributes = document.createElement("attribute-panel");
+          attributes.showHeader();
           attributes.enableBuiltInAttributes = true;
           attributes.setAssociatedMedia(this._media, this._mediaType);
           attributes.dataType = evt.detail.typeObj;

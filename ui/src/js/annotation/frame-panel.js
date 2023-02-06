@@ -30,12 +30,12 @@ export class FramePanel extends TatorElement {
 
     this._moreLessButton.addEventListener("click", () => {
       this._moreLessButton.blur();
-      if (attrDiv.style.display == "none") {
-        attrDiv.style.display = "block";
+      if (this._moreLessButton.textContent.includes("More")) {
+        this._attributes.showMore();
         this._moreLessButton.textContent = "Less -";
       }
       else {
-        attrDiv.style.display = "none";
+        this._attributes.showLess();
         this._moreLessButton.textContent = "More +";
       }
     });

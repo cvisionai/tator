@@ -26,9 +26,9 @@ export class MediaPanel extends TatorElement {
     div.appendChild(attrDiv);
 
     this._attrs = document.createElement("attribute-panel");
-    this._attrs._idWidget.style.display = "none";
-    this._attrs._frameWidget.style.display = "none";
-    this._attrs._versionWidget.style.display = "none";
+    this._attrs.disableWidget("id");
+    this._attrs.disableWidget("frame");
+    this._attrs.disableWidget("version");
     attrDiv.appendChild(this._attrs);
 
     const browserDiv = document.createElement("div");
@@ -45,12 +45,12 @@ export class MediaPanel extends TatorElement {
 
     this._moreLessButton.addEventListener("click", () => {
       this._moreLessButton.blur();
-      if (attrDiv.style.display == "none") {
-        attrDiv.style.display = "block";
+      if (this._moreLessButton.textContent.includes("More")) {
+        this._attrs.showMore();
         this._moreLessButton.textContent = "Less -";
       }
       else {
-        attrDiv.style.display = "none";
+        this._attrs.showLess();
         this._moreLessButton.textContent = "More +";
       }
     });
