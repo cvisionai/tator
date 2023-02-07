@@ -173,7 +173,7 @@ class UserListAPI(BaseListView):
                 raise ValueError("Registration token is expired or invalid!")
             else:
                 invite = invites[0]
-                if (invite.email != email):
+                if (invite.email.lower() != email.lower()):
                     raise ValueError("Email address must match where registration token was sent!")
                 user = User(first_name=first_name,
                             last_name=last_name,
