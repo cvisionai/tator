@@ -494,19 +494,19 @@ class Project(Model):
         maintaining elasticsearch field aliases.
     """
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                        related_name='+')
+                        related_name='+', db_column='bucket')
     """ If set, media will use this bucket by default.
     """
     upload_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='upload_bucket')
     """ If set, uploads will use this bucket by default.
     """
     backup_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='backup_bucket')
     """ If set, backups will use this bucket by default.
     """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='default_media')
 
     """ Default media type for uploads.
     """
