@@ -93,30 +93,47 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
     return count
 
 
-def buildSearchIndices(project_number, flush=False):
+def buildSearchIndices(project_ids=None, flush=False, concurrent=True):
     """ Builds search index for a project.
+        project_number - if supplied will limit to just these project(s)
         flush - whether to clear existing indices
+        concurrent - Whether to build the indices concurrently with other access.
+
+        Examples:
+        buildSearchIndices(1,True, True) # Rebuilds project 1 indices concurrently
+        
+        buildSearchIndices(None, False, False) # Rebuilds all indices not present, using an exclusive lock (faster)
+
+        Warning:
+        Non-concurrent index building is not recommended in production systems. It will prevent database writes
+        during index creation.
     """
-    project_name = Project.objects.get(pk=project_number).name
-    logger.info(f"Building search indices for project {project_number}: {project_name}")
+    projects = Project.objects.all()
+    if type(project_ids) == list:
+        projects = projects.filter(pk__in=project_ids)
+    elif type(project_ids) == int:
+        projects = project.filter(pk=project_ids)
+    
+    logger.info(f"Building search indices for projects: {projects.values('name')}")
 
     # Create mappings
     logger.info("Building mappings for media types...")
-    for type_ in progressbar.progressbar(list(MediaType.objects.filter(project=project_number))):
-        TatorSearch().create_mapping(type_, flush)
+    for type_ in progressbar.progressbar(list(MediaType.objects.filter(project__in=projects))):
+        TatorSearch().create_mapping(type_, flush, concurrent)
     logger.info("Building mappings for localization types...")
-    for type_ in progressbar.progressbar(list(LocalizationType.objects.filter(project=project_number))):
-        TatorSearch().create_mapping(type_, flush)
+    for type_ in progressbar.progressbar(list(LocalizationType.objects.filter(project__in=projects))):
+        TatorSearch().create_mapping(type_, flush, concurrent)
     logger.info("Building mappings for state types...")
-    for type_ in progressbar.progressbar(list(StateType.objects.filter(project=project_number))):
+    for type_ in progressbar.progressbar(list(StateType.objects.filter(project__in=projects))):
         TatorSearch().create_mapping(type_, flush)
-    logger.info("Building mappings for leaf types...")
-    for type_ in progressbar.progressbar(list(LeafType.objects.filter(project=project_number))):
+    logger.info("Building mappings for leaf types...", concurrent)
+    for type_ in progressbar.progressbar(list(LeafType.objects.filter(project__in=projects))):
         TatorSearch().create_mapping(type_, flush)
-    logger.info("Building mappings for file types...")
-    for type_ in progressbar.progressbar(list(FileType.objects.filter(project=project_number))):
-        TatorSearch().create_mapping(type_, flush)
-    logger.info("Build mappings complete!")
+    logger.info("Building mappings for file types...", concurrent)
+    for type_ in progressbar.progressbar(list(FileType.objects.filter(project__in=projects))):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Dispatch complete!")
+    logger.info("To watch status, use `rq info` at the gunicorn shell OR the top-level rq-info make target")
 
 def makeDefaultVersion(project_number):
     """ Creates a default version for a project and sets all localizations
