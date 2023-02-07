@@ -51,11 +51,11 @@ class TatorTransactionTest(APITransactionTestCase):
 def wait_for_indices(entity_type):
     for attribute in entity_type.attribute_types:
         found_it = False
-        for i in range(600):
+        for i in range(1,600):
             if TatorSearch().is_index_present(entity_type, attribute) == True:
                 found_it = True
                 break
-            time.sleep(0.1)
+            time.sleep(0.1*min(i, 30))
         assert(found_it)
 
 def assertResponse(self, response, expected_code):
