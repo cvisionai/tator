@@ -4,6 +4,7 @@ import { fetchRetry } from "../util/fetch-retry.js";
 import { Utilities } from "../util/utilities.js";
 import TatorLoading from "../../images/tator_loading.gif";
 import { store } from "./store.js";
+import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
 
 export class AnnotationPage extends TatorPage {
   constructor() {
@@ -111,6 +112,9 @@ export class AnnotationPage extends TatorPage {
     this._videoSettingsDialog = document.createElement("video-settings-dialog");
     this._main.appendChild(this._videoSettingsDialog);
 
+    this._browserSettingsDialog = document.createElement("annotation-browser-settings-dialog");
+    this._main.appendChild(this._browserSettingsDialog);
+
     this._progressDialog.addEventListener("jobsDone", evt => {
       evt.detail.job.callback(evt.detail.status);
     });
@@ -217,6 +221,7 @@ export class AnnotationPage extends TatorPage {
           })
           .then((response) => response.json())
           .then(type_data => {
+            this._mediaType = type_data;
             this._browser.mediaType = type_data;
             this._undo.mediaType = type_data;
             let player;
@@ -226,9 +231,8 @@ export class AnnotationPage extends TatorPage {
             if (type_data.dtype == "video") {
               player = document.createElement("annotation-player");
               this._player = player;
+              this._player.parent = this;
               this._player.mediaType = type_data;
-              player.addDomParent({"object": this._headerDiv,
-                                   "alignTo":  this._browser});
               this._videoSettingsDialog.mode("single", data);
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
@@ -247,10 +251,8 @@ export class AnnotationPage extends TatorPage {
             } else if (type_data.dtype == "image" ){
               player = document.createElement("annotation-image");
               this._player = player;
+              this._player.parent = this;
               this._player.mediaType = type_data;
-              //player.style.minWidth="63%";
-              player.addDomParent({"object": this._headerDiv,
-                                   "alignTo":  this._browser});
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
@@ -790,6 +792,11 @@ export class AnnotationPage extends TatorPage {
       canvas.allowSafeMode(evt.detail.allowSafeMode);
     });
 
+    this._browserSettingsDialog.addEventListener("close", () => {
+      this.removeAttribute("has-open-modal", "");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
     this._player.addEventListener("setTimelineDisplayMode", (evt) => {
       this._settings.setAttribute("timeline-display", evt.detail.mode);
       this._updateURL();
@@ -803,6 +810,12 @@ export class AnnotationPage extends TatorPage {
       var videoSettings = canvas.getVideoSettings();
       this._videoSettingsDialog.applySettings(videoSettings);
       this._videoSettingsDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+      document.body.classList.add("shortcuts-disabled");
+    });
+
+    this._browser.addEventListener("openBrowserSettings", () => {
+      this._browserSettingsDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
       document.body.classList.add("shortcuts-disabled");
     });
@@ -1017,7 +1030,9 @@ export class AnnotationPage extends TatorPage {
           stateMediaIds = this._mediaIds;
         }
 
-        this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
+        this._browserSettings = new AnnotationBrowserSettings(projectId, dataTypes, this._mediaType);
+        this._browserSettingsDialog.init(this._browserSettings, dataTypes, this._mediaType);
+        this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image", this._browserSettings);
 
         this._sidebar.localizationTypes = byType;
         this._sidebar.trackTypes = trackTypes;
@@ -1843,7 +1858,7 @@ export class AnnotationPage extends TatorPage {
       window.history.pushState(this._annotationPageHistoryState, "", newUrl);
     }
 
-    
+
   }
   _getSave(objDescription) {
     let save;

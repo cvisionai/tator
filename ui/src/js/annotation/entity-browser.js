@@ -72,6 +72,8 @@ export class EntityBrowser extends TatorElement {
     this._selectors = {};
     this._attributes = {};
     this._initialized = false;
+    this._media = null;
+    this._mediaType = null;
 
     back.addEventListener("click", evt => {
       this.style.display = "none";
@@ -163,6 +165,18 @@ export class EntityBrowser extends TatorElement {
     this._noFrames = val;
   }
 
+  set media(val) {
+    this._media = val;
+  }
+
+  set mediaType(val) {
+    this._mediaType = val;
+  }
+  
+  set browserSettings(val) {
+    this._browserSettings = val;
+  }
+
   _drawControls() {
     const evt = this._evt;
     let groups;
@@ -229,6 +243,10 @@ export class EntityBrowser extends TatorElement {
 
         if (!this._dataType.isTLState) {
           const attributes = document.createElement("attribute-panel");
+          attributes.showHeader();
+          attributes.browserSettings = this._browserSettings;
+          attributes.enableBuiltInAttributes = true;
+          attributes.setAssociatedMedia(this._media, this._mediaType);
           attributes.dataType = evt.detail.typeObj;
           if (typeof this._permission !== "undefined") {
             attributes.permission = this._permission;

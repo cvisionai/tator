@@ -168,8 +168,15 @@
   }
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--brown;
-    color: $color-gray--dark;
+    background-color: transparent;
+    color: $color-gray--dark !important;
+    border: 1px solid $color-gray--dark50 !important;
+    &:hover,
+    &:focus {
+      background-color: transparent;
+      color: $color-gray--dark !important;
+      border: 1px solid $color-gray--dark50 !important;
+    }
   }
 }
 

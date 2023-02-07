@@ -8,22 +8,52 @@ export class MediaPanel extends TatorElement {
     div.setAttribute("class", "annotation__panel px-4 rounded-2");
     this._shadow.appendChild(div);
 
+    const headerDiv = document.createElement("div");
+    headerDiv.setAttribute("class", "d-flex flex-grow py-3 rounded-2 flex-justify-between flex-items-center");
+    div.appendChild(headerDiv);
+
     this._name = document.createElement("h3");
-    this._name.setAttribute("class", "py-3 text-semibold css-truncate");
-    div.appendChild(this._name);
+    this._name.setAttribute("class", "text-semibold css-truncate");
+    headerDiv.appendChild(this._name);
+
+    this._moreLessButton = document.createElement("div");
+    this._moreLessButton.setAttribute("class", "f3 text-dark-gray px-3");
+    this._moreLessButton.style.cursor = "pointer";
+    this._moreLessButton.textContent = "Less -";
+    headerDiv.appendChild(this._moreLessButton);
+
+    const attrDiv = document.createElement("div");
+    div.appendChild(attrDiv);
 
     this._attrs = document.createElement("attribute-panel");
-    this._attrs._versionWidget.style.display = "none";
+    this._attrs.disableWidget("ID");
+    this._attrs.disableWidget("Frame");
+    this._attrs.disableWidget("Version");
+    attrDiv.appendChild(this._attrs);
 
-    div.appendChild(this._attrs); // TODO: Fill this in with attribute data
+    const browserDiv = document.createElement("div");
+    browserDiv.setAttribute("class", "annotation__panel px-4 rounded-2");
+    this._shadow.appendChild(browserDiv);
 
     this._entities = document.createElement("div");
     this._entities.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
     this._entities.style.display = "none";
-    div.appendChild(this._entities);
+    browserDiv.appendChild(this._entities);
 
     this._annotationData = null;
     this._dataTypes = null;
+
+    this._moreLessButton.addEventListener("click", () => {
+      this._moreLessButton.blur();
+      if (this._moreLessButton.textContent.includes("More")) {
+        this._attrs.showMore();
+        this._moreLessButton.textContent = "Less -";
+      }
+      else {
+        this._attrs.showLess();
+        this._moreLessButton.textContent = "More +";
+      }
+    });
   }
 
   set permission(val) {
@@ -42,6 +72,7 @@ export class MediaPanel extends TatorElement {
   set mediaType(val)
   {
     // Setup the attribute display for the media
+    this._mediaType = val;
     this._attrs.dataType = val;
     this._attrs.setValues(this._mediaData);
     this._attrs.addEventListener("change", () => {
@@ -65,6 +96,10 @@ export class MediaPanel extends TatorElement {
   set dataTypes(val) {
     this._dataTypes = val;
     this._makeButtons();
+  }
+  set browserSettings(val) {
+    this._browserSettings = val;
+    this._attrs.browserSettings = this._browserSettings;
   }
 
   _makeButtons() {
