@@ -335,7 +335,7 @@ class TatorSearch:
 
         table_name = entity_type._meta.db_table.replace('type','')
         index_name = _get_unique_index_name(entity_type, attribute)
-        push_job(index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute, flush), result_ttl=0)
+        push_job(index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute, flush, concurrent), result_ttl=0)
 
     def create_mapping(self, entity_type, flush=False, concurrent=True):
         from .models import MediaType, LocalizationType, StateType, LeafType

@@ -112,25 +112,25 @@ def buildSearchIndices(project_ids=None, flush=False, concurrent=True):
     if type(project_ids) == list:
         projects = projects.filter(pk__in=project_ids)
     elif type(project_ids) == int:
-        projects = project.filter(pk=project_ids)
+        projects = projects.filter(pk=project_ids)
     
     logger.info(f"Building search indices for projects: {projects.values('name')}")
 
     # Create mappings
     logger.info("Building mappings for media types...")
-    for type_ in progressbar.progressbar(list(MediaType.objects.filter(project__in=projects))):
+    for type_ in list(MediaType.objects.filter(project__in=projects)):
         TatorSearch().create_mapping(type_, flush, concurrent)
     logger.info("Building mappings for localization types...")
-    for type_ in progressbar.progressbar(list(LocalizationType.objects.filter(project__in=projects))):
+    for type_ in list(LocalizationType.objects.filter(project__in=projects)):
         TatorSearch().create_mapping(type_, flush, concurrent)
     logger.info("Building mappings for state types...")
-    for type_ in progressbar.progressbar(list(StateType.objects.filter(project__in=projects))):
-        TatorSearch().create_mapping(type_, flush)
-    logger.info("Building mappings for leaf types...", concurrent)
-    for type_ in progressbar.progressbar(list(LeafType.objects.filter(project__in=projects))):
-        TatorSearch().create_mapping(type_, flush)
-    logger.info("Building mappings for file types...", concurrent)
-    for type_ in progressbar.progressbar(list(FileType.objects.filter(project__in=projects))):
+    for type_ in list(StateType.objects.filter(project__in=projects)):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Building mappings for leaf types...")
+    for type_ in list(LeafType.objects.filter(project__in=projects)):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Building mappings for file types...")
+    for type_ in list(FileType.objects.filter(project__in=projects)):
         TatorSearch().create_mapping(type_, flush, concurrent)
     logger.info("Dispatch complete!")
     logger.info("To watch status, use `rq info` at the gunicorn shell OR the top-level rq-info make target")
