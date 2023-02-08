@@ -1,10 +1,14 @@
 import * as d3 from "d3";
 import { v1 as uuidv1 } from "uuid";
+import { TatorApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { BaseTimeline } from "../annotation/base-timeline.js";
 
 export class EntityTimeline extends BaseTimeline {
   constructor() {
     super();
+
+    this._selectedDiv = document.createElement("div");
+    this._shadow.appendChild(this._selectedDiv);
 
     this._mainTimelineDiv = document.createElement("div");
     this._mainTimelineDiv.id = "main-timeline";
@@ -34,9 +38,10 @@ export class EntityTimeline extends BaseTimeline {
     this._focusTimelineDiv.style.display = "none";
 
     // Redraw whenever there's a resize
-    this._selectedDataId = -1;
+    this._selectedData = null;
     this._stateData = [];
     this._numericalData = [];
+    this._pointsData = [];
     window.addEventListener("resize", this._updateSvgData());
   }
 
@@ -288,14 +293,66 @@ export class EntityTimeline extends BaseTimeline {
     }
   }
 
+  _createStateGraphData(attrTypeInfo, data) {
+    var startFrame;
+    var endFrame;
+    if (attrTypeInfo.mode == "frame") {
+      startFrame = data.attributes[attrTypeInfo.startFrameAttr];
+      endFrame = data.attributes[attrTypeInfo.endFrameAttr];
+    }
+    else if (attrTypeInfo.mode == "utc") {
+      startFrame = this._timeStore.getGlobalFrame("utc", [], data.attributes[attrTypeInfo.startUTCAttr]);
+      endFrame = this._timeStore.getGlobalFrame("utc", [], data.attributes[attrTypeInfo.endUTCAttr]);
+    }
+
+    if (attrTypeInfo.startInVideoCheckAttr && attrTypeInfo.endInVideoCheckAttr) {
+      // Start frame check and end frame check attributes exist.
+      // #TODO This capability may go away in lieu of just using -1 values.
+      if (data.attributes[attrTypeInfo.startInVideoCheckAttr] === false) {
+        startFrame = 0;
+      }
+      if (data.attributes[attrTypeInfo.endInVideoCheckAttr] === false) {
+        endFrame = this._timeStore.getLastGlobalFrame();
+      }
+    }
+    else {
+      // Start/end frame check attributes don't exist.
+      // Just assume if there's a -1, it's going to stretch
+      if (startFrame == -1) {
+        startFrame = 0;
+      }
+      if (endFrame == -1) {
+        endFrame = this._timeStore.getLastGlobalFrame();
+      }
+    }
+
+    if (attrTypeInfo.inVideoCheckAttr) {
+      // A "in video check" attribute is there. Don't draw if this value is false.
+      if (data.attributes[attrTypeInfo.inVideoCheckAttr] === false) {
+        return null;
+      }
+    }
+
+    if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
+      return {
+        startFrame: startFrame,
+        endFrame: endFrame};
+    }
+    else {
+      return null;
+    }
+  }
+
   /**
    * Called whenever there's been a notification of new data. This will update the GUI.
    */
   _updateData() {
 
     // Recreate the state and numerical datasets
+    this._pointsData = [];
     this._numericalData = [];
     this._stateData = [];
+
     if (isNaN(this._maxFrame)) {
       this.showMain(false);
       this.showFocus(false);
@@ -303,6 +360,7 @@ export class EntityTimeline extends BaseTimeline {
       this.dispatchEvent(new CustomEvent("graphData", {
         composed: true,
         detail: {
+          pointsData: this._pointsData,
           numericalData: this._numericalData,
           stateData: this._stateData
         }
@@ -324,10 +382,12 @@ export class EntityTimeline extends BaseTimeline {
 
     for (let typeId in this._data._dataTypes) {
 
-      // Grab the dataType and if this is not a state type, then ignore it
       const dataType = this._data._dataTypes[typeId];
       if (dataType.isLocalization) {
-        continue;
+        let allData = this._data._dataByType.get(typeId);
+        if (!allData) {
+          continue;
+        }
       }
 
       if (dataType.interpolation == "latest") {
@@ -348,17 +408,14 @@ export class EntityTimeline extends BaseTimeline {
             for (let data of allData) {
               let value = data.attributes[attrType.name];
               let graphValue;
-              let tatorId;
               if (!value) {
                 value = false;
                 graphValue = 0.0;
               }
               else {
-                tatorId = data.id;
                 graphValue = 1.0;
               }
               graphData.push({
-                tatorId: tatorId,
                 frame: this._timeStore.getGlobalFrame("matchFrame", data.media, data.frame),
                 value: graphValue,
                 actualValue: value});
@@ -377,6 +434,7 @@ export class EntityTimeline extends BaseTimeline {
               }
 
               this._stateData.push({
+                meta: attrType.id,
                 name: attrType.name,
                 graphData: graphData
               });
@@ -397,7 +455,6 @@ export class EntityTimeline extends BaseTimeline {
                   maxValue = value;
                 }
                 graphData.push({
-                  tatorId: data.id,
                   frame: this._timeStore.getGlobalFrame("matchFrame", data.media, data.frame),
                   value: 0.0,
                   actualValue: value});
@@ -484,12 +541,12 @@ export class EntityTimeline extends BaseTimeline {
         if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
           // Save the graphData to the state data list
           graphData.push({
-            tatorId: data.id,
+            meta: data.meta,
             frame: startFrame,
             value: 1.0,
             actualValue: true});
           graphData.push({
-            tatorId: data.id,
+            meta: data.meta,
             frame: endFrame,
             value: 0.0,
             actualValue: false});
@@ -510,6 +567,7 @@ export class EntityTimeline extends BaseTimeline {
         }
 
         this._stateData.push({
+          meta: attrTypeInfo.dataType.id,
           name: attrTypeInfo.name,
           graphData: graphData
         });
@@ -548,7 +606,11 @@ export class EntityTimeline extends BaseTimeline {
       return;
     }
 
+    this._mainPointsHeight = 30;
     this._mainLineHeight = 30;
+    if (this._pointsData.length == 0) {
+      this._mainPointsHeight = 0;
+    }
     if (this._numericalData.length == 0) {
       this._mainLineHeight = 0;
     }
@@ -577,23 +639,6 @@ export class EntityTimeline extends BaseTimeline {
     //       Potentially worth revisiting in the future and updating the dataset directly
     //       using the traditional d3 enter/update/exit paradigm.
     this._mainSvg.selectAll('*').remove();
-
-    // Frame number x-axis ticks
-    /*
-    if (this._numericalData.length == 0 && this._stateData.length == 0) {
-      var xAxis = g => g
-        .call(d3.axisBottom(this._mainX).ticks().tickFormat(d3.format("d")))
-        .call(g => g.selectAll(".tick").filter(d => this._mainX(d) < this._mainMargin.left || this._mainX(d) >= this._mainWidth - this._mainMargin.right).remove())
-        .call(g => g.select(".domain").remove());
-    }
-    else {
-      var xAxis = g => g
-      .attr("transform", `translate(0,${this._mainMargin.top})`)
-      .call(d3.axisTop(this._mainX).ticks().tickFormat(d3.format("d")))
-      .call(g => g.selectAll(".tick").filter(d => this._mainX(d) < this._mainMargin.left || this._mainX(d) >= this._mainWidth - this._mainMargin.right).remove())
-      .call(g => g.select(".domain").remove());
-    }
-    */
 
     // States are represented as area graphs
     var area = d3.area()
@@ -634,14 +679,7 @@ export class EntityTimeline extends BaseTimeline {
       .selectAll("use")
       .data(d => new Array(1).fill(d))
       .join("use")
-        .attr("fill", (d, i) => {
-          if (d.graphData[i].tatorId == this._selectedDataId) {
-            return "#ffffff";
-          }
-          else {
-            return "#797991";
-          }
-        })
+        .attr("fill", "#797991")
         .attr("transform", (d, i) => `translate(0,${(i + 1) * this._mainStep})`)
         .attr("xlink:href", d => d.pathId.href);
 
@@ -711,6 +749,38 @@ export class EntityTimeline extends BaseTimeline {
       .attr("dy", "0.35em")
       .attr("fill", "#fafafa")
       .attr("opacity", "0.0");
+
+
+    if (this._selectedGraphData) {
+      const selectedG = this._mainSvg.append("g");
+      selectedG.append("g")
+        .selectAll("rect")
+        .data(this._selectedGraphData)
+        .join("rect")
+          .attr("transform", (d) => {
+            var step = 0;
+            for (let idx = 0; idx < this._stateData.length; idx++) {
+              if (this._stateData[idx].meta == d.meta) {
+                step = idx;
+                break;
+              }
+            }
+            return `translate(0,${(step + 1) * this._mainStep})`;
+          })
+          .attr("fill", d => d.color)
+          .attr("x", d => this._mainX(d.startFrame))
+          .attr("y", mainY(0))
+          .attr("width", d => {
+            const newStart = Math.max(0,Math.round(this._mainX.invert(0)));
+            const newEnd = Math.min(this._maxFrame, Math.round(this._mainX.invert(this._mainWidth)));
+            var width = ((d.endFrame - d.startFrame) / (newEnd - newStart)) * this._mainWidth;
+            if ((d.endFrame - d.startFrame) < newStart || d.startFrame > newEnd) {
+              width = 0;
+            }
+            return width;
+          })
+          .attr("height", this._mainStep);
+    }
 
     this._mainFrameLine = this._mainSvg.append("line")
       .attr("stroke", "#fafafa")
@@ -1215,16 +1285,25 @@ export class EntityTimeline extends BaseTimeline {
   }
 
   /**
-   * #TODO Implement in the future. This will highlight a particular region
+   * This highlights a particular localization, frame range state, or track.
+   * Provide null to deselect.
+   *
+   * @param {Tator.Localization | Tator.State | null} data
    */
   selectEntity(data) {
-    //this._selectedDataId = data.id;
-    //this.redraw();
-  }
+    this._selectedData = data;
 
-  selectNone() {
-    //this._selectedDataId = -1;
-    //this.redraw();
+    if (this._selectedData) {
+      this._selectedGraphData = [{
+        type: "state",
+        meta: data.meta,
+        startFrame: 5000,
+        endFrame: 10000,
+        color: "#FFFFFF"
+      }]
+    }
+
+    this.redraw();
   }
 
   /**
