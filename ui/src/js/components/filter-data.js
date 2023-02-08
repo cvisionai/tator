@@ -226,6 +226,37 @@ export class FilterData {
         entityType.typeGroupName = (category_lookup.Localizations ? category_lookup.Localizations : "Localization");
 
         if (this.skipTypeIds.indexOf(this.localizationTypes[idx].id) < 0) {
+
+          if (['box','line','dot'].indexOf(this.localizationTypes[idx].dtype) >= 0)
+          {
+            var geo_x = {
+              name: "_x",
+              label: "X coordinate",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_x);
+            var geo_y = {
+              name: "_y",
+              label: "Y coordinate",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_y);
+          }
+          if (['box'].indexOf(this.localizationTypes[idx].dtype) >= 0)
+          {
+            var geo_width = {
+              name: "_width",
+              label: "Box Width",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_width);
+            var geo_height = {
+              name: "_height",
+              label: "Box Height",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_height);
+          }
           var versionAttribute = {
             choices: versionNames,
             name: "_version",
