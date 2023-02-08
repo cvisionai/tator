@@ -16,12 +16,14 @@ export class FilterData {
    *    List of categories to display in run algorithm option
    * @param {array} excludeTypesList
    *    List of types to exclude from creating filter options for
-   *    Available options: Medias|Localizations|MediaStates|TrackStates
+   *    Available options: Medias|Localizations|MediaStates|LocalizationStates
    * @param {array} skipTypeIds
    *    List of type ids to skip when creating filter options for
    *    Available options: Any Int ID
+   * @param {boolean} squashMetadata
+   *    If true, will collapse Localizations, MediaStates, LocalizationStates (whichever aren't excluded) into a single 'Metadata' Category
    */
-  constructor(modelData, algorithmCategories, excludeTypesList, skipTypeIds) {
+  constructor(modelData, algorithmCategories, excludeTypesList, skipTypeIds, squashMetadata) {
 
     this._modelData = modelData;
 
@@ -38,6 +40,8 @@ export class FilterData {
     if (skipTypeIds != null) {
       this.skipTypeIds = skipTypeIds;
     }
+
+    this._squashMetadata = (squashMetadata == true);
   }
   /**
    * @precondition The provided modelData must have been initialized
@@ -129,6 +133,14 @@ export class FilterData {
     // Create the filter options
     this._allTypes = [];
 
+    let category_lookup = {};
+    if (this._squashMetadata)
+    {
+      category_lookup = {'Localizations': 'Metadata',
+                         'MediaStates': 'Metadata',
+                         'LocalizationStates': 'Metadata'};
+    }
+
     if (this.excludeTypesList.indexOf("Medias") < 0) {
       for (let idx = 0; idx < this.mediaTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.mediaTypes[idx]));
@@ -211,7 +223,7 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("Localizations") < 0) {
       for (let idx = 0; idx < this.localizationTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
-        entityType.typeGroupName = "Localization";
+        entityType.typeGroupName = (category_lookup.Localizations ? category_lookup.Localizations : "Localization");
 
         if (this.skipTypeIds.indexOf(this.localizationTypes[idx].id) < 0) {
           var versionAttribute = {
@@ -268,7 +280,7 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("MediaStates") < 0) {
       for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.mediaStateTypes[idx]));
-        entityType.typeGroupName = "State";
+        entityType.typeGroupName = (category_lookup.MediaStates ? category_lookup.MediaStates : "State");
 
         if (this.skipTypeIds.indexOf(this.mediaStateTypes[idx].id) < 0) {
           var versionAttribute = {
@@ -295,7 +307,7 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("LocalizationStates") < 0) {
       for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.localizationStateTypes[idx]));
-        entityType.typeGroupName = "State";
+        entityType.typeGroupName = (category_lookup.LocalizationStates ? category_lookup.LocalizationStates : "State");
 
         if (this.skipTypeIds.indexOf(this.localizationStateTypes[idx].id) < 0) {
           var versionAttribute = {
