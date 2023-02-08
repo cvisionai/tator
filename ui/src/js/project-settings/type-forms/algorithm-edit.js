@@ -37,14 +37,19 @@ export class AlgorithmEdit extends TypeFormTemplate {
    async connectedCallback() {
       store.subscribe(state => state.JobClusterPermission, this.savePermission.bind(this));
       store.subscribe(state => state.Project, this.setManifestInfo.bind(this), []);
-      store.subscribe(state => state.Project, this.setManifestInfo.bind(this), []);
+      store.subscribe(state => state.isStaff, this.resetClusterPermission.bind(this), []);
 
       if (store.getState().JobClusterPermission) {
          this.savePermission(store.getState().JobClusterPermission);
       }
+
       if (store.getState().Project) {
          this.setManifestInfo(store.getState().Project);
       }
+   }
+
+   async resetClusterPermission(){
+      store.getState().setJobClusterPermissions();
    }
 
    async setManifestInfo(project) {
