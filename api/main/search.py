@@ -40,7 +40,7 @@ def _get_unique_index_name(entity_type, attribute):
     type_name_sanitized=entity_type.__class__.__name__.lower()
     entity_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",entity_type.name).lower()
     attribute_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",attribute['name']).lower()
-    if attribute['name'].startswith('_'):
+    if attribute['name'].startswith('$'):
         index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_internal_{attribute_name_sanitized}"
     else:
         index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_{entity_name_sanitized}_{attribute_name_sanitized}"
@@ -48,7 +48,7 @@ def _get_unique_index_name(entity_type, attribute):
 
 def _get_column_name(attribute):
     name=re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
-    if name.startswith('_'):
+    if name.startswith('$'):
         return name[1:] # internal field
     else:
         return f"attributes->>'{name}'" #embedded in JSONB field
