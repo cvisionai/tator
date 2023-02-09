@@ -125,9 +125,7 @@ export class FilterData {
     var sectionNames = [];
     for (let idx = 0; idx < this.sections.length; idx++) {
       let section = this.sections[idx];
-      if (section.tator_user_sections != null) {
-        sectionNames.push({label: `${section.name} (ID:${section.id})`, value: section.tator_user_sections});
-      }
+      sectionNames.push({label: `${section.name} (ID:${section.id})`, value: section.id});
     }
 
     // Create the filter options
@@ -163,7 +161,7 @@ export class FilterData {
 
           var sectionAttribute = {
             choices: sectionNames,
-            name: "tator_user_sections",
+            name: "_section",
             label: "Section",
             dtype: "enum"
           }
