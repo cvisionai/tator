@@ -146,14 +146,14 @@ export class FilterData {
 
         if (this.skipTypeIds.indexOf(this.mediaTypes[idx].id) < 0) {
           var nameAttribute = {
-            name: "_name",
+            name: "$name",
             label: "Filename",
             dtype: "string"
           };
           entityType.attribute_types.push(nameAttribute);
 
           var mediaIdAttribute = {
-            name: "_id",
+            name: "$id",
             label: "ID",
             dtype: "int"
           };
@@ -161,14 +161,14 @@ export class FilterData {
 
           var sectionAttribute = {
             choices: sectionNames,
-            name: "_section",
+            name: "$section",
             label: "Section",
             dtype: "enum"
           }
           entityType.attribute_types.push(sectionAttribute);
 
           var createdDatetimeAttribute = {
-            name: "_created_datetime",
+            name: "$created_datetime",
             label: "Created Datetime",
             dtype: "datetime"
           };
@@ -176,7 +176,7 @@ export class FilterData {
 
           var createdByAttribute = {
             choices: userFirstLastNames,
-            name: "_created_by",
+            name: "$created_by",
             label: "Created By",
             dtype: "enum"
           }
@@ -184,14 +184,14 @@ export class FilterData {
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "_modified_by",
+            name: "$modified_by",
             label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
-            name: "_modified_datetime",
+            name: "$modified_datetime",
             label: "Modified Datetime",
             dtype: "datetime"
           };
@@ -199,7 +199,7 @@ export class FilterData {
 
           var dtypeAttribute = {
             choices: mediaTypeOptions,
-            name: "_dtype",
+            name: "$dtype",
             label: "Data type",
             dtype: "enum"
           };
@@ -207,7 +207,7 @@ export class FilterData {
 
           var archiveStateAttribute = {
             choices: ["live", "to_archive", "archived", "to_live"],
-            name: "_archive_state",
+            name: "$archive_state",
             label: "Archive State",
             dtype: "enum"
           }
@@ -228,13 +228,13 @@ export class FilterData {
           if (['box','line','dot'].indexOf(this.localizationTypes[idx].dtype) >= 0)
           {
             var geo_x = {
-              name: "_x",
+              name: "$x",
               label: "X coordinate",
               dtype: "float"
             };
             entityType.attribute_types.push(geo_x);
             var geo_y = {
-              name: "_y",
+              name: "$y",
               label: "Y coordinate",
               dtype: "float"
             };
@@ -243,13 +243,13 @@ export class FilterData {
           if (['box'].indexOf(this.localizationTypes[idx].dtype) >= 0)
           {
             var geo_width = {
-              name: "_width",
+              name: "$width",
               label: "Box Width",
               dtype: "float"
             };
             entityType.attribute_types.push(geo_width);
             var geo_height = {
-              name: "_height",
+              name: "$height",
               label: "Box Height",
               dtype: "float"
             };
@@ -257,7 +257,7 @@ export class FilterData {
           }
           var versionAttribute = {
             choices: versionNames,
-            name: "_version",
+            name: "$version",
             label: "Version",
             dtype: "enum"
           };
@@ -265,7 +265,7 @@ export class FilterData {
 
           var dtypeAttribute = {
             choices: localizationTypeOptions,
-            name: "_dtype",
+            name: "$dtype",
             label: "Data type",
             dtype: "enum"
           };
@@ -273,14 +273,14 @@ export class FilterData {
 
           var userAttribute = {
             choices: userNames,
-            name: "_user",
+            name: "$user",
             label: "User",
             dtype: "enum"
           };
           entityType.attribute_types.push(userAttribute);
 
           var createdDatetimeAttribute = {
-            name: "_created_datetime",
+            name: "$created_datetime",
             label: "Created datetime",
             dtype: "datetime"
           };
@@ -288,14 +288,14 @@ export class FilterData {
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "_modified_by",
+            name: "$modified_by",
             label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
-            name: "_modified_datetime",
+            name: "$modified_datetime",
             label: "Modified Datetime",
             dtype: "datetime"
           };
@@ -314,7 +314,7 @@ export class FilterData {
         if (this.skipTypeIds.indexOf(this.mediaStateTypes[idx].id) < 0) {
           var versionAttribute = {
             choices: versionNames,
-            name: "_version",
+            name: "$version",
             label: "Version",
             dtype: "enum"
           };
@@ -322,7 +322,7 @@ export class FilterData {
 
           var typeAttribute = {
             choices: stateTypeOptions,
-            name: "_type",
+            name: "$type",
             label: "Data type",
             dtype: "enum"
           }
@@ -341,7 +341,7 @@ export class FilterData {
         if (this.skipTypeIds.indexOf(this.localizationStateTypes[idx].id) < 0) {
           var versionAttribute = {
             choices: versionNames,
-            name: "_version",
+            name: "$version",
             label: "Version",
             dtype: "enum"
           };
@@ -349,7 +349,7 @@ export class FilterData {
 
           var typeAttribute = {
             choices: stateTypeOptions,
-            name: "_type",
+            name: "$type",
             label: "Data Type",
             dtype: "enum"
           }
@@ -357,7 +357,7 @@ export class FilterData {
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "_modified_by",
+            name: "$modified_by",
             label: "Modified By",
             dtype: "enum"
           }
