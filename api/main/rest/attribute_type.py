@@ -53,8 +53,8 @@ class AttributeTypeListAPI(BaseListView):
 
         if "name" not in attribute_type:
             raise ValueError("Attribute type definition missing 'name' field")
-        if attribute_type['name'].startswith('_'):
-            raise ValueError("Attribute type name can not start with '_' character")
+        if attribute_type['name'].startswith('$'):
+            raise ValueError("Attribute type name can not start with '$' character")
         if "dtype" not in attribute_type:
             raise ValueError("Attribute type definition missing 'dtype' field")
         if "enum" == attribute_type["dtype"] and "choices" not in attribute_type:

@@ -103,6 +103,7 @@ export class EntityBrowser extends TatorElement {
   set dataType(val) {
     this._identifier = identifyingAttribute(val);
     this._dataType = val;
+    this._filterModal.dataType = val;
     this._title.textContent = this._dataType.name;
     let choices = [{value: "Off"}];
     const sorted = this._dataType.attribute_types.sort((a, b) => a.order - b.order);

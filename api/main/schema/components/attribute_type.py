@@ -18,7 +18,7 @@ autocomplete_service = {
 
 attribute_type_properties = {
     'name': {
-        'description': 'Name of the attribute.',
+        'description': 'Name of the attribute. The first character must not be \'$\', which is a reserved character for system usage.',
         'type': 'string',
     },
     'description': {

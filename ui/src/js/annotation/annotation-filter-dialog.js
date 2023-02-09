@@ -110,10 +110,42 @@ export class AnnotationFilterDialog extends ModalDialog {
     }
   }
 
+  set dataType(val)
+  {
+    this._dataType = val;
+    this._isLocalization = 'dtype' in val;
+  }
   set data(data)
   {
     this._td = new ModelDataConverter(data.project, data);
-    this._filterData = new FilterData(this._td, [], ['Medias']);
+    let excludeList = [];
+    let excludeCategories = ['Medias'];
+    if (this._dataType)
+    {
+      if (this._isLocalization)
+      {
+        excludeCategories.push(...['MediaStates', 'LocalizationStates']);
+        for (let t of this._td.getStoredLocalizationTypes())
+        {
+          if (t.id != this._dataType.id)
+          {
+            excludeList.push(t.id);
+          }
+        }
+      }
+      else
+      {
+        excludeCategories.push('Localizations');
+        for (let t of this._td.getStoredStateTypes())
+        {
+          if (t.id != this._dataType.id)
+          {
+            excludeList.push(t.id);
+          }
+        }
+      }
+    }
+    this._filterData = new FilterData(this._td, [], excludeCategories, excludeList, true);
     this._filterData.init();
 
     // Set the GUI elements
