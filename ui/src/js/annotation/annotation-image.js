@@ -41,6 +41,10 @@ export class AnnotationImage extends TatorElement {
     this._image.annotationData = val;
   }
 
+  set timelineSettings(val) {
+    this._timelineSettings = val;
+  }
+
   newMetadataItem(dtype, metaMode, objId) {
     this._image.style.cursor = "crosshair";
     this._image.newMetadataItem(dtype, metaMode, objId);

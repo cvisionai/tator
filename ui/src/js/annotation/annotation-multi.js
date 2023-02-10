@@ -1811,6 +1811,11 @@ export class AnnotationMulti extends TatorElement {
     this._entityTimeline.annotationData = val;
   }
 
+  set timelineSettings(val) {
+    this._timelineSettings = val;
+    this._entityTimeline.timelineSettings = val;
+  }
+
   _displayPlayerSettingsMenu() {
     this._hideCanvasMenus();
 

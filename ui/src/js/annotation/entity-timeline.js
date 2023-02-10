@@ -56,12 +56,24 @@ export class EntityTimeline extends BaseTimeline {
     this._data.addEventListener("freshData", () => {
       this._setupAttrStyleRangeTypes();
       this._updateData();
+
+      if (this._selectedData) {
+        this.selectEntity(this._selectedData);
+      }
     });
 
     this._data.addEventListener("initialized", () => {
       this._setupAttrStyleRangeTypes();
       this._updateData();
     });
+  }
+
+  /**
+   * This should be called prior to utilizing the entity timeline functions.
+   * @param {TimelineSettings} val - Expected to have been initialized already.
+   */
+  set timelineSettings(val) {
+    this._timelineSettings = val;
   }
 
   timeStoreInitialized() {
@@ -293,53 +305,56 @@ export class EntityTimeline extends BaseTimeline {
     }
   }
 
-  _createStateGraphData(attrTypeInfo, data) {
-    var startFrame;
-    var endFrame;
-    if (attrTypeInfo.mode == "frame") {
-      startFrame = data.attributes[attrTypeInfo.startFrameAttr];
-      endFrame = data.attributes[attrTypeInfo.endFrameAttr];
-    }
-    else if (attrTypeInfo.mode == "utc") {
-      startFrame = this._timeStore.getGlobalFrame("utc", [], data.attributes[attrTypeInfo.startUTCAttr]);
-      endFrame = this._timeStore.getGlobalFrame("utc", [], data.attributes[attrTypeInfo.endUTCAttr]);
-    }
+  /**
+   * @precondition this._timelineSettings must have been initialized
+   * @precondition this._data must have been initialized
+   * @precondition this._stateData must have been initialized with the current set of data
+   * @precondition this._selectedData must have been set
+   */
+  setSelectedStateGraphData() {
 
-    if (attrTypeInfo.startInVideoCheckAttr && attrTypeInfo.endInVideoCheckAttr) {
-      // Start frame check and end frame check attributes exist.
-      // #TODO This capability may go away in lieu of just using -1 values.
-      if (data.attributes[attrTypeInfo.startInVideoCheckAttr] === false) {
-        startFrame = 0;
-      }
-      if (data.attributes[attrTypeInfo.endInVideoCheckAttr] === false) {
-        endFrame = this._timeStore.getLastGlobalFrame();
-      }
-    }
-    else {
-      // Start/end frame check attributes don't exist.
-      // Just assume if there's a -1, it's going to stretch
-      if (startFrame == -1) {
-        startFrame = 0;
-      }
-      if (endFrame == -1) {
-        endFrame = this._timeStore.getLastGlobalFrame();
-      }
-    }
+    var data = this._selectedData;
 
-    if (attrTypeInfo.inVideoCheckAttr) {
-      // A "in video check" attribute is there. Don't draw if this value is false.
-      if (data.attributes[attrTypeInfo.inVideoCheckAttr] === false) {
-        return null;
-      }
-    }
-
-    if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
-      return {
-        startFrame: startFrame,
-        endFrame: endFrame};
-    }
-    else {
+    if (!data.meta.includes("state")) {
       return null;
+    }
+    const dataType = this._data._dataTypes[data.meta];
+
+    if (dataType.interpolation == "latest" || dataType.interpolation == "attr_style_range") {
+
+      this._selectedStateGraphData = [];
+      
+      for (const stateData of this._stateData) {
+        if (stateData.meta == data.meta) {
+
+          var graphData = [];
+          graphData.push({
+            id: data.id,
+            frame: this._minFrame,
+            value: 0.0,
+            actualValue: false});
+
+          for (const entry of stateData.graphData) {
+            if (entry.id == data.id) {
+              graphData.push(entry);
+            }
+            else if (entry.prevId == data.id) {
+              graphData.push(entry);
+            }
+          }
+
+          if (graphData.length == 0) {
+            continue;
+          }
+
+          this._selectedStateGraphData.push({
+            meta: stateData.meta,
+            name: stateData.name,
+            color: this._timelineSettings.getSelectedColor(),
+            graphData: graphData
+          });
+        }
+      }
     }
   }
 
@@ -416,6 +431,7 @@ export class EntityTimeline extends BaseTimeline {
                 graphValue = 1.0;
               }
               graphData.push({
+                id: data.id,
                 frame: this._timeStore.getGlobalFrame("matchFrame", data.media, data.frame),
                 value: graphValue,
                 actualValue: value});
@@ -430,11 +446,21 @@ export class EntityTimeline extends BaseTimeline {
               graphData[graphData.length - 1].frame = this._maxFrame;
 
               if (graphData[0].frame != this._minFrame) {
-                graphData.unshift({frame: this._minFrame, value: 0.0, actualValue: false});
+                graphData.unshift({
+                  id: null,
+                  frame: this._minFrame,
+                  value: 0.0,
+                  actualValue: false});
+              }
+
+              let prevId = null;
+              for (const entry of graphData) {
+                entry.prevId = prevId;
+                prevId = entry.id;
               }
 
               this._stateData.push({
-                meta: attrType.id,
+                meta: dataType.id,
                 name: attrType.name,
                 graphData: graphData
               });
@@ -541,12 +567,12 @@ export class EntityTimeline extends BaseTimeline {
         if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
           // Save the graphData to the state data list
           graphData.push({
-            meta: data.meta,
+            id: data.id,
             frame: startFrame,
             value: 1.0,
             actualValue: true});
           graphData.push({
-            meta: data.meta,
+            id: data.id,
             frame: endFrame,
             value: 0.0,
             actualValue: false});
@@ -563,7 +589,7 @@ export class EntityTimeline extends BaseTimeline {
         graphData[graphData.length - 1].frame = this._maxFrame;
 
         if (graphData[0].frame != this._minFrame) {
-          graphData.unshift({frame: this._minFrame, value: 0.0, actualValue: "false"});
+          graphData.unshift({frame: this._minFrame, value: 0.0, actualValue: "false", id: null});
         }
 
         this._stateData.push({
@@ -751,35 +777,54 @@ export class EntityTimeline extends BaseTimeline {
       .attr("opacity", "0.0");
 
 
-    if (this._selectedGraphData) {
-      const selectedG = this._mainSvg.append("g");
-      selectedG.append("g")
-        .selectAll("rect")
-        .data(this._selectedGraphData)
-        .join("rect")
+    if (this._selectedStateGraphData) {
+
+      var selectedStateDataset = this._selectedStateGraphData.map(d => Object.assign({
+        clipId: this._d3UID(),
+        pathId: this._d3UID()
+      }, d));
+
+      const selectedG = this._mainSvg.append("g")
+        .selectAll("g")
+        .data(selectedStateDataset)
+        .join("g")
           .attr("transform", (d) => {
             var step = 0;
             for (let idx = 0; idx < this._stateData.length; idx++) {
               if (this._stateData[idx].meta == d.meta) {
-                step = idx;
-                break;
+                if (this._stateData[idx].name == d.name) {
+                  step = idx;
+                  break;
+                }
               }
             }
-            return `translate(0,${(step + 1) * this._mainStep})`;
-          })
-          .attr("fill", d => d.color)
-          .attr("x", d => this._mainX(d.startFrame))
-          .attr("y", mainY(0))
-          .attr("width", d => {
-            const newStart = Math.max(0,Math.round(this._mainX.invert(0)));
-            const newEnd = Math.min(this._maxFrame, Math.round(this._mainX.invert(this._mainWidth)));
-            var width = ((d.endFrame - d.startFrame) / (newEnd - newStart)) * this._mainWidth;
-            if ((d.endFrame - d.startFrame) < newStart || d.startFrame > newEnd) {
-              width = 0;
+            if (step == 0) {
+              var pad = 0;
             }
-            return width;
-          })
+            else {
+              var pad = this._mainStepPad;
+            }
+            return `translate(0,${(step + 1) * (this._mainStep) + (step * pad) + this._mainMargin.top})`;
+          });
+
+      selectedG.append("clipPath")
+        .attr("id", d => d.clipId.id)
+        .append("rect")
+          .attr("width", this._mainWidth)
           .attr("height", this._mainStep);
+
+      selectedG.append("defs").append("path")
+        .attr("id", d => d.pathId.id)
+        .attr("d", d => area(d.graphData));
+
+      selectedG.append("g")
+          .attr("clip-path", d => d.clipId)
+        .selectAll("use")
+        .data(d => new Array(1).fill(d))
+        .join("use")
+          .attr("fill", d => d.color)
+          .attr("xlink:href", d => d.pathId.href);
+
     }
 
     this._mainFrameLine = this._mainSvg.append("line")
@@ -1292,18 +1337,15 @@ export class EntityTimeline extends BaseTimeline {
    */
   selectEntity(data) {
     this._selectedData = data;
+    this._selectedStateGraphData = [];
 
-    if (this._selectedData) {
-      this._selectedGraphData = [{
-        type: "state",
-        meta: data.meta,
-        startFrame: 5000,
-        endFrame: 10000,
-        color: "#FFFFFF"
-      }]
+    if (data) {
+      if (data.meta.includes("state")) {
+        this.setSelectedStateGraphData();
+      }
     }
-
     this.redraw();
+
   }
 
   /**

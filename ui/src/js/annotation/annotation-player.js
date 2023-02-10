@@ -1188,6 +1188,11 @@ export class AnnotationPlayer extends TatorElement {
     this._entityTimeline.annotationData = val;
   }
 
+  set timelineSettings(val) {
+    this._timelineSettings = val;
+    this._entityTimeline.timelineSettings = val;
+  }
+
   _displayPlayerSettingsMenu() {
     this._hideCanvasMenus();
 
@@ -1575,6 +1580,7 @@ export class AnnotationPlayer extends TatorElement {
 
   selectNone() {
     this._video.selectNone();
+    this.selectTimelineData();
   }
 
   selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {

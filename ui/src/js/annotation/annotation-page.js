@@ -5,6 +5,7 @@ import { Utilities } from "../util/utilities.js";
 import TatorLoading from "../../images/tator_loading.gif";
 import { store } from "./store.js";
 import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
+import { TimelineSettings } from "./timeline-settings.js";
 
 export class AnnotationPage extends TatorPage {
   constructor() {
@@ -1029,6 +1030,9 @@ export class AnnotationPage extends TatorPage {
         if (this._player.mediaType.dtype == "multi") {
           stateMediaIds = this._mediaIds;
         }
+
+        this._timelineSettings = new TimelineSettings(projectId, dataTypes);
+        canvas.timelineSettings = this._timelineSettings;
 
         this._browserSettings = new AnnotationBrowserSettings(projectId, dataTypes, this._mediaType);
         this._browserSettingsDialog.init(this._browserSettings, dataTypes, this._mediaType);
