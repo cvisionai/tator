@@ -1072,6 +1072,7 @@ export class AnnotationPage extends TatorPage {
         });
         canvas.addEventListener("select", evt => {
           this._browser.selectEntity(evt.detail);
+          canvas.selectTimelineData(evt.detail);
           this._settings.setAttribute("entity-id", evt.detail.id);
           this._settings.setAttribute("entity-type", evt.detail.meta);
           this._settings.setAttribute("type-id", evt.detail.meta);

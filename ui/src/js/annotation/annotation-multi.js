@@ -2474,6 +2474,7 @@ export class AnnotationMulti extends TatorElement {
     {
       video.selectNone();
     }
+    this.selectTimelineData();
   }
 
   selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
@@ -2579,7 +2580,7 @@ export class AnnotationMulti extends TatorElement {
   }
 
   selectTimelineData(data) {
-    //this._entityTimeline.selectEntity(data); #TODO
+    this._entityTimeline.selectEntity(data);
   }
 
   _timeToFrame(minutes, seconds) {

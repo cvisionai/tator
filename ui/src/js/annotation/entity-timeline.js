@@ -323,7 +323,7 @@ export class EntityTimeline extends BaseTimeline {
     if (dataType.interpolation == "latest" || dataType.interpolation == "attr_style_range") {
 
       this._selectedStateGraphData = [];
-      
+
       for (const stateData of this._stateData) {
         if (stateData.meta == data.meta) {
 
@@ -364,7 +364,6 @@ export class EntityTimeline extends BaseTimeline {
   _updateData() {
 
     // Recreate the state and numerical datasets
-    this._pointsData = [];
     this._numericalData = [];
     this._stateData = [];
 
@@ -375,7 +374,6 @@ export class EntityTimeline extends BaseTimeline {
       this.dispatchEvent(new CustomEvent("graphData", {
         composed: true,
         detail: {
-          pointsData: this._pointsData,
           numericalData: this._numericalData,
           stateData: this._stateData
         }
@@ -503,6 +501,7 @@ export class EntityTimeline extends BaseTimeline {
               graphData[graphData.length - 1].frame = this._maxFrame;
 
               this._numericalData.push({
+                meta: dataType.id,
                 name: `${attrType.name}`,
                 graphData: graphData
               });
@@ -616,9 +615,14 @@ export class EntityTimeline extends BaseTimeline {
    * Used in making unique identifiers for the various d3 graphing elements
    * @returns {object} id, href properties
    */
-  _d3UID() {
-    var id = uuidv1();
-    var href = new URL(`#${id}`, location) + "";
+  _d3UID(meta, name, category) {
+    if (meta == null) {
+      var id = uuidv1();
+    }
+    else {
+      var id = `tator_entityTimeline_${meta}_${name.replace(" ","-")}_${category}`;
+    }
+    var href = `#${id}`;
     return {id: id, href: href};
   }
 
@@ -632,7 +636,7 @@ export class EntityTimeline extends BaseTimeline {
       return;
     }
 
-    this._mainPointsHeight = 30;
+    this._mainPointsHeight = 10;
     this._mainLineHeight = 30;
     if (this._pointsData.length == 0) {
       this._mainPointsHeight = 0;
@@ -644,12 +648,15 @@ export class EntityTimeline extends BaseTimeline {
     this._mainStep = 5; // vertical height of each entry in the series / band
     this._mainMargin = ({top: 5, right: 3, bottom: 3, left: 3});
     this._mainHeight =
+    this._mainPointsHeight +
     this._mainLineHeight +
       this._stateData.length * (this._mainStep + this._mainStepPad) +
       this._mainMargin.top + this._mainMargin.bottom;
     this._mainWidth = this._mainTimelineDiv.offsetWidth;
 
-    if (this._mainWidth <= 0) { return; }
+    if (this._mainWidth <= 0) {
+      return;
+    }
     this._mainSvg.attr("viewBox",`0 0 ${this._mainWidth} ${this._mainHeight}`);
 
     // Define the axes
@@ -666,6 +673,29 @@ export class EntityTimeline extends BaseTimeline {
     //       using the traditional d3 enter/update/exit paradigm.
     this._mainSvg.selectAll('*').remove();
 
+    // Localizations are represented as triangles along the graph
+    const gLocalizations = this._mainSvg.append("g")
+      .selectAll("g")
+      .data(this._pointsData)
+      .join("g")
+        .attr("transform", `translate(0,${this._mainMargin.top})`);
+
+    var triangle = d3.symbol()
+      .type(d3.symbolTriangle)
+      .size(50);
+
+    gLocalizations
+      .append("g")
+      .attr("stroke-width", 1)
+      .selectAll("path")
+      .data(this._pointsData)
+        .join("path")
+        .attr(
+          "transform", d => `translate(${this._mainX(d.frame)}, ${2})`
+        )
+        .attr("fill", d => d.color)
+        .attr("d", d => triangle(d.species));
+
     // States are represented as area graphs
     var area = d3.area()
       .curve(d3.curveStepAfter)
@@ -674,15 +704,15 @@ export class EntityTimeline extends BaseTimeline {
       .y1(d => mainY(d.value));
 
     var mainStateDataset = this._stateData.map(d => Object.assign({
-      clipId: this._d3UID(),
-      pathId: this._d3UID()
+      clipId: this._d3UID(d.meta, d.name, "mainClip"),
+      pathId: this._d3UID(d.meta, d.name, "mainPath"),
     }, d));
 
     const gState = this._mainSvg.append("g")
       .selectAll("g")
       .data(mainStateDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${i * (this._mainStep + this._mainStepPad) + this._mainMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${i * (this._mainStep + this._mainStepPad) + this._mainMargin.top + this._mainPointsHeight})`);
 
     gState.append("clipPath")
       .attr("id", d => d.clipId.id)
@@ -711,8 +741,8 @@ export class EntityTimeline extends BaseTimeline {
 
     // Numerical data are represented as line graphs
     var mainLineDataset = this._numericalData.map(d => Object.assign({
-      clipId: this._d3UID(),
-      pathId: this._d3UID(),
+      clipId: this._d3UID(d.meta, d.name, "mainClip"),
+      pathId: this._d3UID(d.meta, d.name, "mainPath"),
       name: d.name
     }, d));
 
@@ -725,7 +755,7 @@ export class EntityTimeline extends BaseTimeline {
       .x(d => this._mainX(d.frame))
       .y(d => mainLineY(d.value));
 
-    const startOfMainLineGraph = (this._stateData.length) * (this._mainStep + this._mainStepPad) + this._mainMargin.top;
+    const startOfMainLineGraph = (this._stateData.length) * (this._mainStep + this._mainStepPad) + this._mainMargin.top + this._mainPointsHeight;
 
     if (mainLineDataset.length > 0) {
       this._mainSvg.append("rect")
@@ -776,12 +806,11 @@ export class EntityTimeline extends BaseTimeline {
       .attr("fill", "#fafafa")
       .attr("opacity", "0.0");
 
-
     if (this._selectedStateGraphData) {
 
       var selectedStateDataset = this._selectedStateGraphData.map(d => Object.assign({
-        clipId: this._d3UID(),
-        pathId: this._d3UID()
+        clipId: this._d3UID(d.meta, d.name, "selectedClip"),
+        pathId: this._d3UID(d.meta, d.name, "selectedPath"),
       }, d));
 
       const selectedG = this._mainSvg.append("g")
@@ -804,7 +833,7 @@ export class EntityTimeline extends BaseTimeline {
             else {
               var pad = this._mainStepPad;
             }
-            return `translate(0,${(step + 1) * (this._mainStep) + (step * pad) + this._mainMargin.top})`;
+            return `translate(0,${(step + 1) * (this._mainStep) + (step * pad) + this._mainMargin.top + this._mainPointsHeight})`;
           });
 
       selectedG.append("clipPath")
@@ -948,7 +977,14 @@ export class EntityTimeline extends BaseTimeline {
     const focusStep = 25; // vertical height of each entry in the series / band
     const focusStepPad = 4;
     const focusMargin = ({top: 20, right: 5, bottom: 3, left: 5});
+
+    var focusPointsHeight = focusStep + focusStepPad;
+    if (this._pointsData.length == 0) {
+      focusPointsHeight = 0;
+    }
+
     const focusHeight =
+      focusPointsHeight +
       this._numericalData.length * (focusStep + focusStepPad) +
       this._stateData.length * (focusStep + focusStepPad) +
       focusMargin.top + focusMargin.bottom;
@@ -1017,17 +1053,53 @@ export class EntityTimeline extends BaseTimeline {
       .x(d => focusX(d.frame))
       .y(d => focusY(d.value));
 
+    // Localizations are represented as triangles along the graph
+    const gLocalizations = this._focusSvg.append("g")
+      .selectAll("g")
+      .data(this._pointsData)
+      .join("g")
+        .attr("transform", `translate(0,${focusMargin.top})`);
+
+    var triangle = d3.symbol()
+      .type(d3.symbolTriangle)
+      .size(150);
+
+    gLocalizations.append("rect")
+      .attr("fill", "#262e3d")
+      .attr("width", focusWidth)
+      .attr("height", focusStep);
+
+    gLocalizations
+      .append("g")
+      .attr("stroke-width", 1)
+      .selectAll("path")
+      .data(this._pointsData)
+        .join("path")
+        .attr(
+          "transform", d => `translate(${focusX(d.frame)}, ${focusStep - 10})`
+        )
+        .attr("fill", d => d.color)
+        .attr("d", triangle());
+
+    gLocalizations.append("text")
+        .attr("x", 4)
+        .attr("y", focusStep / 2)
+        .attr("dy", "0.5em")
+        .attr("fill", "#fafafa")
+        .style("font-size", "12px")
+        .text(d => d.name);
+
     var focusStateDataset = this._stateData.map(d => Object.assign({
-        clipId: this._d3UID(),
-        pathId: this._d3UID(),
-        textId: this._d3UID()
+        clipId: this._d3UID(d.meta, d.name, "focusClip"),
+        pathId: this._d3UID(d.meta, d.name, "focusPath"),
+        textId: this._d3UID(d.meta, d.name, "focusText"),
       }, d));
 
     const focusG = this._focusSvg.append("g")
       .selectAll("g")
       .data(focusStateDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${i * (focusStep + focusStepPad) + focusMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${i * (focusStep + focusStepPad) + focusPointsHeight + focusMargin.top})`);
 
     focusG.append("clipPath")
       .attr("id", d => d.clipId.id)
@@ -1056,6 +1128,56 @@ export class EntityTimeline extends BaseTimeline {
         .attr("transform", (d, i) => `translate(0,${(i + 1) * focusStep})`)
         .attr("xlink:href", d => d.pathId.href);
 
+      if (this._selectedStateGraphData) {
+
+        var selectedStateDataset = this._selectedStateGraphData.map(d => Object.assign({
+          clipId: this._d3UID(d.meta, d.name, "selectedFocusClip"),
+          pathId: this._d3UID(d.meta, d.name, "selectedFocusPath"),
+        }, d));
+
+        const selectedG = this._focusSvg.append("g")
+          .selectAll("g")
+          .data(selectedStateDataset)
+          .join("g")
+            .attr("transform", (d) => {
+              var step = 0;
+              for (let idx = 0; idx < this._stateData.length; idx++) {
+                if (this._stateData[idx].meta == d.meta) {
+                  if (this._stateData[idx].name == d.name) {
+                    step = idx;
+                    break;
+                  }
+                }
+              }
+              if (step == 0) {
+                var pad = 0;
+              }
+              else {
+                var pad = this._mainStepPad;
+              }
+              return `translate(0,${(step + 1) * (focusStep + focusStepPad) + focusPointsHeight + focusMargin.top - focusStepPad})`;
+            });
+
+        selectedG.append("clipPath")
+          .attr("id", d => d.clipId.id)
+          .append("rect")
+            .attr("width", focusWidth)
+            .attr("height", focusStep);
+
+        selectedG.append("defs").append("path")
+          .attr("id", d => d.pathId.id)
+          .attr("d", d => focusArea(d.graphData));
+
+        selectedG.append("g")
+            .attr("clip-path", d => d.clipId)
+          .selectAll("use")
+          .data(d => new Array(1).fill(d))
+          .join("use")
+            .attr("fill", d => d.color)
+            .attr("xlink:href", d => d.pathId.href);
+      }
+
+
     // Unlike the main SVG, this SVG will display the corresponding attribute name
     // and the value when the user hovers over the SVG
     focusG.append("text")
@@ -1076,16 +1198,16 @@ export class EntityTimeline extends BaseTimeline {
 
     // States are represented as line graphs
     var focusLineDataset = this._numericalData.map(d => Object.assign({
-        clipId: this._d3UID(),
-        pathId: this._d3UID(),
-        textId: this._d3UID()
-      }, d));
+      clipId: this._d3UID(d.meta, d.name, "focusClip"),
+      pathId: this._d3UID(d.meta, d.name, "focusPath"),
+      textId: this._d3UID(d.meta, d.name, "focusText"),
+    }, d));
 
     const focusGLine = this._focusSvg.append("g")
       .selectAll("g")
       .data(focusLineDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${(i + this._stateData.length) * (focusStep + focusStepPad) + focusMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${(i + this._stateData.length) * (focusStep + focusStepPad) + focusPointsHeight + focusMargin.top})`);
 
     focusGLine.append("clipPath")
       .attr("id", d => d.clipId.id)
@@ -1336,12 +1458,28 @@ export class EntityTimeline extends BaseTimeline {
    * @param {Tator.Localization | Tator.State | null} data
    */
   selectEntity(data) {
+
     this._selectedData = data;
     this._selectedStateGraphData = [];
 
+    this._pointsData = [];
+
     if (data) {
-      if (data.meta.includes("state")) {
+
+      const dataType = this._data._dataTypes[data.meta];
+
+      if (dataType.id.includes("state") && (dataType.interpolation == "latest" || dataType.interpolation == "attr_style_range")) {
         this.setSelectedStateGraphData();
+      }
+      else if (dataType.id.includes("state") && dataType.association == "Media") {
+        // #TODO Do we want to show anything for media associated states?
+      }
+      else {
+        this._pointsData.push({
+          name: `Selected ${dataType.name}`,
+          frame: data.frame,
+          color: this._timelineSettings.getSelectedColor()
+        })
       }
     }
     this.redraw();

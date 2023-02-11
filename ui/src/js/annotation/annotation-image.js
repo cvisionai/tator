@@ -120,6 +120,10 @@ export class AnnotationImage extends TatorElement {
     this._image.selectTrack(track, undefined, false)
   }
 
+  selectTimelineData() {
+    return;
+  }
+
   addCreateTrackType(stateTypeObj) {
     this._image.addCreateTrackType(stateTypeObj);
   }
