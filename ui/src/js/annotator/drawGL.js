@@ -1270,19 +1270,6 @@ export class DrawGL
       console.error("Can't draw polygon with less than 3 points");
       return;
     }
-    if (points.length > 4)
-    {
-      console.warn("We only support rectangle fill");
-      return;
-    }
-    if (points.length == 4)
-    {
-      if (points[0][0] == points[3][0] && points[0][1] == points[3][1])
-      {
-        console.warn("We only support rectangle fill");
-        return;
-      }
-    }
 
     let contour = [];
     for (let p of points)
