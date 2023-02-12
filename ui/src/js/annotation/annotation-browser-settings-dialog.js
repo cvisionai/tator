@@ -1,7 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
 import { svgNamespace } from "../components/tator-element.js";
-import * as jsyaml from "js-yaml";
-import { variance } from "d3";
 
 export class AnnotationBrowserSettingsDialog extends ModalDialog {
   constructor() {
@@ -121,7 +119,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     pageParentDiv.appendChild(parentDiv);
 
     var headerDiv = document.createElement("div");
-    headerDiv.setAttribute("class", "d-flex flex-grow col-12")
+    headerDiv.setAttribute("class", "d-flex col-12")
     parentDiv.appendChild(headerDiv);
     
     var visibilityTab = document.createElement("button");
@@ -136,7 +134,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     headerDiv.appendChild(visibilityTab);
 
     var infoDiv = document.createElement("div");
-    infoDiv.setAttribute("class", "d-flex flex-grow flex-column col-12 purple-box-border py-3 annotation_browser_wrapper")
+    infoDiv.setAttribute("class", "d-flex flex-grow flex-column col-12 purple-box-border py-3 annotation_browser_settings_wrapper")
     parentDiv.appendChild(infoDiv);
 
     var description = document.createElement("div");
@@ -260,7 +258,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     // Create the button tabs based on the available localization types.
     var parentDiv = this._typePageSelectDiv;
     var header = document.createElement("h3");
-    header.setAttribute("class", "py-2 h3 px-3")
+    header.setAttribute("class", "py-3 h3 px-3")
     header.textContent = "Annotation Types";
     parentDiv.appendChild(header);
 
@@ -268,8 +266,11 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     var firstPageId = null;
     for (const [id, dataType] of Object.entries(this._dataTypeIdMap)) {
       var btn = document.createElement("button");
-      btn.setAttribute("class", "tab-btn px-2 mx-3 my-2 f2");
+      btn.setAttribute("class", "tab-btn px-3 mx-3 f2");
       btn.style.width = "200px";
+      btn.style.height = "50px";
+      btn.style.borderRadius = "0px";
+      btn.style.justifyContent = "left";
       btn.textContent = `${dataType.dtype}/${dataType.name}`;
       parentDiv.appendChild(btn);
       this._typePageButtons[id] = btn;
@@ -340,7 +341,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     attrWrapper.appendChild(this._typePageSelectDiv);
 
     this._typeAttributesDiv = document.createElement("div");
-    this._typeAttributesDiv.setAttribute("class", "d-flex flex-wrap flex-column my-2 col-12 mr-3");
+    this._typeAttributesDiv.setAttribute("class", "d-flex flex-wrap flex-column col-12 mr-3");
     attrWrapper.appendChild(this._typeAttributesDiv);
 
     this._makeAttributeSections();
