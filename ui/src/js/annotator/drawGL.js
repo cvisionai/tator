@@ -28,6 +28,7 @@
 
 import { FrameBuffer } from "./FrameBuffer.js";
 import { color } from "./drawGL_colors.js";
+import {triangulate} from "./tesselator.js";
 
 const vsSource = `#version 300 es
     in vec2 vertex;
@@ -1113,6 +1114,108 @@ export class DrawGL
       this.drawBuffer.indices.push(quadIndices[idx]+startIdx);
     }
   }
+
+  drawVertex(points, penColor, alpha, effect)
+  {
+    if (this.drawBuffer == null)
+    {
+      this.beginDraw();
+    }
+    if (penColor == undefined)
+    {
+      penColor = color.BLUE;
+    }
+    if (alpha == undefined)
+    {
+      // This is actually a scale of 0 to 255 when it works
+      alpha = 255.0;
+    }
+    if (effect == undefined)
+    {
+      effect = [0];
+    }
+
+    if (effect.length != 4)
+    {
+      let effect_new = [];
+      let idx = 0;
+      for (idx = 0; idx < effect.length; idx++)
+      {
+        effect_new[idx] = effect[idx];
+      }
+      for (idx; idx < 4; idx++)
+      {
+        effect_new[idx] = 0;
+      }
+      effect = effect_new;
+    }
+
+    var idx = 0;
+
+    // Initial # of vertices (half the count, we have 2d vertices)
+    var startIdx=this.drawBuffer.vertices.length/2;
+
+    // this is 8 floats (2 floats per vertex)
+    var vertices=new Array(points.length);
+
+    // Margin X is the amount to pull left or right to add thickness
+    // Margin Y is the amount to pull up/down to add thickness
+
+    // If it isn't, do some trig to figure out angles
+
+    // The assumed texture coordinates from the vertex location are
+    // relatve to the current roi; we have to convert to the global roi
+    // to accurately create a fill
+    let globalizeTexCoord = (coord) => {
+      return [(coord[0]*this._roi[2])+this._roi[0],
+              (coord[1]*this._roi[3])+this._roi[1]];
+    };
+
+    // Make sure the vertices don't go off the page.
+    // Left or top
+    var bgCoords =[];
+    for (let bg_idx = 0, s_idx = 0; s_idx < points.length; s_idx+=2, bg_idx++)
+    {
+      vertices[s_idx] = Math.min(points[s_idx],this.clientWidth);
+      vertices[s_idx+1] = Math.min(points[s_idx+1], this.clientHeight);
+      bgCoords[bg_idx] = globalizeTexCoord([vertices[0]/this.clientWidth,vertices[1]/this.clientHeight]);
+    }
+    
+
+    // Pen color is the same for each vertex pair (!)
+    // We use 2 dimensional vertices
+    for (idx = 0; idx < (vertices.length/2); idx++)
+    {
+      // Push supplied color to the color buffer
+      this.drawBuffer.colors.push(...penColor);
+      this.drawBuffer.colors.push(alpha);
+      if (effect[0] == 0.0)
+      {
+        // No texture for pen drawing
+        this.drawBuffer.uv.push(...[-1.0,-1.0]);
+      }
+      else if (effect[0] == 4.0)
+      {
+        const CIRCLE_UX = [[0.0,0.0],[1.0,0.0],[1.0,1.0],[0.0,1.0]];
+        this.drawBuffer.uv.push(...CIRCLE_UX[idx]);
+      }
+      else
+      {
+        // Fill effects use a texture coordinate based on line location
+        this.drawBuffer.uv.push(...bgCoords[idx]);
+      }
+
+      this.drawBuffer.filter.push(...effect);
+    }
+
+    this.drawBuffer.vertices = this.drawBuffer.vertices.concat(vertices);
+
+    // Push all the points supplied
+    for (idx = 0; idx < points.length/2; idx++)
+    {
+      this.drawBuffer.indices.push(idx+startIdx);
+    }
+  }
   // Draw a polygon given a series of points, polygon has to have 3
   // points, else you are a line. We are 2d space projecting imagery
   // but one should still consult research on perspectives, such as
@@ -1172,13 +1275,6 @@ export class DrawGL
       console.warn("We only support rectangle fill");
       return;
     }
-
-    // Temporary checks for filling of unexpected polygon shapes
-    if (points.length > 4)
-    {
-      console.warn("We only support rectangle fill");
-      return;
-    }
     if (points.length == 4)
     {
       if (points[0][0] == points[3][0] && points[0][1] == points[3][1])
@@ -1188,36 +1284,14 @@ export class DrawGL
       }
     }
 
-
-    var maxX = 0;
-    var maxY = 0;
-    var minY = 0xFFFFFFF;
-    var minX = 0xFFFFFFF;
-
-    for (var idx = 0; idx < points.length; idx++)
+    let contour = [];
+    for (let p of points)
     {
-      if (points[idx][0] > maxX)
-      {
-        maxX = points[idx][0];
-      }
-      if (points[idx][0] < minX)
-      {
-        minX = points[idx][0];
-      }
-      if (points[idx][1] > maxY)
-      {
-        maxY = points[idx][1];
-      }
-      if (points[idx][1] < minY)
-      {
-        minY = points[idx][1];
-      }
-
-      var start=[minX+(width/2), (minY+maxY)/2];
-      var end =[maxX-(width/2), (minY+maxY)/2];
-      var fillWidth = (maxY-minY-width);
+      contour.push(...p);
     }
-    this.drawLine(start,end,penColor, fillWidth, alpha, effect);
+    let triangles = triangulate([contour]);
+
+    this.drawVertex(triangles, penColor, alpha, effect);
   }
 
   computeBounds(vertices)
