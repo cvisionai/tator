@@ -906,7 +906,7 @@ export class EntityTimeline extends BaseTimeline {
     // and there is data
     if (this._focusTimelineDiv.style.display != "none") {
       this._mainBrush = d3.brushX()
-        .extent([[this._mainMargin.left, 0.5], [this._mainWidth - this._mainMargin.right, this._mainHeight - this._mainMargin.bottom + 0.5]])
+        .extent([[0, 0.5], [this._mainWidth - 0, this._mainHeight - this._mainMargin.bottom + 0.5]])
         .on("brush", this._mainBrushed.bind(this));
 
       this._mainBrushG = this._mainSvg.append("g")
