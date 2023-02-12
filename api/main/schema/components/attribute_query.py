@@ -4,7 +4,37 @@ attribute_filter_schema = {
         'properties': {
           'attribute': {
               'type': 'string',
-              'description': 'Name of the attribute',
+              'description': """Name of the attribute or field to search on. 
+              
+              Given a user defined type (Localization, State, or Media) with defined attributes 
+              any attribute is searchable by its name. If a Localization has an attribute named 'Species' 
+              the name to use to search on that column is 'Species'. 
+
+              Additional built-in columns are available to search on dependent on the underlying metadata
+              type being searched. To search a built in field, a '$' character must be used in front of the column
+              name from main.models.
+              
+              The following table shows common columns and to which types they apply. Any internal column 
+              of the model may be searched in this manner.
+              
+              '$' must precede these names in search attempts. E.g. `created_by` is supplied as `$created_by`.
+    
+              | Name              | Description                            | Localizations | States | Medias | Leaves | Files | 
+              |-------------------|----------------------------------------|---------------|--------|--------|--------|-------|
+              | created_datetime  | The time of creation for this datum    |       X       |   X    |   X    |    X   |   X   |
+              | created_by        | The user id who created this datum     |       X       |   X    |   X    |    X   |   X   |
+              | modified_datetime | The last modification time             |       X       |   X    |   X    |    X   |   X   |
+              | modified_by       | The last modification user             |       X       |   X    |   X    |    X   |   X   |
+              | name              | The name of the element                |               |        |   X    |    X   |   X   |
+              | fps               | The frames per second                  |               |        |   X    |        |       |
+              | deleted           | Whether the media is marked deleted    |               |        |   X    |    X   |   X   |
+              | variant_deleted   | Whether the metadata is marked deleted |       X       |   X    |        |        |       |
+              | archive_state     | The current archive state of the media |               |        |   X    |        |       |
+              | x, y, u, or v     | Geometric coordinates                  |               |        |        |        |       |
+              | width or height   | Geometric sizes                        |               |        |        |        |       |
+
+              
+              """,
           },
           'operation': {
               'type': 'string',
