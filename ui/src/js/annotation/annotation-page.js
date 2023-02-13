@@ -116,6 +116,9 @@ export class AnnotationPage extends TatorPage {
     this._browserSettingsDialog = document.createElement("annotation-browser-settings-dialog");
     this._main.appendChild(this._browserSettingsDialog);
 
+    this._timelineSettingsDialog = document.createElement("timeline-settings-dialog");
+    this._main.appendChild(this._timelineSettingsDialog);
+
     this._progressDialog.addEventListener("jobsDone", evt => {
       evt.detail.job.callback(evt.detail.status);
     });
@@ -798,6 +801,15 @@ export class AnnotationPage extends TatorPage {
       document.body.classList.remove("shortcuts-disabled");
     });
 
+    this._timelineSettingsDialog.addEventListener("close", () => {
+      this.removeAttribute("has-open-modal", "");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
+    this._timelineSettingsDialog.addEventListener("settingsChanged", () => {
+      canvas.updateTimeline();
+    });
+
     this._player.addEventListener("setTimelineDisplayMode", (evt) => {
       this._settings.setAttribute("timeline-display", evt.detail.mode);
       this._updateURL();
@@ -814,6 +826,12 @@ export class AnnotationPage extends TatorPage {
       this.setAttribute("has-open-modal", "");
       document.body.classList.add("shortcuts-disabled");
     });
+
+    this._player.addEventListener("openTimelineSettings", () => {
+      this._timelineSettingsDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+      document.body.classList.add("shortcuts-disabled");
+    })
 
     this._browser.addEventListener("openBrowserSettings", () => {
       this._browserSettingsDialog.setAttribute("is-open", "");
@@ -1033,6 +1051,7 @@ export class AnnotationPage extends TatorPage {
 
         this._timelineSettings = new TimelineSettings(projectId, dataTypes);
         canvas.timelineSettings = this._timelineSettings;
+        this._timelineSettingsDialog.init(this._timelineSettings);
 
         this._browserSettings = new AnnotationBrowserSettings(projectId, dataTypes, this._mediaType);
         this._browserSettingsDialog.init(this._browserSettings, dataTypes, this._mediaType);

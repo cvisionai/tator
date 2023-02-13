@@ -1,19 +1,22 @@
 /**
  * Processes the provided data types to be used by the entity timeline and
  * the timeline settings dialog.
- * 
+ *
  * Dependency: localStorage is used
- * 
+ *
  */
 export class TimelineSettings {
 
   constructor(projectId, dataTypes) {
 
     this._projectId = projectId;
+    this._localStorageKey = `tator_timeline_settings_proj_${projectId}`;
 
     this._frameNumericalTypes = [];
     this._frameBooleanTypes = [];
     this._attrRangeTypes = [];
+    this._allTypes = [];
+    this._defaultColor = "#797991";
 
     for (const dataType of dataTypes) {
 
@@ -23,18 +26,24 @@ export class TimelineSettings {
         sortedAttributeTypes.sort((a,b) => {return a.order - b.order});
         for (let attrType of sortedAttributeTypes) {
           if (attrType.dtype == "bool") {
-          
+
             this._frameBooleanTypes.push({
+              timelineType: "frameBoolean",
               dataType: dataType,
               name: attrType.name,
+              color: this._defaultColor,
+              visible: true
             });
 
           }
           else if (attrType.dtype == "float" || attrType.dtype == "int") {
 
             this._frameNumericalTypes.push({
+              timelineType: "frameNumerical",
               dataType: dataType,
-              name: attrType.name
+              name: attrType.name,
+              color: this._defaultColor,
+              visible: true
             })
 
           }
@@ -115,6 +124,7 @@ export class TimelineSettings {
           inVideoCheckAttr = null;
 
           this._attrRangeTypes.push({
+            timelineType: "attributeRange",
             dataType: dataType,
             name: dataType.name,
             mode: mode,
@@ -125,6 +135,8 @@ export class TimelineSettings {
             startInVideoCheckAttr: startInVideoCheckAttr,
             endInVideoCheckAttr: endInVideoCheckAttr,
             inVideoCheckAttr: null,
+            color: this._defaultColor,
+            visible: true
           });
         }
         else if (
@@ -157,6 +169,7 @@ export class TimelineSettings {
             endInVideoCheckAttr = rangeTokens[4];
 
             this._attrRangeTypes.push({
+              timelineType: "attributeRange",
               dataType: dataType,
               name: rangeInfo.name,
               mode: mode,
@@ -166,7 +179,9 @@ export class TimelineSettings {
               endFrameAttr: null,
               startInVideoCheckAttr: startInVideoCheckAttr,
               endInVideoCheckAttr: endInVideoCheckAttr,
-              inVideoCheckAttr: inVideoCheckAttr
+              inVideoCheckAttr: inVideoCheckAttr,
+              color: this._defaultColor,
+              visible: true
             });
           }
         }
@@ -176,6 +191,7 @@ export class TimelineSettings {
           endUTCAttr = endUTCAttrList[0];
 
           this._attrRangeTypes.push({
+            timelineType: "attributeRange",
             dataType: dataType,
             name: dataType.name,
             mode: mode,
@@ -186,6 +202,8 @@ export class TimelineSettings {
             startInVideoCheckAttr: startInVideoCheckAttr,
             endInVideoCheckAttr: endInVideoCheckAttr,
             inVideoCheckAttr: null,
+            color: this._defaultColor,
+            visible: true
           });
         }
         else if (startFrameAttrList.length > 1 &&
@@ -216,6 +234,7 @@ export class TimelineSettings {
             inVideoCheckAttr = rangeTokens[2];
 
             this._attrRangeTypes.push({
+              timelineType: "attributeRange",
               dataType: dataType,
               name: rangeInfo.name,
               mode: mode,
@@ -225,7 +244,9 @@ export class TimelineSettings {
               endFrameAttr: endFrameAttr,
               startInVideoCheckAttr: null,
               endInVideoCheckAttr: null,
-              inVideoCheckAttr: inVideoCheckAttr
+              inVideoCheckAttr: inVideoCheckAttr,
+              color: this._defaultColor,
+              visible: true
             });
           }
         }
@@ -237,6 +258,68 @@ export class TimelineSettings {
 
     }
 
+    this._allTypes.push(...this._frameBooleanTypes);
+    this._allTypes.push(...this._attrRangeTypes);
+    this._allTypes.push(...this._frameNumericalTypes);
+
+    try {
+      const storedDataJSON = localStorage.getItem(this._localStorageKey);
+      if (storedDataJSON) {
+        const storageObject = JSON.parse(storedDataJSON);
+        if (storageObject.attributeTypesInfo) {
+          for (const cachedInfo of storageObject.attributeTypesInfo) {
+            for (var thisInfo of this._allTypes) {
+              if (thisInfo.dataType.id == cachedInfo.dataTypeId && thisInfo.name == cachedInfo.name) {
+                thisInfo.color = cachedInfo.color;
+                thisInfo.visible = cachedInfo.visible;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    catch (exc) {
+      console.warn(exc);
+    }
+
+  }
+
+  setColor(dataTypeId, attributeName, color) {
+    for (var entry of this._allTypes) {
+      if (entry.dataType.id == dataTypeId && entry.name == attributeName) {
+        entry.color = color;
+        this.saveToLocalStorage();
+        return;
+      }
+    }
+  }
+
+  setVisible(dataTypeId, attributeName, visible) {
+    for (var entry of this._allTypes) {
+      if (entry.dataType.id == dataTypeId && entry.name == attributeName) {
+        entry.visible = visible;
+        this.saveToLocalStorage();
+        return;
+      }
+    }
+  }
+
+  saveToLocalStorage() {
+    var attributeTypesInfo = [];
+    for (const info of this._allTypes) {
+      attributeTypesInfo.push({
+        dataTypeId: info.dataType.id,
+        name: info.name,
+        color: info.color,
+        visible: info.visible
+      });
+    }
+    var storageObject = {
+      projectId: this._projectId,
+      attributeTypesInfo: attributeTypesInfo
+    }
+    window.localStorage.setItem(this._localStorageKey, JSON.stringify(storageObject));
   }
 
   getFrameBooleanInfo() {

@@ -2583,6 +2583,10 @@ export class AnnotationMulti extends TatorElement {
     this._entityTimeline.selectEntity(data);
   }
 
+  updateTimeline() {
+    this._entityTimeline.updateData();
+  }
+
   _timeToFrame(minutes, seconds) {
     var frame = minutes * 60 * this._fps_of_max + seconds * this._fps_of_max + 1;
     return frame;

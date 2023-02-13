@@ -1645,6 +1645,10 @@ export class AnnotationPlayer extends TatorElement {
     this._entityTimeline.selectEntity(data);
   }
 
+  updateTimeline() {
+    this._entityTimeline.updateData();
+  }
+
   _timeToFrame(minutes, seconds) {
     var frame = minutes * 60 * this._fps + seconds * this._fps + 1;
     return frame;

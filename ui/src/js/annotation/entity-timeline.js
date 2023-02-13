@@ -54,8 +54,7 @@ export class EntityTimeline extends BaseTimeline {
     this._data = val;
 
     this._data.addEventListener("freshData", () => {
-      this._setupAttrStyleRangeTypes();
-      this._updateData();
+      this.updateData();
 
       if (this._selectedData) {
         this.selectEntity(this._selectedData);
@@ -63,8 +62,7 @@ export class EntityTimeline extends BaseTimeline {
     });
 
     this._data.addEventListener("initialized", () => {
-      this._setupAttrStyleRangeTypes();
-      this._updateData();
+      this.updateData();
     });
   }
 
@@ -78,231 +76,7 @@ export class EntityTimeline extends BaseTimeline {
 
   timeStoreInitialized() {
     this._timeStoreInitialized = true;
-    this._setupAttrStyleRangeTypes();
-    this._updateData();
-  }
-
-  /**
-   * Expected that state types will not change within the annotator/usage of this timeline.
-   * Therefore, run this once at initialization.
-   *
-   * @postcondition this._attrStyleRangeTypes is set
-   */
-  _setupAttrStyleRangeTypes() {
-
-    if (this._attrStyleRangeTypes != undefined) {
-      return;
-    }
-
-    if (this._data == undefined) {
-      return;
-    }
-
-    this._attrStyleRangeTypes = [];
-
-    for (let typeId in this._data._dataTypes) {
-
-      // Grab the dataType and if this is not a state type, then ignore it
-      const dataType = this._data._dataTypes[typeId];
-      if (dataType.isLocalization) {
-        continue;
-      }
-
-      if (dataType.interpolation == "attr_style_range") {
-        // To support attr_style_range, there must at least be one set of
-        // start_frame|end_frame style attributes. Grab the start_frame/end_frame info.
-        // Same applies to start_utc|end_utc style attributes
-        //
-        // There can actually be multiple start_frame|end_frame pairs. If this is the case,
-        // there has to be a range associated. If not, then don't show anything and throw a
-        // warning
-        var startUTCAttr;
-        var endUTCAttr;
-        var startFrameAttr;
-        var endFrameAttr;
-        var startInVideoCheckAttr;
-        var endInVideoCheckAttr;
-        var inVideoCheckAttr;
-        var inVideoCheckAttrList = [];
-        var startUTCAttrList = [];
-        var endUTCAttrList = [];
-        var startFrameAttrList = [];
-        var endFrameAttrList = [];
-        var rangeList = [];
-        var rangeUtcList = [];
-        var mode;
-
-        for (const attr of dataType.attribute_types) {
-          const style = attr['style'];
-
-          if (style) {
-
-            const styleOptions = style.split(' ');
-            const name = attr['name'];
-
-            if (styleOptions.includes("start_frame")) {
-              mode = "frame";
-              startFrameAttrList.push(name);
-            }
-            else if (styleOptions.includes("end_frame")) {
-              mode = "frame";
-              endFrameAttrList.push(name);
-            }
-            else if (styleOptions.includes("start_frame_check") || styleOptions.includes("start_in_video_check")) {
-              startInVideoCheckAttr = name;
-            }
-            else if (styleOptions.includes("end_frame_check") || styleOptions.includes("end_in_video_check")) {
-              endInVideoCheckAttr = name;
-            }
-            else if (styleOptions.includes("start_utc")) {
-              mode = "utc";
-              startUTCAttrList.push(name);
-            }
-            else if (styleOptions.includes("end_utc")) {
-              mode = "utc";
-              endUTCAttrList.push(name);
-            }
-            else if (styleOptions.includes("in_video_check")) {
-              inVideoCheckAttrList.push(name);
-            }
-            else if (styleOptions.includes("range_set")) {
-              rangeList.push({name: name, data: attr["default"], order: attr["order"]});
-            }
-            else if (styleOptions.includes("range_set_utc")) {
-              rangeUtcList.push({name: name, data: attr["default"], order: attr["order"]});
-            }
-          }
-        }
-
-        if (startFrameAttrList.length == 1 && endFrameAttrList.length == 1) {
-
-          startFrameAttr = startFrameAttrList[0];
-          endFrameAttr = endFrameAttrList[0];
-          startUTCAttr = null;
-          endUTCAttr = null;
-          inVideoCheckAttr = null;
-
-          this._attrStyleRangeTypes.push({
-            dataType: dataType,
-            name: dataType.name,
-            mode: mode,
-            startUTCAttr: null,
-            endUTCAttr: null,
-            startFrameAttr: startFrameAttr,
-            endFrameAttr: endFrameAttr,
-            startInVideoCheckAttr: startInVideoCheckAttr,
-            endInVideoCheckAttr: endInVideoCheckAttr,
-            inVideoCheckAttr: null,
-          });
-        }
-        else if (
-          startUTCAttrList.length >= 1 &&
-          endUTCAttrList.length >= 1 &&
-          startUTCAttrList.length == endUTCAttrList.length &&
-          rangeUtcList.length == startUTCAttrList.length) {
-
-          rangeUtcList.sort(function(a, b) {
-              if (a.order < b.order) {
-                return 1;
-              }
-              if (a.order > b.order) {
-                return -1;
-              }
-              return 0;
-            }
-          );
-          for (const rangeInfo of rangeUtcList) {
-            const rangeTokens = rangeInfo.data.split('|');
-            if (rangeTokens.length != 5) {
-              console.error("Incorrect datatype setup with attr_style_range interpolation.")
-              break;
-            }
-
-            startUTCAttr = rangeTokens[0];
-            endUTCAttr = rangeTokens[1];
-            inVideoCheckAttr = rangeTokens[2];
-            startInVideoCheckAttr = rangeTokens[3];
-            endInVideoCheckAttr = rangeTokens[4];
-
-            this._attrStyleRangeTypes.push({
-              dataType: dataType,
-              name: rangeInfo.name,
-              mode: mode,
-              startUTCAttr: startUTCAttr,
-              endUTCAttr: endUTCAttr,
-              startFrameAttr: null,
-              endFrameAttr: null,
-              startInVideoCheckAttr: startInVideoCheckAttr,
-              endInVideoCheckAttr: endInVideoCheckAttr,
-              inVideoCheckAttr: inVideoCheckAttr
-            });
-          }
-        }
-        else if (startUTCAttrList.length == 1 && endUTCAttrList.length == 1) {
-
-          startUTCAttr = startUTCAttrList[0];
-          endUTCAttr = endUTCAttrList[0];
-
-          this._attrStyleRangeTypes.push({
-            dataType: dataType,
-            name: dataType.name,
-            mode: mode,
-            startUTCAttr: startUTCAttr,
-            endUTCAttr: endUTCAttr,
-            startFrameAttr: null,
-            endFrameAttr: null,
-            startInVideoCheckAttr: startInVideoCheckAttr,
-            endInVideoCheckAttr: endInVideoCheckAttr,
-            inVideoCheckAttr: null,
-          });
-        }
-        else if (startFrameAttrList.length > 1 &&
-          endFrameAttrList.length > 1 &&
-          startFrameAttrList.length == endFrameAttrList.length &&
-          startFrameAttrList.length == rangeList.length) {
-
-          rangeList.sort(function(a, b) {
-              if (a.order < b.order) {
-                return 1;
-              }
-              if (a.order > b.order) {
-                return -1;
-              }
-              return 0;
-            }
-          );
-
-          for (const rangeInfo of rangeList) {
-            const rangeTokens = rangeInfo.data.split('|');
-            if (rangeTokens.length != 3) {
-              console.error("Incorrect datatype setup with attr_style_range interpolation.")
-              break;
-            }
-
-            startFrameAttr = rangeTokens[0];
-            endFrameAttr = rangeTokens[1];
-            inVideoCheckAttr = rangeTokens[2];
-
-            this._attrStyleRangeTypes.push({
-              dataType: dataType,
-              name: rangeInfo.name,
-              mode: mode,
-              startUTCAttr: null,
-              endUTCAttr: null,
-              startFrameAttr: startFrameAttr,
-              endFrameAttr: endFrameAttr,
-              startInVideoCheckAttr: null,
-              endInVideoCheckAttr: null,
-              inVideoCheckAttr: inVideoCheckAttr
-            });
-          }
-        }
-        else {
-          console.error("Incorrect datatype setup with attr_style_range interpolation.")
-          continue;
-        }
-      }
-    }
+    this.updateData();
   }
 
   /**
@@ -361,7 +135,7 @@ export class EntityTimeline extends BaseTimeline {
   /**
    * Called whenever there's been a notification of new data. This will update the GUI.
    */
-  _updateData() {
+  updateData() {
 
     // Recreate the state and numerical datasets
     this._numericalData = [];
@@ -385,13 +159,17 @@ export class EntityTimeline extends BaseTimeline {
       return;
     }
 
-    if (this._attrStyleRangeTypes == undefined) {
+    if (this._timelineSettings == undefined) {
       return;
     }
 
     if (!this._timeStoreInitialized) {
       return;
     }
+
+    this._frameBooleanTypes = this._timelineSettings.getFrameBooleanInfo();
+    this._frameNumericalTypes = this._timelineSettings.getFrameNumericalInfo();
+    this._attrRangeTypes = this._timelineSettings.getAttrRangeInfo();
 
     for (let typeId in this._data._dataTypes) {
 
@@ -415,6 +193,19 @@ export class EntityTimeline extends BaseTimeline {
         sortedAttributeTypes.sort((a,b) => {return a.order - b.order});
         for (let attrType of sortedAttributeTypes) {
           if (attrType.dtype == "bool") {
+
+            var color = "#FFFFFF";
+            var visible = true;
+            for (const info of this._frameBooleanTypes) {
+              if (info.name == attrType.name && info.dataType.id == dataType.id) {
+                color = info.color;
+                visible = info.visible;
+              }
+            }
+
+            if (!visible) {
+              continue;
+            }
 
             // Collect all the data for this attribute
             let graphData = [];
@@ -460,7 +251,8 @@ export class EntityTimeline extends BaseTimeline {
               this._stateData.push({
                 meta: dataType.id,
                 name: attrType.name,
-                graphData: graphData
+                graphData: graphData,
+                color: color
               });
             }
           }
@@ -468,6 +260,20 @@ export class EntityTimeline extends BaseTimeline {
           //       Typically, the first conditional would check if style exists and the
           //       next would be attrType.style == "display_timeline"
           else if (attrType.dtype == "float" || attrType.dtype == "int") {
+
+            var color = "#FFFFFF";
+            var visible = true;
+            for (const info of this._frameNumericalTypes) {
+              if (info.name == attrType.name && info.dataType.id == dataType.id) {
+                color = info.color;
+                visible = info.visible;
+              }
+            }
+
+            if (!visible) {
+              continue;
+            }
+
             // Display this attribute as a numerical graph.
             // Normalize the data because the graph domain is from 0 to 1.
             let graphData = [];
@@ -501,6 +307,7 @@ export class EntityTimeline extends BaseTimeline {
               graphData[graphData.length - 1].frame = this._maxFrame;
 
               this._numericalData.push({
+                color: color,
                 meta: dataType.id,
                 name: `${attrType.name}`,
                 graphData: graphData
@@ -511,9 +318,14 @@ export class EntityTimeline extends BaseTimeline {
       }
     }
 
-    // Have to loop over the stored _attrStyleRangeTypes separately from the dataTypes
+    // Have to loop over the stored _attrRangeTypes separately from the dataTypes
     // since we treat each start/end range separately in the graph.
-    for (let attrTypeInfo of this._attrStyleRangeTypes) {
+    for (let attrTypeInfo of this._attrRangeTypes) {
+
+      if (!attrTypeInfo.visible) {
+        continue;
+      }
+
       // We've already figured out how the attributes are connected to each other earlier
       // with _setupAttrStyleRangeTypes()
       let allData = this._data._dataByType.get(attrTypeInfo.dataType.id);
@@ -594,7 +406,8 @@ export class EntityTimeline extends BaseTimeline {
         this._stateData.push({
           meta: attrTypeInfo.dataType.id,
           name: attrTypeInfo.name,
-          graphData: graphData
+          graphData: graphData,
+          color: attrTypeInfo.color
         });
       }
     }
@@ -735,7 +548,7 @@ export class EntityTimeline extends BaseTimeline {
       .selectAll("use")
       .data(d => new Array(1).fill(d))
       .join("use")
-        .attr("fill", "#797991")
+        .attr("fill", d => d.color)
         .attr("transform", (d, i) => `translate(0,${(i + 1) * this._mainStep})`)
         .attr("xlink:href", d => d.pathId.href);
 
@@ -787,7 +600,7 @@ export class EntityTimeline extends BaseTimeline {
       .data(d => new Array(1).fill(d))
       .join("use")
         .attr("opacity","0.7")
-        .attr("stroke", d => "#797991")
+        .attr("stroke", d => d.color)
         .attr("stroke-width", d => 1.0)
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
@@ -927,7 +740,7 @@ export class EntityTimeline extends BaseTimeline {
 
     this._mainLineG.selectAll("use").join("use")
       .attr("opacity", d => d.name === selectedName ? "0.7" : "0.4")
-      .attr("stroke", d => d.name === selectedName ? "#fafafa" : "#797991")
+      .attr("stroke", d => d.name === selectedName ? "#fafafa" : d.color)
       .attr("stroke-width", d => d.name === selectedName ? 1.5 : 0.5)
       .style("stroke-dasharray", d => d.name === selectedName ? null : ("1, 2"));
 
@@ -952,7 +765,7 @@ export class EntityTimeline extends BaseTimeline {
     this._mainLineG.selectAll("use")
       .join("use")
       .attr("opacity", "0.7")
-      .attr("stroke", "#797991")
+      .attr("stroke", d => d.color)
       .attr("stroke-width", 1.0)
       .style("stroke-dasharray", "1, 2");
 
@@ -1124,7 +937,7 @@ export class EntityTimeline extends BaseTimeline {
       .selectAll("use")
       .data(d => new Array(1).fill(d))
       .join("use")
-        .attr("fill", (d, i) => "#797991")
+        .attr("fill", (d) => d.color)
         .attr("transform", (d, i) => `translate(0,${(i + 1) * focusStep})`)
         .attr("xlink:href", d => d.pathId.href);
 
@@ -1233,7 +1046,7 @@ export class EntityTimeline extends BaseTimeline {
       .data(d => new Array(1).fill(d))
       .join("use")
         .attr("pointer-events", "none")
-        .attr("stroke", (d, i) => "#797991")
+        .attr("stroke", (d, i) => d.color)
         .attr("fill", (d, i) => "none")
         .attr("transform", (d, i) => `translate(0,${(i + 1) * focusStep})`)
         .attr("xlink:href", d => d.pathId.href)
@@ -1406,7 +1219,7 @@ export class EntityTimeline extends BaseTimeline {
 
     this._minFrame = minFrame;
     this._maxFrame = maxFrame;
-    this._updateData();
+    this.updateData();
     this.redraw();
   }
 

@@ -121,7 +121,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     var headerDiv = document.createElement("div");
     headerDiv.setAttribute("class", "d-flex col-12")
     parentDiv.appendChild(headerDiv);
-    
+
     var visibilityTab = document.createElement("button");
     visibilityTab.setAttribute("class", "page-tab active f2");
     visibilityTab.style.width = "200px";
@@ -257,21 +257,45 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
 
     // Create the button tabs based on the available localization types.
     var parentDiv = this._typePageSelectDiv;
-    var header = document.createElement("h3");
-    header.setAttribute("class", "py-3 h3 px-3")
-    header.textContent = "Annotation Types";
-    parentDiv.appendChild(header);
+    var header = document.createElement("div");
+    header.setAttribute("class", "py-3 f2 d-flex flex-items-center")
+    header.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill mr-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+    </svg> Annotation Types`;    parentDiv.appendChild(header);
 
     this._typePageButtons = {};
     var firstPageId = null;
     for (const [id, dataType] of Object.entries(this._dataTypeIdMap)) {
       var btn = document.createElement("button");
-      btn.setAttribute("class", "tab-btn px-3 mx-3 f2");
-      btn.style.width = "200px";
+      btn.setAttribute("class", "tab-btn px-3 f2");
+      btn.style.width = "250px";
       btn.style.height = "50px";
       btn.style.borderRadius = "0px";
-      btn.style.justifyContent = "left";
-      btn.textContent = `${dataType.dtype}/${dataType.name}`;
+      btn.style.marginLeft = "0px";
+      btn.style.justifyContent = "space-between";
+
+      var text = document.createElement("span");
+      text.setAttribute("class", "px-2 text-white text-semibold");
+      btn.appendChild(text);
+
+      if (["box", "poly", "line", "dot"].includes(dataType.dtype)) {
+        text.textContent = `${dataType.name} (${dataType.dtype})`;
+      }
+      else {
+        text.textContent = `${dataType.name}`;
+      }
+
+      const svg = document.createElementNS(svgNamespace, "svg");
+      svg.setAttribute("class", "icon-chevron-right");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("height", "1em");
+      svg.setAttribute("width", "1em");
+      btn.appendChild(svg);
+
+      const path = document.createElementNS(svgNamespace, "path");
+      path.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+      svg.appendChild(path);
+
       parentDiv.appendChild(btn);
       this._typePageButtons[id] = btn;
 
@@ -337,7 +361,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     parentWrapper.appendChild(attrWrapper);
 
     this._typePageSelectDiv = document.createElement("div");
-    this._typePageSelectDiv.setAttribute("class", "d-flex flex-justify-center flex-column analysis__filter_main");
+    this._typePageSelectDiv.setAttribute("class", "d-flex flex-justify-center flex-column analysis__filter_main ");
     attrWrapper.appendChild(this._typePageSelectDiv);
 
     this._typeAttributesDiv = document.createElement("div");
