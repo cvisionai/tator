@@ -243,7 +243,7 @@ class TatorStorage(ABC):
         """The server-specific implementation for listing object metadata."""
 
     @abstractmethod
-    def complete_multipart_upload(self, path: str, parts: int, upload_id: str) -> None:
+    def complete_multipart_upload(self, path: str, parts: int, upload_id: str) -> bool:
         """Completes a previously started multipart upload."""
 
     @abstractmethod
@@ -595,6 +595,7 @@ class GCPStorage(TatorStorage):
 
     def complete_multipart_upload(self, path, parts, upload_id):
         logger.info(f"No need to complete upload for GCP store")
+        return True
 
     def put_object(self, path, body):
         self.gcs_bucket.blob(self.path_to_key(path)).upload_from_file(body)
