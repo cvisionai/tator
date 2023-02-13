@@ -159,12 +159,12 @@
 
 .btn.background-green,
 .background-green {
-  background-color: $color-green;
+  background-color: $color-rainforest-green;
 
   &:hover,
   &:focus {
     background-color: $color-white;
-    color: $color-green;
+    color: $color-rainforest-green;
   }
   &:disabled,
   [disabled] {

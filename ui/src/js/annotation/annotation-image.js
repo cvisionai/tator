@@ -41,6 +41,10 @@ export class AnnotationImage extends TatorElement {
     this._image.annotationData = val;
   }
 
+  set timelineSettings(val) {
+    this._timelineSettings = val;
+  }
+
   newMetadataItem(dtype, metaMode, objId) {
     this._image.style.cursor = "crosshair";
     this._image.newMetadataItem(dtype, metaMode, objId);
@@ -114,6 +118,14 @@ export class AnnotationImage extends TatorElement {
 
   selectTrack(track, frameHint, skipGoToFrame) {
     this._image.selectTrack(track, undefined, false)
+  }
+
+  selectTimelineData() {
+    return;
+  }
+
+  updateTimeline() {
+    return;
   }
 
   addCreateTrackType(stateTypeObj) {

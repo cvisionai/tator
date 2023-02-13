@@ -5,6 +5,7 @@ import { Utilities } from "../util/utilities.js";
 import TatorLoading from "../../images/tator_loading.gif";
 import { store } from "./store.js";
 import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
+import { TimelineSettings } from "./timeline-settings.js";
 
 export class AnnotationPage extends TatorPage {
   constructor() {
@@ -114,6 +115,9 @@ export class AnnotationPage extends TatorPage {
 
     this._browserSettingsDialog = document.createElement("annotation-browser-settings-dialog");
     this._main.appendChild(this._browserSettingsDialog);
+
+    this._timelineSettingsDialog = document.createElement("timeline-settings-dialog");
+    this._main.appendChild(this._timelineSettingsDialog);
 
     this._progressDialog.addEventListener("jobsDone", evt => {
       evt.detail.job.callback(evt.detail.status);
@@ -797,6 +801,15 @@ export class AnnotationPage extends TatorPage {
       document.body.classList.remove("shortcuts-disabled");
     });
 
+    this._timelineSettingsDialog.addEventListener("close", () => {
+      this.removeAttribute("has-open-modal", "");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
+    this._timelineSettingsDialog.addEventListener("settingsChanged", () => {
+      canvas.updateTimeline();
+    });
+
     this._player.addEventListener("setTimelineDisplayMode", (evt) => {
       this._settings.setAttribute("timeline-display", evt.detail.mode);
       this._updateURL();
@@ -813,6 +826,12 @@ export class AnnotationPage extends TatorPage {
       this.setAttribute("has-open-modal", "");
       document.body.classList.add("shortcuts-disabled");
     });
+
+    this._player.addEventListener("openTimelineSettings", () => {
+      this._timelineSettingsDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+      document.body.classList.add("shortcuts-disabled");
+    })
 
     this._browser.addEventListener("openBrowserSettings", () => {
       this._browserSettingsDialog.setAttribute("is-open", "");
@@ -1030,6 +1049,10 @@ export class AnnotationPage extends TatorPage {
           stateMediaIds = this._mediaIds;
         }
 
+        this._timelineSettings = new TimelineSettings(projectId, dataTypes);
+        canvas.timelineSettings = this._timelineSettings;
+        this._timelineSettingsDialog.init(this._timelineSettings);
+
         this._browserSettings = new AnnotationBrowserSettings(projectId, dataTypes, this._mediaType);
         this._browserSettingsDialog.init(this._browserSettings, dataTypes, this._mediaType);
         this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image", this._browserSettings);
@@ -1068,6 +1091,7 @@ export class AnnotationPage extends TatorPage {
         });
         canvas.addEventListener("select", evt => {
           this._browser.selectEntity(evt.detail);
+          canvas.selectTimelineData(evt.detail);
           this._settings.setAttribute("entity-id", evt.detail.id);
           this._settings.setAttribute("entity-type", evt.detail.meta);
           this._settings.setAttribute("type-id", evt.detail.meta);

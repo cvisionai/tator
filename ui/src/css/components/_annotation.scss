@@ -127,6 +127,10 @@
   background-color: $color-charcoal--medium-dark;
 }
 
+.annotation_browser_settings_wrapper {
+  background-color: $color-charcoal--dark;
+}
+
 .annotation_browser_header_panel {
   background-color: $color-charcoal--medium;
   margin-bottom: $spacing-3;
@@ -525,7 +529,7 @@ annotation-player {
   color: #a2afcd;
   cursor: pointer;
   display: flex;
-  height: 46px;
+  height: 30px;
   justify-content: center;
   transition-duration: 0.25s;
   transition-property: background-color, color;

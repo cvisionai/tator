@@ -246,6 +246,18 @@ export class AnnotationMulti extends TatorElement {
       }));
     });
 
+    this._playerTimelineSettings = document.createElement("div");
+    this._playerTimelineSettings.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2");
+    this._playerTimelineSettings.textContent = "Timeline Settings";
+    this._playerSettingsMenu.appendChild(this._playerTimelineSettings);
+
+    this._playerTimelineSettings.addEventListener("click", () => {
+      this._hideCanvasMenus();
+      this.dispatchEvent(new CustomEvent("openTimelineSettings", {
+        composed: true
+      }));
+    });
+
     // Timeline units menu
     var backOption = document.createElement("div");
     backOption.setAttribute("class", "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
@@ -1799,11 +1811,16 @@ export class AnnotationMulti extends TatorElement {
     this._entityTimeline.annotationData = val;
   }
 
+  set timelineSettings(val) {
+    this._timelineSettings = val;
+    this._entityTimeline.timelineSettings = val;
+  }
+
   _displayPlayerSettingsMenu() {
     this._hideCanvasMenus();
 
     var pos = this._playerSettingsBtn.getBoundingClientRect();
-    this._playerSettingsMenu.style.top = `${pos.top - 120}px`;
+    this._playerSettingsMenu.style.top = `${pos.top - 150}px`;
     this._playerSettingsMenu.style.left = `${pos.left - 150}px`;
 
     this._playerTimelineUnitsContent.textContent = this._displayMode;
@@ -2457,6 +2474,7 @@ export class AnnotationMulti extends TatorElement {
     {
       video.selectNone();
     }
+    this.selectTimelineData();
   }
 
   selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
@@ -2562,7 +2580,11 @@ export class AnnotationMulti extends TatorElement {
   }
 
   selectTimelineData(data) {
-    //this._entityTimeline.selectEntity(data); #TODO
+    this._entityTimeline.selectEntity(data);
+  }
+
+  updateTimeline() {
+    this._entityTimeline.updateData();
   }
 
   _timeToFrame(minutes, seconds) {

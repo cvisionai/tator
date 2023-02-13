@@ -71,6 +71,8 @@ export class AnnotationBrowser extends TatorElement {
 
   _expandBrowser() {
 
+    this._media.showEntities();
+
     if (this._panels.style.display != "none") {
       return;
     }
