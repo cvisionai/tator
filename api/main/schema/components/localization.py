@@ -121,6 +121,10 @@ localization_get_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+    'created_by': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the user who created this localization.'
+    },
     'created_datetime': {
         'type': 'string',
         'format': 'date-time',
