@@ -36,28 +36,37 @@ if os.getenv('REQUIRE_HTTPS') == 'TRUE':
 else:
     PROTO = 'http://'
 
+
+def _rfc1123_name_converter(workflow_name, min_length):
+    # Make sure the generated name is 56 characters or fewer and has a penultimate alphanumeric
+    # character
+    out = workflow_name[:55]
+    while re.search("[^0-9a-zA-Z]", out[-1]):
+        out = out[:-1]
+
+    if len(out) < min_length:
+        raise RuntimeError(f"Over-stripped workflow name '{full_out}' trying to comply to RFC 1123")
+
+    out = out + "-"
+    return out
+
 def _transcode_name(project, user, media_name, media_id=None):
     """ Generates name of transcode workflow.
     """
     slug_name = re.sub('[^0-9a-zA-Z.]+', '-', media_name).lower()
     if media_id:
         out = f"transcode-proj-{project}-usr-{user}-media-{media_id}-name-{slug_name}-"
-        out = f"transcode-proj-999-usr-999-media-1234567-name-{slug_name}-"
     else:
         out = f"transcode-proj-{project}-usr-{user}-name-{slug_name}-"
 
-    # Make sure the generated name is 56 characters or fewer
-    out = out[:56] + "-"
-    return out
+    return _rfc1123_name_converter(out, 29)
 
 def _algo_name(algorithm_id, project, user, name):
     """ Reformats an algorithm name to ensure it conforms to kube's rigid requirements.
     """
     slug_name = re.sub('[^0-9a-zA-Z.]+', '-', name).lower()
-    out = f"alg-{algorithm_id}-proj-{project}-usr-{user}-name-{slug_name}-"
-    # Make sure the generated name is 56 characters or fewer
-    out = out[:56] + "-"
-    return out
+    out = f"alg-{algorithm_id}-proj-{project}-usr-{user}-name-{slug_name}"
+    return _rfc1123_name_converter(out, 24)
 
 def _select_storage_class():
     """ Randomly selects a workflow storage class.

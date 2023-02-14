@@ -4,18 +4,25 @@ export class SaveDialog extends TatorElement {
   constructor() {
     super();
 
+    this._outerDiv = document.createElement("div");
+    this._outerDiv.setAttribute("class", "annotation__panel--popup annotation__panel rounded-2 px-2");
+    this._outerDiv.style.zIndex = 3;
+    this._shadow.appendChild(this._outerDiv);
+
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "annotation__panel--popup annotation__panel px-4 rounded-2");
-    this._div.style.zIndex = 3;
-    this._shadow.appendChild(this._div);
+    this._div.setAttribute("class", "px-3");
+    this._outerDiv.appendChild(this._div);
 
     const header = document.createElement("div");
     header.setAttribute("class", "d-flex flex-items-center flex-justify-between py-3");
     this._div.appendChild(header);
 
     this._nameDiv = document.createElement("div");
-    this._nameDiv.setAttribute("class", "text-semibold");
+    this._nameDiv.setAttribute("class", "h2 text-semibold");
     header.appendChild(this._nameDiv);
+
+    const close = document.createElement("modal-close");
+    header.appendChild(close);
 
     this._hookButtonDiv = document.createElement("div");
     this._hookButtonDiv.setAttribute("class", "hooks-button-div");
@@ -31,36 +38,46 @@ export class SaveDialog extends TatorElement {
     this._hooksPanel.hidden = true;
     this._div.appendChild(this._hooksPanel);
 
-    this._type = document.createElement("enum-input");
-    this._type.setAttribute("name", "Type");
-    this._savePanel.appendChild(this._type);
-
-    this._attributes = document.createElement("attribute-panel");
-    this._savePanel.appendChild(this._attributes);
-    this._attributes._idWidget.style.display = "none";
-    this._attributes._createdByWidget.style.display = "none";
-
-    const favesDiv = document.createElement("div");
-    favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2 top-border mt-3");
-    this._savePanel.appendChild(favesDiv);
-
-    this._favorites = document.createElement("favorites-panel");
-    favesDiv.appendChild(this._favorites);
-
     const buttons = document.createElement("div");
-    buttons.setAttribute("class", "d-flex flex-items-center py-4");
+    buttons.setAttribute("class", "d-flex flex-items-center flex-justify-between py-3 save-dialog-bottom-border");
     this._savePanel.appendChild(buttons);
 
     this._save = document.createElement("button");
-    this._save.setAttribute("class", "btn btn-clear");
+    this._save.setAttribute("class", "btn btn-clear background-green d-flex flex-grow mx-3");
     this._save.setAttribute("disabled", "");
     this._save.textContent = "Save";
     buttons.appendChild(this._save);
 
     const cancel = document.createElement("button");
-    cancel.setAttribute("class", "btn-clear px-4 text-gray hover-text-white");
+    cancel.setAttribute("class", "btn btn-clear btn-outline d-flex flex-grow mx-3");
     cancel.textContent = "Cancel";
     buttons.appendChild(cancel);
+
+    this._entityPanel = document.createElement("div");
+    this._entityPanel.setAttribute("class", "py-3 px-3 rounded-2 mb-3");
+    this._outerDiv.appendChild(this._entityPanel);
+
+    this._type = document.createElement("enum-input");
+    this._type.setAttribute("name", "Select Type");
+    this._type.setAttribute("class", "text-white f2 py-2 text-semibold");
+    this._type.label.classList.add("mb-3");
+    this._entityPanel.appendChild(this._type);
+
+    this._favesDiv = document.createElement("div");
+    this._favesDiv.setAttribute("class", "annotation__panel-group py-2 px-3 text-gray f2 favorites-panel mb-3");
+    this._entityPanel.appendChild(this._favesDiv);
+
+    this._favorites = document.createElement("favorites-panel");
+    this._favesDiv.appendChild(this._favorites);
+
+    const attrDiv = document.createElement("div");
+    attrDiv.setAttribute("class", "save-dialog-attribute-panel px-3 py-1")
+    this._entityPanel.appendChild(attrDiv);
+
+    this._attributes = document.createElement("attribute-panel");
+    attrDiv.appendChild(this._attributes);
+    this._attributes.disableWidget("ID");
+    this._attributes.disableWidget("Frame");
 
     this._attributes.addEventListener("change", () => {
       this._values = this._attributes.getValues();
@@ -72,8 +89,14 @@ export class SaveDialog extends TatorElement {
     });
 
     this._favorites.addEventListener("load", evt => {
-      this._attributes.setValues({ attributes: evt.detail });
-      console.log(evt.detail);
+      this._attributes._track = null;
+      this._attributes.setValues({ attributes: evt.detail, id: -1, frame: this._requestObj.frame });
+      this._values = this._attributes.getValues();
+      if (this._values === null) {
+        this._save.setAttribute("disabled", "");
+      } else {
+        this._save.removeAttribute("disabled");
+      }
     });
 
     this._favorites.addEventListener("store", evt => {
@@ -93,6 +116,13 @@ export class SaveDialog extends TatorElement {
     });
 
     cancel.addEventListener("click", () => {
+      cancel.blur();
+      this.dispatchEvent(new Event("cancel"));
+      this._attributes.reset();
+    });
+
+    close.addEventListener("click", () => {
+      cancel.blur();
       this.dispatchEvent(new Event("cancel"));
       this._attributes.reset();
     });
@@ -107,12 +137,6 @@ export class SaveDialog extends TatorElement {
     this._undo = undo;
     this._version = version;
     this._favoritesData = favorites;
-
-    // For the save dialog, the track search bar doesn't need to be shown.
-    // The user only needs to modify the attributes in the dialog window.
-    this._attributes.displaySlider(false);
-    this._attributes.displayGoToLocalization(false);
-    this._attributes.displayGoToTrack(false);
     this._attributes._versionWidget.setValue(this._version.name);
 
     // Set choices on type selector.
@@ -122,11 +146,6 @@ export class SaveDialog extends TatorElement {
     this._type.default = defaultType.name;
     this._type.reset();
     this._setDataType();
-
-    // Hide the type selector if there is only one type.
-    if (dataTypes.length == 1) {
-      this._type.style.display = "none";
-    }
 
     this._attributes.dispatchEvent(new Event("change"));
   }
@@ -249,6 +268,7 @@ export class SaveDialog extends TatorElement {
     if (this._dataType.interpolation == "attr_style_range") {
       this._attributes.setFrameRange(val.frame, val.frame);
     }
+    this._attributes._frameWidget.setValue(val.frame);
   }
 
   addRecent(val) {
@@ -279,16 +299,50 @@ export class SaveDialog extends TatorElement {
     }
   }
 
+  /**
+   * Change the dialog to match the current datatype
+   *
+   * 1. Update the title
+   * 2. Update the attribute panel
+   * 3. Update the favorites
+   * 4. Set the save button's disabled status
+   */
   _setDataType() {
     this._dataType = JSON.parse(this._type.getValue());
-    this._nameDiv.textContent = this._dataType.name;
+    var category = "Localization";
+    if (this._dataType.dtype.includes("state")) {
+      category = "State";
+      if (this._dataType.isTrack) {
+        category = "Track";
+      }
+    }
+
+    this._nameDiv.textContent = `Save ${category}`;
+
+    this._attributes._track = null;
     this._attributes.dataType = this._dataType;
+    this._attributes.displayTrackUI(false);
+
+    if (!this._dataType.hasOwnProperty("attribute_types") || this._dataType.attribute_types.length < 1) {
+      this._favesDiv.style.display = "none";
+    }
+    else {
+      this._favesDiv.style.display = "block";
+    }
+
     this._favorites.init(this._dataType, this._favoritesData);
+
+    this._values = this._attributes.getValues();
+    if (this._values === null) {
+      this._save.setAttribute("disabled", "");
+    } else {
+      this._save.removeAttribute("disabled");
+    }
   }
 
   /**
    * @param {*} panel panel to append to hooks panel div
-   * @returns 
+   * @returns
    */
   addAppletPanel(panel) {
     this._hooksPanel.appendChild(panel);

@@ -1,6 +1,8 @@
 import { TatorElement } from "../components/tator-element.js";
 import { getCookie } from "../util/get-cookie.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { frameToTime } from "./annotation-common.js";
+import { TimeStore} from "./time-store.js"
 
 export class AttributePanel extends TatorElement {
   constructor() {
@@ -8,26 +10,65 @@ export class AttributePanel extends TatorElement {
 
     this._widgets = [];
 
-    this._div = document.createElement("div");
-    this._div.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
-    this._shadow.appendChild(this._div);
-    this._emitChanges=true;
+    this._topDiv = document.createElement("div");
+    this._topDiv.setAttribute("class", "d-flex flex-grow pt-4 rounded-2 flex-justify-right flex-items-center");
+    this._topDiv.style.display = "none";
+    this._shadow.appendChild(this._topDiv);
+
+    this._moreLessButton = document.createElement("div");
+    this._moreLessButton.setAttribute("class", "f3 text-dark-gray mr-6");
+    this._moreLessButton.style.cursor = "pointer";
+    this._moreLessButton.textContent = "Less -";
+    this._topDiv.appendChild(this._moreLessButton);
+
+    this._trackDiv = document.createElement("div");
+    this._trackDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    this._trackDiv.style.display = "none";
+    this._shadow.appendChild(this._trackDiv);
+
+    this._standardWidgetsDiv = document.createElement("div");
+    this._standardWidgetsDiv.setAttribute("class", "annotation__panel-group pt-2 text-gray f2");
+    this._shadow.appendChild(this._standardWidgetsDiv);
 
     this._idWidget = document.createElement("text-input");
     this._idWidget.permission = "View Only";
     this._idWidget.setAttribute("name", "ID");
-    this._div.appendChild(this._idWidget);
+    this._standardWidgetsDiv.appendChild(this._idWidget);
     this._widgets.push(this._idWidget);
 
-    this._createdByWidget = document.createElement("text-input");
-    this._createdByWidget.permission = "View Only";
-    this._createdByWidget.setAttribute("name", "Created By");
-    this._div.appendChild(this._createdByWidget);
-    this._widgets.push(this._createdByWidget);
+    this._frameWidget = document.createElement("text-input");
+    this._frameWidget.permission = "View Only";
+    this._frameWidget.setAttribute("name", "Frame");
+    this._standardWidgetsDiv.appendChild(this._frameWidget);
+    this._widgets.push(this._frameWidget);
+
+    this._versionWidget = document.createElement("text-input");
+    this._versionWidget.setAttribute("name", "Version");
+    this._versionWidget.permission = "View Only";
+    this._standardWidgetsDiv.appendChild(this._versionWidget);
+    this._widgets.push(this._versionWidget);
+
+    this._groupDiv = document.createElement("div");
+    this._groupDiv.setAttribute("class", "annotation__panel-group px-2 text-gray f2");
+    this._shadow.appendChild(this._groupDiv);
+
+    this._builtInAttrLabel = document.createElement("div");
+    this._builtInAttrLabel.setAttribute("class", "f2 text-gray clickable pt-3 pb-1");
+    this._builtInAttrLabel.textContent = "Built-in Attributes";
+    this._groupDiv.appendChild(this._builtInAttrLabel);
+
+    this._builtInAttrsDiv = document.createElement("div");
+    this._builtInAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
+    this._groupDiv.appendChild(this._builtInAttrsDiv);
 
     this._parentAttrGroupDiv = document.createElement("div");
     this._parentAttrGroupDiv.setAttribute("class", "d-flex flex-column px-4 mb-2");
-    this._shadow.appendChild(this._parentAttrGroupDiv);
+    this._groupDiv.appendChild(this._parentAttrGroupDiv);
+
+    this._userDiv = document.createElement("div");
+    this._userDiv.setAttribute("class", "annotation__panel-group pb-3 text-gray f2");
+    this._shadow.appendChild(this._userDiv);
+    this._emitChanges=true;
 
     this._innerDiv = document.createElement("div");
     this._innerDiv.setAttribute("class", "d-flex");
@@ -43,26 +84,6 @@ export class AttributePanel extends TatorElement {
     this._innerDiv.appendChild(this._innerDiv2);
 
     this._attrColumns = 1;
-    this._versionWidget = document.createElement("text-input");
-    this._versionWidget.setAttribute("name", "Version");
-    this._versionWidget.permission = "View Only";
-    this._div.appendChild(this._versionWidget);
-    this._widgets.push(this._versionWidget);
-
-    this._builtInAttrLabel = document.createElement("div");
-    this._builtInAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
-    this._builtInAttrLabel.textContent = "Built-in Attributes";
-    this._shadow.appendChild(this._builtInAttrLabel);
-
-    this._builtInAttrsDiv = document.createElement("div");
-    this._builtInAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
-    this._shadow.appendChild(this._builtInAttrsDiv);
-
-    this._builtInAttrLabel.appendChild(this._chevron());
-    this._builtInAttrLabel.addEventListener("click", evt => {
-      this._toggleAttributes(this._builtInAttrsDiv);
-      this._toggleChevron(evt);
-    });
 
     this._hiddenAttrLabel = document.createElement("div");
     this._hiddenAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
@@ -73,10 +94,28 @@ export class AttributePanel extends TatorElement {
     this._hiddenAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
     this._shadow.appendChild(this._hiddenAttrsDiv);
 
+    this._builtInAttrLabel.appendChild(this._chevron());
+    this._builtInAttrLabel.addEventListener("click", evt => {
+      this._toggleAttributes(this._builtInAttrsDiv);
+      this._toggleChevron(evt);
+    });
+
     this._hiddenAttrLabel.appendChild(this._chevron());
     this._hiddenAttrLabel.addEventListener("click", evt => {
       this._toggleAttributes(this._hiddenAttrsDiv);
       this._toggleChevron(evt);
+    });
+
+    this._moreLessButton.addEventListener("click", () => {
+      this._moreLessButton.blur();
+      if (this._moreLessButton.textContent.includes("More")) {
+        this.showMore();
+        this._moreLessButton.textContent = "Less -";
+      }
+      else {
+        this.showLess();
+        this._moreLessButton.textContent = "More +";
+      }
     });
 
     this._builtInAttrLabel.hidden = true;
@@ -87,6 +126,9 @@ export class AttributePanel extends TatorElement {
     // #TODO refactor this to tator-data
     this._userList = [];
     this._versionList = [];
+    this._timeStore = null;
+    this._browserSettings = null;
+    this._disableWidgets = new Set();
   }
 
   static get observedAttributes() {
@@ -121,8 +163,17 @@ export class AttributePanel extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "in-entity-browser":
-        this._div.classList.add("px-4");
+        this._userDiv.classList.add("px-4");
+        this._standardWidgetsDiv.classList.add("px-4");
+        this._groupDiv.classList.add("px-4");
     }
+  }
+
+  /**
+   * @param {AnnotationBrowserSettings} val
+   */
+  set browserSettings(val) {
+    this._browserSettings = val;
   }
 
   /**
@@ -137,7 +188,7 @@ export class AttributePanel extends TatorElement {
     this._permission = val;
     for (const widget of this._widgets) {
       // Specific attribute fields in this panel are always disabled
-      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By" && widget.getAttribute("name") != "Version") {
+      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Frame" && widget.getAttribute("name") != "Version") {
         // Widget may have been marked as disabled, and its permission have already been
         // set appropriately.
         if (!widget.disabled) {
@@ -150,9 +201,23 @@ export class AttributePanel extends TatorElement {
   /**
    * @param {Tator.Media} media - Media associated with localization. Optional and only useful
    *                              with the built in attributes.
+   *
+   * @param {Tator.MediaType} mediaType - Media type associated with media param
+   *
+   * Execute this prior to setting the dataType of this attribute panel. This will ensure
+   * that the widgets that utilize this are created.
    */
-  set associatedMedia(media) {
+  setAssociatedMedia(media, mediaType) {
+
     this._associatedMedia = media;
+    this._associatedMediaType = mediaType;
+
+    if (mediaType.dtype == "video") {
+      this._timeStore = new TimeStore(this._associatedMedia, this._associatedMediaType);
+    }
+    else if (mediaType.dtype == "image") {
+      this._frameWidget.style.display = "none";
+    }
   }
 
   /**
@@ -163,12 +228,7 @@ export class AttributePanel extends TatorElement {
     var widget;
 
     widget = document.createElement("text-input");
-    widget.setAttribute("name", "Frame");
-    widget.permission = "View Only";
-    this._builtInAttrsDiv.appendChild(widget);
-
-    widget = document.createElement("text-input");
-    widget.setAttribute("name", "Type");
+    widget.setAttribute("name", "Created By");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
 
@@ -186,18 +246,58 @@ export class AttributePanel extends TatorElement {
     widget.setAttribute("name", "Modified Datetime");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
+
+    if (this._timeStore) {
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "Video Time");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      if (this._timeStore.utcEnabled()) {
+        widget = document.createElement("text-input");
+        widget.setAttribute("name", "UTC Time");
+        widget.permission = "View Only";
+        this._builtInAttrsDiv.appendChild(widget);
+      }
+    }
   }
 
+  /**
+   * @precondition frameWidget must have been set
+   * @precondition timeStore must have been set for relative time / UTC time to pop up
+   * @precondtion associatedMedia must have been set to apply pixel information
+   */
   _setBuiltInAttributes(values) {
+
+    var frame = parseInt(this._frameWidget.getValue());
 
     for (const widget of this._builtInAttrsDiv.children) {
       const name = widget.getAttribute("name");
 
-      if (name == "Frame") {
-        widget.setValue(values.frame);
-      }
-      else if (name == "Type") {
-        widget.setValue(values.type);
+      if (name == "Created By") {
+
+        let userKey = "created_by";
+        if (values.created_by == null) {
+          userKey = "user";
+        }
+
+        let username = null;
+        let foundUser = false;
+        for (let index = 0; index < this._userList.length; index++) {
+          if (this._userList[index].result.id == values[userKey]) {
+            foundUser = true;
+            username = this._userList[index].result.username;
+            break;
+          }
+        }
+
+        if (!foundUser) {
+          this._getUsername(values[userKey], widget);
+        }
+        else {
+          widget.setValue(username);
+        }
+
       }
       else if (name == "Created Datetime") {
         widget.setValue(values.created_datetime);
@@ -224,10 +324,16 @@ export class AttributePanel extends TatorElement {
       else if (name == "Modified Datetime") {
         widget.setValue(values.modified_datetime);
       }
+      else if (name == "Video Time") {
+        widget.setValue(this._timeStore.getRelativeTimeFromFrame(frame));
+      }
+      else if (name == "UTC Time") {
+        widget.setValue(this._timeStore.getAbsoluteTimeFromFrame(frame));
+      }
       else if (name == "x") {
         if (values.x != undefined) {
           let val = `${values.x.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.x*this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
@@ -236,7 +342,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "y") {
         if (values.y != undefined) {
           let val = `${values.y.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.y*this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
@@ -245,7 +351,7 @@ export class AttributePanel extends TatorElement {
       else if (name == "u") {
         if (values.u != undefined) {
           let val = `${values.u.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.u*this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
@@ -254,25 +360,41 @@ export class AttributePanel extends TatorElement {
       else if (name == "v") {
         if (values.v != undefined) {
           let val = `${values.v.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.v*this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
         }
       }
-      else if (name == "width") {
+      else if (name == "Line Length") {
+        let lineL2norm = Math.sqrt(
+          Math.pow((values.x - (values.x + values.u)) * 1, 2) +
+          Math.pow((values.y - (values.y + values.v)) * 1, 2)
+        );
+        let val = `${lineL2norm.toFixed(4)}`;
+
+        if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
+          let lineL2norm_pixels = Math.sqrt(
+            Math.pow((values.x - (values.x + values.u)) * this._associatedMedia.width, 2) +
+            Math.pow((values.y - (values.y + values.v)) * this._associatedMedia.height, 2)
+          );
+          val += ` | ${lineL2norm_pixels.toFixed(4)} px`;
+        }
+        widget.setValue(val);
+      }
+      else if (name == "Box Width") {
         if (values.width != undefined) {
           let val = `${values.width.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.width*this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
         }
       }
-      else if (name == "height") {
+      else if (name == "Box Height") {
         if (values.height != undefined) {
           let val = `${values.height.toFixed(4)}`;
-          if (this._associatedMedia) {
+          if (this._associatedMedia && this._associatedMediaType.dtype != "multi") {
             val += ` | ${Math.round(values.height*this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
@@ -314,14 +436,14 @@ export class AttributePanel extends TatorElement {
 
   set dataType(val) {
     this._dataType = val;
+    this._widgets = [];
 
     // Remove existing attribute widgets.
-    while (true) {
-      const child = this._div.lastChild;
-      if (child === this._idWidget || child === this._createdByWidget || child == this._versionWidget) {
-        break;
-      }
-      this._div.removeChild(child);
+    while (this._userDiv.firstChild) {
+      this._userDiv.removeChild(this._userDiv.firstChild);
+    }
+    while (this._trackDiv.firstChild) {
+      this._trackDiv.removeChild(this._trackDiv.firstChild);
     }
 
     this._removeBuiltInAttributes();
@@ -329,8 +451,9 @@ export class AttributePanel extends TatorElement {
 
     if (val.isTrack) {
       const div = document.createElement("div");
-      div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
-      this._shadow.insertBefore(div, this._div);
+      div.setAttribute("class", "annotation__panel-group px-4 text-gray f2");
+      this._trackDiv.appendChild(div);
+      this._trackDiv.style.display = "block";
 
       var sliderDiv = document.createElement("div");
       sliderDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between py-1");
@@ -392,8 +515,9 @@ export class AttributePanel extends TatorElement {
     }
     else {
       const div = document.createElement("div");
-      div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
-      this._shadow.insertBefore(div, this._div);
+      div.setAttribute("class", "annotation__panel-group px-4 text-gray f2");
+      this._trackDiv.appendChild(div);
+      this._trackDiv.style.display = "block";
 
       var goToTrackDiv = document.createElement("div");
       goToTrackDiv.setAttribute("class", "d-flex flex-items-center py-1");
@@ -432,12 +556,12 @@ export class AttributePanel extends TatorElement {
       this._builtInAttrsDiv.appendChild(widget);
 
       widget = document.createElement("text-input");
-      widget.setAttribute("name", "width");
+      widget.setAttribute("name", "Box Width");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
 
       widget = document.createElement("text-input");
-      widget.setAttribute("name", "height");
+      widget.setAttribute("name", "Box Height");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
     }
@@ -461,6 +585,11 @@ export class AttributePanel extends TatorElement {
 
       widget = document.createElement("text-input");
       widget.setAttribute("name", "v");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "Line Length");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
     }
@@ -658,7 +787,7 @@ export class AttributePanel extends TatorElement {
           }
         }
         else {
-          this._div.appendChild(widget);
+          this._userDiv.appendChild(widget);
         }
       }
 
@@ -674,6 +803,7 @@ export class AttributePanel extends TatorElement {
       });
 
       if (column.visible == false) {
+        this._disableWidgets.add(column.name);
         widget.style.display = "none";
       }
 
@@ -761,6 +891,17 @@ export class AttributePanel extends TatorElement {
     }
   }
 
+  displayTrackUI(display) {
+    if (this._trackDiv) {
+      if (display) {
+        this._trackDiv.style.display = "block";
+      }
+      else {
+        this._trackDiv.style.display = "none";
+      }
+    }
+  }
+
   setSlider(data) {
     // If there's no slider as a part of this panel, then just ignored this call.
     if (!this._slider){ return; }
@@ -843,6 +984,74 @@ export class AttributePanel extends TatorElement {
   }
 
   /**
+   * @param {string} val - "ID" | "Frame" | "Version" for the built-in attributes
+   */
+  disableWidget(val) {
+    this._disableWidgets.add(val);
+    if (val == "ID") {
+      this._idWidget.style.display = "none";
+    }
+    if (val == "Frame") {
+      this._frameWidget.style.display = "none";
+    }
+    if (val == "Version") {
+      this._versionWidget.style.display = "none";
+    }
+  }
+
+  showHeader() {
+    this._topDiv.style.display = "flex";
+  }
+
+  showMore() {
+    for (const widget of this._widgets) {
+      if (!this._disableWidgets.has(widget.getAttribute("name"))) {
+        widget.style.display = "block";
+      }
+    }
+    this._groupDiv.style.display = "block";
+
+    if (!this._disableWidgets.has("ID")) {
+      this._idWidget.style.display = "block";
+    }
+    if (!this._disableWidgets.has("Frame")) {
+      this._frameWidget.style.display = "block";
+    }
+    if (!this._disableWidgets.has("Version")) {
+      this._versionWidget.style.display = "block";
+    }
+  }
+
+  showLess() {
+    for (const widget of this._widgets) {
+      widget.style.display = "none";
+      if (this._browserSettings) {
+        const attrName = widget.getAttribute("name");
+        if (this._browserSettings.isAlwaysVisible(this._dataType, attrName)) {
+          widget.style.display = "block";
+        }
+      }
+    }
+    this._groupDiv.style.display = "none";
+
+    var standardWidgets = [
+      {attrName: "ID", widget: this._idWidget},
+      {attrName: "Frame", widget: this._frameWidget},
+      {attrName: "Version", widget: this._versionWidget},
+    ]
+    for (const info of standardWidgets) {
+      var attrName = info["attrName"];
+      var widget = info["widget"];
+      widget.style.display = "none";
+      if (!this._disableWidgets.has(attrName) && this._browserSettings) {
+        if (this._browserSettings.isAlwaysVisible(this._dataType, attrName)) {
+          widget.style.display = "block";
+        }
+      }
+    }
+  }
+
+  /**
    * Sets frame range if there are attributes with "start_frame"
    * and "end_frame" associated with it
    *
@@ -874,33 +1083,7 @@ export class AttributePanel extends TatorElement {
   setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
     this._idWidget.setValue(values.id);
-
-    // Set the user widget
-    var createdByUsername = null;
-    var foundUser = false;
-
-    var creatorMatchId = values.created_by;
-    if (creatorMatchId == null) {
-      creatorMatchId = values.user;
-    }
-
-    for (let index = 0; index < this._userList.length; index++) {
-      let storedId = this._userList[index].result.id;
-      if (storedId == creatorMatchId) {
-        foundUser = true;
-        createdByUsername = this._userList[index].result.username;
-        break;
-      }
-
-    }
-
-    if (!foundUser) {
-      this._getUsername(creatorMatchId, this._createdByWidget);
-    }
-    else {
-      this._createdByWidget.setValue(createdByUsername);
-    }
-
+    this._frameWidget.setValue(values.frame);
 
     let version = null;
     let foundVersion = false;
@@ -974,7 +1157,7 @@ export class AttributePanel extends TatorElement {
       // Only set the name if it is defined
       if (value != undefined) {
         widget.setValue(values.attributes[name]);
-      } else if (!["ID", "Created By", "Version"].includes(name)) {
+      } else if (!["ID", "Frame", "Version"].includes(name)) {
         widget.reset();
       }
     }

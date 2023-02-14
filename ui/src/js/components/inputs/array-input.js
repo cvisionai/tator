@@ -18,6 +18,11 @@ export class ArrayInput extends TatorElement {
     this._name = document.createTextNode("");
     this.label.appendChild(this._name);
 
+    this._description = document.createElement("span");
+    this._description.setAttribute("class", "f3 text-dark-gray py-1");
+    this._description.style.display = "none";
+    this._div.appendChild(this._description);
+
     //
     this._inputs = []
 
@@ -37,13 +42,22 @@ export class ArrayInput extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["name"];
+    return ["name", "description"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "name":
         this._name.nodeValue = newValue;
+        break;
+      case "description":
+        this._description.textContent = newValue;
+        if (newValue == null || newValue == "") {
+          this._description.style.display = "none";
+        }
+        else {
+          this._description.style.display = "block";
+        }
         break;
     }
   }
