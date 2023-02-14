@@ -14,9 +14,6 @@ from ..models import State
 from ..models import User
 from ..models import Project
 from ..models import Version
-from ..models import database_qs
-from ..models import database_query_ids
-from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
 from ..schema import parse
