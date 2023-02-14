@@ -838,6 +838,7 @@ class TatorTranscode(JobManagerMixin):
     def start_tar_import(self,
                          project,
                          entity_type,
+                         request_host,
                          token,
                          url,
                          name,
@@ -861,7 +862,7 @@ class TatorTranscode(JobManagerMixin):
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        host = f'{PROTO}{os.getenv("MAIN_HOST")}'
+        host = f'{PROTO}{request_host}'
         global_args = {'upload_name': name,
                        'url': url,
                        'host': host,
@@ -944,7 +945,7 @@ class TatorTranscode(JobManagerMixin):
         response = self.create_workflow(manifest)
 
     def start_transcode(self, project,
-                        entity_type, token, url, name,
+                        entity_type, request_host, token, url, name,
                         section, md5, gid, uid,
                         user, upload_size,
                         attributes, media_id):
@@ -979,7 +980,7 @@ class TatorTranscode(JobManagerMixin):
         logger.info(f"Scratch space requirements for {name}: {pvc_size}, using RAM disk: {use_ram_disk}")
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        host = f'{PROTO}{os.getenv("MAIN_HOST")}'
+        host = f'{PROTO}{request_host}'
         global_args = {'upload_name': name,
                        'url': url,
                        'host': host,

@@ -95,6 +95,7 @@ class TranscodeAPI(BaseListView):
             TatorTranscode().start_tar_import(
                 project,
                 entity_type,
+                self.request.get_host(),
                 token,
                 url,
                 name,
@@ -109,6 +110,7 @@ class TranscodeAPI(BaseListView):
             TatorTranscode().start_transcode(
                 project,
                 entity_type,
+                self.request.get_host(),
                 token,
                 url,
                 name,
