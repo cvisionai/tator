@@ -363,7 +363,7 @@ class StateDetailAPI(BaseDetailView):
         qs = State.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        state = database_qs(qs)[0]
+        state = qs.values(*STATE_PROPERTIES)[0]
         # Get many to many fields.
         state['localizations'] = list(State.localizations.through.objects\
                                       .filter(state_id=state['id'])\

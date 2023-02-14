@@ -272,7 +272,7 @@ class LocalizationDetailAPI(BaseDetailView):
         qs = Localization.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        return database_qs(qs)[0]
+        return qs.values(*LOCALIZATION_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params):

@@ -224,7 +224,7 @@ class LeafDetailAPI(BaseDetailView):
         qs = Leaf.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        return database_qs(qs)[0]
+        return qs.values(*LEAF_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params):
