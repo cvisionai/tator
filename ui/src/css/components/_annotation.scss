@@ -112,13 +112,28 @@
 
 .annotation__panels {
   flex-shrink: 0;
-  width: 500px;
+  min-width: 520px;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
 }
 
 .annotation__panel {
   background-color: $color-charcoal--medium;
   margin-bottom: $spacing-3;
   overflow: hidden;
+}
+
+.annotation_browser_wrapper {
+  background-color: $color-charcoal--medium-dark;
+}
+
+.annotation_browser_settings_wrapper {
+  background-color: $color-charcoal--dark;
+}
+
+.annotation_browser_header_panel {
+  background-color: $color-charcoal--medium;
+  margin-bottom: $spacing-3;
 }
 
 save-dialog {
@@ -139,6 +154,15 @@ save-dialog {
     transform: scale(1);
   }
 }
+
+.save-dialog-bottom-border {
+  border-bottom: 1px solid $color-charcoal--light;
+}
+
+.save-dialog-attribute-panel {
+  background-color: $color-charcoal--dark;
+}
+
 modify-track-dialog {
   box-sizing: border-box;
   width: 334px;
@@ -171,7 +195,7 @@ modify-track-dialog {
 }
 
 .annotation__panel-border {
-  border: 1px solid $color-charcoal--light;
+  border: 1px solid $color-charcoal--medium;
 }
 
 .annotation__entities {
@@ -260,6 +284,11 @@ favorite-button {
   margin-right: $spacing-2;
 }
 
+.favorites-panel {
+  border: 1px solid $color-charcoal--light;
+  background-color: $color-charcoal--medium;
+}
+
 .annotation__multi-grid {
   display: grid;
 }
@@ -309,10 +338,13 @@ favorite-button {
 }
 
 .annotation__video-player {
+  display: flex;
+  flex-direction: column;
   flex-grow: 1;
   overflow: hidden;
   margin-bottom: $spacing-3;
   margin-top: $spacing-3;
+  width: 100%;
   &.is-full-screen {
     margin-right: $spacing-3;
 
@@ -464,6 +496,59 @@ annotation-player {
 
 .select-not-allowed {
   cursor: not-allowed;
+}
+
+.annotation-browser-btn {
+  align-items: center;
+  background-color: $color-charcoal--medium-dark;
+  border: 1px #1e2129;
+  border-radius: 3px;
+  color: #a2afcd;
+  cursor: pointer;
+  display: flex;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+}
+.annotation-browser-btn:focus {
+  outline: none;
+}
+.annotation-browser-btn.active,
+.annotation-browser-btn:hover,
+.annotation-browser-btn:focus {
+  background-color: #ffffff;
+  color: #262e3d;
+}
+
+.page-tab {
+  align-items: center;
+  background-color: #262e3d;
+  border: 1px #1e2129;
+  color: #a2afcd;
+  cursor: pointer;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+}
+.page-tab:focus {
+  outline: none;
+}
+.page-tab.active,
+.page-tab:hover,
+.page-tab:focus {
+  background-color: #4A4EAE;
+  color: #ffffff;
+}
+
+.box-border {
+  border: 1px solid #262e3d;
+}
+.purple-box-border {
+  border: 2px solid #4A4EAE;
 }
 
 .tab-btn {

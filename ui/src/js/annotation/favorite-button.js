@@ -42,6 +42,7 @@ export class FavoriteButton extends TatorElement {
     });
 
     input.addEventListener("focus", evt => {
+      document.body.classList.add("shortcuts-disabled");
       evt.target.select();
     });
 
@@ -53,6 +54,7 @@ export class FavoriteButton extends TatorElement {
     });
 
     input.addEventListener("blur", evt => {
+      document.body.classList.remove("shortcuts-disabled");
       if (evt.target.value !== "") {
         this._button.textContent = evt.target.value;
         this._favorite.name = evt.target.value;
@@ -98,6 +100,7 @@ export class FavoriteButton extends TatorElement {
     this._favorite = favorite;
 
     this._button.addEventListener("click", () => {
+      this._button.blur();
       this.dispatchEvent(new CustomEvent("load", {
         detail: favorite.values,
         composed: true,

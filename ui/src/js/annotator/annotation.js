@@ -1835,310 +1835,123 @@ export class AnnotationCanvas extends TatorElement
       return;
     }
 
-    if (this._mouseMode == MouseMode.QUERY)
+    if (event.ctrlKey && event.code == "Digit9")
     {
-      if (event.ctrlKey && event.code == "Digit9")
-      {
-        this._effectManager.grayscale();
-        return;
-      }
-      if (event.ctrlKey && event.code == "Digit8")
-      {
-        this._effectManager.grayscale({'color': color.BLACK, 'alpha': 128});
-        document.body.style.cursor = "progress";
-        setTimeout(()=>{
-        this.underwaterCorrection();
-        },33);
-        return;
-      }
-      if (event.ctrlKey && event.code == "Digit7")
-      {
-        setTimeout(()=>{
-        this.refresh(true);
-        },0);
-        return;
-      }
-      if (event.key == "1")
-      {
-        if (event.altKey == true) {
-          if (this._menuAppletShortcuts["ALT+1"] != null) {
-            event.preventDefault();
-            event.stopPropagation();
+      this._effectManager.grayscale();
+      return;
+    }
+    if (event.ctrlKey && event.code == "Digit8")
+    {
+      this._effectManager.grayscale({'color': color.BLACK, 'alpha': 128});
+      document.body.style.cursor = "progress";
+      setTimeout(()=>{
+      this.underwaterCorrection();
+      },33);
+      return;
+    }
+    if (event.ctrlKey && event.code == "Digit7")
+    {
+      setTimeout(()=>{
+      this.refresh(true);
+      },0);
+      return;
+    }
+    if (event.key == "1")
+    {
+      if (event.altKey == true) {
+        if (this._menuAppletShortcuts["ALT+1"] != null) {
+          event.preventDefault();
+          event.stopPropagation();
 
-            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
-              detail: {
-                appletName: this._menuAppletShortcuts["ALT+1"],
-                frame: this.currentFrame(),
-                media: this._videoObject,
-                projectId: this._data._projectId,
-                version: this._data.getVersion(),
-              },
-              composed: true,
-            }));
-            return;
-          }
+          this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+            detail: {
+              appletName: this._menuAppletShortcuts["ALT+1"],
+              frame: this.currentFrame(),
+              media: this._videoObject,
+              projectId: this._data._projectId,
+              version: this._data.getVersion(),
+            },
+            composed: true,
+          }));
+          return;
         }
       }
-      if (event.key == "2")
-      {
-        if (event.altKey == true) {
-          if (this._menuAppletShortcuts["ALT+2"] != null) {
-            event.preventDefault();
-            event.stopPropagation();
+    }
+    if (event.key == "2")
+    {
+      if (event.altKey == true) {
+        if (this._menuAppletShortcuts["ALT+2"] != null) {
+          event.preventDefault();
+          event.stopPropagation();
 
-            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
-              detail: {
-                appletName: this._menuAppletShortcuts["ALT+2"],
-                frame: this.currentFrame(),
-                media: this._videoObject,
-                projectId: this._data._projectId,
-                version: this._data.getVersion(),
-              },
-              composed: true,
-            }));
-            return;
-          }
+          this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+            detail: {
+              appletName: this._menuAppletShortcuts["ALT+2"],
+              frame: this.currentFrame(),
+              media: this._videoObject,
+              projectId: this._data._projectId,
+              version: this._data.getVersion(),
+            },
+            composed: true,
+          }));
+          return;
         }
       }
-      if (event.key == "3")
-      {
-        if (event.altKey == true) {
-          if (this._menuAppletShortcuts["ALT+3"] != null) {
-            event.preventDefault();
-            event.stopPropagation();
+    }
+    if (event.key == "3")
+    {
+      if (event.altKey == true) {
+        if (this._menuAppletShortcuts["ALT+3"] != null) {
+          event.preventDefault();
+          event.stopPropagation();
 
-            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
-              detail: {
-                appletName: this._menuAppletShortcuts["ALT+3"],
-                frame: this.currentFrame(),
-                media: this._videoObject,
-                projectId: this._data._projectId,
-                version: this._data.getVersion(),
-              },
-              composed: true,
-            }));
-            return;
-          }
+          this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+            detail: {
+              appletName: this._menuAppletShortcuts["ALT+3"],
+              frame: this.currentFrame(),
+              media: this._videoObject,
+              projectId: this._data._projectId,
+              version: this._data.getVersion(),
+            },
+            composed: true,
+          }));
+          return;
         }
       }
+    }
 
-      if (event.code == 'Tab')
-      {
-        event.preventDefault();
-
-        var frame = this.currentFrame();
-        var firstLocalization = this.getFirstLocalization(frame);
-        if (firstLocalization)
-        {
-          this.selectLocalization(firstLocalization, true);
-        }
-
-        return false;
-      }
-
-      // Handle frame seek shortcuts
-      var amount = 1;
+    // Handle frame seek shortcuts
+    var amount = 1;
+    if (event.shiftKey == true)
+    {
+      amount *= 5;
+    }
+    if (event.key == 'ArrowRight')
+    {
+      event.preventDefault();
+      event.stopPropagation();
       if (event.shiftKey == true)
       {
-        amount *= 5;
+        this.advanceOneSecond(true);
       }
-      if (event.key == 'ArrowRight')
+      else
       {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.shiftKey == true)
-        {
-          this.advanceOneSecond(true);
-        }
-        else
-        {
-          this.gotoFrame(this.currentFrame() + amount, true);
-        }
-        return false;
+        this.gotoFrame(this.currentFrame() + amount, true);
       }
-      if (event.key == 'ArrowLeft')
-      {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.shiftKey == true)
-        {
-          this.backwardOneSecond(true);
-        }
-        else
-        {
-          this.gotoFrame(this.currentFrame() - amount, true);
-        }
-        return false;
-      }
+      return false;
     }
-
-    if (this._mouseMode == MouseMode.SELECT)
+    if (event.key == 'ArrowLeft')
     {
-      if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.shiftKey == true)
       {
-        this._delConfirm.objectName = this.getObjectDescription(this.activeLocalization).name;
-        this._delConfirm.confirm()
+        this.backwardOneSecond(true);
       }
-
-      if (event.code == 'Tab')
+      else
       {
-        event.preventDefault();
-
-        var frame = this.currentFrame();
-        var firstLocalization = this.getFirstLocalization(frame);
-        if (firstLocalization)
-        {
-          //Select the first annotation
-          var currentId = this.activeLocalization.id;
-          var firstType=this._framedData.get(frame).keys().next().value;
-          var nextLocalization=firstLocalization;
-          var typeIter = this._framedData.get(frame).values();
-          var done = false;
-          // Not a sorted list so search through the whole thing
-          var maxId = Number.MAX_VALUE;
-          var typeList=typeIter.next();
-          while (typeList.done == false && done == false)
-          {
-            for (var idx = 0; idx < typeList.value.length; idx++)
-            {
-              if (typeList.value[idx].id > currentId && typeList.value[idx].id < maxId)
-              {
-                maxId = typeList.value[idx].id;
-                nextLocalization = typeList.value[idx];
-              }
-            }
-            typeList=typeIter.next();
-          }
-          this.selectLocalization(nextLocalization, true);
-        }
-        return false;
+        this.gotoFrame(this.currentFrame() - amount, true);
       }
-    }
-
-    if ((this._mouseMode == MouseMode.SELECT ||
-        this._mouseMode == MouseMode.MOVE ) && this._determineCanEdit(this.activeLocalization))
-    {
-      if (event.key == 'ArrowRight' ||
-          event.key == 'ArrowLeft' ||
-          event.key == 'ArrowUp' ||
-          event.key == 'ArrowDown')
-      {
-        this._mouseMode = MouseMode.MOVE;
-        var coord = 0;
-        var amount = 0;
-        var impactVector = [1,1,1,1];
-
-        if (event.key == 'ArrowRight')
-        {
-          coord = 0;
-          amount = 1;
-          if (event.altKey)
-          {
-            impactVector = [-1,1,1, -1];
-          }
-        }
-        if (event.key == 'ArrowLeft')
-        {
-          coord = 0;
-          amount = -1;
-          if (event.altKey)
-          {
-            impactVector = [-1,1,1,-1];
-          }
-        }
-        if (event.key == 'ArrowUp')
-        {
-          coord = 1;
-          amount = -1;
-          if (event.altKey)
-          {
-            impactVector = [1,1,-1,-1];
-          }
-        }
-        if (event.key == 'ArrowDown')
-        {
-          coord = 1;
-          amount = 1;
-          if (event.altKey)
-          {
-            impactVector = [1,1,-1,-1];
-          }
-        }
-
-        // Move a lot when you hold shift down
-        if (event.shiftKey == true)
-        {
-          amount *= 5;
-        }
-
-        var meta=this.getObjectDescription(this.activeLocalization);
-        var objType = this.getObjectDescription(this.activeLocalization);
-
-        if (objType.dtype == 'box')
-        {
-          var poly = this.localizationToPoly(this.activeLocalization);
-          for (var idx = 0; idx < 4; idx++)
-          {
-            poly[idx][coord] += (amount*impactVector[idx]);
-          }
-          poly = this.boundsCheck(poly);
-
-          // Update localization based on motion
-          var boxCoords=this.scaleToRelative(polyToBox(poly));
-          this.activeLocalization.x = boxCoords[0];
-          this.activeLocalization.y = boxCoords[1];
-          this.activeLocalization.width = boxCoords[2];
-          this.activeLocalization.height = boxCoords[3];
-        }
-        else if (objType.dtype == 'line')
-        {
-          var line = this.localizationToLine(this.activeLocalization);
-          for (var idx = 0; idx < 2; idx++)
-          {
-            line[idx][coord] += (amount*impactVector[0]);
-          }
-          line = this.boundsCheck(line);
-
-          // Update localization based on motion
-          var expLine=this.scaleToRelative(this.explodeLine(line), true);
-          this.activeLocalization.x0 = expLine[0];
-          this.activeLocalization.y0 = expLine[1];
-          this.activeLocalization.x1 = expLine[2];
-          this.activeLocalization.y1 = expLine[3];
-          this.modifyLocalization();
-        }
-        else if (objType.dtype == 'dot')
-        {
-          // Add to current localization first
-          if (coord == 0)
-          {
-            var pixel = 1.0/this._dims[0];
-            var newX = this.activeLocalization.x + (amount*impactVector[0]*pixel);
-            if (newX <= 1.0 && newX >= 0)
-            {
-              this.activeLocalization.x = newX;
-            }
-          }
-          else if (coord == 1)
-          {
-            var pixel = 1.0/this._dims[1];
-            var newY = this.activeLocalization.y + (amount*impactVector[1]*pixel);
-            if (newY <= 1.0 && newY >= 0)
-            {
-              this.activeLocalization.y = newY;
-            }
-          }
-          var line = this.localizationToDot(this.activeLocalization,
-                                            defaultDotWidth);
-
-        }
-
-        this.selectLocalization(this.activeLocalization, true, true);
-        this._mouseMode = MouseMode.MOVE; //select puts us back in select mode
-        return false;
-      }
-
-      // If we somehow get in here..
       return false;
     }
   }
