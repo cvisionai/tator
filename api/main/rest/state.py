@@ -17,9 +17,6 @@ from ..models import Membership
 from ..models import Version
 from ..models import User
 from ..models import InterpolationMethods
-from ..models import database_qs
-from ..models import database_query_ids
-from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
 from ..schema import MergeStatesSchema
@@ -363,7 +360,7 @@ class StateDetailAPI(BaseDetailView):
         qs = State.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        state = database_qs(qs)[0]
+        state = qs.values(*STATE_PROPERTIES)[0]
         # Get many to many fields.
         state['localizations'] = list(State.localizations.through.objects\
                                       .filter(state_id=state['id'])\

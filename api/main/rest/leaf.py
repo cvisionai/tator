@@ -9,9 +9,6 @@ from django.http import Http404
 from ..models import Leaf
 from ..models import LeafType
 from ..models import Project
-from ..models import database_qs
-from ..models import database_query_ids
-from ..search import TatorSearch
 from ..schema import LeafSuggestionSchema
 from ..schema import LeafListSchema
 from ..schema import LeafDetailSchema
@@ -224,7 +221,7 @@ class LeafDetailAPI(BaseDetailView):
         qs = Leaf.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        return database_qs(qs)[0]
+        return qs.values(*LEAF_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params):
