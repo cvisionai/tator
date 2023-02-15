@@ -668,8 +668,11 @@ def get_tator_store(
         client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
         return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
     elif getattr(bucket, "config", None):
+        external_host = bucket.config.get('external_host')
         client = _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts)
-        return TatorStorage.get_tator_store(bucket.store_type, bucket, client, bucket.name,bucket.config.get('external_host'))
+        return TatorStorage.get_tator_store(
+            bucket.store_type, bucket, client, bucket.name, external_host
+        )
     else:
         endpoint = bucket.endpoint_url
         region = bucket.region
