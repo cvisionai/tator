@@ -74,13 +74,13 @@ def _convert_boolean(value):
 def _get_info_for_attribute(project, entity_type, key):
     """ Returns the first matching dtype with a matching key """
     if key.startswith('$'):
-        if key in ['_x', '_y', '_u', '_v', '_width', '_height']:
+        if key in ['$x', '$y', '$u', '$v', '$width', '$height']:
             return {'name': key[1:], 'dtype': 'float'}
-        elif key in ['_created_by', '_modified_by']:
+        elif key in ['$created_by', '$modified_by']:
             return {'name': key[1:], 'dtype': 'int'}
-        elif key in ['_created_datetime', '_modified_datetime']:
+        elif key in ['$created_datetime', '$modified_datetime']:
             return {'name': key[1:], 'dtype': 'datetime'}
-        elif key in ['_name']:
+        elif key in ['$name']:
             return {'name': key[1:], 'dtype': 'string'}
         else:
             return None
