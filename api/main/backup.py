@@ -218,10 +218,9 @@ class TatorBackupManager:
             if success:
                 backup_info = store_info[StoreType.BACKUP]
                 backup_store = backup_info["store"]
-                live_info = store_info[StoreType.LIVE]
-                live_store = live_info["store"]
             for resource in resource_project_qs.iterator():
                 path = resource.path
+                live_store = get_tator_store(resource.bucket)
                 backup_size = backup_store.get_size(path)
                 live_size = live_store.get_size(path)
                 if backup_size < 0 or live_size != backup_size:
