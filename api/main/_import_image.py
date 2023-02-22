@@ -1,8 +1,13 @@
 # This file is outside the `api/main/rest/` folder to avoid the imports in that module's __init__.py
 import os
-import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tator_online.settings')
-django.setup()
+import sys
+
+try:
+    import django
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tator_online.settings')
+    django.setup()
+except Exception:
+    pass
 
 from PIL import Image
 import pillow_avif # add AVIF support to pillow
