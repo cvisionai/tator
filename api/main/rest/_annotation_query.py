@@ -2,129 +2,38 @@
 from collections import defaultdict
 import logging
 
+import json
+import base64
+import uuid
+
 from django.db.models import Subquery
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
-from ..models import Localization
-from ..models import State
+from ..models import Localization, LocalizationType, Media, MediaType, Section
+from ..models import State, StateType
 from ..search import TatorSearch
 
+from ..schema._attributes import related_keys
+
 from ._media_query import query_string_to_media_ids
-from ._attribute_query import get_attribute_es_query
+from ._media_query import _related_search
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
+from ._attribute_query import get_attribute_psql_queryset_from_query_obj
 
 logger = logging.getLogger(__name__)
 
 ANNOTATION_LOOKUP = {'localization': Localization,
                      'state': State}
 
-def get_annotation_es_query(project, params, annotation_type):
-    """Converts annotation query string into a list of IDs and a count.
-       annotation_type: Should be one of `localization` or `state`.
-    """
-    media_id = params.get('media_id')
-    media_id_put = params.get('media_ids') # PUT request only
-    media_query = params.get('media_query') # PUT request only
-    if annotation_type == 'localization':
-        localization_ids = params.get('ids') # PUT request only
-        state_ids = params.get('state_ids') # PUT request only
-    elif annotation_type == 'state':
-        localization_ids = params.get('localization_ids') # PUT request only
-        state_ids = params.get('ids') # PUT request only
-    filter_type = params.get('type')
-    version = params.get('version')
-    frame = params.get('frame')
-    exclude_parents = params.get('excludeParents')
-    start = params.get('start')
-    stop = params.get('stop')
-    after = params.get('after')
-
-    if exclude_parents and (start or stop):
-        raise Exception("Elasticsearch based queries with pagination are incompatible with "
-                        "'excludeParents'!")
-
-    if state_ids and (annotation_type == 'localization'):
-        raise Exception("Elasticsearch based localization queries do not support 'state_ids'!")
-
-    if localization_ids and (annotation_type == 'state'):
-        raise Exception("Elasticsearch based state queries do not support 'localization_ids'!")
-
-    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort']['_postgres_id'] = 'asc'
-    media_bools = []
-    annotation_types = ["box", "line", "dot", "poly"]
-    if annotation_type == 'localization':
-        annotation_bools = [{'bool': {
-            "should": [{"match": {"_dtype": type_}} for type_ in annotation_types],
-            'minimum_should_match': 1,
-        }}]
-    elif annotation_type == 'state':
-        annotation_bools = [{'match': {'_dtype': 'state'}}]
-    else:
-        raise ValueError(f"Programming error: invalid annotation type {annotation_type}")
-
-    media_ids = []
-    media_types = ["image", "video", "multi"]
-    if media_id_put is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id_put)
-
-    if media_query is not None:
-        media_query_ids = query_string_to_media_ids(project, media_query)
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_query_ids)
-
-    if media_id is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id)
-    if media_ids:
-        media_bools.append({'ids': {'values': media_ids}})
-
-    annotation_ids = []
-    if localization_ids is not None:
-        annotation_ids.extend(
-            f"{type_}_{id_}" for type_ in annotation_types for id_ in localization_ids
-        )
-    if state_ids is not None:
-        annotation_ids.extend(f"state_{id_}" for id_ in state_ids)
-    if annotation_ids:
-        annotation_bools.append({'ids': {'values': annotation_ids}})
-
-    if filter_type is not None:
-        annotation_bools.append({'match': {'_meta': {'query': int(filter_type)}}})
-
-    if version is not None:
-        annotation_bools.append({'terms': {'_annotation_version': version}})
-
-    if frame is not None:
-        annotation_bools.append({'match': {'_frame': {'query': int(frame)}}})
-
-    if start is not None:
-        query['from'] = int(start)
-        if start > 10000:
-            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after'.")
-
-    if start is None and stop is not None:
-        query['size'] = int(stop)
-        if stop > 10000:
-            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after'.")
-
-    if start is not None and stop is not None:
-        query['size'] = int(stop) - int(start)
-        if start + stop > 10000:
-            raise ValueError("Parameter 'start' plus 'stop' must be less than 10000! Try using "
-                             "'after'.")
-
-    if after is not None:
-        annotation_bools.append({'range': {'_postgres_id': {'gt': after}}})
-
-    # TODO: Remove modified parameter.
-    query = get_attribute_es_query(params, query, media_bools, project, False,
-                                   annotation_bools, True)
-
-    return query
+ANNOTATION_TYPE_LOOKUP = {'localization': LocalizationType, 'state': StateType}
 
 def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     """ Constructs a psql queryset.
     """
+
+    logger.info(f"PARAMS={params}")
     # Get query parameters.
     media_id = params.get('media_id')
     media_id_put = params.get('media_ids') # PUT request only
@@ -138,9 +47,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     version = params.get('version')
     frame = params.get('frame')
     after = params.get('after')
-    exclude_parents = params.get('excludeParents')
+    apply_merge = params.get('merge')
     start = params.get('start')
     stop = params.get('stop')
+    elemental_id = params.get('elemental_id')
 
     qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project, deleted=False)
     media_ids = []
@@ -170,12 +80,16 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     if state_ids and (annotation_type == 'state'):
         qs = qs.filter(pk__in=state_ids)
-
-    if filter_type is not None:
-        qs = qs.filter(meta=filter_type)
         
     if version is not None:
         qs = qs.filter(version__in=version)
+
+    if elemental_id is not None:
+        # Django 3.X has a bug where UUID fields aren't escaped properly
+        # Use .extra to manually validate the input is UUID
+        # Then construct where clause manually.
+        safe = uuid.UUID(elemental_id)
+        qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
 
     if frame is not None:
         qs = qs.filter(frame=frame)
@@ -183,21 +97,105 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if after is not None:
         qs = qs.filter(pk__gt=after)
 
-    # TODO: Remove modified parameter
-    qs = qs.exclude(modified=False)
+    relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values_list('media').distinct()
+    if filter_type is not None:
+        qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = qs.filter(type=filter_type)
+        relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values_list('media').distinct()
+    elif filter_ops or params.get('float_array',None):
+        queries = []
+        for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
+            sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
+            if type(sub_qs) != type(None):
+                queries.append(sub_qs.filter(type=entity_type))
+        logger.info(f"Joining {len(queries)} queries together.")
+        sub_qs = queries.pop()
+        if queries:
+            query = Q(pk__in=sub_qs)
+            for r in queries:
+                query = query | Q(pk__in=r)
+            qs = qs.filter(query)
+        else:
+            qs = sub_qs
 
-    qs = get_attribute_psql_queryset(qs, params, filter_ops)
+    if 'section' in params:
+        section = Section.objects.get(pk=params['section'])
+        media_ids = []
+        # This iteration ensures the scoped UUID index is used
+        for media_type_id in relevant_media_type_ids:
+            section_uuid = section.tator_user_sections
+            object_search = section.object_search
+            related_object_search = section.related_object_search
+            media_qs = Media.objects.filter(project=project, type=media_type_id)
+            if section_uuid:
+                media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
+            if object_search:
+                media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, object_search)
+            if related_object_search:
+                media_state_types = StateType.objects.filter(project=project)
+                media_localization_types = Localization.objects.filter(project=project)
+                media_qs = _related_search(media_qs, project, media_state_types, media_localization_types, related_object_search)
+            media_ids.append(media_qs)
+        query = Q(media__in=media_ids.pop())
+        for m in media_ids:
+            query = query | Q(media__in=m)
+        qs = qs.filter(query)
 
-    if exclude_parents:
-        parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
-        qs = qs.difference(parent_set)
+    # Do a related query
+    if any([x in params for x in related_keys if x.startswith('related_')]):
+        related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
+        matches = [x for x in related_keys if x in params]
+        faux_params={key.replace('related_',''): params[key] for key in matches}
+        logger.info(faux_params)
+        related_matches = []
+        for entity_type in related_media_types:
+            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            if faux_filter_ops:
+                related_matches.append(get_attribute_psql_queryset(project, entity_type, Media.objects.filter(project=project), faux_params, faux_filter_ops))
+        if related_matches:
+            related_match = related_matches.pop()
+            query = Q(media__in=related_match)
+            for r in related_matches:
+                query = query | Q(media__in=r)
+            qs = qs.filter(query).distinct()
+
+    if params.get('object_search'):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+
+    if params.get('encoded_related_search'):
+        search_obj = json.loads(base64.b64decode(params.get('encoded_related_search').encode()).decode())
+        related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
+        related_matches = []
+        for entity_type in related_media_types:
+            media_qs = Media.objects.filter(project=project, type=entity_type)
+            media_qs =  get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
+            if media_qs.count():
+                related_matches.append(media_qs)
+        if related_matches:
+            related_match = related_matches.pop()
+            query = Q(media__in=related_match)
+            for r in related_matches:
+                query = query | Q(media__in=r)
+            qs = qs.filter(query).distinct()
+        else:
+            qs = qs.filter(pk=-1)
+
+    # Used by GET queries
+    if params.get('encoded_search'):
+        search_obj = json.loads(base64.b64decode(params.get('encoded_search').encode()).decode())
+        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+
+    if apply_merge:
+        #parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
+        objects_with_parents=qs.filter(parent__isnull=False)
+        qs = qs.exclude(pk__in=objects_with_parents.values('parent'))
+
+    show_deleted = params.get('show_deleted')
+    if not show_deleted:
+        qs = qs.filter(variant_deleted=False)
         
-    # Coalesce is a no-op that prevents PSQL from using the primary key index for small
-    # LIMIT values (which results in slow queries).
-    if exclude_parents or (stop is None):
+    if params.get('float_array',None) == None:
         qs = qs.order_by('id')
-    else:
-        qs = qs.order_by(Coalesce('id', 'id'))
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
@@ -206,65 +204,26 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     elif stop is not None:
         qs = qs[:stop]
 
+    # Useful for profiling / checking out query complexity
+    logger.info(qs.query)
+    logger.info(qs.explain())
+
     return qs
-
-def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'media_search', 'section']
-    use_es = False
-    for es_param in ES_ONLY_PARAMS:
-        if es_param in params:
-            use_es = True
-            break
-
-    # Look up attribute dtypes if necessary.
-    use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
-    use_es = use_es or use_es_for_attributes
-
-    return use_es, filter_ops
         
 def get_annotation_queryset(project, params, annotation_type):
-    # Determine whether to use ES or not.
-    use_es, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and construct the queryset.
-        query = get_annotation_es_query(project, params, annotation_type)
-        annotation_ids, _  = TatorSearch().search(project, query)
-        qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
-
-        # Apply excludeParents if no pagination.
-        exclude_parents = params.get('excludeParents')
-        if exclude_parents:
-            parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
-            qs = qs.difference(parent_set)
-
-        qs = qs.order_by('id')
+    # annotation_type is either localization or state
+    filter_type = params.get('type')
+    project = params.get('project')
+    filter_ops=[]
+    if filter_type:
+        types = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type)
     else:
-        # If using PSQL, construct the queryset.
-        qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
+        types = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project)
+    for entity_type in types:
+        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
+    qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
     return qs
 
 def get_annotation_count(project, params, annotation_type):
-    # Determine whether to use ES or not.
-    use_es, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and get the count.
-        query = get_annotation_es_query(project, params, annotation_type)
-        annotation_ids, _  = TatorSearch().search(project, query)
-
-        # Apply excludeParents if no pagination.
-        exclude_parents = params.get('excludeParents')
-        if exclude_parents:
-            qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
-            parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
-            qs = qs.difference(parent_set)
-            count = qs.count()
-        else:
-            count = len(annotation_ids)
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
-        count = qs.count()
-    return count
+    return get_annotation_queryset(project,params,annotation_type).count()
 

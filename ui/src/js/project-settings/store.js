@@ -511,7 +511,7 @@ export const getLeavesByParent = async ({ object }) => {
 
    for (let item of leaves) {
       // Add to setlist
-      const parentId = item.meta;
+      const parentId = item.type;
       newSetList.add(parentId);
       
       // Get existing array, or start new leaves array

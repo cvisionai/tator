@@ -9,9 +9,6 @@ from django.http import Http404
 from ..models import Leaf
 from ..models import LeafType
 from ..models import Project
-from ..models import database_qs
-from ..models import database_query_ids
-from ..search import TatorSearch
 from ..schema import LeafSuggestionSchema
 from ..schema import LeafListSchema
 from ..schema import LeafDetailSchema
@@ -20,7 +17,6 @@ from ..schema.components import leaf as leaf_schema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._leaf_query import get_leaf_queryset
-from ._leaf_query import get_leaf_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -51,19 +47,22 @@ class LeafSuggestionAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
-        minLevel=int(params.get('minLevel', 1))
+        project = params.get('project')
+        min_level=int(params.get('min_level', 1))
         startsWith=params.get('query', None)
         ancestor=params['ancestor']
-        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-        query['size'] = 10
-        query['sort']['_exact_treeleaf_name'] = 'asc'
-        query['query']['bool']['filter'] = [
-            {'match': {'_dtype': {'query': 'leaf'}}},
-            {'range': {'_treeleaf_depth': {'gte': minLevel}}},
-            {'query_string': {'query': f'{startsWith}* AND _treeleaf_path:{ancestor}*'}},
-        ]
-        ids, _ = TatorSearch().search(params['project'], query)
-        queryset = list(Leaf.objects.filter(pk__in=ids))
+
+        # Try to find root node for type
+        root_node = Leaf.objects.filter(project=project, path=ancestor)
+        if root_node.count() == 0:
+            return []
+        
+        type_id = root_node[0].type
+        queryset = Leaf.objects.filter(project=project, 
+                                       type=type_id, 
+                                       name__istartswith=startsWith, 
+                                       path__istartswith=ancestor,
+                                       path__depth__gte=min_level)
 
         suggestions=[]
         for idx,match in enumerate(queryset):
@@ -94,6 +93,7 @@ class LeafSuggestionAPI(BaseDetailView):
             return elem["group"]
 
         suggestions.sort(key=functor)
+        logger.info(queryset.explain())
         return suggestions
 
 class LeafListAPI(BaseListView):
@@ -123,7 +123,7 @@ class LeafListAPI(BaseListView):
 
             leaf = Leaf(
                 project=project,
-                meta=metas[leaf_spec["type"]],
+                type=metas[leaf_spec["type"]],
                 attributes=attrs,
                 created_by=user,
                 modified_by=user,
@@ -137,6 +137,8 @@ class LeafListAPI(BaseListView):
         # Check that we are getting a leaf list.
         if 'body' in params:
             leaf_specs = params['body']
+            if not isinstance(leaf_specs, list):
+                leaf_specs = [leaf_specs]
         else:
             raise Exception('Leaf creation requires list of leaves!')
 
@@ -164,16 +166,6 @@ class LeafListAPI(BaseListView):
         leaves = bulk_create_from_generator(objs, Leaf)
         create_buffer = []
 
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for leaf in leaves:
-            documents += ts.build_document(leaf)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
         ids = bulk_log_creation(leaves, project, self.request.user)
 
         # Return created IDs.
@@ -187,8 +179,6 @@ class LeafListAPI(BaseListView):
         count = qs.count()
         if count > 0:
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_leaf_es_query(params)
-            TatorSearch().delete(self.kwargs['project'], query)
             
         if count == 1:
             return {'message': f'Successfully deleted {count} leaf!'}
@@ -199,14 +189,13 @@ class LeafListAPI(BaseListView):
         qs = get_leaf_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             new_attrs = validate_attributes(params, qs[0])
             bulk_update_and_log_changes(
                 qs, params["project"], self.request.user, new_attributes=new_attrs
             )
             bulk_patch_attributes(new_attrs, qs)
-
-            query = get_leaf_es_query(params)
-            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
 
         if count == 1:
             return {'message': f'Successfully updated {count} leaf!'}
@@ -232,7 +221,7 @@ class LeafDetailAPI(BaseDetailView):
         qs = Leaf.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        return database_qs(qs)[0]
+        return qs.values(*LEAF_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -278,7 +267,6 @@ class LeafDetailAPI(BaseDetailView):
 
         for i in ids:
             inner_leaf = Leaf.objects.get(pk=i, deleted=False)
-            TatorSearch().delete_document(inner_leaf)
                 
         bulk_delete_and_log_changes(queryset, project, self.request.user)
 

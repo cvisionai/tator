@@ -3,18 +3,35 @@ from collections import defaultdict
 import copy
 import logging
 
+import datetime
 from dateutil.parser import parse as dateutil_parse
+import pytz
+
+from django.db.models.functions import Cast
+from django.db.models import Func, F, Q
+from django.contrib.gis.db.models import CharField
+from django.contrib.gis.db.models import BooleanField
+from django.contrib.gis.db.models import BigIntegerField
+from django.contrib.gis.db.models import FloatField
+from django.contrib.gis.db.models import DateTimeField
+from django.contrib.gis.db.models import PointField
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import Distance
+from pgvector.django import VectorField
 
 from ..models import LocalizationType
 from ..models import StateType
+from ..models import MediaType
+from ..models import LeafType
+from ..models import FileType
 from ..models import Section
-from ..search import TatorSearch
 
 from ._attributes import KV_SEPARATOR
 from ._float_array_query import get_float_array_query
 
-logger = logging.getLogger(__name__)
+from pgvector.django import L2Distance, MaxInnerProduct, CosineDistance
 
+logger = logging.getLogger(__name__)
 
 def format_query_string(query_str: str) -> str:
     """
@@ -25,200 +42,14 @@ def format_query_string(query_str: str) -> str:
     """
     return query_str.replace("/", "\\/")
 
-
-def get_attribute_es_query(query_params, query, bools, project,
-                           is_media=True, annotation_bools=None, modified=None):
-    """ TODO: add documentation for this """
-    if annotation_bools is None:
-        annotation_bools = []
-
-    # Construct query for media and annotations
-    attr_filter_params = {
-        'attribute_eq': query_params.get('attribute', None),
-        'attribute_lt': query_params.get('attribute_lt', None),
-        'attribute_lte': query_params.get('attribute_lte', None),
-        'attribute_gt': query_params.get('attribute_gt', None),
-        'attribute_gte': query_params.get('attribute_gte', None),
-        'attribute_contains': query_params.get('attribute_contains', None),
-        'attribute_distance': query_params.get('attribute_distance', None),
-        'attribute_null': query_params.get('attribute_null', None),
-    }
-    child_attrs = []
-    for state_type in StateType.objects.filter(project=project).iterator():
-        child_attrs += state_type.attribute_types
-    for localization_type in LocalizationType.objects.filter(project=project).iterator():
-        child_attrs += localization_type.attribute_types
-    child_attrs = [attr['name'] for attr in child_attrs]
-    attr_query = {
-        'media': {
-            'must_not': [],
-            'filter': [],
-        },
-        'annotation': {
-            'must_not': [],
-            'filter': [],
-        },
-    }
-    for o_p in attr_filter_params: #pylint: disable=too-many-nested-blocks
-        if attr_filter_params[o_p] is not None:
-            for kv_pair in attr_filter_params[o_p]:
-                if o_p == 'attribute_distance':
-                    key, dist_km, lat, lon = kv_pair.split(KV_SEPARATOR)
-                    relation = 'annotation' if key in child_attrs else 'media'
-                    attr_query[relation]['filter'].append({
-                        'geo_distance': {
-                            'distance': f'{dist_km}km',
-                            key: {'lat': float(lat), 'lon': float(lon)},
-                        }
-                    })
-                else:
-                    key, val = kv_pair.split(KV_SEPARATOR)
-                    relation = 'annotation' if key in child_attrs else 'media'
-                    if o_p == 'attribute_eq':
-                        attr_query[relation]['filter'].append({'match': {key: val}})
-                    elif o_p == 'attribute_lt':
-                        attr_query[relation]['filter'].append({'range': {key: {'lt': val}}})
-                    elif o_p == 'attribute_lte':
-                        attr_query[relation]['filter'].append({'range': {key: {'lte': val}}})
-                    elif o_p == 'attribute_gt':
-                        attr_query[relation]['filter'].append({'range': {key: {'gt': val}}})
-                    elif o_p == 'attribute_gte':
-                        attr_query[relation]['filter'].append({'range': {key: {'gte': val}}})
-                    elif o_p == 'attribute_contains':
-                        attr_query[relation]['filter'].append({'wildcard': {key: {'value': f'*{val}*'}}}) #pylint: disable=line-too-long
-                    elif o_p == 'attribute_null':
-                        check = {'exists': {'field': key}}
-                        if val.lower() == 'false':
-                            attr_query[relation]['filter'].append(check)
-                        elif val.lower() == 'true':
-                            attr_query[relation]['must_not'].append(check)
-                        else:
-                            raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.") #pylint: disable=line-too-long
-
-    attr_query['media']['filter'] += bools
-    attr_query['annotation']['filter'] += annotation_bools
-
-    section = query_params.get('section')
-    if section is not None:
-        section_object = Section.objects.get(pk=section)
-        if section_object.lucene_search:
-            attr_query['media']['filter'].append({'bool': {
-                'should': [
-                    {'query_string': {'query': format_query_string(section_object.lucene_search)}},
-                    {'has_child': {
-                        'type': 'annotation',
-                        'query': {'query_string': {'query': format_query_string(section_object.lucene_search)}},
-                        },
-                    },
-                ],
-                'minimum_should_match': 1,
-            }})
-        if section_object.media_bools:
-            attr_query['media']['filter'] += section_object.media_bools
-        if section_object.annotation_bools:
-            attr_query['annotation']['filter'] += section_object.annotation_bools
-        if section_object.tator_user_sections:
-            attr_query['media']['filter'].append({'match': {'tator_user_sections': {
-                'query': section_object.tator_user_sections,
-            }}})
-
-    if is_media:
-        # Construct query for media
-        has_child = False
-        child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))) #pylint: disable=line-too-long
-
-        for key in ['must_not', 'filter']:
-            if len(attr_query['annotation'][key]) > 0:
-                has_child = True
-                child_query['query']['bool'][key] = copy.deepcopy(attr_query['annotation'][key])
-
-        if has_child:
-            child_query['type'] = 'annotation'
-            attr_query['media']['filter'].append({'has_child': child_query})
-
-        for key in ['must_not', 'filter']:
-            if len(attr_query['media'][key]) > 0:
-                query['query']['bool'][key] = attr_query['media'][key]
-
-        search = query_params.get('search')
-        if search is not None:
-            search_query = {'query_string': {'query': format_query_string(search)}}
-            query['query']['bool']['filter'].append(search_query)
-
-        annotation_search = query_params.get('annotation_search')
-        if annotation_search is not None:
-            annotation_search_query = {'has_child': {'type': 'annotation',
-                                                     'query': {'query_string': {'query': format_query_string(annotation_search)}}}}
-            query['query']['bool']['filter'].append(annotation_search_query)
-
-    else:
-        # Construct query for annotations
-        has_parent = False
-        parent_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))) #pylint: disable=line-too-long
-
-        for key in ['must_not', 'filter']:
-            if len(attr_query['media'][key]) > 0:
-                has_parent = True
-                parent_query['query']['bool'][key] = copy.deepcopy(attr_query['media'][key])
-
-        if has_parent:
-            parent_query['parent_type'] = 'media'
-            attr_query['annotation']['filter'].append({'has_parent': parent_query})
-            parent_type_check = [{'bool': {
-                'should': [
-                    {'match': {'_dtype': 'image'}},
-                    {'match': {'_dtype': 'video'}},
-                    {'match': {'_dtype': 'multi'}},
-                ],
-                'minimum_should_match': 1,
-            }}]
-            if 'filter' in parent_query['query']['bool']:
-                parent_query['query']['bool']['filter'] += parent_type_check
-            else:
-                parent_query['query']['bool']['filter'] = [parent_type_check]
-
-        for key in ['must_not', 'filter']:
-            if len(attr_query['annotation'][key]) > 0:
-                query['query']['bool'][key] = attr_query['annotation'][key]
-
-        search = query_params.get('search', None)
-        if search is not None:
-            search_query = {'query_string': {'query': format_query_string(search)}}
-            query['query']['bool']['filter'].append(search_query)
-
-        media_search = query_params.get('media_search')
-        if media_search is not None:
-            media_search_query = {'has_parent': {'parent_type': 'media',
-                                                 'query': {'query_string': {'query': format_query_string(media_search)}}}}
-            query['query']['bool']['filter'].append(media_search_query)
-
-        if modified is not None:
-            # Get modified + null or not modified + null
-            modified_query = {'bool': {
-                'should': [
-                    {'bool': {'must_not': [{
-                        'exists': {'field': '_modified'},
-                    }]}},
-                    {'match': {'_modified': bool(int(modified))}},
-                ],
-                'minimum_should_match': 1,
-            }}
-            query['query']['bool']['filter'].append(modified_query)
-
-    # Add float array queries - NOTE: because this adds a script_score to the query it
-    # should be the last step in query construction
-    query = get_float_array_query(query_params, query)
-
-    return query
-
 ALLOWED_TYPES = {
-    'attribute': ('boolean', 'long', 'double', 'date', 'keyword', 'text'),
-    'attribute_lt': ('long', 'double', 'date'),
-    'attribute_lte': ('long', 'double', 'date'),
-    'attribute_gt': ('long', 'double', 'date'),
-    'attribute_gte': ('long', 'double', 'date'),
-    'attribute_contains': ('keyword', 'text'),
-    'attribute_distance': ('geo_point',),
+    'attribute': ('bool', 'float', 'datetime', 'keyword', 'string', 'int', 'enum'),
+    'attribute_lt': ('float', 'datetime', 'int'),
+    'attribute_lte': ('float', 'datetime', 'int'),
+    'attribute_gt': ('float', 'datetime', 'int'),
+    'attribute_gte': ('float', 'datetime', 'int'),
+    'attribute_contains': ('keyword', 'string', 'enum'),
+    'attribute_distance': ('geopos',),
 }
 
 OPERATOR_SUFFIXES = {
@@ -228,7 +59,7 @@ OPERATOR_SUFFIXES = {
     'attribute_gt': '__gt',
     'attribute_gte': '__gte',
     'attribute_contains': '__icontains',
-    'attribute_distance': '__distance__lte',
+    'attribute_distance': '__distance_lte',
 }
 
 def _convert_boolean(value):
@@ -240,18 +71,54 @@ def _convert_boolean(value):
         value = bool(value)
     return value
 
-def _convert_attribute_filter_value(pair, mappings, operation):
+def _get_info_for_attribute(project, entity_type, key):
+    """ Returns the first matching dtype with a matching key """
+    if key.startswith('$'):
+        if key in ['$x', '$y', '$u', '$v', '$width', '$height']:
+            return {'name': key[1:], 'dtype': 'float'}
+        elif key in ['$created_by', '$modified_by']:
+            return {'name': key[1:], 'dtype': 'int'}
+        elif key in ['$created_datetime', '$modified_datetime']:
+            return {'name': key[1:], 'dtype': 'datetime'}
+        elif key in ['$name']:
+            return {'name': key[1:], 'dtype': 'string'}
+        else:
+            return None
+    elif key == 'tator_user_sections':
+        return {'name': 'tator_user_sections', 'dtype': 'string'}
+    else:
+        for attribute_info in entity_type.attribute_types:
+            if attribute_info['name'] == key:
+                return attribute_info
+    return None
+
+def _get_field_for_attribute(project, entity_type, key):
+    """ Returns the field type for a given key in a project/annotation_type """
+    lookup_map = {'bool': BooleanField,
+                  'int': BigIntegerField,
+                  'float': FloatField,
+                  'enum': CharField,
+                  'string': CharField,
+                  'datetime': DateTimeField,
+                  'geopos': PointField,
+                  'float_array': VectorField}
+    info = _get_info_for_attribute(project, entity_type, key)
+    if info:
+        return lookup_map[info['dtype']], info.get('size', None)
+    else:
+        return None,None
+
+def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     kv = pair.split(KV_SEPARATOR, 1)
     key, value = kv
-    if key not in mappings:
-        raise ValueError(f"Attribute '{key}' could not be found in project!")
-    if 'path' in mappings[key]:
-        dtype = mappings[key]['path'].split('_', 1)[1]
-    else:
-        dtype = mappings[key]['type']
+    info = _get_info_for_attribute(project, annotation_type, key)
+    if info is None:
+        return None, None,None
+    dtype = info['dtype']
+    
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
-    if dtype == 'boolean':
+    if dtype == 'bool':
         value = _convert_boolean(value)
     if dtype == 'double':
         value = float(value)
@@ -259,43 +126,164 @@ def _convert_attribute_filter_value(pair, mappings, operation):
         value = int(value)
     elif dtype == 'date':
         value = dateutil_parse(value)
+    elif dtype == 'geopos':
+        distance, lat, lon = value.split('::')
+        value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
+        logger.info(f"{distance}, {lat},{lon}")
     return key, value, dtype
 
-def get_attribute_filter_ops(project, params):
+def get_attribute_filter_ops(project, params, data_type):
     filter_ops = []
-    use_es = False
     if any([(filt in params) for filt in ALLOWED_TYPES.keys()]):
-        search = TatorSearch()
-        index_name = search.index_name(project)
-        mappings = TatorSearch().es.indices.get_mapping(index=index_name)
-        mappings = mappings[index_name]['mappings']['properties']
-
         for op in ALLOWED_TYPES.keys():
             if op in params:
                 for kv in params[op]:
-                    key, value, dtype = _convert_attribute_filter_value(kv, mappings, op)
-                    # Don't deal with type conversions required for date and geo_point filtering
-                    # in PSQL
-                    if (dtype in ['date', 'geo_point']) or (op == 'attribute_distance'):
-                        use_es = True
-                    filter_ops.append((key, value, op))
-    force_es = params.get('force_es')
-    if force_es:
-        use_es = True
-    if 'float_array' in params:
-        use_es = True
-    return use_es, filter_ops
+                    key, value, dtype = _convert_attribute_filter_value(kv, project, data_type, op)
+                    if key:
+                        filter_ops.append((key, value, op))
+    return filter_ops
 
-def get_attribute_psql_queryset(qs, params, filter_ops):
+def build_query_recursively(query_object):
+    if 'method' in query_object:
+        method = query_object['method'].lower()
+        sub_queries = [build_query_recursively(x) for x in query_object['operations']]
+        if len(sub_queries) == 0:
+            return Q()
+        if method == 'not':
+            if len(sub_queries) != 1:
+                raise(Exception("NOT operator can only be applied to one suboperation"))
+            query = ~sub_queries[0]
+        elif method == 'and':
+            query = sub_queries.pop()
+            for q in sub_queries:
+                query = query & q
+        elif method == 'or':
+            query = sub_queries.pop()
+            for q in sub_queries:
+                query = query | q
+    else:
+        attr_name = query_object['attribute']
+        operation = query_object['operation']
+        inverse = query_object.get('inverse',False)
+        value = query_object['value']
+        if attr_name.startswith('$'):
+            db_lookup=attr_name[1:]
+        else:
+            db_lookup=f"attributes__{attr_name}"
+        if operation.startswith('date_'):
+            # python is more forgiving then SQL so convert any partial dates to 
+            # full-up ISO8601 datetime strings WITH TIMEZONE.
+            operation = operation.replace('date_','')
+            if operation=='range':
+                utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
+                value_0 = utc.datetime.isoformat()
+                utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
+                value_1 = utc.datetime.isoformat()
+                value = (value_0,value_1)
+            else:
+                utc_datetime = dateutil_parse(value).astimezone(pytz.UTC)
+                value = utc.datetime.isoformat()
+        elif operation.startswith('distance_'):
+            distance, lat, lon = value
+            value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
+        
+        if operation in ['date_eq','eq']:
+            query = Q(**{f"{db_lookup}": value})
+        else:
+            query = Q(**{f"{db_lookup}__{operation}": value})
+
+        if inverse:
+            query = ~query
+
+    return query
+        
+def get_attribute_psql_queryset_from_query_obj(qs, query_object):
+    q_object = build_query_recursively(query_object)
+    return qs.filter(q_object)
+
+def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
     attribute_null = params.get('attribute_null')
+    float_queries = params.get('float_array')
+    if float_queries is None:
+        float_queries = []
 
+    # return original queryset if no queries were supplied
+    if not filter_ops and not float_queries and not attribute_null:
+        return qs
+
+    found_it = False
     for key, value, op in filter_ops:
-        qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
+        if key.startswith('$'):
+            db_field = key[1:]
+            qs = qs.filter(**{f'{db_field}{OPERATOR_SUFFIXES[op]}': value})
+            found_it = True
+        else:
+            field_type,_ = _get_field_for_attribute(project, entity_type, key)
+            if field_type:
+                # Annotate with a typed object prior to query to ensure index usage
+                if field_type == PointField:
+                    qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
+                    qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
+                    qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_0_float"), F(f"{key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
+                    qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                elif field_type == DateTimeField:
+                    qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
+                    qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})
+                    qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                elif field_type == CharField:
+                    qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
+                else:
+                    qs = qs.annotate(**{f'{key}_typed': Cast(f'attributes__{key}', field_type())})
+                    qs = qs.filter(**{f'{key}_typed{OPERATOR_SUFFIXES[op]}': value})
+                found_it=True
 
     if attribute_null is not None:
         for kv in attribute_null:
             key, value = kv.split(KV_SEPARATOR)
             value = _convert_boolean(value)
-            qs = qs.filter(**{f"attributes__{key}__isnull": value})
-    return qs
+            if value:
+                qs = qs.filter(Q(**{f"attributes__contains": {key:None}}) | ~Q(**{f"attributes__has_key": key}))
+            else:
+                # Returns true if the attributes both have a key and it is not set to null
+                qs = qs.filter(**{f"attributes__has_key": key})
+                qs = qs.filter(~Q(**{f"attributes__contains": {key:None}}))
+            found_it = True
+
+    for query in float_queries:
+        if not 'type' in params:
+            raise(Exception("Must supply 'type' if supplying a float_query. "))
+        logger.info(f"EXECUTING FLOAT QUERY={query}")
+        found_it = True
+        name = query['name']
+        center = query['center']
+        upper_bound = query.get('upper_bound', None)
+        lower_bound = query.get('lower_bound', None)
+        metric = query.get('metric', 'l2norm')
+        order = query.get('order', 'asc')
+        field_type,size = _get_field_for_attribute(project, entity_type, name)
+        if field_type:
+            found_it = True
+            qs = qs.filter(type=params['type'])
+            qs = qs.annotate(**{f"{name}_char": Cast(f"attributes__{name}", CharField())})
+            qs = qs.annotate(**{f"{name}_typed": Cast(f"{name}_char", VectorField(dimensions=size))})
+            if metric == 'l2norm':
+                qs = qs.annotate(**{f"{name}_distance": L2Distance(f"{name}_typed", center)})
+            elif metric == 'cosine':
+                qs = qs.annotate(**{f"{name}_distance":CosineDistance(f"{name}_typed", center)})
+            elif metric == 'ip':
+                qs = qs.annotate(**{f"{name}_distance":MaxInnerProduct(f"{name}_typed", center)})
+
+            if upper_bound:
+                qs = qs.filter(**{f"{name}_distance__lte": upper_bound})
+            if lower_bound:
+                qs = qs.filter(**{f"{name}_distance__gte": lower_bound})
+            if order == 'asc':
+                qs = qs.order_by(f"{name}_distance")
+            else:
+                qs = qs.order_by(f"-{name}_distance")
+
+    if found_it:
+        return qs
+    else:
+        return None
 

@@ -25,7 +25,7 @@ class Command(BaseCommand):
                                            modified_datetime__lte=max_datetime)
             null_project = Media.objects.filter(project__isnull=True, 
                                                 modified_datetime__lte=max_datetime)
-            null_meta = Media.objects.filter(meta__isnull=True,
+            null_type = Media.objects.filter(type__isnull=True,
                                              modified_datetime__lte=max_datetime)
             media_ids = (deleted | null_project | null_meta)\
                         .distinct()\

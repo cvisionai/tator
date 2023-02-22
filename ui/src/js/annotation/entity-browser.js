@@ -44,11 +44,18 @@ export class EntityBrowser extends TatorElement {
 
     const searchDiv = document.createElement("div");
     searchDiv.setAttribute("class", "annotation__panel-group py-3");
+    searchDiv.style.width = 'fit-content';
     spacer.appendChild(searchDiv);
 
-    this._search = document.createElement("annotation-search");
+    this._search = document.createElement("filter-data-button");
+    this._filterModal = document.createElement("annotation-filter-dialog");
     searchDiv.appendChild(this._search);
+    searchDiv.appendChild(this._filterModal);
 
+    const filterNotificationSpan = document.createElement("span");
+    filterNotificationSpan.setAttribute("class", "f3");
+    searchDiv.appendChild(filterNotificationSpan);
+    this._filterNotificationSpan = filterNotificationSpan;
     const groupDiv = document.createElement("div");
     groupDiv.setAttribute("class", "text-gray f2");
     spacer.appendChild(groupDiv);
@@ -98,6 +105,7 @@ export class EntityBrowser extends TatorElement {
   set dataType(val) {
     this._identifier = identifyingAttribute(val);
     this._dataType = val;
+    this._filterModal.dataType = val;
     this._title.textContent = this._dataType.name;
     let choices = [{value: "Off"}];
     const sorted = this._dataType.attribute_types.sort((a, b) => a.order - b.order);
@@ -143,8 +151,34 @@ export class EntityBrowser extends TatorElement {
         }
       }
     });
-    this._search.addEventListener("filterAnnotations", evt => {
-      this._data.updateType(this._dataType, null, evt.detail.query);
+
+    this._filterModal.data = this._data;
+    this._search.addEventListener("click", evt => {
+      this._filterModal.setAttribute("is-open", "");
+      document.body.classList.add("shortcuts-disabled");
+    });
+
+    this._filterModal.addEventListener("close", evt => {
+      this._filterModal.removeAttribute("is-open");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
+    this._filterModal.addEventListener("annotationFilter", evt => {
+      if (evt.detail.filterObject)
+      {
+        const encoded_query = btoa(JSON.stringify(evt.detail.filterObject));
+        this._data.updateType(this._dataType, null, encoded_query);
+        this._filterNotificationSpan.textContent = "Filters applied";
+      }
+      else
+      {
+        this._data.updateType(this._dataType, null);
+        this._filterNotificationSpan.textContent = null;
+      }
+
+      // Close after filter is applied
+      this._filterModal.removeAttribute("is-open");
+      document.body.classList.remove("shortcuts-disabled");
     });
     this._group.addEventListener("change", evt => {
       this._drawControls();
@@ -288,9 +322,9 @@ export class EntityBrowser extends TatorElement {
                   let newObject = {};
                   let state = tweakedObj;
                   newObject.parent = state.id;
-                  newObject = Object.assign(newObject, values);
+                  newObject.attributes = {...values};
                   newObject.version = this._data.getVersion().id;
-                  newObject.type = Number(state.meta.split("_")[1]);
+                  newObject.type = Number(state.type.split("_")[1]);
                   newObject.media_ids = state.media;
                   newObject.frame = state.frame;
                   newObject.localization_ids = state.localizations;

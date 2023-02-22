@@ -2,32 +2,55 @@ import os
 import logging
 from uuid import uuid1
 
+from django.http import Http404
 from rest_framework.authtoken.models import Token
 import requests
 
 from ..kube import TatorTranscode
 from ..kube import get_jobs
+from ..kube import cancel_jobs
 from ..store import get_tator_store
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
 from ..models import Media
-from ..schema import TranscodeSchema
+from ..schema import TranscodeListSchema
+from ..schema import TranscodeDetailSchema
 from ..notify import Notify
 
 from .media import _create_media
 from ._util import url_to_key
 from ._base_views import BaseListView
+from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+from ._media_query import get_media_queryset
+from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
 
-class TranscodeAPI(BaseListView):
+def _filter_cache_by_media(project, params, cache):
+    """ Checks if a params dict has media filters.
+    """
+    keys = list(params.keys())
+    if 'project' in keys:
+        keys.remove('project')
+    if 'gid' in keys:
+        keys.remove('gid')
+    if len(keys) > 0:
+        filtered = []
+        qs = get_media_queryset(project, params)
+        media_ids = list(qs.values_list('id', flat=True))
+        filtered = [item for item in cache if item['spec']['media_id'] in media_ids]
+    else:
+        filtered = cache
+    return filtered
+        
+class TranscodeListAPI(BaseListView):
     """ Start a transcode.
     """
-    schema = TranscodeSchema()
+    schema = TranscodeListSchema()
     permission_classes = [ProjectTransferPermission]
-    http_method_names = ['post']
+    http_method_names = ['post', 'get', 'put', 'delete']
 
     def _post(self, params):
         entity_type = params['type']
@@ -89,10 +112,10 @@ class TranscodeAPI(BaseListView):
             if media_obj.project.pk != project:
                 raise Exception(f"Media not part of specified project!")
         elif entity_type != -1:
-            media_obj, _ = _create_media(params, self.request.user)
+            media_obj, _ = _create_media(project, params, self.request.user)
             media_id = media_obj.id
         if entity_type == -1:
-            TatorTranscode().start_tar_import(
+            transcode = TatorTranscode().start_tar_import(
                 project,
                 entity_type,
                 token,
@@ -106,7 +129,7 @@ class TranscodeAPI(BaseListView):
                 upload_size,
                 attributes)
         else:
-            TatorTranscode().start_transcode(
+            transcode = TatorTranscode().start_transcode(
                 project,
                 entity_type,
                 token,
@@ -124,9 +147,8 @@ class TranscodeAPI(BaseListView):
         msg = (f"Transcode job {uid} started for file "
                f"{name} on project {type_objects[0].project.name}")
         response_data = {'message': msg,
-                         'uid': uid,
-                         'gid': gid,
-                         'media_id': media_id}
+                         'id': str(uid),
+                         'object': transcode}
 
         # Update Media object with workflow name
         if media_id:
@@ -141,3 +163,74 @@ class TranscodeAPI(BaseListView):
         # Send notification that transcode started.
         logger.info(msg)
         return response_data
+
+
+    def _get(self, params):
+        gid = params.get('gid', None)
+        project = params['project']
+
+        selector = f'project={project},job_type=upload'
+        if gid is not None:
+            selector += f',gid={gid}'
+            cache = TatorCache().get_jobs_by_gid(gid)
+            if not cache:
+                cache = []
+            else:
+                assert(cache[0]['project'] == project)
+        else:
+            cache = TatorCache().get_jobs_by_project(project, 'transcode')
+        cache = _filter_cache_by_media(project, params, cache)
+        specs = {spec['uid']:spec['spec'] for spec in cache}
+        jobs = get_jobs(selector, cache)
+        jobs = [workflow_to_job(job) for job in jobs]
+        jobs = {job['uid']:job for job in jobs}
+        return [{'spec':specs[uid], 'job': jobs[uid]} for uid in jobs.keys()
+                if uid in jobs and uid in specs]
+
+    def _delete(self, params):
+        # Parse parameters
+        gid = params.get('gid', None)
+        project = params['project']
+
+        selector = f'project={project},job_type=upload'
+        if gid is not None:
+            selector += f',gid={gid}'
+            cache = TatorCache().get_jobs_by_gid(gid)
+            if not cache:
+                cache = []
+            else:
+                assert(cache[0]['project'] == project)
+        else:
+            cache = TatorCache().get_jobs_by_project(project, 'transcode')
+        cache = _filter_cache_by_media(project, params, cache)
+        cancelled = cancel_jobs(selector, cache)
+        return {'message': f"Deleted {cancelled} jobs for project {project}!"}
+
+    def _put(self, params):
+        return self._get(params)
+
+class TranscodeDetailAPI(BaseDetailView):
+    schema = TranscodeDetailSchema()
+    permission_classes = [ProjectTransferPermission]
+    http_method_names = ['get', 'delete']
+
+    def _get(self, params):
+        uid = params['uid']
+        cache = TatorCache().get_jobs_by_uid(uid)
+        if cache is None:
+            raise Http404
+        jobs = get_jobs(f'uid={uid}', cache)
+        if len(jobs) != 1:
+            raise Http404
+        return {'job': workflow_to_job(jobs[0]), 'spec': cache[0]['spec']}
+
+    def _delete(self, params):
+        uid = params['uid']
+        cache = TatorCache().get_jobs_by_uid(uid)
+        if cache is None:
+            raise Http404
+        cancelled = cancel_jobs(f'uid={uid}', cache)
+        if cancelled != 1:
+            raise Http404
+
+        return {'message': f"Job with UID {uid} deleted!"}

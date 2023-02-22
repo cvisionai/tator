@@ -4,7 +4,7 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
-from ._attributes import attribute_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
 
 class MediaPrevSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -36,7 +36,7 @@ class MediaPrevSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method  == 'GET':
-            params = media_filter_parameter_schema + attribute_filter_parameter_schema
+            params = media_filter_parameter_schema + attribute_filter_parameter_schema + related_attribute_filter_parameter_schema
         return params
 
     def get_request_body(self, path, method):

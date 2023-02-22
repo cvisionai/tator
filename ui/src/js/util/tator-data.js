@@ -14,7 +14,7 @@ export class TatorData {
     this._mediaTypes = [];
     this._mediaTypeNames = [];
     this._localizationTypes = [];
-    this._localizaitonTypeNames = [];
+    this._localizationTypeNames = [];
     this._versions = [];
     this._sections = [];
     this._algorithms = [];
@@ -524,18 +524,6 @@ export class TatorData {
   }
 
   /**
-   * @param {integer} sectionId - Section ID to convert into the user attribute form for searching
-   * @returns {string} tator_user_section value associated with given section ID
-   */
-   _getTatorUserSection(sectionId) {
-    for (const section of this._sections) {
-      if (section.id == sectionId) {
-        return section.tator_user_sections;
-      }
-    }
-  }
-
-  /**
    * Converts the given attribute name to a Tator search compliant string
    * @param {*} attrName - Name of attribute to convert
    * @returns {string} - Tator search compliant attribute name
@@ -604,48 +592,34 @@ export class TatorData {
 
   /**
    * @param {FilterConditionData} filter - Filter to convert
-   * @returns {string} - Tator REST compliant parameter string
+   * @returns {string} - Tator REST compliant parameter object
    */
   _convertFilterForTator(filter) {
+    const modifier_lookup = {
+      '==': 'eq',
+      'NOT ==': 'eq',
+      '>': 'gt',
+      '<': 'lt',
+      '>=': 'gte',
+      '<=': 'lte',
+      'After': 'gt',
+      'Before': 'lt',
+      'Includes': 'icontains',
+      'Starts with': 'istartswith',
+      'Ends with': 'iendswith',
+      'Distance <=': 'distance_lte'
+    }
 
-    // Adjust the modifier to be lucene compliant
     var modifier = filter.modifier;
-    var modifierEnd = "";
-    var modifierStart = "";
-    var doNotReplace = false;
     var value = filter.value;
     var field = filter.field;
-
-    if (modifier == "==") {
-      modifier = "";
-    }
-    else if (modifier == "Includes") {
-      modifier = "*";
-      modifierEnd = "*";
-    }
-    else if (modifier == "OR") {
-      modifier = "";
-      doNotReplace = true;
-    } else if (modifier == "NOT ==") {
-      modifier = "";
-      modifierStart = "NOT("
-      modifierEnd = ")";
-    }
-
-    if (!doNotReplace) {
-      // Lucene search string requires spaces to have the backlash preceding it
-      field = filter.field.replace(/ /g, "\\ ")
-      field = field.replace(/\(/g, "\\(")
-      field = field.replace(/\)/g, "\\)")
-    
-      value = String(filter.value).replace(/ /g, "\\ ")
-      value = value.replace(/\(/g, "\\(")
-      value = value.replace(/\)/g, "\\)")
-    }
-
-    // Finally generate the final parameter string compliant with Tator's REST call
-    var paramStr = `${modifierStart}${field}:${modifier}${value}${modifierEnd}`;
-    return paramStr;
+    var filter_object = {};
+    filter_object.attribute = field;
+    filter_object.value = value;
+    filter_object.operation = modifier_lookup[filter.modifier];
+    filter_object.inverse = (filter.modifier.startsWith('NOT') ? true : false);
+ 
+    return filter_object;
   }
 
   /**
@@ -675,72 +649,48 @@ export class TatorData {
     var promises = [];
 
     var paramString = "";
-
+    var section = null;
     var finalAnnotationFilters = [];
-    var annotationDateFilters = [];
     for (const filter of annotationFilterData) {
-      if (filter.modifier == "Before") {
-        annotationDateFilters = this._applyDateRange(annotationDateFilters, filter.field, "end", filter.value);
+      if (filter.field == "_section")
+      {
+        section = field.value;
       }
-      else if (filter.modifier == "After") {
-        annotationDateFilters = this._applyDateRange(annotationDateFilters, filter.field, "start", filter.value);
-      }
-      else {
+      else
+      {
         finalAnnotationFilters.push(this._convertFilterForTator(filter));
       }
-    }
-    
-    for (const dateFilter of annotationDateFilters) {
-      finalAnnotationFilters.push(this._convertDateRangeForTator(dateFilter));
     }
 
     // Annotation Search
     var annotationSearch = "";
-    for (let idx = 0; idx < finalAnnotationFilters.length; idx++) {
-      var filter = finalAnnotationFilters[idx];
-      annotationSearch += encodeURIComponent(filter);
-      if (idx < finalAnnotationFilters.length - 1) {
-        annotationSearch += encodeURIComponent(" AND ");        
-      }
-    }
-    if (annotationSearch && annotationType != "Medias") {
-      paramString += "&search=" + annotationSearch;
-    } else if (annotationSearch && annotationType == "Medias") {
-      paramString += "&annotation_search" + annotationSearch;
+    var annotationSearchObject = {'method': 'and', 'operations': [...finalAnnotationFilters]};
+    var annotationSearchBlob = btoa(JSON.stringify(annotationSearchObject));
+    if (finalAnnotationFilters.length && annotationType != "Medias") {
+      paramString += "&encoded_search=" + annotationSearchBlob;
+    } else if (finalAnnotationFilters.length && annotationType == "Medias") {
+      paramString += "&encoded_related_search" + annotationSearchBlob;
     }
 
      // Media Filters
     var finalMediaFilters = [];
-    var mediaDateFilters = [];
     for (const filter of mediaFilterData) {
-      if (filter.modifier == "Before") {
-        mediaDateFilters = this._applyDateRange(mediaDateFilters, filter.field, "end", filter.value);
+      if (filter.field == "_section")
+      {
+        section = field.value;
       }
-      else if (filter.modifier == "After") {
-        mediaDateFilters = this._applyDateRange(mediaDateFilters, filter.field, "start", filter.value);
-      }
-      else {
+      else
+      {
         finalMediaFilters.push(this._convertFilterForTator(filter));
       }
     }
 
-    for (const dateFilter of mediaDateFilters) {
-      finalMediaFilters.push(this._convertDateRangeForTator(dateFilter));
-    }
-
-    var mediaSearch = "";
-    for (let idx = 0; idx < finalMediaFilters.length; idx++) {
-      var filter = finalMediaFilters[idx];
-      mediaSearch += encodeURIComponent(filter);
-      if (idx < finalMediaFilters.length - 1) {
-        mediaSearch += encodeURIComponent(" AND ");
-      }
-    }
-
-    if (mediaSearch && annotationType != "Medias") {
-      paramString += "&media_search=" + mediaSearch;
-    } else if (mediaSearch && annotationType == "Medias") {
-      paramString += "&search=" + mediaSearch;
+    var mediaSearchObject = {'method': "and", 'operations':[...finalMediaFilters]};
+    var mediaSearchBlob = btoa(JSON.stringify(mediaSearchObject)); 
+    if (finalMediaFilters.length && annotationType != "Medias") {
+      paramString += "&related_search=" + mediaSearchBlob;
+    } else if (finalMediaFilters.length && annotationType == "Medias") {
+      paramString += "&encoded_search=" + mediaSearchBlob;
     }
 
     if (versionIds != undefined && versionIds.length > 0) {
@@ -765,6 +715,11 @@ export class TatorData {
 
     if (dtype != undefined) {
       paramString += `&type=${dtype}`
+    }
+
+    if (section != null)
+    {
+      paramString += `&section=${section}`;
     }
 
     let url = "/rest";
@@ -886,21 +841,17 @@ export class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_dtype") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "_meta";
-            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
             mediaIds.push(Number(filter.value))
-          }
-          else if (filter.field == "Modified By") {
-            filter.field = "_modified_by";
-            mediaFilters.push(filter);            
           }
           else {
             mediaFilters.push(filter);
@@ -1022,8 +973,8 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+            newFilter.field = "_section";
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
@@ -1152,8 +1103,8 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+            newFilter.field = "_section";
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_dtype") {
@@ -1277,7 +1228,7 @@ export class TatorData {
     }
 
     var launched = false;
-    await fetchRetry("/rest/AlgorithmLaunch/" + this._project, {
+    await fetchRetry("/rest/Jobs/" + this._project, {
       method: "POST",
       credentials: "same-origin",
       headers: {

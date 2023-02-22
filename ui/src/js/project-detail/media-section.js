@@ -147,11 +147,20 @@ export class MediaSection extends TatorElement {
 
   set searchString(val) {
     if (val) {
-      this._searchParams.set("search", val);
+      this._searchParams.set("encoded_search", val);
     } else {
-      this._searchParams = new URLSearchParams();
+      this._searchParams.delete("encoded_search");
     }
     this._searchString = val;
+  }
+
+  set relatedSearchString(val) {
+    if (val) {
+      this._searchParams.set("encoded_related_search", val);
+    } else {
+      this._searchParams.delete("encoded_related_search");
+    }
+    this._relatedSearchString = val;
   }
 
   get sectionParams() {
@@ -234,6 +243,10 @@ export class MediaSection extends TatorElement {
     if (this._section !== null) {
       sectionParams.append("section", this._section.id);
     }
+    if (this._filterSection != null)
+    {
+      sectionParams.append("section", this._filterSection);
+    }
     const filterAndSearchParams = this._getFilterQueryParams();
     return joinParams(sectionParams, filterAndSearchParams);
   }
@@ -244,7 +257,7 @@ export class MediaSection extends TatorElement {
     const recursiveFetch = (url, params, current) => {
       let after = "";
       if (this._after.has(current - 5000)) {
-        after = `&after_id=${this._after.get(current - 5000)}`;
+        after = `&after=${this._after.get(current - 5000)}`;
       }
       return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`, {
         method: "GET",
@@ -295,7 +308,7 @@ export class MediaSection extends TatorElement {
     }
     return afterPromise.then(afterId => {
       if (afterId) {
-        sectionQuery.append("after_id", afterId);
+        sectionQuery.append("after", afterId);
       }
       return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`, {
         method: "GET",
@@ -405,7 +418,7 @@ export class MediaSection extends TatorElement {
           async pull(ctrl) {
             let url = `${getUrl("Medias")}&stop=${batchSize}&presigned=28800`;
             if (lastId != null) {
-              url += "&after_id=" + encodeURIComponent(lastId);
+              url += "&after=" + encodeURIComponent(lastId);
             }
             await fetchRetry(url, {
               method: "GET",
@@ -513,12 +526,7 @@ export class MediaSection extends TatorElement {
           baseFilename, lastId, idQuery) => {
           let url = baseUrl + "&type=" + type.id + "&stop=" + batchSize;
           if (lastId != null) {
-            let param;
-            if (url.includes("Medias")) {
-              param = "after_id";
-            } else {
-              param = "after";
-            }
+            let param = "after";
             url += `&${param}=` + encodeURIComponent(lastId);
           }
 
@@ -838,46 +846,54 @@ export class MediaSection extends TatorElement {
     if (conditions !== []) {
       // Media Filters
       var finalMediaFilters = [];
-      var mediaDateFilters = [];
+      var finalMetadataFilters = [];
+      this._filterSection = null;
       for (var filter of this._filterConditions) {
-        if (filter.modifier == "Before") {
-          mediaDateFilters = this._modelData._applyDateRange(mediaDateFilters, filter.field, "end", filter.value);
-        } else if (filter.modifier == "After") {
-          mediaDateFilters = this._modelData._applyDateRange(mediaDateFilters, filter.field, "start", filter.value);
-        } else if (filter.field == "_dtype") {
-          filter.field = "_meta";
-          filter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
-          finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
-        } else if (filter.field == "_section") {
-          filter.field = "tator_user_sections";
-          filter.value = this._modelData._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
-          finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
-        } else {
-          if (filter.field == "_id") {
-            filter.field = "_postgres_id"
-          }
+        if (filter.field == "_section")
+        {
+          this._filterSection = filter.value;
+          continue;
+        }
+        if (filter.categoryGroup == "Media")
+        {
           finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
         }
-      }
-
-      for (const dateFilter of mediaDateFilters) {
-        finalMediaFilters.push(this._modelData._convertDateRangeForTator(dateFilter));
-      }
-
-      var mediaSearch = "";
-      for (let idx = 0; idx < finalMediaFilters.length; idx++) {
-        var filter = finalMediaFilters[idx];
-        mediaSearch += filter;
-        if (idx < finalMediaFilters.length - 1) {
-          mediaSearch += " AND ";
+        else
+        {
+          finalMetadataFilters.push(this._modelData._convertFilterForTator(filter));
         }
+          
       }
-      this.searchString = mediaSearch;
+
+      if (finalMediaFilters.length > 0)
+      {
+        var searchObject = {'method': 'and', 'operations': [...finalMediaFilters]};
+        console.info(`Search Object = ${JSON.stringify(searchObject)}`);
+        var searchBlob = btoa(JSON.stringify(searchObject));
+        this.searchString = searchBlob;
+      }
+      else
+      {
+        this.searchString = "";
+      }
+
+      if (finalMetadataFilters.length > 0)
+      {
+        var searchObject = {'method': 'and', 'operations': [...finalMetadataFilters]};
+        console.info(`Search Object = ${JSON.stringify(searchObject)}`);
+        var searchBlob = btoa(JSON.stringify(searchObject));
+        this.relatedSearchString = searchBlob;
+      }
+      else
+      {
+        this.relatedSearchString = "";
+      }
 
       await this.reload();
 
     } else {
       this.searchString = "";
+      this.relatedSearchString = "";
     }
 
     if (window.location.search !== this._getFilterQueryParams.toString()) {
@@ -885,7 +901,7 @@ export class MediaSection extends TatorElement {
       window.history.replaceState({}, "Filter", newUrl);
     }
 
-    return this._searchString;
+    return this._searchString + this.relatedSearchString;
   }
 
   getFilterURL() {
@@ -908,12 +924,20 @@ export class MediaSection extends TatorElement {
       params.delete("filterConditions");
     }
 
-    const searchString = this._searchParams.get("search");
+    const searchString = this._searchParams.get("encoded_search");
     if (typeof searchString !== "undefined" && searchString != null && searchString !== "undefined") {
       // let params = this._sectionParams();
-      params.set("search", searchString);
+      params.set("encoded_search", searchString);
     } else {
-      params.delete("search");
+      params.delete("encoded_search");
+    }
+
+    const relatedSearchString = this._searchParams.get("encoded_related_search");
+    if (typeof relatedSearchString !== "undefined" && relatedSearchString != null && relatedSearchString !== "undefined") {
+      // let params = this._sectionParams();
+      params.set("encoded_related_search", relatedSearchString);
+    } else {
+      params.delete("encoded_related_search");
     }
 
     return params;

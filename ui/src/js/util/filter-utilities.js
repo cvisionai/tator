@@ -44,13 +44,12 @@ export class FilterUtilities {
     var dtype = selectedAttributeType.dtype;
 
     // #TODO Add more options for the different dtypes
-    if (selectedAttributeType.name == "_version" ||
-      selectedAttributeType.name == "_section" ||
-      selectedAttributeType.name == "_user" ||
-      selectedAttributeType.name == "_dtype") {
-      choices.push({ "value": "==" });
+    if (dtype == "enum") {
+      choices.push({ "value": "==", label: "Equals" });
+      choices.push({ "value": "NOT ==", label: "Does Not Equal"});
     } else if (dtype == "int" || dtype == "float") {
-      choices.push({ "value": "==" });
+      choices.push({ "value": "==", label: "Equals"});
+      choices.push({ "value": "NOT ==", label: "Does Not Equal"});
       choices.push({ "value": ">" });
       choices.push({ "value": ">=" });
       choices.push({ "value": "<" });
@@ -60,13 +59,19 @@ export class FilterUtilities {
     } else if (dtype == "datetime") {
       choices.push({ "value": "After" });
       choices.push({ "value": "Before" });
-    } else if (selectedAttributeType.name == "Modified By") { //_modified_by
-      choices.push({ "value": "==" });
-      choices.push({ "value": "NOT ==" });
+    } else if (dtype == "string") {
       choices.push({ "value": "Includes" });
-    } else {
-      choices.push({ "value": "Includes" });
-      choices.push({ "value": "==" });
+      choices.push({ "value": "==" , label: "Equals"});
+      choices.push({ "value": "Starts with" });
+      choices.push({ "value": "Ends with" });
+      choices.push({ "value": "NOT ==", label: "Does Not Equal"});
+    } else if (dtype == "geopos")
+    {
+      choices.push({ "value": "Distance <=", "label": "Distance Within Sphere (dist,lat,lon)" });
+    }
+    else
+    {
+      console.error(`Can't handle filter ops on dtype='{$dtype}'`)
     }
 
     return choices;

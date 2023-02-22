@@ -38,11 +38,17 @@ postgresUsername: "<Your postgres username>"
 postgresPassword: "<Your postgres password>"
 redisHost: "<Your ElastiCache endpoint>"
 elasticsearchHost: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
-objectStorageHost: "https://<Your S3 bucket endpoint>"
-objectStorageBucketName: "<Your S3 bucket name>"
-objectStorageRegionName: "<Your S3 bucket region>"
-objectStorageAccessKey: "<Your S3 bucket access key>"
-objectStorageSecretKey: "<Your S3 bucket secret key>"
+liveBucket:
+  config: >-
+    {
+      "endpoint_url": "fill me in",
+      "region_name": "fill me in",
+      "aws_access_key_id": "fill me in",
+      "aws_secret_access_key": "fill me in"
+    }
+  storeType: "AWS"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 dockerUsername: "<Your ECR username>"
 dockerPassword: "<Your ECR password>"
 dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
@@ -81,19 +87,17 @@ pv:
     - noresvport
   path: "/"
 uploadBucket:
-  enabled: true
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  enabled: false
+  config: "json in folded block (>- ...)"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 backupBucket:
   enabled: false
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  config: "json in folded block (>- ...)"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 hpa:
   nginxMinReplicas: 2
   nginxMaxReplicas: 10

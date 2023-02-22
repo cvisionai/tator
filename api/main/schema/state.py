@@ -5,7 +5,7 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_with_id_list_schema
 from ._message import message_schema
-from ._attributes import attribute_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
 boilerplate = dedent("""\
@@ -69,7 +69,7 @@ class StateListSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
-            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
+            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + related_attribute_filter_parameter_schema
         return params
 
     def get_request_body(self, path, method):
@@ -77,44 +77,54 @@ class StateListSchema(AutoSchema):
         if method == 'POST':
             body = {
                 'required': True,
-                'content': {'application/json': {
-                'schema': {
-                    'type': 'array',
-                    'items': {'$ref': '#/components/schemas/StateSpec'},
-                    'maxItems': 500,
-                },
-                'examples': {
-                    'frame': {
-                        'summary': 'Frame associated state',
-                        'value': [{
-                            'type': 1,
-                            'media_ids': [1],
-                            'frame': 1000,
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'localization': {
-                        'summary': 'Localization associated state',
-                        'value': [{
-                            'type': 1,
-                            'media_ids': [1],
-                            'localization_ids': [1, 5, 10],
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'media': {
-                        'summary': 'Media associated state',
-                        'value': [{
-                            'type': 1,
-                            'media_ids': [1, 5, 10],
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                },
-            }}}
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'oneOf': [
+                                {
+                                    'type': 'array',
+                                    'items': {'$ref': '#/components/schemas/StateSpec'},
+                                    'maxItems': 500
+                                },
+                                {
+                                    '$ref': '#/components/schemas/StateSpec',
+                                },
+                            ],
+                        },
+                        'examples': {
+                            'frame': {
+                                'summary': 'Frame associated state',
+                                'value': {
+                                    'type': 1,
+                                    'media_ids': [1],
+                                    'frame': 1000,
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                },
+                            },
+                            'localization': {
+                                'summary': 'Localization associated state',
+                                'value': {
+                                    'type': 1,
+                                    'media_ids': [1],
+                                    'localization_ids': [1, 5, 10],
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                },
+                            },
+                            'media': {
+                                'summary': 'Media associated state',
+                                'value': {
+                                    'type': 1,
+                                    'media_ids': [1, 5, 10],
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                },
+                            },
+                        },
+                    }
+                }
+            }
         if method == 'PATCH':
             body = {
                 'required': True,
@@ -144,7 +154,7 @@ class StateListSchema(AutoSchema):
                 'required': False,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/StateIdQuery',
+                    '$ref': '#/components/schemas/StateBulkDelete',
                 },
             }}}
         return body
@@ -211,6 +221,14 @@ class StateDetailSchema(AutoSchema):
                     'frame': 1001,
                 }
             }}}
+        elif method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/StateDelete',
+                }}}
+            }
         return body
 
     def get_responses(self, path, method):
@@ -278,7 +296,7 @@ class StateGraphicSchema(AutoSchema):
                 },
             },
             {
-                'name': 'forceScale',
+                'name': 'force_scale',
                 'in': 'query',
                 'required': False,
                 'description': 'wxh to force each tile prior to stich',

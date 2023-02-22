@@ -218,6 +218,10 @@ export class FilterInterface extends TatorElement {
       this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
     }
 
+    if (this._section)
+    {
+      this._addBreadcrumbsForSearches(this._section);
+    }
     // Loop through all the conditions and create the string
     var conditions = this._filterConditionGroup.getConditions();
 
@@ -233,6 +237,96 @@ export class FilterInterface extends TatorElement {
         this._filterConditionGroup.setConditions(conditions);
         this.applyFilterData();
       });
+    }
+  }
+
+  _operationToString(filter)
+  {
+    const operator_convert = {
+      'eq': '==', 
+      'gt' : '>', 
+      'gte' : '>=', 
+      'lt' : '<', 
+      'lte': '<=', 
+      'date_eq': '==', 
+      'date_gte': 'After', 
+      'date_gt' : 'After', 
+      'date_lt' : 'Before', 
+      'date_lte' : 'Before', 
+      'date_range' : 'Within', 
+      'distance_lte' : 'Within'
+    }
+    const humanReadable = operator_convert[filter.operation];
+    const display = (humanReadable ? humanReadable : filter.operation);
+    return `${filter.attribute} ${display} ${filter.value}`;
+  }
+
+  _addConstantPill(section, description)
+  {
+    const pill = document.createElement("removable-pill");
+    this._filterStringDiv.appendChild(pill);
+    pill.setAttribute("class", "py-1 d-flex");
+    pill.style.marginRight = "5px";
+    pill.init(description, 0);
+    pill.removable = false;
+    pill.setAttribute("tooltip", `Defined search in section '${section.name}'`);
+  }
+
+  set sections(sections)
+  {
+    this._sections = sections;
+  }
+
+  set section(section)
+  {
+    this._section = section;
+    this.setFilterBar();
+  }
+
+  _addBreadcrumbsForSearches(section) {
+    if (section.object_search)
+    {
+      let ops = [];
+      if (section.tator_user_sections)
+      {
+        for (const s of this._sections)
+        {
+          // The UUID is the same for the saved search and original section, so only display
+          // the name of the matching UUID for the original section name.
+          if (s.tator_user_sections == section.tator_user_sections && s.id != section.id)
+          {
+            ops.push({"attribute": "Section", "operation": "eq","value": s.name});
+          }
+        }
+      }
+      if (Object.hasOwn(section.object_search, 'attribute'))
+      {
+        ops.push(section.object_search);
+      }
+      else
+      {
+        ops.push(...section.object_search.operations);
+      }
+      for (const filter of ops)
+      {
+        this._addConstantPill(section, "Media:"+this._operationToString(filter));
+      }
+    }
+    if (section.related_object_search)
+    {
+      let ops = [];
+      if (Object.hasOwn(section.related_object_search, 'attribute'))
+      {
+        ops.push(section.related_object_search);
+      }
+      else
+      {
+        ops.push(...section.related_object_search.operations);
+      }
+      for (const filter of ops)
+      {
+        this._addConstantPill(section, "Metadata:"+this._operationToString(filter));
+      }
     }
   }
 

@@ -30,7 +30,7 @@ class Command(BaseCommand):
             null_project = File.objects.filter(
                 project__isnull=True, modified_datetime__lte=max_datetime
             )
-            null_meta = File.objects.filter(meta__isnull=True, modified_datetime__lte=max_datetime)
+            null_type = File.objects.filter(type__isnull=True, modified_datetime__lte=max_datetime)
             file_ids = (
                 (deleted | null_project | null_meta)
                 .distinct()

@@ -54,7 +54,7 @@ class LeafSuggestionSchema(AutoSchema):
         if method == 'GET':
             params = [
                 {
-                    'name': 'minLevel',
+                    'name': 'min_level',
                     'in': 'query',
                     'required': False,
                     'description': 'Integer specifying level of results that may be returned. '
@@ -151,13 +151,23 @@ class LeafListSchema(AutoSchema):
         if method == 'POST':
             body = {
                 'required': True,
-                'content': {'application/json': {
-                'schema': {
-                    'type': 'array',
-                    'items': {'$ref': '#/components/schemas/LeafSpec'},
-                    'maxItems': 500,
-                },
-            }}}
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'oneOf': [
+                                {
+                                    'type': 'array',
+                                    'items': {'$ref': '#/components/schemas/LeafSpec'},
+                                    'maxItems': 500
+                                },
+                                {
+                                    '$ref': '#/components/schemas/LeafSpec',
+                                },
+                            ],
+                        },
+                    }
+                }
+            }
         if method == 'PATCH':
             body = {
                 'required': True,

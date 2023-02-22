@@ -65,15 +65,15 @@ class GetFrameAPI(BaseDetailView):
             assert requested_height > 0
             force_image_size = (requested_width, requested_height)
 
-        if video.meta.dtype == 'video':
+        if video.type.dtype == 'video':
             for frame in frames:
                 if int(frame) >= video.num_frames:
                     raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
-        elif video.meta.dtype == 'image':
+        elif video.type.dtype == 'image':
             if len(frames) > 1:
                 raise Exception(f"Images can only supply 1 frame, asked for '{frames}'")
-        elif video.meta.dtype == 'live' or video.meta.dtype == 'multi':
-            raise Exception(f"GetFrame does not support '{video.meta.dtype}' objects.")
+        elif video.type.dtype == 'live' or video.type.dtype == 'multi':
+            raise Exception(f"GetFrame does not support '{video.type.dtype}' objects.")
         tile_size = tile
 
         if tile and animate:
@@ -125,11 +125,11 @@ class GetFrameAPI(BaseDetailView):
                     response_data = data_file.read()
             else:
                 logger.info(f"Accepted format = {self.request.accepted_renderer.format}")
-                if video.meta.dtype == 'video':
+                if video.type.dtype == 'video':
                     image_fp = media_util.get_tile_image(frames, roi_arg, tile_size,
                                                         render_format=self.request.accepted_renderer.format,
                                                         force_scale=force_image_size)
-                elif video.meta.dtype == 'image':
+                elif video.type.dtype == 'image':
                     roi = None
                     if roi_arg:
                         roi = roi_arg[0]

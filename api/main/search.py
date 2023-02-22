@@ -3,330 +3,365 @@ import os
 import datetime
 from copy import deepcopy
 from uuid import uuid1
+import re
+import time
+import psycopg2
+from psycopg2 import sql
 
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
+from .worker import push_job
+
+from django.db import connection
 
 logger = logging.getLogger(__name__)
 
 # Indicates what types can mutate into. Maps from type -> to type.
 ALLOWED_MUTATIONS = {
-    'bool': ['bool', 'enum', 'string'],
-    'int': ['int', 'float', 'enum', 'string'],
-    'float': ['int', 'float', 'enum', 'string'],
-    'enum': ['enum', 'string'],
-    'string': ['enum', 'string'],
-    'datetime': ['enum', 'string', 'datetime'],
-    'geopos': ['enum', 'string', 'geopos'],
-    'float_array': ['float_array'],
+    'bool': [],
+    'int': ['float'],
+    'float': ['int'],
+    'enum': ['string'],
+    'string': ['enum',],
+    'datetime': [],
+    'geopos': [],
+    'float_array': [],
 }
 
-# Used for duplicate ID storage
-id_bits=448
-id_mask=(1 << id_bits) - 1
+def get_connection(db_name):
+    conn = psycopg2.connect(database=db_name,
+                         host=os.getenv('POSTGRES_HOST'),
+                         user=os.getenv('POSTGRES_USERNAME'),
+                         password=os.getenv('POSTGRES_PASSWORD'))
 
-def drop_dupes(ids):
-    """ Drops duplicates in a list without changing the order.
-    """
-    seen = set()
-    seen_add = seen.add
-    return [x for x in ids if not (x in seen or seen_add(x))]
+    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    return conn
 
-def _get_alias_type(attribute_type):
-    """
-    Maps `dtype` to ES alias type.
-    """
-    dtype = attribute_type["dtype"]
-    if dtype == "bool":
-        return "boolean"
-    if dtype == "int":
-        return "long"
-    if dtype == "float":
-        return "double"
-    if dtype == "enum":
-        return "keyword"
-    if dtype == "string":
-        return "text" if "long_string" in attribute_type.get("style", "") else "keyword"
-    if dtype == "datetime":
-        return "date"
-    if dtype == "geopos":
-        return "geo_point"
-    if dtype == "float_array":
-        return "dense_vector"
+def _get_unique_index_name(entity_type, attribute):
+    """ Get a unique index name based on an entity type and supplied attribute """
+    type_name_sanitized=entity_type.__class__.__name__.lower()
+    entity_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",entity_type.name).lower()
+    attribute_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",attribute['name']).lower()
+    if attribute['name'].startswith('$'):
+        index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_internal_{attribute_name_sanitized}"
+    else:
+        index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_{entity_name_sanitized}_{attribute_name_sanitized}"
+    return index_name
 
-def _get_mapping_values(entity_type, attributes):
-    """ For a given entity type and attribute values, determines mappings that should
-        be set.
-    """
-    mapping_values = {}
-    mapping_types = {}
+def _get_column_name(attribute):
+    name=re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
+    if name.startswith('$'):
+        return name[1:] # internal field
+    else:
+        return f"attributes->>'{name}'" #embedded in JSONB field
 
-    # Handle tator_user_sections
-    name = "tator_user_sections"
-    value = attributes.get(name)
-    if value is not None:
-        mapping_values[name] = str(value).replace("\\", "\\\\")
-        mapping_types[name] = "text"
+def make_btree_index(db_name, project_id, entity_type_id, table_name, index_name,  attribute, psql_type, flush, concurrent):
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(index_name=sql.Identifier(index_name), concurrent=sql.SQL(concurrent_str)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        if psql_type == 'native':
+            sql_str=sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name}
+                            USING btree ({col_name})
+                            WHERE project=%s""").format(index_name=sql.SQL(index_name),
+                                                        concurrent=sql.SQL(concurrent_str),
+                                                        table_name=sql.Identifier(table_name),
+                                                        col_name=sql.SQL(col_name))
+            cursor.execute(sql_str, (project_id, ))
+        else:
+            sql_str=sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name}
+                            USING btree (CAST({col_name} AS {psql_type}))
+                            WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                                                                    concurrent=sql.SQL(concurrent_str),
+                                                                    table_name=sql.Identifier(table_name),
+                                                                    col_name=sql.SQL(col_name),
+                                                                    psql_type=sql.SQL(psql_type))
+            cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str)
 
-    if entity_type.attribute_types is None:
-        return mapping_values, mapping_types
+def make_native_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush, concurrent):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'native', flush, concurrent)
 
-    for attribute_type in entity_type.attribute_types:
-        name = attribute_type['name']
-        value = attributes.get(name)
-        if value is not None:
-            uuid = entity_type.project.attribute_type_uuids[name]
-            mapping_type = _get_alias_type(attribute_type)
-            mapping_name = f'{uuid}_{mapping_type}'
-            mapping_types[mapping_name] = mapping_type
-            if mapping_type == 'boolean':
-                mapping_values[mapping_name] = bool(value)
-            elif mapping_type == 'long':
-                mapping_values[mapping_name] = int(value)
-            elif mapping_type == 'double':
-                mapping_values[mapping_name] = float(value)
-            elif mapping_type == 'text':
-                mapping_values[mapping_name] = str(value).replace("\\", "\\\\")
-            elif mapping_type == 'keyword':
-                mapping_values[mapping_name] = str(value).replace("\\", "\\\\")
-            elif mapping_type == 'date':
-                mapping_values[mapping_name] = value # TODO: reformat?
-            elif mapping_type == 'geo_point':
-                if type(value) == list:
-                    # Store django lat/lon as a string
-                    # Special note: in ES, array representations are lon/lat, but
-                    # strings are lat/lon, therefore we intentionally swap order here.
-                    mapping_values[mapping_name] = f"{value[1]},{value[0]}"
-                else:
-                    mapping_values[mapping_name] = value
-            elif mapping_type == 'dense_vector':
-                mapping_values[mapping_name] = [float(val) for val in value]
-    return mapping_values, mapping_types
+def make_bool_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush, concurrent):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'boolean', flush, concurrent)
+
+def make_int_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, concurrent):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'bigint', flush, concurrent)
+
+def make_float_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'float', flush, concurrent)
+
+def make_string_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, concurrent):
+    col_name = _get_column_name(attribute)
+    method = 'GIN'
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str=sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING {method} (CAST({col_name} AS text) {method}_trgm_ops)
+                                 WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                                                                         concurrent=sql.SQL(concurrent_str),
+                                                                         method=sql.SQL(method.lower()),
+                                                                         table_name=sql.Identifier(table_name),
+                                                                         col_name=sql.SQL(col_name))
+        cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str.as_string(cursor))
+
+def make_upper_string_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, concurrent):
+    col_name = _get_column_name(attribute)
+    index_name += "_upper"
+    method = 'GIN'
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX {concurrently} IF EXISTS {index_name}").format(index_name=sql.SQL(index_name),concurrent=sql.SQL(concurrent_str)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str=sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING {method} (UPPER(CAST({col_name} AS text)) {method}_trgm_ops)
+                                 WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                                                                         method=sql.SQL(method.lower()),
+                                                                         concurrent=sql.SQL(concurrent_str),
+                                                                         table_name=sql.Identifier(table_name),
+                                                                         col_name=sql.SQL(col_name))
+        cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str.as_string(cursor))
+
+def make_section_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, concurrent):
+    col_name = _get_column_name(attribute)
+    method = 'GIN'
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str=sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING {method} (CAST({col_name} AS text) {method}_trgm_ops)
+                                 WHERE project=%s""").format(index_name=sql.SQL(index_name),
+                                                             concurrent=sql.SQL(concurrent_str),
+                                                             method=sql.SQL(method.lower()),
+                                                             table_name=sql.Identifier(table_name),
+                                                             col_name=sql.SQL(col_name))
+        cursor.execute(sql_str, (project_id, ))
+        print(sql_str.as_string(cursor))
+
+def make_native_string_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, concurrent):
+    col_name = _get_column_name(attribute)
+    method = 'GIN'
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str=sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING {method} ({col_name} {method}_trgm_ops)
+                                 WHERE project=%s""").format(index_name=sql.SQL(index_name),
+                                                             concurrent=sql.SQL(concurrent_str),
+                                                             method=sql.SQL(method.lower()),
+                                                             table_name=sql.Identifier(table_name),
+                                                             col_name=sql.SQL(col_name))
+        cursor.execute(sql_str, (project_id, ))
+        print(sql_str.as_string(cursor))
+
+def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, concurrent):
+    func_str=f"""CREATE OR REPLACE FUNCTION tator_timestamp(text)
+                 RETURNS timestamp AS
+                $func$
+                SELECT CAST($1 as timestamp)
+                $func$ LANGUAGE sql IMMUTABLE;"""
+    col_name = _get_column_name(attribute)
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    sql_str=sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name} 
+    USING btree (tator_timestamp({col_name})) WHERE project=%s AND meta=%s;""").format(index_name=sql.SQL(index_name),
+                                                                   concurrent=sql.SQL(concurrent_str),
+                                                                   table_name=sql.Identifier(table_name),
+                                                                   col_name=sql.SQL(col_name)
+                                                                   )
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        cursor.execute(func_str)
+        cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str)
+
+
+
+def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush, concurrent):
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    attr_name = re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
+    sql_str = sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name} 
+                         using gist(ST_MakePoint((attributes -> '{attr_name}' -> 1)::float, 
+                         (attributes -> '{attr_name}' -> 0)::float)) WHERE project=%s and meta=%s;""").format(
+                            attr_name=sql.SQL(attr_name),
+                            concurrent=sql.SQL(concurrent_str),
+                            index_name=sql.Identifier(index_name),
+                            table_name=sql.Identifier(table_name)
+                         )
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(index_name=sql.SQL(index_name),concurrent=sql.SQL(concurrent_str)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str)
+
+def make_vector_index(db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent):
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            for method in ['l2', 'ip', 'cosine']:
+                cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}_{method}").format(index_name=sql.SQL(index_name), method=sql.SQL(method),concurrent=sql.SQL(concurrent_str)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        # Create an index method for each access type
+        attr_name = re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
+        attr_size = int(attribute['size'])
+        for method in ['l2', 'ip', 'cosine']:
+            sql_str = sql.SQL("""CREATE INDEX {concurrent} {index_name}_{method} ON {table_name} 
+                                 using ivfflat(CAST(attributes ->> '{attr_name}' AS vector({attr_size})) 
+                                                                   vector_{method}_ops) WHERE project=%s and meta=%s;""").format(
+                                                                   attr_name=sql.SQL(attr_name),
+                                                                   attr_size=sql.SQL(f"{attr_size}"),
+                                                                   concurrent=sql.SQL(concurrent_str),
+                                                                   index_name=sql.SQL(index_name),
+                                                                   method=sql.SQL(method),
+                                                                   table_name=sql.Identifier(table_name))
+            print(sql_str)
+            cursor.execute(sql_str, (project_id, entity_type_id))
+            print(sql_str)
+
+def delete_psql_index(db_name,index_name):
+    with get_connection(db_name).cursor() as cursor:
+        cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
 
 class TatorSearch:
-    """ Interface for elasticsearch documents.
-        There is one index per entity type.
-        There is one mapping per attribute type.
-        There is one document per entity.
+    """ Interface for managing psql indices
+        There is one index per attribute type.
     """
-    @classmethod
-    def setup_elasticsearch(cls):
-        cls.prefix = os.getenv('ELASTICSEARCH_PREFIX')
-        if cls.prefix is None:
-            cls.prefix = ''
-        cls.es = Elasticsearch(
-            [os.getenv('ELASTICSEARCH_HOST')],
-            timeout=60,
-            max_retries=10,
-            retry_on_timeout=True,
-        )
 
-    def index_name(self, project):
-        return f'{self.prefix}project_{project}'
+    index_map = {
+        'bool': make_bool_index,
+        'int' : make_int_index,
+        'float' : make_float_index,
+        'enum' : make_string_index,
+        'string' : make_string_index,
+        'datetime' : make_datetime_index,
+        'geopos' : make_geopos_index,
+        'float_array' : make_vector_index,
+        'native' : make_native_index,
+        'native_string' : make_native_string_index,
+        'section' : make_section_index,
+        'upper_string': make_upper_string_index
+    }
 
-    def create_index(self, project):
-        index = self.index_name(project)
-        if not self.es.indices.exists(index):
-            self.es.indices.create(
-                index,
-                body={
-                    'settings': {
-                        'number_of_shards': 1,
-                        'number_of_replicas': 1,
-                        'refresh_interval': '1s',
-                        'analysis': {
-                            'normalizer': {
-                                'lower_normalizer': {
-                                    'type': 'custom',
-                                    'char_filter': [],
-                                    'filter': ['lowercase', 'asciifolding'],
-                                },
-                            },
-                        },
-                    },
-                    'mappings': {
-                        'properties': {
-                            '_media_relation': {
-                                'type': 'join',
-                                'relations': {
-                                    'media': 'annotation',
-                                }
-                            },
-                            '_exact_name': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
-                            '_md5': {'type': 'keyword'},
-                            '_meta': {'type': 'integer'},
-                            '_dtype': {'type': 'keyword'},
-                            'tator_user_sections': {'type': 'keyword'},
-                        }
-                    },
-                },
-            )
-        # Mappings that were added later
-        self.es.indices.put_mapping(
-            index=index,
-            body={'properties': {
-                '_exact_treeleaf_name': {'type': 'keyword'},
-                'tator_treeleaf_name': {'type': 'text'},
-                '_treeleaf_depth': {'type': 'integer'},
-                '_treeleaf_path': {'type': 'keyword'},
-                '_annotation_version': {'type': 'integer'},
-                '_modified': {'type': 'boolean'},
-                '_modified_datetime': {'type': 'date'},
-                '_modified_by': {'type': 'keyword'},
-                '_created_datetime': {'type': 'date'},
-                '_created_by': {'type': 'keyword'},
-                '_indexed_datetime': {'type': 'date'},
-                '_postgres_id': {'type': 'long'},
-                '_download_size': {'type': 'long'},
-                '_total_size': {'type': 'long'},
-                '_duration': {'type': 'float'},
-                '_gid': {'type': 'keyword'},
-                '_uid': {'type': 'keyword'},
-                '_fps': {'type': 'float'},
-                '_num_frames': {'type': 'long'},
-                '_codec': {'type': 'keyword'},
-                '_rows': {'type': 'integer'},
-                '_columns': {'type': 'integer'},
-                'filename': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
-            }},
-        )
+    def list_indices(self, project):
+        """ Based on a project id, list all known indices """
+        with get_connection(connection.settings_dict['NAME']).cursor() as cursor:
+            cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname LIKE '{}'".format(f"tator_proj_{project}_%"))
+            return cursor.fetchall()
 
-    def delete_index(self, project):
-        index = self.index_name(project)
-        if self.es.indices.exists(index):
-            self.es.indices.delete(index)
+    def delete_project_indices(self, project):
+        """ Delete all indices synchronously """
+        proj_indices = self.list_indices(project)
+        for _,index_name,_ in proj_indices:
+            push_job(delete_psql_index, args=(connection.settings_dict['NAME'], index_name))
+            
 
-    def check_addition(self, entity_type, new_attribute_type):
-        """
-        Checks that the new attribute type does not collide with existing attributes on the target
-        entity type or other entity types.
-        """
-        new_name = new_attribute_type["name"]
+    def delete_index(self, entity_type, attribute):
+        """ Delete the index for a given entity type """
+        index_name = _get_unique_index_name(entity_type, attribute)
+        push_job(delete_psql_index, args=(connection.settings_dict['NAME'], index_name), result_ttl=0)
 
-        # There should be no existing attribute types on the target entity type with the same name
-        if entity_type.attribute_types:
-            for attribute_type in entity_type.attribute_types:
-                if new_name == attribute_type["name"]:
-                    raise ValueError(
-                        f"Attempted to add attribute '{new_name}' to {type(entity_type).__name__} "
-                        f"{entity_type.name} ID {entity_type.id}, but one with that name already exists"
-                    )
-
-        # If no uuid exists, then no other entity types have an attribute type with the same name
-        uuid = entity_type.project.attribute_type_uuids.get(new_name)
-        if uuid is None:
-            return
-
-        # Fetch existing mappings
-        index_name = self.index_name(entity_type.project.pk)
-        existing_mappings = self.es.indices.get_mapping(index=index_name)
-        mappings = existing_mappings[index_name].get("mappings",{})
-        properties = mappings.get("properties",{})
-
-        # This should not happen if the uuid exists, but if it does, then no mapping exists and it
-        # is valid to create one
-        if new_name not in properties:
-            return
-
-        # Check that the existing mapping has the same mapping name, i.e. the same dtype
-        mapping_type = _get_alias_type(new_attribute_type)
-        mapping_name = f"{uuid}_{mapping_type}"
-        if mapping_name != properties[new_name]["path"]:
-            raise ValueError(
-                f"Attempted to add attribute '{new_name}' with dtype {new_attribute_type['dtype']} "
-                f"to {type(entity_type).__name__} {entity_type.name} ID {entity_type.id}, but "
-                f"another entity type has already defined this attribute name with a different dtype"
-            )
-
-    def create_mapping(self, entity_type):
-        if not entity_type.attribute_types:
-            return
-
-        # Fetch existing mappings
-        index_name = self.index_name(entity_type.project.pk)
-        existing_mappings = self.es.indices.get_mapping(index=index_name)
-        mappings = existing_mappings[index_name].get("mappings",{})
-        properties = mappings.get("properties",{})
-        existing_prop_names = properties.keys()
-        for attribute_type in entity_type.attribute_types:
-            # Skip over existing mappings
-            if attribute_type["name"] in existing_prop_names:
-                continue
-
-            # Get or create UUID for this attribute type.
-            name = attribute_type["name"]
-            if name in entity_type.project.attribute_type_uuids:
-                uuid = entity_type.project.attribute_type_uuids[name]
+    def is_index_present(self, entity_type, attribute):
+        """ Returns true if the index exists for this attribute """
+        index_name = _get_unique_index_name(entity_type, attribute)
+        with get_connection(connection.settings_dict['NAME']).cursor() as cursor:
+            if attribute['dtype'] == 'float_array':
+                cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname LIKE '{}%'".format(index_name))
+                result=cursor.fetchall()
+                return bool(result)
             else:
-                uuid = str(uuid1()).replace("-", "")
-                entity_type.project.attribute_type_uuids[name] = uuid
-                entity_type.project.save()
+                cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+                result=cursor.fetchall()
+                return bool(result)
 
-            mapping_type = _get_alias_type(attribute_type)
-            mapping_name = f"{uuid}_{mapping_type}"
+    def create_psql_index(self, entity_type, attribute, flush=False, concurrent=True):
+        """ Create a psql index for the given attribute """
+        index_name = _get_unique_index_name(entity_type, attribute)
+        if self.is_index_present(entity_type, attribute) and flush==False:
+            logger.info(f"Index '{index_name}' already exists.")
+            return False
 
-            # Define alias for this attribute type.
-            alias = {name: {"type": "alias",
-                            "path": mapping_name}}
+        index_func = self.index_map.get(attribute['dtype'],None)
+        if index_func is None:
+            logger.info(f"Index '{index_name}' can't be created with unknown dtype {attribute['dtype']}")
+            return False
 
-            # Create mappings depending on dtype.
-            mapping = {mapping_name: {"type": mapping_type}}
+        table_name = entity_type._meta.db_table.replace('type','')
+        index_name = _get_unique_index_name(entity_type, attribute)
+        push_job(index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute, flush, concurrent), result_ttl=0)
 
-            # Dense vectors require size definition.
-            if mapping_type == "dense_vector":
-                mapping[mapping_name]["dims"] = attribute_type["size"]
+    def create_mapping(self, entity_type, flush=False, concurrent=True):
+        from .models import MediaType, LocalizationType, StateType, LeafType
+        # Add project specific indices based on the type being indexed
+        if type(entity_type) == MediaType:
+            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'native_string'}, flush=flush, concurrent=concurrent) # native fields are indexed across the entire project
+            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': 'tator_user_sections', 'dtype': 'section'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_restoration_requested', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_archive_status_date', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_archive_state', 'dtype': 'native_string'}, flush=flush, concurrent=concurrent)
+        if type(entity_type) == LocalizationType:
+            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+        if type(entity_type) == StateType:
+            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+        if type(entity_type) == LeafType:
+            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'upper_string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'upper_string'}, flush=flush, concurrent=concurrent)
 
-            # Create mappings.
-            self.es.indices.put_mapping(
-                index=self.index_name(entity_type.project.pk),
-                body={"properties": {**mapping, **alias}},
-            )
-
-    def check_rename(self, entity_type, old_name, new_name):
-        """
-        Checks rename operation and raises if it is invalid. See `rename_alias` for argument
-        description.
-        """
-        # If no name change is happening, there is nothing to check
-        if old_name == new_name:
-            return None, None, None
-
-        # Check that the new name isn't already in use
-        if entity_type.project.attribute_type_uuids.get(new_name, None) is not None:
-            raise ValueError(
-                f"New attribute name {new_name} already in use in this project, please choose a "
-                f"different one."
-            )
-
-        # Retrieve UUID, raise error if it doesn't exist.
-        uuid = entity_type.project.attribute_type_uuids.get(old_name)
-        if uuid is None:
-            raise ValueError(f"Could not find attribute name {old_name} in entity type "
-                             f"{type(entity_type).__name__} ID {entity_type.id}")
-
-        # Find old attribute type and create new attribute type.
-        new_attribute_type = None
-        for idx, attribute_type in enumerate(entity_type.attribute_types):
-            name = attribute_type['name']
-            if name == old_name:
-                replace_idx = idx
-                new_attribute_type = dict(attribute_type)
-                new_attribute_type['name'] = new_name
-            elif name == new_name:
-                raise ValueError(
-                    f"Could not rename attribute '{old_name}' to '{new_name}' because an attribute "
-                    f"with that name already exists in entity type {type(entity_type).__name__} ID "
-                    f"{entity_type.id}"
-                )
-
-        if new_attribute_type is None:
-            raise ValueError(
-                f"Could not find attribute name {old_name} in entity type "
-                f"{type(entity_type).__name__} ID {entity_type.id}"
-            )
-
-        return uuid, replace_idx, new_attribute_type
-
+        for attribute in entity_type.attribute_types:
+            self.create_psql_index(entity_type, attribute, flush=flush, concurrent=concurrent)
 
     def rename_alias(self, entity_type, old_name, new_name):
         """
@@ -340,55 +375,69 @@ class TatorSearch:
         :param old_name: Name of attribute type being mutated.
         :param new_name: New name for the attribute type.
         """
-        # If no name change is happening, there is nothing to do
+        element = None
+        found_idx = None
+        for idx,attribute_obj in enumerate(entity_type.attribute_types):
+            if attribute_obj['name'] == old_name:
+                found_idx = idx
+                element = {**attribute_obj}
+        if element is None:
+            logger.error(f"Couldn't find {old_name} in {entity_type.name}")
+            return []
+
+        self.delete_index(entity_type, element)
+        element['name'] = new_name
+        entity_type.attribute_types[found_idx]['name'] = new_name
+        self.create_psql_index(entity_type, element)
+    
+        return [entity_type]
+
+    def check_rename(self, entity_type, old_name, new_name):
+        """
+        Checks rename operation and raises if it is invalid. See `rename_alias` for argument
+        description.
+        """
+        # If no name change is happening, there is nothing to check
         if old_name == new_name:
-            return
+            return None, None, None
 
-        # Create new alias definition.
-        uuid, replace_idx, new_attribute_type = self.check_rename(entity_type, old_name, new_name)
-        alias_type = _get_alias_type(new_attribute_type)
-        alias = {new_name: {"type": "alias", "path": f"{uuid}_{alias_type}"}}
-        self.es.indices.put_mapping(
-            index=self.index_name(entity_type.project.pk),
-            body={"properties": alias},
-        )
+        element = None
+        for attribute_obj in entity_type.attribute_types:
+            if attribute_obj['name'] == old_name:
+                element = {**attribute_obj}
 
-        # Update entity type object with new values.
-        attribute_type_uuids = entity_type.project.attribute_type_uuids
-        attribute_type_uuids[new_name] = attribute_type_uuids.pop(old_name)
-        entity_type.attribute_types[replace_idx] = new_attribute_type
+        element['name'] = new_name
 
-    def check_mutation(self, entity_type, name, new_attribute_type):
+        if self.is_index_present(entity_type, element) is True:
+            raise(f'Index already exists with the specified name. ID={entity_type.id} {old_name}->{new_name}')
+        
+
+    def check_mutation(self, entity_type, name, attribute_type_update):
         """
         Checks mutation operation and raises if it is invalid. See `mutate_alias` for argument
         description.
         """
-        # Retrieve UUID, raise error if it doesn't exist.
-        uuid = entity_type.project.attribute_type_uuids.get(name)
-        if uuid is None:
-            raise ValueError(f"Could not find attribute name {name} in entity type "
-                             f"{type(entity_type).__name__} ID {entity_type.id}")
-
+        found_it = False
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
             if attribute_type['name'] == name:
                 replace_idx = idx
-                old_mapping_type = _get_alias_type(attribute_type)
-                old_mapping_name = f'{uuid}_{old_mapping_type}'
                 old_dtype = attribute_type['dtype']
+                old_mapping_name = attribute_type['name']
+                found_it = True
                 break
-        else:
+        
+        
+        if found_it != True:
             raise ValueError(f"Could not find attribute name {name} in entity type "
                              f"{type(entity_type).__name__} ID {entity_type.id}")
 
-        new_dtype = new_attribute_type["dtype"]
+        new_dtype = attribute_type_update["dtype"]
         if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
             raise RuntimeError(f"Attempted mutation of {name} from {old_dtype} to {new_dtype} is "
                                 "not allowed!")
 
-        return uuid, replace_idx, old_mapping_name
-
-    def mutate_alias(self, entity_type, name, new_attribute_type, mod_type, new_style=None):
+    def mutate_alias(self, entity_type, name, attribute_type_update, mod_type, new_style=None):
         """
         Sets alias to new mapping type.
 
@@ -396,96 +445,34 @@ class TatorSearch:
                             Field attribute_types will be updated with new dtype and style. Entity
                             type will not be saved.
         :param name: Name of attribute type being mutated.
-        :param new_attribute_type: New attribute type for the attribute being mutated.
+        :param attribute_type_update: New attribute type for the attribute being mutated.
         :param mod_type: The type of modification to perform on the attribute: `update` will add
                          missing keys and update values of existing keys; `replace` will replace the
-                         definition with `new_attribute_type`, which will result in deletion of
+                         definition with `attribute_type_update`, which will result in deletion of
                          existing keys if they are not present in the new definition.
         :param new_style: [Optional] New display style of attribute type. Used to determine if
                           string attributes should be indexed as keyword or text.
         :returns: Entity type with updated attribute_types.
         """
-        valid_mod_types = ["update", "replace"]
-        if mod_type not in valid_mod_types:
-            raise ValueError(f"Expected `mod_type` in {valid_mod_types}, received '{mod_type}'")
+        element = None
+        el_idx = -1
+        for idx,attribute_obj in enumerate(entity_type.attribute_types):
+            if attribute_obj['name'] == name:
+                element = {**attribute_obj}
+                el_idx = idx
+        if element is None:
+            names = [a['name'] for a in entity_type.attribute_types]
+            raise(Exception(f"Couldn't find {name} in {entity_type.name} {names}"))
 
-        # Check mutation before applying atomically
-        uuid, replace_idx, old_mapping_name = self.check_mutation(
-            entity_type, name, new_attribute_type
-        )
+        if element['dtype'] != attribute_type_update['dtype']:
+            self.create_psql_index(entity_type, attribute_type_update, True)
 
-        # Create new alias definition and mapping.
-        if new_style is not None:
-            new_attribute_type['style'] = new_style
-        mapping_type = _get_alias_type(new_attribute_type)
-        mapping_name = f'{uuid}_{mapping_type}'
-        alias = {name: {'type': 'alias',
-                        'path': mapping_name}}
-        mapping = {mapping_name: {'type': mapping_type}}
-        # Create new mapping.
-        self.es.indices.put_mapping(
-            index=self.index_name(entity_type.project.pk),
-            body={'properties': {**mapping, **alias}},
-        )
-
-        # Copy values from old mapping to new mapping.
-        body = {
-            "script": f"ctx._source['{mapping_name}']=ctx._source['{old_mapping_name}'];",
-            "query": {"exists": {"field": old_mapping_name}},
-        }
-        self.es.update_by_query(
-            index=self.index_name(entity_type.project.pk),
-            body=body,
-            conflicts='proceed',
-            slices="auto",
-            requests_per_second=-1,
-        )
-
-        # Replace values in old mapping with null.
-        body = {
-            "script": f"ctx._source['{old_mapping_name}']=null;",
-            "query": {"exists": {"field": old_mapping_name}},
-        }
-        self.es.update_by_query(
-            index=self.index_name(entity_type.project.pk),
-            body=body,
-            conflicts='proceed',
-            slices="auto",
-            requests_per_second=-1,
-        )
-
-        # Update entity type object with new values.
+        # Update DB record for dtype and return it
         if mod_type == "update":
-            entity_type.attribute_types[replace_idx].update(new_attribute_type)
+            entity_type.attribute_types[el_idx].update(attribute_type_update)
         elif mod_type == "replace":
-            entity_type.attribute_types[replace_idx] = new_attribute_type
-
+            entity_type.attribute_types[el_idx] = attribute_type_update
         return entity_type
-
-    def check_deletion(self, entity_type, name):
-        """
-        Checks deletion operation and raises if it is invalid. See `delete_alias` for argument
-        description.
-        """
-        # Retrieve UUID, raise error if it doesn't exist.
-        uuid = entity_type.project.attribute_type_uuids.get(name)
-        if uuid is None:
-            raise ValueError(f"Could not find attribute name {name} in entity type "
-                             f"{type(entity_type).__name__} ID {entity_type.id}")
-
-        # Find old attribute type and create new attribute type.
-        for idx, attribute_type in enumerate(entity_type.attribute_types):
-            if attribute_type['name'] == name:
-                delete_idx = idx
-                mapping_type = _get_alias_type(attribute_type)
-                mapping_name = f'{uuid}_{mapping_type}'
-                old_dtype = attribute_type['dtype']
-                break
-        else:
-            raise ValueError(f"Could not find attribute name {name} in entity type "
-                             f"{type(entity_type).__name__} ID {entity_type.id}")
-
-        return uuid, delete_idx, mapping_name
 
     def delete_alias(self, entity_type, name):
         """
@@ -495,301 +482,13 @@ class TatorSearch:
         :param name: Name of attribute type being deleted.
         :returns: Entity type with updated attribute_types.
         """
-        # Check deletion before performing atomically
-        uuid, delete_idx, mapping_name = self.check_deletion(entity_type, name)
-
-        # Replace values in mapping with null.
-        body = {
-            'script': f"ctx._source['{mapping_name}']=null;",
-            "query": {"exists": {"field": mapping_name}},
-        }
-        self.es.update_by_query(
-            index=self.index_name(entity_type.project.pk),
-            body=body,
-            conflicts='proceed',
-            slices="auto",
-            requests_per_second=-1,
-        )
-
-        # Remove attribute from entity type object.
-        del entity_type.attribute_types[delete_idx]
+        element = None
+        for idx,attribute_obj in enumerate(entity_type.attribute_types):
+            if attribute_obj['name'] == name:
+                element = {**attribute_obj}
+                found_idx = idx
+        if element is None:
+            raise(f"Could not find attribute name {name} in entity type {entity_type.name}")
+        self.delete_index(entity_type, element)
+        del entity_type.attribute_types[found_idx]
         return entity_type
-
-    def bulk_add_documents(self, listOfDocs):
-        bulk(self.es, listOfDocs, raise_on_error=False, refresh='wait_for')
-
-    def create_document(self, entity, wait=True):
-        """ Indicies an element into ES """
-        docs = self.build_document(entity, 'single')
-        for doc in docs:
-            res = self.es.index(index=self.index_name(entity.project.pk),
-                                id=doc['_id'],
-                                refresh=wait,
-                                routing=1,
-                                body={**doc['_source']})
-
-    def build_document(self, entity, mode='index'):
-        """ Returns a list of documents representing the entity to be
-            used with the es.helpers.bulk functions
-            if mode is 'single', then one can use the 'doc' member
-            as the parameters to the es.index function.
-        """
-        aux = {}
-        aux['_meta'] = entity.meta.pk
-        aux['_dtype'] = entity.meta.dtype
-        aux['_postgres_id'] = entity.pk # Same as ID but indexed/sortable. Use of _id for this
-                                        # purpose is not recommended by ES.
-        aux['_created_datetime'] = entity.created_datetime.isoformat()
-        aux['_created_by'] = str(entity.created_by)
-        aux['_modified_datetime'] = entity.modified_datetime.isoformat()
-        aux['_modified_by'] = str(entity.modified_by)
-        tzinfo = entity.created_datetime.tzinfo
-        aux['_indexed_datetime'] = datetime.datetime.now(tzinfo).isoformat()
-        duplicates = []
-        if entity.meta.dtype in ['image', 'video', 'multi', 'live']:
-            aux['_media_relation'] = 'media'
-            aux['filename'] = entity.name
-            aux['_exact_name'] = entity.name
-            aux['_md5'] = entity.md5
-            aux['_gid'] = entity.gid
-            aux['_uid'] = entity.uid
-            aux['_archive_state'] = entity.archive_state
-            aux['_fps'] = entity.fps
-            aux['_num_frames'] = entity.num_frames
-            aux['_codec'] = entity.codec
-            aux['_rows'] = entity.height
-            aux['_columns'] = entity.width
-
-            # Get total size and download size of this file.
-            total_size, download_size = entity.get_file_sizes()
-            aux['_total_size'] = total_size
-            aux['_download_size'] = download_size
-
-            # Get total duration of this file.
-            aux['_duration'] = 0.0
-            if entity.meta.dtype == 'video':
-                if entity.num_frames is not None and entity.fps is not None:
-                    aux['_duration'] = entity.num_frames / entity.fps
-
-            # Copy section name.
-            if entity.attributes is not None:
-                if 'tator_user_sections' in entity.attributes:
-                    aux['tator_user_sections'] = entity.attributes['tator_user_sections']
-        elif entity.meta.dtype in ['box', 'line', 'dot', 'poly']:
-            aux['_media_relation'] = {
-                'name': 'annotation',
-                'parent': f"{entity.media.meta.dtype}_{entity.media.pk}",
-            }
-            if entity.version:
-                aux['_annotation_version'] = entity.version.pk
-            aux['_modified'] = entity.modified
-            aux['_user'] = entity.user.pk
-            aux['_email'] = entity.user.email
-            aux['_meta'] = entity.meta.pk
-            aux['_frame'] = entity.frame
-            aux['_x'] = entity.x
-            aux['_y'] = entity.y
-            if entity.thumbnail_image:
-                aux['_thumbnail_image'] = entity.thumbnail_image.pk
-            else:
-                aux['_thumbnail_image'] = None
-            if entity.meta.dtype == 'box':
-                aux['_width'] = entity.width
-                aux['_height'] = entity.height
-            elif entity.meta.dtype == 'line':
-                aux['_u'] = entity.u
-                aux['_v'] = entity.v
-            elif entity.meta.dtype == 'dot':
-                pass
-            elif entity.meta.dtype == 'poly':
-                pass
-        elif entity.meta.dtype in ['state']:
-            media = entity.media.all()
-            if media.exists():
-                aux['_media_relation'] = {
-                    'name': 'annotation',
-                    'parent': f"{media[0].meta.dtype}_{media[0].pk}",
-                }
-                for media_idx in range(1, media.count()):
-                    duplicate = deepcopy(aux)
-                    duplicate['_media_relation'] = {
-                        'name': 'annotation',
-                        'parent': f"{media[media_idx].meta.dtype}_{media[media_idx].pk}",
-                    }
-                    duplicates.append(duplicate)
-            try:
-                # If the state has an extracted image, its a
-                # duplicated entry in ES.
-                extracted_image = entity.extracted
-                if extracted_image:
-                    duplicate = deepcopy(aux)
-                    duplicate['_media_relation'] = {
-                        'name': 'annotation',
-                        'parent': f"{extracted_image.meta.dtype}_{extracted_image.pk}",
-                    }
-                    duplicates.append(duplicate)
-            except:
-                pass
-            if entity.version:
-                aux['_annotation_version'] = entity.version.pk
-            aux['_modified'] = entity.modified
-        elif entity.meta.dtype in ['leaf']:
-            aux['_exact_treeleaf_name'] = entity.name
-            aux['tator_treeleaf_name'] = entity.name
-            aux['_treeleaf_depth'] = entity.depth()
-            aux['_treeleaf_path'] = entity.computePath()
-        if entity.attributes is None:
-            entity.attributes = {}
-            entity.save()
-
-        # Index attributes for all supported dtype mutations.
-        mapping_values, _ = _get_mapping_values(entity.meta, entity.attributes)
-
-        results=[]
-        results.append({
-            '_index':self.index_name(entity.project.pk),
-            '_op_type': mode,
-            '_source': {
-                **mapping_values,
-                **aux,
-            },
-            '_id': f"{aux['_dtype']}_{entity.pk}",
-            '_routing': 1,
-        })
-
-        # Load in duplicates, if any
-        for idx,duplicate in enumerate(duplicates):
-            # duplicate_id needs to be unique we use the upper
-            # 8 bits of the id field to indicate which duplicate
-            # it is. This won't create collisions until there are
-            # more than 2^256 elements in the database or more than
-            # 256 duplicates for a given type
-            duplicate_id = entity.pk + ((idx + 1) << id_bits)
-            results.append({
-            '_index':self.index_name(entity.project.pk),
-            '_op_type': mode,
-            '_source': {
-                **mapping_values,
-                **duplicate,
-            },
-            '_id': f"{aux['_dtype']}_{duplicate_id}",
-            '_routing': 1,
-            })
-        return results
-
-
-    def delete_document(self, entity):
-        # If project is null, the entire index should have been deleted.
-        if not entity.project is None:
-            index = self.index_name(entity.project.pk)
-            if entity.meta:
-                if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
-                    self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}',
-                                   refresh='wait_for')
-
-    def search_raw(self, project, query):
-        return self.es.search(
-            index=self.index_name(project),
-            body=query,
-            stored_fields=[],
-        )
-
-    def search(self, project, query):
-        if 'sort' not in query:
-            query['sort'] = {'_doc': 'asc'}
-        size = query.get('size', None)
-        if (size is None) or (size >= 10000):
-            query['size'] = 10000
-            result = self.es.search(
-                index=self.index_name(project),
-                body=query,
-                scroll='1m',
-                stored_fields=[],
-            )
-            scroll_id = result['_scroll_id']
-            result = result['hits']
-            data = result['hits']
-            count = result['total']['value']
-
-            if size:
-                count = size
-            ids = drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in data])
-            while len(ids) < count:
-                result = self.es.scroll(
-                    scroll_id=scroll_id,
-                    scroll='1m',
-                )
-                if len(result['hits']['hits']) == 0:
-                    break
-                ids += drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in result['hits']['hits']])
-            ids = ids[:count]
-            self.es.clear_scroll(scroll_id=scroll_id)
-        else:
-            result = self.search_raw(project, query)
-            result = result['hits']
-            data = result['hits']
-            count = result['total']['value']
-            ids = drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in data])
-            if len(ids) != count:
-                # We must have dupes + pagination. Do the search again without pagination, 
-                # and return a slice.
-                offset = query.get('from', 0)
-                limit = query.get('size', 10000)
-                query['size'] = 10000
-                query['from'] = 0
-                ids, count = self.search(project, query)
-                ids = ids[offset:(offset+limit)]
-                count = len(ids)
-        return ids, count
-
-    def count(self, project, query):
-        index = self.index_name(project)
-        count_query = dict(query)
-        count_query.pop('sort', None)
-        count_query.pop('aggs', None)
-        count_query.pop('size', None)
-        return self.es.count(index=index, body=count_query)['count']
-
-    def refresh(self, project):
-        """Force refresh on an index.
-        """
-        self.es.indices.refresh(index=self.index_name(project))
-
-    def delete(self, project, query):
-        """Bulk delete on search results.
-        """
-        self.es.delete_by_query(
-            index=self.index_name(project),
-            body=query,
-            conflicts='proceed',
-            refresh=True,
-        )
-
-    def update(self, project, entity_type, query, attrs):
-        """Bulk update on search results.
-        """
-        query['script'] = ''
-        mapping_values, mapping_types = _get_mapping_values(entity_type, attrs)
-        for key, val in mapping_values.items():
-            mapping_type = mapping_types[key]
-            if isinstance(val, bool):
-                if val:
-                    val = 'true'
-                else:
-                    val = 'false'
-            if mapping_type == 'geo_point':
-                if isinstance(val, list): # This is a list geopos type
-                    lon, lat = val # Lists are lon first
-                    val = f'{lat},{lon}' # Convert to string geopos type, lat first
-            if mapping_type in ['boolean', 'long', 'double', 'dense_vector']:
-                query['script'] += f"ctx._source['{key}']={val};"
-            else:
-                query['script'] += f"ctx._source['{key}']='{val}';"
-        self.es.update_by_query(
-            index=self.index_name(project),
-            body=query,
-            conflicts='proceed',
-            refresh=True,
-        )
-
-TatorSearch.setup_elasticsearch()

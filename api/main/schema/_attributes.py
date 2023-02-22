@@ -1,47 +1,5 @@
 attribute_filter_parameter_schema = [
     {
-        'name': 'search',
-        'in': 'query',
-        'required': False,
-        'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See [reference](https://www.elastic.co/guide/en/elasticsearch/'
-                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax). '
-                       'This search string only applies to the relevant objects, not children or '
-                       'parents. For media, child annotations can be searched with `annotation_search`. '
-                       'For localizations and states, parent media can be searched with `media_search`.',
-        'schema': {'type': 'string'},
-        'examples': {
-            'no_search': {
-                'summary': 'No search',
-                'value': '',
-            },
-            'basic': {
-                'summary': 'Generic search',
-                'value': '"My search string"',
-            },
-            'user_attribute': {
-                'summary': 'Search on user-defined attribute',
-                'value': 'Species:lobster',
-            },
-            'builtin_attribute': {
-                'summary': 'Search built-in attribute',
-                'value': '_name:*.mp4',
-            },
-            'numerical_attribute': {
-                'summary': 'Search numerical attribute',
-                'value': '_width:<0.5',
-            },
-            'wildcard': {
-                'summary': 'Wildcard search',
-                'value': 'Species:*hake',
-            },
-            'boolean': {
-                'summary': 'Boolean search',
-                'value': '_name:*.mp4 AND Species:*hake',
-            },
-        },
-    },
-    {
         'name': 'attribute',
         'in': 'query',
         'required': False,
@@ -139,12 +97,127 @@ attribute_filter_parameter_schema = [
         'schema': {'type': 'integer'},
     },
     {
-        'name': 'force_es',
+        'name': 'encoded_search',
         'in': 'query',
         'required': False,
-        'description': 'Set to 1 to require an Elasticsearch based query. This can be used '
-                       'as a consistency check or for performance comparison.',
-        'schema': {'type': 'integer',
-                   'enum': [0, 1]},
-    },
+        'description': 'Binary64 encoded string representing an `Object_Search` defined in /components/AttributeOperationFilter',
+        'schema': {'type': 'string'},
+    }
 ]
+
+related_attribute_filter_parameter_schema = [
+        {
+        'name': 'related_attribute',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute equality filter. Format is '
+                       'attribute1::value1,[attribute2::value2].'
+                       'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'related_attribute_lt',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute less than filter. Format is '
+                       'attribute1::value1,[attribute2::value2].'
+                        'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'related_attribute_lte',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute less than or equal filter. Format is '
+                       'attribute1::value1,[attribute2::value2].'
+                        'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'related_attribute_gt',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute greater than filter. Format is '
+                       'attribute1::value1,[attribute2::value2].'
+                       'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'related_attribute_gte',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute greater than or equal filter. Format is '
+                       'attribute1::value1,[attribute2::value2].'
+                       'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'related_attribute_contains',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute contains filter. Format is '
+                       'attribute1::value1,[attribute2::value2].'
+                       'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'related_attribute_distance',
+        'in': 'query',
+        'required': False,
+        'description': 'Range filter for geoposition attributes. Format is '
+                       'attribute1::distance_km2::lat2::lon2,'
+                       '[attribute2::distancekm2::lat2::lon2].'
+                       'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'related_attribute_null',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute null filter. Returns elements for which '
+                       'a given attribute is not defined.'
+                       'This filter is applied to related data of the primary object.'
+                       'On the Media endpoint, this searches on related metadata(States/Localizations).'
+                       'On metadata endpoints, this searches on related media.',
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
+    },
+    {
+        'name': 'encoded_related_search',
+        'in': 'query',
+        'required': False,
+        'description': 'Binary64 encoded string representing an `Object_Search` defined in /components/AttributeOperationFilter applied against related objects',
+        'schema': {'type': 'string'},
+    }
+]
+
+related_keys = [x['name'] for x in related_attribute_filter_parameter_schema]

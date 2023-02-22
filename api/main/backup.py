@@ -69,11 +69,11 @@ class TatorBackupManager:
                         break
                     except Exception as e:
                         logger.warning(
-                            f"Upload of {path} chunk {chunk_count} failed ({e})! Attempt "
+                            f"Upload of {upload_id} chunk {chunk_count} failed ({e})! Attempt "
                             f"{attempt + 1}/{MAX_RETRIES}"
                         )
                         if attempt == MAX_RETRIES - 1:
-                            raise RuntimeError(f"Upload of {path} failed!")
+                            raise RuntimeError(f"Upload of {upload_id} failed!")
                         else:
                             sleep(10 * attempt)
                             logger.warning(f"Backing off for {10 * attempt} seconds...")
@@ -93,14 +93,14 @@ class TatorBackupManager:
                     return True
                 else:
                     logger.warning(
-                        f"Upload of {path} failed ({response.text}) size={len(data)}! Attempt "
-                        f"{attempt + 1}/{MAX_RETRIES}"
+                        f"Upload of '{upload_url}' failed ({response.text}) size={len(data)}! "
+                        f"Attempt {attempt + 1}/{MAX_RETRIES}"
                     )
                     if attempt < MAX_RETRIES - 1:
                         logger.warning("Backing off for 5 seconds...")
                         sleep(5)
             else:
-                logger.error(f"Upload of {path} failed!")
+                logger.error(f"Upload of '{upload_url}' failed!")
         return False
 
     @classmethod
@@ -150,24 +150,38 @@ class TatorBackupManager:
         # Determine if the default bucket is being used for all StoreTypes or none
         use_default_bucket = project.get_bucket() is None
 
-        # Get the `TatorStore` object that connects to object storage for the given type
-        for store_type in StoreType:
-            is_backup = store_type == StoreType.BACKUP
-            project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
-            try:
-                store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
-            except:
-                success = False
-                logger.error(
-                    f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
-                    exc_info=True,
-                )
-                break
+        # Get the `TatorStore` object that connects to object storage for live storage first
+        try:
+            store = get_tator_store(project.get_bucket())
+        except:
+            success = False
+            bucket_str = "default" if use_default_bucket else "project-specific"
+            logger.error(
+                f"Could not get {bucket_str}live bucket for project {project_id}", exc_info=True
+            )
+        else:
+            project_store_info[StoreType.LIVE] = {
+                "store": store,
+                "remote_name": f"{project_id}_{StoreType.LIVE}",
+                "bucket_name": store.bucket_name,
+            }
 
+        # Get the `TatorStore` object that connects to object storage for backup storage, if
+        # applicable
+        project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
+        try:
+            store = get_tator_store(project_bucket, backup=use_default_bucket)
+        except:
+            success = False
+            bucket_str = "default" if use_default_bucket else "project-specific"
+            logger.error(
+                f"Could not get {bucket_str} backup bucket for project {project_id}", exc_info=True
+            )
+        else:
             if store:
-                project_store_info[store_type] = {
+                project_store_info[StoreType.BACKUP] = {
                     "store": store,
-                    "remote_name": f"{project_id}_{store_type}",
+                    "remote_name": f"{project_id}_{StoreType.BACKUP}",
                     "bucket_name": store.bucket_name,
                 }
 

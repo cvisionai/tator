@@ -402,18 +402,18 @@ export class EntitySelector extends TatorElement {
     var associatedState = null;
     var associatedStateType = null;
 
-    var dataList = this._globalData._dataByType.get(this._data[index].meta);
+    var dataList = this._globalData._dataByType.get(this._data[index].type);
     const elemIndex = dataList.findIndex(elem => elem.id === this._data[index].id);
     if (elemIndex > -1)
     {
       const data = dataList[elemIndex];
-      const isLocalization = data.meta.includes("box") || data.meta.includes("line") || data.meta.includes("dot");
+      const isLocalization = data.type.includes("box") || data.type.includes("line") || data.type.includes("dot");
       if (isLocalization)
       {
         if (data.id in this._globalData._trackDb)
         {
           associatedState = this._globalData._trackDb[data.id];
-          associatedStateType = this._globalData._dataTypes[associatedState.meta];
+          associatedStateType = this._globalData._dataTypes[associatedState.type];
         }
       }
     }

@@ -37,6 +37,12 @@ class UserExistsSchema(AutoSchema):
                 'description': 'Email address associated with user. Either this or email must be '
                                'supplied.',
                 'schema': {'type': 'string'},
+            }, {
+                'name': 'elemental_id',
+                'in': 'query',
+                'required': False,
+                'description': 'Elemental_id of user',
+                'schema': {'type': 'string'},
             }]
         return params
 
@@ -99,6 +105,25 @@ class UserListSchema(AutoSchema):
                 'description': 'Email address associated with user. Either this or email must be '
                                'supplied.',
                 'schema': {'type': 'string'},
+            },
+            {
+                'name': 'elemental_id',
+                'in': 'query',
+                'required': False,
+                'description': 'Elemental_id of user',
+                'schema': {'type': 'string'},
+            },
+            {
+                'name': 'presigned',
+                'in': 'query',
+                'required': False,
+                'description': 'If given, all object key fields in `profile` will be '
+                               'replaced with presigned URLs that can be downloaded without '
+                               'authentication. The value is the expiration time of the URLs '
+                               'in seconds.',
+                'schema': {'type': 'integer',
+                           'minimum': 1,
+                           'maximum': 86400},
             }]
         return params
 
@@ -152,7 +177,18 @@ class UserDetailSchema(AutoSchema):
         }]
 
     def get_filter_parameters(self, path, method):
-        return []
+        return [{
+                'name': 'presigned',
+                'in': 'query',
+                'required': False,
+                'description': 'If given, all object key fields in `profile` will be '
+                               'replaced with presigned URLs that can be downloaded without '
+                               'authentication. The value is the expiration time of the URLs '
+                               'in seconds.',
+                'schema': {'type': 'integer',
+                           'minimum': 1,
+                           'maximum': 86400},
+            }]
 
     def get_request_body(self, path, method):
         body = {}
@@ -194,7 +230,18 @@ class CurrentUserSchema(AutoSchema):
         return []
 
     def get_filter_parameters(self, path, method):
-        return []
+        return [{
+                'name': 'presigned',
+                'in': 'query',
+                'required': False,
+                'description': 'If given, all object key fields in `profile` will be '
+                               'replaced with presigned URLs that can be downloaded without '
+                               'authentication. The value is the expiration time of the URLs '
+                               'in seconds.',
+                'schema': {'type': 'integer',
+                           'minimum': 1,
+                           'maximum': 86400},
+            }]
 
     def get_responses(self, path, method):
         responses = {

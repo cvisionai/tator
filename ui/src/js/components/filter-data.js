@@ -16,12 +16,14 @@ export class FilterData {
    *    List of categories to display in run algorithm option
    * @param {array} excludeTypesList
    *    List of types to exclude from creating filter options for
-   *    Available options: Medias|Localizations|MediaStates|TrackStates
+   *    Available options: Medias|Localizations|MediaStates|LocalizationStates
    * @param {array} skipTypeIds
    *    List of type ids to skip when creating filter options for
    *    Available options: Any Int ID
+   * @param {boolean} squashMetadata
+   *    If true, will collapse Localizations, MediaStates, LocalizationStates (whichever aren't excluded) into a single 'Metadata' Category
    */
-  constructor(modelData, algorithmCategories, excludeTypesList, skipTypeIds) {
+  constructor(modelData, algorithmCategories, excludeTypesList, skipTypeIds, squashMetadata) {
 
     this._modelData = modelData;
 
@@ -38,6 +40,8 @@ export class FilterData {
     if (skipTypeIds != null) {
       this.skipTypeIds = skipTypeIds;
     }
+
+    this._squashMetadata = (squashMetadata == true);
   }
   /**
    * @precondition The provided modelData must have been initialized
@@ -100,7 +104,7 @@ export class FilterData {
       userNames.push(`${user.username} (ID:${user.user})`);
       userFirstLastNames.push({
         label: `${user.username}(ID: ${user.user})`,
-        value: `${user.first_name} ${user.last_name}`
+        value: user.user
       });
     }
     userNames.sort();
@@ -112,7 +116,7 @@ export class FilterData {
     var versionNames = [];
     for (let idx = 0; idx < this.versions.length; idx++) {
       let version = this.versions[idx];
-      versionNames.push(`${version.name} (ID:${version.id})`);
+      versionNames.push({label: `${version.name} (ID:${version.id})`, value: version.id});
     }
 
     // Media sections aren't typically part of the media type's user attribute list.
@@ -121,13 +125,19 @@ export class FilterData {
     var sectionNames = [];
     for (let idx = 0; idx < this.sections.length; idx++) {
       let section = this.sections[idx];
-      if (section.tator_user_sections != null) {
-        sectionNames.push(`${section.name} (ID:${section.id})`);
-      }
+      sectionNames.push({label: `${section.name} (ID:${section.id})`, value: section.id});
     }
 
     // Create the filter options
     this._allTypes = [];
+
+    let category_lookup = {};
+    if (this._squashMetadata)
+    {
+      category_lookup = {'Localizations': 'Metadata',
+                         'MediaStates': 'Metadata',
+                         'LocalizationStates': 'Metadata'};
+    }
 
     if (this.excludeTypesList.indexOf("Medias") < 0) {
       for (let idx = 0; idx < this.mediaTypes.length; idx++) {
@@ -136,53 +146,69 @@ export class FilterData {
 
         if (this.skipTypeIds.indexOf(this.mediaTypes[idx].id) < 0) {
           var nameAttribute = {
-            name: "filename",
+            name: "$name",
+            label: "Filename",
             dtype: "string"
           };
           entityType.attribute_types.push(nameAttribute);
 
-          var sectionAttribute = {
-            choices: sectionNames,
-            name: "_section",
-            dtype: "enum"
-          };
-          entityType.attribute_types.push(sectionAttribute);
-
           var mediaIdAttribute = {
-            name: "_id",
+            name: "$id",
+            label: "ID",
             dtype: "int"
           };
           entityType.attribute_types.push(mediaIdAttribute);
 
+          var sectionAttribute = {
+            choices: sectionNames,
+            name: "$section",
+            label: "Section",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(sectionAttribute);
+
           var createdDatetimeAttribute = {
-            name: "_created_datetime",
+            name: "$created_datetime",
+            label: "Created Datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
+          var createdByAttribute = {
+            choices: userFirstLastNames,
+            name: "$created_by",
+            label: "Created By",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(createdByAttribute);
+
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "Modified By",
+            name: "$modified_by",
+            label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
-            name: "_modified_datetime",
+            name: "$modified_datetime",
+            label: "Modified Datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(modifiedDatetimeAttribute);
 
           var dtypeAttribute = {
             choices: mediaTypeOptions,
-            name: "_dtype",
+            name: "$dtype",
+            label: "Data type",
             dtype: "enum"
           };
           entityType.attribute_types.push(dtypeAttribute);
 
           var archiveStateAttribute = {
             choices: ["live", "to_archive", "archived", "to_live"],
-            name: "_archive_state",
+            name: "$archive_state",
+            label: "Archive State",
             dtype: "enum"
           }
           entityType.attribute_types.push(archiveStateAttribute);
@@ -195,45 +221,82 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("Localizations") < 0) {
       for (let idx = 0; idx < this.localizationTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
-        entityType.typeGroupName = "Annotation";
+        entityType.typeGroupName = (category_lookup.Localizations ? category_lookup.Localizations : "Localization");
 
         if (this.skipTypeIds.indexOf(this.localizationTypes[idx].id) < 0) {
+
+          if (['box','line','dot'].indexOf(this.localizationTypes[idx].dtype) >= 0)
+          {
+            var geo_x = {
+              name: "$x",
+              label: "X coordinate",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_x);
+            var geo_y = {
+              name: "$y",
+              label: "Y coordinate",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_y);
+          }
+          if (['box'].indexOf(this.localizationTypes[idx].dtype) >= 0)
+          {
+            var geo_width = {
+              name: "$width",
+              label: "Box Width",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_width);
+            var geo_height = {
+              name: "$height",
+              label: "Box Height",
+              dtype: "float"
+            };
+            entityType.attribute_types.push(geo_height);
+          }
           var versionAttribute = {
             choices: versionNames,
-            name: "_version",
+            name: "$version",
+            label: "Version",
             dtype: "enum"
           };
           entityType.attribute_types.push(versionAttribute);
 
           var dtypeAttribute = {
             choices: localizationTypeOptions,
-            name: "_dtype",
+            name: "$dtype",
+            label: "Data type",
             dtype: "enum"
           };
           entityType.attribute_types.push(dtypeAttribute);
 
           var userAttribute = {
             choices: userNames,
-            name: "_user",
+            name: "$user",
+            label: "User",
             dtype: "enum"
           };
           entityType.attribute_types.push(userAttribute);
 
           var createdDatetimeAttribute = {
-            name: "_created_datetime",
+            name: "$created_datetime",
+            label: "Created datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "Modified By",
+            name: "$modified_by",
+            label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
-            name: "_modified_datetime",
+            name: "$modified_datetime",
+            label: "Modified Datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(modifiedDatetimeAttribute);
@@ -246,19 +309,21 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("MediaStates") < 0) {
       for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.mediaStateTypes[idx]));
-        entityType.typeGroupName = "Collection";
+        entityType.typeGroupName = (category_lookup.MediaStates ? category_lookup.MediaStates : "State");
 
         if (this.skipTypeIds.indexOf(this.mediaStateTypes[idx].id) < 0) {
           var versionAttribute = {
             choices: versionNames,
-            name: "_version",
+            name: "$version",
+            label: "Version",
             dtype: "enum"
           };
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
             choices: stateTypeOptions,
-            name: "_type",
+            name: "$type",
+            label: "Data type",
             dtype: "enum"
           }
           entityType.attribute_types.push(typeAttribute);
@@ -271,26 +336,29 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("LocalizationStates") < 0) {
       for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.localizationStateTypes[idx]));
-        entityType.typeGroupName = "Collection";
+        entityType.typeGroupName = (category_lookup.LocalizationStates ? category_lookup.LocalizationStates : "State");
 
         if (this.skipTypeIds.indexOf(this.localizationStateTypes[idx].id) < 0) {
           var versionAttribute = {
             choices: versionNames,
-            name: "_version",
+            name: "$version",
+            label: "Version",
             dtype: "enum"
           };
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
             choices: stateTypeOptions,
-            name: "_type",
+            name: "$type",
+            label: "Data Type",
             dtype: "enum"
           }
           entityType.attribute_types.push(typeAttribute);
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "Modified By",
+            name: "$modified_by",
+            label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);

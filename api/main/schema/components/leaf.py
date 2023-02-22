@@ -36,8 +36,14 @@ leaf_properties = {
 leaf_spec = {
     'type': 'object',
     'required': ['name', 'type'],
-    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-    'properties': leaf_properties,
+    'properties': {
+        **leaf_properties,
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+    }
 }
 
 leaf_update = {
@@ -51,6 +57,22 @@ leaf_update = {
             'description': 'Attribute values to update.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
         },
     },
 }
@@ -71,6 +93,7 @@ leaf_id_query = {
             'type': 'array',
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
+        'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     }
 }
 
@@ -83,6 +106,22 @@ leaf_bulk_update = {
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
         **leaf_id_query['properties'],
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
     },
 }
 
@@ -95,7 +134,7 @@ leaf = {
             'type': 'integer',
             'description': 'Unique integer identifying the leaf.',
         },
-        'meta': {
+        'type': {
             'type': 'integer',
             'description': 'Unique integer identifying the entity type.',
         },

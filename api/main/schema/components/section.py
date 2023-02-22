@@ -3,29 +3,20 @@ section_post_properties = {
         'type': 'string',
         'description': 'Unique name of the section.',
     },
-    'lucene_string': {
-        'type': 'string',
-        'description': 'Lucene query syntax search string.',
-    },
-    'media_bools': {
-        'type': 'array',
-        'description': 'List of elasticsearch boolean queries that should be applied '
-                       'to media. These are applied to the boolean query "filter" list.',
-        'items': {'type': 'object', 'additionalProperties': True},
-    },
-    'annotation_bools': {
-        'type': 'array',
-        'description': 'List of elasticsearch boolean queries that should be applied '
-                       'to annotations. These are applied to the boolean query "filter" list.',
-        'items': {'type': 'object', 'additionalProperties': True},
-    },
     'tator_user_sections': {
         'type': 'string',
         'description': 'Attribute that is applied to media to identify membership to a section.',
     },
+    'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
+    'related_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     "visible": {
         "type": "boolean",
         "description": "Determines the visibility in the UI.",
+    },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
     },
 }
 

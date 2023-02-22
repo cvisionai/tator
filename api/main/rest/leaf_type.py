@@ -1,5 +1,7 @@
 from django.db import transaction
 
+import uuid
+
 from ..models import LeafType
 from ..models import Leaf
 from ..models import Project
@@ -12,7 +14,7 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
-fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'visible']
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'visible', 'elemental_id']
 
 class LeafTypeListAPI(BaseListView):
     """ Interact with leaf type list.
@@ -26,8 +28,15 @@ class LeafTypeListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params):
-        return list(LeafType.objects.filter(project=params['project'])\
-                    .order_by('name').values(*fields))
+        qs = LeafType.objects.filter(project=params['project'])
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+        return list(qs.order_by('name').values(*fields))
 
     def _post(self, params):
         if params['name'] in attribute_keywords:
@@ -35,6 +44,8 @@ class LeafTypeListAPI(BaseListView):
                               "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
+        if params.get('elemental_id',None) is None:
+            params['elemental_id'] = uuid.uuid4()
         obj = LeafType(**params)
         obj.save()
         return {'message': 'Leaf type created successfully!', 'id': obj.id}
@@ -57,12 +68,15 @@ class LeafTypeDetailAPI(BaseDetailView):
     def _patch(self, params):
         name = params.get('name', None)
         description = params.get('description', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = LeafType.objects.get(pk=params['id'])
         if name is not None:
             obj.name = name
         if description is not None:
             obj.description = description
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         obj.save()
         return {'message': f'Leaf type {obj.id} updated successfully!'}

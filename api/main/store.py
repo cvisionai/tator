@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from datetime import datetime, timedelta
 from enum import Enum, unique
 import json
 import logging
+from oci.object_storage import ObjectStorageClient
+from oci.object_storage.models import RenameObjectDetails
 import os
 from typing import IO, List, Optional, Tuple, Union
 from urllib.parse import urlsplit, urlunsplit
@@ -77,20 +80,33 @@ DEFAULT_STORAGE_CLASSES = {
 }
 
 
-def _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts):
-    # TODO Handle OCI separately with native sdk
-    store_type = ObjectStore(bucket.store_type)
-    config = dict(bucket.config)
-    if store_type in [ObjectStore.AWS, ObjectStore.MINIO, ObjectStore.OCI]:
+def _client_from_config(
+    store_type, config, bucket_name, connect_timeout, read_timeout, max_attempts
+):
+    config = deepcopy(config)
+    if store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
         config["config"] = Config(
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
             retries={"max_attempts": max_attempts},
         )
-        config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket.name}.", "")
-        if 'external_host' in config:
-            del config['external_host']
+        # TODO change back to virtual-host-style access when it works again, as path-style access is
+        # on delayed deprecation
+        config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket_name}.", "")
         return boto3.client("s3", **config)
+    if store_type == ObjectStore.OCI:
+        config["boto3_config"]["config"] = Config(
+            connect_timeout=connect_timeout,
+            read_timeout=read_timeout,
+            retries={"max_attempts": max_attempts},
+        )
+        config["boto3_config"]["endpoint_url"] = config["boto3_config"]["endpoint_url"].replace(
+            f"{bucket_name}.", ""
+        )
+        return {
+            "boto3_client": boto3.client("s3", **config["boto3_config"]),
+            "native_client": ObjectStorageClient(config["native_config"]),
+        }
     if store_type == ObjectStore.GCP:
         return storage.Client(config["project_id"], Credentials.from_service_account_info(config))
 
@@ -104,9 +120,8 @@ class TatorStorage(ABC):
         self.bucket = bucket
         self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
-        self.external_host = external_host
+        self.external_host = external_host and external_host.strip("/")
         self._server = None
-        self.remote_type = None
 
         self._proto = "https" if os.getenv("REQUIRE_HTTPS") == "TRUE" else "http"
 
@@ -161,7 +176,7 @@ class TatorStorage(ABC):
     def check_key(self, path: str) -> bool:
         """Checks that at least one key matches the given path"""
 
-    def head_object(self, path: str, quiet: Optional[bool]=False) -> dict:
+    def head_object(self, path: str, quiet: Optional[bool] = False) -> dict:
         """
         Returns the object metadata for a given path using the concrete class implementation of
         `_head_object`. If the concrete implementation raises, this logs a warning and returns an
@@ -312,7 +327,7 @@ class TatorStorage(ABC):
         """
 
     def paths_from_media(self, media):
-        if media.meta.dtype == "multi":
+        if media.type.dtype == "multi":
             return self._paths_from_multi(media)
         return self._paths_from_single(media)
 
@@ -333,7 +348,6 @@ class MinIOStorage(TatorStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.MINIO
-        self.remote_type = "s3"
 
     def check_key(self, path):
         return bool(self.list_objects_v2(self.path_to_key(path)))
@@ -477,7 +491,6 @@ class S3Storage(MinIOStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.AWS
-        self.remote_type = "s3"
 
     def path_to_key(self, path):
         return f"{self.bucket_name}/{path}"
@@ -489,27 +502,54 @@ class S3Storage(MinIOStorage):
             RestoreRequest={"Days": min_exp_days},
         )
 
-class OCIStorage(MinIOStorage):
+
+class OCIStorage(S3Storage):
+    ARCHIVE_PREFIX = "_to_archive"
+
     def __init__(self, bucket, client, bucket_name, external_host=None):
-        super().__init__(bucket, client, bucket_name, external_host)
+        super().__init__(bucket, client["boto3_client"], bucket_name, external_host)
+        self._native_client = client["native_client"]
+        self._namespace = self._native_client.get_namespace().data
         self._server = ObjectStore.OCI
-        self.remote_type = "oci"
+
+    def path_to_key(self, path):
+        return path
+
+    def _get_archived_key(self, path):
+        return f"{self.ARCHIVE_PREFIX}/{path}"
 
     def object_tagged_for_archive(self, path):
-        return False # OCI does not support object tags.
+        archived_key = self._get_archived_key(path)
+        return self.check_key(archived_key)
 
     def _put_archive_tag(self, path):
-        pass # OCI does not support object tags.
+        key = self.path_to_key(path)
+        archived_key = self._get_archived_key(path)
+        self._native_client.rename_object(
+            namespace_name=self._namespace,
+            bucket_name=self.bucket_name,
+            rename_object_details=RenameObjectDetails(source_name=key, new_name=archived_key),
+        )
 
     def put_media_id_tag(self, path, media_id):
-        pass # OCI does not support object tags.
+        pass  # OCI does not support object tags.
+
+    def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
+        key = self.path_to_key(path)
+        self._native_client.rename_object(
+            namespace_name=self._namespace,
+            bucket_name=self.bucket_name,
+            rename_object_details=RenameObjectDetails(
+                source_name=self._get_archived_key(path), new_name=key
+            ),
+        )
+
 
 class GCPStorage(TatorStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.GCP
         self.gcs_bucket = self.client.get_bucket(self.bucket_name)
-        self.remote_type = "google cloud storage"
 
     def _get_blob(self, path):
         blob = self.gcs_bucket.get_blob(self.path_to_key(path))
@@ -540,7 +580,7 @@ class GCPStorage(TatorStorage):
 
     def put_media_id_tag(self, path, media_id):
         blob = self._get_blob(path)
-        metadata = {MEDIA_ID_KEY : str(media_id)}
+        metadata = {MEDIA_ID_KEY: str(media_id)}
         blob.metadata = metadata
         blob.patch()
 
@@ -644,90 +684,60 @@ def get_tator_store(
         )
 
     if bucket is None:
-        if upload and os.getenv("UPLOAD_STORAGE_HOST"):
-            # Configure for upload
-            prefix = "UPLOAD"
-            bucket_env_name = "UPLOAD_STORAGE_BUCKET_NAME"
+        if upload and os.getenv("DEFAULT_UPLOAD_CONFIG"):
+            bucket_type = "UPLOAD"
         elif backup:
-            # Configure for backup
-            prefix = "BACKUP"
-            bucket_env_name = "BACKUP_STORAGE_BUCKET_NAME"
+            bucket_type = "BACKUP"
         else:
-            # Configure for standard use
-            prefix = "OBJECT"
-            bucket_env_name = "BUCKET_NAME"
-        endpoint = os.getenv(f"{prefix}_STORAGE_HOST")
-        region = os.getenv(f"{prefix}_STORAGE_REGION_NAME")
-        access_key = os.getenv(f"{prefix}_STORAGE_ACCESS_KEY")
-        secret_key = os.getenv(f"{prefix}_STORAGE_SECRET_KEY")
-        bucket_name = os.getenv(bucket_env_name)
-        external_host = os.getenv(f"{prefix}_STORAGE_EXTERNAL_HOST")
-    elif getattr(bucket, "gcs_key_info", None):
-        gcs_key_info = json.loads(bucket.gcs_key_info)
-        gcs_project = gcs_key_info["project_id"]
-        client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
-        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
+            bucket_type = "LIVE"
+
+        # Config filename is a required environment variable
+        config = os.getenv(f"DEFAULT_{bucket_type}_CONFIG")
+        if config:
+            # Quoted json string needs to be json-loaded twice
+            for _ in range(2):
+                try:
+                    config = json.loads(config)
+                except Exception:
+                    logger.error(f"Could not parse json string:\n'{config}'", exc_info=True)
+                    raise
+        else:
+            # If a backup store was requested but not provided (`bucket` is None and the environment
+            # variables are empty), return `None` to signal no store exists
+            if bucket_type == "BACKUP":
+                return None
+            raise ValueError("No config found for {bucket_type.lower()} bucket!")
+
+        # Bucket name is a required environment variable
+        bucket_name = os.getenv(f"DEFAULT_{bucket_type}_BUCKET_NAME")
+        if not bucket_name:
+            raise ValueError(f"No bucket name found for default {bucket_type.lower()} bucket!")
+
+        # Store type is a required environment variable
+        store_type = ObjectStore(os.getenv(f"DEFAULT_{bucket_type}_STORE_TYPE"))
+        if not store_type:
+            raise ValueError(f"No store type found for default {bucket_type.lower()} bucket!")
+
+        # External host is an optional environment variable, except for OCI
+        external_host = os.getenv(f"DEFAULT_{bucket_type}_EXTERNAL_HOST")
+        if store_type == ObjectStore.OCI and not external_host:
+            raise ValueError(
+                f"No external host found for OCI default {bucket_type.lower()} bucket!"
+            )
     elif getattr(bucket, "config", None):
-        client = _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts)
-        return TatorStorage.get_tator_store(bucket.store_type, bucket, client, bucket.name,bucket.config.get('external_host'))
-    else:
-        endpoint = bucket.endpoint_url
-        region = bucket.region
-        access_key = bucket.access_key
-        secret_key = bucket.secret_key
         bucket_name = bucket.name
-        external_host = None
-
-    if endpoint:
-        # TODO change back to virtual-host-style access when it works again, as path-style access is
-        # on delayed deprecation
-        # Strip the bucket name from the url to use path-style access
-        endpoint = endpoint.replace(f"{bucket_name}.", "")
-        config = Config(
-            connect_timeout=connect_timeout,
-            read_timeout=read_timeout,
-            retries={"max_attempts": max_attempts},
-        )
-        client = boto3.client(
-            "s3",
-            endpoint_url=f"{endpoint}",
-            region_name=region,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            config=config,
-        )
+        store_type = ObjectStore(bucket.store_type)
+        config = bucket.config
+        external_host = bucket.external_host
     else:
-        # If a backup store was requested but not provided (`bucket` is None and the environment
-        # variables are empty), return `None` to signal no store exists
-        if backup:
-            return None
-        # Client generator will not have env variables defined
-        client = boto3.client("s3")
-
-    # Get the type of object store from bucket metadata
-    try:
-        response = client.head_bucket(Bucket=bucket_name)
-    except:
-        logger.warning(
-            f"Failed to retrieve remote bucket information, inferring server type from endpoint"
+        raise RuntimeError(
+            f"Received bucket {bucket} as input, which is missing its `config` field."
         )
-        if endpoint and "amazonaws" in endpoint:
-            server = ObjectStore.AWS
-        else:
-            server = ObjectStore.MINIO
-    else:
-        response_server = response["ResponseMetadata"]["HTTPHeaders"].get("server", "")
-        api_id = response["ResponseMetadata"]["HTTPHeaders"].get("x-api-id", "")
-        if OldObjectStore.AWS.value in response_server:
-            server = ObjectStore.AWS
-        elif OldObjectStore.MINIO.value in response_server:
-            server = ObjectStore.MINIO
-        elif "s3-compatible" in api_id:
-            server = ObjectStore.OCI
-        else:
-            raise ValueError(f"Received unhandled server type '{response_server}'")
 
-    return TatorStorage.get_tator_store(server, bucket, client, bucket_name, external_host)
+    client = _client_from_config(
+        store_type, config, bucket_name, connect_timeout, read_timeout, max_attempts
+    )
+    return TatorStorage.get_tator_store(store_type, bucket, client, bucket_name, external_host)
 
 
 def get_storage_lookup(resources):

@@ -52,7 +52,7 @@ export class UndoBuffer extends HTMLElement {
         if (edit_triggers)
         {
           edit_triggers.forEach(algo_name=>{
-            fetchRetry("/rest/AlgorithmLaunch/" + this._media['project'], {
+            fetchRetry("/rest/Jobs/" + this._media['project'], {
               method: "POST",
               credentials: "same-origin",
               headers: {
@@ -113,13 +113,13 @@ export class UndoBuffer extends HTMLElement {
           other = {
             media_id: data.media,
             frame: data.frame,
-            type: data.meta,
+            type: data.type,
           };
         } else if (detailUri == "State") {
           other = {
             media_ids: data.media,
             frame: data.frame,
-            type: data.meta,
+            type: data.type,
             localization_ids: data.localizations,
           };
         }
@@ -306,7 +306,6 @@ export class UndoBuffer extends HTMLElement {
     };
     if (body) {
       if (method == "POST") {
-        delete body.attributes;
         delete body.color;
         obj.body = JSON.stringify([body]);
       } else {

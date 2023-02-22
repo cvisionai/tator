@@ -5,7 +5,7 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._message import message_schema
 from ._message import message_with_id_list_schema
 from ._errors import error_responses
-from ._attributes import attribute_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
 localization_filter_schema = [
@@ -16,7 +16,7 @@ localization_filter_schema = [
         'schema': {'type': 'integer',
                    'minimum': 0},
         'required': False,
-    },
+    }
 ]
 
 boilerplate = dedent("""\
@@ -86,7 +86,7 @@ class LocalizationListSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
-            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema
+            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema + related_attribute_filter_parameter_schema
         return params
 
     def get_request_body(self, path, method):
@@ -94,158 +94,172 @@ class LocalizationListSchema(AutoSchema):
         if method == 'POST':
             body = {
                 'required': True,
-                'content': {'application/json': {
-                'schema': {
-                    'type': 'array',
-                    'items': {'$ref': '#/components/schemas/LocalizationSpec'},
-                    'maxItems': 500,
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'oneOf': [
+                                {
+                                    'type': 'array',
+                                    'items': {'$ref': '#/components/schemas/LocalizationSpec'},
+                                    'maxItems': 500
+                                },
+                                {
+                                    '$ref': '#/components/schemas/LocalizationSpec',
+                                },
+                            ],
+                        },
+                        'examples': {
+                            'box': {
+                                'summary': 'Single box localization',
+                                'value': {
+                                    'media_id': 1,
+                                    'type': 1,
+                                    'x': 0.1,
+                                    'y': 0.2,
+                                    'width': 0.3,
+                                    'height': 0.4,
+                                    'frame': 1000,
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                },
+                            },
+                            'boxes': {
+                                'summary': 'Many box localizations',
+                                'value': [
+                                    {
+                                        'media_id': 1,
+                                        'type': 1,
+                                        'x': 0.1,
+                                        'y': 0.2,
+                                        'width': 0.3,
+                                        'height': 0.4,
+                                        'frame': 100,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                    {
+                                        'media_id': 1,
+                                        'type': 1,
+                                        'x': 0.1,
+                                        'y': 0.2,
+                                        'width': 0.3,
+                                        'height': 0.4,
+                                        'frame': 1000,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                ],
+                            },
+                            'line': {
+                                'summary': 'Single line localization',
+                                'value': [
+                                    {
+                                        'media_id': 1,
+                                        'type': 2,
+                                        'x': 0.1,
+                                        'y': 0.2,
+                                        'u': 0.3,
+                                        'v': 0.4,
+                                        'frame': 1000,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                ],
+                            },
+                            'lines': {
+                                'summary': 'Many line localizations',
+                                'value': [
+                                    {
+                                        'media_id': 1,
+                                        'type': 2,
+                                        'x': 0.1,
+                                        'y': 0.2,
+                                        'u': 0.3,
+                                        'v': 0.4,
+                                        'frame': 100,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                    {
+                                        'x': 0.1,
+                                        'y': 0.2,
+                                        'u': 0.3,
+                                        'v': 0.4,
+                                        'frame': 1000,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                ],
+                            },
+                            'dot': {
+                                'summary': 'Single dot localization',
+                                'value': [{
+                                    'media_id': 1,
+                                    'type': 1,
+                                    'x': 0.1,
+                                    'y': 0.2,
+                                    'frame': 1000,
+                                    'My First Attribute': 'value1',
+                                    'My Second Attribute': 'value2',
+                                }],
+                            },
+                            'dots': {
+                                'summary': 'Many dot localizations',
+                                'value': [
+                                    {
+                                        'media_id': 1,
+                                        'type': 1,
+                                        'x': 0.1,
+                                        'y': 0.2,
+                                        'frame': 100,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                    {
+                                        'x': 0.1,
+                                        'y': 0.2,
+                                        'frame': 1000,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                ],
+                            },
+                            'poly': {
+                                'summary': 'Single poly localization',
+                                'value': [
+                                    {
+                                        'media_id': 1,
+                                        'type': 1,
+                                        'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
+                                        'frame': 1000,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                ],
+                            },
+                            'polys': {
+                                'summary': 'Many poly localizations',
+                                'value': [
+                                    {
+                                        'media_id': 1,
+                                        'type': 1,
+                                        'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
+                                        'frame': 100,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                    {
+                                        'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
+                                        'frame': 1000,
+                                        'My First Attribute': 'value1',
+                                        'My Second Attribute': 'value2',
+                                    },
+                                ],
+                            },
+                        },
+                    },
                 },
-                'examples': {
-                    'box': {
-                        'summary': 'Single box localization',
-                        'value': [{
-                            'media_id': 1,
-                            'type': 1,
-                            'x': 0.1,
-                            'y': 0.2,
-                            'width': 0.3,
-                            'height': 0.4,
-                            'frame': 1000,
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'boxes': {
-                        'summary': 'Many box localizations',
-                        'value': [
-                            {
-                                'media_id': 1,
-                                'type': 1,
-                                'x': 0.1,
-                                'y': 0.2,
-                                'width': 0.3,
-                                'height': 0.4,
-                                'frame': 100,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                            {
-                                'media_id': 1,
-                                'type': 1,
-                                'x': 0.1,
-                                'y': 0.2,
-                                'width': 0.3,
-                                'height': 0.4,
-                                'frame': 1000,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                        ],
-                    },
-                    'line': {
-                        'summary': 'Single line localization',
-                        'value': [{
-                            'media_id': 1,
-                            'type': 2,
-                            'x': 0.1,
-                            'y': 0.2,
-                            'u': 0.3,
-                            'v': 0.4,
-                            'frame': 1000,
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'lines': {
-                        'summary': 'Many line localizations',
-                        'value': [
-                            {
-                                'media_id': 1,
-                                'type': 2,
-                                'x': 0.1,
-                                'y': 0.2,
-                                'u': 0.3,
-                                'v': 0.4,
-                                'frame': 100,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                            {
-                                'x': 0.1,
-                                'y': 0.2,
-                                'u': 0.3,
-                                'v': 0.4,
-                                'frame': 1000,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                        ],
-                    },
-                    'dot': {
-                        'summary': 'Single dot localization',
-                        'value': [{
-                            'media_id': 1,
-                            'type': 1,
-                            'x': 0.1,
-                            'y': 0.2,
-                            'frame': 1000,
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'dots': {
-                        'summary': 'Many dot localizations',
-                        'value': [
-                            {
-                                'media_id': 1,
-                                'type': 1,
-                                'x': 0.1,
-                                'y': 0.2,
-                                'frame': 100,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                            {
-                                'x': 0.1,
-                                'y': 0.2,
-                                'frame': 1000,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                        ],
-                    },
-                    'poly': {
-                        'summary': 'Single poly localization',
-                        'value': [{
-                            'media_id': 1,
-                            'type': 1,
-                            'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
-                            'frame': 1000,
-                            'My First Attribute': 'value1',
-                            'My Second Attribute': 'value2',
-                        }],
-                    },
-                    'polys': {
-                        'summary': 'Many poly localizations',
-                        'value': [
-                            {
-                                'media_id': 1,
-                                'type': 1,
-                                'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
-                                'frame': 100,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                            {
-                                'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
-                                'frame': 1000,
-                                'My First Attribute': 'value1',
-                                'My Second Attribute': 'value2',
-                            },
-                        ],
-                    },
-                }
-            }}}
+            }
         if method == 'PATCH':
             body = {
                 'required': True,
@@ -277,7 +291,7 @@ class LocalizationListSchema(AutoSchema):
                 'required': False,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/LocalizationIdQuery',
+                    '$ref': '#/components/schemas/LocalizationBulkDelete',
                 },
             }}}
         return body
@@ -349,6 +363,14 @@ class LocalizationDetailSchema(AutoSchema):
                     'height': 0.25,
                 }
             }}}
+        elif method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/LocalizationDelete',
+                }}}
+            }
         return body
 
     def get_responses(self, path, method):

@@ -5,6 +5,8 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
+import uuid
+
 from ..cache import TatorCache
 from ..models import Project
 from ..models import Membership
@@ -91,6 +93,15 @@ class ProjectListAPI(BaseListView):
         organization = params.get('organization')
         if organization is not None:
             projects = projects.filter(organization=organization)
+        elemental_id = params.get('elemental_id', None)
+        logger.info(f'{elemental_id} = {type(elemental_id)}')
+        if elemental_id is not None:
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            projects = projects.extra(where=[f"elemental_id='{str(safe)}'"])
+        logger.info(projects.query)
         return _serialize_projects(projects, self.request.user.pk)
 
     def _post(self, params):
@@ -127,6 +138,8 @@ class ProjectListAPI(BaseListView):
 
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
+        if params.get('elemental_id',None) is None:
+            params['elemental_id'] = uuid.uuid4()
         project = Project.objects.create(
             **params,
             creator=self.request.user,
@@ -160,9 +173,7 @@ class ProjectListAPI(BaseListView):
         }
 
     def get_queryset(self):
-        memberships = Membership.objects.filter(user=self.request.user)
-        project_ids = memberships.values_list('project', flat=True)
-        projects = Project.objects.filter(pk__in=project_ids).order_by('id')
+        projects = Project.objects.filter(membership__user=self.request.user).order_by('id')
         return projects
 
 class ProjectDetailAPI(BaseDetailView):
@@ -187,6 +198,7 @@ class ProjectDetailAPI(BaseDetailView):
     def _patch(self, params):
         made_changes = False
         project = Project.objects.get(pk=params['id'])
+        elemental_id = params.get('elemental_id', None)
         if 'name' in params:
             if Project.objects.filter(
                 membership__user=self.request.user).filter(name__iexact=params['name']).exists():
@@ -250,6 +262,9 @@ class ProjectDetailAPI(BaseDetailView):
             project.backup_bucket = get_object_or_404(Bucket, pk=params['backup_bucket'])
             if project.backup_bucket.organization != project.organization:
                 raise PermissionDenied
+            made_changes = True
+        if elemental_id:
+            project.elemental_id = elemental_id
             made_changes = True
 
         # Save the project if any changes were made, otherwise error

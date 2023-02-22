@@ -1,4 +1,5 @@
 from django.db import transaction
+import uuid
 
 from ..models import (
     LocalizationType,
@@ -17,7 +18,7 @@ from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
           'default_volume', 'visible', 'archive_config', 'streaming_config', 'overlay_config',
-          'default_box', 'default_line', 'default_dot']
+          'default_box', 'default_line', 'default_dot', 'elemental_id']
 
 
 class MediaTypeListAPI(BaseListView):
@@ -47,12 +48,20 @@ class MediaTypeListAPI(BaseListView):
             media_element = Media.objects.get(pk=media_id[0])
             if media_element.project.id != self.kwargs['project']:
                 raise Exception('Media not in project!')
-            response_data = MediaType.objects.filter(
-                pk=media_element.meta.pk).order_by('name').values(*fields)
+            qs = MediaType.objects.filter(
+                pk=media_element.type.pk)
         else:
-            response_data = MediaType.objects.filter(
-                project=self.kwargs['project']).order_by('name').values(*fields)
-        return list(response_data)
+            qs = MediaType.objects.filter(
+                project=self.kwargs['project'])
+
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+        return list(qs.order_by('name').values(*fields))
 
     def _post(self, params):
         """ Create media type.
@@ -83,6 +92,8 @@ class MediaTypeListAPI(BaseListView):
                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
+        if params.get('elemental_id',None) is None:
+            params['elemental_id'] = uuid.uuid4()
         obj = MediaType(**params)
         obj.save()
         return {'id': obj.id, 'message': 'Media type created successfully!'}
@@ -128,6 +139,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         default_box = params.get('default_box', None)
         default_line = params.get('default_line', None)
         default_dot = params.get('default_dot', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = MediaType.objects.get(pk=params['id'])
         if name is not None:
@@ -146,6 +158,8 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.visible = visible
         if default_volume is not None:
             obj.default_volume = default_volume
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         if default_box is not None:
             default_box = LocalizationType.objects.get(pk=default_box)

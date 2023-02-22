@@ -19,6 +19,10 @@ version_properties = {
         'items': {'type': 'integer'},
         'minimum': 0,
     },
+    'elemental_id': {
+            'description': 'Unique ID of an element',
+            'type': 'string'
+    },
 }
 
 version_spec = {
@@ -29,26 +33,7 @@ version_spec = {
 
 version_update = {
     'type': 'object',
-    'properties': {
-        'name': {
-            'description': 'Name of the version.',
-            'type': 'string',
-        },
-        'description': {
-            'description': 'Description of the version.',
-            'type': 'string',
-        },
-        'show_empty': {
-            'type': 'boolean',
-            'description': 'Whether to show this version on media for which no annotations exist.',
-        },
-        'bases': {
-            'type': 'array',
-            'description': 'Array of other version IDs that are dependencies of this version.',
-            'items': {'type': 'integer'},
-            'minimum': 0,
-        },
-    }
+    'properties': version_properties
 }
 
 version = {

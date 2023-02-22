@@ -57,9 +57,9 @@ export class LocalizationEdit extends TypeFormTemplate {
     this._editDescription.default = this._data.description;
 
     // color map
-    if (this._data.colorMap && this._data.colorMap.default) {
-      this._colorMap.setValue(this._data.colorMap.default);
-      this._colorMap.default = this._data.colorMap.default;
+    if (this._data.color_map && this._data.color_map.default) {
+      this._colorMap.setValue(this._data.color_map.default);
+      this._colorMap.default = this._data.color_map.default;
     } else {
       this._colorMap.setValue(null);
       this._colorMap.default = null;
@@ -111,10 +111,10 @@ export class LocalizationEdit extends TypeFormTemplate {
     }
 
     if (this._colorMap.changed() || isNew) {
-      formData.colorMap = {};
+      formData.color_map = {};
       const colorMapDefaultVal = this._colorMap.getValue();
       if (this._colorMap.getValue() !== null) {
-        formData.colorMap.default = colorMapDefaultVal;
+        formData.color_map.default = colorMapDefaultVal;
       }
     }
 

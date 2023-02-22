@@ -25,13 +25,13 @@ class Command(BaseCommand):
                                            modified_datetime__lte=max_datetime)
             null_project = State.objects.filter(project__isnull=True,
                                                 modified_datetime__lte=max_datetime)
-            null_meta = State.objects.filter(meta__isnull=True,
+            null_type = State.objects.filter(type__isnull=True,
                                              modified_datetime__lte=max_datetime)
             null_version = State.objects.filter(version__isnull=True,
                                                 modified_datetime__lte=max_datetime)
             null_media = State.objects.filter(media__isnull=True,
                                               modified_datetime__lte=max_datetime)
-            state_ids = (deleted | null_project | null_meta | null_version | null_media)\
+            state_ids = (deleted | null_project | null_type | null_version | null_media)\
                          .distinct()\
                          .values_list('pk', flat=True)[:BATCH_SIZE]
             states = State.objects.filter(pk__in=state_ids)

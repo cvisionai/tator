@@ -64,21 +64,7 @@ transcode_spec = {
 transcode = {
     'type': 'object',
     'properties': {
-        'message': {
-            'type': 'string',
-            'description': 'Message indicating transcode started successfully.',
-        },
-        'uid': {
-            'type': 'string',
-            'description': 'UUID identifying the job.',
-        },
-        'gid': {
-            'type': 'string',
-            'description': 'UUID identifying the job group.',
-        },
-        'media_id': {
-            'type': 'integer',
-            'description': 'Media ID for this transcode. -1 for tar uploads.',
-        },
+        'spec': {'$ref': '#/components/schemas/TranscodeSpec'},
+        'job': {'$ref': '#/components/schemas/Job'},
     },
 }

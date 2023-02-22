@@ -7,6 +7,7 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+from ._type_query import type_filter_parameter_schema
 
 boilerplate = dedent("""\
 A state type is the metadata definition object for a state. It includes association
@@ -43,7 +44,7 @@ class StateTypeListSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = {}
         if method == 'GET':
-            params = entity_type_filter_parameters_schema
+            params = entity_type_filter_parameters_schema + type_filter_parameter_schema
         return params
 
     def get_request_body(self, path, method):

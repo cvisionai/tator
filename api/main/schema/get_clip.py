@@ -33,7 +33,7 @@ class GetClipSchema(AutoSchema):
         if method == 'GET':
             params = [
                 {
-                    'name': 'frameRanges',
+                    'name': 'frame_ranges',
                     'in': 'query',
                     'required':True,
                     'description': 'Comma-seperated list of frame ranges to capture.',

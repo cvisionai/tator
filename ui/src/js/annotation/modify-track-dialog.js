@@ -200,8 +200,8 @@ export class ModifyTrackDialog extends TatorElement {
         new CustomEvent("mergeTracks",
           {composed: true,
            detail: {
-             localizationType: this._data.localization.meta,
-             trackType: this._data.mainTrack.meta,
+             localizationType: this._data.localization.type,
+             trackType: this._data.mainTrack.type,
              frame: this._data.frame,
              mainTrackId: this._data.mainTrack.id,
              mergeTrackId: this._data.track.id}}));
@@ -214,7 +214,7 @@ export class ModifyTrackDialog extends TatorElement {
            detail: {
             project: this._data.project,
             trackId: this._data.track.id,
-            trackType: this._data.track.meta,
+            trackType: this._data.track.type,
             localization: this._data.localization}}));
     }
     else if (this._data.interface == "addDetection")
@@ -223,8 +223,8 @@ export class ModifyTrackDialog extends TatorElement {
         new CustomEvent("addDetectionToTrack",
           {composed: true,
            detail: {
-             localizationType: this._data.localization.meta,
-             trackType: this._data.mainTrack.meta,
+             localizationType: this._data.localization.type,
+             trackType: this._data.mainTrack.type,
              frame: this._data.frame,
              mainTrackId: this._data.mainTrack.id,
              detectionId: this._data.localization.id,
@@ -236,8 +236,8 @@ export class ModifyTrackDialog extends TatorElement {
         new CustomEvent("trimTrack",
           {composed: true,
            detail: {
-             localizationType: this._data.localization.meta,
-             trackType: this._data.track.meta,
+             localizationType: this._data.localization.type,
+             trackType: this._data.track.type,
              frame: this._data.frame,
              endpoint: this._data.trimEndpoint,
              trackId: this._data.track.id}}));
@@ -293,7 +293,7 @@ export class ModifyTrackDialog extends TatorElement {
              detail: {
                project: this._data.project,
                trackId: this._data.track.id,
-               trackType: this._data.track.meta,
+               trackType: this._data.track.type,
                localization: this._data.localization,
                algorithm: alg,
                numFrames: extendFrames,

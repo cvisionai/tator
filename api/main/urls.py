@@ -93,10 +93,6 @@ urlpatterns += [
         AffiliationDetailAPI.as_view(),
     ),
     path(
-        'rest/AlgorithmLaunch/<int:project>',
-        AlgorithmLaunchAPI.as_view(),
-    ),
-    path(
         'rest/Algorithms/<int:project>',
         AlgorithmListAPI.as_view(),
     ),
@@ -108,14 +104,6 @@ urlpatterns += [
         'rest/SaveAlgorithmManifest/<int:project>',
         SaveAlgorithmManifestAPI.as_view(),
         name='SaveAlgorithmManifest',
-    ),
-    path(
-        'rest/Analyses/<int:project>',
-        AnalysisListAPI.as_view(),
-    ),
-    path(
-        'rest/Analysis/<int:id>',
-        AnalysisDetailAPI.as_view(),
     ),
     path(
         'rest/Announcements',
@@ -375,11 +363,6 @@ urlpatterns += [
         SectionDetailAPI.as_view(),
     ),
     path(
-        'rest/SectionAnalysis/<int:project>',
-        SectionAnalysisAPI.as_view(),
-        name='SectionAnalysis',
-    ),
-    path(
         'rest/States/<int:project>',
         StateListAPI.as_view(),
         name='States'
@@ -426,8 +409,12 @@ urlpatterns += [
          TokenAPI.as_view(),
          ),
     path(
-        'rest/Transcode/<int:project>',
-        TranscodeAPI.as_view(),
+        'rest/Transcodes/<int:project>',
+        TranscodeListAPI.as_view(),
+    ),
+    path(
+        'rest/Transcode/<str:uid>',
+        TranscodeDetailAPI.as_view(),
     ),
     path(
         'rest/UploadCompletion/<int:project>',

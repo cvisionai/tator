@@ -3,16 +3,25 @@ from collections import defaultdict
 import logging
 from urllib import parse as urllib_parse
 
+import json
+import base64
+import uuid
+
 from django.db.models.functions import Coalesce
+from django.db.models import Q
+from django.http import Http404
 
 from ..search import TatorSearch
 from ..models import Section
-from ..models import Media
+from ..models import Media, Localization, State
+from ..models import MediaType, LocalizationType, StateType
 from ..models import State
 
-from ._attribute_query import get_attribute_es_query
+from ..schema._attributes import related_keys
+
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
+from ._attribute_query import get_attribute_psql_queryset_from_query_obj
 from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
@@ -32,125 +41,31 @@ def _get_archived_filter(params):
         f"['archived', 'live', 'all']."
     )
 
+def _related_search(qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj):
+    related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
+    related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
+    related_matches = []
+    for entity_type in related_state_types:
+        state_qs = State.objects.filter(project=project, type=entity_type)
+        state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
+        if state_qs.count():
+            related_matches.append(state_qs)
+    for entity_type in related_localization_types:
+        local_qs = Localization.objects.filter(project=project, type=entity_type)
+        local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
+        if local_qs.count():
+            related_matches.append(local_qs)
+    if related_matches:
+        related_match = related_matches.pop()
+        query = Q(pk__in=related_match.values('media'))
+        for r in related_matches:
+            query = query | Q(pk__in=r.values('media'))
+        qs = qs.filter(query).distinct()
+    else:
+        qs = qs.filter(pk=-1)
+    return qs
 
-def get_media_es_query(project, params):
-    """ Constructs an elasticsearch query.
-    """
-    # Get query parameters.
-    media_id = params.get('media_id')
-    media_id_put = params.get('ids') # PUT request only
-    localization_ids = params.get('localization_ids') # PUT request only
-    state_ids = params.get('state_ids') # PUT request only
-    filter_type = params.get('type')
-    name = params.get('name')
-    section = params.get('section')
-    dtype = params.get('dtype')
-    md5 = params.get('md5')
-    gid = params.get('gid')
-    uid = params.get('uid')
-    start = params.get('start')
-    stop = params.get('stop')
-    after = params.get('after')
-    after_id = params.get('after_id')
-    archive_state = _get_archived_filter(params)
-
-    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort'] = [{'_exact_name': 'asc'}, {'_postgres_id': 'asc'}]
-    media_types = ["image", "video", "multi"]
-    bools = [{'bool': {
-        "should": [{"match": {"_dtype": type_}} for type_ in media_types],
-        'minimum_should_match': 1,
-    }}]
-    annotation_bools = []
-
-    media_ids = []
-    if media_id_put is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id_put)
-
-    if media_id is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id)
-    if media_ids:
-        bools.append({'ids': {'values': media_ids}})
-
-    annotation_ids = []
-    annotation_types = ["box", "line", "dot"]
-    if localization_ids is not None:
-        annotation_ids.extend(
-            f"{type_}_{id_}" for type_ in annotation_types for id_ in localization_ids
-        )
-    if state_ids is not None:
-        annotation_ids.extend(f"state_{id_}" for id_ in state_ids)
-    if annotation_ids:
-        annotation_bools.append({'ids': {'values': annotation_ids}})
-
-    if filter_type is not None:
-        bools.append({'match': {'_meta': {'query': int(filter_type)}}})
-
-    if name is not None:
-        bools.append({'match': {'_exact_name': {'query': name}}})
-
-    if dtype is not None:
-        bools.append({'match': {'_dtype': {'query': dtype}}})
-
-    if md5 is not None:
-        bools.append({'match': {'_md5': {'query': md5}}})
-
-    if gid is not None:
-        bools.append({'match': {'_gid': {'query': gid}}})
-
-    if uid is not None:
-        bools.append({'match': {'_uid': {'query': uid}}})
-
-    if start is not None:
-        query['from'] = int(start)
-        if start > 10000:
-            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after_id'.")
-
-    if start is None and stop is not None:
-        query['size'] = int(stop)
-        if stop > 10000:
-            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after_id'.")
-
-    if start is not None and stop is not None:
-        query['size'] = int(stop) - int(start)
-        if stop > 10000:
-            raise ValueError("Parameter 'stop' must be less than 10000! Try using "
-                             "'after_id'.")
-
-    if after is not None:
-        bools.append({'range': {'_exact_name': {'gt': after}}})
-
-    if after_id is not None:
-        after_media = Media.objects.get(pk=after_id)
-        bools.append({
-            'bool': {
-                'should': [{
-                    'bool': {
-                        'must': [{'match': {'_exact_name': {'query': after_media.name}}},
-                                 {'range': {'_postgres_id': {'gt': after_id}}}],
-                    },
-                }, {
-                    'range': {'_exact_name': {'gt': after_media.name}}
-                }],
-                "minimum_should_match": 1,
-            },
-        })
-
-    if archive_state is not None:
-        bools.append(
-            {
-                "bool": {
-                    "should": [{"match": {"_archive_state": state}} for state in archive_state],
-                    "minimum_should_match": 1,
-                }
-            }
-        )
-
-    query = get_attribute_es_query(params, query, bools, project, is_media=True,
-                                   annotation_bools=annotation_bools)
-    return query
-
-def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
+def _get_media_psql_queryset(project, filter_ops, params):
     """ Constructs a psql queryset.
     """
     # Get query parameters.
@@ -167,7 +82,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     after = params.get('after')
     start = params.get('start')
     stop = params.get('stop')
+    section_id = params.get('section')
     archive_states = _get_archived_filter(params)
+    elemental_id = params.get('elemental_id')
 
     qs = Media.objects.filter(project=project, deleted=False)
     media_ids = []
@@ -187,17 +104,18 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if localization_ids is not None:
         qs = qs.filter(localization__in=localization_ids).distinct()
 
-    if filter_type is not None:
-        qs = qs.filter(meta=filter_type)
-
     if name is not None:
         qs = qs.filter(name__iexact=name)
 
-    if section_uuid is not None:
-        qs = qs.filter(attributes__tator_user_sections=section_uuid)
+    if elemental_id is not None:
+        # Django 3.X has a bug where UUID fields aren't escaped properly
+        # Use .extra to manually validate the input is UUID
+        # Then construct where clause manually.
+        safe = uuid.UUID(elemental_id)
+        qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
 
     if dtype is not None:
-        qs = qs.filter(meta__dtype=dtype)
+        qs = qs.filter(type__dtype=dtype)
 
     if md5 is not None:
         qs = qs.filter(md5=md5)
@@ -209,19 +127,95 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         qs = qs.filter(uid=uid)
 
     if after is not None:
-        qs = qs.filter(name__gt=after)
+        qs = qs.filter(pk__gt=after)
 
     if archive_states is not None:
         qs = qs.filter(archive_state__in=archive_states)
 
-    qs = get_attribute_psql_queryset(qs, params, filter_ops)
+    relevant_state_type_ids = StateType.objects.filter(project=project)
+    relevant_localization_type_ids = LocalizationType.objects.filter(project=project)
+    if filter_type is not None:
+        relevant_state_type_ids = relevant_state_type_ids.filter(media__in=[filter_type])
+        relevant_localization_type_ids = relevant_localization_type_ids.filter(media__in=[filter_type])
+        qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = qs.filter(type=filter_type)
+    elif filter_ops or params.get('float_array',None):
+        queries = []
+        for entity_type in MediaType.objects.filter(project=project):
+            sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
+            if sub_qs:
+                queries.append(sub_qs.filter(type=entity_type))
+            else:
+                queries.append(qs.filter(pk=-1)) # no matches
+        logger.info(f"Joining {len(queries)} queries together.")
+        
+        sub_qs = queries.pop()
+        if queries:
+            query = Q(pk__in=sub_qs)
+            for r in queries:
+                query = query | Q(pk__in=r)
+            qs = qs.filter(query)
+        else:
+            qs = sub_qs
 
-    # Coalesce is a no-op that prevents PSQL from using the primary key index for small
-    # LIMIT values (which results in slow queries).
-    if stop is None:
-        qs = qs.order_by('name', 'id')
-    else:
-        qs = qs.order_by(Coalesce('name', 'name'), 'id')
+     # Do a related query
+    logger.info(params)
+    if any([x in params for x in related_keys if x.startswith('related_')]):
+        related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
+        related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
+        logger.info(f"Related Query on {related_localization_types} + {related_state_types}")
+        matches = [x for x in related_keys if x in params]
+        faux_params={key.replace('related_',''): params[key] for key in matches}
+        logger.info(faux_params)
+        related_matches = []
+        for entity_type in related_state_types:
+            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            if faux_filter_ops:
+                related_matches.append(get_attribute_psql_queryset(project, entity_type, State.objects.filter(project=project), faux_params, faux_filter_ops))
+        for entity_type in related_localization_types:
+            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            if faux_filter_ops:
+                related_matches.append(get_attribute_psql_queryset(project, entity_type, Localization.objects.filter(project=project), faux_params, faux_filter_ops))
+        if related_matches:
+            related_match = related_matches.pop()
+            query = Q(pk__in=related_match.values('media'))
+            for r in related_matches:
+                query = query | Q(pk__in=r.values('media'))
+            qs = qs.filter(query).distinct()
+
+    if params.get('object_search'):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+
+    if section_id:
+        section = Section.objects.filter(pk=section_id)
+        if not section.exists():
+            raise Http404
+
+        section_uuid = section[0].tator_user_sections
+        if section_uuid:
+            qs = qs.filter(attributes__tator_user_sections=section_uuid)
+
+        if section[0].object_search:
+            qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+
+        if section[0].related_object_search:
+            qs = _related_search(qs,
+                                 project,
+                                 relevant_state_type_ids,
+                                 relevant_localization_type_ids,
+                                 section[0].related_object_search)
+
+    related_encoded_search_qs = None
+    if params.get('encoded_related_search'):
+        search_obj = json.loads(base64.b64decode(params.get('encoded_related_search')).decode())
+        qs = _related_search(qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj)
+
+    # Used by GET queries
+    if params.get('encoded_search'):
+        search_obj = json.loads(base64.b64decode(params.get('encoded_search')).decode())
+        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+
+    qs = qs.order_by('name', 'id')
 
     if start is not None and stop is not None:
         qs = qs[start:stop]
@@ -230,58 +224,33 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     elif stop is not None:
         qs = qs[:stop]
 
+    logger.info(qs.query)
+    logger.info(qs.explain())
+
     return qs
 
-def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'annotation_search', 'after_id']
-    use_es = False
-    for es_param in ES_ONLY_PARAMS:
-        if es_param in params:
-            use_es = True
-            break
-    section_uuid = None
-    if 'section' in params:
-        section = Section.objects.get(pk=params['section'])
-        if not((section.lucene_search is None)
-               and (section.media_bools is None)
-               and (section.annotation_bools is None)):
-            use_es = True
-        section_uuid = section.tator_user_sections
+def _get_section_and_params(project, params):
+    filter_type = params.get('type')
+    filter_ops=[]
+    if filter_type:
+        types = MediaType.objects.filter(pk=filter_type)
+    else:
+        types = MediaType.objects.filter(project=project)
+    for entity_type in types:
+        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
 
-    # Look up attribute dtypes if necessary.
-    use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
-    use_es = use_es or use_es_for_attributes
-
-    return use_es, section_uuid, filter_ops
+    return filter_ops
 
 def get_media_queryset(project, params):
-    # Determine whether to use ES or not.
-    use_es, section_uuid, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and construct the queryset.
-        query = get_media_es_query(project, params)
-        media_ids, _  = TatorSearch().search(project, query)
-        qs = Media.objects.filter(pk__in=media_ids, deleted=False).order_by('name', 'id')
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
+    filter_ops = _get_section_and_params(project, params)
+    # If using PSQL, construct the queryset.
+    qs = _get_media_psql_queryset(project, filter_ops, params)
     return qs
 
 def get_media_count(project, params):
     # Determine whether to use ES or not.
-    use_es, section_uuid, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and get the count.
-        query = get_media_es_query(project, params)
-        media_ids, _  = TatorSearch().search(project, query)
-        count = len(media_ids)
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
-        count = qs.count()
-    return count
+    qs = get_media_queryset(project, params)
+    return qs.count()
 
 def query_string_to_media_ids(project_id, url):
     """ TODO: add documentation for this """

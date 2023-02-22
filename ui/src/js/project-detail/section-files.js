@@ -85,7 +85,7 @@ export class SectionFiles extends TatorElement {
         const newCard = index >= children.length;
         const cardObj = {
           id: media.id,
-          entityType: this._mediaTypesMap.get(media.meta),
+          entityType: this._mediaTypesMap.get(media.type),
           media: media
         }
         let card;

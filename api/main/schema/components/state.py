@@ -9,11 +9,11 @@ state_properties = {
         'nullable': True,
     },
     'elemental_id': {
-        'description': 'Unique ID of an element',
-        'type': 'string'
-    }
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
-
 version_properties = {
     'version': {
         'description': 'Unique integer identifying the version.',
@@ -26,7 +26,7 @@ state_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying the state.',
     },
-    'meta': {
+    'type': {
         'type': 'integer',
         'description': 'Unique integer identifying the entity type.',
     },
@@ -72,13 +72,16 @@ state_get_properties = {
     'created_by': {
         'type': 'integer',
         'description': 'Unique integer identifying the user who created this state.'
+    },
+    'variant_deleted': {
+        'type' : 'boolean',
+        'description': 'Unique integer identifying the user who created this localization.'
     }
 }
 
 state_spec = {
     'type': 'object',
     'required': ['media_ids', 'type'],
-    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     'properties': {
         'type': {
             'description': 'Unique integer identifying a state type.',
@@ -94,6 +97,15 @@ state_spec = {
             'type': 'array',
             'items': {'type': 'integer'},
         },
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
         **version_properties,
         **state_properties,
     },
@@ -107,7 +119,11 @@ state_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-        },        
+        },     
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },   
         'localization_ids_add': {
             'description': 'List of new localization IDs that this state applies to.',
             'type': 'array',
@@ -117,6 +133,22 @@ state_update = {
             'description': 'List of new localization IDs that this state applies to.',
             'type': 'array',
             'items': {'type': 'integer'},
+        },
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
         },
     },
 }
@@ -159,6 +191,7 @@ state_id_query = {
             'type': 'array',
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
+        'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     }
 }
 
@@ -170,6 +203,51 @@ state_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
+        'new_version': {
+            'type': 'integer',
+            'description': 'Unique integer identifying a new version for these objects',
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
+        **state_id_query['properties'],
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+    },
+}
+
+state_delete_schema = {
+    'type': 'object',
+    'properties': {
+        'prune': {
+            'type': 'integer',
+            'description': 'If set to 1 will purge the object from the database entirely. This removes any record, change-log, that this metadatum ever existed.',
+            'minimum': 0,
+            'maximum': 1,
+            'default': 0,
+        }
+    }
+}
+
+state_bulk_delete_schema = {
+    'type': 'object',
+    'properties': {
+        **state_delete_schema['properties'],
         **state_id_query['properties'],
     },
 }

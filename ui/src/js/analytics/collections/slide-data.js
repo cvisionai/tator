@@ -36,7 +36,7 @@ export class CollectionSlideCardData extends HTMLElement {
             let m = media;
             let id = m.id;
             let mediaLink = this._modelData.generateMediaLink(m.id);
-            let entityType = this.findMediaMetaDetails(m.meta)
+            let entityType = this.findMediaMetaDetails(m.type)
             let attributes = m.attributes;
             let created = new Date(m.created_datetime);
             let modified = new Date(m.modified_datetime);
@@ -75,7 +75,7 @@ export class CollectionSlideCardData extends HTMLElement {
             let l = localization;
             let id = l.id;
             let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.version);
-            let entityType = this.findMetaDetails(l.meta);
+            let entityType = this.findMetaDetails(l.type);
             let attributes = l.attributes;
             let created = new Date(l.created_datetime);
             let modified = new Date(l.modified_datetime);
@@ -83,7 +83,7 @@ export class CollectionSlideCardData extends HTMLElement {
 
             let mediaInfo = {
                 id: mediaId,
-                entityType: this.findMediaMetaDetails(media.meta),
+                entityType: this.findMediaMetaDetails(media.type),
                 attributes: media.attributes,
                 media: media,
             }

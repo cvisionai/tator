@@ -14,9 +14,6 @@ from ..models import State
 from ..models import User
 from ..models import Project
 from ..models import Version
-from ..models import database_qs
-from ..models import database_query_ids
-from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
 from ..schema import parse
@@ -25,7 +22,6 @@ from ..schema.components import localization as localization_schema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -38,7 +34,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    construct_elemental_id_from_parent
+    construct_elemental_id_from_parent,
+    compute_user
 )
 from ._permissions import ProjectEditPermission
 
@@ -62,6 +59,7 @@ class LocalizationListAPI(BaseListView):
     entity_type = LocalizationType # Needed by attribute filter mixin
 
     def _get(self, params):
+        logger.info(f"PARAMS={params}")
         qs = get_annotation_queryset(self.kwargs['project'], params, 'localization')
         response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
 
@@ -81,7 +79,7 @@ class LocalizationListAPI(BaseListView):
                 filename_dict[media['id']] = media['name']
 
             for element in response_data:
-                del element['meta']
+                del element['type']
 
                 oldAttributes = element['attributes']
                 del element['attributes']
@@ -98,8 +96,12 @@ class LocalizationListAPI(BaseListView):
         # Check that we are getting a localization list.
         if 'body' in params:
             loc_specs = params['body']
+            if not isinstance(loc_specs, list):
+                loc_specs = [loc_specs]
         else:
             raise Exception('Localization creation requires list of localizations!')
+
+        project = params['project']
 
         # Get a default version.
         membership = Membership.objects.get(user=self.request.user, project=params['project'])
@@ -171,16 +173,14 @@ class LocalizationListAPI(BaseListView):
         objs = (
             Localization(
                 project=project,
-                meta=metas[loc_spec["type"]],
+                type=metas[loc_spec["type"]],
                 media=medias[loc_spec["media_id"]],
-                user=self.request.user,
+                user=compute_user(project, self.request.user, loc_spec.get('user_elemental_id', None)),
                 attributes=attrs,
-                created_by=self.request.user,
-                modified_by=self.request.user,
+                created_by=compute_user(project, self.request.user, loc_spec.get('user_elemental_id', None)),
+                modified_by=compute_user(project, self.request.user, loc_spec.get('user_elemental_id', None)),
                 version=versions[loc_spec.get("version", None)],
-                parent=Localization.objects.get(pk=loc_spec.get("parent"))
-                if loc_spec.get("parent")
-                else None,
+                parent=Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None,
                 x=loc_spec.get("x", None),
                 y=loc_spec.get("y", None),
                 u=loc_spec.get("u", None),
@@ -195,16 +195,6 @@ class LocalizationListAPI(BaseListView):
         )
         localizations = bulk_create_from_generator(objs, Localization)
 
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for loc in localizations:
-            documents += ts.build_document(loc)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
         ids = bulk_log_creation(localizations, project, self.request.user)
 
         # Return created IDs.
@@ -214,24 +204,37 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
-            # Delete the localizations.
-            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_annotation_es_query(params['project'], params, 'localization')
-            TatorSearch().delete(self.kwargs['project'], query)
+            if params['prune'] == 1:
+                # Delete the localizations.
+                bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+            else:
+                obj = qs.first()
+                entity_type = obj.type
+                bulk_update_and_log_changes(
+                qs,
+                params["project"],
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
 
         return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
-        patched_version = params.pop("version", None)
+        patched_version = params.pop("new_version", None)
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             # Get the current representation of the object for comparison
             obj = qs.first()
             first_id = obj.id
-            entity_type = obj.meta
+            entity_type = obj.type
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
+            if params.get('user_elemental_id', None):
+                computed_author = compute_user(params['project'], self.request.user, params.get('user_elemental_id', None))
+                update_kwargs['created_by'] = computed_author
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
 
@@ -242,9 +245,6 @@ class LocalizationListAPI(BaseListView):
                 update_kwargs=update_kwargs,
                 new_attributes=new_attrs,
             )
-
-            query = get_annotation_es_query(params['project'], params, 'localization')
-            TatorSearch().update(self.kwargs['project'], entity_type, query, new_attrs)
 
         return {'message': f'Successfully updated {count} localizations!'}
 
@@ -269,7 +269,7 @@ class LocalizationDetailAPI(BaseDetailView):
         qs = Localization.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        return database_qs(qs)[0]
+        return qs.values(*LOCALIZATION_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -285,7 +285,12 @@ class LocalizationDetailAPI(BaseDetailView):
         if version is not None:
             obj.version = version
 
-        if obj.meta.dtype == 'box':
+        if params.get('user_elemental_id', None):
+            computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
+            obj.created_by = computed_author
+            obj.user = computed_author
+
+        if obj.type.dtype == 'box':
             x = params.get("x", None)
             y = params.get("y", None)
             height = params.get("height", None)
@@ -310,7 +315,7 @@ class LocalizationDetailAPI(BaseDetailView):
                     obj.thumbnail_image = thumbnail_obj
                 except:
                     logger.error("Bad thumbnail reference given")
-        elif obj.meta.dtype == 'line':
+        elif obj.type.dtype == 'line':
             x = params.get("x", None)
             y = params.get("y", None)
             u = params.get("u", None)
@@ -323,14 +328,14 @@ class LocalizationDetailAPI(BaseDetailView):
                 obj.u = u
             if v:
                 obj.v = v
-        elif obj.meta.dtype == 'dot':
+        elif obj.type.dtype == 'dot':
             x = params.get("x", None)
             y = params.get("y", None)
             if x is not None:
                 obj.x = x
             if y is not None:
                 obj.y = y
-        elif obj.meta.dtype == 'poly':
+        elif obj.type.dtype == 'poly':
             points = params.get("points", None)
             if points:
                 obj.points = points
@@ -340,6 +345,9 @@ class LocalizationDetailAPI(BaseDetailView):
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
+
+        if params.get("elemental_id", None):
+            obj.elemental_id = params.get("elemental_id", None)
 
         # Update modified_by to be the last user
         obj.modified_by = self.request.user
@@ -362,8 +370,13 @@ class LocalizationDetailAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
-        delete_and_log_changes(obj, obj.project, self.request.user)
-        TatorSearch().delete_document(obj)
+        if params['prune'] == 1:
+            delete_and_log_changes(obj, obj.project, self.request.user)
+        else:
+            b = qs[0]
+            b.variant_deleted = True
+            b.save()
+            log_changes(b, b.model_dict, b.project, self.request.user)
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

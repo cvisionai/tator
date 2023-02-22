@@ -70,9 +70,10 @@ localization_properties = {
         'nullable': True,
     },
     'elemental_id': {
-        'description': 'Unique ID of an element',
-        'type': 'string'
-    }
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 post_properties = {
@@ -99,7 +100,7 @@ localization_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying project of this localization.',
     },
-    'meta': {
+    'type': {
         'type': 'integer',
         'description': 'Unique integer identifying entity type of this localization.',
     },
@@ -120,6 +121,10 @@ localization_get_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+    'created_by': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the user who created this localization.'
+    },
     'created_datetime': {
         'type': 'string',
         'format': 'date-time',
@@ -137,6 +142,10 @@ localization_get_properties = {
     'user': {
         'type': 'integer',
         'description': 'Unique integer identifying the user who created this localization.'
+    },
+    'variant_deleted': {
+        'type' : 'boolean',
+        'description': 'Unique integer identifying the user who created this localization.'
     }
 }
 
@@ -145,10 +154,18 @@ localization_spec = {
     'description': 'Localization creation spec. Attribute key/values must be '
                    'included in the base object.',
     'required': ['media_id', 'type', 'frame'],
-    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     'properties': {
         **post_properties,
         **localization_properties,
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
     },
 }
 
@@ -160,6 +177,26 @@ localization_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
         },
     },
 }
@@ -201,8 +238,47 @@ localization_id_query = {
             'type': 'array',
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
+        'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     }
 }
+
+localization_delete_schema = {
+    'type': 'object',
+    'properties': {
+        'prune': {
+            'type': 'integer',
+            'description': 'If set to 1 will purge the object from the database entirely. This removes any record, change-log, that this metadatum ever existed.',
+            'minimum': 0,
+            'maximum': 1,
+            'default': 0,
+        }
+    },
+}
+localization_bulk_delete_schema = {
+    'type': 'object',
+    'properties': {
+        **localization_delete_schema['properties'],
+        **localization_id_query['properties'],
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+    },
+}
+
+
 
 localization_bulk_update = {
     'type': 'object',
@@ -212,9 +288,13 @@ localization_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
-        'version': {
+        'new_version': {
             'type': 'integer',
-            'description': 'Unique integer identifying a version.',
+            'description': 'Unique integer identifying a new version for these objects',
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
         },
         **localization_id_query['properties'],
     },

@@ -685,7 +685,7 @@ export class GalleryBulkEdit extends TatorElement {
       let tmpArray = [];
       for (let filter of filterObj) {
          // console.log(`Filter found: ${filter}`)
-         if (filter.categoryGroup === "Annotation" && !filter.field.startsWith("_")) {
+         if (filter.categoryGroup === "Localization" && !filter.field.startsWith("_")) {
             this.resultsFilter.containsAttributes = true;
             tmpArray.push(filter.field);
             // console.log(filter.field);

@@ -25,7 +25,7 @@ class Command(BaseCommand):
                                           modified_datetime__lte=max_datetime)
             null_project = Leaf.objects.filter(project__isnull=True,
                                                modified_datetime__lte=max_datetime)
-            null_meta = Leaf.objects.filter(meta__isnull=True,
+            null_type = Leaf.objects.filter(type__isnull=True,
                                             modified_datetime__lte=max_datetime)
             loc_ids = (deleted | null_project | null_meta)\
                       .distinct()\
