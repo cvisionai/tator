@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 from main.models import Media, Resource
 from main.store import get_tator_store
 
-from .download import download_file
+from main.download import download_file
 from main.rest._util import url_to_key
 
 def _import_image(name, url, thumbnail_url, media_id):

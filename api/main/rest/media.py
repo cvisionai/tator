@@ -38,7 +38,9 @@ from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
 from ..worker import push_job
-from .._import_image import _import_image
+
+# This import is formatted like this to avoid a circular import
+import main._import_image
 
 from ._util import (
     bulk_update_and_log_changes,
@@ -279,9 +281,9 @@ def _create_media(project, params, user, use_rq=False):
         tator_store = get_tator_store(project_obj.bucket)
 
         if use_rq:
-            push_job(_import_image, args=(name, url, thumbnail_url, media_obj.id))
+            push_job(main._import_image._import_image, args=(name, url, thumbnail_url, media_obj.id))
         else:
-            _import_image(name, url, thumbnail_url, media_obj.id)
+            main._import_image._import_image(name, url, thumbnail_url, media_obj.id)
 
 
         response = {'message': "Image saved successfully!", 'id': media_obj.id}
