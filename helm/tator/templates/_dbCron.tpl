@@ -21,7 +21,7 @@ spec:
             {{ include "volumes.template" . | indent 12 }}
           containers:
             - name: postgis
-              image: postgres:11.6
+              image: postgres:14.7
               imagePullPolicy: "Always"
               command: {{ .command }}
               args: {{ .args }}
