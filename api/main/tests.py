@@ -3937,7 +3937,10 @@ class ResourceTestCase(TatorTransactionTest):
             # Back up the resource
             n_successful_backups = 0
             resource_qs = Resource.objects.filter(path__in=all_keys)
-            for success, resource in TatorBackupManager().backup_resources(resource_qs, "DOMAIN"):
+            projects = Project.objects.filter(backup_bucket__isnull=False)
+            if self.backup_bucket:
+                projects = projects.union(Projects.objects.filter(bucket__isnull=True))
+            for success, resource in TatorBackupManager().backup_resources(projects, resource_qs, "DOMAIN"):
                 if success:
                     n_successful_backups += 1
 
@@ -4024,7 +4027,10 @@ class ResourceTestCase(TatorTransactionTest):
 
         # Back up the resource
         n_successful_backups = 0
-        for success, resource in TatorBackupManager().backup_resources(resource_qs, "DOMAIN"):
+        projects = Project.objects.filter(backup_bucket__isnull=False)
+        if self.backup_bucket:
+            projects = projects.union(Projects.objects.filter(bucket__isnull=True))
+        for success, resource in TatorBackupManager().backup_resources(projects, resource_qs, "DOMAIN"):
             if success:
                 n_successful_backups += 1
 
