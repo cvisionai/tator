@@ -335,7 +335,7 @@ workflows:
         filters:
           branches:
             only:
-            - dev/1111-oci-ci
+            - main
           tags:
             only: /.*/
     - cleanup-lightsail:
