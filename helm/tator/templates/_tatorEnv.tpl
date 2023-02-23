@@ -101,6 +101,21 @@
 {{- else }}
   value: "false"
 {{- end }}
+{{- /*
+The values below do not use default because zero is a valid value and helm would interpret this as "not set".
+*/}}
+- name: EXPIRATION_AGE_DAYS
+{{- if kindIs "float64" .Values.maintenanceCron.expirationAgeDays }}
+  value: {{ .Values.maintenanceCron.expirationAgeDays | quote }}
+{{- else }}
+  value: "30"
+{{- end }}
+- name: ARCHIVE_AGE_DAYS
+{{- if kindIs "float64" .Values.maintenanceCron.archiveAgeDays }}
+  value: {{ .Values.maintenanceCron.archiveAgeDays | quote }}
+{{- else }}
+  value: "7"
+{{- end }}
 - name: REQUIRE_HTTPS
 {{- if .Values.requireHttps }}
   value: "TRUE"

@@ -73,6 +73,15 @@ maintenanceCron:
   # Enable this to allow maintenance cron jobs to run, such as garbage collection
   # of deleted database objects and database backups.
   enabled: true
+  # If maintenance cron jobs are enabled, this optionally specifies the minimum
+  # age of objects after deletion before they are actually deleted. This allows
+  # for a grace period in which the `deleted` flag for objects in the database 
+  # can be reset to `False` to recover them.
+  expirationAgeDays: 0
+  # If maintenance cron jobs are enabled, this optionally specifies the minimum
+  # age of objects after archiving before they are actually archived. This allows
+  # for a grace period in which the archive request can be revoked.
+  archiveAgeDays: 0
 migrations:
   # Enable this if database migrations are allowed.
   enabled: true

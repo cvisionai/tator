@@ -30,7 +30,7 @@ spec:
         {{ .selector }}
       containers:
         - name: postgis
-          image: postgres:11.6
+          image: postgres:14.7
           imagePullPolicy: "Always"
           command: {{ .command }}
           args: {{ .args }}
