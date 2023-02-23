@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 
 from django.core.management.base import BaseCommand
 from main.models import Leaf
@@ -10,7 +11,8 @@ class Command(BaseCommand):
     help = 'Deletes any leaves marked for deletion with null project or type.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--min_age_days', type=int, default=30,
+        parser.add_argument('--min_age_days', type=int,
+                            default=int(os.getenv('EXPIRATION_AGE_DAYS', 30)),
                             help="Minimum age in days of leaf objects for deletion.")
 
     def handle(self, **options):

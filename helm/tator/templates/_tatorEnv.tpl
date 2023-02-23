@@ -101,6 +101,10 @@
 {{- else }}
   value: "false"
 {{- end }}
+- name: EXPIRATION_AGE_DAYS
+- value: { .Values.maintenanceCron.expirationAgeDays | default "30" }
+- name: ARCHIVE_AGE_DAYS
+- value: { .Values.maintenanceCron.archiveAgeDays | default "7" }
 - name: REQUIRE_HTTPS
 {{- if .Values.requireHttps }}
   value: "TRUE"

@@ -1,5 +1,6 @@
 import logging
 import datetime
+import os
 
 from django.core.management.base import BaseCommand
 from main.models import File
@@ -14,7 +15,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--min-age-days",
             type=int,
-            default=30,
+            default=int(os.getenv('EXPIRATION_AGE_DAYS', 30)),
             help="Minimum age in days of file objects for deletion.",
         )
 
