@@ -27,7 +27,7 @@ class Command(BaseCommand):
                                                 modified_datetime__lte=max_datetime)
             null_type = Media.objects.filter(type__isnull=True,
                                              modified_datetime__lte=max_datetime)
-            media_ids = (deleted | null_project | null_meta)\
+            media_ids = (deleted | null_project | null_type)\
                         .distinct()\
                         .values_list('pk', flat=True)[:BATCH_SIZE]
             medias = Media.objects.filter(pk__in=media_ids)

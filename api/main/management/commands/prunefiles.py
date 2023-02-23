@@ -32,7 +32,7 @@ class Command(BaseCommand):
             )
             null_type = File.objects.filter(type__isnull=True, modified_datetime__lte=max_datetime)
             file_ids = (
-                (deleted | null_project | null_meta)
+                (deleted | null_project | null_type)
                 .distinct()
                 .values_list("pk", flat=True)[:BATCH_SIZE]
             )

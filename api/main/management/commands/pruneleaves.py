@@ -27,7 +27,7 @@ class Command(BaseCommand):
                                                modified_datetime__lte=max_datetime)
             null_type = Leaf.objects.filter(type__isnull=True,
                                             modified_datetime__lte=max_datetime)
-            loc_ids = (deleted | null_project | null_meta)\
+            loc_ids = (deleted | null_project | null_type)\
                       .distinct()\
                       .values_list('pk', flat=True)[:BATCH_SIZE]
             leaves = Leaf.objects.filter(pk__in=loc_ids)
