@@ -88,7 +88,7 @@ export class GalleryPanelLocalization extends TatorElement {
     // Get mediaTypes
     let mediaType = null;
     for (let m of this.modelData._mediaTypes) {
-      if (m.id == mediaData.meta) {
+      if (m.id == mediaData.type) {
         mediaType = m.dtype
       }
     }
@@ -96,7 +96,7 @@ export class GalleryPanelLocalization extends TatorElement {
     // Get localizationTypes
     let localizationType = null;
     for (let l of this.modelData._localizationTypes) {
-      if (l.id == localizationData.meta) {
+      if (l.id == localizationData.type) {
         localizationType = l.dtype
         if (l.colorMap && l.colorMap.default) {
           drawColor = Array.isArray(l.colorMap.default) ? `rgb(${l.colorMap.default.join(", ")})` : l.colorMap.default

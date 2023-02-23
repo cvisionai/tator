@@ -89,17 +89,17 @@ export class EntityTimeline extends BaseTimeline {
 
     var data = this._selectedData;
 
-    if (!data.meta.includes("state")) {
+    if (!data.type.includes("state")) {
       return null;
     }
-    const dataType = this._data._dataTypes[data.meta];
+    const dataType = this._data._dataTypes[data.type];
 
     if (dataType.interpolation == "latest" || dataType.interpolation == "attr_style_range") {
 
       this._selectedStateGraphData = [];
 
       for (const stateData of this._stateData) {
-        if (stateData.meta == data.meta) {
+        if (stateData.type == data.type) {
 
           var graphData = [];
           graphData.push({
@@ -122,7 +122,7 @@ export class EntityTimeline extends BaseTimeline {
           }
 
           this._selectedStateGraphData.push({
-            meta: stateData.meta,
+            meta: stateData.type,
             name: stateData.name,
             color: this._timelineSettings.getSelectedColor(),
             graphData: graphData
@@ -517,8 +517,8 @@ export class EntityTimeline extends BaseTimeline {
       .y1(d => mainY(d.value));
 
     var mainStateDataset = this._stateData.map(d => Object.assign({
-      clipId: this._d3UID(d.meta, d.name, "mainClip"),
-      pathId: this._d3UID(d.meta, d.name, "mainPath"),
+      clipId: this._d3UID(d.type, d.name, "mainClip"),
+      pathId: this._d3UID(d.type, d.name, "mainPath"),
     }, d));
 
     const gState = this._mainSvg.append("g")
@@ -554,8 +554,8 @@ export class EntityTimeline extends BaseTimeline {
 
     // Numerical data are represented as line graphs
     var mainLineDataset = this._numericalData.map(d => Object.assign({
-      clipId: this._d3UID(d.meta, d.name, "mainClip"),
-      pathId: this._d3UID(d.meta, d.name, "mainPath"),
+      clipId: this._d3UID(d.type, d.name, "mainClip"),
+      pathId: this._d3UID(d.type, d.name, "mainPath"),
       name: d.name
     }, d));
 
@@ -622,8 +622,8 @@ export class EntityTimeline extends BaseTimeline {
     if (this._selectedStateGraphData) {
 
       var selectedStateDataset = this._selectedStateGraphData.map(d => Object.assign({
-        clipId: this._d3UID(d.meta, d.name, "selectedClip"),
-        pathId: this._d3UID(d.meta, d.name, "selectedPath"),
+        clipId: this._d3UID(d.type, d.name, "selectedClip"),
+        pathId: this._d3UID(d.type, d.name, "selectedPath"),
       }, d));
 
       const selectedG = this._mainSvg.append("g")
@@ -633,7 +633,7 @@ export class EntityTimeline extends BaseTimeline {
           .attr("transform", (d) => {
             var step = 0;
             for (let idx = 0; idx < this._stateData.length; idx++) {
-              if (this._stateData[idx].meta == d.meta) {
+              if (this._stateData[idx].type == d.type) {
                 if (this._stateData[idx].name == d.name) {
                   step = idx;
                   break;
@@ -903,9 +903,9 @@ export class EntityTimeline extends BaseTimeline {
         .text(d => d.name);
 
     var focusStateDataset = this._stateData.map(d => Object.assign({
-        clipId: this._d3UID(d.meta, d.name, "focusClip"),
-        pathId: this._d3UID(d.meta, d.name, "focusPath"),
-        textId: this._d3UID(d.meta, d.name, "focusText"),
+        clipId: this._d3UID(d.type, d.name, "focusClip"),
+        pathId: this._d3UID(d.type, d.name, "focusPath"),
+        textId: this._d3UID(d.type, d.name, "focusText"),
       }, d));
 
     const focusG = this._focusSvg.append("g")
@@ -944,8 +944,8 @@ export class EntityTimeline extends BaseTimeline {
       if (this._selectedStateGraphData) {
 
         var selectedStateDataset = this._selectedStateGraphData.map(d => Object.assign({
-          clipId: this._d3UID(d.meta, d.name, "selectedFocusClip"),
-          pathId: this._d3UID(d.meta, d.name, "selectedFocusPath"),
+          clipId: this._d3UID(d.type, d.name, "selectedFocusClip"),
+          pathId: this._d3UID(d.type, d.name, "selectedFocusPath"),
         }, d));
 
         const selectedG = this._focusSvg.append("g")
@@ -955,7 +955,7 @@ export class EntityTimeline extends BaseTimeline {
             .attr("transform", (d) => {
               var step = 0;
               for (let idx = 0; idx < this._stateData.length; idx++) {
-                if (this._stateData[idx].meta == d.meta) {
+                if (this._stateData[idx].type == d.type) {
                   if (this._stateData[idx].name == d.name) {
                     step = idx;
                     break;
@@ -1011,9 +1011,9 @@ export class EntityTimeline extends BaseTimeline {
 
     // States are represented as line graphs
     var focusLineDataset = this._numericalData.map(d => Object.assign({
-      clipId: this._d3UID(d.meta, d.name, "focusClip"),
-      pathId: this._d3UID(d.meta, d.name, "focusPath"),
-      textId: this._d3UID(d.meta, d.name, "focusText"),
+      clipId: this._d3UID(d.type, d.name, "focusClip"),
+      pathId: this._d3UID(d.type, d.name, "focusPath"),
+      textId: this._d3UID(d.type, d.name, "focusText"),
     }, d));
 
     const focusGLine = this._focusSvg.append("g")
@@ -1279,7 +1279,7 @@ export class EntityTimeline extends BaseTimeline {
 
     if (data) {
 
-      const dataType = this._data._dataTypes[data.meta];
+      const dataType = this._data._dataTypes[data.type];
 
       if (dataType.id.includes("state") && (dataType.interpolation == "latest" || dataType.interpolation == "attr_style_range")) {
         this.setSelectedStateGraphData();
