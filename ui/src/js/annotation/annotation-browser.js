@@ -13,7 +13,8 @@ export class AnnotationBrowser extends TatorElement {
     wrapper.appendChild(header);
 
     this._minimizeButton = document.createElement("button");
-    this._minimizeButton.setAttribute("class", "annotation-browser-btn flex-justify-left");
+    this._minimizeButton.setAttribute("class", "annotation-browser-btn flex-justify-left f3");
+    this._minimizeButton.style.width = "70px";
     header.appendChild(this._minimizeButton);
 
     this._headerLabel = document.createElement("div");
@@ -78,9 +79,9 @@ export class AnnotationBrowser extends TatorElement {
     }
 
     this._panels.style.display = "block";
-    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 18 9 12 15 6"></polyline>
-      </svg>`;
+    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"></polyline>
+      </svg><div class="text-dark-gray ml-1">Hide</div>`;
     this._headerLabel.style.display = "flex";
     this._settingsButton.style.display = "flex";
     window.dispatchEvent(new Event("resize"));
@@ -88,9 +89,9 @@ export class AnnotationBrowser extends TatorElement {
 
   _collapseBrowser() {
     this._panels.style.display = "none";
-    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="9 18 15 12 9 6"></polyline>
-      </svg>`;
+    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="20" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  
+      <polyline points="15 18 9 12 15 6"></polyline>
+      </svg><div class="text-dark-gray">Show Panel</div>`;
     this._headerLabel.style.display = "none";
     this._settingsButton.style.display = "none";
     window.dispatchEvent(new Event("resize"));
