@@ -18,6 +18,7 @@ import uuid
 from main.models import *
 from main.search import TatorSearch
 from main.store import get_tator_store
+from main.backup import TatorBackupManager
 
 from django.conf import settings
 
@@ -339,14 +340,15 @@ def move_backups_to_s3():
     else:
         bucket_name = os.getenv("BACKUP_STORAGE_BUCKET_NAME")
 
-    client = store.client
-    transfer = S3Transfer(client)
     num_moved = 0
     for backup in os.listdir('/backup'):
         logger.info(f"Moving {backup} to S3...")
         key = f'backup/{backup}'
         path = os.path.join('/backup', backup)
-        transfer.upload_file(path, bucket_name, key)
+        size = os.stat(path).st_size
+        success = TatorBackupManager._upload_from_file(store, key, path, size, "DOMAIN")
+        if not success:
+            raise Exception(f"Failed to upload {path} to key {key}!")
         os.remove(path)
         num_moved += 1
     logger.info(f"Finished moving {num_moved} files!")

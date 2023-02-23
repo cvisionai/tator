@@ -37,74 +37,72 @@ class TatorBackupManager:
         return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
 
     @classmethod
-    def _multipart_upload(cls, path, upload_urls, upload_id, source_url):
+    def _multipart_upload(cls, path, upload_urls, upload_id, stream):
         num_chunks = len(upload_urls)
         parts = []
         last_progress = 0
         gcp_upload = upload_id == upload_urls[0]
-        with requests.get(source_url, stream=True).raw as f:
-            for chunk_count, url in enumerate(upload_urls):
-                file_part = f.read(cls.chunk_size)
-                default_etag_val = str(chunk_count) if gcp_upload else None
-                for attempt in range(MAX_RETRIES):
-                    try:
-                        kwargs = {"data": file_part}
-                        if gcp_upload:
-                            first_byte = chunk_count * chunk_size
-                            last_byte = min(first_byte + chunk_size, file_size) - 1
-                            kwargs["headers"] = {
-                                "Content-Length": str(last_byte - first_byte),
-                                "Content-Range": f"bytes {first_byte}-{last_byte}/{file_size}",
-                            }
-                        response = requests.put(url, **kwargs)
-                        etag_str = response.headers.get("ETag", default_etag_val)
-                        if etag_str == None:
-                            raise RuntimeError("No ETag in response!")
-                        parts.append(
-                            {
-                                "ETag": etag_str,
-                                "PartNumber": chunk_count + 1,
-                            }
-                        )
-                        break
-                    except Exception as e:
-                        logger.warning(
-                            f"Upload of {upload_id} chunk {chunk_count} failed ({e})! Attempt "
-                            f"{attempt + 1}/{MAX_RETRIES}"
-                        )
-                        if attempt == MAX_RETRIES - 1:
-                            raise RuntimeError(f"Upload of {upload_id} failed!")
-                        else:
-                            sleep(10 * attempt)
-                            logger.warning(f"Backing off for {10 * attempt} seconds...")
-                this_progress = round((chunk_count / num_chunks) * 100, 1)
-                if this_progress != last_progress:
-                    last_progress = this_progress
+        for chunk_count, url in enumerate(upload_urls):
+            file_part = stream.read(cls.chunk_size)
+            default_etag_val = str(chunk_count) if gcp_upload else None
+            for attempt in range(MAX_RETRIES):
+                try:
+                    kwargs = {"data": file_part}
+                    if gcp_upload:
+                        first_byte = chunk_count * chunk_size
+                        last_byte = min(first_byte + chunk_size, file_size) - 1
+                        kwargs["headers"] = {
+                            "Content-Length": str(last_byte - first_byte),
+                            "Content-Range": f"bytes {first_byte}-{last_byte}/{file_size}",
+                        }
+                    response = requests.put(url, **kwargs)
+                    etag_str = response.headers.get("ETag", default_etag_val)
+                    if etag_str == None:
+                        raise RuntimeError("No ETag in response!")
+                    parts.append(
+                        {
+                            "ETag": etag_str,
+                            "PartNumber": chunk_count + 1,
+                        }
+                    )
+                    break
+                except Exception as e:
+                    logger.warning(
+                        f"Upload of {upload_id} chunk {chunk_count} failed ({e})! Attempt "
+                        f"{attempt + 1}/{MAX_RETRIES}"
+                    )
+                    if attempt == MAX_RETRIES - 1:
+                        raise RuntimeError(f"Upload of {upload_id} failed!")
+                    else:
+                        sleep(10 * attempt)
+                        logger.warning(f"Backing off for {10 * attempt} seconds...")
+            this_progress = round((chunk_count / num_chunks) * 100, 1)
+            if this_progress != last_progress:
+                last_progress = this_progress
 
         return parts
 
     @staticmethod
-    def _single_upload(path, upload_url, source_url):
-        with requests.get(source_url, stream=True).raw as f:
-            data = f.read()
-            for attempt in range(MAX_RETRIES):
-                response = requests.put(upload_url, data=data)
-                if response.status_code == 200:
-                    return True
-                else:
-                    logger.warning(
-                        f"Upload of '{upload_url}' failed ({response.text}) size={len(data)}! "
-                        f"Attempt {attempt + 1}/{MAX_RETRIES}"
-                    )
-                    if attempt < MAX_RETRIES - 1:
-                        logger.warning("Backing off for 5 seconds...")
-                        sleep(5)
+    def _single_upload(path, upload_url, stream):
+        data = stream.read()
+        for attempt in range(MAX_RETRIES):
+            response = requests.put(upload_url, data=data)
+            if response.status_code == 200:
+                return True
             else:
-                logger.error(f"Upload of '{upload_url}' failed!")
+                logger.warning(
+                    f"Upload of '{upload_url}' failed ({response.text}) size={len(data)}! "
+                    f"Attempt {attempt + 1}/{MAX_RETRIES}"
+                )
+                if attempt < MAX_RETRIES - 1:
+                    logger.warning("Backing off for 5 seconds...")
+                    sleep(5)
+        else:
+            logger.error(f"Upload of '{upload_url}' failed!")
         return False
 
     @classmethod
-    def _upload_from_url(cls, store, path, url, size, domain):
+    def _upload_from_stream(cls, store, path, stream, size, domain):
         num_chunks = math.ceil(size / cls.chunk_size)
         urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
 
@@ -113,9 +111,19 @@ class TatorBackupManager:
             return False
 
         if num_chunks > 1:
-            parts = cls._multipart_upload(path, urls, upload_id, url)
+            parts = cls._multipart_upload(path, urls, upload_id, stream)
             return store.complete_multipart_upload(path, parts, upload_id)
-        return cls._single_upload(path, urls[0], url)
+        return cls._single_upload(path, urls[0], stream)
+
+    @classmethod
+    def _upload_from_url(cls, store, path, url, size, domain):
+        with requests.get(url, stream=True).raw as stream:
+            return cls._upload_from_stream(store, path, stream, size, domain)
+
+    @classmethod
+    def _upload_from_file(cls, store, path, filepath, size, domain):
+        with open(filepath, 'rb') as stream:
+            return cls._upload_from_stream(store, path, stream, size, domain)
 
     @staticmethod
     def get_backup_store(store_info):
