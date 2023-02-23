@@ -31,8 +31,8 @@ class Command(BaseCommand):
         )
         # Handle multiviews after all singles because their transition is dependent on the singles'
         # states
-        archived_qs = base_qs.exclude(meta__dtype="multi")
-        multi_qs = base_qs.filter(meta__dtype="multi")
+        archived_qs = base_qs.exclude(type__dtype="multi")
+        multi_qs = base_qs.filter(type__dtype="multi")
 
         if not (archived_qs.exists() or multi_qs.exists()):
             logger.info(f"No media to archive!")
