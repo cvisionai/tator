@@ -20,8 +20,8 @@ class Command(BaseCommand):
         )
         # Handle multiviews after all singles because their transition is dependent on the singles'
         # states
-        restoration_qs = base_qs.exclude(meta__dtype="multi")
-        multi_qs = base_qs.filter(meta__dtype="multi")
+        restoration_qs = base_qs.exclude(type__dtype="multi")
+        multi_qs = base_qs.filter(type__dtype="multi")
 
         if not (restoration_qs.exists() or multi_qs.exists()):
             logger.info(f"No media requiring restoration finalization!")
