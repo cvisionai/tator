@@ -261,7 +261,7 @@ jobs:
         at: ~/
     - run:
         name: Run cron jobs
-        command: ssh lightsail './tator/scripts/test-cronjobs.sh'
+        command: ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && ./tator/scripts/test-cronjobs.sh'
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
