@@ -44,7 +44,7 @@ if [ ${gunicorn_pod} == "" ]; then
 fi
 
 our_models=`md5sum $root/api/main/models.py | awk '{print $1}'`
-their_models=`kubectl exec ${gunicorn_pod} -- md5sum /tator_online/api/main/models.py | awk '{print $1}'`
+their_models=`kubectl exec ${gunicorn_pod} -- md5sum /tator_online/main/models.py | awk '{print $1}'`
 
 if [ ${our_models} != ${their_models} ]; then
     echo "$(tput setaf 1)$(tput bold)Models.py change detected$(tput sgr 0)"
