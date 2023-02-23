@@ -25,23 +25,21 @@ class Command(BaseCommand):
         # Check for existence of default backup store
         default_backup_store = get_tator_store(backup=True)
 
-        if default_backup_store is None:
-            logger.info("No default backup bucket found, looking for project specific ones...")
-            projects_with_backup_buckets = Project.objects.exclude(backup_bucket=None)
-            if projects_with_backup_buckets.count() == 0:
-                logger.info("No project specific backup buckets found!")
-                return
+        # Find projects with a project-specific backup bucket
+        projects_needing_backup = Project.objects.filter(backup_bucket__isnull=False)
 
-            # If there is no default backup bucket, restrict the resource queryset to those that
-            # reside in projects with defined project-specific backup buckets
-            project_ids = [str(p.id) for p in projects_with_backup_buckets]
-            logger.info(
-                f"Found project-specific backup buckets for: {','.join(project_ids)}, backing up "
-                f"resources in those projects, if necessary."
-            )
-            # Use the fact that paths for resources take the form of `<org_id>/<proj_id>/<media_id>`
-            # and filter for only project ids with backup buckets
-            resource_qs = resource_qs.filter(path__iregex=f"\\d+/({'|'.join(project_ids)})/\\d+")
+        # If the default backup store exists, add any buckets without a project specific live bucket.
+        if default_backup_store is not None:
+            projects_using_default_live = Project.objects.filter(bucket__isnull=True)
+            projects_needing_backup = projects_needing_backup.union(projects_using_default_live)
+
+        if projects_needing_backup.count() == 0:
+            logger.info("No project specific backup buckets found!")
+            return
+
+        project_ids = projects_needing_backup.values_list('pk', flat=True)
+
+        resource_qs = resource_qs.filter(media__project__in=project_ids)
 
         total_to_back_up = resource_qs.count()
         if total_to_back_up == 0:
@@ -52,7 +50,7 @@ class Command(BaseCommand):
         failed_backups = defaultdict(set)
         successful_backups = set()
         domain = os.getenv("MAIN_HOST", "MAIN_HOST")
-        for idx, (success, resource) in enumerate(tbm.backup_resources(resource_qs, domain)):
+        for idx, (success, resource) in enumerate(tbm.backup_resources(projects_needing_backup, resource_qs, domain)):
             if success:
                 successful_backups.add(resource.id)
             else:

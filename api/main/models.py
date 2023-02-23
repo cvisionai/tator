@@ -1222,7 +1222,8 @@ class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
     generic_files = ManyToManyField(File, related_name='resource_files')
-    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
+    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name='bucket')
+    backup_bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name='backup_bucket')
     backed_up = BooleanField(default=False)
 
     def get_project_from_path(path):

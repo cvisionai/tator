@@ -191,7 +191,7 @@ class TatorBackupManager:
         return bool(project_store_info), project_store_info
 
     @classmethod
-    def backup_resources(cls, resource_qs, domain) -> Generator[tuple, None, None]:
+    def backup_resources(cls, projects, resource_qs, domain) -> Generator[tuple, None, None]:
         """
         Creates a generator that copies the resources in the given queryset from the live store to
         the backup store for their respective projects. Yields a tuple with the first element being
@@ -209,36 +209,18 @@ class TatorBackupManager:
         :rtype: Generator[tuple, None, None]
         """
         successful_backups = set()
-        project_store_map = {}
         Resource = type(resource_qs.first())
-        for resource in resource_qs.iterator():
-            success = True
-            path = resource.path
-            try:
-                project = cls.project_from_resource(resource)
-            except:
-                logger.warning(
-                    f"Could not get project from resource with path '{path}', skipping",
-                    exc_info=True,
-                )
-                success = False
-                project = None
-
-            if success:
-                if project.id not in project_store_map:
-                    success, store_info = cls.get_store_info(project)
-                    if success:
-                        project_store_map[project.id] = store_info
-                else:
-                    store_info = project_store_map[project.id]
-                success = success and StoreType.BACKUP in store_info
-
+        for project in projects.iterator():
+            resource_project_qs = resource_qs.filter(media__project=project)
+            num_backups = resource_project_qs.count()
+            logger.info(f"Backing up {num_backups} resources in project {project}...")
+            success, store_info = cls.get_store_info(project)
             if success:
                 backup_info = store_info[StoreType.BACKUP]
                 backup_store = backup_info["store"]
-                live_info = store_info[StoreType.LIVE]
-                live_store = live_info["store"]
-
+            for resource in resource_project_qs.iterator():
+                path = resource.path
+                live_store = get_tator_store(resource.bucket)
                 backup_size = backup_store.get_size(path)
                 live_size = live_store.get_size(path)
                 if backup_size < 0 or live_size != backup_size:
@@ -254,21 +236,20 @@ class TatorBackupManager:
                             exc_info=True,
                         )
 
-            if success:
-                successful_backups.add(resource.id)
+                if success:
+                    successful_backups.add(resource.id)
+                if len(successful_backups) > 500:
+                    with transaction.atomic():
+                        update_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                        update_qs.update(backed_up=True, backup_bucket=backup_store.bucket)
+                    successful_backups.clear()
 
-            if len(successful_backups) > 500:
+                yield success, resource
+
+            if successful_backups:
                 with transaction.atomic():
-                    resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
-                    resource_qs.update(backed_up=True)
-                successful_backups.clear()
-
-            yield success, resource
-
-        if successful_backups:
-            with transaction.atomic():
-                resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
-                resource_qs.update(backed_up=True)
+                    update_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                    update_qs.update(backed_up=True, backup_bucket=backup_store.bucket)
 
     @classmethod
     def request_restore_resource(cls, path, project, min_exp_days) -> bool:
