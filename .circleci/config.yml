@@ -127,7 +127,7 @@ jobs:
         name: Update earlyaccess
         command: |
           mv $HOME/project $HOME/tator
-          $HOME/$PRIVATE_REPO_NAME/aws/update.sh
+          $HOME/$PRIVATE_REPO_NAME/oci/update.sh
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
@@ -335,7 +335,7 @@ workflows:
         filters:
           branches:
             only:
-            - rc/0.2.23
+            - dev/1111-oci-ci
           tags:
             only: /.*/
     - cleanup-lightsail:
