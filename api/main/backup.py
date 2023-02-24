@@ -176,7 +176,7 @@ class TatorBackupManager:
 
         # Get the `TatorStore` object that connects to object storage for backup storage, if
         # applicable
-        project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
+        project_bucket = None if use_default_bucket else project.get_bucket(backup=True)
         try:
             store = get_tator_store(project_bucket, backup=use_default_bucket)
         except:
