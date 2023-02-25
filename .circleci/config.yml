@@ -256,9 +256,11 @@ jobs:
     - run:
         name: Dump container logs
         command: ssh lightsail 'cd tator && make dump-logs';
+        when: always
     - store_artifacts:
         path: /tmp/logs
         destination: container_logs
+        when: always
   cron-job-tests:
     machine:
       image: ubuntu-2004:202010-01
