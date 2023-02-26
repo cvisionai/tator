@@ -93,7 +93,8 @@ init-logs:
 
 dump-logs:
 	mkdir -p /tmp/logs
-	kubectl logs $$(kubectl get pod -l "app=python-rq" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/worker-logs.txt
+	kubectl logs $$(kubectl get pod -l "app=db-worker" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/db-worker-logs.txt
+	kubectl logs $$(kubectl get pod -l "app=image-worker" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/image-worker-logs.txt
 	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/gunicorn-logs.txt
 	kubectl logs $$(kubectl get pod -l "app=nginx" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/nginx-logs.txt
 	kubectl logs $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/postgis-logs.txt
