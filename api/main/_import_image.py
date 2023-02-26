@@ -1,4 +1,5 @@
 # This file is outside the `api/main/rest/` folder to avoid the imports in that module's __init__.py
+import logging
 import os
 import sys
 
@@ -20,16 +21,24 @@ from main.store import get_tator_store
 from main.download import download_file
 from main.rest._util import url_to_key
 
+logger = logging.getLogger(__name__)
+
+
 def _import_image(name, url, thumbnail_url, media_id):
+    logger.info(f"{__name__} called with inputs '{name}', '{url}', '{thumbnail_url}', '{media_id}'")
     try:
         media_obj = Media.objects.get(pk=media_id)
     except Exception:
+        logger.error(f"Could not find media object with id {media_id}", exc_info=True)
         return
+    logger.info(f"Found existing media object with id {media_id}")
     project_obj = media_obj.project
     try:
         tator_store = get_tator_store(project_obj.bucket)
     except Exception:
+        logger.error(f"Could not get object storage for project {project_obj.id}", exc_info=True)
         return
+    logger.info(f"Found object storage for project {project_obj.id}")
     alt_image = None
     if url:
         # Download the image file and load it.
