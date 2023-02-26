@@ -91,6 +91,14 @@ check_restore:
 init-logs:
 	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
 
+dump-logs:
+	mkdir -p /tmp/logs
+	kubectl logs $$(kubectl get pod -l "app=python-rq" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/worker-logs.txt
+	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/gunicorn-logs.txt
+	kubectl logs $$(kubectl get pod -l "app=nginx" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/nginx-logs.txt
+	kubectl logs $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/postgis-logs.txt
+	kubectl logs $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/ui-logs.txt
+
 ui_bash:
 	kubectl exec -it $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh
 
