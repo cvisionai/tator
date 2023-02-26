@@ -300,13 +300,13 @@ class TatorSearch:
         """ Delete all indices synchronously """
         proj_indices = self.list_indices(project)
         for _,index_name,_ in proj_indices:
-            push_job(delete_psql_index, args=(connection.settings_dict['NAME'], index_name))
+            push_job('db_jobs', delete_psql_index, args=(connection.settings_dict['NAME'], index_name))
             
 
     def delete_index(self, entity_type, attribute):
         """ Delete the index for a given entity type """
         index_name = _get_unique_index_name(entity_type, attribute)
-        push_job(delete_psql_index, args=(connection.settings_dict['NAME'], index_name), result_ttl=0)
+        push_job('db_jobs', delete_psql_index, args=(connection.settings_dict['NAME'], index_name), result_ttl=0)
 
     def is_index_present(self, entity_type, attribute):
         """ Returns true if the index exists for this attribute """
@@ -335,7 +335,7 @@ class TatorSearch:
 
         table_name = entity_type._meta.db_table.replace('type','')
         index_name = _get_unique_index_name(entity_type, attribute)
-        push_job(index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute, flush, concurrent), result_ttl=0)
+        push_job('db_jobs', index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute, flush, concurrent), result_ttl=0)
 
     def create_mapping(self, entity_type, flush=False, concurrent=True):
         from .models import MediaType, LocalizationType, StateType, LeafType

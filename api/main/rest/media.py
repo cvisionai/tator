@@ -281,7 +281,7 @@ def _create_media(project, params, user, use_rq=False):
         tator_store = get_tator_store(project_obj.bucket)
 
         if use_rq:
-            push_job(main._import_image._import_image, args=(name, url, thumbnail_url, media_obj.id))
+            push_job('image_jobs', main._import_image._import_image, args=(name, url, thumbnail_url, media_obj.id))
         else:
             main._import_image._import_image(name, url, thumbnail_url, media_obj.id)
 
