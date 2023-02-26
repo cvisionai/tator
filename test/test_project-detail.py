@@ -32,7 +32,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_1 = '/tmp/hubble-sees-the-wings-of-a-butterfly.jpg'
    if not os.path.exists(nasa_space_photo_1):
-      url = 'https://s3.amazonaws.com/tator-ci/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o~small.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/hubble.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_1, 'wb') as f:
@@ -42,7 +42,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_2 = '/tmp/layers-in-galle-crater.jpg'
    if not os.path.exists(nasa_space_photo_2):
-      url = 'https://s3.amazonaws.com/tator-ci/PIA21575~medium.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/galle.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_2, 'wb') as f:
@@ -52,7 +52,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_3 = '/tmp/behemoth-black-hole.jpg'
    if not os.path.exists(nasa_space_photo_3):
-      url = 'https://s3.amazonaws.com/tator-ci/behemoth-black-hole-found-in-an-unlikely-place_26209716511_o~medium.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/behemoth.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_3, 'wb') as f:
