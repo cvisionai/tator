@@ -341,24 +341,24 @@ class TatorSearch:
         from .models import MediaType, LocalizationType, StateType, LeafType
         # Add project specific indices based on the type being indexed
         if type(entity_type) == MediaType:
-            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'native_string'}, flush=flush, concurrent=concurrent) # native fields are indexed across the entire project
-            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$name', 'dtype': 'native_string'}, flush=flush, concurrent=concurrent) # native fields are indexed across the entire project
+            self.create_psql_index(entity_type, {'name': '$created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
             self.create_psql_index(entity_type, {'name': 'tator_user_sections', 'dtype': 'section'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_restoration_requested', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_archive_status_date', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_archive_state', 'dtype': 'native_string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$restoration_requested', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$archive_status_date', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$archive_state', 'dtype': 'native_string'}, flush=flush, concurrent=concurrent)
         if type(entity_type) == LocalizationType:
-            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
         if type(entity_type) == StateType:
-            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$created_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$modified_datetime', 'dtype': 'native'}, flush=flush, concurrent=concurrent)
         if type(entity_type) == LeafType:
-            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'string'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'string'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'upper_string'}, flush=flush, concurrent=concurrent)
-            self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'upper_string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$name', 'dtype': 'string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$path', 'dtype': 'string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$name', 'dtype': 'upper_string'}, flush=flush, concurrent=concurrent)
+            self.create_psql_index(entity_type, {'name': '$path', 'dtype': 'upper_string'}, flush=flush, concurrent=concurrent)
 
         for attribute in entity_type.attribute_types:
             self.create_psql_index(entity_type, attribute, flush=flush, concurrent=concurrent)
