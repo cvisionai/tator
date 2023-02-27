@@ -246,20 +246,22 @@ def make_vector_index(db_name, project_id, entity_type_id, table_name, index_nam
         if flush:
             for method in ['l2', 'ip', 'cosine']:
                 cursor.execute(sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}_{method}").format(index_name=sql.SQL(index_name), method=sql.SQL(method),concurrent=sql.SQL(concurrent_str)))
-        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
-        if bool(cursor.fetchall()):
-            return
         # Create an index method for each access type
         attr_name = re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
         attr_size = int(attribute['size'])
         for method in ['l2', 'ip', 'cosine']:
-            sql_str = sql.SQL("""CREATE INDEX {concurrent} {index_name}_{method} ON {table_name} 
+            unique_vector_name=f"{index_name}_{method}"
+            cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+                           (unique_vector_name,))
+            if bool(cursor.fetchall()):
+                continue
+            sql_str = sql.SQL("""CREATE INDEX {concurrent} {index_name} ON {table_name} 
                                  using ivfflat(CAST(attributes ->> '{attr_name}' AS vector({attr_size})) 
                                                                    vector_{method}_ops) WHERE project=%s and meta=%s;""").format(
                                                                    attr_name=sql.SQL(attr_name),
                                                                    attr_size=sql.SQL(f"{attr_size}"),
                                                                    concurrent=sql.SQL(concurrent_str),
-                                                                   index_name=sql.SQL(index_name),
+                                                                   index_name=sql.SQL(unique_vector_name),
                                                                    method=sql.SQL(method),
                                                                    table_name=sql.Identifier(table_name))
             print(sql_str)
