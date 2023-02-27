@@ -49,7 +49,8 @@ class TatorTransactionTest(APITransactionTestCase):
                 time.sleep(1)
 
 def wait_for_indices(entity_type):
-    for attribute in entity_type.attribute_types:
+    built_ins = BUILT_IN_INDICES.get(type(entity_type),[])
+    for attribute in [*entity_type.attribute_types, *built_ins]:
         found_it = False
         for i in range(1,600):
             if TatorSearch().is_index_present(entity_type, attribute) == True:
@@ -58,6 +59,7 @@ def wait_for_indices(entity_type):
             time.sleep(0.1*min(i, 30))
         assert(found_it)
 
+    
 def assertResponse(self, response, expected_code):
     if response.status_code != expected_code:
         print(response.data)
