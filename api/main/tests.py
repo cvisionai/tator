@@ -65,9 +65,11 @@ def assertResponse(self, response, expected_code):
         print(response.data)
     self.assertEqual(response.status_code, expected_code)
 
-def create_test_user(is_staff=False):
+def create_test_user(is_staff=False, username=None):
+    if username == None:
+        username = ''.join(random.choices(string.ascii_lowercase, k=10))
     return User.objects.create(
-        username=''.join(random.choices(string.ascii_lowercase, k=10)),
+        username=username,
         password="jsnow",
         first_name="Jon",
         last_name="Snow",
@@ -1629,6 +1631,84 @@ class AlgorithmTestCase(
             create_test_algorithm(self.user, f'result{idx}', self.project)
             for idx in range(random.randint(6, 10))
         ]
+
+class AnonymousAccessTestCase(TatorTransactionTest):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.random_user = create_test_user()
+        self.anonymous_user = create_test_user(username='anonymous')
+        self.public_project = create_test_project(self.user)
+        self.private_project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.private_project)
+        self.membership = create_test_membership(self.user, self.private_project)
+        self.membership = create_test_membership(self.anonymous_user, self.public_project)
+        self.private_entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.private_project,
+        )
+        self.public_entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.public_project,
+        )
+
+        self.public_video = create_test_video(self.user, f'asdf_0', self.public_entity_type, self.public_project)
+        self.private_video = create_test_video(self.user, f'asdf_0', self.private_entity_type, self.private_project)
+
+        self.public_video.media_files = {'streaming': [{'path': 'fake_key.txt', 'resolution': [720,1280]}]}
+        self.public_video.save()
+        self.private_video.media_files = {'streaming': [{'path': 'fake_key.txt', 'resolution': [720,1280]}]}
+        self.private_video.save()
+
+        self.store = get_tator_store()
+        self.test_bucket = create_test_bucket(None)
+        resource = Resource(path='fake_key.txt', bucket = self.test_bucket)
+        resource.save()
+        resource.media.add(self.public_video)
+        resource.media.add(self.private_video)
+        resource.save()
+        
+
+
+    def test_random_user(self):
+        """ A random user should get access to public project but not the private project """
+        self.client.force_authenticate(self.random_user)
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        assert(response.status_code == 403)
+
+    def test_unauthenticated_user(self):
+        """ Users not logged in at all should get access to public, but not private """
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        # Unauthenticated access gets 400 vs. 403 because of django
+        assert(response.status_code == 400)
+
+    def test_authenticated_anonymous_user(self):
+        """ Users logged in as guest should get access to public, but not private """
+        self.client.force_authenticate(self.anonymous_user)
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        assert(response.status_code == 403)
+
+    def test_authenticated_primary_user(self):
+        """ The user with permission to both projects should get access to both """
+        self.client.force_authenticate(self.user)
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        assert(response.status_code == 301)
+
+
+
+
+
+
 
 class VideoTestCase(
         TatorTransactionTest,
