@@ -459,4 +459,5 @@ rq-info:
 
 .PHONY: rq-empty
 rq-empty:
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty
+	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty async_jobs
+	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty db_jobs
