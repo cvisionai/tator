@@ -309,7 +309,7 @@ testinit:
 .PHONY: test
 test:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'bash scripts/addExtensionsToInit.sh'
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'pytest --ds=tator_online.settings -n 4 main/tests.py'
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
 
 .PHONY: cache_clear
 cache-clear:
