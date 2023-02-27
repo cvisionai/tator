@@ -28,7 +28,7 @@ from ..schema.components import media as media_schema
 from ..store import get_tator_store, get_storage_lookup
 
 from ._base_views import process_exception
-from ._permissions import ProjectTransferPermission
+from ._permissions import PermalinkPermission
 
 import sys
 
@@ -74,7 +74,7 @@ class PermalinkAPI(APIView):
         sub-element.
     """
     schema = PermalinkSchema()
-    permission_classes = [ProjectTransferPermission]
+    permission_classes = [PermalinkPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
 
