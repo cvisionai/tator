@@ -10,8 +10,6 @@ from psycopg2 import sql
 
 from .worker import push_job
 
-from .models import BUILT_IN_INDICES
-
 from django.db import connection
 
 logger = logging.getLogger(__name__)
@@ -340,7 +338,7 @@ class TatorSearch:
         push_job('db_jobs', index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute, flush, concurrent), result_ttl=0)
 
     def create_mapping(self, entity_type, flush=False, concurrent=True):
-        from .models import MediaType, LocalizationType, StateType, LeafType
+        from .models import BUILT_IN_INDICES
         # Add project specific indices based on the type being indexed
         built_ins = BUILT_IN_INDICES.get(type(entity_type),[])
         for built_in in built_ins:
