@@ -461,3 +461,8 @@ rq-info:
 rq-empty:
 	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty async_jobs
 	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty db_jobs
+
+.PHONY: check-clean-db-logs
+check-clean-db-logs:
+	scripts/check_for_errors.sh $$(kubectl get pod -l "app=db-worker" -o name | head -n 1 | sed 's/pod\///')
+
