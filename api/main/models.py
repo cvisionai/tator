@@ -1783,3 +1783,32 @@ class RowProtection(Model):
                                      'organization',
                                      'group'], name='permission_uniqueness_check')
         ]
+
+
+# Structure to handle identifying columns with project-scoped indices
+# e.g. Not relaying solely on `db_index=True` in django.
+BUILT_IN_INDICES = {
+    MediaType: [
+        {'name': '$name', 'dtype': 'native_string'},
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'},
+        {'name': 'tator_user_sections', 'dtype': 'section'},
+        {'name': '$restoration_requested', 'dtype': 'native'},
+        {'name': '$archive_status_date', 'dtype': 'native'},
+        {'name': '$archive_state', 'dtype': 'native_string'}
+    ],
+    LocalizationType: [
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'}
+    ],
+    StateType: [
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'},
+    ],
+    LeafType: [
+        {'name': '$name', 'dtype': 'string'},
+        {'name': '$path', 'dtype': 'string'},
+        {'name': '$name', 'dtype': 'upper_string'},
+        {'name': '$path', 'dtype': 'upper_string'}
+    ]
+}
