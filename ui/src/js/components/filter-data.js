@@ -17,6 +17,8 @@ export class FilterData {
    * @param {array} excludeTypesList
    *    List of types to exclude from creating filter options for
    *    Available options: Medias|Localizations|MediaStates|LocalizationStates|FrameStates
+   *    @TODO: This is generally a bad practice, lists should be inclusive vs. exclusionary as adding new elements causes people to seek out
+   *           where code is and change it in N places. We should opt to change this interface to inclusive.
    * @param {array} skipTypeIds
    *    List of type ids to skip when creating filter options for
    *    Available options: Any Int ID
