@@ -309,7 +309,7 @@ testinit:
 .PHONY: test
 test:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'bash scripts/addExtensionsToInit.sh'
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'pytest --ds=tator_online.settings -n 4 main/tests.py'
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
 
 .PHONY: cache_clear
 cache-clear:
@@ -459,4 +459,10 @@ rq-info:
 
 .PHONY: rq-empty
 rq-empty:
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty
+	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty async_jobs
+	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty db_jobs
+
+.PHONY: check-clean-db-logs
+check-clean-db-logs:
+	scripts/check_for_errors.sh $$(kubectl get pod -l "app=db-worker" -o name | head -n 1 | sed 's/pod\///')
+

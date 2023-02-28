@@ -3884,6 +3884,33 @@ export class AnnotationCanvas extends TatorElement
     return new_box;
   }
 
+  encompassing_box(poly)
+  {
+    let min_x=0xFFFFFFFF,min_y=0xFFFFFF,max_x=-1,max_y=-1;
+    for (let idx = 0; idx < poly.length; idx++)
+    {
+      const this_x = poly[idx][0];
+      const this_y = poly[idx][1];
+      if (this_x > max_x)
+      {
+        max_x = this_x;
+      }
+      if (this_x < min_x)
+      {
+        min_x = this_x;
+      }
+      if (this_y > max_y)
+      {
+        max_y = this_y;
+      }
+      if (this_y < min_y)
+      {
+        min_y = this_y;
+      }
+    }
+    return [[min_x, min_y],[max_x, min_y], [max_x,max_y], [min_x,max_y]];
+  }
+
   accentWithHandles(drawCtx, type, item, color_req, width, alpha, activeSelection)
   {
     let allZeros = true;
@@ -3979,9 +4006,9 @@ export class AnnotationCanvas extends TatorElement
     }
   }
 
-  blackoutOutside(box)
+  blackoutOutside(poly)
   {
-    box = this.fix_box(box);
+    let box = this.encompassing_box(poly);
 
     const maxX = this._canvas.width;
     const maxY = this._canvas.height;
@@ -4049,10 +4076,9 @@ export class AnnotationCanvas extends TatorElement
       var y1 = dragEnd.y;
 
       var lineCoords = [[x0,y0],[x1,y1]];
-      var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 
       that._draw.beginDraw();
-      that.blackoutOutside(fauxBoxCoords);
+      that.blackoutOutside(lineCoords);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
                           colorReq,
