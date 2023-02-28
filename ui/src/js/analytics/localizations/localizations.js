@@ -181,7 +181,7 @@ export class AnalyticsLocalizations extends TatorPage {
 
       // Filter interface
       this._filterDataView = new FilterData(
-        this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
+        this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates", "FrameStates"]);
 
       this._filterDataView.init(); // requires model data to be init
       this._filterView.dataView = this._filterDataView;
