@@ -167,7 +167,7 @@ class PermalinkPermission(BasePermission):
                     return True
         except Exception as e:
             # This is an untrusted endpoint, so don't leak any exceptions to response if possible
-            logger.error(f"Error {e}")
+            logger.error(f"Error {e}", exc_info=True)
 
         return False
 
