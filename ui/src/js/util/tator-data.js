@@ -54,6 +54,10 @@ export class TatorData {
     return this._stateTypeAssociations.localization;
   }
 
+  getStoredFrameStateTypes() {
+    return this._stateTypeAssociations.frame;
+  }
+
   getStoredMediaTypes() {
     return this._mediaTypes;
   }
