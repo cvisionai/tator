@@ -200,7 +200,7 @@ class TatorSearch:
 
     @staticmethod
     def validate_name(name):
-        if not re.match("^[A-Za-z0-9_\s\-]+$", name):
+        if not re.match("^[A-Za-z0-9_\s\->]+$", name):
             raise ValueError(
                 f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
                 f"or alphanumeric characters"
