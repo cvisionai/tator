@@ -16,6 +16,8 @@ from ..models import Project
 from ..models import Membership
 from ..models import Organization
 from ..models import Affiliation
+from ..models import User
+from ..models import Media
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
@@ -139,6 +141,35 @@ class ProjectFullControlPermission(ProjectPermissionBase):
         Permission.CAN_TRANSFER,
         Permission.CAN_EXECUTE,
     ]
+
+class PermalinkPermission(BasePermission):
+    """
+    1.) Let request through if project has anonymous membership
+    2.) Let request through if requesting user any membership.
+    Note: Because the lowest level of access allows READ the existence check for membership is sufficient.
+    """
+    def has_permission(self, request, view):
+        try:
+            media_id = view.kwargs['id']
+            m = Media.objects.filter(pk=media_id)
+            if not m.exists():
+                return False # If the media doesn't exist, do not authenticate
+            project = m[0].project
+            # Not all deployments have an anonymous user
+            anonymous_user = User.objects.filter(username='anonymous')
+            if anonymous_user.exists():
+                anonymous_membership = Membership.objects.filter(project=project, user=anonymous_user[0])
+                if anonymous_membership.exists():
+                    return True
+            if not isinstance(request.user, AnonymousUser):
+                user_membership = Membership.objects.filter(project=project, user=request.user)
+                if user_membership.exists():
+                    return True
+        except Exception as e:
+            # This is an untrusted endpoint, so don't leak any exceptions to response if possible
+            logger.error(f"Error {e}", exc_info=True)
+
+        return False
 
 class UserPermission(BasePermission):
     """ 1.) Reject all anonymous requests
