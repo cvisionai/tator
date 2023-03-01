@@ -1867,6 +1867,8 @@ export class AnnotationPage extends TatorPage {
 
   _updateURL()
   {
+    if (!this._dataInitialized || !this._canvasInitialized) { return; }
+
     let existingSearchParams = new URLSearchParams(window.location.search);
     if (this._canvas._rate) // annotation-player or annotation-image
     {
