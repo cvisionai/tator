@@ -196,12 +196,22 @@ class TatorSearch:
         if self.es.indices.exists(index):
             self.es.indices.delete(index)
 
+
+    @staticmethod
+    def validate_name(name):
+        if not re.match("^[A-Za-z0-9\s\-]+$", name):
+            raise ValueError(
+                f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
+                f"or alphanumeric characters"
+            )
+
     def check_addition(self, entity_type, new_attribute_type):
         """
         Checks that the new attribute type does not collide with existing attributes on the target
         entity type or other entity types.
         """
         new_name = new_attribute_type["name"]
+        self.validate_name(new_name)
 
         # There should be no existing attribute types on the target entity type with the same name
         if entity_type.attribute_types:
@@ -297,6 +307,9 @@ class TatorSearch:
                 f"New attribute name {new_name} already in use in this project, please choose a "
                 f"different one."
             )
+
+        # Validate the new name
+        self.validate_name(new_name)
 
         # Retrieve UUID, raise error if it doesn't exist.
         uuid = entity_type.project.attribute_type_uuids.get(old_name)
