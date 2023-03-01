@@ -16,12 +16,14 @@ export class FilterData {
    *    List of categories to display in run algorithm option
    * @param {array} excludeTypesList
    *    List of types to exclude from creating filter options for
-   *    Available options: Medias|Localizations|MediaStates|LocalizationStates
+   *    Available options: Medias|Localizations|MediaStates|LocalizationStates|FrameStates
+   *    @TODO: This is generally a bad practice, lists should be inclusive vs. exclusionary as adding new elements causes people to seek out
+   *           where code is and change it in N places. We should opt to change this interface to inclusive.
    * @param {array} skipTypeIds
    *    List of type ids to skip when creating filter options for
    *    Available options: Any Int ID
    * @param {boolean} squashMetadata
-   *    If true, will collapse Localizations, MediaStates, LocalizationStates (whichever aren't excluded) into a single 'Metadata' Category
+   *    If true, will collapse Localizations, MediaStates, LocalizationStates, and FrameStates (whichever aren't excluded) into a single 'Metadata' Category
    */
   constructor(modelData, algorithmCategories, excludeTypesList, skipTypeIds, squashMetadata) {
 
@@ -47,6 +49,7 @@ export class FilterData {
    * @precondition The provided modelData must have been initialized
    */
   init() {
+    this.frameStateTypes = this._modelData.getStoredFrameStateTypes();
     this.mediaStateTypes = this._modelData.getStoredMediaStateTypes();
     this.localizationStateTypes = this._modelData.getStoredLocalizationStateTypes();
     this.localizationTypes = this._modelData.getStoredLocalizationTypes();
@@ -136,6 +139,7 @@ export class FilterData {
     {
       category_lookup = {'Localizations': 'Metadata',
                          'MediaStates': 'Metadata',
+                         'FrameStates': 'Metadata',
                          'LocalizationStates': 'Metadata'};
     }
 
@@ -339,6 +343,41 @@ export class FilterData {
         entityType.typeGroupName = (category_lookup.LocalizationStates ? category_lookup.LocalizationStates : "State");
 
         if (this.skipTypeIds.indexOf(this.localizationStateTypes[idx].id) < 0) {
+          var versionAttribute = {
+            choices: versionNames,
+            name: "$version",
+            label: "Version",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(versionAttribute);
+
+          var typeAttribute = {
+            choices: stateTypeOptions,
+            name: "$type",
+            label: "Data Type",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(typeAttribute);
+
+          var modifiedByAttribute = {
+            choices: userFirstLastNames,
+            name: "$modified_by",
+            label: "Modified By",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(modifiedByAttribute);
+
+          this._allTypes.push(entityType);
+        }
+      }
+    }
+
+    if (this.excludeTypesList.indexOf("FrameStates") < 0) {
+      for (let idx = 0; idx < this.frameStateTypes.length; idx++) {
+        let entityType = JSON.parse(JSON.stringify(this.frameStateTypes[idx]));
+        entityType.typeGroupName = (category_lookup.FrameStates ? category_lookup.FrameStates : "State");
+
+        if (this.skipTypeIds.indexOf(this.frameStateTypes[idx].id) < 0) {
           var versionAttribute = {
             choices: versionNames,
             name: "$version",

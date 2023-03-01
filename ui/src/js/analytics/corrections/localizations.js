@@ -173,7 +173,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
     // Filter interface
     this._filterDataView = new FilterData(
-      this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]
+      this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates", "FrameStates"]
     );
 
     // Init panel side behavior
