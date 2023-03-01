@@ -1,6 +1,7 @@
 from pprint import pformat
 from typing import Dict
 from django.db import transaction
+import re
 import logging
 
 from ..models import (
@@ -53,8 +54,8 @@ class AttributeTypeListAPI(BaseListView):
 
         if "name" not in attribute_type:
             raise ValueError("Attribute type definition missing 'name' field")
-        if attribute_type['name'].startswith('$'):
-            raise ValueError("Attribute type name can not start with '$' character")
+        if not re.match(r'^[a-zA-Z-_ ]+$', attribute_type['name']):
+            raise ValueError("Attribute type name can only include alphanumeric characters, hyphens, underscores, and spaces")
         if "dtype" not in attribute_type:
             raise ValueError("Attribute type definition missing 'dtype' field")
         if "enum" == attribute_type["dtype"] and "choices" not in attribute_type:
