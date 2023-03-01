@@ -1126,12 +1126,17 @@ class Media(Model, ModelDiffMixin):
         :type keys: List[str]
         :rtype: Generator[Tuple[str, dict], None, None]
         """
+        whitelisted_keys = [
+            "archival", "streaming", "audio", "image", "attachment", "thumbnail", "thumbnail_gif"
+        ]
         if self.media_files:
             keys = keys or self.media_files.keys()
         else:
             keys = []
 
         for key in keys:
+            if key not in whitelisted_keys:
+                continue
             files = self.media_files.get(key, [])
             if files is None:
                 files = []
