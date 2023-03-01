@@ -310,22 +310,6 @@ class TatorSearch:
         index_name = _get_unique_index_name(entity_type, attribute)
         push_job('db_jobs', delete_psql_index, args=(connection.settings_dict['NAME'], index_name), result_ttl=0)
 
-    @staticmethod
-    def validate_name(name):
-        if not re.match("^[A-Za-z0-9\s\-]+$", name):
-            raise ValueError(
-                f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
-                f"or alphanumeric characters"
-            )
-
-    def check_addition(self, entity_type, new_attribute_type):
-        """
-        Checks that the new attribute type does not collide with existing attributes on the target
-        entity type or other entity types.
-        """
-        new_name = new_attribute_type["name"]
-        self.validate_name(new_name)
-
     def is_index_present(self, entity_type, attribute):
         """ Returns true if the index exists for this attribute """
         index_name = _get_unique_index_name(entity_type, attribute)
