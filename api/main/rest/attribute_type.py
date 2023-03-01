@@ -249,6 +249,7 @@ class AttributeTypeListAPI(BaseListView):
             # Check that the attribute type is valid and it is valid to add it to the desired entity
             # type
             self._check_attribute_type(attribute_type_update)
+            TatorSearch.validate_name(new_name)
 
             # Add the attribute to the desired entity type
             if entity_type.attribute_types:

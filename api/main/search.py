@@ -378,6 +378,14 @@ class TatorSearch:
     
         return [entity_type]
 
+    @staticmethod
+    def validate_name(name):
+        if not re.match("^[A-Za-z0-9_\s\->]+$", name):
+            raise ValueError(
+                f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
+                f"or alphanumeric characters"
+            )
+
     def check_rename(self, entity_type, old_name, new_name):
         """
         Checks rename operation and raises if it is invalid. See `rename_alias` for argument
@@ -396,7 +404,10 @@ class TatorSearch:
 
         if self.is_index_present(entity_type, element) is True:
             raise(f'Index already exists with the specified name. ID={entity_type.id} {old_name}->{new_name}')
-        
+
+        # Validate the new name
+        self.validate_name(new_name)
+
 
     def check_mutation(self, entity_type, name, attribute_type_update):
         """
