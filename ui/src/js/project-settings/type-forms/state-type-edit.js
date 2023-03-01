@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 import { getCompiledList } from "../store.js";
 
 export class StateTypeEdit extends TypeFormTemplate {
@@ -23,15 +23,29 @@ export class StateTypeEdit extends TypeFormTemplate {
     this._association = this._shadow.getElementById("state-type-edit--association");
     this._interpolation = this._shadow.getElementById("state-type-edit--interpolation");
     this._deleteChildLoc = this._shadow.getElementById("state-type-edit--delete-child");
+
+    // set enum values once
+    this.dtypeSelect.choices = [
+      { "label": "State", "value": "state" }
+    ];
+
+    this._association.choices = [
+      { "label" : "Select", "value" : ""},
+      { "value": "Media"},
+      { "value": "Frame" },
+      { "value": "Localization" }
+    ];
+
+    this._interpolation.choices = [
+      { "label" : "Select", "value" : ""},
+      { "label": "None", "value": "none" },
+      { "label": "Latest", "value": "latest" },
+      { "label": "Attr Style Range", "value": "attr_style_range" }
+    ];
   }
 
   async _setupFormUnique() {
     // dtype
-    const dTypeOptions = [
-      { "label": "State", "value": "state" }
-    ];
-    // Emptyform uses "" for dtype value
-    if(typeof this.dtypeSelect._choices == "undefined") this.dtypeSelect.choices = dTypeOptions;
     if (!this._data.dtype) {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
@@ -68,15 +82,6 @@ export class StateTypeEdit extends TypeFormTemplate {
     }
 
     // Associations
-    if(!this._association._choices){
-      const assocOptions = [
-        { "label" : "Select", "value" : ""},
-        { "value": "Media"},
-        { "value": "Frame" },
-        { "value": "Localization" }
-      ];
-      this._association.choices = assocOptions;
-    }
     if (!this._data.association) {
       this._association.default = ""; 
     } else {
@@ -85,15 +90,6 @@ export class StateTypeEdit extends TypeFormTemplate {
     }
 
     // Interpolation
-    if(!this._interpolation._choices) {
-      const interpOptions = [
-        { "label" : "Select", "value" : ""},
-        { "label": "None", "value": "none" },
-        { "label": "Latest", "value": "latest" },
-        { "label": "Attr Style Range", "value": "attr_style_range" }
-      ];
-      this._interpolation.choices = interpOptions;
-    }
     if (!this._data.interpolation) {
       this._interpolation.default = ""; 
     } else {

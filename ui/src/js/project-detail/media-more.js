@@ -77,15 +77,12 @@ export class MediaMore extends TatorElement {
 
     this._moreIcon.addEventListener("click", this.toggleDetails.bind(this));
     window.addEventListener("click", (evt) => {
-      if (evt.path[0].id !== "icon-more-horizontal" && (evt.path[0].parentElement && evt.path[0].parentElement.id !== "icon-more-horizontal")) {
-        // console.log("what is path 0?");
-        // console.log(evt.path[0]);
+      const path = evt.composedPath();
+      if (path[0].id !== "icon-more-horizontal" && (path[0].parentElement && path[0].parentElement.id !== "icon-more-horizontal")) {
         this.hideDetails();
-      } else if (this._media && evt.path[0].attributes.getNamedItem('mediaId') && evt.path[0].attributes.getNamedItem('mediaId').value !== String(this._media.id)) {
-        // console.log("It is the icon, but not mine!");
+      } else if (this._media && path[0].attributes.getNamedItem('mediaId') && path[0].attributes.getNamedItem('mediaId').value !== String(this._media.id)) {
         this.hideDetails();
-      } else if (this._media && evt.path[0].parentElement && evt.path[0].parentElement.attributes.getNamedItem('mediaId') && evt.path[0].parentElement.attributes.getNamedItem('mediaId').value !== String(this._media.id)) {
-          // console.log("Parent element situation...")
+      } else if (this._media && path[0].parentElement && path[0].parentElement.attributes.getNamedItem('mediaId') && path[0].parentElement.attributes.getNamedItem('mediaId').value !== String(this._media.id)) {
           this.hideDetails();
       } else {
         // console.log("Conditions not met....");

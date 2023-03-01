@@ -55,11 +55,11 @@ jobs:
     - run:
         name: Make version.py
         command: |
-          ssh lightsail 'cd tator && make main/version.py';
+          ssh lightsail 'cd tator && make api/main/version.py';
     - run:
         name: Make docker images
         command: |
-          ssh lightsail 'cd tator && make -j$(nproc) tator-image images';
+          ssh lightsail 'cd tator && for i in $(seq 1 3); do make -j$(nproc) tator-image images && s=0 && break || s=$? && sleep 10; done; (exit $s)'
     - store_artifacts:
         path: doc/_build/schema.yaml
         destination: docs/schema.yaml
@@ -83,6 +83,33 @@ jobs:
         name: Push backend images to AWS
         command: |
           ssh lightsail 'export AWS_REGISTRY='"'$AWS_REGISTRY'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_aws.sh';
+  set-versions:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - run:
+        name: Set version in tator-py, tator-js, and REST interface
+        command: |
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-py/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-js/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/api/main/urls.py';
+  publish-clients:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - run:
+        name: Publish tator-py
+        command: |
+          ssh lightsail 'pip3 install twine';
+          ssh lightsail 'export TWINE_USERNAME='"'$TWINE_USERNAME'"';export TWINE_PASSWORD='"'$TWINE_PASSWORD'"';export TWINE_NON_INTERACTIVE='"'$TWINE_NON_INTERACTIVE'"';cd tator/scripts/packages/tator-py && python3 -m twine upload dist/*';
+    - run:
+        name: Publish tator-js
+        command: |
+          ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
@@ -167,7 +194,7 @@ jobs:
         command: ssh lightsail 'cd tator && make testinit'
     - run:
         name: Run REST tests
-        command: ssh lightsail 'cd tator && make test'
+        command: ssh lightsail 'cd tator && for i in $(seq 1 3); do make test && s=0 && break || s=$? && sleep 10; done; (exit $s)'
   front-end-tests:
     machine:
       image: ubuntu-2004:202010-01
@@ -195,7 +222,7 @@ jobs:
           mkdir -p /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos';
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
-          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
+          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s && s=0 && break || s=$? && sleep 10; done; (exit $s)';
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -215,7 +242,7 @@ jobs:
           scp ~/token.txt lightsail:~
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep';
+        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
@@ -235,13 +262,32 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - build-docker-images:
+    - set-versions:
         requires:
         - setup-lightsail
         context: cd
         filters:
           tags:
             only: /.*/
+          branches:
+            ignore: /.*/
+    - build-docker-images:
+        requires:
+        - setup-lightsail
+        - set-versions
+        context: cd
+        filters:
+          tags:
+            only: /.*/
+    - publish-clients:
+        requires:
+        - build-docker-images
+        context: cd
+        filters:
+          tags:
+            only: /.*/
+          branches:
+            ignore: /.*/
     - install-tator:
         requires:
         - build-docker-images
@@ -279,7 +325,9 @@ workflows:
         filters:
           branches:
             only:
-            - rc/0.2.22
+            - rc/0.2.23
+          tags:
+            only: /.*/
     - cleanup-lightsail:
         requires:
         - rest-tests

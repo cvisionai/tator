@@ -178,19 +178,22 @@ const store = create(subscribeWithSelector((set, get) => ({
    /** */
    setJobClusterPermissions: async () => {
       try {
-         const object = await get().fetchTypeByOrg("JobCluster");
+         if (get().organizationId) {
+            const object = await get().fetchTypeByOrg("JobCluster");
 
-         set({
-            JobClusterPermission: {
-               ...get().JobClusterPermission,
-               userCantSee: object.response.status === "403",
-               userCantSave: !get().isStaff && (object.data == null || object.data.length == 0)
-            }
-         });
+            set({
+               JobClusterPermission: {
+                  ...get().JobClusterPermission,
+                  userCantSee: object.response.status === "403",
+                  userCantSave: !get().isStaff && (object.data == null || object.data.length == 0)
+               }
+            });
 
-         // Success: Return status to idle (handles page spinner)
-         set({ status: { ...get().status, name: "idle", msg: "" } });
-         return object;
+            // Success: Return status to idle (handles page spinner)
+            set({ status: { ...get().status, name: "idle", msg: "" } });
+            return object;
+         }
+         
       } catch (err) {
          console.error(err);
          // Success: Return status to idle (handles page spinner)
@@ -214,9 +217,11 @@ const store = create(subscribeWithSelector((set, get) => ({
       api.getAnnouncementList(),
     ])
     .then((values) => {
+       console.log(values[0]);
       set({
         user: values[0],
-        announcements: values[1],
+         announcements: values[1],
+        isStaff: values[0].is_staff
       });
     });
    },
@@ -240,13 +245,18 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ projectId: id });
       set({ organizationId: object.data.organization });
       set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
-      
+
+
+
       set({
          status: {
             name: "idle",
             msg: ""
          }
       });
+
+      // As soon as we have the org ID
+      await store.getState().setJobClusterPermissions();
 
    },
 
@@ -478,8 +488,9 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
 
    for (let type of Object.keys(attributeDataByType)) {
       const data = await store.getState().initType(type);
-      const list = Array.isArray(data) ? data :  data.map.entries();
+      const list = Array.isArray(data) ? data : data.map.values();
       for (let entity of list) {
+         console.log(` attributeDataByType[${type}][${entity.name}] = entity.attribute_types`, entity.attribute_types);
          attributeDataByType[type][entity.name] = entity.attribute_types;
       }
    }

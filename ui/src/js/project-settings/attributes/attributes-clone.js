@@ -22,8 +22,8 @@ export class AttributesClone {
     this._typeSelect = document.createElement("enum-input");
     this._typeSelect.setAttribute("name", "Type");
     this._typeSelect.choices = typeOptions;
-    this._typeSelect.setValue("");
-    this._typeSelect.default = "";
+    this._typeSelect.setValue("none");
+    this._typeSelect.default = "none";
     this.form.appendChild(this._typeSelect);
 
     this.submitForm = null;
@@ -38,7 +38,8 @@ export class AttributesClone {
   
       entitySelect.addEventListener("change", () => {
         const entity = this._entitySelect.getValue();
-        const attributes = this.entities[entity];
+        const attributes = (entity == "none") ? false : this.entities[entity];
+
         if (attributes && attributes.length > 0) {
           const checkboxHTML = this._getAttributeCheckboxes( attributes );
           
@@ -102,7 +103,7 @@ export class AttributesClone {
   // Choose a type and entity to see a list of attributes:
   _getTypesList(){
       return [
-        {"label": "Select type", "value":""},
+        { "label": "Select type", "value": "none" },
         {"label": "Media Type", "value":"MediaType"},
         {"label": "Localization Type", "value":"LocalizationType"},
         {"label": "State Type", "value":"StateType"},
@@ -111,23 +112,25 @@ export class AttributesClone {
   }
 
   _getEntitiesForType(type) {
-    let entityOptions = [{"label":"Select", "value": ""}];
+    console.log("_getEntitiesForType type" + type, this.attributeDataByType[type]);
+    let entityOptions = [{ "label": "Select", "value": "none" }];
     this.entities = this.attributeDataByType[type];
+
 
     if (this.entities) {
       for (let o in this.entities) {
         let option = {"label":o, "value":o};
         entityOptions.push(option)
       }
-  
-      this._entitySelect = document.createElement("enum-input");
-      this._entitySelect.setAttribute("name", "Entity");
-      this._entitySelect.choices = entityOptions;
-      this._entitySelect.setValue("");
-      this._entitySelect.default = "";
-  
-      return this._entitySelect;
     }
+
+    this._entitySelect = document.createElement("enum-input");
+    this._entitySelect.setAttribute("name", "Entity");
+    this._entitySelect.choices = entityOptions;
+    this._entitySelect.setValue("none");
+    this._entitySelect.default = "none";
+
+    return this._entitySelect;
     
   }
 }

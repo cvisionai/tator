@@ -12,6 +12,7 @@ export class AnnotationImage extends TatorElement {
     this._shadow.appendChild(imageDiv);
 
     this._image = document.createElement("image-canvas");
+    this._image.domParents.push({"object":this});
     imageDiv.appendChild(this._image);
   }
 
@@ -38,6 +39,10 @@ export class AnnotationImage extends TatorElement {
 
   set annotationData(val) {
     this._image.annotationData = val;
+  }
+
+  set timelineSettings(val) {
+    this._timelineSettings = val;
   }
 
   newMetadataItem(dtype, metaMode, objId) {
@@ -113,6 +118,14 @@ export class AnnotationImage extends TatorElement {
 
   selectTrack(track, frameHint, skipGoToFrame) {
     this._image.selectTrack(track, undefined, false)
+  }
+
+  selectTimelineData() {
+    return;
+  }
+
+  updateTimeline() {
+    return;
   }
 
   addCreateTrackType(stateTypeObj) {

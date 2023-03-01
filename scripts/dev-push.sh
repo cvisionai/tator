@@ -7,8 +7,8 @@ for selector in "app=gunicorn"; do
     for pod in ${pods}; do
         name=`echo $pod | sed 's/pod\///'`
         echo "Updating ${name}"
-        kubectl cp main ${name}:/tator_online
-        kubectl cp tator_online ${name}:/tator_online
+        kubectl cp api/main ${name}:/tator_online
+        kubectl cp api/tator_online ${name}:/tator_online
     done
 done
 

@@ -1,10 +1,14 @@
 import * as d3 from "d3";
 import { v1 as uuidv1 } from "uuid";
+import { TatorApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { BaseTimeline } from "../annotation/base-timeline.js";
 
 export class EntityTimeline extends BaseTimeline {
   constructor() {
     super();
+
+    this._selectedDiv = document.createElement("div");
+    this._shadow.appendChild(this._selectedDiv);
 
     this._mainTimelineDiv = document.createElement("div");
     this._mainTimelineDiv.id = "main-timeline";
@@ -34,9 +38,10 @@ export class EntityTimeline extends BaseTimeline {
     this._focusTimelineDiv.style.display = "none";
 
     // Redraw whenever there's a resize
-    this._selectedDataId = -1;
+    this._selectedData = null;
     this._stateData = [];
     this._numericalData = [];
+    this._pointsData = [];
     window.addEventListener("resize", this._updateSvgData());
   }
 
@@ -49,240 +54,79 @@ export class EntityTimeline extends BaseTimeline {
     this._data = val;
 
     this._data.addEventListener("freshData", () => {
-      this._setupAttrStyleRangeTypes();
-      this._updateData();
+      this.updateData();
+
+      if (this._selectedData) {
+        this.selectEntity(this._selectedData);
+      }
     });
 
     this._data.addEventListener("initialized", () => {
-      this._setupAttrStyleRangeTypes();
-      this._updateData();
+      this.updateData();
     });
+  }
+
+  /**
+   * This should be called prior to utilizing the entity timeline functions.
+   * @param {TimelineSettings} val - Expected to have been initialized already.
+   */
+  set timelineSettings(val) {
+    this._timelineSettings = val;
   }
 
   timeStoreInitialized() {
     this._timeStoreInitialized = true;
-    this._setupAttrStyleRangeTypes();
-    this._updateData();
+    this.updateData();
   }
 
   /**
-   * Expected that state types will not change within the annotator/usage of this timeline.
-   * Therefore, run this once at initialization.
-   *
-   * @postcondition this._attrStyleRangeTypes is set
+   * @precondition this._timelineSettings must have been initialized
+   * @precondition this._data must have been initialized
+   * @precondition this._stateData must have been initialized with the current set of data
+   * @precondition this._selectedData must have been set
    */
-  _setupAttrStyleRangeTypes() {
+  setSelectedStateGraphData() {
 
-    if (this._attrStyleRangeTypes != undefined) {
-      return;
+    var data = this._selectedData;
+
+    if (!data.meta.includes("state")) {
+      return null;
     }
+    const dataType = this._data._dataTypes[data.meta];
 
-    if (this._data == undefined) {
-      return;
-    }
+    if (dataType.interpolation == "latest" || dataType.interpolation == "attr_style_range") {
 
-    this._attrStyleRangeTypes = [];
+      this._selectedStateGraphData = [];
 
-    for (let typeId in this._data._dataTypes) {
+      for (const stateData of this._stateData) {
+        if (stateData.meta == data.meta) {
 
-      // Grab the dataType and if this is not a state type, then ignore it
-      const dataType = this._data._dataTypes[typeId];
-      if (dataType.isLocalization) {
-        continue;
-      }
+          var graphData = [];
+          graphData.push({
+            id: data.id,
+            frame: this._minFrame,
+            value: 0.0,
+            actualValue: false});
 
-      if (dataType.interpolation == "attr_style_range") {
-        // To support attr_style_range, there must at least be one set of
-        // start_frame|end_frame style attributes. Grab the start_frame/end_frame info.
-        // Same applies to start_utc|end_utc style attributes
-        //
-        // There can actually be multiple start_frame|end_frame pairs. If this is the case,
-        // there has to be a range associated. If not, then don't show anything and throw a
-        // warning
-        var startUTCAttr;
-        var endUTCAttr;
-        var startFrameAttr;
-        var endFrameAttr;
-        var startInVideoCheckAttr;
-        var endInVideoCheckAttr;
-        var inVideoCheckAttr;
-        var inVideoCheckAttrList = [];
-        var startUTCAttrList = [];
-        var endUTCAttrList = [];
-        var startFrameAttrList = [];
-        var endFrameAttrList = [];
-        var rangeList = [];
-        var rangeUtcList = [];
-        var mode;
-
-        for (const attr of dataType.attribute_types) {
-          const style = attr['style'];
-
-          if (style) {
-
-            const styleOptions = style.split(' ');
-            const name = attr['name'];
-
-            if (styleOptions.includes("start_frame")) {
-              mode = "frame";
-              startFrameAttrList.push(name);
+          for (const entry of stateData.graphData) {
+            if (entry.id == data.id) {
+              graphData.push(entry);
             }
-            else if (styleOptions.includes("end_frame")) {
-              mode = "frame";
-              endFrameAttrList.push(name);
-            }
-            else if (styleOptions.includes("start_frame_check") || styleOptions.includes("start_in_video_check")) {
-              startInVideoCheckAttr = name;
-            }
-            else if (styleOptions.includes("end_frame_check") || styleOptions.includes("end_in_video_check")) {
-              endInVideoCheckAttr = name;
-            }
-            else if (styleOptions.includes("start_utc")) {
-              mode = "utc";
-              startUTCAttrList.push(name);
-            }
-            else if (styleOptions.includes("end_utc")) {
-              mode = "utc";
-              endUTCAttrList.push(name);
-            }
-            else if (styleOptions.includes("in_video_check")) {
-              inVideoCheckAttrList.push(name);
-            }
-            else if (styleOptions.includes("range_set")) {
-              rangeList.push({name: name, data: attr["default"], order: attr["order"]});
-            }
-            else if (styleOptions.includes("range_set_utc")) {
-              rangeUtcList.push({name: name, data: attr["default"], order: attr["order"]});
+            else if (entry.prevId == data.id) {
+              graphData.push(entry);
             }
           }
-        }
 
-        if (startFrameAttrList.length == 1 && endFrameAttrList.length == 1) {
+          if (graphData.length == 0) {
+            continue;
+          }
 
-          startFrameAttr = startFrameAttrList[0];
-          endFrameAttr = endFrameAttrList[0];
-          startUTCAttr = null;
-          endUTCAttr = null;
-          inVideoCheckAttr = null;
-
-          this._attrStyleRangeTypes.push({
-            dataType: dataType,
-            name: dataType.name,
-            mode: mode,
-            startUTCAttr: null,
-            endUTCAttr: null,
-            startFrameAttr: startFrameAttr,
-            endFrameAttr: endFrameAttr,
-            startInVideoCheckAttr: startInVideoCheckAttr,
-            endInVideoCheckAttr: endInVideoCheckAttr,
-            inVideoCheckAttr: null,
+          this._selectedStateGraphData.push({
+            meta: stateData.meta,
+            name: stateData.name,
+            color: this._timelineSettings.getSelectedColor(),
+            graphData: graphData
           });
-        }
-        else if (
-          startUTCAttrList.length >= 1 &&
-          endUTCAttrList.length >= 1 &&
-          startUTCAttrList.length == endUTCAttrList.length &&
-          rangeUtcList.length == startUTCAttrList.length) {
-
-          rangeUtcList.sort(function(a, b) {
-              if (a.order < b.order) {
-                return 1;
-              }
-              if (a.order > b.order) {
-                return -1;
-              }
-              return 0;
-            }
-          );
-          for (const rangeInfo of rangeUtcList) {
-            const rangeTokens = rangeInfo.data.split('|');
-            if (rangeTokens.length != 5) {
-              console.error("Incorrect datatype setup with attr_style_range interpolation.")
-              break;
-            }
-
-            startUTCAttr = rangeTokens[0];
-            endUTCAttr = rangeTokens[1];
-            inVideoCheckAttr = rangeTokens[2];
-            startInVideoCheckAttr = rangeTokens[3];
-            endInVideoCheckAttr = rangeTokens[4];
-
-            this._attrStyleRangeTypes.push({
-              dataType: dataType,
-              name: rangeInfo.name,
-              mode: mode,
-              startUTCAttr: startUTCAttr,
-              endUTCAttr: endUTCAttr,
-              startFrameAttr: null,
-              endFrameAttr: null,
-              startInVideoCheckAttr: startInVideoCheckAttr,
-              endInVideoCheckAttr: endInVideoCheckAttr,
-              inVideoCheckAttr: inVideoCheckAttr
-            });
-          }
-        }
-        else if (startUTCAttrList.length == 1 && endUTCAttrList.length == 1) {
-
-          startUTCAttr = startUTCAttrList[0];
-          endUTCAttr = endUTCAttrList[0];
-
-          this._attrStyleRangeTypes.push({
-            dataType: dataType,
-            name: dataType.name,
-            mode: mode,
-            startUTCAttr: startUTCAttr,
-            endUTCAttr: endUTCAttr,
-            startFrameAttr: null,
-            endFrameAttr: null,
-            startInVideoCheckAttr: startInVideoCheckAttr,
-            endInVideoCheckAttr: endInVideoCheckAttr,
-            inVideoCheckAttr: null,
-          });
-        }
-        else if (startFrameAttrList.length > 1 &&
-          endFrameAttrList.length > 1 &&
-          startFrameAttrList.length == endFrameAttrList.length &&
-          startFrameAttrList.length == rangeList.length) {
-
-          rangeList.sort(function(a, b) {
-              if (a.order < b.order) {
-                return 1;
-              }
-              if (a.order > b.order) {
-                return -1;
-              }
-              return 0;
-            }
-          );
-
-          for (const rangeInfo of rangeList) {
-            const rangeTokens = rangeInfo.data.split('|');
-            if (rangeTokens.length != 3) {
-              console.error("Incorrect datatype setup with attr_style_range interpolation.")
-              break;
-            }
-
-            startFrameAttr = rangeTokens[0];
-            endFrameAttr = rangeTokens[1];
-            inVideoCheckAttr = rangeTokens[2];
-
-            this._attrStyleRangeTypes.push({
-              dataType: dataType,
-              name: rangeInfo.name,
-              mode: mode,
-              startUTCAttr: null,
-              endUTCAttr: null,
-              startFrameAttr: startFrameAttr,
-              endFrameAttr: endFrameAttr,
-              startInVideoCheckAttr: null,
-              endInVideoCheckAttr: null,
-              inVideoCheckAttr: inVideoCheckAttr
-            });
-          }
-        }
-        else {
-          console.error("Incorrect datatype setup with attr_style_range interpolation.")
-          continue;
         }
       }
     }
@@ -291,11 +135,12 @@ export class EntityTimeline extends BaseTimeline {
   /**
    * Called whenever there's been a notification of new data. This will update the GUI.
    */
-  _updateData() {
+  updateData() {
 
     // Recreate the state and numerical datasets
     this._numericalData = [];
     this._stateData = [];
+
     if (isNaN(this._maxFrame)) {
       this.showMain(false);
       this.showFocus(false);
@@ -314,7 +159,7 @@ export class EntityTimeline extends BaseTimeline {
       return;
     }
 
-    if (this._attrStyleRangeTypes == undefined) {
+    if (this._timelineSettings == undefined) {
       return;
     }
 
@@ -322,12 +167,18 @@ export class EntityTimeline extends BaseTimeline {
       return;
     }
 
+    this._frameBooleanTypes = this._timelineSettings.getFrameBooleanInfo();
+    this._frameNumericalTypes = this._timelineSettings.getFrameNumericalInfo();
+    this._attrRangeTypes = this._timelineSettings.getAttrRangeInfo();
+
     for (let typeId in this._data._dataTypes) {
 
-      // Grab the dataType and if this is not a state type, then ignore it
       const dataType = this._data._dataTypes[typeId];
       if (dataType.isLocalization) {
-        continue;
+        let allData = this._data._dataByType.get(typeId);
+        if (!allData) {
+          continue;
+        }
       }
 
       if (dataType.interpolation == "latest") {
@@ -343,22 +194,33 @@ export class EntityTimeline extends BaseTimeline {
         for (let attrType of sortedAttributeTypes) {
           if (attrType.dtype == "bool") {
 
+            var color = "#FFFFFF";
+            var visible = true;
+            for (const info of this._frameBooleanTypes) {
+              if (info.name == attrType.name && info.dataType.id == dataType.id) {
+                color = info.color;
+                visible = info.visible;
+              }
+            }
+
+            if (!visible) {
+              continue;
+            }
+
             // Collect all the data for this attribute
             let graphData = [];
             for (let data of allData) {
               let value = data.attributes[attrType.name];
               let graphValue;
-              let tatorId;
               if (!value) {
                 value = false;
                 graphValue = 0.0;
               }
               else {
-                tatorId = data.id;
                 graphValue = 1.0;
               }
               graphData.push({
-                tatorId: tatorId,
+                id: data.id,
                 frame: this._timeStore.getGlobalFrame("matchFrame", data.media, data.frame),
                 value: graphValue,
                 actualValue: value});
@@ -373,12 +235,24 @@ export class EntityTimeline extends BaseTimeline {
               graphData[graphData.length - 1].frame = this._maxFrame;
 
               if (graphData[0].frame != this._minFrame) {
-                graphData.unshift({frame: this._minFrame, value: 0.0, actualValue: false});
+                graphData.unshift({
+                  id: null,
+                  frame: this._minFrame,
+                  value: 0.0,
+                  actualValue: false});
+              }
+
+              let prevId = null;
+              for (const entry of graphData) {
+                entry.prevId = prevId;
+                prevId = entry.id;
               }
 
               this._stateData.push({
+                meta: dataType.id,
                 name: attrType.name,
-                graphData: graphData
+                graphData: graphData,
+                color: color
               });
             }
           }
@@ -386,6 +260,20 @@ export class EntityTimeline extends BaseTimeline {
           //       Typically, the first conditional would check if style exists and the
           //       next would be attrType.style == "display_timeline"
           else if (attrType.dtype == "float" || attrType.dtype == "int") {
+
+            var color = "#FFFFFF";
+            var visible = true;
+            for (const info of this._frameNumericalTypes) {
+              if (info.name == attrType.name && info.dataType.id == dataType.id) {
+                color = info.color;
+                visible = info.visible;
+              }
+            }
+
+            if (!visible) {
+              continue;
+            }
+
             // Display this attribute as a numerical graph.
             // Normalize the data because the graph domain is from 0 to 1.
             let graphData = [];
@@ -397,7 +285,6 @@ export class EntityTimeline extends BaseTimeline {
                   maxValue = value;
                 }
                 graphData.push({
-                  tatorId: data.id,
                   frame: this._timeStore.getGlobalFrame("matchFrame", data.media, data.frame),
                   value: 0.0,
                   actualValue: value});
@@ -420,6 +307,8 @@ export class EntityTimeline extends BaseTimeline {
               graphData[graphData.length - 1].frame = this._maxFrame;
 
               this._numericalData.push({
+                color: color,
+                meta: dataType.id,
                 name: `${attrType.name}`,
                 graphData: graphData
               });
@@ -429,9 +318,14 @@ export class EntityTimeline extends BaseTimeline {
       }
     }
 
-    // Have to loop over the stored _attrStyleRangeTypes separately from the dataTypes
+    // Have to loop over the stored _attrRangeTypes separately from the dataTypes
     // since we treat each start/end range separately in the graph.
-    for (let attrTypeInfo of this._attrStyleRangeTypes) {
+    for (let attrTypeInfo of this._attrRangeTypes) {
+
+      if (!attrTypeInfo.visible) {
+        continue;
+      }
+
       // We've already figured out how the attributes are connected to each other earlier
       // with _setupAttrStyleRangeTypes()
       let allData = this._data._dataByType.get(attrTypeInfo.dataType.id);
@@ -484,12 +378,12 @@ export class EntityTimeline extends BaseTimeline {
         if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
           // Save the graphData to the state data list
           graphData.push({
-            tatorId: data.id,
+            id: data.id,
             frame: startFrame,
             value: 1.0,
             actualValue: true});
           graphData.push({
-            tatorId: data.id,
+            id: data.id,
             frame: endFrame,
             value: 0.0,
             actualValue: false});
@@ -506,12 +400,14 @@ export class EntityTimeline extends BaseTimeline {
         graphData[graphData.length - 1].frame = this._maxFrame;
 
         if (graphData[0].frame != this._minFrame) {
-          graphData.unshift({frame: this._minFrame, value: 0.0, actualValue: "false"});
+          graphData.unshift({frame: this._minFrame, value: 0.0, actualValue: "false", id: null});
         }
 
         this._stateData.push({
+          meta: attrTypeInfo.dataType.id,
           name: attrTypeInfo.name,
-          graphData: graphData
+          graphData: graphData,
+          color: attrTypeInfo.color
         });
       }
     }
@@ -532,9 +428,14 @@ export class EntityTimeline extends BaseTimeline {
    * Used in making unique identifiers for the various d3 graphing elements
    * @returns {object} id, href properties
    */
-  _d3UID() {
-    var id = uuidv1();
-    var href = new URL(`#${id}`, location) + "";
+  _d3UID(meta, name, category) {
+    if (meta == null) {
+      var id = uuidv1();
+    }
+    else {
+      var id = `tator_entityTimeline_${meta}_${name.replace(" ","-")}_${category}`;
+    }
+    var href = `#${id}`;
     return {id: id, href: href};
   }
 
@@ -548,7 +449,11 @@ export class EntityTimeline extends BaseTimeline {
       return;
     }
 
+    this._mainPointsHeight = 10;
     this._mainLineHeight = 30;
+    if (this._pointsData.length == 0) {
+      this._mainPointsHeight = 0;
+    }
     if (this._numericalData.length == 0) {
       this._mainLineHeight = 0;
     }
@@ -556,12 +461,15 @@ export class EntityTimeline extends BaseTimeline {
     this._mainStep = 5; // vertical height of each entry in the series / band
     this._mainMargin = ({top: 5, right: 3, bottom: 3, left: 3});
     this._mainHeight =
+    this._mainPointsHeight +
     this._mainLineHeight +
       this._stateData.length * (this._mainStep + this._mainStepPad) +
       this._mainMargin.top + this._mainMargin.bottom;
     this._mainWidth = this._mainTimelineDiv.offsetWidth;
 
-    if (this._mainWidth <= 0) { return; }
+    if (this._mainWidth <= 0) {
+      return;
+    }
     this._mainSvg.attr("viewBox",`0 0 ${this._mainWidth} ${this._mainHeight}`);
 
     // Define the axes
@@ -578,22 +486,28 @@ export class EntityTimeline extends BaseTimeline {
     //       using the traditional d3 enter/update/exit paradigm.
     this._mainSvg.selectAll('*').remove();
 
-    // Frame number x-axis ticks
-    /*
-    if (this._numericalData.length == 0 && this._stateData.length == 0) {
-      var xAxis = g => g
-        .call(d3.axisBottom(this._mainX).ticks().tickFormat(d3.format("d")))
-        .call(g => g.selectAll(".tick").filter(d => this._mainX(d) < this._mainMargin.left || this._mainX(d) >= this._mainWidth - this._mainMargin.right).remove())
-        .call(g => g.select(".domain").remove());
-    }
-    else {
-      var xAxis = g => g
-      .attr("transform", `translate(0,${this._mainMargin.top})`)
-      .call(d3.axisTop(this._mainX).ticks().tickFormat(d3.format("d")))
-      .call(g => g.selectAll(".tick").filter(d => this._mainX(d) < this._mainMargin.left || this._mainX(d) >= this._mainWidth - this._mainMargin.right).remove())
-      .call(g => g.select(".domain").remove());
-    }
-    */
+    // Localizations are represented as triangles along the graph
+    const gLocalizations = this._mainSvg.append("g")
+      .selectAll("g")
+      .data(this._pointsData)
+      .join("g")
+        .attr("transform", `translate(0,${this._mainMargin.top})`);
+
+    var triangle = d3.symbol()
+      .type(d3.symbolTriangle)
+      .size(50);
+
+    gLocalizations
+      .append("g")
+      .attr("stroke-width", 1)
+      .selectAll("path")
+      .data(this._pointsData)
+        .join("path")
+        .attr(
+          "transform", d => `translate(${this._mainX(d.frame)}, ${2})`
+        )
+        .attr("fill", d => d.color)
+        .attr("d", d => triangle(d.species));
 
     // States are represented as area graphs
     var area = d3.area()
@@ -603,15 +517,15 @@ export class EntityTimeline extends BaseTimeline {
       .y1(d => mainY(d.value));
 
     var mainStateDataset = this._stateData.map(d => Object.assign({
-      clipId: this._d3UID(),
-      pathId: this._d3UID()
+      clipId: this._d3UID(d.meta, d.name, "mainClip"),
+      pathId: this._d3UID(d.meta, d.name, "mainPath"),
     }, d));
 
     const gState = this._mainSvg.append("g")
       .selectAll("g")
       .data(mainStateDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${i * (this._mainStep + this._mainStepPad) + this._mainMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${i * (this._mainStep + this._mainStepPad) + this._mainMargin.top + this._mainPointsHeight})`);
 
     gState.append("clipPath")
       .attr("id", d => d.clipId.id)
@@ -634,21 +548,14 @@ export class EntityTimeline extends BaseTimeline {
       .selectAll("use")
       .data(d => new Array(1).fill(d))
       .join("use")
-        .attr("fill", (d, i) => {
-          if (d.graphData[i].tatorId == this._selectedDataId) {
-            return "#ffffff";
-          }
-          else {
-            return "#797991";
-          }
-        })
+        .attr("fill", d => d.color)
         .attr("transform", (d, i) => `translate(0,${(i + 1) * this._mainStep})`)
         .attr("xlink:href", d => d.pathId.href);
 
     // Numerical data are represented as line graphs
     var mainLineDataset = this._numericalData.map(d => Object.assign({
-      clipId: this._d3UID(),
-      pathId: this._d3UID(),
+      clipId: this._d3UID(d.meta, d.name, "mainClip"),
+      pathId: this._d3UID(d.meta, d.name, "mainPath"),
       name: d.name
     }, d));
 
@@ -661,7 +568,7 @@ export class EntityTimeline extends BaseTimeline {
       .x(d => this._mainX(d.frame))
       .y(d => mainLineY(d.value));
 
-    const startOfMainLineGraph = (this._stateData.length) * (this._mainStep + this._mainStepPad) + this._mainMargin.top;
+    const startOfMainLineGraph = (this._stateData.length) * (this._mainStep + this._mainStepPad) + this._mainMargin.top + this._mainPointsHeight;
 
     if (mainLineDataset.length > 0) {
       this._mainSvg.append("rect")
@@ -693,7 +600,7 @@ export class EntityTimeline extends BaseTimeline {
       .data(d => new Array(1).fill(d))
       .join("use")
         .attr("opacity","0.7")
-        .attr("stroke", d => "#797991")
+        .attr("stroke", d => d.color)
         .attr("stroke-width", d => 1.0)
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
@@ -711,6 +618,56 @@ export class EntityTimeline extends BaseTimeline {
       .attr("dy", "0.35em")
       .attr("fill", "#fafafa")
       .attr("opacity", "0.0");
+
+    if (this._selectedStateGraphData) {
+
+      var selectedStateDataset = this._selectedStateGraphData.map(d => Object.assign({
+        clipId: this._d3UID(d.meta, d.name, "selectedClip"),
+        pathId: this._d3UID(d.meta, d.name, "selectedPath"),
+      }, d));
+
+      const selectedG = this._mainSvg.append("g")
+        .selectAll("g")
+        .data(selectedStateDataset)
+        .join("g")
+          .attr("transform", (d) => {
+            var step = 0;
+            for (let idx = 0; idx < this._stateData.length; idx++) {
+              if (this._stateData[idx].meta == d.meta) {
+                if (this._stateData[idx].name == d.name) {
+                  step = idx;
+                  break;
+                }
+              }
+            }
+            if (step == 0) {
+              var pad = 0;
+            }
+            else {
+              var pad = this._mainStepPad;
+            }
+            return `translate(0,${(step + 1) * (this._mainStep) + (step * pad) + this._mainMargin.top + this._mainPointsHeight})`;
+          });
+
+      selectedG.append("clipPath")
+        .attr("id", d => d.clipId.id)
+        .append("rect")
+          .attr("width", this._mainWidth)
+          .attr("height", this._mainStep);
+
+      selectedG.append("defs").append("path")
+        .attr("id", d => d.pathId.id)
+        .attr("d", d => area(d.graphData));
+
+      selectedG.append("g")
+          .attr("clip-path", d => d.clipId)
+        .selectAll("use")
+        .data(d => new Array(1).fill(d))
+        .join("use")
+          .attr("fill", d => d.color)
+          .attr("xlink:href", d => d.pathId.href);
+
+    }
 
     this._mainFrameLine = this._mainSvg.append("line")
       .attr("stroke", "#fafafa")
@@ -762,7 +719,7 @@ export class EntityTimeline extends BaseTimeline {
     // and there is data
     if (this._focusTimelineDiv.style.display != "none") {
       this._mainBrush = d3.brushX()
-        .extent([[this._mainMargin.left, 0.5], [this._mainWidth - this._mainMargin.right, this._mainHeight - this._mainMargin.bottom + 0.5]])
+        .extent([[0, 0.5], [this._mainWidth - 0, this._mainHeight - this._mainMargin.bottom + 0.5]])
         .on("brush", this._mainBrushed.bind(this));
 
       this._mainBrushG = this._mainSvg.append("g")
@@ -783,7 +740,7 @@ export class EntityTimeline extends BaseTimeline {
 
     this._mainLineG.selectAll("use").join("use")
       .attr("opacity", d => d.name === selectedName ? "0.7" : "0.4")
-      .attr("stroke", d => d.name === selectedName ? "#fafafa" : "#797991")
+      .attr("stroke", d => d.name === selectedName ? "#fafafa" : d.color)
       .attr("stroke-width", d => d.name === selectedName ? 1.5 : 0.5)
       .style("stroke-dasharray", d => d.name === selectedName ? null : ("1, 2"));
 
@@ -808,7 +765,7 @@ export class EntityTimeline extends BaseTimeline {
     this._mainLineG.selectAll("use")
       .join("use")
       .attr("opacity", "0.7")
-      .attr("stroke", "#797991")
+      .attr("stroke", d => d.color)
       .attr("stroke-width", 1.0)
       .style("stroke-dasharray", "1, 2");
 
@@ -833,7 +790,14 @@ export class EntityTimeline extends BaseTimeline {
     const focusStep = 25; // vertical height of each entry in the series / band
     const focusStepPad = 4;
     const focusMargin = ({top: 20, right: 5, bottom: 3, left: 5});
+
+    var focusPointsHeight = focusStep + focusStepPad;
+    if (this._pointsData.length == 0) {
+      focusPointsHeight = 0;
+    }
+
     const focusHeight =
+      focusPointsHeight +
       this._numericalData.length * (focusStep + focusStepPad) +
       this._stateData.length * (focusStep + focusStepPad) +
       focusMargin.top + focusMargin.bottom;
@@ -902,17 +866,53 @@ export class EntityTimeline extends BaseTimeline {
       .x(d => focusX(d.frame))
       .y(d => focusY(d.value));
 
+    // Localizations are represented as triangles along the graph
+    const gLocalizations = this._focusSvg.append("g")
+      .selectAll("g")
+      .data(this._pointsData)
+      .join("g")
+        .attr("transform", `translate(0,${focusMargin.top})`);
+
+    var triangle = d3.symbol()
+      .type(d3.symbolTriangle)
+      .size(150);
+
+    gLocalizations.append("rect")
+      .attr("fill", "#262e3d")
+      .attr("width", focusWidth)
+      .attr("height", focusStep);
+
+    gLocalizations
+      .append("g")
+      .attr("stroke-width", 1)
+      .selectAll("path")
+      .data(this._pointsData)
+        .join("path")
+        .attr(
+          "transform", d => `translate(${focusX(d.frame)}, ${focusStep - 10})`
+        )
+        .attr("fill", d => d.color)
+        .attr("d", triangle());
+
+    gLocalizations.append("text")
+        .attr("x", 4)
+        .attr("y", focusStep / 2)
+        .attr("dy", "0.5em")
+        .attr("fill", "#fafafa")
+        .style("font-size", "12px")
+        .text(d => d.name);
+
     var focusStateDataset = this._stateData.map(d => Object.assign({
-        clipId: this._d3UID(),
-        pathId: this._d3UID(),
-        textId: this._d3UID()
+        clipId: this._d3UID(d.meta, d.name, "focusClip"),
+        pathId: this._d3UID(d.meta, d.name, "focusPath"),
+        textId: this._d3UID(d.meta, d.name, "focusText"),
       }, d));
 
     const focusG = this._focusSvg.append("g")
       .selectAll("g")
       .data(focusStateDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${i * (focusStep + focusStepPad) + focusMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${i * (focusStep + focusStepPad) + focusPointsHeight + focusMargin.top})`);
 
     focusG.append("clipPath")
       .attr("id", d => d.clipId.id)
@@ -937,9 +937,59 @@ export class EntityTimeline extends BaseTimeline {
       .selectAll("use")
       .data(d => new Array(1).fill(d))
       .join("use")
-        .attr("fill", (d, i) => "#797991")
+        .attr("fill", (d) => d.color)
         .attr("transform", (d, i) => `translate(0,${(i + 1) * focusStep})`)
         .attr("xlink:href", d => d.pathId.href);
+
+      if (this._selectedStateGraphData) {
+
+        var selectedStateDataset = this._selectedStateGraphData.map(d => Object.assign({
+          clipId: this._d3UID(d.meta, d.name, "selectedFocusClip"),
+          pathId: this._d3UID(d.meta, d.name, "selectedFocusPath"),
+        }, d));
+
+        const selectedG = this._focusSvg.append("g")
+          .selectAll("g")
+          .data(selectedStateDataset)
+          .join("g")
+            .attr("transform", (d) => {
+              var step = 0;
+              for (let idx = 0; idx < this._stateData.length; idx++) {
+                if (this._stateData[idx].meta == d.meta) {
+                  if (this._stateData[idx].name == d.name) {
+                    step = idx;
+                    break;
+                  }
+                }
+              }
+              if (step == 0) {
+                var pad = 0;
+              }
+              else {
+                var pad = this._mainStepPad;
+              }
+              return `translate(0,${(step + 1) * (focusStep + focusStepPad) + focusPointsHeight + focusMargin.top - focusStepPad})`;
+            });
+
+        selectedG.append("clipPath")
+          .attr("id", d => d.clipId.id)
+          .append("rect")
+            .attr("width", focusWidth)
+            .attr("height", focusStep);
+
+        selectedG.append("defs").append("path")
+          .attr("id", d => d.pathId.id)
+          .attr("d", d => focusArea(d.graphData));
+
+        selectedG.append("g")
+            .attr("clip-path", d => d.clipId)
+          .selectAll("use")
+          .data(d => new Array(1).fill(d))
+          .join("use")
+            .attr("fill", d => d.color)
+            .attr("xlink:href", d => d.pathId.href);
+      }
+
 
     // Unlike the main SVG, this SVG will display the corresponding attribute name
     // and the value when the user hovers over the SVG
@@ -961,16 +1011,16 @@ export class EntityTimeline extends BaseTimeline {
 
     // States are represented as line graphs
     var focusLineDataset = this._numericalData.map(d => Object.assign({
-        clipId: this._d3UID(),
-        pathId: this._d3UID(),
-        textId: this._d3UID()
-      }, d));
+      clipId: this._d3UID(d.meta, d.name, "focusClip"),
+      pathId: this._d3UID(d.meta, d.name, "focusPath"),
+      textId: this._d3UID(d.meta, d.name, "focusText"),
+    }, d));
 
     const focusGLine = this._focusSvg.append("g")
       .selectAll("g")
       .data(focusLineDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${(i + this._stateData.length) * (focusStep + focusStepPad) + focusMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${(i + this._stateData.length) * (focusStep + focusStepPad) + focusPointsHeight + focusMargin.top})`);
 
     focusGLine.append("clipPath")
       .attr("id", d => d.clipId.id)
@@ -996,7 +1046,7 @@ export class EntityTimeline extends BaseTimeline {
       .data(d => new Array(1).fill(d))
       .join("use")
         .attr("pointer-events", "none")
-        .attr("stroke", (d, i) => "#797991")
+        .attr("stroke", (d, i) => d.color)
         .attr("fill", (d, i) => "none")
         .attr("transform", (d, i) => `translate(0,${(i + 1) * focusStep})`)
         .attr("xlink:href", d => d.pathId.href)
@@ -1169,7 +1219,7 @@ export class EntityTimeline extends BaseTimeline {
 
     this._minFrame = minFrame;
     this._maxFrame = maxFrame;
-    this._updateData();
+    this.updateData();
     this.redraw();
   }
 
@@ -1215,16 +1265,38 @@ export class EntityTimeline extends BaseTimeline {
   }
 
   /**
-   * #TODO Implement in the future. This will highlight a particular region
+   * This highlights a particular localization, frame range state, or track.
+   * Provide null to deselect.
+   *
+   * @param {Tator.Localization | Tator.State | null} data
    */
   selectEntity(data) {
-    //this._selectedDataId = data.id;
-    //this.redraw();
-  }
 
-  selectNone() {
-    //this._selectedDataId = -1;
-    //this.redraw();
+    this._selectedData = data;
+    this._selectedStateGraphData = [];
+
+    this._pointsData = [];
+
+    if (data) {
+
+      const dataType = this._data._dataTypes[data.meta];
+
+      if (dataType.id.includes("state") && (dataType.interpolation == "latest" || dataType.interpolation == "attr_style_range")) {
+        this.setSelectedStateGraphData();
+      }
+      else if (dataType.id.includes("state") && dataType.association == "Media") {
+        // #TODO Do we want to show anything for media associated states?
+      }
+      else {
+        this._pointsData.push({
+          name: `Selected ${dataType.name}`,
+          frame: data.frame,
+          color: this._timelineSettings.getSelectedColor()
+        })
+      }
+    }
+    this.redraw();
+
   }
 
   /**

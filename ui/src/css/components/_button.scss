@@ -159,17 +159,24 @@
 
 .btn.background-green,
 .background-green {
-  background-color: $color-green;
+  background-color: $color-rainforest-green;
 
   &:hover,
   &:focus {
     background-color: $color-white;
-    color: $color-green;
+    color: $color-rainforest-green;
   }
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--brown;
-    color: $color-gray--dark;
+    background-color: transparent;
+    color: $color-gray--dark !important;
+    border: 1px solid $color-gray--dark50 !important;
+    &:hover,
+    &:focus {
+      background-color: transparent;
+      color: $color-gray--dark !important;
+      border: 1px solid $color-gray--dark50 !important;
+    }
   }
 }
 

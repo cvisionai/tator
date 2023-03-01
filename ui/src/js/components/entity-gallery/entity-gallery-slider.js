@@ -164,7 +164,6 @@ export class EntityGallerySlider extends TatorElement {
       }
 
       this._attributes._idWidget.hidden = true;
-      this._attributes._createdByWidget.hidden = true;
       this._attributes.attributeColumns = 2;
       this._attributes.dataType = state.typeData;
       this._attributes.setValues(state);
