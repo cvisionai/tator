@@ -90,7 +90,25 @@ export class SaveDialog extends TatorElement {
 
     this._favorites.addEventListener("load", evt => {
       this._attributes._track = null;
-      this._attributes.setValues({ attributes: evt.detail, id: -1, frame: this._requestObj.frame });
+
+      var attrs = evt.detail;
+      console.log(attrs);
+      var filteredAttrs = attrs;
+      if (this._dataType.interpolation == "attr_style_range") {
+        filteredAttrs = {};
+        for (const info of this._dataType.attribute_types) {
+          if (attrs.hasOwnProperty(info.name)) {
+            filteredAttrs[info.name] = attrs[info.name];
+            if (info.style) {
+              if (info.style.includes("start_frame") || info.style.includes("end_frame")) {
+                filteredAttrs[info.name] = this._requestObj.frame;
+              }
+            }
+          }
+        }
+      }
+      console.log(filteredAttrs);
+      this._attributes.setValues({ attributes: filteredAttrs, id: -1, frame: this._requestObj.frame });
       this._values = this._attributes.getValues();
       if (this._values === null) {
         this._save.setAttribute("disabled", "");
