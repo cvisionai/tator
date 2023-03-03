@@ -2070,8 +2070,8 @@ export class AnnotationCanvas extends TatorElement
 
   computeLocalizationColor(localization, meta)
   {
-    // Default fill is solid
-    var fill = {"style": "solid","color":color.TEAL,"alpha":0.15*255};
+    // Default fill is fill
+    var fill = {"style": "fill","color":color.TEAL,"alpha":0.15*255};
     var drawColor = color.TEAL;
     var trackColor = null;
     var alpha = annotation_alpha;
@@ -2188,6 +2188,7 @@ export class AnnotationCanvas extends TatorElement
       }
     }
 
+    fill.color = drawColor;
     if (meta.color_map)
     {
       if (localizationInTrack)
@@ -2199,7 +2200,6 @@ export class AnnotationCanvas extends TatorElement
         colorMap(localization.attributes, false);
       }
     }
-    fill.color = drawColor;
 
     // Handle state based color choices
     // If we are cutting the localization apply half alpha at gray
@@ -3302,7 +3302,7 @@ export class AnnotationCanvas extends TatorElement
             {
               that.accentWithHandles(that._draw, meta.dtype, poly, getColorForFrame(frameIdx), width, alpha);
             }
-            if (colorInfo.fill.style == "solid")
+            if (colorInfo.fill.style == "fill")
             {
               that._draw.fillPolygon(poly, width, getColorForFrame(frameIdx), fillAlpha);
             }
@@ -4494,7 +4494,7 @@ export class AnnotationCanvas extends TatorElement
                                     colorInfo.alpha,
                                     match);
             }
-            if (fill.style == "solid")
+            if (fill.style == "fill")
             {
               drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
             }
