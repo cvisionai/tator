@@ -253,6 +253,18 @@ export class AnnotationSidebar extends TatorElement {
     this._hiddenDiv.appendChild(panel);
     this._div.appendChild(trigger);
   }
+
+  set videoIsPlaying(val)
+  {
+    if (val == true)
+    {
+      
+    }
+    else
+    {
+
+    }
+  }
 }
 
 customElements.define("annotation-sidebar", AnnotationSidebar);
