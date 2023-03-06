@@ -298,6 +298,12 @@
   font-size: inherit;
   font-weight: inherit;
   text-align: inherit;
+
+  &:disabled,
+  [disabled] {
+    color: $color-gray--dark;
+    cursor: not-allowed;
+  }
 }
 
 .height-full {
