@@ -13,6 +13,11 @@ leaf_type_properties = {
         'type': 'array',
         'items': {'$ref': '#/components/schemas/AttributeType'},
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 leaf_type_spec = {
@@ -30,6 +35,7 @@ leaf_type_update = {
             'type': 'string'
         },
         'name': leaf_type_properties['name'],
+        'elemental_id': leaf_type_properties['elemental_id'],
     },
 }
 

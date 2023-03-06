@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import logging
+import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -17,7 +18,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--min_age_days",
             type=int,
-            default=7,
+            default=int(os.getenv("ARCHIVE_AGE_DAYS", 7)),
             help="Minimum age in days of media objects for archive.",
         )
 
@@ -31,8 +32,8 @@ class Command(BaseCommand):
         )
         # Handle multiviews after all singles because their transition is dependent on the singles'
         # states
-        archived_qs = base_qs.exclude(meta__dtype="multi")
-        multi_qs = base_qs.filter(meta__dtype="multi")
+        archived_qs = base_qs.exclude(type__dtype="multi")
+        multi_qs = base_qs.filter(type__dtype="multi")
 
         if not (archived_qs.exists() or multi_qs.exists()):
             logger.info(f"No media to archive!")

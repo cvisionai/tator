@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 
 from django.core.management.base import BaseCommand
 from main.models import State
@@ -10,7 +11,8 @@ class Command(BaseCommand):
     help = 'Deletes any states marked for deletion with null project, type, or version.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--min_age_days', type=int, default=30,
+        parser.add_argument('--min_age_days', type=int,
+                            default=int(os.getenv('EXPIRATION_AGE_DAYS', 30)),
                             help="Minimum age in days of state objects for deletion.")
 
     def handle(self, **options):

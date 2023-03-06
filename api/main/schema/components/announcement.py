@@ -6,12 +6,16 @@ announcement = {
             'type': 'integer',
             'description': 'Unique integer identifying an announcement.',
         },
-        'subject': {
-            'description': 'Subject of the announcement.',
+        'created_datetime': {
+            'description': 'When the announcement was made.',
             'type': 'string',
         },
-        'message': {
-            'description': 'Message of the announcement.',
+        'eol_datetime': {
+            'description': 'When the announcement will expire.',
+            'type': 'string',
+        },
+        'markdown': {
+            'description': 'Markdown formatted contents of the announcement.',
             'type': 'string',
         },
     },

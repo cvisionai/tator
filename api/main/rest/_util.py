@@ -10,8 +10,9 @@ from django.db.models.expressions import Subquery
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound
 
-from ..models import type_to_obj, ChangeLog, ChangeToObject, Project
+from ..models import type_to_obj, ChangeLog, ChangeToObject, Membership, Project, Permission, User
 
 from ._attributes import bulk_patch_attributes, convert_attribute
 
@@ -20,6 +21,21 @@ logger = logging.getLogger(__name__)
 class Array(Subquery):
     """ Class to expose ARRAY SQL function to ORM """
     template = 'ARRAY(%(subquery)s)'
+
+def compute_user(project, user, user_elemental_id):
+    """ Given a project and a user, if a user_elemental_id is supplied return the appropriate user to specify as the author of an object. """
+    if user_elemental_id:
+        can_change_authorship = Membership.objects.filter(user=user, project=project, permission=Permission.FULL_CONTROL).exists()
+        if can_change_authorship:
+            identified_user = User.objects.filter(elemental_id=user_elemental_id)
+            if identified_user:
+                return identified_user[0]
+            else:
+                raise NotFound(f"Couldn't find user with {user_elemental_id}")
+        else:
+            raise PermissionDenied(f"{user} does not have full permission, required for authorship modifications, on {project.pk}")
+    else:
+        return user
 
 def reverse_queryArgs(viewname, kwargs=None, queryargs=None):
     """

@@ -3,6 +3,7 @@ import logging
 import datetime
 from uuid import uuid1
 
+from django.http import Http404
 from rest_framework.authtoken.models import Token
 from django.http import Http404
 import requests
@@ -145,8 +146,8 @@ class TranscodeListAPI(BaseListView):
             media_obj = Media.objects.get(pk=media_id)
             if media_obj.project.pk != project:
                 raise Exception(f"Media not part of specified project!")
-        else:
-            media_obj, _ = _create_media(params, self.request.user)
+        elif entity_type != -1:
+            media_obj, _ = _create_media(project, params, self.request.user)
             media_id = media_obj.id
         response = requests.post(ENDPOINT, json=[{
             'url': url,

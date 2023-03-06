@@ -14,7 +14,7 @@ export class TatorData {
     this._mediaTypes = [];
     this._mediaTypeNames = [];
     this._localizationTypes = [];
-    this._localizaitonTypeNames = [];
+    this._localizationTypeNames = [];
     this._versions = [];
     this._sections = [];
     this._algorithms = [];
@@ -52,6 +52,10 @@ export class TatorData {
 
   getStoredLocalizationStateTypes() {
     return this._stateTypeAssociations.localization;
+  }
+
+  getStoredFrameStateTypes() {
+    return this._stateTypeAssociations.frame;
   }
 
   getStoredMediaTypes() {
@@ -649,10 +653,17 @@ export class TatorData {
     var promises = [];
 
     var paramString = "";
-
+    var section = null;
     var finalAnnotationFilters = [];
     for (const filter of annotationFilterData) {
+      if (filter.field == "_section")
+      {
+        section = field.value;
+      }
+      else
+      {
         finalAnnotationFilters.push(this._convertFilterForTator(filter));
+      }
     }
 
     // Annotation Search
@@ -668,7 +679,14 @@ export class TatorData {
      // Media Filters
     var finalMediaFilters = [];
     for (const filter of mediaFilterData) {
+      if (filter.field == "_section")
+      {
+        section = field.value;
+      }
+      else
+      {
         finalMediaFilters.push(this._convertFilterForTator(filter));
+      }
     }
 
     var mediaSearchObject = {'method': "and", 'operations':[...finalMediaFilters]};
@@ -701,6 +719,11 @@ export class TatorData {
 
     if (dtype != undefined) {
       paramString += `&type=${dtype}`
+    }
+
+    if (section != null)
+    {
+      paramString += `&section=${section}`;
     }
 
     let url = "/rest";
@@ -954,7 +977,7 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "tator_user_sections";
+            newFilter.field = "_section";
             newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
@@ -1084,7 +1107,7 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "tator_user_sections";
+            newFilter.field = "_section";
             newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }

@@ -32,7 +32,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_1 = '/tmp/hubble-sees-the-wings-of-a-butterfly.jpg'
    if not os.path.exists(nasa_space_photo_1):
-      url = 'https://images-assets.nasa.gov/image/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o~small.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/hubble.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_1, 'wb') as f:
@@ -42,7 +42,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_2 = '/tmp/layers-in-galle-crater.jpg'
    if not os.path.exists(nasa_space_photo_2):
-      url = 'https://images-assets.nasa.gov/image/PIA21575/PIA21575~medium.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/galle.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_2, 'wb') as f:
@@ -52,7 +52,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_3 = '/tmp/behemoth-black-hole.jpg'
    if not os.path.exists(nasa_space_photo_3):
-      url = 'https://images-assets.nasa.gov/image/behemoth-black-hole-found-in-an-unlikely-place_26209716511_o/behemoth-black-hole-found-in-an-unlikely-place_26209716511_o~medium.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/behemoth.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_3, 'wb') as f:
@@ -61,7 +61,7 @@ def test_basic(request, page_factory, project): #video
                   f.write(chunk)
 
    page.set_input_files('section-upload input', [nasa_space_photo_1,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_2,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1])
-   page.wait_for_timeout(5000)
+   page.wait_for_timeout(15000) # Waiting for all these files to upload
    page.query_selector('upload-dialog').query_selector('text=Close').click()
 
    page.locator('.project__header reload-button').click()

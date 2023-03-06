@@ -32,7 +32,7 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
     }
 
     # Make media element to get ID
-    response = api.create_media(project, media_spec=spec)
+    response = api.create_media_list(project, body=[spec])
     assert isinstance(response, CreateResponse)
     media_id = response.id
 

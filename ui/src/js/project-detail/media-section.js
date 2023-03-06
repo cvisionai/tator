@@ -243,6 +243,10 @@ export class MediaSection extends TatorElement {
     if (this._section !== null) {
       sectionParams.append("section", this._section.id);
     }
+    if (this._filterSection != null)
+    {
+      sectionParams.append("section", this._filterSection);
+    }
     const filterAndSearchParams = this._getFilterQueryParams();
     return joinParams(sectionParams, filterAndSearchParams);
   }
@@ -843,7 +847,13 @@ export class MediaSection extends TatorElement {
       // Media Filters
       var finalMediaFilters = [];
       var finalMetadataFilters = [];
+      this._filterSection = null;
       for (var filter of this._filterConditions) {
+        if (filter.field == "_section")
+        {
+          this._filterSection = filter.value;
+          continue;
+        }
         if (filter.categoryGroup == "Media")
         {
           finalMediaFilters.push(this._modelData._convertFilterForTator(filter));

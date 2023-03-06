@@ -1835,310 +1835,123 @@ export class AnnotationCanvas extends TatorElement
       return;
     }
 
-    if (this._mouseMode == MouseMode.QUERY)
+    if (event.ctrlKey && event.code == "Digit9")
     {
-      if (event.ctrlKey && event.code == "Digit9")
-      {
-        this._effectManager.grayscale();
-        return;
-      }
-      if (event.ctrlKey && event.code == "Digit8")
-      {
-        this._effectManager.grayscale({'color': color.BLACK, 'alpha': 128});
-        document.body.style.cursor = "progress";
-        setTimeout(()=>{
-        this.underwaterCorrection();
-        },33);
-        return;
-      }
-      if (event.ctrlKey && event.code == "Digit7")
-      {
-        setTimeout(()=>{
-        this.refresh(true);
-        },0);
-        return;
-      }
-      if (event.key == "1")
-      {
-        if (event.altKey == true) {
-          if (this._menuAppletShortcuts["ALT+1"] != null) {
-            event.preventDefault();
-            event.stopPropagation();
+      this._effectManager.grayscale();
+      return;
+    }
+    if (event.ctrlKey && event.code == "Digit8")
+    {
+      this._effectManager.grayscale({'color': color.BLACK, 'alpha': 128});
+      document.body.style.cursor = "progress";
+      setTimeout(()=>{
+      this.underwaterCorrection();
+      },33);
+      return;
+    }
+    if (event.ctrlKey && event.code == "Digit7")
+    {
+      setTimeout(()=>{
+      this.refresh(true);
+      },0);
+      return;
+    }
+    if (event.key == "1")
+    {
+      if (event.altKey == true) {
+        if (this._menuAppletShortcuts["ALT+1"] != null) {
+          event.preventDefault();
+          event.stopPropagation();
 
-            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
-              detail: {
-                appletName: this._menuAppletShortcuts["ALT+1"],
-                frame: this.currentFrame(),
-                media: this._videoObject,
-                projectId: this._data._projectId,
-                version: this._data.getVersion(),
-              },
-              composed: true,
-            }));
-            return;
-          }
+          this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+            detail: {
+              appletName: this._menuAppletShortcuts["ALT+1"],
+              frame: this.currentFrame(),
+              media: this._videoObject,
+              projectId: this._data._projectId,
+              version: this._data.getVersion(),
+            },
+            composed: true,
+          }));
+          return;
         }
       }
-      if (event.key == "2")
-      {
-        if (event.altKey == true) {
-          if (this._menuAppletShortcuts["ALT+2"] != null) {
-            event.preventDefault();
-            event.stopPropagation();
+    }
+    if (event.key == "2")
+    {
+      if (event.altKey == true) {
+        if (this._menuAppletShortcuts["ALT+2"] != null) {
+          event.preventDefault();
+          event.stopPropagation();
 
-            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
-              detail: {
-                appletName: this._menuAppletShortcuts["ALT+2"],
-                frame: this.currentFrame(),
-                media: this._videoObject,
-                projectId: this._data._projectId,
-                version: this._data.getVersion(),
-              },
-              composed: true,
-            }));
-            return;
-          }
+          this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+            detail: {
+              appletName: this._menuAppletShortcuts["ALT+2"],
+              frame: this.currentFrame(),
+              media: this._videoObject,
+              projectId: this._data._projectId,
+              version: this._data.getVersion(),
+            },
+            composed: true,
+          }));
+          return;
         }
       }
-      if (event.key == "3")
-      {
-        if (event.altKey == true) {
-          if (this._menuAppletShortcuts["ALT+3"] != null) {
-            event.preventDefault();
-            event.stopPropagation();
+    }
+    if (event.key == "3")
+    {
+      if (event.altKey == true) {
+        if (this._menuAppletShortcuts["ALT+3"] != null) {
+          event.preventDefault();
+          event.stopPropagation();
 
-            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
-              detail: {
-                appletName: this._menuAppletShortcuts["ALT+3"],
-                frame: this.currentFrame(),
-                media: this._videoObject,
-                projectId: this._data._projectId,
-                version: this._data.getVersion(),
-              },
-              composed: true,
-            }));
-            return;
-          }
+          this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+            detail: {
+              appletName: this._menuAppletShortcuts["ALT+3"],
+              frame: this.currentFrame(),
+              media: this._videoObject,
+              projectId: this._data._projectId,
+              version: this._data.getVersion(),
+            },
+            composed: true,
+          }));
+          return;
         }
       }
+    }
 
-      if (event.code == 'Tab')
-      {
-        event.preventDefault();
-
-        var frame = this.currentFrame();
-        var firstLocalization = this.getFirstLocalization(frame);
-        if (firstLocalization)
-        {
-          this.selectLocalization(firstLocalization, true);
-        }
-
-        return false;
-      }
-
-      // Handle frame seek shortcuts
-      var amount = 1;
+    // Handle frame seek shortcuts
+    var amount = 1;
+    if (event.shiftKey == true)
+    {
+      amount *= 5;
+    }
+    if (event.key == 'ArrowRight')
+    {
+      event.preventDefault();
+      event.stopPropagation();
       if (event.shiftKey == true)
       {
-        amount *= 5;
+        this.advanceOneSecond(true);
       }
-      if (event.key == 'ArrowRight')
+      else
       {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.shiftKey == true)
-        {
-          this.advanceOneSecond(true);
-        }
-        else
-        {
-          this.gotoFrame(this.currentFrame() + amount, true);
-        }
-        return false;
+        this.gotoFrame(this.currentFrame() + amount, true);
       }
-      if (event.key == 'ArrowLeft')
-      {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.shiftKey == true)
-        {
-          this.backwardOneSecond(true);
-        }
-        else
-        {
-          this.gotoFrame(this.currentFrame() - amount, true);
-        }
-        return false;
-      }
+      return false;
     }
-
-    if (this._mouseMode == MouseMode.SELECT)
+    if (event.key == 'ArrowLeft')
     {
-      if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.shiftKey == true)
       {
-        this._delConfirm.objectName = this.getObjectDescription(this.activeLocalization).name;
-        this._delConfirm.confirm()
+        this.backwardOneSecond(true);
       }
-
-      if (event.code == 'Tab')
+      else
       {
-        event.preventDefault();
-
-        var frame = this.currentFrame();
-        var firstLocalization = this.getFirstLocalization(frame);
-        if (firstLocalization)
-        {
-          //Select the first annotation
-          var currentId = this.activeLocalization.id;
-          var firstType=this._framedData.get(frame).keys().next().value;
-          var nextLocalization=firstLocalization;
-          var typeIter = this._framedData.get(frame).values();
-          var done = false;
-          // Not a sorted list so search through the whole thing
-          var maxId = Number.MAX_VALUE;
-          var typeList=typeIter.next();
-          while (typeList.done == false && done == false)
-          {
-            for (var idx = 0; idx < typeList.value.length; idx++)
-            {
-              if (typeList.value[idx].id > currentId && typeList.value[idx].id < maxId)
-              {
-                maxId = typeList.value[idx].id;
-                nextLocalization = typeList.value[idx];
-              }
-            }
-            typeList=typeIter.next();
-          }
-          this.selectLocalization(nextLocalization, true);
-        }
-        return false;
+        this.gotoFrame(this.currentFrame() - amount, true);
       }
-    }
-
-    if ((this._mouseMode == MouseMode.SELECT ||
-        this._mouseMode == MouseMode.MOVE ) && this._determineCanEdit(this.activeLocalization))
-    {
-      if (event.key == 'ArrowRight' ||
-          event.key == 'ArrowLeft' ||
-          event.key == 'ArrowUp' ||
-          event.key == 'ArrowDown')
-      {
-        this._mouseMode = MouseMode.MOVE;
-        var coord = 0;
-        var amount = 0;
-        var impactVector = [1,1,1,1];
-
-        if (event.key == 'ArrowRight')
-        {
-          coord = 0;
-          amount = 1;
-          if (event.altKey)
-          {
-            impactVector = [-1,1,1, -1];
-          }
-        }
-        if (event.key == 'ArrowLeft')
-        {
-          coord = 0;
-          amount = -1;
-          if (event.altKey)
-          {
-            impactVector = [-1,1,1,-1];
-          }
-        }
-        if (event.key == 'ArrowUp')
-        {
-          coord = 1;
-          amount = -1;
-          if (event.altKey)
-          {
-            impactVector = [1,1,-1,-1];
-          }
-        }
-        if (event.key == 'ArrowDown')
-        {
-          coord = 1;
-          amount = 1;
-          if (event.altKey)
-          {
-            impactVector = [1,1,-1,-1];
-          }
-        }
-
-        // Move a lot when you hold shift down
-        if (event.shiftKey == true)
-        {
-          amount *= 5;
-        }
-
-        var meta=this.getObjectDescription(this.activeLocalization);
-        var objType = this.getObjectDescription(this.activeLocalization);
-
-        if (objType.dtype == 'box')
-        {
-          var poly = this.localizationToPoly(this.activeLocalization);
-          for (var idx = 0; idx < 4; idx++)
-          {
-            poly[idx][coord] += (amount*impactVector[idx]);
-          }
-          poly = this.boundsCheck(poly);
-
-          // Update localization based on motion
-          var boxCoords=this.scaleToRelative(polyToBox(poly));
-          this.activeLocalization.x = boxCoords[0];
-          this.activeLocalization.y = boxCoords[1];
-          this.activeLocalization.width = boxCoords[2];
-          this.activeLocalization.height = boxCoords[3];
-        }
-        else if (objType.dtype == 'line')
-        {
-          var line = this.localizationToLine(this.activeLocalization);
-          for (var idx = 0; idx < 2; idx++)
-          {
-            line[idx][coord] += (amount*impactVector[0]);
-          }
-          line = this.boundsCheck(line);
-
-          // Update localization based on motion
-          var expLine=this.scaleToRelative(this.explodeLine(line), true);
-          this.activeLocalization.x0 = expLine[0];
-          this.activeLocalization.y0 = expLine[1];
-          this.activeLocalization.x1 = expLine[2];
-          this.activeLocalization.y1 = expLine[3];
-          this.modifyLocalization();
-        }
-        else if (objType.dtype == 'dot')
-        {
-          // Add to current localization first
-          if (coord == 0)
-          {
-            var pixel = 1.0/this._dims[0];
-            var newX = this.activeLocalization.x + (amount*impactVector[0]*pixel);
-            if (newX <= 1.0 && newX >= 0)
-            {
-              this.activeLocalization.x = newX;
-            }
-          }
-          else if (coord == 1)
-          {
-            var pixel = 1.0/this._dims[1];
-            var newY = this.activeLocalization.y + (amount*impactVector[1]*pixel);
-            if (newY <= 1.0 && newY >= 0)
-            {
-              this.activeLocalization.y = newY;
-            }
-          }
-          var line = this.localizationToDot(this.activeLocalization,
-                                            defaultDotWidth);
-
-        }
-
-        this.selectLocalization(this.activeLocalization, true, true);
-        this._mouseMode = MouseMode.MOVE; //select puts us back in select mode
-        return false;
-      }
-
-      // If we somehow get in here..
       return false;
     }
   }
@@ -2257,8 +2070,8 @@ export class AnnotationCanvas extends TatorElement
 
   computeLocalizationColor(localization, meta)
   {
-    // Default fill is solid
-    var fill = {"style": "solid","color":color.TEAL,"alpha":0.15*255};
+    // Default fill is fill
+    var fill = {"style": "fill","color":color.TEAL,"alpha":0.15*255};
     var drawColor = color.TEAL;
     var trackColor = null;
     var alpha = annotation_alpha;
@@ -2375,6 +2188,7 @@ export class AnnotationCanvas extends TatorElement
       }
     }
 
+    fill.color = drawColor;
     if (meta.color_map)
     {
       if (localizationInTrack)
@@ -2386,7 +2200,6 @@ export class AnnotationCanvas extends TatorElement
         colorMap(localization.attributes, false);
       }
     }
-    fill.color = drawColor;
 
     // Handle state based color choices
     // If we are cutting the localization apply half alpha at gray
@@ -3059,6 +2872,7 @@ export class AnnotationCanvas extends TatorElement
         this.deselectTrack()
         this.refresh();
         this._mouseMode = MouseMode.QUERY;
+        this.dispatchEvent(new CustomEvent("unselect", {composed:true}));
       }
     }
     if (this._mouseMode == MouseMode.ZOOM_ROI)
@@ -3488,7 +3302,7 @@ export class AnnotationCanvas extends TatorElement
             {
               that.accentWithHandles(that._draw, meta.dtype, poly, getColorForFrame(frameIdx), width, alpha);
             }
-            if (colorInfo.fill.style == "solid")
+            if (colorInfo.fill.style == "fill")
             {
               that._draw.fillPolygon(poly, width, getColorForFrame(frameIdx), fillAlpha);
             }
@@ -4070,6 +3884,33 @@ export class AnnotationCanvas extends TatorElement
     return new_box;
   }
 
+  encompassing_box(poly)
+  {
+    let min_x=0xFFFFFFFF,min_y=0xFFFFFF,max_x=-1,max_y=-1;
+    for (let idx = 0; idx < poly.length; idx++)
+    {
+      const this_x = poly[idx][0];
+      const this_y = poly[idx][1];
+      if (this_x > max_x)
+      {
+        max_x = this_x;
+      }
+      if (this_x < min_x)
+      {
+        min_x = this_x;
+      }
+      if (this_y > max_y)
+      {
+        max_y = this_y;
+      }
+      if (this_y < min_y)
+      {
+        min_y = this_y;
+      }
+    }
+    return [[min_x, min_y],[max_x, min_y], [max_x,max_y], [min_x,max_y]];
+  }
+
   accentWithHandles(drawCtx, type, item, color_req, width, alpha, activeSelection)
   {
     let allZeros = true;
@@ -4165,9 +4006,9 @@ export class AnnotationCanvas extends TatorElement
     }
   }
 
-  blackoutOutside(box)
+  blackoutOutside(poly)
   {
-    box = this.fix_box(box);
+    let box = this.encompassing_box(poly);
 
     const maxX = this._canvas.width;
     const maxY = this._canvas.height;
@@ -4235,10 +4076,9 @@ export class AnnotationCanvas extends TatorElement
       var y1 = dragEnd.y;
 
       var lineCoords = [[x0,y0],[x1,y1]];
-      var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 
       that._draw.beginDraw();
-      that.blackoutOutside(fauxBoxCoords);
+      that.blackoutOutside(lineCoords);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
                           colorReq,
@@ -4654,7 +4494,7 @@ export class AnnotationCanvas extends TatorElement
                                     colorInfo.alpha,
                                     match);
             }
-            if (fill.style == "solid")
+            if (fill.style == "fill")
             {
               drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
             }

@@ -11,7 +11,7 @@ from django.db.models.functions import Cast
 from django.db.models import Func, F, Q
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import BooleanField
-from django.contrib.gis.db.models import IntegerField
+from django.contrib.gis.db.models import BigIntegerField
 from django.contrib.gis.db.models import FloatField
 from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
@@ -73,14 +73,14 @@ def _convert_boolean(value):
 
 def _get_info_for_attribute(project, entity_type, key):
     """ Returns the first matching dtype with a matching key """
-    if key.startswith('_'):
-        if key in ['_x', '_y', '_u', '_v', '_width', '_height']:
+    if key.startswith('$'):
+        if key in ['$x', '$y', '$u', '$v', '$width', '$height']:
             return {'name': key[1:], 'dtype': 'float'}
-        elif key in ['_created_by', '_modified_by']:
+        elif key in ['$created_by', '$modified_by']:
             return {'name': key[1:], 'dtype': 'int'}
-        elif key in ['_created_datetime', '_modified_datetime']:
+        elif key in ['$created_datetime', '$modified_datetime']:
             return {'name': key[1:], 'dtype': 'datetime'}
-        elif key in ['_name']:
+        elif key in ['$name']:
             return {'name': key[1:], 'dtype': 'string'}
         else:
             return None
@@ -95,7 +95,7 @@ def _get_info_for_attribute(project, entity_type, key):
 def _get_field_for_attribute(project, entity_type, key):
     """ Returns the field type for a given key in a project/annotation_type """
     lookup_map = {'bool': BooleanField,
-                  'int': IntegerField,
+                  'int': BigIntegerField,
                   'float': FloatField,
                   'enum': CharField,
                   'string': CharField,
@@ -166,7 +166,7 @@ def build_query_recursively(query_object):
         operation = query_object['operation']
         inverse = query_object.get('inverse',False)
         value = query_object['value']
-        if attr_name.startswith('_'):
+        if attr_name.startswith('$'):
             db_lookup=attr_name[1:]
         else:
             db_lookup=f"attributes__{attr_name}"
@@ -213,7 +213,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
 
     found_it = False
     for key, value, op in filter_ops:
-        if key.startswith('_'):
+        if key.startswith('$'):
             db_field = key[1:]
             qs = qs.filter(**{f'{db_field}{OPERATOR_SUFFIXES[op]}': value})
             found_it = True
@@ -241,7 +241,12 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         for kv in attribute_null:
             key, value = kv.split(KV_SEPARATOR)
             value = _convert_boolean(value)
-            qs = qs.filter(**{f"attributes__{key}__isnull": value})
+            if value:
+                qs = qs.filter(Q(**{f"attributes__contains": {key:None}}) | ~Q(**{f"attributes__has_key": key}))
+            else:
+                # Returns true if the attributes both have a key and it is not set to null
+                qs = qs.filter(**{f"attributes__has_key": key})
+                qs = qs.filter(~Q(**{f"attributes__contains": {key:None}}))
             found_it = True
 
     for query in float_queries:

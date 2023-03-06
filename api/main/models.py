@@ -45,6 +45,7 @@ from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
 from django.db import transaction
+from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
 from .search import TatorSearch
@@ -293,6 +294,12 @@ class User(AbstractUser):
     confirmation_token = UUIDField(primary_key=False, db_index=True, null=True, blank=True)
     """ Used for email address confirmation for anonymous registrations. """
 
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
+
+    profile = JSONField(default=dict)
+    """ Store user specific information (avatar image, tbd elements) """
+
     def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
         response = cognito.create_user(self, email_verified, temp_pw)
@@ -337,6 +344,17 @@ def user_save(sender, instance, created, **kwargs):
             Affiliation.objects.create(organization=organization,
                                        user=instance,
                                        permission='Admin')
+
+@receiver(post_delete, sender=User)
+def user_post_delete(sender, instance, **kwargs):
+    """ Clean up avatar on user deletion. """
+    if instance.profile.get('avatar'):
+        avatar_key = instance.profile.get('avatar')
+        # Out of an abundance of caution check to make sure the object key
+        # matches the user's scope
+        if avatar_key.startswith(f"user_data/{instance.pk}"):
+            generic_store = get_tator_store()
+            generic_store.delete_object(avatar_key)
 
 class PasswordReset(Model):
     user = ForeignKey(User, on_delete=CASCADE)
@@ -404,12 +422,7 @@ class Bucket(Model):
     name = CharField(max_length=63)
     config = JSONField(null=True, blank=True)
     store_type = EnumField(ObjectStore, max_length=32, null=True, blank=True)
-    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
-    access_key = CharField(max_length=128, null=True, blank=True)
-    secret_key = CharField(max_length=40, null=True, blank=True)
-    endpoint_url = CharField(max_length=1024, null=True, blank=True)
-    region = CharField(max_length=16, null=True, blank=True)
-    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
+    external_host = CharField(max_length=128, null=True, blank=True)
     archive_sc = CharField(
         max_length=16,
         choices=[
@@ -419,9 +432,15 @@ class Bucket(Model):
         ],
     )
     live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")])
-    # TODO remove field gcs_key_info ###############################################################
-    gcs_key_info = TextField(null=True, blank=True)
-    # TODO remove field gcs_key_info ###############################################################
+
+    def __str__(self):
+        return " | ".join(
+            [
+                f"{self.name} ({self.id})",
+                str(self.store_type),
+                f"{self.organization} ({self.organization.id})",
+            ]
+        )
 
     def validate_storage_classes(store_type, params):
         """
@@ -475,22 +494,26 @@ class Project(Model):
         maintaining elasticsearch field aliases.
     """
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                        related_name='+')
+                        related_name='+', db_column='bucket')
     """ If set, media will use this bucket by default.
     """
     upload_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='upload_bucket')
     """ If set, uploads will use this bucket by default.
     """
     backup_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='backup_bucket')
     """ If set, backups will use this bucket by default.
     """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='default_media')
 
     """ Default media type for uploads.
     """
+
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
@@ -537,6 +560,8 @@ class Version(Model):
         for each generation of a state-based inference algorithm; all referencing localizations
         in another layer.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
     def __str__(self):
         out = f"{self.name}"
@@ -772,6 +797,8 @@ class MediaType(Model):
     """ Dot type used as default in UI. """
     default_poly = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
                               related_name='+')
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -819,6 +846,8 @@ class LocalizationType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -876,6 +905,8 @@ class StateType(Model):
     """ If this is a track type, this is the default localization that is created when
         a track is created via the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -915,6 +946,8 @@ class LeafType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -1036,7 +1069,7 @@ class Media(Model, ModelDiffMixin):
     """ URL where original media was hosted. """
     summary_level = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a media to facilitate cross-cluster sync operations """
 
     def get_file_sizes(self):
@@ -1093,12 +1126,17 @@ class Media(Model, ModelDiffMixin):
         :type keys: List[str]
         :rtype: Generator[Tuple[str, dict], None, None]
         """
+        whitelisted_keys = [
+            "archival", "streaming", "audio", "image", "attachment", "thumbnail", "thumbnail_gif"
+        ]
         if self.media_files:
             keys = keys or self.media_files.keys()
         else:
             keys = []
 
         for key in keys:
+            if key not in whitelisted_keys:
+                continue
             files = self.media_files.get(key, [])
             if files is None:
                 files = []
@@ -1149,6 +1187,8 @@ class FileType(Model):
     dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
     """ Required as part of building the TatorSearch documents
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 @receiver(post_save, sender=FileType)
 def file_type_save(sender, instance, **kwargs):
@@ -1180,12 +1220,15 @@ class File(Model, ModelDiffMixin):
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     deleted = BooleanField(default=False, db_index=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
     generic_files = ManyToManyField(File, related_name='resource_files')
-    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
+    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name='bucket')
+    backup_bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name='backup_bucket')
     backed_up = BooleanField(default=False)
 
     def get_project_from_path(path):
@@ -1384,9 +1427,11 @@ class Localization(Model, ModelDiffMixin):
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False, db_index=True)
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
 
 @receiver(pre_delete, sender=Localization)
 def localization_delete(sender, instance, **kwargs):
@@ -1428,9 +1473,11 @@ class State(Model, ModelDiffMixin):
                            related_name='extracted',
                            db_column='extracted')
     deleted = BooleanField(default=False, db_index=True)
-    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True, default = uuid.uuid4)
     variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
@@ -1544,6 +1591,8 @@ class Section(Model):
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Favorite(Model):
     """ Stores an annotation saved by a user.
@@ -1565,6 +1614,7 @@ class Bookmark(Model):
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
     name = CharField(max_length=128)
     uri = CharField(max_length=1024)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class ChangeLog(Model):
     """ Stores individual changesets for entities """
@@ -1681,3 +1731,89 @@ def database_query_ids(table, ids, order):
              f'(VALUES ({"), (".join([str(id_) for id_ in ids])})) '
              f'ORDER BY {order}')
     return database_query(query)
+
+class Group(Model):
+    """ Represents a group of users in an organization, presumably that share access levels """
+    organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    """ Organization that the group belongs to """
+    name = CharField(max_length=128)
+    """ Descriptive name for the group """
+
+class GroupMembership(Model):
+    """ Associates a user to a group """
+    project = ForeignKey(Project, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
+    group = ForeignKey(Group, on_delete=CASCADE)
+    group_admin = BooleanField(default=False)
+    """ Can add/remove people from the group if set to true """
+    name = CharField(max_length=128, blank=True, null=True)
+    """ Descriptive name for the role of this user in the group """
+
+
+class RowProtection(Model):
+    # Pointer to protected row element, one of the following should be non-null.
+    # Note: Currently type objects are protected by project membership status
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
+
+    # One of the following must be non-null
+    user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the user this permission/rule refers to """
+    organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the organization this permission/rule refers to """
+    group = ForeignKey(Group, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the group this permission/rule refers to """
+
+    permission = BigIntegerField(default=0, db_index=True)
+    """ Permission bitmask for the row in question
+        0 - Can not see
+        0x1 - Exist
+        0x2 - Read
+        0x4 - Write
+        0x8 - Full control (ability to delete)
+        bits above this are reserved for future use.
+    """
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['project',
+                                     'media',
+                                     'localization',
+                                     'state',
+                                     'file',
+                                     'user',
+                                     'organization',
+                                     'group'], name='permission_uniqueness_check')
+        ]
+
+
+# Structure to handle identifying columns with project-scoped indices
+# e.g. Not relaying solely on `db_index=True` in django.
+BUILT_IN_INDICES = {
+    MediaType: [
+        {'name': '$name', 'dtype': 'native_string'},
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'},
+        {'name': 'tator_user_sections', 'dtype': 'section'},
+        {'name': '$restoration_requested', 'dtype': 'native'},
+        {'name': '$archive_status_date', 'dtype': 'native'},
+        {'name': '$archive_state', 'dtype': 'native_string'}
+    ],
+    LocalizationType: [
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'}
+    ],
+    StateType: [
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'},
+    ],
+    LeafType: [
+        {'name': '$name', 'dtype': 'string'},
+        {'name': '$path', 'dtype': 'string'},
+        {'name': '$name', 'dtype': 'upper_string'},
+        {'name': '$path', 'dtype': 'upper_string'}
+    ]
+}

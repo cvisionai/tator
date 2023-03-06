@@ -10,7 +10,7 @@ fi
 set -e
 
 # Define environment variables.
-BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
+BENTO4_URL="https://s3.amazonaws.com/tator-ci/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
 GIT_REVISION=$(git rev-parse HEAD)
 KUBECTL_URL="https://dl.k8s.io/release/v1.22.9/bin/linux/amd64/kubectl"
 ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/argo-linux-amd64.gz"

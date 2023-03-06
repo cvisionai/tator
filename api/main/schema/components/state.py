@@ -102,6 +102,10 @@ state_spec = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
         **version_properties,
         **state_properties,
     },
@@ -115,7 +119,11 @@ state_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-        },        
+        },     
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },   
         'localization_ids_add': {
             'description': 'List of new localization IDs that this state applies to.',
             'type': 'array',
@@ -125,6 +133,22 @@ state_update = {
             'description': 'List of new localization IDs that this state applies to.',
             'type': 'array',
             'items': {'type': 'integer'},
+        },
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
         },
     },
 }
@@ -167,7 +191,7 @@ state_id_query = {
             'type': 'array',
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
-        'object_search' : {'type': 'object'},
+        'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     }
 }
 
@@ -183,7 +207,27 @@ state_bulk_update = {
             'type': 'integer',
             'description': 'Unique integer identifying a new version for these objects',
         },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
         **state_id_query['properties'],
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
     },
 }
 

@@ -257,6 +257,18 @@ export class AnnotationPlayer extends TatorElement {
       }));
     });
 
+    this._playerTimelineSettings = document.createElement("div");
+    this._playerTimelineSettings.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2");
+    this._playerTimelineSettings.textContent = "Timeline Settings";
+    this._playerSettingsMenu.appendChild(this._playerTimelineSettings);
+
+    this._playerTimelineSettings.addEventListener("click", () => {
+      this._hideCanvasMenus();
+      this.dispatchEvent(new CustomEvent("openTimelineSettings", {
+        composed: true
+      }));
+    });
+
     // Timeline units menu
     var backOption = document.createElement("div");
     backOption.setAttribute("class", "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
@@ -408,23 +420,22 @@ export class AnnotationPlayer extends TatorElement {
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
 
-    //this._utcBtn = document.createElement("button");
-    //this._utcBtn.setAttribute("class", "btn btn-small-height btn-fit-content btn-clear btn-outline text-gray f3 text-semibold px-2");
-    //this._utcBtn.textContent = "UTC";
-    //this._utcBtn.style.marginLeft = "10px";
-    //playButtons.appendChild(this._utcBtn);
+    this._utcBtn = document.createElement("button");
+    this._utcBtn.setAttribute("class", "btn btn-small-height btn-fit-content btn-clear btn-outline text-gray f3 text-semibold px-2");
+    this._utcBtn.textContent = "UTC";
+    this._utcBtn.style.marginLeft = "10px";
+    playButtons.appendChild(this._utcBtn);
 
-    //this._utcDiv = document.createElement("div");
-    //this._utcDiv.setAttribute("class", "annotation-canvas-overlay-menu d-flex flex-row flex-items-center flex-justify-between rounded-1");
-    //this._utcDiv.style.display = "none";
-    //this._shadow.appendChild(this._utcDiv);
+    this._utcDiv = document.createElement("div");
+    this._utcDiv.setAttribute("class", "annotation-canvas-overlay-menu d-flex flex-row flex-items-center flex-justify-between rounded-1");
+    this._utcDiv.style.display = "none";
+    this._shadow.appendChild(this._utcDiv);
 
     this._utcLabel = document.createElement("span");
     this._utcLabel.setAttribute("class", "f2 text-center text-gray px-2");
     this._utcLabel.textContent = "N/A";
-    playButtons.appendChild(this._utcLabel);
+    this._utcDiv.appendChild(this._utcLabel);
 
-    /*
     var btn = document.createElement("small-svg-button");
     btn.init(
       `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
@@ -447,13 +458,13 @@ export class AnnotationPlayer extends TatorElement {
       this._utcDiv.style.left = `${pos.left - 60}px`;
       if (this._utcDiv.style.display == "flex") {
         this._hideCanvasMenus();
+        this._utcDiv.style.display = "none";
       }
       else {
         this._hideCanvasMenus();
         this._utcDiv.style.display = "flex";
       }
     });
-    */
 
     this._volume_control = document.createElement("volume-control");
     settingsDiv.appendChild(this._volume_control);
@@ -946,6 +957,7 @@ export class AnnotationPlayer extends TatorElement {
       this._video.stopPlayerThread();
       this._video.shutdownOnDemandDownload();
       this._video.seekFrame(frame, this._video.drawFrame);
+      this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
     }
   }
 
@@ -975,6 +987,7 @@ export class AnnotationPlayer extends TatorElement {
       this._videoStatus = "paused";
       this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
+      this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
     });/*;.catch((e) => {
       console.error(`"ERROR: ${e}`)
       throw e;
@@ -1078,6 +1091,7 @@ export class AnnotationPlayer extends TatorElement {
   }
 
   set mediaInfo(val) {
+    const searchParams = new URLSearchParams(window.location.search);
     this._video.mediaInfo = val;
     this._mediaInfo = val;
     const dims = [val.width, val.height];
@@ -1096,6 +1110,11 @@ export class AnnotationPlayer extends TatorElement {
         else {
           this._allowSafeMode = false;
         }
+        if (searchParams.has("playbackRate"))
+        {
+          this._rateControl.setValue(Number(searchParams.get("playbackRate")));
+          this.setRate(Number(searchParams.get("playbackRate")));
+        }
         const seekInfo = this._video.getQuality("seek");
         const scrubInfo = this._video.getQuality("scrub");
         const playInfo = this._video.getQuality("play");
@@ -1103,7 +1122,7 @@ export class AnnotationPlayer extends TatorElement {
 
         this._timeStore = new TimeStore(this._mediaInfo, this.mediaType);
         if (!this._timeStore.utcEnabled()) {
-          this._utcLabel.style.display = "none";
+          this._utcBtn.style.display = "none";
           this._timelineUnitsUTC.style.display = "none";
         }
         this._videoTimeline.timeStore = this._timeStore;
@@ -1168,11 +1187,16 @@ export class AnnotationPlayer extends TatorElement {
     this._entityTimeline.annotationData = val;
   }
 
+  set timelineSettings(val) {
+    this._timelineSettings = val;
+    this._entityTimeline.timelineSettings = val;
+  }
+
   _displayPlayerSettingsMenu() {
     this._hideCanvasMenus();
 
     var pos = this._playerSettingsBtn.getBoundingClientRect();
-    this._playerSettingsMenu.style.top = `${pos.top - 120}px`;
+    this._playerSettingsMenu.style.top = `${pos.top - 150}px`;
     this._playerSettingsMenu.style.left = `${pos.left - 150}px`;
 
     this._playerTimelineUnitsContent.textContent = this._displayMode;
@@ -1214,7 +1238,7 @@ export class AnnotationPlayer extends TatorElement {
     this._timelineUnitsMenu.style.display = "none";
     this._videoQualityMenu.style.display = "none";
     this._timelineZoomMenu.style.display = "none";
-    //this._utcDiv.style.display = "none";
+    this._utcDiv.style.display = "none";
   }
 
   /**
@@ -1487,6 +1511,7 @@ export class AnnotationPlayer extends TatorElement {
   setRate(val) {
     this._rate = val;
     this._video.rateChange(this._rate);
+    this.dispatchEvent(new CustomEvent("updateURL", {"composed": true}));
   }
 
   setQuality(quality, buffer) {
@@ -1554,10 +1579,12 @@ export class AnnotationPlayer extends TatorElement {
 
   selectNone() {
     this._video.selectNone();
+    this.selectTimelineData();
   }
 
   selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
     this._video.selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame);
+    this.selectTimelineData(loc);
   }
 
   selectTrackUsingId(stateId, stateTypeId, frameHint, skipGoToFrame) {
@@ -1566,6 +1593,7 @@ export class AnnotationPlayer extends TatorElement {
 
   selectTrack(track, frameHint, skipGoToFrame) {
     this._video.selectTrack(track, frameHint, skipGoToFrame);
+    this.selectTimelineData(track);
   }
 
   deselectTrack() {
@@ -1606,8 +1634,18 @@ export class AnnotationPlayer extends TatorElement {
     return 0;
   }
 
+  /**
+   * This highlights a particular localization, frame range state, or track on the entity timeline.
+   * Provide null to deselect.
+   *
+   * @param {Tator.Localization | Tator.State | null} data
+   */
   selectTimelineData(data) {
-    //this._entityTimeline.selectEntity(data); #TODO
+    this._entityTimeline.selectEntity(data);
+  }
+
+  updateTimeline() {
+    this._entityTimeline.updateData();
   }
 
   _timeToFrame(minutes, seconds) {

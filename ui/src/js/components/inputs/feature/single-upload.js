@@ -1,4 +1,4 @@
-import { getCookie } from "../../util/get-cookie.js";
+import { getCookie } from "../../../util/get-cookie.js";
 
 // Manages an upload.
 export class SingleUpload {

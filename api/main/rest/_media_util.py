@@ -309,7 +309,7 @@ class MediaUtil:
         else:
             return None
 
-    def get_clip(self, frame_ranges):
+    def get_clip(self, frame_ranges, reencode=False):
         """ Given a list of frame ranges generate a temporary mp4
 
             :param frame_ranges: tuple or list of tuples representing (begin,
@@ -349,11 +349,16 @@ class MediaUtil:
                 vid_list.write(f"file '{mux_0}'\n")
 
         output_file = os.path.join(self._temp_dir, "concat.mp4")
+
+        if reencode == True:
+            encode_params = ['-c:v', 'libx264', '-preset', 'veryfast']
+        else:
+            encode_params = ['-c:v', 'copy']
         args = ["ffmpeg",
                 "-f", "concat",
                 "-safe", "0",
                 "-i", os.path.join(self._temp_dir, "vid_list.txt"),
-                "-c", "copy",
+                *encode_params,
                 output_file]
         proc = subprocess.run(args, check=True, capture_output=True)
         return output_file, segment_info

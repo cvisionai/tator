@@ -9,6 +9,9 @@ import time
 from uuid import uuid1, uuid4
 from math import sin, cos, sqrt, atan2, radians
 import re
+import requests
+import io
+import base64
 
 from main.models import *
 
@@ -46,23 +49,27 @@ class TatorTransactionTest(APITransactionTestCase):
                 time.sleep(1)
 
 def wait_for_indices(entity_type):
-    for attribute in entity_type.attribute_types:
+    built_ins = BUILT_IN_INDICES.get(type(entity_type),[])
+    for attribute in [*entity_type.attribute_types, *built_ins]:
         found_it = False
-        for i in range(600):
+        for i in range(1,600):
             if TatorSearch().is_index_present(entity_type, attribute) == True:
                 found_it = True
                 break
-            time.sleep(0.1)
+            time.sleep(0.1*min(i, 30))
         assert(found_it)
 
+    
 def assertResponse(self, response, expected_code):
     if response.status_code != expected_code:
         print(response.data)
     self.assertEqual(response.status_code, expected_code)
 
-def create_test_user(is_staff=False):
+def create_test_user(is_staff=False, username=None):
+    if username == None:
+        username = ''.join(random.choices(string.ascii_lowercase, k=10))
     return User.objects.create(
-        username=random.choices(string.ascii_lowercase, k=10),
+        username=username,
         password="jsnow",
         first_name="Jon",
         last_name="Snow",
@@ -189,6 +196,7 @@ def create_test_video(user, name, entity_type, project):
         codec='H264',
         width='640',
         height='480',
+        created_by=user,
         elemental_id=str(uuid4())
     )
 
@@ -209,6 +217,8 @@ def create_test_box(user, entity_type, project, media, frame):
     h = random.uniform(0.0, float(media.height) - y)
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
@@ -233,6 +243,8 @@ def create_test_line(user, entity_type, project, media, frame):
     y1 = random.uniform(0.0, float(media.height) - y0)
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         media=media,
@@ -245,6 +257,8 @@ def create_test_dot(user, entity_type, project, media, frame):
     y = random.uniform(0.0, float(media.height))
     return Localization.objects.create(
         user=user,
+        created_by=user,
+        modified_by=user,
         type=entity_type,
         project=project,
         media=media,
@@ -316,11 +330,13 @@ def create_test_version(name, description, number, project, media):
         project=project,
     )
 
-def create_test_file(name, entity_type, project):
+def create_test_file(name, entity_type, project, user):
     return File.objects.create(
         name=name,
         type=entity_type,
         project=project,
+        created_by=user,
+        modified_by=user
     )
 
 def random_string(length):
@@ -361,6 +377,34 @@ affiliation_levels = [
     'Admin',
 ]
 
+class EntityAuthorChangeMixin:
+    def test_author_change(self):
+        test_entity = self.entities[0]
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{test_entity.pk}',
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        new_json = {**self.create_json[0], **{'user_elemental_id': self.user_two.elemental_id}}
+
+        response = self.client.post(f'/rest/{self.list_uri}/{self.project.pk}',
+                                    [new_json], format='json')
+        new_id = response.data['id'][0]
+        response = self.client.get(f'/rest/{self.detail_uri}/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        # test bulk patch authorship change (back to original)
+        response = self.client.patch(f'/rest/{self.list_uri}/{self.project.pk}',
+                               {'ids': [new_id, test_entity.id],
+                               'user_elemental_id': self.user.elemental_id}, format='json')
+        response = self.client.get(f'/rest/{self.detail_uri}/{new_id}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.get(f'/rest/{self.detail_uri}/{test_entity.id}')
+        assert(response.data['created_by'] == self.user.pk)
+
 class DefaultCreateTestMixin:
     def _check_object(self, response, is_default):
         # Get the created objects.
@@ -381,8 +425,6 @@ class DefaultCreateTestMixin:
                     self.assertTrue(obj.attributes[field]==self.create_json['attributes'][field])
                 else:
                     for create_json in self.create_json:
-                        print(obj.attributes)
-                        print(create_json)
                         self.assertTrue(obj.attributes[field]==create_json.get('attributes',{}).get(field, None))
         # Delete the object
         obj.delete()
@@ -765,6 +807,22 @@ class AttributeTestMixin:
             format='json'
         )
         self.assertEqual(len(response.data), 0)
+
+        # Nullify all the Bool Tests
+        for idx, test_val in enumerate(test_vals):
+            pk = self.entities[idx].pk
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': ['Bool Test']},
+                                         format='json')
+            assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get(
+            f'/rest/{self.list_uri}/{self.project.pk}?attribute_null=Bool Test::true'
+            f'&type={self.entity_type.pk}', # needed for localizations
+            format='json'
+        )
+        self.assertEqual(len(response.data), len(self.entities))
+
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_null=asdf::true'
             f'&type={self.entity_type.pk}', # needed for localizations
@@ -866,6 +924,47 @@ class AttributeTestMixin:
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Int Test::false&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
+        pk = self.entities[0].pk
+        project = self.entities[0].project
+        many_pks = [e.pk for e in self.entities]
+        default_value = 42
+        attribute_name='Int Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes']['Int Test'] == default_value)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
+        # verify bulk 
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == default_value)
+
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == None)
+
+
     def test_float_attr(self):
         test_vals = [random.uniform(-1000.0, 1000.0) for _ in range(len(self.entities))]
         # Test setting an invalid float
@@ -911,6 +1010,46 @@ class AttributeTestMixin:
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Float Test::false&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
+        pk = self.entities[0].pk
+        project = self.entities[0].project
+        many_pks = [e.pk for e in self.entities]
+        default_value = 42.0
+        attribute_name='Float Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == default_value)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
+        # verify bulk 
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == default_value)
+
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == None)
+
     def test_enum_attr(self):
         test_vals = [random.choice(['enum_val1', 'enum_val2', 'enum_val3']) for _ in range(len(self.entities))]
         # Test setting an invalid choice
@@ -946,6 +1085,46 @@ class AttributeTestMixin:
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Enum Test::0&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
+        pk = self.entities[0].pk
+        project = self.entities[0].project
+        many_pks = [e.pk for e in self.entities]
+        default_value = 'enum_val1'
+        attribute_name='Enum Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == default_value)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
+        # verify bulk 
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == default_value)
+
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == None)
+
     def test_string_attr(self):
         test_vals = [''.join(random.choices(string.ascii_uppercase + string.digits, k=random.randint(1, 64)))
             for _ in range(len(self.entities))]
@@ -974,6 +1153,46 @@ class AttributeTestMixin:
             self.assertEqual(len(response.data), sum([subs.lower() in t.lower() for t in test_vals]))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=String Test::0&type={self.entity_type.pk}&format=json')
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        pk = self.entities[0].pk
+        project = self.entities[0].project
+        many_pks = [e.pk for e in self.entities]
+        default_value = 'asdf_default'
+        attribute_name='String Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == default_value)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
+        # verify bulk 
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == default_value)
+
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == None)
 
     def test_datetime_attr(self):
         def to_string(dt):
@@ -1047,6 +1266,46 @@ class AttributeTestMixin:
             f'type={self.entity_type.pk}&format=json'
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        pk = self.entities[0].pk
+        project = self.entities[0].project
+        many_pks = [e.pk for e in self.entities]
+        default_value = None
+        attribute_name='Datetime Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == default_value)
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == None)
+
+        # verify bulk 
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == default_value)
+
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == None)
 
     def test_geoposition_attr(self):
         test_vals = [(40.712776,-74.005974), # new york
@@ -1126,6 +1385,48 @@ class AttributeTestMixin:
                 for lat, lon in test_vals
             ]))
 
+        pk = self.entities[0].pk
+        project = self.entities[0].project
+        many_pks = [e.pk for e in self.entities]
+        default_value = [-179.0,-89.0]
+        attribute_name='Geoposition Test'
+        # Test attribute reset / nullification
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == default_value)
+
+        # Of note, geopositions can't be null so -1.0,-1.0 is used instead.
+        response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                         format='json')
+        assert(response.data['attributes'][attribute_name] == [-1.0,-1.0])
+
+         # verify bulk 
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'reset_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == default_value)
+
+        response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                         {'ids': many_pks, 'null_attributes': [attribute_name]},
+                                         format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
+                                            format='json')
+            assert(response.data['attributes'][attribute_name] == [-1.0,-1.0])
+
 class FileMixin:
     def _test_methods(self, role):
         list_endpoint = f'/rest/{self.list_uri}/{self.media.pk}'
@@ -1166,12 +1467,89 @@ class FileMixin:
         return f'{self.organization.pk}/{self.project.pk}/{self.media.pk}/{uuid1()}'
 
 class CurrentUserTestCase(TatorTransactionTest):
-    def test_get(self):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
+    def test_get(self):
         response = self.client.get('/rest/User/GetCurrent')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.user.id)
+        response = self.client.get(f'/rest/Users?elemental_id={self.user.elemental_id}')
+        self.assertEqual(len(response.data), 1)
+        response = self.client.get(f'/rest/User/Exists?elemental_id={self.user.elemental_id}')
+        self.assertEqual(response.data, True)
+        random_uuid=uuid.uuid4()
+        response = self.client.get(f'/rest/Users?elemental_id={random_uuid}')
+        self.assertEqual(len(response.data), 0)
+
+    def test_avatar(self):
+        response = self.client.get('/rest/User/GetCurrent')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, False)
+        ben_url = 'https://tator-ci.s3.amazonaws.com/avatar_images/ben_franklin.jpg'
+        white_house_url = 'https://tator-ci.s3.amazonaws.com/avatar_images/white_house.jpg'
+        video_url = 'https://tator-ci.s3.amazonaws.com/AudioVideoSyncTest_BallastMedia.mp4'
+        user_id = response.data['id']
+
+
+        # Verify Ben Franklin works
+        fp = io.BytesIO()
+        with requests.get(ben_url, stream=True) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    fp.write(chunk)
+        fp.seek(0)
+        encoded = base64.b64encode(fp.read())
+
+        # .decode() is required to convert the bytes to a string for JSON.
+        response = self.client.patch(f'/rest/User/{user_id}', {'new_avatar': encoded.decode()},format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        # Verify white house image is rejected, because it is too big.
+        fp = io.BytesIO()
+        with requests.get(white_house_url, stream=True) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    fp.write(chunk)
+        fp.seek(0)
+        encoded = base64.b64encode(fp.read())
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'new_avatar': encoded.decode()},format='json')
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        # Verify video image fails, because it is a bad mime type
+        fp = io.BytesIO()
+        with requests.get(video_url, stream=True) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    fp.write(chunk)
+        fp.seek(0)
+        encoded = base64.b64encode(fp.read(512*1024))
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'new_avatar': encoded.decode()},format='json')
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        # Verify we get a profile image now
+        response = self.client.get('/rest/User/GetCurrent')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, True)
+
+        # Verify it is true over the other access method as well
+        response = self.client.get(f'/rest/User/{user_id}')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, True)
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'clear_avatar': 1},format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get('/rest/User/GetCurrent')
+        has_avatar = 'avatar' in response.data['profile']
+        self.assertEqual(has_avatar, False)
+
 
 class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
@@ -1182,7 +1560,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         self.video_type = MediaType.objects.create(
             name="video",
             dtype='video',
-            project=self.project,
+            project=self.project
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1254,6 +1632,84 @@ class AlgorithmTestCase(
             for idx in range(random.randint(6, 10))
         ]
 
+class AnonymousAccessTestCase(TatorTransactionTest):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.random_user = create_test_user()
+        self.anonymous_user = create_test_user(username='anonymous')
+        self.public_project = create_test_project(self.user)
+        self.private_project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.private_project)
+        self.membership = create_test_membership(self.user, self.private_project)
+        self.membership = create_test_membership(self.anonymous_user, self.public_project)
+        self.private_entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.private_project,
+        )
+        self.public_entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.public_project,
+        )
+
+        self.public_video = create_test_video(self.user, f'asdf_0', self.public_entity_type, self.public_project)
+        self.private_video = create_test_video(self.user, f'asdf_0', self.private_entity_type, self.private_project)
+
+        self.public_video.media_files = {'streaming': [{'path': 'fake_key.txt', 'resolution': [720,1280]}]}
+        self.public_video.save()
+        self.private_video.media_files = {'streaming': [{'path': 'fake_key.txt', 'resolution': [720,1280]}]}
+        self.private_video.save()
+
+        self.store = get_tator_store()
+        self.test_bucket = create_test_bucket(None)
+        resource = Resource(path='fake_key.txt', bucket = self.test_bucket)
+        resource.save()
+        resource.media.add(self.public_video)
+        resource.media.add(self.private_video)
+        resource.save()
+        
+
+
+    def test_random_user(self):
+        """ A random user should get access to public project but not the private project """
+        self.client.force_authenticate(self.random_user)
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        assert(response.status_code == 403)
+
+    def test_unauthenticated_user(self):
+        """ Users not logged in at all should get access to public, but not private """
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        # Unauthenticated access gets 400 vs. 403 because of django
+        assert(response.status_code == 400)
+
+    def test_authenticated_anonymous_user(self):
+        """ Users logged in as guest should get access to public, but not private """
+        self.client.force_authenticate(self.anonymous_user)
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        assert(response.status_code == 403)
+
+    def test_authenticated_primary_user(self):
+        """ The user with permission to both projects should get access to both """
+        self.client.force_authenticate(self.user)
+        response = self.client.get(f'/rest/Permalink/{self.public_video.pk}')
+        assert(response.status_code == 301)
+        response = self.client.get(f'/rest/Permalink/{self.private_video.pk}')
+        assert(response.status_code == 301)
+
+
+
+
+
+
+
 class VideoTestCase(
         TatorTransactionTest,
         AttributeTestMixin,
@@ -1265,9 +1721,11 @@ class VideoTestCase(
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1287,6 +1745,35 @@ class VideoTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
 
+    def test_author_change(self):
+        test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
+        response = self.client.get(f'/rest/Media/{test_video.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/Media/{test_video.pk}', 
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/Media/{test_video.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        response = self.client.post(f'/rest/Medias/{self.project.pk}',
+                               {'type': self.entity_type.pk,
+                               'section': "test cross author",
+                               'name': 'test cross author',
+                               'md5': 'b81e32eb9957ea4e965ca36680d4adfb',
+                               'user_elemental_id': self.user_two.elemental_id}, format='json')
+        new_id = response.data['id']
+        response = self.client.get(f'/rest/Media/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        # test bulk patch authorship change (back to original)
+        response = self.client.patch(f'/rest/Medias/{self.project.pk}',
+                               {'ids': [new_id, test_video.id],
+                               'user_elemental_id': self.user.elemental_id}, format='json')
+        response = self.client.get(f'/rest/Media/{new_id}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.get(f'/rest/Media/{test_video.id}')
+        assert(response.data['created_by'] == self.user.pk)
+
     def test_elemental_id(self):
         test_video = create_test_video(self.user, f'asdf_0', self.entity_type, self.project)
         existing_uuid = test_video.elemental_id
@@ -1299,6 +1786,31 @@ class VideoTestCase(
         self.assertEqual(response.data, 1)
         response = self.client.get(f'/rest/MediaCount/{self.project.pk}?elemental_id={existing_uuid}')
         self.assertEqual(response.data, 0)
+
+        project = test_video.project.id
+        # Test on type object
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/MediaTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/MediaType/{test_video.type.id}')
+        assert(str(response.data['elemental_id']) == str(test_video.type.elemental_id))
+        response = self.client.patch(f'/rest/MediaType/{test_video.type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/MediaType/{test_video.type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/MediaTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
+
+        # Test on Project object
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/Projects?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/Project/{test_video.project.id}')
+        assert(str(response.data['elemental_id']) == str(test_video.project.elemental_id))
+        response = self.client.patch(f'/rest/Project/{test_video.project.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/Project/{test_video.project.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/Projects?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
 
 
     def test_annotation_delete(self):
@@ -1426,14 +1938,17 @@ class LocalizationBoxTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1491,14 +2006,17 @@ class LocalizationLineTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1556,14 +2074,17 @@ class LocalizationDotTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1619,14 +2140,17 @@ class LocalizationPolyTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1681,15 +2205,18 @@ class StateTestCase(
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailTestMixin,
+        EntityAuthorChangeMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -1710,6 +2237,8 @@ class StateTestCase(
         self.entities = []
         for _ in range(random.randint(6, 10)):
             state = State.objects.create(
+                created_by=self.user,
+                modified_by=self.user,
                 type=self.entity_type,
                 project=self.project,
                 version=self.version,
@@ -1742,7 +2271,20 @@ class StateTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
 
-
+    def test_elemental_id(self):
+        # Test on type object
+        new_uuid = str(uuid4())
+        project = self.entity_type.project.id
+        response = self.client.get(f'/rest/StateTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/StateTypes/{self.entity_type.id}')
+        response = self.client.get(f'/rest/StateType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == str(self.entity_type.elemental_id))
+        response = self.client.patch(f'/rest/StateType/{self.entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/StateType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/StateTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
 
     def test_frame_association(self):
         media = self.media_entities[0]
@@ -1818,11 +2360,15 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         # localization must also be deleted. Delete via the endpoint.
         unique_string_attr_val = 'super_unique_string_to_search_for_1'
         attr_search = f"String Test::{unique_string_attr_val}"
-        body = {'type': self.image_type.pk,
-                'section': 'asdf',
-                'name': 'asdf',
-                'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+        body = [
+            {
+                "type": self.image_type.pk,
+                "section": "asdf",
+                "name": "asdf",
+                "md5": "asdf",
+                "attributes": {"String Test": unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id1 = response.data['id']
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
@@ -1906,19 +2452,27 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         unique_string_attr_val1 = 'super_unique_string_to_search_for_1'
         unique_string_attr_val2 = 'super_unique_string_to_search_for_2'
         unique_string_attr_val3 = 'super_unique_string_to_search_for_3'
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val1}}
+                'attributes': {'String Test': unique_string_attr_val1},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id1 = response.data['id']
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val2}}
+                'attributes': {'String Test': unique_string_attr_val2},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id2 = response.data['id']
 
@@ -2026,11 +2580,15 @@ class StateMediaDeleteCase(TatorTransactionTest):
 
         unique_string_attr_val = 'super_unique_string_to_search_for_1'
         attr_search = f"String Test::{unique_string_attr_val}"
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id = response.data['id']
 
@@ -2071,27 +2629,39 @@ class StateMediaDeleteCase(TatorTransactionTest):
         unique_string_attr_val = 'super_unique_string_to_search_for_2'
         attr_search = f'String Test::{unique_string_attr_val}'
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id1 = response.data['id']
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id2 = response.data['id']
 
-        body = {'type': self.image_type.pk,
+        body = [
+            {
+                'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
                 'md5': 'asdf',
-                'attributes': {'String Test': unique_string_attr_val}}
+                'attributes': {'String Test': unique_string_attr_val},
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id3 = response.data['id']
 
@@ -2211,6 +2781,20 @@ class LeafTestCase(
         }]
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {'name': 'leaf1'}
+
+    def test_elemental_id(self):
+        project = self.entity_type.project.id
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/LeafTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        # Test on type object
+        response = self.client.get(f'/rest/LeafType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == str(self.entity_type.elemental_id))
+        response = self.client.patch(f'/rest/LeafType/{self.entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/LeafType/{self.entity_type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/LeafTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
 
 class LeafTypeTestCase(
         TatorTransactionTest,
@@ -2371,6 +2955,21 @@ class LocalizationTypeTestCase(
         }
         self.patch_json = {'name': 'box asdf'}
         self.edit_permission = Permission.FULL_CONTROL
+
+    def test_elemental_id(self):
+        # Test on type object
+        for entity_type in self.entities:
+            project = entity_type.project.id
+            new_uuid = str(uuid4())
+            response = self.client.get(f'/rest/LocalizationTypes/{project}?elemental_id={new_uuid}')
+            assert(len(response.data) == 0)
+            response = self.client.get(f'/rest/LocalizationType/{entity_type.id}')
+            assert(str(response.data['elemental_id']) == str(entity_type.elemental_id))
+            response = self.client.patch(f'/rest/LocalizationType/{entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+            response = self.client.get(f'/rest/LocalizationType/{entity_type.id}')
+            assert(str(response.data['elemental_id']) == new_uuid)
+            response = self.client.get(f'/rest/LocalizationTypes/{project}?elemental_id={new_uuid}')
+            assert(len(response.data) == 1)
 
 class MembershipTestCase(
         TatorTransactionTest,
@@ -2559,6 +3158,15 @@ class VersionTestCase(
             'description': 'asdf123',
         }
         self.edit_permission = Permission.CAN_EDIT
+
+    def test_elemental_id(self):
+        # Test on type object
+        test_version = create_test_version(f'asdf', f'desc', 10, self.project, self.media)
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/Version/{test_version.pk}')
+        response = self.client.patch(f'/rest/Version/{test_version.pk}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/Version/{test_version.pk}')
+        assert(str(response.data['elemental_id']) == new_uuid)
 
 class FavoriteStateTestCase(
         TatorTransactionTest,
@@ -2992,11 +3600,13 @@ class ResourceTestCase(TatorTransactionTest):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
         self.project = create_test_project(self.user, self.organization)
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -3012,6 +3622,20 @@ class ResourceTestCase(TatorTransactionTest):
         wait_for_indices(self.file_entity_type)
         self.store = get_tator_store()
         self.backup_bucket = None
+
+    def test_elemental_id(self):
+        # Test on type object
+        project = self.file_entity_type.project.id
+        new_uuid = str(uuid4())
+        response = self.client.get(f'/rest/FileTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 0)
+        response = self.client.get(f'/rest/FileType/{self.file_entity_type.id}')
+        assert(str(response.data['elemental_id']) == str(self.file_entity_type.elemental_id))
+        response = self.client.patch(f'/rest/FileType/{self.file_entity_type.id}', {'elemental_id': str(new_uuid)}, format='json')
+        response = self.client.get(f'/rest/FileType/{self.file_entity_type.id}')
+        assert(str(response.data['elemental_id']) == new_uuid)
+        response = self.client.get(f'/rest/FileTypes/{project}?elemental_id={new_uuid}')
+        assert(len(response.data) == 1)
 
     def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
@@ -3076,9 +3700,9 @@ class ResourceTestCase(TatorTransactionTest):
         """
 
         file1 = create_test_file(
-            name="File1", entity_type=self.file_entity_type, project=self.project)
+            name="File1", entity_type=self.file_entity_type, project=self.project, user=self.user)
         file2 = create_test_file(
-            name="File2", entity_type=self.file_entity_type, project=self.project)
+            name="File2", entity_type=self.file_entity_type, project=self.project, user=self.user)
 
         key1 = self._random_file_store_obj(file1)
         file_patch_spec = {
@@ -3088,6 +3712,15 @@ class ResourceTestCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file1.id}")
         self.assertTrue(self._store_obj_exists(response.data["path"]))
+
+        # verify retrieval via elemental_id
+        response = self.client.get(f"/rest/Files/{file1.project.id}?elemental_id={file1.elemental_id}")
+        assert(len(response.data) == 1)
+        new_uuid = uuid4()
+        response = self.client.patch(f'/rest/File/{file1.id}', {'elemental_id': str(new_uuid)}, format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/Files/{file1.project.id}?elemental_id={new_uuid}")
+        assert(len(response.data) == 1)
 
         key2 = self._random_file_store_obj(file2)
         file_patch_spec = {
@@ -3116,6 +3749,26 @@ class ResourceTestCase(TatorTransactionTest):
         response = self.client.delete(f"/rest/File/{file2.id}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertFalse(self._store_obj_exists(key2))
+
+    def test_author_change(self):
+        test_file = create_test_file(name="File1", entity_type=self.file_entity_type, project=self.project, user=self.user)
+        response = self.client.get(f'/rest/File/{test_file.pk}')
+        assert(response.data['created_by'] == self.user.pk)
+        response = self.client.patch(f'/rest/File/{test_file.pk}', 
+                               {'user_elemental_id': self.user_two.elemental_id}, format='json')
+        assert(response.status_code < 400)
+        response = self.client.get(f'/rest/File/{test_file.pk}')
+        assert(response.data['created_by'] == self.user_two.pk)
+
+        response = self.client.post(f'/rest/Files/{self.project.pk}',
+                               {'type': self.file_entity_type.pk,
+                               'name': 'test cross author',
+                               'description': 'Testing changing authorship on files.',
+                               'attributes': {},
+                               'user_elemental_id': self.user_two.elemental_id}, format='json')
+        new_id = response.data['id']
+        response = self.client.get(f'/rest/File/{new_id}')
+        assert(response.data['created_by'] == self.user_two.pk)
 
     def test_files(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
@@ -3240,11 +3893,15 @@ class ResourceTestCase(TatorTransactionTest):
             attribute_types=create_test_attribute_types(),
         )
         wait_for_indices(image_type)
-        body = {'url': TEST_IMAGE,
+        body = [
+            {
+                'url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
-                'md5': 'asdf'}
+                'md5': 'asdf',
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
         image_id = response.data['id']
@@ -3266,12 +3923,16 @@ class ResourceTestCase(TatorTransactionTest):
         self.assertFalse(self._store_obj_exists(thumb_key))
 
         # Create an image with thumbnail_url included.
-        body = {'url': TEST_IMAGE,
+        body = [
+            {
+                'url': TEST_IMAGE,
                 'thumbnail_url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
-                'md5': 'asdf'}
+                'md5': 'asdf',
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
         image_id = response.data['id']
@@ -3293,12 +3954,16 @@ class ResourceTestCase(TatorTransactionTest):
         self.assertFalse(self._store_obj_exists(thumb_key))
 
         # Create a video that has thumbnails.
-        body = {'thumbnail_url': TEST_IMAGE,
+        body = [
+            {
+                'thumbnail_url': TEST_IMAGE,
                 'thumbnail_gif_url': TEST_IMAGE,
                 'type': self.entity_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
-                'md5': 'asdf'}
+                'md5': 'asdf',
+            }
+        ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
         video_id = response.data['id']
@@ -3354,7 +4019,10 @@ class ResourceTestCase(TatorTransactionTest):
             # Back up the resource
             n_successful_backups = 0
             resource_qs = Resource.objects.filter(path__in=all_keys)
-            for success, resource in TatorBackupManager().backup_resources(resource_qs, "DOMAIN"):
+            projects = Project.objects.filter(backup_bucket__isnull=False)
+            if self.backup_bucket:
+                projects = projects.union(Projects.objects.filter(bucket__isnull=True))
+            for success, resource in TatorBackupManager().backup_resources(projects, resource_qs, "DOMAIN"):
                 if success:
                     n_successful_backups += 1
 
@@ -3441,7 +4109,10 @@ class ResourceTestCase(TatorTransactionTest):
 
         # Back up the resource
         n_successful_backups = 0
-        for success, resource in TatorBackupManager().backup_resources(resource_qs, "DOMAIN"):
+        projects = Project.objects.filter(backup_bucket__isnull=False)
+        if self.backup_bucket:
+            projects = projects.union(Projects.objects.filter(bucket__isnull=True))
+        for success, resource in TatorBackupManager().backup_resources(projects, resource_qs, "DOMAIN"):
             if success:
                 n_successful_backups += 1
 
@@ -3467,6 +4138,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
+        self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
@@ -3476,6 +4148,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
             self.user, self.organization, bucket=self.store.bucket, backup_bucket=self.store.bucket
         )
         self.membership = create_test_membership(self.user, self.project)
+        self.membership_two = create_test_membership(self.user_two, self.project)
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -3530,8 +4203,8 @@ class AttributeTestCase(TatorTransactionTest):
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {
             "entity_type": "LocalizationType",
-            "old_attribute_type_name": 'Int Test',
-            "new_attribute_type": {
+            "current_name": 'Int Test',
+            "attribute_type_update": {
                 "name": "Renamed Int Test",
                 "dtype": "float",
             },
@@ -3548,7 +4221,7 @@ class AttributeTestCase(TatorTransactionTest):
         }
         self.delete_json = {
             "entity_type": "LocalizationType",
-            "attribute_to_delete": 'Int Test',
+            "name": 'Int Test',
         }
 
 
@@ -3731,16 +4404,16 @@ class MutateAliasTestCase(TatorTransactionTest):
 
         for attr_name, attr_type in attribute_types:
             # Make a copy of the attribute type and remove a random field that isn't required
-            new_attribute_type = attr_type.copy()
+            attribute_type_update = attr_type.copy()
             fields = [
-                key for key in new_attribute_type.keys() if key not in ["name", "dtype", "choices"]
+                key for key in attribute_type_update.keys() if key not in ["name", "dtype", "choices"]
             ]
             key_to_remove = random.choice(fields)
-            new_attribute_type.pop(key_to_remove)
+            attribute_type_update.pop(key_to_remove)
 
             # Perform an update, check that no fields were removed
             self.search.mutate_alias(
-                entity_type, attr_name, new_attribute_type, "update"
+                entity_type, attr_name, attribute_type_update, "update"
             ).save()
             entity_type = MediaType.objects.get(pk=entity_type_id)
 
@@ -3757,7 +4430,7 @@ class MutateAliasTestCase(TatorTransactionTest):
 
             # Perform a replace, check that no fields were removed
             self.search.mutate_alias(
-                entity_type, attr_name, new_attribute_type, "replace"
+                entity_type, attr_name, attribute_type_update, "replace"
             ).save()
             entity_type = MediaType.objects.get(pk=entity_type_id)
 

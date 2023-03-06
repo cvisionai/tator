@@ -9,9 +9,6 @@ from django.http import Http404
 from ..models import Leaf
 from ..models import LeafType
 from ..models import Project
-from ..models import database_qs
-from ..models import database_query_ids
-from ..search import TatorSearch
 from ..schema import LeafSuggestionSchema
 from ..schema import LeafListSchema
 from ..schema import LeafDetailSchema
@@ -140,6 +137,8 @@ class LeafListAPI(BaseListView):
         # Check that we are getting a leaf list.
         if 'body' in params:
             leaf_specs = params['body']
+            if not isinstance(leaf_specs, list):
+                leaf_specs = [leaf_specs]
         else:
             raise Exception('Leaf creation requires list of leaves!')
 
@@ -190,6 +189,8 @@ class LeafListAPI(BaseListView):
         qs = get_leaf_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             new_attrs = validate_attributes(params, qs[0])
             bulk_update_and_log_changes(
                 qs, params["project"], self.request.user, new_attributes=new_attrs
@@ -220,7 +221,7 @@ class LeafDetailAPI(BaseDetailView):
         qs = Leaf.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        return database_qs(qs)[0]
+        return qs.values(*LEAF_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params):

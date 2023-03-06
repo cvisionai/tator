@@ -38,6 +38,11 @@ localization_type_properties = {
         'type': 'array',
         'items': {'$ref': '#/components/schemas/AttributeType'},
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 localization_type_spec = {
@@ -69,6 +74,7 @@ localization_type_update = {
         'visible': localization_type_properties['visible'],
         'drawable': localization_type_properties['drawable'],
         'grouping_default': localization_type_properties['grouping_default'],
+        'elemental_id': localization_type_properties['elemental_id'],
     },
 }
 

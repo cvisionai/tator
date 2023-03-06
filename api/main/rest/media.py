@@ -37,17 +37,23 @@ from ..notify import Notify
 from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
+from ..worker import push_job
 
-from ._util import url_to_key
+# This import is formatted like this to avoid a circular import
+import main._import_image
+
 from ._util import (
     bulk_update_and_log_changes,
     bulk_delete_and_log_changes,
+    compute_user,
     delete_and_log_changes,
     log_changes,
     log_creation,
     computeRequiredFields,
     check_required_fields,
+    url_to_key
 )
+
 from ._base_views import BaseListView, BaseDetailView
 from ._media_query import get_media_queryset
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
@@ -159,7 +165,51 @@ def _save_image(url, media_obj, project_obj, role):
     Resource.add_resource(image_key, media_obj)
     return media_obj
 
-def _create_media(params, user):
+
+def get_media_type(project, entity_type, name):
+    if int(entity_type) == -1:
+        media_types = MediaType.objects.filter(project=project)
+        if media_types.count():
+            mime, _ = mimetypes.guess_type(name)
+            if mime is None:
+                ext = os.path.splitext(name)[1].lower()
+                if ext in [".mts", ".m2ts"]:
+                    mime = "video/MP2T"
+                elif ext in [".dng"]:
+                    mime = "image/dng"
+            if mime.startswith("image"):
+                for media_type in media_types:
+                    if media_type.dtype == "image":
+                        break
+            else:
+                for media_type in media_types:
+                    if media_type.dtype == "video":
+                        break
+            entity_type = media_type.pk
+        else:
+            raise RuntimeError("No media types for project")
+    else:
+        media_type = MediaType.objects.get(pk=int(entity_type))
+        if media_type.project.pk != project:
+            raise ValueError("Media type is not part of project")
+
+    return media_type, entity_type
+
+
+def assert_list_of_image_specs(project, param_list):
+    """ Checks that all media creation specs are of dtype "image" """
+    for params in param_list:
+        entity_type = params["type"]
+        name = params['name']
+        media_type, entity_type = get_media_type(project, entity_type, name)
+        if media_type.dtype != "image":
+            raise ValueError(
+                f"Multiple media creation only supports images, found at least one spec with dtype "
+                f"{media_type.dtype}"
+            )
+
+
+def _create_media(project, params, user, use_rq=False):
     """ Media POST method in its own function for reuse by Transcode endpoint.
     """
     # Get common parameters (between video/image).
@@ -167,7 +217,6 @@ def _create_media(params, user):
     section = params['section']
     name = params['name']
     md5 = params['md5']
-    project = params['project']
     gid = params.get('gid', None)
     uid = params.get('uid', None)
     new_attributes = params.get('attributes', None)
@@ -176,6 +225,8 @@ def _create_media(params, user):
     if gid is not None:
         gid = str(gid)
     project_obj = Project.objects.get(pk=project)
+
+    computed_author = compute_user(project, user, params.get('user_elemental_id', None))
 
     # If section does not exist and is not an empty string, create a section.
     tator_user_sections = ""
@@ -190,31 +241,7 @@ def _create_media(params, user):
                                    tator_user_sections=tator_user_sections)
 
     # Get the media type.
-    if int(entity_type) == -1:
-        media_types = MediaType.objects.filter(project=project)
-        if media_types.count() > 0:
-            mime, _ = mimetypes.guess_type(name)
-            if mime is None:
-                ext = os.path.splitext(name)[1].lower()
-                if ext in ['.mts', '.m2ts']:
-                    mime = 'video/MP2T'
-                elif ext in [".dng"]:
-                    mime = "image/dng"
-            if mime.startswith('image'):
-                for media_type in media_types:
-                    if media_type.dtype == 'image':
-                        break
-            else:
-                for media_type in media_types:
-                    if media_type.dtype == 'video':
-                        break
-            entity_type = media_type.pk
-        else:
-            raise Exception('No media types for project')
-    else:
-        media_type = MediaType.objects.get(pk=int(entity_type))
-        if media_type.project.pk != project:
-            raise Exception('Media type is not part of project')
+    media_type, entity_type = get_media_type(project, entity_type, name)
 
     # Compute the required fields for posting a media object
     # of this type
@@ -241,8 +268,8 @@ def _create_media(params, user):
             name=name,
             md5=md5,
             attributes=attributes,
-            created_by=user,
-            modified_by=user,
+            created_by=computed_author,
+            modified_by=computed_author,
             gid=gid,
             uid=uid,
             source_url=url,
@@ -250,103 +277,14 @@ def _create_media(params, user):
         )
         media_obj.media_files = {}
 
-        alt_image = None
-        if url:
-            # Download the image file and load it.
-            ext = os.path.splitext(name)[1].lower()
-            if ext in [".dng"]:
-                # Digital Negative files need conversion
-                temp_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                temp_dng = tempfile.NamedTemporaryFile(delete=False, suffix=".dng")
-                download_file(url, temp_dng.name, 5)
-                with rawpy.imread(temp_dng.name) as raw:
-                    rgb = raw.postprocess()
-                imageio.imwrite(temp_image.name, rgb)
-                os.remove(temp_dng.name)
-            else:
-                temp_image = tempfile.NamedTemporaryFile(delete=False)
-                download_file(url, temp_image.name, 5)
-            image = Image.open(temp_image.name)
-            media_obj.width, media_obj.height = image.size
-            image_format = image.format
-
-            # Add a png for compatibility purposes
-            if image_format == 'AVIF':
-                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-                image.save(alt_image, format='png')
-                alt_name = "image.png"
-                alt_format = 'png'
-            else:
-                # convert image upload to AVIF
-                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.avif')
-                image.save(alt_image, format='avif')
-                alt_name = "image.avif"
-                alt_format = 'avif'
-
-
-            # Download or create the thumbnail.
-            if thumbnail_url is None:
-                temp_thumb = tempfile.NamedTemporaryFile(delete=False)
-                thumb_size = (256, 256)
-                image = image.convert('RGB') # Remove alpha channel for jpeg
-                image.thumbnail(thumb_size, Image.ANTIALIAS)
-                image.save(temp_thumb.name, format='jpeg')
-                thumb_name = 'thumb.jpg'
-                thumb_format = 'jpg'
-                thumb_width = image.width
-                thumb_height = image.height
-                image.close()
-
-        if thumbnail_url:
-            temp_thumb = tempfile.NamedTemporaryFile(delete=False)
-            download_file(thumbnail_url, temp_thumb.name)
-            thumb = Image.open(temp_thumb.name)
-            thumb_name = os.path.basename(urlparse(thumbnail_url).path)
-            thumb_format = thumb.format
-            thumb_width = thumb.width
-            thumb_height = thumb.height
-            thumb.close()
-
         # Set up S3 client.
         tator_store = get_tator_store(project_obj.bucket)
 
-        if url:
-            # Upload image.
-            image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-            tator_store.put_object(image_key, temp_image)
-            media_obj.media_files['image'] = [{'path': image_key,
-                                               'size': os.stat(temp_image.name).st_size,
-                                               'resolution': [media_obj.height, media_obj.width],
-                                               'mime': f'image/{image_format.lower()}'}]
-            os.remove(temp_image.name)
-            Resource.add_resource(image_key, media_obj)
+        if use_rq:
+            push_job('image_jobs', main._import_image._import_image, args=(name, url, thumbnail_url, media_obj.id))
+        else:
+            main._import_image._import_image(name, url, thumbnail_url, media_obj.id)
 
-        if alt_image:
-            # Upload image.
-            image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{alt_name}"
-            # alt_image fp doesn't seem to work here (odd)
-            with open(alt_image.name, 'rb') as temp_fp:
-                tator_store.put_object(image_key, temp_fp)
-            media_obj.media_files['image'].extend([{'path': image_key,
-                                                    'size': os.stat(alt_image.name).st_size,
-                                                    'resolution': [media_obj.height, media_obj.width],
-                                                    'mime': f'image/{alt_format.lower()}'}])
-            os.remove(alt_image.name)
-            Resource.add_resource(image_key, media_obj)
-
-        if url or thumbnail_url:
-            # Upload thumbnail.
-            thumb_format = image.format
-            thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
-            tator_store.put_object(thumb_key, temp_thumb)
-            media_obj.media_files['thumbnail'] = [{'path': thumb_key,
-                                                   'size': os.stat(temp_thumb.name).st_size,
-                                                   'resolution': [thumb_height, thumb_width],
-                                                   'mime': f'image/{thumb_format}'}]
-            os.remove(temp_thumb.name)
-            Resource.add_resource(thumb_key, media_obj)
-
-        media_obj.save()
 
         response = {'message': "Image saved successfully!", 'id': media_obj.id}
 
@@ -358,8 +296,8 @@ def _create_media(params, user):
             name=name,
             md5=md5,
             attributes=attributes,
-            created_by=user,
-            modified_by=user,
+            created_by=computed_author,
+            modified_by=computed_author,
             gid=gid,
             uid=uid,
             source_url=url,
@@ -367,18 +305,9 @@ def _create_media(params, user):
         )
 
         # Add optional parameters.
-        if 'fps' in params:
-            media_obj.fps = params['fps']
-        if 'num_frames' in params:
-            media_obj.num_frames = params['num_frames']
-        if 'codec' in params:
-            media_obj.codec = params['codec']
-        if 'width' in params:
-            media_obj.width = params['width']
-        if 'height' in params:
-            media_obj.height = params['height']
-        if 'summary_level' in params:
-            media_obj.summary_level = params['summary_level']
+        for opt_key in ["fps", "num_frames", "codec", "width", "height", "summary_level"]:
+            if opt_key in params:
+                setattr(media_obj, opt_key, params[opt_key])
 
         # Use thumbnails if they are given.
         thumbnail_url = params.get('thumbnail_url', None)
@@ -396,13 +325,13 @@ def _create_media(params, user):
         response = {'message': msg, 'id': media_obj.id}
         logger.info(msg)
 
-    # If this is an upload to Tator, put media ID as object tag.
-    if url:
-        path, bucket, upload = url_to_key(url, project_obj)
-        if path is not None:
-            use_upload_bucket = upload and not bucket
-            tator_store = get_tator_store(bucket, upload=use_upload_bucket)
-            tator_store.put_media_id_tag(path, media_obj.id)
+        # If this is an upload to Tator, put media ID as object tag.
+        if url:
+            path, bucket, upload = url_to_key(url, project_obj)
+            if path is not None:
+                use_upload_bucket = upload and not bucket
+                tator_store = get_tator_store(bucket, upload=use_upload_bucket)
+                tator_store.put_media_id_tag(path, media_obj.id)
 
     log_creation(media_obj, media_obj.project, user)
 
@@ -444,7 +373,21 @@ class MediaListAPI(BaseListView):
         return response_data
 
     def _post(self, params):
-        _, response = _create_media(params, self.request.user)
+        project = params["project"]
+        media_spec_list = params["body"]
+
+        if not isinstance(media_spec_list, list):
+            media_spec_list = [media_spec_list]
+        if len(media_spec_list) == 1:
+            _, response = _create_media(project, media_spec_list[0], self.request.user)
+        elif media_spec_list:
+            # TODO handle multiple image creation
+            assert_list_of_image_specs(project, media_spec_list)
+            for media_spec in media_spec_list:
+                _create_media(project, media_spec, self.request.user, use_rq=True)
+            response = {"message": f"Started import of {len(media_spec_list)} images!"}
+        else:
+            raise ValueError(f"Expected one or more media specs, received zero!")
         return response
 
     def _delete(self, params):
@@ -490,21 +433,32 @@ class MediaListAPI(BaseListView):
             Only attributes are eligible for bulk patch operations.
         """
         desired_archive_state = params.pop("archive_state", None)
-        if desired_archive_state is None and params.get("attributes") is None:
-            raise ValueError("Must specify 'attributes' and/or property to patch, but none found")
+        if desired_archive_state is None and \
+           params.get("attributes") is None and \
+           params.get('user_elemental_id') == None and \
+           params.get('reset_attributes') is None and \
+           params.get('null_attributes') is None:
+            raise ValueError("Must specify 'attributes', 'reset_attributes', 'null_attributes', 'user_elemental_id',"
+                             " and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
+
         count = 0
         if qs.exists():
             ts = TatorSearch()
             ids_to_update = list(qs.values_list("pk", flat=True).distinct())
-
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             # Get the current representation of the object for comparison
             obj = qs.first()
             new_attrs = validate_attributes(params, obj)
-            if new_attrs is not None:
+            update_kwargs=None
+            if params.get('user_elemental_id', None):
+                computed_author = compute_user(params['project'], self.request.user, params.get('user_elemental_id', None))
+                update_kwargs = {'created_by': computed_author}
+            if new_attrs is not None or update_kwargs is not None:
                 attr_count = len(ids_to_update)
                 bulk_update_and_log_changes(
-                    qs, params["project"], self.request.user, new_attributes=new_attrs
+                    qs, params["project"], self.request.user, new_attributes=new_attrs, update_kwargs=update_kwargs
                 )
                 count = max(count, attr_count)
 
@@ -609,8 +563,12 @@ class MediaDetailAPI(BaseDetailView):
             qs = Media.objects.select_for_update().filter(pk=params['id'], deleted=False)
             media = qs[0]
             model_dict = media.model_dict
-            if 'attributes' in params:
+            computed_author = compute_user(media.project.pk, self.request.user, params.get('user_elemental_id', None))
+            if params.get('user_elemental_id', None):
+                qs.update(created_by=computed_author)
+            if 'attributes' in params or 'null_attributes' in params or 'reset_attributes' in params:
                 new_attrs = validate_attributes(params, media)
+                logger.info(f"new_attrs={new_attrs}")
                 bulk_patch_attributes(new_attrs, qs)
 
             if 'name' in params:

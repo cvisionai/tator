@@ -17,6 +17,10 @@ spec:
         dbServer: "yes"
       containers:
         - name: postgis
+          lifecycle:
+            preStop:
+              exec:
+                command: ["pg_ctl", "-D", "/var/lib/postgresql/data/db-files", "stop"]
           image: {{ .Values.dockerRegistry }}/tator_postgis:{{ .Values.gitRevision }}
           imagePullPolicy: "IfNotPresent"
           ports:

@@ -7,6 +7,7 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+from ._type_query import type_filter_parameter_schema
 
 boilerplate = dedent("""\
 A media type is the metadata definition object for media. It includes file format,
@@ -41,7 +42,10 @@ class MediaTypeListSchema(AutoSchema):
         }]
 
     def get_filter_parameters(self, path, method):
-        return {}
+        params = []
+        if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
+            params = type_filter_parameter_schema
+        return params
 
     def get_request_body(self, path, method):
         body = {}

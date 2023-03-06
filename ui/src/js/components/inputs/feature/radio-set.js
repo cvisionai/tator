@@ -1,53 +1,50 @@
 import { TatorElement } from "../../tator-element.js";
 
 export class RadioSet extends TatorElement {
-   constructor() {
-      super();
+  constructor() {
+    super();
 
-      const div = document.createElement("div");
-      div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
-      this._shadow.appendChild(div);
+    const div = document.createElement("div");
+    div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this._shadow.appendChild(div);
 
-      this._name = document.createTextNode("");
-      div.appendChild(this._name);
+    this._name = document.createTextNode("");
+    div.appendChild(this._name);
 
-      //
-     this._setName = "radio-set";
-      this._inputs = []
+    //
+    this._setName = "radio-set";
+    this._inputs = []
 
-      this._inputDiv = document.createElement("div");
-      this._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap flex-justify-between col-8");
-     div.appendChild(this._inputDiv);
+    this._inputDiv = document.createElement("div");
+    this._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap flex-justify-between col-8");
+    div.appendChild(this._inputDiv);
 
-     // default 2 columns
-     this._colSize = "col-6";
+    // default 2 columns
+    this._colSize = "col-6";
+  }
+
+  static get observedAttributes() {
+    return ["name", "type"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "name":
+        this._name.nodeValue = newValue;
+        this._setName = encodeURI(newValue);
+        break;
+      case "type":
+        switch (newValue) {
+          case "number":
+            this.getValue = this.getValueAsNumber;
+            this.type = newValue;
+            break;
+        }
     }
-
-    static get observedAttributes() {
-      return ["name", "type"];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-      switch (name) {
-        case "name":
-          this._name.nodeValue = newValue;
-          this._setName = encodeURI(newValue);
-          break;
-        case "type":
-          switch (newValue) {
-            case "number":
-              this.getValue = this.getValueAsNumber;
-              this.type = newValue;
-              break;
-          }
-      }
-    }
+  }
 
   set default(val) {
-    this.defaultData = val; // full data needed to reset FE
-
-    // default is apples to apples with getValue to check for Array of ids
-    this._default = val.filter(data => data.checked).map(checked => checked.id);
+    this._default = val;
   }
 
   reset() {
@@ -55,27 +52,34 @@ export class RadioSet extends TatorElement {
     if (typeof this.defaultData !== "undefined") {
       this.setValue(this.defaultData);
     } else {
-      this.setValue([]);
+      this.setValue("");
     }
   }
 
-  setValue(val) {
+  set choices(val) {
     if( val && val.length ){
       for (let item of val) {
         this._newInput(item);
       }
+    }    
+  }
+
+  setValue(val) {
+    for (let input of this._inputs) {
+      console.log(`${input.value} == ${val} >>> ${input.value == val}`)
+      input.checked = (input.value == val);
     }
   }
 
   _newInput(item) {
     let radioLabelAndInput = document.createElement("label");
     radioLabelAndInput.setAttribute("class", "d-flex flex-items-center py-1");
-    radioLabelAndInput.setAttribute("for", item.id);
+    radioLabelAndInput.setAttribute("for", item.value);
 
     let radioInput = document.createElement("input");
     radioInput.setAttribute("name", this._setName);
-    radioInput.setAttribute("id", item.id);
-    radioInput.setAttribute("value", item.id);
+    radioInput.setAttribute("id", item.value);
+    radioInput.setAttribute("value", item.value);
     radioInput.setAttribute("type", "radio");
     radioInput.checked = item.checked;
     radioLabelAndInput.appendChild(radioInput);
@@ -86,7 +90,6 @@ export class RadioSet extends TatorElement {
 
     this._name = document.createTextNode(item.name);
     this.styleSpan.appendChild(this._name);
-
 
     return this._addInput(radioLabelAndInput, radioInput);
   }

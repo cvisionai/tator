@@ -1,5 +1,7 @@
 from django.db import transaction
 
+import uuid
+
 from ..models import FileType
 from ..models import File
 from ..models import Project
@@ -13,7 +15,7 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
-fields = ['id', 'project', 'name', 'description', 'attribute_types']
+fields = ['id', 'project', 'name', 'description', 'attribute_types', 'elemental_id']
 
 class FileTypeListAPI(BaseListView):
     """ Create or retrieve file types.
@@ -25,7 +27,15 @@ class FileTypeListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params: dict) -> dict:
-        qs = FileType.objects.filter(project=params['project']).order_by('id')
+        qs = FileType.objects.filter(project=params['project'])
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+        qs = qs.order_by('id')
         return database_qs(qs)
 
     def get_queryset(self) -> dict:
@@ -41,6 +51,8 @@ class FileTypeListAPI(BaseListView):
                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
+        if params.get('elemental_id',None) is None:
+            params['elemental_id'] = uuid.uuid4()
         obj = FileType(**params)
         obj.save()
         return {'id': obj.id, 'message': 'File type created successfully!'}
@@ -73,12 +85,15 @@ class FileTypeDetailAPI(BaseDetailView):
         """
         name = params.get('name', None)
         description = params.get('description', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = FileType.objects.get(pk=params['id'])
         if name is not None:
             obj.name = name
         if description is not None:
             obj.description = description
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         obj.save()
         return {'message': 'File type updated successfully!'}

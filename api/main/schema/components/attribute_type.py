@@ -18,7 +18,7 @@ autocomplete_service = {
 
 attribute_type_properties = {
     'name': {
-        'description': 'Name of the attribute.',
+        'description': 'Name of the attribute. The first character must not be \'$\', which is a reserved character for system usage.',
         'type': 'string',
     },
     'description': {
@@ -87,6 +87,10 @@ attribute_type_properties = {
                        'When associated with a bool, these checks will result in Tator GUI changes with the corresponding start_frame and end_frame attributes.',
         'type': 'string',
     },
+    'visible': {
+        'description': 'True to make attribute visible.',
+        'type': 'boolean',
+    }
 }
 
 attribute_type = {
@@ -114,18 +118,18 @@ attribute_type_properties_no_defaults = {
 
 attribute_type_update = {
     "type": "object",
-    "required": ["entity_type", "old_attribute_type_name", "new_attribute_type"],
+    "required": ["entity_type", "current_name", "attribute_type_update"],
     "description": "Renames an attribute of a type.",
     "properties": {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
         },
-        "old_attribute_type_name": {
+        "current_name": {
             "type": "string",
             "description": "The attribute to rename.",
         },
-        "new_attribute_type": {
+        "attribute_type_update": {
             'type': 'object',
             'properties': attribute_type_properties_no_defaults,
         }
@@ -140,7 +144,7 @@ attribute_type_delete = {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
         },
-        "attribute_to_delete": {
+        "name": {
             "type": "string",
             "description": "The attribute to delete.",
         },

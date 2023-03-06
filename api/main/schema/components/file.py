@@ -11,7 +11,9 @@ file_fields = SimpleNamespace(
     name="name",
     project="project",
     attributes="attributes",
-    type="type")
+    type="type",
+    elemental_id="elemental_id",
+    user_elemental_id="user_elemental_id")
 
 file_shared_properties = {
     file_fields.name: {
@@ -27,13 +29,23 @@ file_shared_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+    file_fields.elemental_id: {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
+    file_fields.type: {
+        'type': 'integer',
+        'description': 'Unique integer identifying FileType of this File object.',
+    },
 }
 
 file_post_properties = {
     **file_shared_properties,
-    file_fields.type: {
-        'type': 'integer',
-        'description': 'Unique integer identifying FileType of this File object.',
+    file_fields.user_elemental_id: {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
     },
 }
 
@@ -54,6 +66,22 @@ file_update = {
         file_fields.path: {
             "type": "string",
             "description": "Relative URL to the file"
+        },
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
         },
     }
 }
@@ -92,7 +120,7 @@ file = {
             "type": "string",
             "description": "Relative URL to the file"
         },
-        **file_post_properties
+        **file_shared_properties
     },
 }
 
@@ -112,5 +140,12 @@ file_filter_parameter_schema = [
                        'File object with this ID. The `start` and `stop` '
                        'parameters are relative to this modified range.',
         'schema': {'type': 'integer'},
+    },
+    {
+        'name': 'elemental_id',
+        'in': 'query',
+        'description': 'Elemental ID to search for',
+        'schema': {'type': 'string'},
+        'required': False,
     },
 ]

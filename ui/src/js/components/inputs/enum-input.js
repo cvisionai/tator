@@ -112,9 +112,18 @@ export class EnumInput extends TatorElement {
     }
     else // use groups
     {
+      while(this._select.firstChild)
+      {
+        this._select.removeChild(this._select.firstChild);
+      }
       let groups = Object.keys(val);
       for (const group of groups)
       {
+        // Skip over empty groups
+        if (val[group].length == 0)
+        {
+          continue;
+        }
         const optgroup = document.createElement("optgroup");
         optgroup.setAttribute("label", group);
         optgroup.setAttribute("class", "form-control");
@@ -195,7 +204,7 @@ export class EnumInput extends TatorElement {
             idx++;
           }
         }
-      } else {
+      } else {        
         for (const option of this._select.options) {
           if (option.value == val) {
             this._select.selectedIndex = idx;

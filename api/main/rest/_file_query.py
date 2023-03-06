@@ -4,6 +4,8 @@ import logging
 import json
 import base64
 
+import uuid
+
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 
@@ -31,6 +33,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
     name = params.get('name')
     start = params.get('start')
     stop = params.get('stop')
+    elemental_id = params.get('elemental_id', None)
 
     qs = File.objects.filter(project=project, deleted=False)
 
@@ -65,6 +68,13 @@ def _get_file_psql_queryset(project, filter_ops, params):
             qs = qs.filter(query)
         else:
             qs = sub_qs
+
+    if elemental_id is not None:
+        # Django 3.X has a bug where UUID fields aren't escaped properly
+        # Use .extra to manually validate the input is UUID
+        # Then construct where clause manually.
+        safe = uuid.UUID(elemental_id)
+        qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
 
     # Used by PUT queries
     if params.get('object_search'):

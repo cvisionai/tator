@@ -60,6 +60,7 @@ class CustomGenerator(SchemaGenerator):
                 'Bucket': bucket,
                 'BucketGCPConfig': gcp_config,
                 'BucketOCIConfig': oci_config,
+                'BucketOCINativeConfig': oci_native_config,
                 'BucketS3Config': s3_config,
                 'ConcatDefinition': concat_definition,
                 'ChangeLog': change_log,

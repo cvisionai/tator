@@ -2,6 +2,8 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 
+import uuid
+
 from ..models import Media
 from ..models import MediaType
 from ..models import LocalizationType
@@ -17,7 +19,7 @@ from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'color_map', 'line_width', 'visible', 'drawable', 'grouping_default']
+          'color_map', 'line_width', 'visible', 'drawable', 'grouping_default', 'elemental_id']
 
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
@@ -40,10 +42,19 @@ class LocalizationTypeListAPI(BaseListView):
             for localization in localizations:
                 if localization.project.id != self.kwargs['project']:
                     raise Exception('Localization not in project!')
-            response_data = localizations.order_by('name').values(*fields)
+            qs = localizations
         else:
-            response_data = LocalizationType.objects.filter(project=params['project'])\
-                            .order_by('name').values(*fields)
+            qs = LocalizationType.objects.filter(project=params['project'])
+
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+
+        response_data = qs.order_by('name').values(*fields)
         # Get many to many fields.
         loc_ids = [loc['id'] for loc in response_data]
         media = {obj['localizationtype_id']:obj['media'] for obj in 
@@ -70,6 +81,8 @@ class LocalizationTypeListAPI(BaseListView):
         media_types = params.pop('media_types')
 
         del params['body']
+        if params.get('elemental_id',None) is None:
+            params['elemental_id'] = uuid.uuid4()
         obj = LocalizationType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
@@ -119,7 +132,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
         """
         name = params.get('name', None)
         description = params.get('description', None)
-
+        elemental_id = params.get('elemental_id', None)
         obj = LocalizationType.objects.get(pk=params['id'])
         if name is not None:
             obj.name = name
@@ -140,6 +153,8 @@ class LocalizationTypeDetailAPI(BaseDetailView):
                 project=obj.project.pk, pk__in=params['media_types'])
             for media in media_types:
                 obj.media.add(media)
+        if elemental_id:
+            obj.elemental_id = elemental_id
 
         obj.save()
         return {'message': 'Localization type updated successfully!'}

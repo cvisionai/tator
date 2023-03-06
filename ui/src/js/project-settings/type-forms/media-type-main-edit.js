@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 
 export class MediaTypeEdit extends TypeFormTemplate {
   constructor() {
@@ -21,21 +21,18 @@ export class MediaTypeEdit extends TypeFormTemplate {
     this._visibleBool = this._shadow.getElementById("media-type-edit--visible");
     
     this.dtypeSelect.addEventListener("change", this._showHideVolume.bind(this));
+
+    // Set enum value once
+    this.dtypeSelect.choices = [
+      { "label": "Select", "value": "" },
+      { "label": "Video", "value": "video" },
+      { "label": "Image", "value": "image" },
+      { "label": "Multiview", "value": "multi" }
+    ];
   }
 
   async _setupFormUnique() {
     // dtype
-    if (!this.dtypeSelect._choices) {
-      const dTypeOptions = [
-        { "label": "Select", "value": "" },
-        { "label": "Video", "value": "video" },
-        { "label": "Image", "value": "image" },
-        { "label": "Multiview", "value": "multi" }
-      ];
-      // Emptyform uses "" for dtype value
-      this.dtypeSelect.choices = dTypeOptions;      
-    }
-
     if (!this._data.dtype) {
       this.dtypeSelect.setValue("");
       this.dtypeSelect._select.required = true;

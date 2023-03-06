@@ -4,6 +4,7 @@ import logging
 
 import json
 import base64
+import uuid
 
 from django.db.models import Subquery
 from django.db.models.functions import Coalesce
@@ -84,7 +85,11 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs.filter(version__in=version)
 
     if elemental_id is not None:
-        qs = qs.filter(elemental_id=elemental_id)
+        # Django 3.X has a bug where UUID fields aren't escaped properly
+        # Use .extra to manually validate the input is UUID
+        # Then construct where clause manually.
+        safe = uuid.UUID(elemental_id)
+        qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
 
     if frame is not None:
         qs = qs.filter(frame=frame)

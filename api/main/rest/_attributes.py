@@ -187,9 +187,9 @@ def validate_attributes(params, obj):
     """Validates attributes by looking up attribute type and attempting
        a type conversion.
     """
-    attributes = params.get("attributes", None)
+    attributes = params.get("attributes", {})
+    attr_types = {a['name']:a for a in obj.type.attribute_types}
     if attributes:
-        attr_types = {a['name']:a for a in obj.type.attribute_types}
         for attr_name in attributes:
             if attr_name == 'tator_user_sections':
                 # This is a built-in attribute used for organizing media sections.
@@ -199,6 +199,13 @@ def validate_attributes(params, obj):
             else:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {obj.type.name}")
             attributes[attr_name] = convert_attribute(attr_type, attributes[attr_name])
+    for attr in params.get("reset_attributes", []):
+        attributes[attr] = attr_types[attr].get('default',None)
+    for attr in params.get("null_attributes", []):
+        if attr_types[attr]['dtype'] != "geopos":
+            attributes[attr] = None
+        else:
+            attributes[attr] = [-1.0,-1.0]
     return attributes
 
 def patch_attributes(new_attrs, obj):
@@ -225,6 +232,8 @@ def _process_for_bulk_op(raw_value):
         return f'"{raw_value}"'
     if isinstance(raw_value, bool):
         return f"{str(raw_value).lower()}"
+    if raw_value == None:
+        return 'null'
 
     return raw_value
 

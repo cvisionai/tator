@@ -151,13 +151,23 @@ class LeafListSchema(AutoSchema):
         if method == 'POST':
             body = {
                 'required': True,
-                'content': {'application/json': {
-                'schema': {
-                    'type': 'array',
-                    'items': {'$ref': '#/components/schemas/LeafSpec'},
-                    'maxItems': 500,
-                },
-            }}}
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'oneOf': [
+                                {
+                                    'type': 'array',
+                                    'items': {'$ref': '#/components/schemas/LeafSpec'},
+                                    'maxItems': 500
+                                },
+                                {
+                                    '$ref': '#/components/schemas/LeafSpec',
+                                },
+                            ],
+                        },
+                    }
+                }
+            }
         if method == 'PATCH':
             body = {
                 'required': True,

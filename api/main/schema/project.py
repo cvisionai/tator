@@ -5,6 +5,7 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_schema
+from ._type_query import type_filter_parameter_schema
 
 boilerplate = dedent("""\
 Projects are the object under which all data in Tator is grouped, including user
@@ -41,7 +42,8 @@ class ProjectListSchema(AutoSchema):
             'required': False,
             'description': 'Unique integer identifying an organization.',
             'schema': {'type': 'integer', 'minimum': 1},
-        }]
+        },
+        *type_filter_parameter_schema]
 
     def get_request_body(self, path, method):
         body = {}

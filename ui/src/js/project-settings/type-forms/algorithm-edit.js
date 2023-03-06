@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
 import { getCompiledList, store } from "../store.js";
@@ -8,7 +8,6 @@ export class AlgorithmEdit extends TypeFormTemplate {
       super();
       this.typeName = "Algorithm";
       this.readableTypeName = "Algorithm";
-      this.icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="SideNav-icon icon-cpu no-fill"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
       this._hideAttributes = true;
       this.versionId = null;
 
@@ -38,14 +37,27 @@ export class AlgorithmEdit extends TypeFormTemplate {
    async connectedCallback() {
       store.subscribe(state => state.JobClusterPermission, this.savePermission.bind(this));
       store.subscribe(state => state.Project, this.setManifestInfo.bind(this), []);
+      store.subscribe(state => state.isStaff, this.resetClusterPermission.bind(this), []);
+
+      if (store.getState().JobClusterPermission) {
+         this.savePermission(store.getState().JobClusterPermission);
+      }
+
+      if (store.getState().Project) {
+         this.setManifestInfo(store.getState().Project);
+      }
+   }
+
+   async resetClusterPermission(){
+      store.getState().setJobClusterPermissions();
    }
 
    async setManifestInfo(project) {
       this.projectId = project.data.id;
       this._manifestPath.projectId = project.data.id;
-      this._manifestPath.organizationId = project.data.organization;
-      await store.getState().setJobClusterPermissions();
+      this._manifestPath.organizationId = project.data.organization;      
    }
+
 
    /**
     * Sets up the message at top of form based on combination of if...
@@ -56,26 +68,34 @@ export class AlgorithmEdit extends TypeFormTemplate {
     */
    savePermission(setPermission) {
       this.cantSave = setPermission.userCantSave;
-      this.cantSee = setPermission.userCantSeeCluster
+      this.cantSee = setPermission.userCantSeeCluster;
+      if (this.cantSave) this.showMessagesCantSave(this._data?.id == "New");
+      if (this.cantSee) this.showMessagesCantSee(this._data?.id == "New");
    }
 
    showMessagesCantSee(isNew) {
+      console.log("showMessagesCantSee");
       if (isNew) {
          this._userMessage.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
          // store.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
+         this.dispatchEvent(new Event("hide-save"));
       } else {
          this._userMessage.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
          // store.setState({ status: { ...store.getState().status, name: "idle", message: "" } });
       }
+      this._userMessage.hidden = false;
    }
 
-   showMessagesCantSave(isNew ) {
+   showMessagesCantSave(isNew) {
+      console.log("showMessagesCantSave");
       if (isNew) {
-         this._userMessage.innerHTML = `Required: Add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
+         this._userMessage.innerHTML = `Required: Add a Job Cluster via <a href="/${store.getState().organizationId}/organization-settings#JobCluster-New" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
       } else {
-         this._userMessage.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
+         this._userMessage.innerHTML = `View Only: Please add a Job Cluster via <a href="/${store.getState().organizationId}/organization-settings#JobCluster-New" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
       }
       // store.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
+      this._userMessage.hidden = false;
+      this.dispatchEvent(new Event("hide-save"));
    }
 
    async _setupFormUnique() {
@@ -84,7 +104,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       if (this.cantSee) this.showMessagesCantSee(this._data.id == "New");
 
       // description
-      this._editDescription.permission = !this.cantSave ? "Can Edit" : "Ready Only";
+      this._editDescription.permission = !this.cantSave ? "Can Edit" : "View Only";
       this._editDescription.setValue(this._data.description);
       this._editDescription.default = this._data.description;
 
@@ -111,7 +131,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       }
 
       // Visible input with readable name
-      this._userEditVisible.permission = "View Only";//!this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+      this._userEditVisible.permission = "View Only";//!this.userCantSaveCluster ? "Can Edit" : "View Only";
       this._userEditVisible.setValue(this._registeredUserName);
       this._userEditVisible.default = this._registeredUserName;
 
@@ -121,7 +141,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       this._userEdit.permission = null;
 
       // Path to manifest
-      this._manifestPath.permission = !this.cantSave ? "Can Edit" : "Ready Only";
+      this._manifestPath.permission = !this.cantSave ? "Can Edit" : "View Only";
       if (this._data.manifest) {
          this._manifestPath.setValue(`/media/${this._data.manifest}`);
          this._manifestPath.default = `/media/${this._data.manifest}`;       
@@ -166,7 +186,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
             this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
          } else {
             this._clusterEnumInput.removeAttribute("disabled");
-            this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+            this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "View Only";
             this._clusterEnumInput.choices = [{ label: "None", value: ""}, ...jobClusterWithChecked];
             this._clusterEnumInput.default = this._data.cluster;
             this._clusterEnumInput.setValue(this._data.cluster);
@@ -178,19 +198,21 @@ export class AlgorithmEdit extends TypeFormTemplate {
       }
 
       // Files per job
-      this._filesPerJob.permission = !this.cantSave ? "Can Edit" : "Ready Only";
+      this._filesPerJob.permission = !this.cantSave ? "Can Edit" : "View Only";
       this._filesPerJob.setValue(this._data.files_per_job);
       this._filesPerJob.default = this._data.files_per_job;
 
       // Categories
-      this._categoriesList.permission = !this.cantSave ? "Can Edit" : "Ready Only";
+      this._categoriesList.clear();
+      this._categoriesList.permission = !this.cantSave ? "Can Edit" : "View Only";
       this._categoriesList.setValue(this._data.categories);
       this._categoriesList.default = this._data.categories;
 
       // Parameters
+      this._parametersList.clear();
       let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
       let paramInputTemplate = JSON.stringify({ name: '', value: '' });
-      this._parametersList.permission = !this.cantSave ? "Can Edit" : "Ready Only";
+      this._parametersList.permission = !this.cantSave ? "Can Edit" : "View Only";
       this._parametersList.setAttribute("properties", paramInputTypes);
       this._parametersList.setAttribute("empty-row", paramInputTemplate);
       this._parametersList.setValue(this._data.parameters);

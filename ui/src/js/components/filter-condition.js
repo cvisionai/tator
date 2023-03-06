@@ -102,6 +102,7 @@ export class FilterCondition extends TatorElement {
 
     // Create the menu options for the field name
     var fieldChoices = [];
+    var geoChoices = [];
     var attributeChoices = [];
     var uniqueFieldChoices = [];
     this._currentTypes = [];
@@ -115,7 +116,14 @@ export class FilterCondition extends TatorElement {
           if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
             if (attribute.label)
             {
-              fieldChoices.push({"value": attribute.name, "label": attribute.label});
+              if (['_x', '_y', '_width', '_height'].indexOf(attribute.name) >= 0)
+              {
+                geoChoices.push({"value": attribute.name, "label": attribute.label});
+              }
+              else
+              {
+                fieldChoices.push({"value": attribute.name, "label": attribute.label});
+              }
             }
             else
             {
@@ -131,7 +139,7 @@ export class FilterCondition extends TatorElement {
     fieldChoices.sort((a,b) => {return a.label.localeCompare(b.label);});
     attributeChoices.sort((a,b) => {return a.label.localeCompare(b.label);});
 
-    this._fieldName.choices = {'Built-in Fields': fieldChoices, 'Attributes': attributeChoices};
+    this._fieldName.choices = {'Built-in Fields': fieldChoices, 'Geometry': geoChoices, 'Attributes': attributeChoices};
     this._fieldName.permission = "Can Edit";
     this._fieldName.selectedIndex = -1;
     this._modifier.permission = "View Only";

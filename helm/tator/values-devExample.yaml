@@ -49,7 +49,12 @@ postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
 transcodeHost: "http://transcode-svc:8080"
-objectStorageHost: "minio-master"
+# liveBucket may be left unconfigured if using local minio
+liveBucket:
+  config: "json in folded block (>- ...)"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
@@ -180,6 +185,15 @@ minio:
   enabled: true
   accessKey: "AKIAIOSFODNN7EXAMPLE"
   secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  config: >-
+    {
+      "aws_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+      "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      "endpoint_url": "http://tator-minio:9000",
+      "region_name": "us-east-2"
+    }
+  storeType: "MINIO"
+  name: tator
   persistence:
     size: "1Ti"
     existingClaim: "main-pv-claim"

@@ -432,13 +432,13 @@ export class AttributesForm extends TatorElement {
       this._default.setAttribute("name", "Default");
 
       this._default.choices = [
-        { value: null, label: "null" },
-        { value: true, label: "true" },
-        { value: false, label: "false" },
+        { value: "null", label: "null" },
+        { value: "true", label: "true" },
+        { value: "false", label: "false" },
       ];
       
-      this._default.default = value;
-      this._default.setValue(value);
+      this._default.default = String(value);
+      this._default.setValue(String(value));
       
       this._default.addEventListener("change", this._formChanged.bind(this));
 
@@ -830,10 +830,10 @@ export class AttributesForm extends TatorElement {
         formData.required = this._required.getValue();
       }
 
-      // Visible: Only when changed, or when it is a Clone pass the value along
-      if ((this._visible.changed() || this.isClone)) {
-        formData.visible = this._visible.getValue();
-      }
+      // Visible: Always send
+      const visible = this._visible.getValue();
+      formData.visible = (!visible || visible == null) ? false : true;
+
 
       // Dtype: Always sent
       formData.dtype = this._dtype.getValue();
@@ -899,10 +899,10 @@ export class AttributesForm extends TatorElement {
             formData["default"] = defaultVal;
           } else if (dtype == "bool") {
             // allow for bool value to be changed to null
-            if (String(defaultVal).trim() === "") {
+            if (String(defaultVal).trim() === "null" || String(defaultVal).trim() === "") {
               delete formData["default"];
             } else {
-              formData["default"] = defaultVal;
+              formData["default"] = (defaultVal == "true") ? true : false;
             }
           } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must be the cases above
             formData["default"] = defaultVal;
@@ -1033,8 +1033,8 @@ export class AttributesForm extends TatorElement {
     const attrFormObj = this._getAttributeFormData();
     const formData = {
       "entity_type": entityType,
-      "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": attrFormObj.formData
+      "current_name": this.dataset.oldName,
+      "attribute_type_update": attrFormObj.formData
     };
 
     data.newName = this._name.getValue();
@@ -1048,15 +1048,15 @@ export class AttributesForm extends TatorElement {
     const promiseInfo = {};
     const formData = {
       "entity_type": entityType,
-      "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": {}
+      "current_name": this.dataset.oldName,
+      "attribute_type_update": {}
     };
 
     promiseInfo.newName = this._name.getValue();
     promiseInfo.oldName = this.dataset.oldName;
 
     // Hand of the data, and call this form unchanged
-    formData.new_attribute_type = this._getAttributeFormData();
+    formData.attribute_type_update = this._getAttributeFormData();
     this.form.classList.remove("changed");
     this.changeReset();
 
