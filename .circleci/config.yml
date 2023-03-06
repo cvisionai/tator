@@ -361,7 +361,7 @@ workflows:
         filters:
           branches:
             only:
-            - main
+            - rc/1.0.0
           tags:
             only: /.*/
     - cleanup-lightsail:
