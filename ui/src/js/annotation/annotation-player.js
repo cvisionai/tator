@@ -582,7 +582,6 @@ export class AnnotationPlayer extends TatorElement {
       this._video.rateChange(2 * this._rate);
       if (this._video.play())
       {
-        this.dispatchEvent(new Event("playing", {composed: true}));
         play.removeAttribute("is-paused");
       }
     });
@@ -591,7 +590,6 @@ export class AnnotationPlayer extends TatorElement {
       this._hideCanvasMenus();
       if (this.is_paused() == false)
       {
-        this.dispatchEvent(new Event("paused", {composed: true}));
         fastForward.removeAttribute("disabled");
         rewind.removeAttribute("disabled");
         this._video.pause().then(() => {
@@ -608,7 +606,6 @@ export class AnnotationPlayer extends TatorElement {
       this._hideCanvasMenus();
       if (this.is_paused() == false)
       {
-        this.dispatchEvent(new Event("paused", {composed: true}));
         fastForward.removeAttribute("disabled");
         rewind.removeAttribute("disabled");
         this._video.pause().then(() => {
@@ -1434,7 +1431,6 @@ export class AnnotationPlayer extends TatorElement {
       return;
     }
 
-    this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
 
@@ -1458,7 +1454,6 @@ export class AnnotationPlayer extends TatorElement {
 
     const paused = this.is_paused();
     if (paused) {
-      this.dispatchEvent(new Event("playing", {composed: true}));
       this._fastForward.setAttribute("disabled", "");
       this._rewind.setAttribute("disabled", "");
       this.disableRateChange();
@@ -1478,7 +1473,6 @@ export class AnnotationPlayer extends TatorElement {
   pause()
   {
     this._ratesAvailable = null;
-    this.dispatchEvent(new Event("paused", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
     this.enableRateChange();

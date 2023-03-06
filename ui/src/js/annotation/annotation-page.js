@@ -342,6 +342,12 @@ export class AnnotationPage extends TatorPage {
               } else {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
+            player.addEventListener("playing", () => {
+              console.info("Video is playing!");
+            });
+            player.addEventListener("paused", () => {
+              console.info("Video is paused!");
+            });
           });
           const nextPromise = fetchRetry(`/rest/MediaNext/${newValue}${window.location.search}`, {
             method: "GET",

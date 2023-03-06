@@ -2840,6 +2840,12 @@ export class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
+    this.dispatchEvent(new CustomEvent(
+      "playing",
+      {
+        composed: true,
+        detail: {},
+      }));
     this._effectManager.grayOut(1000);
     this._playEffect = true;
     document.body.style.cursor = "progress";
@@ -2950,6 +2956,12 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   pause()
   {
+    this.dispatchEvent(new CustomEvent(
+      "paused",
+      {
+        composed: true,
+        detail: {},
+      }));
     this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = false;
     // Stoping the player thread sets the direction to stop
     const currentDirection = this._direction;
