@@ -1318,9 +1318,9 @@ export class AnnotationCanvas extends TatorElement
     // the active track.
     // Handle case when localization is in a track
     if (this.activeLocalization) {
-      if (this.activeLocalization.id in this._data._trackDb)
+      if (this._data._trackDb.has(this.activeLocalization.id))
       {
-        const track = this._data._trackDb[this.activeLocalization.id];
+        const track = this._data._trackDb.get(this.activeLocalization.id);
         this._activeTrack = track;
         this._activeTrackFrame = this.currentFrame();
       }
@@ -1739,7 +1739,7 @@ export class AnnotationCanvas extends TatorElement
         });
         evt.detail.data.forEach(track => {
           track.localizations.forEach(localId => {
-            this._data._trackDb[localId] = track;
+            this._data._trackDb.set(localId,track);
           });
 
           if (track.color == null) {
@@ -1773,7 +1773,7 @@ export class AnnotationCanvas extends TatorElement
 
     // Determine if the user right clicked on a state/track or a stand-alone localization/detection
     if (this.activeLocalization) {
-      let localizationInTrack = this.activeLocalization.id in this._data._trackDb;
+      let localizationInTrack = this._data._trackDb.has(this.activeLocalization.id);
       if (localizationInTrack) {
         this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
       }
@@ -2168,9 +2168,9 @@ export class AnnotationCanvas extends TatorElement
     };
 
     let localizationMatchesActiveTrack = this._activeTrack && this._activeTrack.localizations.includes(localization.id);
-    let localizationInTrack = localization.id in this._data._trackDb;
+    let localizationInTrack = this._data._trackDb.has(localization.id);
 
-    if (localization.id in this._data._trackDb)
+    if (this._data._trackDb.has(localization.id))
     {
       if (localizationMatchesActiveTrack)
       {
@@ -2180,7 +2180,7 @@ export class AnnotationCanvas extends TatorElement
       }
       else
       {
-        trackColor = this._data._trackDb[localization.id].color;
+        trackColor = this._data._trackDb.get(localization.id).color;
       }
       if (trackColor)
       {
@@ -2193,7 +2193,7 @@ export class AnnotationCanvas extends TatorElement
     {
       if (localizationInTrack)
       {
-        colorMap(this._data._trackDb[localization.id].attributes, true);
+        colorMap(this._data._trackDb.get(localization.id).attributes, true);
       }
       else
       {
@@ -2983,9 +2983,9 @@ export class AnnotationCanvas extends TatorElement
             });
     }
     // Handle case when localization is in a track
-    if (localization.id in this._data._trackDb)
+    if (this._data._trackDb.has(localization.id))
     {
-      const track = this._data._trackDb[localization.id];
+      const track = this._data._trackDb.get(localization.id);
       this._activeTrack = track
       this._activeTrackFrame = this.currentFrame();
     }
@@ -3044,8 +3044,8 @@ export class AnnotationCanvas extends TatorElement
       this._data._dataByType.forEach((value, key, map) => {
         if (key != track.type) {
           for (const localization of value) {
-            if (localization.id in this._data._trackDb) {
-              const sameId = this._data._trackDb[localization.id].id == track.id;
+            if (this._data._trackDb.has(localization.id )) {
+              const sameId = this._data._trackDb.get(localization.id).id == track.id;
               const firstFrame = localization.frame == frame;
               if (sameId && firstFrame) {
                 this.selectLocalization(localization, true);
@@ -3119,9 +3119,9 @@ export class AnnotationCanvas extends TatorElement
         this._draw.drawCircle(center, dotWidth/2, drawColor);
       }
       // Handle case when localization is in a track
-      if (localization.id in this._data._trackDb)
+      if (this._data._trackDb.has(localization.id))
       {
-        const track = this._data._trackDb[localization.id];
+        const track = this._data._trackDb.get(localization.id);
         this._activeTrack = track
         this._activeTrackFrame = this.currentFrame();
       }
