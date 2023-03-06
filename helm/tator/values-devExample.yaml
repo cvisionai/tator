@@ -48,6 +48,7 @@ postgresUsername: "django"
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
+transcodeHost: "http://transcode-svc:8080"
 # liveBucket may be left unconfigured if using local minio
 liveBucket:
   config: "json in folded block (>- ...)"
