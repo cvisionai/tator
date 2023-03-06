@@ -73,18 +73,30 @@ class Command(BaseCommand):
 
             for project_id, failed_media_ids in failed_backups.items():
                 msg = (
-                    f"Failed to back up at least one resource from each of the following media: "
-                    f"{list(failed_media_ids)}"
+                    f"Failed to back up at least one resource from each of the following media in "
+                    f"project '{project_id}': {', '.join(str(mid) for mid in failed_media_ids)}"
                 )
                 logger.warning(msg)
 
                 if ses:
-                    project = Project.objects.get(pk=project_id)
+                    try:
+                        project = Project.objects.get(pk=project_id)
+                    except Exception:
+                        logger.info(
+                            f"Could not find project with id '{project_id}', alerting deployment staff",
+                            exc_info=True,
+                        )
+                        recipient_ids = User.objects.filter(
+                            is_staff=True
+                        ).values_list("id", flat=True)
+                        project_name = project_id
+                    else:
+                        # Get project administrators
+                        recipient_ids = Affiliation.objects.filter(
+                            organization=project.organization, permission="Admin"
+                        ).values_list("user", flat=True)
+                        project_name = project.name
 
-                    # Get project administrators
-                    recipient_ids = Affiliation.objects.filter(
-                        organization=project.organization, permission="Admin"
-                    ).values_list("user", flat=True)
                     recipients = list(
                         User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
                     )
@@ -92,6 +104,6 @@ class Command(BaseCommand):
                     ses.email(
                         sender=settings.TATOR_EMAIL_SENDER,
                         recipients=recipients,
-                        title=f"Nightly backup for {project.name} ({project.id}) failed",
+                        title=f"Nightly backup for {project_name} ({project_id}) failed",
                         text=msg,
                     )
