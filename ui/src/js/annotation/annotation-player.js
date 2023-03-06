@@ -503,9 +503,6 @@ export class AnnotationPlayer extends TatorElement {
     if (searchParams.has("scrubQuality")) {
       this._scrubQuality = Number(searchParams.get("scrubQuality"));
     }
-    if (searchParams.has("safeMode")) {
-      this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
-    }
 
     this._timelineMore.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -648,10 +645,6 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("playbackEnded", evt => {
       this.pause();
-    });
-
-    this._video.addEventListener("safeMode", () => {
-      this.safeMode();
     });
 
     this._video.addEventListener("playbackReady", () =>{
@@ -1626,12 +1619,6 @@ export class AnnotationPlayer extends TatorElement {
 
   toggleTextOverlays(on) {
     this._video.toggleTextOverlays(on);
-  }
-
-  safeMode() {
-    this._scrubInterval = 1000.0/guiFPS;
-    console.info("Entered video safe mode");
-    return 0;
   }
 
   /**

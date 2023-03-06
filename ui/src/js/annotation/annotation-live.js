@@ -932,10 +932,6 @@ export class AnnotationLive extends TatorElement {
     }
   }
 
-  safeMode() {
-    return 0;
-  }
-
   _frameToTime(frame) {
     const totalSeconds = frame / this._fps_of_max;
     const seconds = Math.floor(totalSeconds % 60);

@@ -451,9 +451,6 @@ export class AnnotationMulti extends TatorElement {
     if (searchParams.has("scrubQuality")) {
       this._scrubQuality = Number(searchParams.get("scrubQuality"));
     }
-    if (searchParams.has("safeMode")) {
-      this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
-    }
 
     this._timelineMore.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -1202,9 +1199,6 @@ export class AnnotationMulti extends TatorElement {
       this._videos[idx].addEventListener("canvasResized", () => {
         this._videoTimeline.redraw();
         this._entityTimeline.redraw();
-      });
-      this._videos[idx].addEventListener("safeMode", () => {
-        this.safeMode();
       });
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
@@ -2566,17 +2560,6 @@ export class AnnotationMulti extends TatorElement {
     {
       video.toggleTextOverlays(on);
     }
-  }
-
-  safeMode() {
-    for (let video of this._videos)
-    {
-      video.safeMode();
-    }
-
-    this._scrubInterval = 1000.0/guiFPS;
-    console.info("Entered video safe mode");
-    return 0;
   }
 
   selectTimelineData(data) {

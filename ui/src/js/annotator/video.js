@@ -178,7 +178,6 @@ export class VideoCanvas extends AnnotationCanvas {
     this._addVideoDiagnosticOverlay();
     this._ftypInfo = {};
     this._disableAutoDownloads = false;
-    this.allowSafeMode = true;
 
     // Set the onDemand watchdog download thread
     // This will request to download segments if needed
@@ -994,11 +993,6 @@ export class VideoCanvas extends AnnotationCanvas {
     var promise = this._videoElement[this._scrub_idx].loadedDataPromise(this);
 
     this.startDownload(streaming_files, offsite_config, this._videoElement[0]._compat == true);
-    if (fps < 20)
-    {
-      console.info("Disable safe mode for low FPS");
-      this.allowSafeMode = false;
-    }
     if (fps > guiFPS)
     {
       this._playbackRate=guiFPS/fps;
@@ -1548,14 +1542,6 @@ export class VideoCanvas extends AnnotationCanvas {
     return promise;
   }
 
-  /**
-   * Note: Once in safe mode, there's no mechanism to get out of it.
-   */
-  safeMode()
-  {
-    this._motionComp.safeMode();
-  }
-
   ////////////////////////////////
   /// Button handlers
   ////////////////////////////////
@@ -1993,17 +1979,6 @@ export class VideoCanvas extends AnnotationCanvas {
       else
       {
         this._fpsScore = Math.min(this._fpsScore + 1,7);
-      }
-
-      if (this._fpsScore == 0)
-      {
-        if (this.allowSafeMode) {
-          console.warn(`(ID:${this._videoObject.id}) Detected slow performance, entering safe mode.`);
-
-          this.dispatchEvent(new Event("safeMode"));
-          this._motionComp.safeMode();
-          this.rateChange(this._playbackRate);
-        }
       }
     }
 

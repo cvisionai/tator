@@ -116,10 +116,6 @@ export class MotionComp {
 
     // Compute a 3-slot schedule for playback
     let animationCyclesPerFrame = this.animationCycles(videoFps, factor);
-    if (this._safeMode) {
-      // Safe mode slows things down by 2x
-      animationCyclesPerFrame *= 2;
-    }
     let regularSize = Math.round(animationCyclesPerFrame);
     let fractional = animationCyclesPerFrame - regularSize;
     let largeSize = regularSize + Math.ceil(fractional * 3);
@@ -189,17 +185,7 @@ export class MotionComp {
     let max_fps = Math.min(this._monitorFps, Math.max(15, this._videoFps));
     let clicks = Math.ceil(target_fps / max_fps);
 
-    // We skip every other frame in safe mode
-    if (this._safeMode) {
-      clicks *= 2;
-    }
     return Math.floor(clicks);
-  }
-
-  safeMode() {
-    //Utilities.sendNotification(`Entered safe mode on ${location.href}`);
-    guiFPS = 15;
-    this._safeMode = true;
   }
 
   // Returns the number of ticks that have occured since the last
