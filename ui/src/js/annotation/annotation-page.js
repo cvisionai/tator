@@ -6,6 +6,7 @@ import TatorLoading from "../../images/tator_loading.gif";
 import { store } from "./store.js";
 import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
 import { TimelineSettings } from "./timeline-settings.js";
+import { playerControlManagement } from "./annotation-common.js";
 
 export class AnnotationPage extends TatorPage {
   constructor() {
@@ -344,9 +345,11 @@ export class AnnotationPage extends TatorPage {
             }
             player.addEventListener("playing", () => {
               this._sidebar.videoIsPlaying = true;
+              playerControlManagement(player, true);
             });
             player.addEventListener("paused", () => {
               this._sidebar.videoIsPlaying = false;
+              playerControlManagement(player, false);
             });
           });
           const nextPromise = fetchRetry(`/rest/MediaNext/${newValue}${window.location.search}`, {

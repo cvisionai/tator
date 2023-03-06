@@ -148,6 +148,24 @@ export function frameToTime(frame, fps)
       return hours + ":" + minFormatted + ":" + secFormatted;
     }
 }
+
+// Given a player (multi or single) handle controls management based on whether we are playing
+export function playerControlManagement(player, isPlaying)
+{
+  let elements = [player._frameNext, player._framePrev, player._currentFrameText, player._currentTimeText, player._currentTimeInput, player._currentFrameInput];
+  for (let element of elements)
+  {
+    if (isPlaying)
+    {
+      element.setAttribute("disabled","");
+    }
+    else
+    {
+      element.removeAttribute("disabled");
+    }
+  }
+}
+
 // Class to handle the repetitive nature of graying out / disabling the play button
 export class PlayInteraction
 {

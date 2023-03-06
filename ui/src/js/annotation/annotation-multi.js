@@ -390,6 +390,7 @@ export class AnnotationMulti extends TatorElement {
 
     const framePrev = document.createElement("frame-prev");
     frameDiv.appendChild(framePrev);
+    this._framePrev = framePrev;
 
     const currentFrameWrapper = document.createElement("div");
     frameDiv.appendChild(currentFrameWrapper);
@@ -411,6 +412,7 @@ export class AnnotationMulti extends TatorElement {
 
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
+    this._frameNext = frameNext;
 
     this._utcLabel = document.createElement("span");
     this._utcLabel.setAttribute("class", "f2 text-center text-gray px-2");
@@ -573,6 +575,10 @@ export class AnnotationMulti extends TatorElement {
     });
 
     this._currentFrameText.addEventListener("click", () => {
+      if (this._currentFrameText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentFrameInput.style.display = "block";
       this._currentFrameInput.focus();
@@ -596,6 +602,10 @@ export class AnnotationMulti extends TatorElement {
     });
 
     this._currentTimeText.addEventListener("click", () => {
+      if (this._currentTimeText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentTimeInput.style.display = "block";
       this._currentTimeInput.focus();

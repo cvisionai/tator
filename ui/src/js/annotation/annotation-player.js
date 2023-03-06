@@ -398,6 +398,7 @@ export class AnnotationPlayer extends TatorElement {
 
     const framePrev = document.createElement("frame-prev");
     frameDiv.appendChild(framePrev);
+    this._framePrev = framePrev;
 
     const currentFrameWrapper = document.createElement("div");
     frameDiv.appendChild(currentFrameWrapper);
@@ -419,6 +420,7 @@ export class AnnotationPlayer extends TatorElement {
 
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
+    this._frameNext = frameNext;
 
     this._utcBtn = document.createElement("button");
     this._utcBtn.setAttribute("class", "btn btn-small-height btn-fit-content btn-clear btn-outline text-gray f3 text-semibold px-2");
@@ -665,6 +667,10 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._currentFrameText.addEventListener("click", () => {
+      if (this._currentFrameText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentFrameInput.style.display = "block";
       this._currentFrameInput.focus();
@@ -687,6 +693,10 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._currentTimeText.addEventListener("click", () => {
+      if (this._currentTimeText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentTimeInput.style.display = "block";
       this._currentTimeInput.focus();
