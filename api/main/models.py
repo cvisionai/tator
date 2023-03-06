@@ -282,6 +282,11 @@ class TatorUserManager(UserManager):
 
         return user
 
+    # Override allows for case-insensitive username matching, to avoid duplicate usernames that only
+    # differ by case
+    def get_by_natural_key(self, username):
+        return self.get(**{f"{self.model.USERNAME_FIELD}__iexact": username})
+
 class User(AbstractUser):
     objects=TatorUserManager()
     cognito_id = UUIDField(primary_key=False, db_index=True, null=True, blank=True, editable=False)
@@ -335,6 +340,9 @@ def user_save(sender, instance, created, **kwargs):
         else:
             TatorCognito().update_attributes(instance)
     if created:
+        if instance.username:
+            instance.username = instance.username.strip()
+            instance.save()
         if settings.SAML_ENABLED and not instance.email:
             instance.email = instance.username
             instance.save()

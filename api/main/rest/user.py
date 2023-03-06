@@ -102,7 +102,7 @@ class UserExistsAPI(BaseDetailView):
         if email is not None:
             users = User.objects.filter(email=email)
         if username is not None:
-            users = User.objects.filter(username=username)
+            users = User.objects.filter(username__iexact=username)
         if elemental_id is not None:
             users = User.objects.filter(elemental_id=elemental_id)
         return users.exists()
@@ -124,7 +124,7 @@ class UserListAPI(BaseListView):
         if email is not None:
             users = User.objects.filter(email=email)
         if username is not None:
-            users = User.objects.filter(username=username)
+            users = User.objects.filter(username__iexact=username)
         if elemental_id is not None:
             users = User.objects.filter(elemental_id=elemental_id)
         return user_serializer_helper(UserSerializerBasic(users, many=True).data, params.get('presigned', None))
