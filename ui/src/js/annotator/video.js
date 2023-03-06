@@ -2878,6 +2878,12 @@ export class VideoCanvas extends AnnotationCanvas {
 
   playBackwards()
   {
+    this.dispatchEvent(new CustomEvent(
+      "playing",
+      {
+        composed: true,
+        detail: {},
+      }));
     if (this._dispFrame <= 0)
     {
       return false;

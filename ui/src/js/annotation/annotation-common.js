@@ -152,7 +152,14 @@ export function frameToTime(frame, fps)
 // Given a player (multi or single) handle controls management based on whether we are playing
 export function playerControlManagement(player, isPlaying)
 {
-  let elements = [player._frameNext, player._framePrev, player._currentFrameText, player._currentTimeText, player._currentTimeInput, player._currentFrameInput];
+  let elements = [player._frameNext,
+                  player._framePrev,
+                  player._currentFrameText,
+                  player._currentTimeText,
+                  player._currentTimeInput,
+                  player._currentFrameInput,
+                  player._slider];
+  
   for (let element of elements)
   {
     if (isPlaying)
