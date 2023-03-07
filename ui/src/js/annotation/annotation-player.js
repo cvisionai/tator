@@ -1,7 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { guiFPS } from "../annotator/video.js";
-import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
+import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { frameToTime, handle_video_error, handle_decoder_error, PlayInteraction } from "./annotation-common.js";
 import { TimeStore } from "./time-store.js"
 

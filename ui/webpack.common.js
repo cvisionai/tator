@@ -11,7 +11,6 @@ module.exports = {
     annotation: "./src/js/annotation/index.js",
     organizations: "./src/js/organizations/index.js",
     "account-profile": "./src/js/account-profile/index.js",
-    annotator: "./src/js/annotator/index.js",
     token: "./src/js/token/index.js",
     projects: "./src/js/projects/index.js",
     util: "./src/js/util/index.js",

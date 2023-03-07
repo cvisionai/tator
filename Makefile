@@ -345,8 +345,11 @@ python-bindings-only:
 python-bindings:
 	make $(TATOR_PY_WHEEL_FILE)
 
+# This is a phony rule now because submodule will handle what to rebuild
+# -u only copies schema if it is newer than what is already generated
+.PHONY: $(TATOR_JS_MODULE_FILE)
 $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
-	cp doc/_build/schema.yaml scripts/packages/tator-js/tator-openapi-schema.yaml
+	cp -u doc/_build/schema.yaml scripts/packages/tator-js/tator-openapi-schema.yaml
 	cd scripts/packages/tator-js && $(MAKE) all && cd ../../..
 	cp scripts/packages/tator-js/pkg/dist/tator.min.js ui/server/static/.
 	cp scripts/packages/tator-js/pkg/dist/tator.js ui/server/static/.

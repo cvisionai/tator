@@ -1,11 +1,16 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { guiFPS } from "../annotator/video.js";
-import { MultiRenderer } from "../annotator/multi-renderer";
-import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
+import { MultiRenderer } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { handle_video_error, handle_decoder_error, frameToTime, PlayInteraction } from "./annotation-common.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { TimeStore } from "./time-store.js"
+
+import { VideoCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+
+if (!customElements.get("video-canvas")) {
+  customElements.define("video-canvas", VideoCanvas);
+}
 
 let MAGIC_PAD = 5; // if videos are failing at the end jump back this number of frames
 
