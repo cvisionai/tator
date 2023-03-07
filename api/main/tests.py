@@ -4534,7 +4534,7 @@ class UsernameTestCase(TatorTransactionTest):
         # The stored username should not have surrounding whitespace
         self.assertEqual(user.username, username.strip())
 
-    def test_case_insensitive_username(self):
+    def test_list_case_insensitive_username(self):
         username = "HoDoR"
         user = create_test_user(username=username)
         self.client.force_authenticate(user)
@@ -4548,3 +4548,17 @@ class UsernameTestCase(TatorTransactionTest):
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), 1)
             self.assertEqual(response.data[0]["username"], username)
+
+    def test_create_case_insensitive_username(self):
+        username = "TYRION"
+        user = create_test_user(username=username)
+        user_spec = {
+            'username': username.lower(),
+            'first_name': "Tyrion",
+            'last_name': "Lannister",
+            'email': "tl@cvisionai.com",
+            'password': "idrinkandiknowthings",
+        }
+        url = f"/rest/{self.list_uri}"
+        response = self.client.post(url, user_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

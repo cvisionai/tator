@@ -137,6 +137,10 @@ class UserListAPI(BaseListView):
         password = params['password']
         registration_token = params.get('registration_token')
 
+        # Case-insensitive check on username existence
+        if User.objects.filter(username__iexact=username).count() > 0:
+            raise ValueError(f"Username is already taken!")
+
         if registration_token is None:
             # This is an anonymous registration, check to see if this is allowed.
             if settings.ANONYMOUS_REGISTRATION_ENABLED:
