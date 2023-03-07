@@ -189,7 +189,7 @@ export class RegistrationPage extends TatorElement {
     if (username.length == 0) {
       this._valid = false;
     } else {
-      return fetch(`/rest/User/Exists?username=${username}`, {
+      return fetch(`/rest/User/Exists?username=${encodeURIComponent(username)}`, {
         method: "GET",
         credentials: "same-origin",
         headers: {
