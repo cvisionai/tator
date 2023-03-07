@@ -97,7 +97,7 @@ server {
     add_header Cache-Control "max-age=0, must-revalidate";
     {{- end }}
     add_header Cross-Origin-Opener-Policy same-origin;
-    add_header Cross-Origin-Embedder-Policy require-corp;
+    add_header Cross-Origin-Embedder-Policy credentialless;
     {{include "cors.template" $corsSettings | indent 4}}
   }
   location /docs {
@@ -109,7 +109,7 @@ server {
     add_header Cache-Control "max-age=3600, must-revalidate";
     add_header 'Access-Control-Allow-Headers' 'Authorization,X-CSRFToken' always;
     add_header Cross-Origin-Opener-Policy same-origin;
-    add_header Cross-Origin-Embedder-Policy require-corp;
+    add_header Cross-Origin-Embedder-Policy credentialless;
     {{include "cors.template" $corsSettings | indent 4}}
     auth_request /auth-project;
   }
@@ -213,7 +213,7 @@ server {
     return 503;
     {{- end }}
     add_header Cross-Origin-Opener-Policy same-origin;
-    add_header Cross-Origin-Embedder-Policy require-corp;
+    add_header Cross-Origin-Embedder-Policy credentialless;
     proxy_pass http://ui-svc:3000;
 
     proxy_redirect off;
@@ -245,7 +245,7 @@ server {
     return 503;
     {{- end }}
     add_header Cross-Origin-Opener-Policy same-origin;
-    add_header Cross-Origin-Embedder-Policy require-corp;
+    add_header Cross-Origin-Embedder-Policy credentialless;
     proxy_pass http://gunicorn-svc:8000;
 
     proxy_redirect off;
