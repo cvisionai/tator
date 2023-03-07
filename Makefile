@@ -353,6 +353,7 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	cd scripts/packages/tator-js && $(MAKE) all && cd ../../..
 	cp scripts/packages/tator-js/pkg/dist/tator.min.js ui/server/static/.
 	cp scripts/packages/tator-js/pkg/dist/tator.js ui/server/static/.
+	cp scripts/packages/tator-js/src/annotator/vid_downloader.js ui/server/static/.
 
 .PHONY: js-bindings
 js-bindings: .token/tator_online_$(GIT_VERSION)
