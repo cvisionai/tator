@@ -4530,11 +4530,13 @@ class UsernameTestCase(TatorTransactionTest):
     def test_strip_whitespace_on_creation(self):
         username = "   Hodor     "
         user = create_test_user(username=username)
+        self.client.force_authenticate(user)
         self.assertEqual(user.username, username.strip())
 
     def test_case_insensitive_username(self):
         username = "HoDoR"
         user = create_test_user(username=username)
+        self.client.force_authenticate(user)
 
         # The stored username should match the original capitalization
         self.assertEqual(user.username, username)
