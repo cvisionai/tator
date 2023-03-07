@@ -332,6 +332,9 @@ class User(AbstractUser):
         else:
             return f"{self.username}"
 
+    def natural_key(self):
+        return (self.username.lower(),)
+
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):
     if os.getenv('COGNITO_ENABLED') == 'TRUE':
