@@ -4530,14 +4530,14 @@ class UsernameTestCase(TatorTransactionTest):
     def test_strip_whitespace_on_creation(self):
         username = "   Hodor     "
         user = create_test_user(username=username)
-        self.assertEqual(user.username == username.strip())
+        self.assertEqual(user.username, username.strip())
 
     def test_case_insensitive_username(self):
         username = "HoDoR"
         user = create_test_user(username=username)
 
         # The stored username should match the original capitalization
-        self.assertEqual(user.username == username)
+        self.assertEqual(user.username, username)
 
         for name in ["hodor", "HODOR", "hOdOr"]:
             url = f"/rest/{self.list_uri}?username={name}"
