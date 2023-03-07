@@ -102,7 +102,7 @@ class UserExistsAPI(BaseDetailView):
         if email is not None:
             users = User.objects.filter(email=email)
         if username is not None:
-            users = User.objects.filter(username=username)
+            users = User.objects.filter(username__iexact=username)
         if elemental_id is not None:
             users = User.objects.filter(elemental_id=elemental_id)
         return users.exists()
@@ -124,7 +124,7 @@ class UserListAPI(BaseListView):
         if email is not None:
             users = User.objects.filter(email=email)
         if username is not None:
-            users = User.objects.filter(username=username)
+            users = User.objects.filter(username__iexact=username)
         if elemental_id is not None:
             users = User.objects.filter(elemental_id=elemental_id)
         return user_serializer_helper(UserSerializerBasic(users, many=True).data, params.get('presigned', None))
@@ -136,6 +136,10 @@ class UserListAPI(BaseListView):
         username = params['username']
         password = params['password']
         registration_token = params.get('registration_token')
+
+        # Case-insensitive check on username existence
+        if User.objects.filter(username__iexact=username).count() > 0:
+            raise ValueError(f"Username is already taken!")
 
         if registration_token is None:
             # This is an anonymous registration, check to see if this is allowed.

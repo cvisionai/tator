@@ -4520,3 +4520,45 @@ class JobClusterTestCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.permission = old_permission
         affiliation.save()
+
+
+class UsernameTestCase(TatorTransactionTest):
+    def setUp(self):
+        self.list_uri = "Users"
+        self.detail_uri = "User"
+
+    def test_strip_whitespace_on_creation(self):
+        username = "   Hodor     "
+        user = create_test_user(username=username)
+
+        # The stored username should not have surrounding whitespace
+        self.assertEqual(user.username, username.strip())
+
+    def test_list_case_insensitive_username(self):
+        username = "HoDoR"
+        user = create_test_user(username=username)
+        self.client.force_authenticate(user)
+
+        # The stored username should match the original capitalization
+        self.assertEqual(user.username, username)
+
+        for name in ["HoDoR", "hodor", "HODOR", "hOdOr"]:
+            url = f"/rest/{self.list_uri}?username={name}"
+            response = self.client.get(url)
+            assertResponse(self, response, status.HTTP_200_OK)
+            self.assertEqual(len(response.data), 1)
+            self.assertEqual(response.data[0]["username"], username)
+
+    def test_create_case_insensitive_username(self):
+        username = "TYRION"
+        user = create_test_user(username=username)
+        user_spec = {
+            'username': username.lower(),
+            'first_name': "Tyrion",
+            'last_name': "Lannister",
+            'email': "tl@cvisionai.com",
+            'password': "idrinkandiknowthings",
+        }
+        url = f"/rest/{self.list_uri}"
+        response = self.client.post(url, user_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
