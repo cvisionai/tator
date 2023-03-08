@@ -18,7 +18,7 @@
 - name: ELASTICSEARCH_HOST
   value: {{ .Values.elasticsearchHost }}
 - name: TRANSCODE_HOST
-  value: {{ .Values.transcodeHost }}
+  value: {{ .Values.transcodeHost | default "http://transcode-svc:8080" | quote }}
 - name: MAIN_HOST
   value: {{ .Values.domain }}
 {{- if hasKey .Values "aliases" }}
