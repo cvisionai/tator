@@ -299,9 +299,9 @@ export class AnnotationBrowser extends TatorElement {
 
     // Find the associated track if the given object is a localization
     var associatedState = null;
-    if (objDataType.isLocalization && obj.id in this._data._trackDb)
+    if (objDataType.isLocalization && this._data._trackDb.has(obj.id))
     {
-      associatedState = this._data._trackDb[obj.id];
+      associatedState = this._data._trackDb.get(obj.id);
     }
 
     // This variable can be changed in the future if there's a project setting to

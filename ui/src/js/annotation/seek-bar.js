@@ -23,6 +23,10 @@ export class SeekBar extends TatorElement {
     var that = this;
     var clickHandler=(evt)=>
     {
+      if (this._disabled == true)
+      {
+        return;
+      }
       this._active = false;
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
@@ -133,6 +137,10 @@ export class SeekBar extends TatorElement {
     }
     this.handle.addEventListener("mousedown", evt =>
                                  {
+                                  if (this._disabled == true)
+                                  {
+                                    return;
+                                  }
                                   this.preview.hide();
                                   this.bar.removeEventListener("mousemove", mouseOver);
                                    this._active = true;
@@ -216,6 +224,17 @@ export class SeekBar extends TatorElement {
       case 'max':
       this._max = Number(newValue);
       break;
+      case "disabled":
+        if (newValue === null) {
+          this._disabled = false;
+          this.handle.style.cursor = null;
+          this.bar.style.cursor = null;
+        } else {
+          this._disabled = true;
+          this.handle.style.cursor = "not-allowed";
+          this.bar.style.cursor = "not-allowed";
+        }
+        break;
     }
     this.updateVisuals();
   }
@@ -297,7 +316,7 @@ export class SeekBar extends TatorElement {
     }
   }
 
-  static get observedAttributes() { return ['min', 'max']; }
+  static get observedAttributes() { return ['min', 'max', 'disabled']; }
 }
 
 customElements.define("seek-bar", SeekBar);

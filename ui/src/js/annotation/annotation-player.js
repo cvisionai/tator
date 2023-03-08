@@ -1,7 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { guiFPS } from "../annotator/video.js";
-import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
+import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { frameToTime, handle_video_error, handle_decoder_error, PlayInteraction } from "./annotation-common.js";
 import { TimeStore } from "./time-store.js"
 
@@ -398,6 +397,7 @@ export class AnnotationPlayer extends TatorElement {
 
     const framePrev = document.createElement("frame-prev");
     frameDiv.appendChild(framePrev);
+    this._framePrev = framePrev;
 
     const currentFrameWrapper = document.createElement("div");
     frameDiv.appendChild(currentFrameWrapper);
@@ -419,6 +419,7 @@ export class AnnotationPlayer extends TatorElement {
 
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
+    this._frameNext = frameNext;
 
     this._utcBtn = document.createElement("button");
     this._utcBtn.setAttribute("class", "btn btn-small-height btn-fit-content btn-clear btn-outline text-gray f3 text-semibold px-2");
@@ -503,9 +504,6 @@ export class AnnotationPlayer extends TatorElement {
     if (searchParams.has("scrubQuality")) {
       this._scrubQuality = Number(searchParams.get("scrubQuality"));
     }
-    if (searchParams.has("safeMode")) {
-      this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
-    }
 
     this._timelineMore.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -585,7 +583,6 @@ export class AnnotationPlayer extends TatorElement {
       this._video.rateChange(2 * this._rate);
       if (this._video.play())
       {
-        this.dispatchEvent(new Event("playing", {composed: true}));
         play.removeAttribute("is-paused");
       }
     });
@@ -594,7 +591,6 @@ export class AnnotationPlayer extends TatorElement {
       this._hideCanvasMenus();
       if (this.is_paused() == false)
       {
-        this.dispatchEvent(new Event("paused", {composed: true}));
         fastForward.removeAttribute("disabled");
         rewind.removeAttribute("disabled");
         this._video.pause().then(() => {
@@ -611,7 +607,6 @@ export class AnnotationPlayer extends TatorElement {
       this._hideCanvasMenus();
       if (this.is_paused() == false)
       {
-        this.dispatchEvent(new Event("paused", {composed: true}));
         fastForward.removeAttribute("disabled");
         rewind.removeAttribute("disabled");
         this._video.pause().then(() => {
@@ -650,10 +645,6 @@ export class AnnotationPlayer extends TatorElement {
       this.pause();
     });
 
-    this._video.addEventListener("safeMode", () => {
-      this.safeMode();
-    });
-
     this._video.addEventListener("playbackReady", () =>{
       if (this.is_paused()) {
         this._playInteraction.enable();
@@ -675,6 +666,10 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._currentFrameText.addEventListener("click", () => {
+      if (this._currentFrameText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentFrameInput.style.display = "block";
       this._currentFrameInput.focus();
@@ -697,6 +692,10 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._currentTimeText.addEventListener("click", () => {
+      if (this._currentTimeText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentTimeInput.style.display = "block";
       this._currentTimeInput.focus();
@@ -1441,7 +1440,6 @@ export class AnnotationPlayer extends TatorElement {
       return;
     }
 
-    this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
 
@@ -1465,7 +1463,6 @@ export class AnnotationPlayer extends TatorElement {
 
     const paused = this.is_paused();
     if (paused) {
-      this.dispatchEvent(new Event("playing", {composed: true}));
       this._fastForward.setAttribute("disabled", "");
       this._rewind.setAttribute("disabled", "");
       this.disableRateChange();
@@ -1485,7 +1482,6 @@ export class AnnotationPlayer extends TatorElement {
   pause()
   {
     this._ratesAvailable = null;
-    this.dispatchEvent(new Event("paused", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
     this.enableRateChange();
@@ -1626,12 +1622,6 @@ export class AnnotationPlayer extends TatorElement {
 
   toggleTextOverlays(on) {
     this._video.toggleTextOverlays(on);
-  }
-
-  safeMode() {
-    this._scrubInterval = 1000.0/guiFPS;
-    console.info("Entered video safe mode");
-    return 0;
   }
 
   /**

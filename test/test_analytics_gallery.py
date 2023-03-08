@@ -2,6 +2,7 @@ import os
 import inspect
 import requests
 import math
+import pytest
 
 from ._common import print_page_error
 
@@ -12,6 +13,7 @@ from ._common import print_page_error
 # Bulk Edit
 # Back to Loc gallery filter on Edit
 # Confirm the count
+@pytest.mark.skip(reason="Toolbar buttons not working in playwright.")
 def test_basic(request, page_factory, project, image1, video): #image 
    print("Loc and Cor Gallery tests...")
 

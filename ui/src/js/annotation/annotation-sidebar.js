@@ -49,6 +49,8 @@ export class AnnotationSidebar extends TatorElement {
     this._indicator.setAttribute("class", "annotation__shape-indicator");
     this._div.appendChild(this._indicator);
 
+    this._buttons = [this._edit, this._box, this._line, this._point, this._poly, this._track, zoomIn, zoomOut, pan];
+
     this._edit.addEventListener("click", () => {
       this._selectButton(this._edit);
       this.dispatchEvent(new Event("default"));
@@ -252,6 +254,21 @@ export class AnnotationSidebar extends TatorElement {
   addAppletPanel(panel, trigger) {
     this._hiddenDiv.appendChild(panel);
     this._div.appendChild(trigger);
+  }
+
+  set videoIsPlaying(val)
+  {
+    for (let button of this._buttons)
+    {
+      if (val == true)
+      {
+        button.setAttribute("disabled","");
+      }
+      else
+      {
+        button.removeAttribute("disabled");
+      }
+    }
   }
 }
 

@@ -20,5 +20,6 @@ pod=$(kubectl get pod -l "app=nginx" -o name | head -n 1 |sed 's/pod\///')
 echo $pod
 kubectl cp ui/server/static ${pod}:/
 kubectl cp ui/dist ${pod}:/
+kubectl cp scripts/packages/tator-js/src/annotator/vid_downloader.js ${pod}:/static
 kubectl exec ${pod} -- sh -c "cp /dist/* /static/."
 

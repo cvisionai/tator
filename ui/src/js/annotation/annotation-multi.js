@@ -1,11 +1,16 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { guiFPS } from "../annotator/video.js";
-import { MultiRenderer } from "../annotator/multi-renderer";
-import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
+import { MultiRenderer } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { handle_video_error, handle_decoder_error, frameToTime, PlayInteraction } from "./annotation-common.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { TimeStore } from "./time-store.js"
+
+import { VideoCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+
+if (!customElements.get("video-canvas")) {
+  customElements.define("video-canvas", VideoCanvas);
+}
 
 let MAGIC_PAD = 5; // if videos are failing at the end jump back this number of frames
 
@@ -390,6 +395,7 @@ export class AnnotationMulti extends TatorElement {
 
     const framePrev = document.createElement("frame-prev");
     frameDiv.appendChild(framePrev);
+    this._framePrev = framePrev;
 
     const currentFrameWrapper = document.createElement("div");
     frameDiv.appendChild(currentFrameWrapper);
@@ -411,6 +417,7 @@ export class AnnotationMulti extends TatorElement {
 
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
+    this._frameNext = frameNext;
 
     this._utcLabel = document.createElement("span");
     this._utcLabel.setAttribute("class", "f2 text-center text-gray px-2");
@@ -450,9 +457,6 @@ export class AnnotationMulti extends TatorElement {
     }
     if (searchParams.has("scrubQuality")) {
       this._scrubQuality = Number(searchParams.get("scrubQuality"));
-    }
-    if (searchParams.has("safeMode")) {
-      this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
     }
 
     this._timelineMore.addEventListener("click", () => {
@@ -576,6 +580,10 @@ export class AnnotationMulti extends TatorElement {
     });
 
     this._currentFrameText.addEventListener("click", () => {
+      if (this._currentFrameText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentFrameInput.style.display = "block";
       this._currentFrameInput.focus();
@@ -599,6 +607,10 @@ export class AnnotationMulti extends TatorElement {
     });
 
     this._currentTimeText.addEventListener("click", () => {
+      if (this._currentTimeText.getAttribute("disabled") != null)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       this._currentTimeInput.style.display = "block";
       this._currentTimeInput.focus();
@@ -1203,9 +1215,6 @@ export class AnnotationMulti extends TatorElement {
         this._videoTimeline.redraw();
         this._entityTimeline.redraw();
       });
-      this._videos[idx].addEventListener("safeMode", () => {
-        this.safeMode();
-      });
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
                                handle_buffer_load(idx,evt);
@@ -1631,9 +1640,11 @@ export class AnnotationMulti extends TatorElement {
       this.setFocusVertical(vid_id);
     };
 
-    video_element.contextMenuNone.addMenuEntry("Focus Video", focusVertical);
-    video_element.contextMenuNone.addMenuEntry("Horizontal Multiview", this.setHorizontal.bind(this));
-    video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
+    video_element.contextMenuAvailable.then(() => {
+      video_element.contextMenuNone.addMenuEntry("Focus Video", focusVertical);
+      video_element.contextMenuNone.addMenuEntry("Horizontal Multiview", this.setHorizontal.bind(this));
+      video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
+    });
   }
 
   // Move all but the first to secondary
@@ -2566,17 +2577,6 @@ export class AnnotationMulti extends TatorElement {
     {
       video.toggleTextOverlays(on);
     }
-  }
-
-  safeMode() {
-    for (let video of this._videos)
-    {
-      video.safeMode();
-    }
-
-    this._scrubInterval = 1000.0/guiFPS;
-    console.info("Entered video safe mode");
-    return 0;
   }
 
   selectTimelineData(data) {

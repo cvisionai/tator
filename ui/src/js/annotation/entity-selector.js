@@ -410,9 +410,9 @@ export class EntitySelector extends TatorElement {
       const isLocalization = data.type.includes("box") || data.type.includes("line") || data.type.includes("dot");
       if (isLocalization)
       {
-        if (data.id in this._globalData._trackDb)
+        if (this._globalData._trackDb.has(data.id))
         {
-          associatedState = this._globalData._trackDb[data.id];
+          associatedState = this._globalData._trackDb.get(data.id);
           associatedStateType = this._globalData._dataTypes[associatedState.type];
         }
       }
