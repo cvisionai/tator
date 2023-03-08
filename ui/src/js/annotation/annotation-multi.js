@@ -1640,9 +1640,11 @@ export class AnnotationMulti extends TatorElement {
       this.setFocusVertical(vid_id);
     };
 
-    video_element.contextMenuNone.addMenuEntry("Focus Video", focusVertical);
-    video_element.contextMenuNone.addMenuEntry("Horizontal Multiview", this.setHorizontal.bind(this));
-    video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
+    video_element.contextMenuAvailable.then(() => {
+      video_element.contextMenuNone.addMenuEntry("Focus Video", focusVertical);
+      video_element.contextMenuNone.addMenuEntry("Horizontal Multiview", this.setHorizontal.bind(this));
+      video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
+    });
   }
 
   // Move all but the first to secondary
