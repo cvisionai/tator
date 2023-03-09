@@ -104,7 +104,7 @@ def test_video_annotation(page_factory, project, video):
     canvas = page.query_selector('video-canvas')
     page.wait_for_selector('play-button:not(.disabled)')
     # This is commented out because toolbar buttons don't work in playwright
-    #common_annotation(page, canvas)
+    # common_annotation(page, canvas)
     page.close()
     
 @pytest.mark.flaky(reruns=2)
@@ -117,7 +117,19 @@ def test_image_annotation(page_factory, project, image):
     page.wait_for_selector('image-canvas')
     canvas = page.query_selector('image-canvas')
     # This is commented out because toolbar buttons don't work in playwright
-    #common_annotation(page, canvas)
+    # common_annotation(page, canvas)
+    page.close()
+
+def test_referenced_image_annotation(page_factory, project, referenced_image):
+    print("[Image] Going to annotation view...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
+    page.goto(f"/{project}/annotation/{referenced_image}", wait_until='networkidle')
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector('image-canvas')
+    canvas = page.query_selector('image-canvas')
+    # This is commented out because toolbar buttons don't work in playwright
+    # common_annotation(page, canvas)
     page.close()
 
 @pytest.mark.flaky(reruns=2)
@@ -132,7 +144,7 @@ def test_multi_annotation(page_factory, project, multi):
     page.wait_for_selector('play-button:not(.disabled)')
     page.wait_for_timeout(2000) # Not sure what else to wait for here but sometimes vids load after play button enabled
     assert(len(canvas) == 2)
-    common_annotation(page, canvas[0])
     # This is commented out because toolbar buttons don't work in playwright
-    #common_annotation(page, canvas[1], bias=3)
+    # common_annotation(page, canvas[0])
+    # common_annotation(page, canvas[1], bias=3)
     page.close()
