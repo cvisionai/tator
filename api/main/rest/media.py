@@ -283,14 +283,15 @@ def _create_media(project, params, user, use_rq=False):
         # Set up S3 client.
         tator_store = get_tator_store(project_obj.bucket)
 
-        reference_only = params.get('reference_only',0) == 1
+        reference_only = params.get('reference_only', 0) == 1
         if use_rq:
-            push_job('image_jobs', main._import_image._import_image, args=(name, url, thumbnail_url, media_obj.id, reference_only))
+            push_job(
+                "image_jobs",
+                main._import_image._import_image,
+                args=(name, url, thumbnail_url, media_obj.id, reference_only),
+            )
         else:
             main._import_image._import_image(name, url, thumbnail_url, media_obj.id, reference_only)
-
-
-        response = {'message': "Image saved successfully!", 'id': media_obj.id}
 
     else:
         # Create the media object.
@@ -324,11 +325,6 @@ def _create_media(project, params, user, use_rq=False):
             media_obj = _save_image(thumbnail_gif_url, media_obj, project_obj, 'thumbnail_gif')
         media_obj.save()
 
-        msg = (f"Media object {media_obj.id} created for video "
-               f"{name} on project {media_type.project.name}")
-        response = {'message': msg, 'id': media_obj.id}
-        logger.info(msg)
-
         # If this is an upload to Tator, put media ID as object tag.
         if url:
             path, bucket, upload = url_to_key(url, project_obj)
@@ -337,9 +333,14 @@ def _create_media(project, params, user, use_rq=False):
                 tator_store = get_tator_store(bucket, upload=use_upload_bucket)
                 tator_store.put_media_id_tag(path, media_obj.id)
 
+    msg = (
+        f"Media object {media_obj.id} created for {media_type.dtype} {name} "
+        f"on project {media_type.project.name}"
+    )
+    logger.info(msg)
     log_creation(media_obj, media_obj.project, user)
 
-    return media_obj, response
+    return media_obj, msg
 
 class MediaListAPI(BaseListView):
     """ Interact with list of media.
@@ -383,13 +384,23 @@ class MediaListAPI(BaseListView):
         if not isinstance(media_spec_list, list):
             media_spec_list = [media_spec_list]
         if len(media_spec_list) == 1:
-            _, response = _create_media(project, media_spec_list[0], self.request.user)
+            obj, msg = _create_media(project, media_spec_list[0], self.request.user)
+            response = {"message": msg, "id": [obj.id], "object": [obj]}
         elif media_spec_list:
             # TODO handle multiple image creation
             assert_list_of_image_specs(project, media_spec_list)
+            ids = []
+            objects = []
             for media_spec in media_spec_list:
-                _create_media(project, media_spec, self.request.user, use_rq=True)
-            response = {"message": f"Started import of {len(media_spec_list)} images!"}
+                try:
+                    obj, msg = _create_media(project, media_spec, self.request.user, use_rq=True)
+                except Exception:
+                    logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
+                ids.append(obj.id)
+                objects.append(obj)
+            response = {
+                "message": f"Started import of {len(ids)} images!", "id": ids, "object": objects
+            }
         else:
             raise ValueError(f"Expected one or more media specs, received zero!")
         return response
