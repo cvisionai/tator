@@ -1,6 +1,7 @@
 # This file is outside the `api/main/rest/` folder to avoid the imports in that module's __init__.py
 import os
 import sys
+import logging
 
 try:
     import django
@@ -92,6 +93,8 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         thumb.close()
 
     if reference_only and url:
+        if media_obj.media_files is None:
+            media_obj.media_files = {}
         media_obj.media_files['image'] = [{'path': url,
                                            'size': os.stat(temp_image.name).st_size,
                                            'resolution': [media_obj.height, media_obj.width],
