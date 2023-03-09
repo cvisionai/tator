@@ -96,6 +96,12 @@ video_definition = {
             'description': 'Description other than codec.',
             'type': 'string',
         },
+        'reference_only' : {
+            'description': 'Do not import the media resources into Tator. This causes the resources to be accessed at the supplied URL upon access in the UI.',
+            'type': 'integer',
+            'default': 0,
+            'maximum': 1
+        }
     },
 }
 
