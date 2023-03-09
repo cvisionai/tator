@@ -80,23 +80,23 @@ export class FilterData {
     var stateTypeOptions = [];
     for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
       let stateType = this.mediaStateTypes[idx];
-      stateTypeOptions.push(`${stateType.name} (ID:${stateType.id})`);
+      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: stateType.id});
     }
     for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
       let stateType = this.localizationStateTypes[idx];
-      stateTypeOptions.push(`${stateType.name} (ID:${stateType.id})`);
+      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: stateType.id});
     }
 
     var localizationTypeOptions = [];
     for (let idx = 0; idx < this.localizationTypes.length; idx++) {
       let locType = this.localizationTypes[idx];
-      localizationTypeOptions.push(`${locType.dtype}/${locType.name} (ID:${locType.id})`);
+      localizationTypeOptions.push({label: `${locType.dtype}/${locType.name} (ID:${locType.id})`, value: locType.id});
     }
 
     var mediaTypeOptions = [];
     for (let idx = 0; idx < this.mediaTypes.length; idx++) {
       let mediaType = this.mediaTypes[idx];
-      mediaTypeOptions.push(`${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`);
+      mediaTypeOptions.push({label: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`, value:mediaType.id});
     }
 
     // Allow options to filter by users
@@ -203,7 +203,7 @@ export class FilterData {
 
           var dtypeAttribute = {
             choices: mediaTypeOptions,
-            name: "$dtype",
+            name: "$type",
             label: "Data type",
             dtype: "enum"
           };
@@ -269,7 +269,7 @@ export class FilterData {
 
           var dtypeAttribute = {
             choices: localizationTypeOptions,
-            name: "$dtype",
+            name: "$type",
             label: "Data type",
             dtype: "enum"
           };
