@@ -283,10 +283,11 @@ def _create_media(project, params, user, use_rq=False):
         # Set up S3 client.
         tator_store = get_tator_store(project_obj.bucket)
 
+        reference_only = params.get('reference_only',0) == 1
         if use_rq:
-            push_job('image_jobs', main._import_image._import_image, args=(name, url, thumbnail_url, media_obj.id))
+            push_job('image_jobs', main._import_image._import_image, args=(name, url, thumbnail_url, media_obj.id, reference_only))
         else:
-            main._import_image._import_image(name, url, thumbnail_url, media_obj.id)
+            main._import_image._import_image(name, url, thumbnail_url, media_obj.id, reference_only)
 
 
         response = {'message': "Image saved successfully!", 'id': media_obj.id}

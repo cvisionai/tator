@@ -20,7 +20,8 @@ from main.store import get_tator_store
 from main.download import download_file
 from main.rest._util import url_to_key
 
-def _import_image(name, url, thumbnail_url, media_id):
+def _import_image(name, url, thumbnail_url, media_id, reference_only):
+    """ Note: In reference_only mode we do not store an alt image format """
     try:
         media_obj = Media.objects.get(pk=media_id)
     except Exception:
@@ -33,6 +34,8 @@ def _import_image(name, url, thumbnail_url, media_id):
     alt_image = None
     if url:
         # Download the image file and load it.
+        # This is required even in reference cases because we need to get the
+        # dimensions, encoding, and likely generate a thumbnail.
         ext = os.path.splitext(name)[1].lower()
         if ext in [".dng"]:
             # Digital Negative files need conversion
@@ -51,17 +54,18 @@ def _import_image(name, url, thumbnail_url, media_id):
         image_format = image.format
 
         # Add a png for compatibility purposes
-        if image_format == 'AVIF':
-            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-            image.save(alt_image, format='png')
-            alt_name = "image.png"
-            alt_format = 'png'
-        else:
-            # convert image upload to AVIF
-            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.avif')
-            image.save(alt_image, format='avif')
-            alt_name = "image.avif"
-            alt_format = 'avif'
+        if reference_only is False:
+            if image_format == 'AVIF':
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+                image.save(alt_image, format='png')
+                alt_name = "image.png"
+                alt_format = 'png'
+            else:
+                # convert image upload to AVIF
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.avif')
+                image.save(alt_image, format='avif')
+                alt_name = "image.avif"
+                alt_format = 'avif'
 
 
         # Download or create the thumbnail.
@@ -87,7 +91,12 @@ def _import_image(name, url, thumbnail_url, media_id):
         thumb_height = thumb.height
         thumb.close()
 
-    if url:
+    if reference_only and url:
+        media_obj.media_files['image'] = [{'path': url,
+                                           'size': os.stat(temp_image.name).st_size,
+                                           'resolution': [media_obj.height, media_obj.width],
+                                           'mime': f'image/{image_format.lower()}'}]
+    elif url:
         if media_obj.media_files is None:
             media_obj.media_files = {}
         # Upload image.
