@@ -132,6 +132,19 @@ def test_referenced_image_annotation(page_factory, project, referenced_image):
     # common_annotation(page, canvas)
     page.close()
 
+def test_referenced_video_annotation(page_factory, project, referenced_video):
+    print("[Video] Going to annotation view...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
+    page.goto(f"/{project}/annotation/{referenced_video}", wait_until='networkidle')
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector('video-canvas')
+    canvas = page.query_selector('video-canvas')
+    page.wait_for_selector('play-button:not(.disabled)')
+    # This is commented out because toolbar buttons don't work in playwright
+    # common_annotation(page, canvas)
+    page.close()
+
 @pytest.mark.flaky(reruns=2)
 def test_multi_annotation(page_factory, project, multi):
     print("[Multi] Going to annotation view...")

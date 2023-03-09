@@ -137,11 +137,14 @@ def bulk_create_from_generator(obj_generator, model, batch_size=1000):
 
     return saved_objects
 
-def check_resource_prefix(prefix, obj):
+def check_resource_prefix(prefix, obj, force_prefix=False):
     """ Checks that a prefix corresponding to a resource has the form
         <organization>/<project>/<object>/<name> and that the IDs line
         up with what is expected for the object associated with the .
     """
+    # If we aren't a prefix 
+    if urlparse(prefix).scheme != "" and force_prefix is False:
+        return
     parts = prefix.split('/')
     if len(parts) != 4:
         raise PermissionDenied("Incorrect prefix format for file resource! Required format is "
