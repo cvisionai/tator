@@ -108,6 +108,9 @@ def _presign(user_id, expiration, medias, fields=None):
 
             for idx, media_def in enumerate(media["media_files"][field]):
                 # Get path url
+                # If the path is a bona fide URL, don't attempt to presign it
+                if urlparse(media_def["path"]).scheme != "":
+                    continue
                 url = cache.get_presigned(user_id, media_def["path"])
                 if url is None:
                     tator_store = store_lookup[media_def["path"]]
