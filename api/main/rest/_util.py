@@ -147,6 +147,7 @@ def check_resource_prefix(prefix, obj, force_prefix=False):
         return
     parts = prefix.split('/')
     if len(parts) != 4:
+        logger.error(f"Permission Denied: {prefix} on {obj}")
         raise PermissionDenied("Incorrect prefix format for file resource! Required format is "
                                "<organization>/<project>/<object>/<name>.")
     organization = obj.project.organization.pk

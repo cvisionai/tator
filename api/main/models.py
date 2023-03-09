@@ -62,6 +62,7 @@ from .store import (
 from .cognito import TatorCognito
 
 from collections import UserDict
+from urllib.parse import urlparse
 
 import pytz
 import datetime
@@ -1248,8 +1249,8 @@ class Resource(Model):
 
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):
-        from .rest._util import check_resource_prefix
-        check_resource_prefix(path_or_link, media, True)
+        if urlparse(path_or_link).scheme != "":
+            raise "Can't supply a url to a resource path"
         if os.path.islink(path_or_link):
             path = os.readlink(path_or_link)
         else:
