@@ -385,7 +385,7 @@ class MediaListAPI(BaseListView):
             media_spec_list = [media_spec_list]
         if len(media_spec_list) == 1:
             obj, msg = _create_media(project, media_spec_list[0], self.request.user)
-            response = {"message": msg, "id": [obj.id], "object": [obj]}
+            response = {"message": msg, "id": [obj.id]}
         elif media_spec_list:
             # TODO handle multiple image creation
             assert_list_of_image_specs(project, media_spec_list)
@@ -398,9 +398,7 @@ class MediaListAPI(BaseListView):
                     logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
                 ids.append(obj.id)
                 objects.append(obj)
-            response = {
-                "message": f"Started import of {len(ids)} images!", "id": ids, "object": objects
-            }
+            response = {"message": f"Started import of {len(ids)} images!", "id": ids}
         else:
             raise ValueError(f"Expected one or more media specs, received zero!")
         return response
