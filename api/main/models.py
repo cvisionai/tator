@@ -1248,6 +1248,8 @@ class Resource(Model):
 
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):
+        from .rest._util import check_resource_prefix
+        check_resource_prefix(path_or_link, media, True)
         if os.path.islink(path_or_link):
             path = os.readlink(path_or_link)
         else:
