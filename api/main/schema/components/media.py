@@ -177,6 +177,12 @@ media_spec = {
             'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
             'type': 'string'
         },
+        'reference_only' : {
+            'description': 'Do not import the media resources into Tator. This causes the image to be accessed at the supplied URL upon access in the UI. Valid for images only.',
+            'type': 'integer',
+            'default': 0,
+            'maximum': 1
+        }
     },
 }
 

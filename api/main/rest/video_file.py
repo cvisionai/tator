@@ -51,9 +51,10 @@ class VideoFileListAPI(BaseListView):
                 media_files[role].insert(index, body)
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params['id'])
-        Resource.add_resource(body['path'], media)
-        if role == 'streaming':
-            Resource.add_resource(body['segment_info'], media)
+        if params['reference_only'] == 0:
+            Resource.add_resource(body['path'], media)
+            if role == 'streaming':
+                Resource.add_resource(body['segment_info'], media)
         return {'message': f"Media file in media object {media.id} created!"}
 
     def get_queryset(self):

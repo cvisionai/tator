@@ -383,6 +383,59 @@ def image(request, page_factory, project, image_section, image_file):
     page.close()
     yield image
 
+
+@pytest.fixture(scope='session')
+def referenced_image(request, base_url, token, page_factory, project, image_section):
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    image_type = None
+    for m in media_types:
+        if m.dtype == "image":
+            image_type = m
+    media_spec = {'type': image_type.id,
+                  'section': "Referenced Image",
+                  'name': 'Referenced Image.jpg',
+                  'url': 'https://s3.amazonaws.com/tator-ci/landscape.jpg',
+                  'md5': tator.util.md5sum('https://s3.amazonaws.com/tator-ci/landscape.jpg'),
+                  'width': 550,
+                  'height': 368,
+                  'reference_only': 1
+                  }
+    response = api.create_media_list(project, [media_spec])
+    yield response.id
+
+@pytest.fixture(scope='session')
+def referenced_video(request, base_url, token, page_factory, project):
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    video_type = None
+    for m in media_types:
+        if m.dtype == "video":
+            video_type = m
+    media_spec = {'type': video_type.id,
+                  'section': "Referenced Image",
+                  'name': 'Referenced Image.jpg',
+                  'md5': tator.util.md5sum('https://s3.amazonaws.com/tator-ci/count.mp4'),
+                  'width': 720,
+                  'height': 720,
+                  'num_frames': 999,
+                  'fps': 30.0
+                  }
+    response = api.create_media_list(project, [media_spec])
+    media_id = response.id
+    video_def = {
+        'codec': 'h264',
+        'codec_description': 'H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10',
+        'size': 249033,
+        'bit_rate': 56393,
+        'resolution': [720,720],
+        'path': 'https://s3.amazonaws.com/tator-ci/count.mp4',
+        'segment_info': 'https://s3.amazonaws.com/tator-ci/count.json',
+        'reference_only': 1,
+    }
+    api.create_video_file(media_id, role='streaming', video_definition=video_def)
+    yield media_id
+
 @pytest.fixture(scope='session')
 def image1(request, page_factory, project, image_section1, image_file):
     print("Uploading an image...")
