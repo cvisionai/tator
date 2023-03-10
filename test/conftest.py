@@ -418,7 +418,6 @@ def referenced_video(request, base_url, token, page_factory, project):
                   'md5': tator.util.md5sum('https://s3.amazonaws.com/tator-ci/count.mp4'),
                   'width': 720,
                   'height': 720,
-                  'reference_only': 1,
                   'num_frames': 999,
                   'fps': 30.0
                   }
@@ -432,6 +431,7 @@ def referenced_video(request, base_url, token, page_factory, project):
         'resolution': [720,720],
         'path': 'https://s3.amazonaws.com/tator-ci/count.mp4',
         'segment_info': 'https://s3.amazonaws.com/tator-ci/count.json',
+        'reference_only': 1,
     }
     api.create_video_file(media_id, role='streaming', video_definition=video_def)
     yield media_id
