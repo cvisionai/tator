@@ -396,7 +396,12 @@ class MediaListAPI(BaseListView):
                 except Exception:
                     logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
                 ids.append(obj.id)
-            response = {"message": f"Started import of {len(ids)} images!", "id": ids}
+
+            # Return a single integer instead of a list if there is only one id
+            ids_len = len(ids)
+            if ids_len == 1:
+                ids = ids[0]
+            response = {"message": f"Started import of {ids_len} images!", "id": ids}
         else:
             raise ValueError(f"Expected one or more media specs, received zero!")
         return response
