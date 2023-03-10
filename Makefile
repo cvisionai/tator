@@ -22,6 +22,8 @@ SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/
 
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
+FAKE_DEV_VERSION=248.434.5508
+TATOR_PY_DEV_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(FAKE_DEV_VERSION)-py3-none-any.whl
 
 TATOR_JS_MODULE_FILE=ui/server/static/tator.min.js
 
@@ -336,6 +338,16 @@ $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	fi
 	cd ../../..
 
+$(TATOR_PY_DEV_WHEEL_FILE): doc/_build/schema.yaml scripts/packages/tator-py/config.json
+	cp doc/_build/schema.yaml scripts/packages/tator-py/.
+	cd scripts/packages/tator-py
+	rm -rf dist
+	python3 setup.py sdist bdist_wheel
+	if [ ! -f dist/*.whl ]; then
+		exit 1
+	fi
+	cd ../../..
+
 # OBE with partial rebuilds working, here for backwards compatibility.
 .PHONY: python-bindings-only
 python-bindings-only:
@@ -344,6 +356,16 @@ python-bindings-only:
 .PHONY: python-bindings
 python-bindings:
 	make $(TATOR_PY_WHEEL_FILE)
+
+.PHONY: install-dev-python
+install-dev-python:
+	cp scripts/packages/tator-py/config.json scripts/packages/tator-py/.config.json
+	sed -i "s/DEVELOPMENT_VERSION/${FAKE_DEV_VERSION}/g" scripts/packages/tator-py/config.json
+	$(MAKE) $(TATOR_PY_DEV_WHEEL_FILE)
+	mv scripts/packages/tator-py/.config.json scripts/packages/tator-py/config.json
+
+	pip3 install --force-reinstall $(TATOR_PY_DEV_WHEEL_FILE)
+
 
 # This is a phony rule now because submodule will handle what to rebuild
 # -u only copies schema if it is newer than what is already generated
