@@ -1250,7 +1250,7 @@ class Resource(Model):
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):
         if urlparse(path_or_link).scheme != "":
-            raise "Can't supply a url to a resource path"
+            raise ValueError("Can't supply a url to a resource path")
         if os.path.islink(path_or_link):
             path = os.readlink(path_or_link)
         else:
