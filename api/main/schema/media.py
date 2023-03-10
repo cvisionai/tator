@@ -3,7 +3,6 @@ from textwrap import dedent
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._message import message_schema
-from ._message import message_with_id_list_schema
 from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
@@ -150,7 +149,23 @@ class MediaListSchema(AutoSchema):
     def get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
-            responses['201'] = message_with_id_list_schema('media')
+            responses["201"] = {
+                "description": "Successful creation of media",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    '$ref': '#/components/schemas/CreateListResponse',
+                                },
+                                {
+                                    '$ref': '#/components/schemas/CreateResponse',
+                                }
+                            ],
+                        },
+                    },
+                },
+            }
         elif method in ['GET', 'PUT']:
             responses['200'] = {
                 'description': 'Successful retrieval of media list.',
