@@ -142,6 +142,10 @@ status:
 check-migration:
 	scripts/check-migration.sh $(pwd)
 
+.PHONY: compose
+compose:
+	GIT_VERSION="$(GIT_VERSION)" docker compose up
+
 cluster: api/main/version.py clean_schema
 	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-deps cluster-install
 

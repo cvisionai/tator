@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+
+  nginx-svc:
+    image: nginx:1.23.3
+    env_file:
+      - ./.env
+    ports:
+      - ${PORT}:${PORT}
+    networks:
+      - private
+      - public
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./compose/nginx.conf.template:/etc/nginx/templates/default.conf.template
+
+  gunicorn-svc:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    command: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :8000 tator_online.wsgi
+    env_file:
+      - ./.env
+    networks:
+      - private
+    volumes:
+      - ${DATA_DIR}/static:/static
+      - ${DATA_DIR}/migrations:/tator_online/main/migrations
+      - ${DATA_DIR}/media:/media
+      - ${DATA_DIR}/backup:/backup
+
+  redis-svc:
+    image: redis:6
+    restart: always
+    networks:
+      - private
+    entrypoint: redis-server --maxmemory 2048mb --maxmemory-policy allkeys-lru
+
+  transcode-svc:
+    image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
+    command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+    networks:
+      - private
+
+  transcode-worker:
+    image: ${REGISTRY}/tator_client:${GIT_VERSION}
+    command: rq worker --url redis://redis-svc transcodes
+    networks:
+      - private
+
+  ui-svc:
+    image: ${REGISTRY}/tator_ui:${GIT_VERSION}
+    command: npm run serve -- --backend=''
+    networks:
+      - private
+
+  postgis-svc:
+    image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
+    env_file:
+      - ./.env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/db-files
+      - POSTGRES_DB=tator_online
+    networks:
+      - private
+    volumes:
+      - ${DATA_DIR}/postgis:/var/lib/postgresql/data
+      - ${DATA_DIR}/backup:/backup
+    shm_size: '2gb'
+
+  minio-svc:
+    image: minio/minio:RELEASE.2022-06-02T16-16-26Z
+    command: server /data
+    networks:
+      - private
+    volumes:
+      - ${DATA_DIR}/objects:/data
+ 
+networks:
+  public:
+    external: true
+  private:
+    external: false
+
+
