@@ -38,7 +38,7 @@ spec:
           env:
             - name: POSTGRES_HOST
               value: {{ .Values.postgresHost }}
-            - name: POSTGRES_USERNAME
+            - name: POSTGRES_USER
               value: {{ .Values.postgresUsername }}
             - name: REDIS_HOST
               value: {{ .Values.redisHost }}
