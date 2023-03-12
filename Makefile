@@ -120,6 +120,8 @@ _logs:
 django-shell:
 	docker exec -it gunicorn python3 manage.py shell
 
+psql-shell:
+	docker exec -it postgis psql -U $(POSTGRES_USER) -d tator_online
 
 #####################################
 ## Custom rules below:

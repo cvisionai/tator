@@ -6,7 +6,7 @@
       key: djangoSecretKey
 - name: POSTGRES_HOST
   value: {{ .Values.postgresHost }}
-- name: POSTGRES_USERNAME
+- name: POSTGRES_USER
   value: {{ .Values.postgresUsername }}
 - name: POSTGRES_PASSWORD
   valueFrom:
