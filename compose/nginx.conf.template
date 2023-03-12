@@ -70,7 +70,7 @@ server {
     proxy_read_timeout 1200;
     send_timeout 1200;
 
-    proxy_pass http://gunicorn-svc:8000/auth-project;
+    proxy_pass http://gunicorn:8000/auth-project;
     proxy_pass_request_body off;
     proxy_set_header Host $host;
     proxy_set_header Content-Length "";
@@ -80,11 +80,11 @@ server {
     proxy_http_version 1.1;
   }
   location /objects/ {
-    proxy_pass http://minio-svc:9000/;
+    proxy_pass http://minio:9000/;
   }
   location /auth-admin {
     internal;
-    proxy_pass http://gunicorn-svc:8000/auth-admin;
+    proxy_pass http://gunicorn:8000/auth-admin;
     proxy_pass_request_body off;
     proxy_set_header Host $host;
     proxy_set_header Content-Length "";
@@ -94,7 +94,7 @@ server {
   location ~ ^/$|^/rest$|^/rest/$|^/static|^/(projects|token|organizations)|^/\d+/ {
     add_header Cross-Origin-Opener-Policy same-origin;
     add_header Cross-Origin-Embedder-Policy credentialless;
-    proxy_pass http://ui-svc:3000;
+    proxy_pass http://ui:3000;
 
     proxy_redirect off;
     proxy_http_version 1.1;
@@ -119,7 +119,7 @@ server {
 
     add_header Cross-Origin-Opener-Policy same-origin;
     add_header Cross-Origin-Embedder-Policy credentialless;
-    proxy_pass http://gunicorn-svc:8000;
+    proxy_pass http://gunicorn:8000;
 
     proxy_redirect off;
     proxy_http_version 1.1;
