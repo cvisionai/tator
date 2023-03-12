@@ -109,17 +109,16 @@ $(foreach action,$(OPERATIONS),$(foreach container,$(CONTAINERS),$(eval $(call g
 
 # Generic handlers (variable podname is set to the requested pod)
 _reset:
-	kubectl delete pods -l app=$(podname)
+	GIT_VERSION=$(GIT_VERSION) docker compose restart $(podname)
 
 _bash:
 	docker exec -it $(podname) /bin/bash
 
 _logs:
-	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
-	kubectl logs $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -f
+	docker compose logs $(podname)
 
 django-shell:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py shell
+	docker exec -it gunicorn python3 manage.py shell
 
 
 #####################################
