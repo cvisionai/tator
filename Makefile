@@ -2,7 +2,7 @@
 
 include .env
 
-CONTAINERS=ui postgis pgbouncer redis client gunicorn nginx pruner sizer
+CONTAINERS=ui postgis redis gunicorn nginx minio
 
 OPERATIONS=reset logs bash
 
@@ -295,13 +295,8 @@ endif
 
 .PHONY: migrate
 migrate:
-	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
-	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
-	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
-	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
-	docker exec -it gunicorn python3 manage.py makemigrations main
-	docker exec -it gunicorn python3 manage.py makemigrations
-	docker exec -it gunicorn python3 manage.py migrate
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d create-extensions
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d migrate
 
 .PHONY: testinit
 testinit:

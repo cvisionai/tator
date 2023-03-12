@@ -2,9 +2,15 @@ version: "3.8"
 
 services:
 
+  ###################################################################
+  # Dependencies
+  ###################################################################
+
   nginx:
     image: nginx:1.23.3
     container_name: nginx
+    depends_on:
+      - gunicorn
     env_file:
       - ./.env
     ports:
@@ -16,19 +22,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./compose/nginx.conf.template:/etc/nginx/templates/default.conf.template
 
-  gunicorn:
-    image: ${REGISTRY}/tator_online:${GIT_VERSION}
-    container_name: gunicorn
-    command: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :8000 tator_online.wsgi
-    env_file:
-      - ./.env
+  minio:
+    image: minio/minio:RELEASE.2022-06-02T16-16-26Z
+    container_name: minio
+    command: server /data
     networks:
       - private
     volumes:
-      - ${DATA_DIR}/static:/static
-      - ${DATA_DIR}/migrations:/tator_online/main/migrations
-      - ${DATA_DIR}/media:/media
-      - ${DATA_DIR}/backup:/backup
+      - ${DATA_DIR}/objects:/data
 
   redis:
     image: redis:6
@@ -38,26 +39,9 @@ services:
       - private
     entrypoint: redis-server --maxmemory 2048mb --maxmemory-policy allkeys-lru
 
-  transcode:
-    image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
-    container_name: transcode
-    command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
-    networks:
-      - private
-
-  transcode-worker:
-    image: ${REGISTRY}/tator_client:${GIT_VERSION}
-    container_name: transcode-worker
-    command: rq worker --url redis://redis transcodes
-    networks:
-      - private
-
-  ui:
-    image: ${REGISTRY}/tator_ui:${GIT_VERSION}
-    container_name: ui
-    command: npm run serve -- --backend=''
-    networks:
-      - private
+  ###################################################################
+  # Tator services
+  ###################################################################
 
   postgis:
     image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
@@ -74,19 +58,59 @@ services:
       - ${DATA_DIR}/backup:/backup
     shm_size: '2gb'
 
-  minio:
-    image: minio/minio:RELEASE.2022-06-02T16-16-26Z
-    container_name: minio
-    command: server /data
+  gunicorn:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: gunicorn
+    command: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :8000 tator_online.wsgi
+    depends_on:
+      - postgis
+      - redis
+      - minio
+    environment:
+      - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
+    env_file:
+      - ./.env
     networks:
       - private
     volumes:
-      - ${DATA_DIR}/objects:/data
+      - ${DATA_DIR}/static:/static
+      - ${DATA_DIR}/migrations:/tator_online/main/migrations
+      - ${DATA_DIR}/media:/media
+      - ${DATA_DIR}/backup:/backup
+
+  transcode:
+    image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
+    container_name: transcode
+    command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+    depends_on:
+      - redis
+    networks:
+      - private
+
+  transcode-worker:
+    image: ${REGISTRY}/tator_client:${GIT_VERSION}
+    container_name: transcode-worker
+    command: rq worker --url redis://redis transcodes
+    depends_on:
+      - redis
+    networks:
+      - private
+
+  ui:
+    image: ${REGISTRY}/tator_ui:${GIT_VERSION}
+    container_name: ui
+    command: npm run serve -- --backend=''
+    networks:
+      - private
 
   db-worker:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: db-worker
     command: python3 /tator_online/main/worker.py db_jobs
+    depends_on:
+      - redis
+    env_file:
+      - ./.env
     networks:
       - private
 
@@ -94,13 +118,81 @@ services:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: image-worker
     command: python3 /tator_online/main/worker.py image_jobs
+    depends_on:
+      - redis
+    env_file:
+      - ./.env
     networks:
       - private
+
+  ###################################################################
+  # Post-install configuration
+  ###################################################################
+
+  create-bucket:
+    image: minio/mc:RELEASE.2022-07-15T09-20-55Z
+    container_name: create-bucket
+    depends_on:
+      - minio
+    env_file:
+      - ./.env
+    networks:
+      - private
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set tator http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing tator/${DEFAULT_LIVE_BUCKET_NAME};
+      mc admin user add tator ${DEFAULT_LIVE_ACCESS_KEY} ${DEFAULT_LIVE_SECRET_KEY};
+      mc admin policy set tator readwrite user=${DEFAULT_LIVE_ACCESS_KEY};
+      exit 0;
+      "
+
+  create-extensions:
+    image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
+    container_name: create-extensions
+    depends_on:
+      - postgis
+    env_file:
+      - ./.env
+    networks:
+      - private
+    entrypoint: >
+      /bin/sh -c "
+      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS ltree';
+      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS postgis';
+      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
+      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+      exit 0;
+      "
+
+  migrate:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: migrate
+    depends_on:
+      - gunicorn
+    env_file:
+      - ./.env
+    networks:
+      - private
+    entrypoint: >
+      /bin/sh -c "
+      python3 manage.py makemigrations;
+      python3 manage.py migrate;
+      exit 0;
+      "
+
+  ###################################################################
+  # Cron jobs
+  ###################################################################
 
   gunicorn-cron:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: gunicorn-cron
     command: crontab /etc/cron.d/crontab && cron
+    depends_on:
+      - gunicorn
+    env_file:
+      - ./.env
     networks:
       - private
     volumes:
@@ -110,6 +202,10 @@ services:
     image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
     container_name: postgis-cron
     command: crontab /etc/cron.d/crontab && cron
+    depends_on:
+      - postgis
+    env_file:
+      - ./.env
     networks:
       - private
     volumes:

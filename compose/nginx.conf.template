@@ -1,4 +1,3 @@
-include mime.types;
 server_names_hash_bucket_size 128;
 proxy_ignore_client_abort on;
 client_max_body_size 0;
