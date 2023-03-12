@@ -1,5 +1,7 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
+include .env
+
 CONTAINERS=ui postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
@@ -16,10 +18,6 @@ else
 YAML_ARGS=
 endif
 
-DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["dockerRegistry"])')
-
-SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("systemImageRepo"))')
-
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 FAKE_DEV_VERSION=248.434.5508
@@ -28,8 +26,8 @@ TATOR_PY_DEV_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(FAKE_DEV_VERSION)
 TATOR_JS_MODULE_FILE=ui/server/static/tator.min.js
 
 # default to dockerhub cvisionai organization
-ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
-SYSTEM_IMAGE_REGISTRY=cvisionai
+ifeq ($(REGISTRY),None)
+REGISTRY=cvisionai
 endif
 
 # Defaults to detecting what the current's node APT is, if cross-dist building:
@@ -40,10 +38,6 @@ endif
 # faster builds on Oracle OCI 
 APT_REPO_HOST ?= $(shell cat /etc/apt/sources.list | grep "focal main" | grep -v cdrom | head -n1 | awk '{print $$2}')
 
-
-POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresHost"])')
-POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresUsername"])')
-POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresPassword"])')
 
 #############################
 ## Help Rule + Generic targets
@@ -77,7 +71,6 @@ ecr_update:
 	$(eval LOGIN := $(shell aws ecr get-login --no-include-email))
 	$(eval KEY := $(shell echo $(LOGIN) | python3 -c 'import sys; print(sys.stdin.read().split()[5])'))
 	$(LOGIN)
-	echo $(KEY) | python3 -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
 
 # Restore database from specified backup (base filename only)
 # Example:
@@ -119,7 +112,7 @@ _reset:
 	kubectl delete pods -l app=$(podname)
 
 _bash:
-	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/bash
+	docker exec -it $(podname) /bin/bash
 
 _logs:
 	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
@@ -143,7 +136,9 @@ check-migration:
 	scripts/check-migration.sh $(pwd)
 
 .PHONY: compose
-compose:
+compose: api/main/version.py clean_schema
+	docker network inspect public >/dev/null 2>&1 || \
+    docker network create public
 	GIT_VERSION="$(GIT_VERSION)" docker compose up
 
 cluster: api/main/version.py clean_schema
@@ -192,20 +187,20 @@ endif
 
 .PHONY: tator-image
 tator-image:
-	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) --network host -t $(REGISTRY)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
+	docker push $(REGISTRY)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
 	touch .token/tator_online_$(GIT_VERSION)
 
 .PHONY: ui-image
 ui-image: webpack
-	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --network host -t $(REGISTRY)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
+	docker push $(REGISTRY)/tator_ui:$(GIT_VERSION)
 
 .PHONY: postgis-image
 postgis-image:
-	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/postgis/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_postgis:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_postgis:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/postgis/Dockerfile . || exit 255
+	docker push $(REGISTRY)/tator_postgis:$(GIT_VERSION)
 
 EXPERIMENTAL_DOCKER=$(shell docker version --format '{{json .Client.Experimental}}')
 ifeq ($(EXPERIMENTAL_DOCKER), true)
@@ -223,12 +218,11 @@ experimental_docker:
 endif
 
 
-USE_VPL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("enableVpl","False"))')
-ifeq ($(USE_VPL),True)
+ifeq ($(USE_VPL),true)
 .PHONY: client-vpl
 client-vpl: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
+	docker push $(REGISTRY)/tator_client_vpl:$(GIT_VERSION)
 else
 .PHONY: client-vpl
 client-vpl: $(TATOR_PY_WHEEL_FILE)
@@ -237,38 +231,38 @@ endif
 
 .PHONY: client-amd64
 client-amd64: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
 
 .PHONY: client-aarch64
 client-aarch64: $(TATOR_PY_WHEEL_FILE)
-		DOCKER_BUILDKIT=1 docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
+		DOCKER_BUILDKIT=1 docker build --platform linux/aarch64 --network host -t $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
 client-image: experimental_docker client-vpl client-amd64 client-aarch64
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
-	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
-	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
-	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
-	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
+	docker push $(REGISTRY)/tator_client_amd64:$(GIT_VERSION)
+	docker push $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest create --insecure $(REGISTRY)/tator_client:$(GIT_VERSION) --amend $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
+	docker manifest create --insecure $(REGISTRY)/tator_client:latest --amend $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
+	docker manifest push $(REGISTRY)/tator_client:$(GIT_VERSION)
+	docker manifest push $(REGISTRY)/tator_client:latest
 
 .PHONY: client-latest
 client-latest: client-image
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
+	docker tag $(REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
 	docker push cvisionai/tator_client:latest
 
 .PHONY: braw-image
 braw-image:
-	DOCKER_BUILDKIT=1 docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
+	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
+	docker push $(REGISTRY)/tator_client_braw:$(GIT_VERSION)
+	docker tag $(REGISTRY)/tator_client_braw:$(GIT_VERSION) $(REGISTRY)/tator_client_braw:latest
+	docker push $(REGISTRY)/tator_client_braw:latest
 
 .PHONY: transcode-image
 transcode-image:
-	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_transcode:$(GIT_VERSION) -f containers/tator_transcode/Dockerfile containers/tator_transcode || exit 255
-	docker push $(DOCKERHUB_USER)/tator_transcode:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_transcode:$(GIT_VERSION) -f containers/tator_transcode/Dockerfile containers/tator_transcode || exit 255
+	docker push $(REGISTRY)/tator_transcode:$(GIT_VERSION)
 
 
 ifeq ($(shell cat api/main/version.py), $(shell ./scripts/version.sh))
@@ -288,8 +282,7 @@ collect-static: webpack
 dev-push:
 	@scripts/dev-push.sh
 
-USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
-ifeq ($(USE_MIN_JS),True)
+ifeq ($(USE_MIN_JS),true)
 webpack: $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
 	cd ui && npm install && python3 make_index_files.py && npm run build
@@ -387,7 +380,7 @@ js-bindings: .token/tator_online_$(GIT_VERSION)
 
 .PHONY: r-docs
 r-docs: doc/_build/schema.yaml
-	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
+	docker inspect --type=image $(REGISTRY)/tator_online:$(GIT_VERSION) && \
 	cp doc/_build/schema.yaml scripts/packages/tator-r/.
 	rm -rf scripts/packages/tator-r/tmp
 	mkdir -p scripts/packages/tator-r/tmp
@@ -421,10 +414,9 @@ r-docs: doc/_build/schema.yaml
 	cd ../../..
 
 TOKEN=$(shell cat token.txt)
-HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')
 .PHONY: pytest
 pytest:
-	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(HOST) --token $(TOKEN)
+	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(MAIN_HOST) --token $(TOKEN)
 
 .PHONY: letsencrypt
 letsencrypt:
@@ -448,7 +440,7 @@ markdown-docs:
 doc/_build/schema.yaml: $(shell find api/main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
 	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
-	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
+	docker run --rm -e DJANGO_SECRET_KEY=1337 $(REGISTRY)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 # Hold over
@@ -458,7 +450,7 @@ schema:
 
 .PHONY: check_schema
 check_schema:
-	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
+	docker run --rm -e DJANGO_SECRET_KEY=1337 $(REGISTRY)/tator_online:$(GIT_VERSION) python3 manage.py getschema
 
 .PHONY: clean_schema
 clean_schema:
