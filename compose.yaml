@@ -25,7 +25,12 @@ services:
   minio:
     image: minio/minio:RELEASE.2022-06-02T16-16-26Z
     container_name: minio
-    command: server /data
+    entrypoint: server /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - private
     volumes:
@@ -35,17 +40,23 @@ services:
     image: redis:6
     container_name: redis
     restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
     networks:
       - private
     entrypoint: redis-server --maxmemory 2048mb --maxmemory-policy allkeys-lru
 
-  ###################################################################
-  # Tator services
-  ###################################################################
-
   postgis:
     image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
     container_name: postgis
+    healthcheck: 
+      test: ["CMD", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     env_file:
       - ./.env
     environment:
@@ -58,10 +69,14 @@ services:
       - ${DATA_DIR}/backup:/backup
     shm_size: '2gb'
 
+  ###################################################################
+  # Tator services
+  ###################################################################
+
   gunicorn:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: gunicorn
-    command: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :8000 tator_online.wsgi
+    entrypoint: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :8000 tator_online.wsgi
     depends_on:
       - postgis
       - redis
@@ -81,7 +96,7 @@ services:
   transcode:
     image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
     container_name: transcode
-    command: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+    entrypoint: uvicorn main:app --host 0.0.0.0 --port 80 --reload
     depends_on:
       - redis
     networks:
@@ -90,7 +105,7 @@ services:
   transcode-worker:
     image: ${REGISTRY}/tator_client:${GIT_VERSION}
     container_name: transcode-worker
-    command: rq worker --url redis://redis transcodes
+    entrypoint: rq worker --url redis://redis transcodes
     depends_on:
       - redis
     networks:
@@ -99,14 +114,14 @@ services:
   ui:
     image: ${REGISTRY}/tator_ui:${GIT_VERSION}
     container_name: ui
-    command: npm run serve -- --backend=''
+    entrypoint: npm run serve -- --backend=''
     networks:
       - private
 
   db-worker:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: db-worker
-    command: python3 /tator_online/main/worker.py db_jobs
+    entrypoint: python3 /tator_online/main/worker.py db_jobs
     depends_on:
       - redis
     env_file:
@@ -117,7 +132,7 @@ services:
   image-worker:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: image-worker
-    command: python3 /tator_online/main/worker.py image_jobs
+    entrypoint: python3 /tator_online/main/worker.py image_jobs
     depends_on:
       - redis
     env_file:
@@ -126,7 +141,7 @@ services:
       - private
 
   ###################################################################
-  # Post-install configuration
+  # Pre-install configuration
   ###################################################################
 
   create-bucket:
@@ -134,6 +149,7 @@ services:
     container_name: create-bucket
     depends_on:
       - minio
+    restart: on-failure
     env_file:
       - ./.env
     networks:
@@ -152,16 +168,19 @@ services:
     container_name: create-extensions
     depends_on:
       - postgis
+    restart: on-failure
     env_file:
       - ./.env
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
     networks:
       - private
     entrypoint: >
       /bin/sh -c "
-      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS ltree';
-      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS postgis';
-      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
-      psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS ltree';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS postgis';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
       exit 0;
       "
 
@@ -170,12 +189,14 @@ services:
     container_name: migrate
     depends_on:
       - gunicorn
+    restart: on-failure
     env_file:
       - ./.env
     networks:
       - private
     entrypoint: >
       /bin/sh -c "
+      python3 manage.py makemigrations main;
       python3 manage.py makemigrations;
       python3 manage.py migrate;
       exit 0;
@@ -188,7 +209,6 @@ services:
   gunicorn-cron:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: gunicorn-cron
-    command: crontab /etc/cron.d/crontab && cron
     depends_on:
       - gunicorn
     env_file:
@@ -197,19 +217,30 @@ services:
       - private
     volumes:
       - ./compose/gunicorn.cron:/etc/cron.d/crontab
+    entrypoint: >
+      /bin/sh -c "
+      cronttab /etc/cron.d/crontab;
+      cron -f;
+      "
  
   postgis-cron:
     image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
     container_name: postgis-cron
-    command: crontab /etc/cron.d/crontab && cron
     depends_on:
       - postgis
     env_file:
       - ./.env
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
     networks:
       - private
     volumes:
       - ./compose/postgis.cron:/etc/cron.d/crontab
+    entrypoint: >
+      /bin/sh -c "
+      cronttab /etc/cron.d/crontab;
+      cron -f;
+      "
 
 networks:
   public:

@@ -137,9 +137,13 @@ check-migration:
 	scripts/check-migration.sh $(pwd)
 
 .PHONY: compose
-compose: api/main/version.py clean_schema
+compose: check-migration api/main/version.py clean_schema
 	docker network inspect public >/dev/null 2>&1 || \
     docker network create public
+	GIT_VERSION="$(GIT_VERSION)" docker compose up -d postgis --wait
+	GIT_VERSION="$(GIT_VERSION)" docker compose up -d minio --wait
+	GIT_VERSION="$(GIT_VERSION)" docker compose up -d redis --wait
+	GIT_VERSION="$(GIT_VERSION)" docker compose run --rm create-extensions
 	GIT_VERSION="$(GIT_VERSION)" docker compose up
 
 cluster: api/main/version.py clean_schema
@@ -164,7 +168,8 @@ cluster-uninstall:
 	helm uninstall tator
 
 .PHONY: clean
-clean: cluster-uninstall clean-tokens
+clean:
+	docker compose down
 
 clean-tokens:
 	rm -fr .token
