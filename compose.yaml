@@ -82,7 +82,39 @@ services:
       - private
     volumes:
       - ${DATA_DIR}/objects:/data
+
+  db-worker:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: db-worker
+    command: python3 /tator_online/main/worker.py db_jobs
+    networks:
+      - private
+
+  image-worker:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: image-worker
+    command: python3 /tator_online/main/worker.py image_jobs
+    networks:
+      - private
+
+  gunicorn-cron:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: gunicorn-cron
+    command: crontab /etc/cron.d/crontab && cron
+    networks:
+      - private
+    volumes:
+      - ./compose/gunicorn.cron:/etc/cron.d/crontab
  
+  postgis-cron:
+    image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
+    container_name: postgis-cron
+    command: crontab /etc/cron.d/crontab && cron
+    networks:
+      - private
+    volumes:
+      - ./compose/postgis.cron:/etc/cron.d/crontab
+
 networks:
   public:
     external: true
