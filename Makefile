@@ -295,8 +295,13 @@ endif
 
 .PHONY: migrate
 migrate:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py makemigrations
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py migrate
+	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
+	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
+	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
+	docker exec -it postgis psql -U ${POSTGRES_USER} -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+	docker exec -it gunicorn python3 manage.py makemigrations main
+	docker exec -it gunicorn python3 manage.py makemigrations
+	docker exec -it gunicorn python3 manage.py migrate
 
 .PHONY: testinit
 testinit:
