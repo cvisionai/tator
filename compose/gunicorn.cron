@@ -5,8 +5,6 @@
 30 2 * * * cd /tator_online && python3 manage.py prunestates > /proc/1/fd/1 2>/proc/1/fd/2
 30 3 * * * cd /tator_online && python3 manage.py pruneleaves > /proc/1/fd/1 2>/proc/1/fd/2
 30 4 * * * cd /tator_online && python3 manage.py prunefiles > /proc/1/fd/1 2>/proc/1/fd/2
-40 4 * * * cd /tator_online && python3 manage.py prunefilebeat > /proc/1/fd/1 2>/proc/1/fd/2
-40 6 * * * cd /tator_online && python3 manage.py prunefilebeat > /proc/1/fd/1 2>/proc/1/fd/2
 40 18 * * * cd /tator_online && python3 manage.py movebackups > /proc/1/fd/1 2>/proc/1/fd/2
 40 0 * * * cd /tator_online && python3 manage.py archivemedia > /proc/1/fd/1 2>/proc/1/fd/2
 0 1 * * * cd /tator_online && python3 manage.py backupresources > /proc/1/fd/1 2>/proc/1/fd/2

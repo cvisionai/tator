@@ -390,14 +390,6 @@ TOKEN=$(shell cat token.txt)
 pytest:
 	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(MAIN_HOST) --token $(TOKEN)
 
-.PHONY: letsencrypt
-letsencrypt:
-	docker exec -it gunicorn env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/letsencrypt.sh 
-
-.PHONY: selfsigned
-selfsigned:
-	docker exec -it gunicorn env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/selfsigned.sh
-
 .PHONY: markdown-docs
 markdown-docs:
 	sphinx-build -M markdown ./doc ./doc/_build
