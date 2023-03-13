@@ -75,7 +75,11 @@ jobs:
         path: /tmp/tator-py.tar
         destination: docs/tator-py.tar
     - run:
-        name: Push client image to OCI
+        name: Push images to Dockerhub
+        command: |
+          ssh lightsail 'export DOCKERHUB_PASSWORD='"'$DOCKERHUB_PASSWORD'"';export DOCKERHUB_USERNAME='"'$DOCKERHUB_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_dockerhub.sh';
+    - run:
+        name: Push images to OCI
         command: |
           ssh lightsail 'export OCI_REGISTRY='"'$OCI_REGISTRY'"';export OCIR_PASSWORD='"'$OCIR_PASSWORD'"';export OCIR_HOST='"'$OCIR_HOST'"';export OCIR_USERNAME='"'$OCIR_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_oci.sh';
     - run:
