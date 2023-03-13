@@ -13,18 +13,6 @@ jobs:
     - attach_workspace:
         at: ~/
     - run:
-        name: Copy helm config
-        command: |
-          ssh lightsail 'cp tator/helm/tator/values-microk8s.yaml tator/helm/tator/values.yaml';
-    - run:
-        name: Replace registry
-        command: |
-          ssh lightsail 'export DOCKER_REGISTRY='"'$DOCKER_REGISTRY'"';sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" tator/helm/tator/values.yaml';
-    - run:
-        name: Display values.yaml
-        command: |
-          ssh lightsail 'cat tator/helm/tator/values.yaml';
-    - run:
         name: Install Docker
         command: |
           ssh lightsail 'wget -O get_docker.sh https://get.docker.com';
