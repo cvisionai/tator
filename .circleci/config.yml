@@ -173,14 +173,13 @@ jobs:
           ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
           ssh lightsail 'wget https://github.com/mikefarah/yq/releases/download/v4.31.1/yq_linux_amd64 -O /home/ubuntu/.local/bin/yq';
     - run:
-        name: Install Tator
-        command: |
-          ssh lightsail 'export DOMAIN_ALIAS='"'localhost'"';cd tator && ./install.sh';
-    - run:
         name: Set public IP as primary domain
         command: |
-          ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export PRIVATE_IP='"'$(cat ~/private_ip_address.txt)'"';sed -i "s/$PRIVATE_IP/$PUBLIC_IP/g" tator/helm/tator/values.yaml';
-          ssh lightsail 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin; cd tator && make cluster-update';
+          ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export PRIVATE_IP='"'$(cat ~/private_ip_address.txt)'"';sed -i "s/localhost/$PUBLIC_IP/g" tator/.env';
+    - run:
+        name: Install Tator
+        command: |
+          ssh lightsail 'cd tator && make compose';
     - run:
         name: Copy whl
         command: scp -r lightsail:/tmp/tator_py_whl /tmp
