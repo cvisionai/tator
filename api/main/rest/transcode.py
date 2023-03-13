@@ -8,9 +8,6 @@ from rest_framework.authtoken.models import Token
 from django.http import Http404
 import requests
 
-from ..kube import TatorTranscode
-from ..kube import get_jobs
-from ..kube import cancel_jobs
 from ..store import get_tator_store
 from ..cache import TatorCache
 from ..models import Project
