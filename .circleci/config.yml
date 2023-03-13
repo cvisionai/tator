@@ -245,7 +245,7 @@ jobs:
           scp ~/token.txt lightsail:~
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do pytest tatorpy_test --ignore test/test_algorithm_launch.py --ignore test/test_job_cancel.py --host=http://$PUBLIC_IP --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
     - run:
         name: Check db-worker logs for clean running
         command: ssh lightsail 'cd tator && make check-clean-db-logs'

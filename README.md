@@ -18,16 +18,15 @@ Visit https://tator.io to learn more.
 Quick start
 ===========
 
-From a node with a fresh [Ubuntu 20.04 LTS](https://releases.ubuntu.com/20.04/) install and a [reserved IP address](https://lifehacker.com/how-to-set-up-dhcp-reservations-and-never-check-an-ip-5822605):
+Install [Docker](https://www.docker.com/), then:
+
 ```bash
 git clone --recurse-submodules -b stable https://github.com/cvisionai/tator
 cd tator
-./install.sh
+make tator
 ```
 
--or-
-
-Start a [free trial of Tator Cloud](https://tator.io/docs/introduction-to-tator/free-trial-with-tator-cloud), a cloud-based deployment of Tator maintained by the authors of Tator. 
+Then open your browser on the same node to `http://localhost:8080`.
 
 Documentation
 =============
@@ -43,10 +42,10 @@ Blog
 
 Visit [our blog](https://www.tator.io/blog/) for upcoming features, development roadmap, news and announcements.
 
-Tator Enterprise Subscription
-=============================
+Tator Enterprise
+================
 
-Tator is available under a commercial license with direct-to-engineer technical support via a [Tator enterprise subscription](https://tator.io/product).
+This repository has everything you need to run Tator on a single node. [Tator Enterprise](https://tator.io/product) can run on many nodes, autoscales with Kubernetes and Argo, integrates with third-party authentication, and more. Technical support is included with a Tator Enterprise subscription.
 
 Screenshots
 ===========

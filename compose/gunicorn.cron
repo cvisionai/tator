@@ -1,4 +1,4 @@
-10 * * * * cd /tator_online && python3 manage.py updateProjects > /proc/1/fd/1 2>/proc/1/fd/2
+10 * * * * cd /tator_online && python3 manage.py updateprojects > /proc/1/fd/1 2>/proc/1/fd/2
 20 * * * * cd /tator_online && python3 manage.py prunetemporaryfiles > /proc/1/fd/1 2>/proc/1/fd/2
 30 0 * * * cd /tator_online && python3 manage.py prunemedia > /proc/1/fd/1 2>/proc/1/fd/2
 30 1 * * * cd /tator_online && python3 manage.py prunelocalizations > /proc/1/fd/1 2>/proc/1/fd/2

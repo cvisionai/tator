@@ -21,6 +21,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./compose/nginx.conf.template:/etc/nginx/templates/default.conf.template
+      - ${DATA_DIR}/media:/media
 
   minio:
     image: minio/minio:RELEASE.2022-06-02T16-16-26Z
@@ -146,6 +147,9 @@ services:
     depends_on:
       - redis
     restart: always
+    environment:
+      - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
+      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     env_file:
       - ./.env
     networks:
@@ -202,6 +206,8 @@ services:
       - ./.env
     networks:
       - private
+    volumes:
+      - ${DATA_DIR}/migrations:/tator_online/main/migrations
     entrypoint: >
       /bin/sh -c "
       python3 manage.py makemigrations main;
@@ -235,6 +241,7 @@ services:
       - ${DATA_DIR}/backup:/backup
     entrypoint: >
       /bin/sh -c "
+      env >> /etc/environment;
       crontab /etc/cron.d/crontab;
       cron -f;
       "
@@ -255,6 +262,7 @@ services:
       - ./compose/postgis.cron:/etc/cron.d/crontab
     entrypoint: >
       /bin/sh -c "
+      env >> /etc/environment;
       crontab /etc/cron.d/crontab;
       cron -f;
       "
