@@ -167,7 +167,7 @@ jobs:
     - run:
         name: Install Tator
         command: |
-          ssh lightsail 'cd tator && make compose';
+          ssh lightsail 'cd tator && make tator';
     - run:
         name: Copy whl
         command: scp -r lightsail:/tmp/tator_py_whl /tmp
