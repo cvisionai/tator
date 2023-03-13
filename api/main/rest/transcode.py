@@ -31,7 +31,11 @@ from ._job import workflow_to_job
 logger = logging.getLogger(__name__)
 
 SCHEME = 'https://' if os.getenv('REQUIRE_HTTPS') == 'TRUE' else 'http://'
-HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
+
+# Compose has to use internal host
+HOST = os.getenv('GUNICORN_HOST')
+if HOST is None:
+		HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
 ENDPOINT = f"{os.getenv('TRANSCODE_HOST')}/jobs"
 
 def _filter_jobs_by_media(project, params, job_list):

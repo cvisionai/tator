@@ -2,7 +2,7 @@
 
 include .env
 
-CONTAINERS=ui postgis redis gunicorn nginx minio
+CONTAINERS=ui postgis redis gunicorn nginx minio transcode transcode-worker db-worker image-worker gunicorn-cron postgis-cron
 
 OPERATIONS=reset logs bash
 
@@ -169,7 +169,7 @@ cluster-uninstall:
 
 .PHONY: clean
 clean:
-	docker compose down
+	GIT_VERSION=$(GIT_VERSION) docker compose down
 
 clean-tokens:
 	rm -fr .token

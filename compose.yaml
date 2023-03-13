@@ -25,7 +25,7 @@ services:
   minio:
     image: minio/minio:RELEASE.2022-06-02T16-16-26Z
     container_name: minio
-    entrypoint: server /data
+    command: server /data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
@@ -81,8 +81,10 @@ services:
       - postgis
       - redis
       - minio
+    restart: always
     environment:
       - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
+      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     env_file:
       - ./.env
     networks:
@@ -97,8 +99,11 @@ services:
     image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
     container_name: transcode
     entrypoint: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+    env_file:
+      - ./.env
     depends_on:
       - redis
+    restart: always
     networks:
       - private
 
@@ -106,8 +111,11 @@ services:
     image: ${REGISTRY}/tator_client:${GIT_VERSION}
     container_name: transcode-worker
     entrypoint: rq worker --url redis://redis transcodes
+    env_file:
+      - ./.env
     depends_on:
       - redis
+    restart: always
     networks:
       - private
 
@@ -115,6 +123,7 @@ services:
     image: ${REGISTRY}/tator_ui:${GIT_VERSION}
     container_name: ui
     entrypoint: npm run serve -- --backend=''
+    restart: always
     networks:
       - private
 
@@ -124,6 +133,7 @@ services:
     entrypoint: python3 /tator_online/main/worker.py db_jobs
     depends_on:
       - redis
+    restart: always
     env_file:
       - ./.env
     networks:
@@ -135,6 +145,7 @@ services:
     entrypoint: python3 /tator_online/main/worker.py image_jobs
     depends_on:
       - redis
+    restart: always
     env_file:
       - ./.env
     networks:
@@ -149,7 +160,6 @@ services:
     container_name: create-bucket
     depends_on:
       - minio
-    restart: on-failure
     env_file:
       - ./.env
     networks:
@@ -168,7 +178,6 @@ services:
     container_name: create-extensions
     depends_on:
       - postgis
-    restart: on-failure
     env_file:
       - ./.env
     environment:
@@ -189,7 +198,6 @@ services:
     container_name: migrate
     depends_on:
       - gunicorn
-    restart: on-failure
     env_file:
       - ./.env
     networks:
@@ -211,6 +219,7 @@ services:
     container_name: gunicorn-cron
     depends_on:
       - gunicorn
+    restart: always
     env_file:
       - ./.env
     networks:
@@ -219,7 +228,7 @@ services:
       - ./compose/gunicorn.cron:/etc/cron.d/crontab
     entrypoint: >
       /bin/sh -c "
-      cronttab /etc/cron.d/crontab;
+      crontab /etc/cron.d/crontab;
       cron -f;
       "
  
@@ -228,6 +237,7 @@ services:
     container_name: postgis-cron
     depends_on:
       - postgis
+    restart: always
     env_file:
       - ./.env
     environment:
@@ -238,7 +248,7 @@ services:
       - ./compose/postgis.cron:/etc/cron.d/crontab
     entrypoint: >
       /bin/sh -c "
-      cronttab /etc/cron.d/crontab;
+      crontab /etc/cron.d/crontab;
       cron -f;
       "
 
