@@ -65,7 +65,7 @@ help:
 
 # Create backup with pg_dump
 backup:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
+	docker exec -it postgis pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
 
 ecr_update:
 	$(eval LOGIN := $(shell aws ecr get-login --no-include-email))
@@ -76,27 +76,21 @@ ecr_update:
 # Example:
 #   make restore SQL_FILE=backup_to_use.sql DB_NAME=backup_db_name
 restore: check_restore
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- createdb -U django $(DB_NAME) 
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
+	docker exec -it postgis createdb -U django $(DB_NAME) 
+	docker exec -it postgis pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
 
 .PHONY: check_restore
 check_restore:
 	@echo -n "This will create a backup database and restore. Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-init-logs:
-	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
-
 dump-logs:
 	mkdir -p /tmp/logs
-	kubectl logs $$(kubectl get pod -l "app=db-worker" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/db-worker-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=image-worker" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/image-worker-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/gunicorn-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=nginx" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/nginx-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/postgis-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/ui-logs.txt
+	for name in $(CONTAINERS); do
+		GIT_VERSION=$(GIT_VERSION) docker compose logs $$name > /tmp/logs/$$name-logs.txt
+	done
 
 ui_bash:
-	kubectl exec -it $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh
+	docker exec -it ui /bin/sh
 
 # Top-level rule to catch user action + podname and whether it is present
 # Sets pod name to the command to execute on each pod.
@@ -115,7 +109,7 @@ _bash:
 	docker exec -it $(podname) /bin/bash
 
 _logs:
-	docker compose logs $(podname)
+	GIT_VERSION=$(GIT_VERSION) docker compose logs $(podname)
 
 django-shell:
 	docker exec -it gunicorn python3 manage.py shell
@@ -128,7 +122,7 @@ psql-shell:
 #####################################
 .PHONY: status
 status:
-	kubectl get --watch pods -o wide --sort-by="{.spec.nodeName}"
+	GIT_VERSION=$(GIT_VERSION) docker compose ps
 
 .ONESHELL:
 
@@ -137,35 +131,29 @@ check-migration:
 	scripts/check-migration.sh $(pwd)
 
 .PHONY: compose
-compose: check-migration api/main/version.py clean_schema
+compose: api/main/version.py clean_schema
 	docker network inspect public >/dev/null 2>&1 || \
     docker network create public
-	GIT_VERSION="$(GIT_VERSION)" docker compose up -d postgis --wait
-	GIT_VERSION="$(GIT_VERSION)" docker compose up -d minio --wait
-	GIT_VERSION="$(GIT_VERSION)" docker compose up -d redis --wait
-	GIT_VERSION="$(GIT_VERSION)" docker compose run --rm create-extensions
-	GIT_VERSION="$(GIT_VERSION)" docker compose up
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d postgis --wait
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d minio --wait
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d redis --wait
+	GIT_VERSION=$(GIT_VERSION) docker compose run --rm create-extensions
+	GIT_VERSION=$(GIT_VERSION) docker compose up
 
 cluster: api/main/version.py clean_schema
-	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-deps cluster-install
-
-cluster-deps:
-	helm dependency update helm/tator
+	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-install
 
 cluster-install:
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
-	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	$(MAKE) compose
 
 cluster-upgrade: check-migration api/main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
-	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	$(MAKE) cluster-update
 
 cluster-update: 
-	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	GIT_VERSION=$(GIT_VERSION) docker compose up --force-recreate
 
 cluster-uninstall:
-	kubectl delete apiservice v1beta1.metrics.k8s.io
-	kubectl delete all --namespace kubernetes-dashboard --all
-	helm uninstall tator
+	$(MAKE) clean
 
 .PHONY: clean
 clean:
@@ -173,9 +161,6 @@ clean:
 
 clean-tokens:
 	rm -fr .token
-
-dashboard-token:
-	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 # GIT-based diff for image generation
 # Available for tator-image, change dep to ".token/tator_online_$(GIT_VERSION)"
@@ -293,31 +278,24 @@ migrate:
 
 .PHONY: testinit
 testinit:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+	docker exec -it postgis psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
+	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
+	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
+	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
+	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
 	
 .PHONY: test
 test:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'bash scripts/addExtensionsToInit.sh'
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
+	docker exec -it gunicorn sh -c 'bash scripts/addExtensionsToInit.sh'
+	docker exec -it gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
 
 .PHONY: cache_clear
 cache-clear:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
-
-.PHONY: cleanup-evicted
-cleanup-evicted:
-	kubectl get pods | grep Evicted | awk '{print $$1}' | xargs kubectl delete pod
+	docker exec -it gunicorn python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
 
 .PHONY: images
 images: ${IMAGES}
 	@echo "Built ${IMAGES}"
-
-lazyPush:
-	rsync -a -e ssh --exclude api/main/migrations --exclude api/main/__pycache__ main adamant:/home/brian/working/tator_online
 
 $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
@@ -414,11 +392,11 @@ pytest:
 
 .PHONY: letsencrypt
 letsencrypt:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/letsencrypt.sh 
+	docker exec -it gunicorn env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/letsencrypt.sh 
 
 .PHONY: selfsigned
 selfsigned:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/selfsigned.sh
+	docker exec -it gunicorn env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/selfsigned.sh
 
 .PHONY: markdown-docs
 markdown-docs:
@@ -466,19 +444,19 @@ endif
 # make announce FILE=blah.md USER_ID=1
 .PHONY: announce
 announce:
-	kubectl cp $(FILE) $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///'):/tmp/announce.md
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- $(ANNOUNCE_CMD) 
+	docker cp $(FILE) gunicorn:/tmp/announce.md
+	docker exec gunicorn $(ANNOUNCE_CMD) 
 
 .PHONY: rq-info
 rq-info:
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq info
+	docker exec gunicorn rq info
 
 .PHONY: rq-empty
 rq-empty:
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty async_jobs
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty db_jobs
+	docker exec gunicorn rq empty async_jobs
+	docker exec gunicorn rq empty db_jobs
 
 .PHONY: check-clean-db-logs
 check-clean-db-logs:
-	scripts/check_for_errors.sh $$(kubectl get pod -l "app=db-worker" -o name | head -n 1 | sed 's/pod\///')
+	scripts/check_for_errors.sh db-worker
 
