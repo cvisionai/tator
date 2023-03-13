@@ -5,7 +5,7 @@ client_max_body_size 0;
 server {
   listen ${PORT};
 
-  server_name ${MAIN_HOST};
+  server_name ${MAIN_HOST} localhost 127.0.0.1;
 
   access_log /var/log/nginx/access.log;
   error_log /var/log/nginx/error.log;
