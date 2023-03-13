@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for name in "gunicorn" "gunicorn-worker"; do
+for name in "gunicorn" "transcode" "gunicorn-cron"; do
     echo "Updating ${name}"
     docker cp api/main ${name}:/tator_online
     docker cp api/tator_online ${name}:/tator_online

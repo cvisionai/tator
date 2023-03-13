@@ -35,7 +35,7 @@ SCHEME = 'https://' if os.getenv('REQUIRE_HTTPS') == 'TRUE' else 'http://'
 # Compose has to use internal host
 HOST = os.getenv('GUNICORN_HOST')
 if HOST is None:
-		HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
+    HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
 ENDPOINT = f"{os.getenv('TRANSCODE_HOST')}/jobs"
 
 def _filter_jobs_by_media(project, params, job_list):
@@ -153,6 +153,7 @@ class TranscodeListAPI(BaseListView):
         elif entity_type != -1:
             media_obj, _ = _create_media(project, params, self.request.user)
             media_id = media_obj.id
+        logger.info(f"HOST: {HOST}")
         response = requests.post(ENDPOINT, json=[{
             'url': url,
             'size': upload_size,

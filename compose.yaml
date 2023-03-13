@@ -76,7 +76,7 @@ services:
   gunicorn:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: gunicorn
-    entrypoint: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :8000 tator_online.wsgi
+    entrypoint: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :80 tator_online.wsgi
     depends_on:
       - postgis
       - redis
@@ -222,10 +222,17 @@ services:
     restart: always
     env_file:
       - ./.env
+    environment:
+      - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
+      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     networks:
       - private
     volumes:
       - ./compose/gunicorn.cron:/etc/cron.d/crontab
+      - ${DATA_DIR}/static:/static
+      - ${DATA_DIR}/migrations:/tator_online/main/migrations
+      - ${DATA_DIR}/media:/media
+      - ${DATA_DIR}/backup:/backup
     entrypoint: >
       /bin/sh -c "
       crontab /etc/cron.d/crontab;
