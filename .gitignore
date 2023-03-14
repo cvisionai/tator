@@ -6,7 +6,6 @@ main/migrations/*
 .sass-cache/*
 doc/tator-r/*
 ui/node_modules/*
-ui/package-lock.json
 ui/dist/*
 ui/**/index.js
 ui/server/static/tator.js
