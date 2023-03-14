@@ -67,11 +67,6 @@ help:
 backup:
 	docker exec -it postgis pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
 
-ecr_update:
-	$(eval LOGIN := $(shell aws ecr get-login --no-include-email))
-	$(eval KEY := $(shell echo $(LOGIN) | python3 -c 'import sys; print(sys.stdin.read().split()[5])'))
-	$(LOGIN)
-
 # Restore database from specified backup (base filename only)
 # Example:
 #   make restore SQL_FILE=backup_to_use.sql DB_NAME=backup_db_name
@@ -222,11 +217,12 @@ client-amd64: $(TATOR_PY_WHEEL_FILE)
 
 .PHONY: client-aarch64
 client-aarch64: $(TATOR_PY_WHEEL_FILE)
-		DOCKER_BUILDKIT=1 docker build --platform linux/aarch64 --network host -t $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
+	echo "Skipping aarch64"
+	#DOCKER_BUILDKIT=1 docker build --no-cache --platform linux/aarch64 --network host -t $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: experimental_docker client-vpl client-amd64 client-aarch64
+client-image: experimental_docker client-vpl client-amd64 #client-aarch64
 	docker tag $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) $(REGISTRY)/tator_client:$(GIT_VERSION)
 	docker tag $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
 
