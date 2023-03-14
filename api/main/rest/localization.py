@@ -253,7 +253,7 @@ class LocalizationListAPI(BaseListView):
         """
         return self._get(params)
 
-class LocalizationDetailAPI(BaseDetailView):
+class LocalizationDetailBaseAPI(BaseDetailView):
     """ Interact with single localization.
 
         Localizations are shape annotations drawn on a video or image. They are currently of type
@@ -265,15 +265,12 @@ class LocalizationDetailAPI(BaseDetailView):
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
 
-    def _get(self, params):
-        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+    def get_qs(self, params, qs):
         if not qs.exists():
             raise Http404
         return qs.values(*LOCALIZATION_PROPERTIES)[0]
 
-    @transaction.atomic
-    def _patch(self, params):
-        obj = Localization.objects.get(pk=params['id'], deleted=False)
+    def patch_obj(self, params, obj):
         model_dict = obj.model_dict
 
         # Patch common attributes.
@@ -365,8 +362,7 @@ class LocalizationDetailAPI(BaseDetailView):
 
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
-    def _delete(self, params):
-        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+    def delete_qs(self, params, qs):
         if not qs.exists():
             raise Http404
         obj = qs[0]
@@ -382,3 +378,27 @@ class LocalizationDetailAPI(BaseDetailView):
     def get_queryset(self):
         return Localization.objects.all()
 
+class LocalizationDetailAPI(LocalizationDetailBaseAPI):
+    """ Interact with single localization.
+
+        Localizations are shape annotations drawn on a video or image. They are currently of type
+        box, line, or dot. Each shape has slightly different data members. Localizations are
+        a type of entity in Tator, meaning they can be described by user defined attributes.
+    """
+    schema = LocalizationDetailSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
+
+    def _get(self, params):
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        obj = Localization.objects.get(pk=params['id'], deleted=False)
+        return self.patch_obj(params, obj)
+
+    def _delete(self, params):
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        return self.delete_qs(params, qs)
