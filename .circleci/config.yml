@@ -170,7 +170,7 @@ jobs:
           ssh lightsail 'cd tator && make tator';
     - run:
         name: Copy whl
-        command: scp -r lightsail:/tmp/tator_py_whl /tmp
+        command: scp -r lightsail:/home/ubuntu/tator/scripts/packages/tator-py/dist /tmp/tator_py_whl
     - store_artifacts:
         path: /tmp/tator_py_whl
         destination: tator_py_whl
