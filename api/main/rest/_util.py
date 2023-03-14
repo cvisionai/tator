@@ -368,7 +368,7 @@ def _use_internal_host(request, url):
             worker_ip = socket.gethostbyname('transcode-worker')
             if request.META['REMOTE_ADDR'] == worker_ip:
                 external_host = os.getenv("DEFAULT_LIVE_EXTERNAL_HOST")
-                gunicorn_host = os.getenv("GUNICORN_HOST")
-                url = url.replace(external_host, gunicorn_host)
+                minio_host = os.getenv("DEFAULT_LIVE_ENDPOINT_URL")
+                url = url.replace(external_host, minio_host)
     return url
 
