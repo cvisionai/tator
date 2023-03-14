@@ -35,7 +35,7 @@
     "hls.js": "1.2.3",
     "isomorphic-fetch": "3.0.0",
     "js-yaml": "4.1.0",
-    "jszip": "3.7.1",
+    "jszip": "^3.8.0",
     "marked": "4.0.12",
     "mp4box": "0.4.9",
     "nodemon": "^2.0.20",
