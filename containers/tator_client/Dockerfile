@@ -27,6 +27,6 @@ COPY scripts/transcoder /scripts
 COPY scripts/packages/tator-py/dist/*.whl /tmp
 
 # Build tator-py
-RUN pip3 install tmp/*.whl
+RUN pip3 install /tmp/*.whl
 
 WORKDIR /scripts
