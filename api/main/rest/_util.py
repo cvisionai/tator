@@ -362,22 +362,13 @@ def _use_internal_host(request, url):
     hostname = urlparse(url).hostname
     is_localhost = hostname in ['localhost', '127.0.0.1']
     is_compose = os.getenv("COMPOSE_DEPLOY")
-    logger.info(f"IS LOCALHOST: {is_localhost}")
-    logger.info(f"IS COMPOSE: {is_compose}")
     if is_compose is not None and is_localhost:
         is_compose = is_compose.lower() == 'true'
-        logger.info(f"IS COMPOSE: {is_compose}")
         if is_compose:
             worker_ip = socket.gethostbyname('transcode-worker')
-            logger.info(f"WORKER_IP: {worker_ip}")
-            logger.info(f"REMOTE_ADDR: {request.META['REMOTE_ADDR']}")
-            #logger.info(f"X_FORWARDED_FOR: {request.META['HTTP_X_FORWARDED_FOR']}")
             if request.META['REMOTE_ADDR'] == worker_ip:
                 external_host = os.getenv("DEFAULT_LIVE_EXTERNAL_HOST")
                 gunicorn_host = os.getenv("GUNICORN_HOST")
-                logger.info(f"EXTERNAL_HOST: {external_host}")
-                logger.info(f"GUNICORN_HOST: {gunicorn_host}")
                 url = url.replace(external_host, gunicorn_host)
-                logger.info(f"URL: {url}")
     return url
 

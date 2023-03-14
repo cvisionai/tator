@@ -104,6 +104,8 @@ services:
     depends_on:
       - redis
     restart: always
+    environment:
+      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     networks:
       - private
 
