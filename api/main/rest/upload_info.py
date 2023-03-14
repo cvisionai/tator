@@ -14,6 +14,7 @@ from ..store import get_tator_store
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+from ._util import _use_internal_host
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,10 @@ class UploadInfoAPI(BaseDetailView):
                 ))
                 for url in urls
             ]
+
+        # For compose deploys, use internal url.
+        for idx, url in enumerate(urls):
+            urls[idx] = _use_internal_host(self.request, url)
 
         return {'urls': urls, 'key': key, 'upload_id': upload_id}
 

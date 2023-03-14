@@ -19,7 +19,6 @@ services:
       - private
       - public
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./compose/nginx.conf.template:/etc/nginx/templates/default.conf.template
       - ${DATA_DIR}/media:/media
 

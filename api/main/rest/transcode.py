@@ -29,10 +29,12 @@ logger = logging.getLogger(__name__)
 
 SCHEME = 'https://' if os.getenv('REQUIRE_HTTPS') == 'TRUE' else 'http://'
 
-# Compose has to use internal host
-HOST = os.getenv('GUNICORN_HOST')
-if HOST is None:
-    HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
+HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
+GUNICORN_HOST = os.getenv('GUNICORN_HOST')
+COMPOSE_DEPLOY = os.getenv('COMPOSE_DEPLOY')
+if GUNICORN_HOST is not None and COMPOSE_DEPLOY is not None:
+    if COMPOSE_DEPLOY.lower() == 'true':
+        HOST = GUNICORN_HOST
 ENDPOINT = f"{os.getenv('TRANSCODE_HOST')}/jobs"
 
 def _filter_jobs_by_media(project, params, job_list):

@@ -3,6 +3,8 @@ from itertools import islice
 import logging
 from urllib.parse import urlparse
 import uuid
+import os
+import socket
 
 from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
@@ -351,3 +353,22 @@ def construct_elemental_id_from_parent(parent, requested_uuid=None):
         return parent.elemental_id
     else:
         return None
+
+def _use_internal_host(request, url):
+    """ Checks if this requests comes from an internal compose
+        container, if so replaces localhost hosts with internal
+        host.
+    """
+    hostname = urlparse(url).hostname
+    is_localhost = hostname in ['localhost', '127.0.0.1']
+    is_compose = os.getenv("COMPOSE_DEPLOY")
+    if is_compose is not None and is_locahost:
+        is_compose = is_compose.lower() == 'true'
+        if is_compose:
+            worker_ip = socket.gethostbyname('transcode-worker')
+            if self.request.META['REMOTE_ADDR'] == worker_ip:
+                external_host = os.getenv("DEFAULT_LIVE_EXTERNAL_HOST")
+                gunicorn_host = os.getenv("GUNICORN_HOST")
+                url = url.replace(external_host, gunicorn_host)
+    return url
+

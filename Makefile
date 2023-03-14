@@ -109,7 +109,7 @@ _bash:
 	docker exec -it $(podname) /bin/bash
 
 _logs:
-	GIT_VERSION=$(GIT_VERSION) docker compose logs $(podname)
+	GIT_VERSION=$(GIT_VERSION) docker compose logs -f $(podname)
 
 django-shell:
 	docker exec -it gunicorn python3 manage.py shell
