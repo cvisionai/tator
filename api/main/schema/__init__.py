@@ -47,6 +47,7 @@ from .leaf_type import LeafTypeListSchema
 from .leaf_type import LeafTypeDetailSchema
 from .localization import LocalizationListSchema
 from .localization import LocalizationDetailSchema
+from .localization import LocalizationByElementalIdSchema
 from .localization_count import LocalizationCountSchema
 from .localization_graphic import LocalizationGraphicSchema
 from .localization_type import LocalizationTypeListSchema

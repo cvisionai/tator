@@ -56,6 +56,12 @@ class ProjectPermissionBase(BasePermission):
                 project = get_object_or_404(Project, pk=cache[0]['project'])
             else:
                 raise Http404
+        elif 'elemental_id' in view.kwargs:
+            elemental_id = view.kwargs['elemental_id']
+            obj = get_object_or_404(view.get_queryset(),elemental_id=elemental_id)
+            project = self._project_from_object(obj)
+            if project is None:
+                raise Http404
         else:
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)

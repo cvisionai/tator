@@ -1,6 +1,6 @@
 import logging
 import datetime
-from django.db.models import Subquery
+from django.db.models import Subquery,Max
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
@@ -15,7 +15,7 @@ from ..models import User
 from ..models import Project
 from ..models import Version
 from ..schema import LocalizationListSchema
-from ..schema import LocalizationDetailSchema
+from ..schema import LocalizationDetailSchema, LocalizationByElementalIdSchema
 from ..schema import parse
 from ..schema.components import localization as localization_schema
 
@@ -270,7 +270,10 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             raise Http404
         return qs.values(*LOCALIZATION_PROPERTIES)[0]
 
-    def patch_obj(self, params, obj):
+    def patch_qs(self, params, qs):
+        if not qs.exists():
+            raise Http404
+        obj = qs[0]
         model_dict = obj.model_dict
 
         # Patch common attributes.
@@ -396,9 +399,52 @@ class LocalizationDetailAPI(LocalizationDetailBaseAPI):
 
     @transaction.atomic
     def _patch(self, params):
-        obj = Localization.objects.get(pk=params['id'], deleted=False)
-        return self.patch_obj(params, obj)
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        return self.patch_qs(params, qs)
 
     def _delete(self, params):
         qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        return self.delete_qs(params, qs)
+
+class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
+    """ Interact with single localization.
+
+        Localizations are shape annotations drawn on a video or image. They are currently of type
+        box, line, or dot. Each shape has slightly different data members. Localizations are
+        a type of entity in Tator, meaning they can be described by user defined attributes.
+    """
+    schema = LocalizationByElementalIdSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = 'elemental_id'
+    http_method_names = ['get', 'patch', 'delete']
+
+    def calculate_queryset(self, params):
+        include_deleted = False
+        if params.get('prune', None) == 1:
+            include_deleted = True
+        qs = Localization.objects.filter(elemental_id=params['elemental_id'], 
+                                         version=params['version'])
+        if include_deleted is False:
+            qs = qs.filter(deleted=False)
+
+        # Get the latest mark or the one that is supplied by the user
+        mark_version = params.get('mark', None)
+        if mark_version:
+            qs = qs.filter(mark=mark_version)
+        else:
+            latest_mark = qs.aggregate(value=Max('mark'))
+            qs.filter(mark=latest_mark['value'])
+        return qs
+
+    def _get(self, params):
+        qs = self.calculate_queryset(params)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        qs = self.calculate_queryset(params)
+        return self.patch_qs(params, qs)
+
+    def _delete(self, params):
+        qs = self.calculate_queryset(params)
         return self.delete_qs(params, qs)

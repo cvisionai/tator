@@ -44,6 +44,7 @@ from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
 from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
+from .localization import LocalizationDetailByElementalIdAPI
 from .localization_count import LocalizationCountAPI
 from .localization_type import LocalizationTypeListAPI
 from .localization_type import LocalizationTypeDetailAPI

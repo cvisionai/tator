@@ -240,6 +240,10 @@ urlpatterns += [
         LocalizationDetailAPI.as_view(),
     ),
     path(
+        'rest/Localization/<int:version>/<str:elemental_id>',
+        LocalizationDetailByElementalIdAPI.as_view(),
+    ),
+    path(
         'rest/LocalizationCount/<int:project>',
         LocalizationCountAPI.as_view(),
     ),
