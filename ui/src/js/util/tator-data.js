@@ -679,7 +679,7 @@ export class TatorData {
      // Media Filters
     var finalMediaFilters = [];
     for (const filter of mediaFilterData) {
-      if (filter.field == "_section")
+      if (filter.field == "$section")
       {
         section = field.value;
       }

@@ -849,7 +849,7 @@ export class MediaSection extends TatorElement {
       var finalMetadataFilters = [];
       this._filterSection = null;
       for (var filter of this._filterConditions) {
-        if (filter.field == "_section")
+        if (filter.field == "$section")
         {
           this._filterSection = filter.value;
           continue;
