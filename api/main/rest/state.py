@@ -592,7 +592,7 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
             qs = qs.filter(mark=mark_version)
         else:
             latest_mark = qs.aggregate(value=Max('mark'))
-            qs.filter(mark=latest_mark['value'])
+            qs = qs.filter(mark=latest_mark['value'])
         return qs
 
     def _get(self, params):

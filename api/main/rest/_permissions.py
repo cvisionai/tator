@@ -58,7 +58,10 @@ class ProjectPermissionBase(BasePermission):
                 raise Http404
         elif 'elemental_id' in view.kwargs:
             elemental_id = view.kwargs['elemental_id']
-            obj = get_object_or_404(view.get_queryset(),elemental_id=elemental_id)
+            obj = view.get_queryset().filter(elemental_id=elemental_id)
+            if not obj.exists():
+                raise Http404
+            obj = obj[0]
             project = self._project_from_object(obj)
             if project is None:
                 raise Http404
