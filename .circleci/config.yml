@@ -163,7 +163,7 @@ jobs:
     - run:
         name: Set public IP as primary domain
         command: |
-          ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export PRIVATE_IP='"'$(cat ~/private_ip_address.txt)'"';sed -i "s/localhost/$PUBLIC_IP/g" tator/.env';
+          ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export PRIVATE_IP='"'$(cat ~/private_ip_address.txt)'"';sed -i "s/localhost/$PUBLIC_IP/g" tator/.env;sed -i "s/8080/80/g" tator/.env;';
     - run:
         name: Install Tator
         command: |
@@ -225,7 +225,8 @@ jobs:
         at: ~/
     - run:
         name: Copy test directories
-        command: ssh lightsail 'cp -r ~/tator/scripts/packages/tator-py/test ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/examples ~/tator/.';
+        command: |
+          ssh lightsail 'rm -rf ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/test ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/examples ~/tator/.';
     - run:
         name: Get API token
         command: |
