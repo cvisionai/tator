@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_admin_json_editor',
     'django_ltree',
+    'pgtrigger'
 ]
 
 GRAPH_MODELS = {
