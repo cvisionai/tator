@@ -1551,6 +1551,8 @@ class Localization(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
+    latest_mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the latest revision number of the element  """
 
 @receiver(pre_delete, sender=Localization)
 def localization_delete(sender, instance, **kwargs):
@@ -1597,6 +1599,8 @@ class State(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
+    latest_mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the latest revision number of the element  """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
