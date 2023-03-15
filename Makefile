@@ -133,6 +133,7 @@ tator: api/main/version.py clean_schema
 	GIT_VERSION=$(GIT_VERSION) docker compose up -d minio --wait
 	GIT_VERSION=$(GIT_VERSION) docker compose up -d redis --wait
 	GIT_VERSION=$(GIT_VERSION) docker compose run --rm create-extensions
+	GIT_VERSION=$(GIT_VERSION) docker compose run --rm migrate
 	GIT_VERSION=$(GIT_VERSION) docker compose up -d
 
 cluster: api/main/version.py clean_schema
