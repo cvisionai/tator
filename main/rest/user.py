@@ -2,6 +2,7 @@ from uuid import uuid1
 
 from django.db import transaction
 from django.conf import settings
+import pyopt
 from rest_framework.exceptions import ValidationError
 
 from ..models import User
@@ -119,8 +120,12 @@ class UserListAPI(BaseListView):
                 Affiliation.objects.create(organization=invite.organization,
                                            permission=invite.permission,
                                            user=user)
-        return {'message': f"User {username} created!",
-                'id': user.id}
+
+        # TODO add MFA_ENABLED environment variable
+        # if settings.MFA_ENABLED:
+        uri = pyopt.totp.TOTP(user.mfa_hash).provisioning_url(user.email, issuer_name="Tator")
+        qrcode_uri = f"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl={uri}"
+        return {'message': f"User {username} created!", 'id': user.id, "qrcode_uri": qrcode_uri}
 
 class UserDetailAPI(BaseDetailView):
     """ Interact with an individual user.

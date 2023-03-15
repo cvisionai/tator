@@ -123,6 +123,15 @@ class UserListSchema(AutoSchema):
                     'items': {'$ref': '#/components/schemas/User'},
                 }}},
             }
+        # TODO add the correct response type
+        # elif method == 'POST':
+        #     responses['200'] = {
+        #         'description': 'Successful creation of user.',
+        #         'content': {'application/json': {'schema': {
+        #             'type': 'array',
+        #             'items': {'$ref': '#/components/schemas/User'},
+        #         }}},
+        #     }
         return responses
 
 class UserDetailSchema(AutoSchema):
