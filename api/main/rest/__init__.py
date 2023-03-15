@@ -73,6 +73,7 @@ from .section import SectionListAPI
 from .section import SectionDetailAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
+from .state import StateDetailByElementalIdAPI
 from .state_count import StateCountAPI
 from .state import MergeStatesAPI
 from .state import TrimStateEndAPI

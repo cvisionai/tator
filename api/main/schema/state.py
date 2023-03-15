@@ -445,3 +445,44 @@ class TrimStateEndSchema(AutoSchema):
         if method == 'PATCH':
             responses['200'] = message_schema('update', 'state')
         return responses
+
+class StateByElementalIdSchema(StateDetailSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetStateByElementalId'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateStateByElementalId'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteStateByElementalId'
+        operation['tags'] = ['Tator']
+        return operation
+    def get_path_parameters(self, path, method):
+        return [{
+            'name': 'version',
+            'in': 'path',
+            'required': True,
+            'description': 'Version ID to select object from',
+            'schema': {'type': 'integer'},
+        },
+        {
+            'name': 'elemental_id',
+            'in': 'path',
+            'required': True,
+            'description': 'Elemental ID to fetch',
+            'schema': {'type': 'string'},
+        },
+        ]
+
+    def get_filter_parameters(self, path, method):
+        params = super().get_filter_parameters(path, method)
+        if method == 'GET':
+            params += [{
+                'name': 'mark',
+                'in': 'query',
+                'required': False,
+                'description': 'If given, select this mark of the element on this version. Defaults to LATEST.',
+                'schema': {'type': 'integer',
+                           'minimum': 0},
+            }]
+        return params

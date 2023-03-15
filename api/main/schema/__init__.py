@@ -76,6 +76,7 @@ from .section import SectionListSchema
 from .section import SectionDetailSchema
 from .state import StateListSchema
 from .state import StateDetailSchema
+from .state import StateByElementalIdSchema
 from .state import StateGraphicSchema
 from .state_count import StateCountSchema
 from .state import MergeStatesSchema

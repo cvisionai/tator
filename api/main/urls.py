@@ -372,6 +372,10 @@ urlpatterns += [
         StateDetailAPI.as_view(),
     ),
     path(
+        'rest/State/<int:version>/<str:elemental_id>',
+        StateDetailByElementalIdAPI.as_view(),
+    ),
+    path(
         'rest/MergeStates/<int:id>',
         MergeStatesAPI.as_view(),
     ),

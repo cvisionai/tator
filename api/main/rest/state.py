@@ -3,6 +3,7 @@ import datetime
 import itertools
 
 from django.db import transaction
+from django.db.models import Max
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.http import Http404
@@ -18,7 +19,7 @@ from ..models import Version
 from ..models import User
 from ..models import InterpolationMethods
 from ..schema import StateListSchema
-from ..schema import StateDetailSchema
+from ..schema import StateDetailSchema, StateByElementalIdSchema
 from ..schema import MergeStatesSchema
 from ..schema import TrimStateEndSchema
 from ..schema.components import state as state_schema
@@ -341,7 +342,7 @@ class StateListAPI(BaseListView):
         """
         return self._get(params)
 
-class StateDetailAPI(BaseDetailView):
+class StateDetailBaseAPI(BaseDetailView):
     """ Interact with an individual state.
 
         A state is a description of a collection of other objects. The objects a state describes
@@ -349,13 +350,8 @@ class StateDetailAPI(BaseDetailView):
         to a collection of localizations is often referred to as a track. States are
         a types of entity in Tator, meaning they can be described by user defined attributes.
     """
-    schema = StateDetailSchema()
-    permission_classes = [ProjectEditPermission]
-    lookup_field = 'id'
-    http_method_names = ['get', 'patch', 'delete']
 
-    def _get(self, params):
-        qs = State.objects.filter(pk=params['id'], deleted=False)
+    def get_qs(self, params, qs):
         if not qs.exists():
             raise Http404
         state = qs.values(*STATE_PROPERTIES)[0]
@@ -370,9 +366,10 @@ class StateDetailAPI(BaseDetailView):
                               ['media'])
         return state
 
-    @transaction.atomic
-    def _patch(self, params):
-        obj = State.objects.get(pk=params['id'], deleted=False)
+    def patch_qs(self, params, qs):
+        if not qs.exists():
+            raise Http404
+        obj = qs[0]
         model_dict = obj.model_dict
 
         if 'frame' in params:
@@ -431,8 +428,10 @@ class StateDetailAPI(BaseDetailView):
 
         return {'message': f'State {params["id"]} successfully updated!'}
 
-    def _delete(self, params):
-        state = State.objects.get(pk=params['id'], deleted=False)
+    def delete_qs(self, params, qs):
+        if not qs.exists():
+            raise Http404
+        state = qs[0]
         project = state.project
         delete_localizations = []
         if state.type.delete_child_localizations:
@@ -538,3 +537,73 @@ class TrimStateEndAPI(BaseDetailView):
 
     def get_queryset(self):
         return State.objects.all()
+    
+
+class StateDetailAPI(StateDetailBaseAPI):
+    """ Interact with an individual state.
+
+        A state is a description of a collection of other objects. The objects a state describes
+        could be media (image or video), video frames, or localizations. A state referring
+        to a collection of localizations is often referred to as a track. States are
+        a types of entity in Tator, meaning they can be described by user defined attributes.
+    """
+    schema = StateDetailSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = 'elemental_id'
+    http_method_names = ['get', 'patch', 'delete']
+    def _get(self, params):
+        qs = State.objects.filter(pk=params['id'], deleted=False)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        qs = State.objects.filter(pk=params['id'], deleted=False)
+        return self.patch_qs(params, qs)
+
+    def _delete(self, params):
+        qs = State.objects.filter(pk=params['id'], deleted=False)
+        return self.delete_qs(params, qs)
+
+class StateDetailByElementalIdAPI(StateDetailBaseAPI):
+    """ Interact with an individual state.
+
+        A state is a description of a collection of other objects. The objects a state describes
+        could be media (image or video), video frames, or localizations. A state referring
+        to a collection of localizations is often referred to as a track. States are
+        a types of entity in Tator, meaning they can be described by user defined attributes.
+    """
+    schema = StateByElementalIdSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = 'elemental_id'
+    http_method_names = ['get', 'patch', 'delete']
+
+    def calculate_queryset(self, params):
+        include_deleted = False
+        if params.get('prune', None) == 1:
+            include_deleted = True
+        qs = State.objects.filter(elemental_id=params['elemental_id'], 
+                                  version=params['version'])
+        if include_deleted is False:
+            qs = qs.filter(deleted=False)
+
+        # Get the latest mark or the one that is supplied by the user
+        mark_version = params.get('mark', None)
+        if mark_version:
+            qs = qs.filter(mark=mark_version)
+        else:
+            latest_mark = qs.aggregate(value=Max('mark'))
+            qs.filter(mark=latest_mark['value'])
+        return qs
+
+    def _get(self, params):
+        qs = self.calculate_queryset(params)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        qs = self.calculate_queryset(params)
+        return self.patch_qs(params, qs)
+
+    def _delete(self, params):
+        qs = self.calculate_queryset(params)
+        return self.delete_qs(params, qs)
