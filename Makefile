@@ -267,6 +267,10 @@ webpack: $(TATOR_JS_MODULE_FILE)
 	cd ui && npm install && python3 make_index_files.py && npm run buildDev
 endif
 
+.PHONY: superuser
+superuser:
+	docker exec -it gunicorn python3 manage.py createsuperuser
+
 .PHONY: migrate
 migrate:
 	GIT_VERSION=$(GIT_VERSION) docker compose up -d create-extensions

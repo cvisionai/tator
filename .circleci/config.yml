@@ -169,6 +169,10 @@ jobs:
         command: |
           ssh lightsail 'cd tator && make tator';
     - run:
+        name: Create superuser
+        command: |
+          ssh lightsail 'cd tator && echo "from main.models import User; User.objects.create_superuser('"'admin'"', password='"'admin'"')" | docker exec -i gunicorn python3 manage.py shell';
+    - run:
         name: Copy whl
         command: scp -r lightsail:/home/ubuntu/tator/scripts/packages/tator-py/dist /tmp/tator_py_whl
     - store_artifacts:

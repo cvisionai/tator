@@ -24,9 +24,10 @@ Install [Docker](https://www.docker.com/), then:
 git clone --recurse-submodules -b stable https://github.com/cvisionai/tator
 cd tator
 make tator
+make superuser
 ```
 
-Then open your browser on the same node to `http://localhost:8080`.
+Enter desired superuser credentials, then open your browser on the same node to `http://localhost:8080`.
 
 Documentation
 =============
