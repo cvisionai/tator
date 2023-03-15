@@ -13,6 +13,10 @@ state_properties = {
         'type': 'string',
         'nullable': True,
     },
+    'mark': {
+        'description': 'Revision number of this object on this version branch',
+        'type': 'integer'
+    }
 }
 version_properties = {
     'version': {

@@ -74,6 +74,10 @@ localization_properties = {
         'type': 'string',
         'nullable': True,
     },
+    'mark': {
+        'description': 'Revision number of this object on this version branch',
+        'type': 'integer'
+    }
 }
 
 post_properties = {
