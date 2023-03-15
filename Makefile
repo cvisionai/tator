@@ -175,7 +175,7 @@ dashboard-token:
 # GIT-based diff for image generation
 # Available for tator-image, change dep to ".token/tator_online_$(GIT_VERSION)"
 # Will cause a rebuild on any dirty working tree OR if the image has been built with a token generated
-ifeq ($(shell git diff api | wc -l), 0)
+ifeq ($(shell git diff -- api | wc -l), 0)
 .token/tator_online_$(GIT_VERSION):
 	@echo "No git changes detected"
 	make tator-image
