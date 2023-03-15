@@ -65,14 +65,14 @@ help:
 
 # Create backup with pg_dump
 backup:
-	docker exec -it postgis pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
+	docker exec postgis pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
 
 # Restore database from specified backup (base filename only)
 # Example:
 #   make restore SQL_FILE=backup_to_use.sql DB_NAME=backup_db_name
 restore: check_restore
-	docker exec -it postgis createdb -U django $(DB_NAME) 
-	docker exec -it postgis pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
+	docker exec postgis createdb -U django $(DB_NAME) 
+	docker exec postgis pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
 
 .PHONY: check_restore
 check_restore:
@@ -274,20 +274,20 @@ migrate:
 
 .PHONY: testinit
 testinit:
-	docker exec -it postgis psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
-	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
-	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
-	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
-	docker exec -it postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+	docker exec postgis psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
 	
 .PHONY: test
 test:
-	docker exec -it gunicorn sh -c 'bash scripts/addExtensionsToInit.sh'
-	docker exec -it gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
+	docker exec gunicorn sh -c 'bash scripts/addExtensionsToInit.sh'
+	docker exec gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
 
 .PHONY: cache_clear
 cache-clear:
-	docker exec -it gunicorn python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
+	docker exec gunicorn python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
 
 .PHONY: images
 images: ${IMAGES}
