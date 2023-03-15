@@ -125,22 +125,24 @@ export class RegistrationPage extends TatorElement {
         body: JSON.stringify(body),
       })
       .then(response => {
+        json_response = response.json();
         if (response.status == 400) {
-          return response.json();
+          return json_response;
         } else {
-          return Promise.resolve("success");
+          return Promise.resolve(json_response["qrcode_url"]);
         }
       })
-      .then(data => {
-        if (data == "success") {
+      .then(qrcode_url => {
+        try {
+          new URL(qrcode_url)
           this._modalNotify.init("Registration succeeded!",
-                                 "Press Continue to go to login screen.",
+                                 qrcode_url,
                                  "ok",
                                  "Continue");
           this._modalNotify.addEventListener("close", evt => {
             window.location.replace("/accounts/login");
           });
-        } else {
+        } catch (err) {
           this._modalNotify.init("Registration failed!",
                                  data.message,
                                  "error",

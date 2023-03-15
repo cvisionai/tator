@@ -1,5 +1,6 @@
 import json
 import os
+import pyopt
 import psycopg2
 from typing import List, Generator, Tuple
 
@@ -292,6 +293,7 @@ class User(AbstractUser):
     failed_login_count = IntegerField(default=0)
     confirmation_token = UUIDField(primary_key=False, db_index=True, null=True, blank=True)
     """ Used for email address confirmation for anonymous registrations. """
+    mfa_hash = CharField(max_length=50, null=True, blank=True)
 
     def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
@@ -328,6 +330,9 @@ def user_save(sender, instance, created, **kwargs):
         else:
             TatorCognito().update_attributes(instance)
     if created:
+        # TODO add MFA_ENABLED environment variable to use this
+        # if settings.MFA_ENABLED:
+        instance.mfa_hash = pyopt.random_base32()
         if settings.SAML_ENABLED and not instance.email:
             instance.email = instance.username
             instance.save()
