@@ -3,12 +3,15 @@ from django.views.generic.base import TemplateView
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
+import pyotp
 
 from django.template.response import TemplateResponse
 from rest_framework.authentication import TokenAuthentication
@@ -46,6 +49,33 @@ class LoginRedirect(View):
                 out += f"?next={next_url}"
 
         return redirect(out)
+
+
+class TatorLoginView(LoginView):
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            data = form.cleaned_data
+            username = data.get("username", None)
+            password = data.get("password", None)
+            user = authenticate(username=username, password=password)
+            if user:
+                # TODO set mfa enabled environment variable
+                # if settings.MFA_ENABLED:
+                if user.mfa_hash:
+                    otp = data.get("otp", None)
+                    totp = pyotp.TOTP(user.mfa_hash)
+                    if totp.verify(otp):
+                        return HttpResponse(status=201)
+                    else:
+                        return HttpResponse(status=401)
+                else:
+                    # Don't reject accounts without mfa
+                    return HttpResponse(status=201)
+            else:
+                return HttpResponse(status=401)
+        else:
+            return HttpResponse(status=400)
 
 class RegistrationView(TemplateView):
     template_name = 'registration/registration.html'

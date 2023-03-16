@@ -7,7 +7,6 @@ from django.conf import settings
 from django.contrib.auth.views import PasswordChangeView
 from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
-from django.contrib.auth.views import LoginView
 
 from rest_framework.schemas import get_schema_view
 
@@ -18,6 +17,7 @@ from .views import (
     AccountProfileView,
     AuthAdminView,
     AuthProjectView,
+    TatorLoginView,
     LoginRedirect,
     PasswordResetRequestView,
     PasswordResetView,
@@ -58,10 +58,12 @@ urlpatterns = [
     path("redirect/login/", LoginRedirect.as_view()),
     path(
         "accounts/login/",
-        LoginView.as_view(
+        TatorLoginView.as_view(
             extra_context={
                 "email_enabled": settings.TATOR_EMAIL_ENABLED,
                 "okta_enabled": settings.OKTA_ENABLED,
+                # TODO set mfa enabled environment variable
+                "mfa_enabled": True, # settings.MFA_ENABLED,
             }
         ),
         name="login",

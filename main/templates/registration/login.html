@@ -22,6 +22,11 @@
       <label class="d-flex flex-column py-2 text-semibold">
         <input class="form-control" name="password" id="id_password" placeholder="Password" type="password" required>
       </label>
+      {% if mfa_enabled %}
+      <label class="d-flex flex-column py-2 text-semibold">
+        <input class="form-control" name="otp" id="id_otp" placeholder="One-time passcode" type="password" required>
+      </label>
+      {% endif %}
     </div>
     <div class="modal__footer d-flex">
       <input class="btn btn-clear" type="submit" value="Continue">
