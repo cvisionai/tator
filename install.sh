@@ -18,7 +18,7 @@ ARGO_MANIFEST_URL="https://github.com/argoproj/argo-workflows/releases/download/
 
 # Install snaps.
 sudo snap install helm --classic
-sudo snap install microk8s --classic --channel=1.22/stable
+sudo snap install microk8s --classic --channel=1.26/stable
 sudo snap install yq
 
 # Install apt packages.
