@@ -1598,6 +1598,23 @@ class State(Model, ModelDiffMixin):
     a media element. It is associated with 0 (1 to be useful) or more media
     elements. If a frame is supplied it was collected at that time point.
     """
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name='state_mark_trigger',
+                operation=pgtrigger.Insert,
+                when=pgtrigger.Before,
+                declare=[('_var', 'integer')],
+                func=BEFORE_MARK_TRIGGER_FUNC
+            ),
+            pgtrigger.Trigger(
+                name='post_state_mark_trigger',
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                declare=[('_var', 'integer')],
+                func=AFTER_MARK_TRIGGER_FUNC
+            )
+        ]
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
