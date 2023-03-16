@@ -226,8 +226,7 @@ jobs:
     - run:
         name: Get API token
         command: |
-          ssh lightsail "curl -d '{"'"username"'": "'"admin"'", "'"password"'": "'"admin"'", "'"refresh"'": true}' -H 'Content-Type: application/json' http://localhost:8080/rest/Token | jq '.token' | xargs printf '%
-b\n' | tee ~/token.txt;"
+          ssh lightsail "curl -d '{"'"username"'": "'"admin"'", "'"password"'": "'"admin"'", "'"refresh"'": true}' -H 'Content-Type: application/json' http://localhost:8080/rest/Token | jq '.token' | xargs printf '%b\n' | tee ~/token.txt;"
           scp lightsail:~/token.txt ~/token.txt
     - run:
         name: Run tator-py tests
