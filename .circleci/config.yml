@@ -213,7 +213,7 @@ jobs:
         name: Front end tests
         no_output_timeout: 30m
         command: |
-          ssh lightsail 'argo delete --all';
+          ssh lightsail 'cd tator && make rq-empty';
           mkdir -p /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos';
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
