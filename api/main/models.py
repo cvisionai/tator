@@ -71,8 +71,24 @@ import os
 import shutil
 import uuid
 
+import pgtrigger
+
 # Load the main.view logger
 logger = logging.getLogger(__name__)
+
+BEFORE_MARK_TRIGGER_FUNC = """
+EXECUTE format('SELECT COALESCE(MAX(mark)+1,0) FROM %I.%I WHERE elemental_id=%L AND version=%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+NEW.mark = _var;
+RETURN NEW;
+"""
+
+AFTER_MARK_TRIGGER_FUNC = """
+EXECUTE format('SELECT COALESCE(MAX(mark),0) FROM %I.%I WHERE elemental_id=%L AND version=%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+EXECUTE format('UPDATE %I.%I SET latest_mark=%s WHERE elemental_id=%L AND version=%s',TG_TABLE_SCHEMA, TG_TABLE_NAME, _var, NEW.elemental_id, NEW.version);
+RETURN NEW;
+"""
+
+
 
 class ModelDiffMixin(object):
     """
@@ -1507,6 +1523,23 @@ def file_post_delete(sender, instance, **kwargs):
         safe_delete(instance.path, instance.project.id)
 
 class Localization(Model, ModelDiffMixin):
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name='localization_mark_trigger',
+                operation=pgtrigger.Insert,
+                when=pgtrigger.Before,
+                declare=[('_var', 'integer')],
+                func=BEFORE_MARK_TRIGGER_FUNC
+            ),
+            pgtrigger.Trigger(
+                name='post_localization_mark_trigger',
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                declare=[('_var', 'integer')],
+                func=AFTER_MARK_TRIGGER_FUNC
+            )
+        ]
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
