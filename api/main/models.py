@@ -77,6 +77,12 @@ import pgtrigger
 logger = logging.getLogger(__name__)
 
 BEFORE_MARK_TRIGGER_FUNC = """
+IF NEW.elemental_id IS NULL THEN
+            RAISE EXCEPTION 'elemental_id cannot be null';
+END IF;
+IF NEW.version IS NULL THEN
+            RAISE EXCEPTION 'version cannot be null';
+END IF;
 EXECUTE format('SELECT COALESCE(MAX(mark)+1,0) FROM %I.%I WHERE elemental_id=%L AND version=%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
 NEW.mark = _var;
 RETURN NEW;
@@ -1561,7 +1567,7 @@ class Localization(Model, ModelDiffMixin):
                                  null=True, blank=True,
                                  related_name='localization_thumbnail_image',
                                  db_column='thumbnail_image')
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column='version')
     x = FloatField(null=True, blank=True)
     """ Horizontal position."""
     y = FloatField(null=True, blank=True)
@@ -1629,7 +1635,7 @@ class State(Model, ModelDiffMixin):
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='state_modified_by', db_column='modified_by')
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
+    version = ForeignKey(Version, on_delete=CASCADE,null=True, blank=False,db_column='version')
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     media = ManyToManyField(Media, related_name='media')
