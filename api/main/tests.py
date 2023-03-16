@@ -247,6 +247,7 @@ def create_test_line(user, entity_type, project, media, frame):
         modified_by=user,
         type=entity_type,
         project=project,
+        version=project.version_set.all()[0],
         media=media,
         frame=frame,
         x=x0, y=y0, u=(x1 - x0), v=(y1 - y0),
@@ -261,6 +262,7 @@ def create_test_dot(user, entity_type, project, media, frame):
         modified_by=user,
         type=entity_type,
         project=project,
+        version=project.version_set.all()[0],
         media=media,
         frame=frame,
         x=x,
@@ -1585,6 +1587,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
             State.objects.create(
                 type=self.state_type,
                 project=self.project,
+                version=self.project.version_set.all()[0],
             )
             for _ in range(random.randint(6, 10))
         ]
