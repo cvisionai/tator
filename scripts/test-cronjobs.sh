@@ -6,6 +6,6 @@ for name in ${NameArray[*]}; do
   echo ""
   echo "Testing management command ${name}..."
   echo "===Start logs for ${name}==="
-  docker exec -it gunicorn python3 manage.py ${name} || { echo "${name} failed!"; exit 1; }
+  docker exec gunicorn python3 manage.py ${name} || { echo "${name} failed!"; exit 1; }
   echo "===End logs for ${name}==="
 done
