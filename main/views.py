@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
@@ -63,17 +63,17 @@ class TatorLoginView(LoginView):
                 # TODO set mfa enabled environment variable
                 # if settings.MFA_ENABLED:
                 if user.mfa_hash:
-                    otp = data.get("otp", None)
+                    otp = request.POST.get("otp")
                     totp = pyotp.TOTP(user.mfa_hash)
                     if totp.verify(otp):
                         login(request, user)
-                        return HttpResponse(status=201)
+                        return HttpResponseRedirect(self.get_success_url())
                     else:
                         return HttpResponse(status=401)
                 else:
                     # Don't reject accounts without mfa
                     login(request, user)
-                    return HttpResponse(status=201)
+                    return HttpResponseRedirect(self.get_success_url())
             else:
                 return HttpResponse(status=401)
         else:
