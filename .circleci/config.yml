@@ -144,7 +144,7 @@ jobs:
     - run:
         name: Install Tator
         command: |
-          ssh lightsail 'export DOMAIN_ALIAS='"'localhost'"';cd tator && ./install.sh';
+          ssh lightsail 'export DOMAIN_ALIAS='"'localhost'"'; cd tator && sudo snap refresh core && sudo snap install snapd && ./install.sh';
     - run:
         name: Set public IP as primary domain
         command: |

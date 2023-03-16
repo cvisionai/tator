@@ -124,19 +124,20 @@ export class RegistrationPage extends TatorElement {
         },
         body: JSON.stringify(body),
       })
-      .then(response => {
-        json_response = response.json();
-        if (response.status == 400) {
-          return json_response;
+      .then(response => response.json())
+      .then(data => {
+        if ("qrcode_uri" in data) {
+          return data["qrcode_uri"];
         } else {
-          return Promise.resolve(json_response["qrcode_url"]);
+          return data;
         }
       })
-      .then(qrcode_url => {
+      .then(qrcode_uri => {
         try {
-          new URL(qrcode_url)
+          new URL(qrcode_uri)
           this._modalNotify.init("Registration succeeded!",
-                                 qrcode_url,
+            "Click <a href=" + qrcode_uri + ">here</a> to obtain your QR code for multi-factor authentication.",
+            "Use the following link to retrieve your autherticator QR code\n<a href>" + qrcode_uri,
                                  "ok",
                                  "Continue");
           this._modalNotify.addEventListener("close", evt => {
@@ -144,7 +145,7 @@ export class RegistrationPage extends TatorElement {
           });
         } catch (err) {
           this._modalNotify.init("Registration failed!",
-                                 data.message,
+                                 qrcode_uri.message,
                                  "error",
                                  "Close");
         }

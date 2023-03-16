@@ -333,6 +333,7 @@ def user_save(sender, instance, created, **kwargs):
         # TODO add MFA_ENABLED environment variable to use this
         # if settings.MFA_ENABLED:
         instance.mfa_hash = pyotp.random_base32()
+        instance.save()
         if settings.SAML_ENABLED and not instance.email:
             instance.email = instance.username
             instance.save()
