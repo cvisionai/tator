@@ -3,7 +3,7 @@ from django.views.generic.base import TemplateView
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied
@@ -66,11 +66,13 @@ class TatorLoginView(LoginView):
                     otp = data.get("otp", None)
                     totp = pyotp.TOTP(user.mfa_hash)
                     if totp.verify(otp):
+                        login(request, user)
                         return HttpResponse(status=201)
                     else:
                         return HttpResponse(status=401)
                 else:
                     # Don't reject accounts without mfa
+                    login(request, user)
                     return HttpResponse(status=201)
             else:
                 return HttpResponse(status=401)
