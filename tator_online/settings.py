@@ -339,3 +339,6 @@ if SAML_ENABLED:
     }
 
     SAML_SSO_URL = os.getenv("SAML_SSO_URL")
+
+# MFA configuration
+MFA_ENABLED = os.getenv("MFA_ENABLED", "false").lower() == "true"

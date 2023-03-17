@@ -252,6 +252,16 @@
 {{- else }}
   value: "FALSE"
 {{- end }}
+- name: MFA_ENABLED
+{{- if hasKey .Values "mfa" }}
+{{- if .Values.mfa.enabled }}
+  value: "TRUE"
+{{- else }}
+  value: "FALSE"
+{{- end }}
+{{- else }}
+  value: "FALSE"
+{{- end }}
 - name: ANONYMOUS_REGISTRATION_ENABLED
 {{- if hasKey .Values "anonymousRegistration" }}
 {{- if .Values.anonymousRegistration.enabled }}

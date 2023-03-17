@@ -121,11 +121,13 @@ class UserListAPI(BaseListView):
                                            permission=invite.permission,
                                            user=user)
 
-        # TODO add MFA_ENABLED environment variable
-        # if settings.MFA_ENABLED:
-        uri = pyotp.totp.TOTP(user.mfa_hash).provisioning_uri(user.email, issuer_name="Tator")
-        qrcode_uri = f"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl={uri}"
-        return {'message': f"User {username} created!", 'id': user.id, "qrcode_uri": qrcode_uri}
+        response = {'message': f"User {username} created!", 'id': user.id}
+        if settings.MFA_ENABLED:
+            uri = pyotp.totp.TOTP(user.mfa_hash).provisioning_uri(user.email, issuer_name="Tator")
+            response["qrcode_uri"] = (
+                f"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl={uri}"
+            )
+        return response
 
 class UserDetailAPI(BaseDetailView):
     """ Interact with an individual user.

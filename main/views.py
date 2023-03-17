@@ -60,9 +60,7 @@ class TatorLoginView(LoginView):
             password = data.get("password", None)
             user = authenticate(username=username, password=password)
             if user:
-                # TODO set mfa enabled environment variable
-                # if settings.MFA_ENABLED:
-                if user.mfa_hash:
+                if settings.MFA_ENABLED and user.mfa_hash:
                     otp = request.POST.get("otp")
                     totp = pyotp.TOTP(user.mfa_hash)
                     if totp.verify(otp):

@@ -62,8 +62,7 @@ urlpatterns = [
             extra_context={
                 "email_enabled": settings.TATOR_EMAIL_ENABLED,
                 "okta_enabled": settings.OKTA_ENABLED,
-                # TODO set mfa enabled environment variable
-                "mfa_enabled": True, # settings.MFA_ENABLED,
+                "mfa_enabled": settings.MFA_ENABLED,
             }
         ),
         name="login",
