@@ -146,7 +146,7 @@ cluster-upgrade: check-migration api/main/version.py clean_schema images .token/
 	$(MAKE) cluster-update
 
 cluster-update: 
-	GIT_VERSION=$(GIT_VERSION) docker compose up --force-recreate
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d --force-recreate
 
 cluster-uninstall:
 	$(MAKE) clean
