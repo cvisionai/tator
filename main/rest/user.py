@@ -12,7 +12,6 @@ from ..models import Invitation
 from ..models import Affiliation
 from ..models import PasswordReset
 from ..models import TemporaryFile
-from ..models import Project
 from ..serializers import UserSerializerBasic
 from ..serializers import TemporaryFileSerializer
 from ..ses import TatorSES
@@ -136,11 +135,10 @@ class UserListAPI(BaseListView):
             temp_file = TemporaryFile.from_local(
                 temp_image.name,
                 img_name,
-                Project.objects.all().first(),
+                None,
                 user,
                 "",
                 24,
-                is_upload=True,
             )
             response["qrcode"] = TemporaryFileSerializer(temp_file, context={"view": self}).data
         return response

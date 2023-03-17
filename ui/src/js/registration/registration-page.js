@@ -124,7 +124,13 @@ export class RegistrationPage extends TatorElement {
         },
         body: JSON.stringify(body),
       })
-      .then(response => response.json())
+      .then(response => {
+        if (response.status == 400) {
+          throw response.json();
+        } else {
+          return response.json();
+        }
+      })
       .then(data => {
         if ("qrcode" in data) {
           return data["qrcode"];
@@ -132,23 +138,22 @@ export class RegistrationPage extends TatorElement {
           return data;
         }
       })
-      .then(qrcode => {
-        if ("path" in qrcode) {
-          this._modalNotify.init(
-            "Registration succeeded!",
-            "Click <a href=" + qrcode["path"] + ">here</a> to obtain your QR code for multi-factor authentication.",
-            "ok",
-            "Continue"
-          );
-          this._modalNotify.addEventListener("close", evt => {
-            window.location.replace("/accounts/login");
-          });
+      .then(data => {
+        let message;
+        if ("path" in data) {
+          message = "Click <a href=" + data["path"] + ">here</a> to obtain your QR code for multi-factor authentication.";
         } else {
-          this._modalNotify.init("Registration failed!",
-                                 qrcode.message,
-                                 "error",
-                                 "Close");
+          message = data.message;
         }
+        this._modalNotify.addEventListener("close", evt => {
+          window.location.replace("/accounts/login");
+        });
+        this._modalNotify.init("Registration succeeded!", message, "ok", "Continue");
+        this._modalNotify.setAttribute("is-open", "");
+        this.setAttribute("has-open-modal", "");
+      })
+      .catch(e => {
+        this._modalNotify.init("Registration failed!", e.message, "error", "Close");
         this._modalNotify.setAttribute("is-open", "");
         this.setAttribute("has-open-modal", "");
       })
