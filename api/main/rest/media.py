@@ -30,7 +30,6 @@ from ..models import (
     database_qs,
     database_query_ids,
 )
-from ..search import TatorSearch
 from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..notify import Notify
@@ -98,7 +97,7 @@ def _presign(user_id, expiration, medias, fields=None):
     ttl = expiration - 3600
 
     # Get replace all keys with presigned urls.
-    for media_idx, media in enumerate(medias):
+    for media in medias:
         if media.get("media_files") is None:
             continue
 
@@ -106,7 +105,7 @@ def _presign(user_id, expiration, medias, fields=None):
             if field not in media["media_files"]:
                 continue
 
-            for idx, media_def in enumerate(media["media_files"][field]):
+            for media_def in media["media_files"][field]:
                 # Get path url
                 # If the path is a bona fide URL, don't attempt to presign it
                 if urlparse(media_def["path"]).scheme != "":
@@ -386,22 +385,24 @@ class MediaListAPI(BaseListView):
         if len(media_spec_list) == 1:
             # Creates a single media object synchronously, works with video and images
             obj, msg = _create_media(project, media_spec_list[0], self.request.user)
-            response = {"message": msg, "id": [obj.id], "object": [obj]}
+            qs = Media.objects.filter(id=obj.id)
+            response_data = list(qs.values(*MEDIA_PROPERTIES))
+            response = {"message": msg, "id": [obj.id], "object": response_data}
         elif media_spec_list:
             # Creates multiple media objects asynchronously, works with images only
             assert_list_of_image_specs(project, media_spec_list)
             ids = []
-            objs = []
             for media_spec in media_spec_list:
                 try:
                     obj, _ = _create_media(project, media_spec, self.request.user, use_rq=True)
                 except Exception:
                     logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
                 ids.append(obj.id)
-                objs.append(obj)
 
+            qs = Media.objects.filter(id__in=ids)
+            response_data = list(qs.values(*MEDIA_PROPERTIES))
             response = {
-                "message": f"Started import of {len(ids)} images!", "id": ids, "object": [objs]
+                "message": f"Started import of {len(ids)} images!", "id": ids, "object": response_data
             }
         else:
             raise ValueError(f"Expected one or more media specs, received zero!")
@@ -461,7 +462,6 @@ class MediaListAPI(BaseListView):
 
         count = 0
         if qs.exists():
-            ts = TatorSearch()
             ids_to_update = list(qs.values_list("pk", flat=True).distinct())
             if qs.values('type').distinct().count() != 1:
                 raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
@@ -515,7 +515,6 @@ class MediaListAPI(BaseListView):
                     # Get the original dict for creating the change log
                     archive_objs = list(archive_qs)
                     obj = archive_objs[0]
-                    model_dict = obj.model_dict
 
                     # Store the list of ids updated for this state and update them
                     archive_ids_to_update = [o.id for o in archive_objs]
@@ -730,7 +729,6 @@ class MediaDetailAPI(BaseDetailView):
         """
         media = Media.objects.get(pk=params['id'], deleted=False)
         project = media.project
-        modified_datetime = datetime.datetime.now(datetime.timezone.utc)
         delete_and_log_changes(media, project, self.request.user)
 
         # Any states that are only associated to deleted media should also be marked 
