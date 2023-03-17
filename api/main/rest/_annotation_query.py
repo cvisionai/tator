@@ -8,7 +8,7 @@ import uuid
 
 from django.db.models import Subquery
 from django.db.models.functions import Coalesce
-from django.db.models import Q
+from django.db.models import Q, F
 
 from ..models import Localization, LocalizationType, Media, MediaType, Section
 from ..models import State, StateType
@@ -204,6 +204,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     elif stop is not None:
         qs = qs[:stop]
 
+       # Only return the latest results
+    if params.get('show_all_marks', 0) == 0:
+        qs = qs.filter(mark=F('latest_mark'))
+
     # Useful for profiling / checking out query complexity
     logger.info(qs.query)
     logger.info(qs.explain())
@@ -223,7 +227,6 @@ def get_annotation_queryset(project, params, annotation_type):
         filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
     qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
     return qs
-
 def get_annotation_count(project, params, annotation_type):
     return get_annotation_queryset(project,params,annotation_type).count()
 

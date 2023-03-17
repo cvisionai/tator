@@ -221,6 +221,10 @@ class LocalizationListAPI(BaseListView):
 
     def _patch(self, params):
         patched_version = params.pop("new_version", None)
+        # Adding an id query a
+        if params.get('ids', []) != []:
+            params['show_all_marks'] = 1
+            params['in_place'] = 1
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
@@ -283,7 +287,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         if frame is not None:
             obj.frame = frame
         if version is not None:
-            obj.version = version
+            obj.version = Version.objects.get(pk=version)
 
         if params.get('user_elemental_id', None):
             computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
@@ -373,7 +377,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             obj.pk = None
             obj.save()
 
-        return {'message': f'Localization {params["id"]} successfully updated!'}
+        return {'message': f'Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!'}
 
     def delete_qs(self, params, qs):
         if not qs.exists():

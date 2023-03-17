@@ -812,10 +812,17 @@ class AttributeTestMixin:
 
         # Nullify all the Bool Tests
         for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+            if hasattr(self.entities[idx], 'mark') and hasattr(self.entities[idx], 'elemental_id'):
+                elemental_id = self.entities[idx].elemental_id
+                response = self.client.patch(f'/rest/{self.detail_uri}/{self.entities[idx].version.pk}/{elemental_id}?format=json',
+                                             {'null_attributes': ['Bool Test']},
+                                             format='json')
+            else:
+                pk = self.entities[idx].pk
+                response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'null_attributes': ['Bool Test']},
                                          format='json')
+            
             assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(
@@ -845,7 +852,15 @@ class AttributeTestMixin:
         is_date = type(test_val) == datetime.datetime
         if is_date:
             test_val=to_string(test_val)
-        elemental_id = self.entities[idx].elemental_id
+
+        if hasattr(self.entities[idx], 'mark') and hasattr(self.entities[idx], 'elemental_id'):
+            elemental_id = self.entities[idx].elemental_id
+            fetch_url = f'/rest/{self.detail_uri}/{self.entities[idx].version.pk}/{elemental_id}?format=json'
+            mark_based = True
+        else:
+            fetch_url = f'/rest/{self.detail_uri}/{pk}'
+            mark_based = False
+
         initial_value = self.entities[idx].attributes.get(name, None)
         response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                         {'attributes': {name: test_val}},
@@ -856,25 +871,33 @@ class AttributeTestMixin:
         response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                         {'attributes': {name: test_val}},
                                         format='json')
-        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+        if mark_based:
+            assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+        else:
+            assertResponse(self, response, status.HTTP_200_OK)
 
         # By serial ID the result is actually the initial value, the change went to
         # a new version 
-        response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
-        self.assertEqual(response.data['id'], pk)
-        self.assertEqual(response.data['attributes'].get(name,None), initial_value)
-        this_mark = response.data['mark']
+        if mark_based:
+            response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
+            self.assertEqual(response.data['id'], pk)
+            self.assertEqual(response.data['attributes'].get(name,None), initial_value)
+            this_mark = response.data['mark']
+            last_mark = this_mark
 
         # Access via the UUID accessor + verify we got a new mark on the version
-        last_mark = this_mark
-        response = self.client.get(f'/rest/{self.detail_uri}/{self.entities[idx].version.pk}/{elemental_id}?format=json')
-        self.assertEqual(response.data['elemental_id'], elemental_id)
+        # Use fetch_url which is the pk-based method for elements with out mark-based versioning
+        response = self.client.get(fetch_url)
         if is_date:
             self.assertEqual(response.data['attributes'][name].replace('+00:00','Z'), test_val)
         else:
             self.assertEqual(response.data['attributes'][name], test_val)
-        this_mark = response.data['mark']
-        self.assertEqual(last_mark+1, this_mark)
+        if mark_based:
+            self.assertEqual(response.data['elemental_id'], elemental_id)
+            this_mark = response.data['mark']
+            self.assertEqual(last_mark+1, this_mark)
+        else:
+            self.assertEqual(response.data['id'], pk)
 
     def generic_reset_nullification(self, attribute_name, default_value, null_value=None):
          # Test attribute reset / nullification
@@ -898,12 +921,12 @@ class AttributeTestMixin:
                                          format='json')
         assert(response.data['attributes'][attribute_name] == null_value)
 
-        # verify bulk 
+        # verify bulk modifications via ids / in-place updates
         response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
                                          {'ids': many_pks, 'reset_attributes': [attribute_name]},
                                          format='json')
         assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
+        for  pk in many_pks:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
                                             format='json')
             assert(response.data['attributes'][attribute_name] == default_value)
@@ -914,7 +937,7 @@ class AttributeTestMixin:
         assertResponse(self, response, status.HTTP_200_OK)
         for pk in many_pks:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}',
-                                            format='json')
+                                        format='json')
             assert(response.data['attributes'][attribute_name] == null_value)
 
     def test_bool_attr(self):
