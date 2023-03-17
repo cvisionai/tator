@@ -360,8 +360,18 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             obj.thumbnail_image = patch_attributes(new_attrs, obj.thumbnail_image)
             obj.thumbnail_image.save()
 
-        obj.save()
-        log_changes(obj, model_dict, obj.project, self.request.user)
+        if params.get('in_place', 0):
+            obj.save()
+            log_changes(obj, model_dict, obj.project, self.request.user)
+        else:
+            # Only allow iterative changes, this has to be changing off the last mark in the version
+            if obj.mark != obj.latest_mark:
+                raise ValueError(f"Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                                 f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}")
+
+            # Save edits as new object, mark is calculated in trigger
+            obj.pk = None
+            obj.save()
 
         return {'message': f'Localization {params["id"]} successfully updated!'}
 

@@ -202,6 +202,13 @@ localization_update = {
                 'minimum': 1,
             },
         },
+        'in_place': {
+            'type': 'integer',
+            'description': 'Set to 1 to edit this record in-place, else mark-based versioning rules apply.',
+            'minimum': 0,
+            'maximum': 1,
+            'default': 0
+        },
     },
 }
 
