@@ -84,7 +84,6 @@ services:
     restart: always
     environment:
       - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
-      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     env_file:
       - ./.env
     networks:
@@ -104,8 +103,6 @@ services:
     depends_on:
       - redis
     restart: always
-    environment:
-      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     networks:
       - private
 
@@ -150,7 +147,6 @@ services:
     restart: always
     environment:
       - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
-      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     env_file:
       - ./.env
     networks:
@@ -231,7 +227,6 @@ services:
       - ./.env
     environment:
       - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
-      - "DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects"
     networks:
       - private
     volumes:
