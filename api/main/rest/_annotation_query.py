@@ -43,6 +43,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     elif annotation_type == 'state':
         localization_id_put = params.get('localization_ids') # PUT request only
         state_ids = params.get('ids') # PUT request only
+    elemental_ids = params.get('elemental_ids')
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
@@ -81,6 +82,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if state_ids and (annotation_type == 'state'):
         qs = qs.filter(pk__in=state_ids)
         
+    if elemental_ids:
+        qs = qs.filter(elemental_id__in=elemental_ids)
     if version is not None:
         qs = qs.filter(version__in=version)
 
@@ -197,16 +200,16 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if params.get('float_array',None) == None:
         qs = qs.order_by('id')
 
+    # Only return the latest results
+    if params.get('show_all_marks', 0) == 0:
+        qs = qs.filter(mark=F('latest_mark'))
+
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
     elif start is not None:
         qs = qs[start:]
     elif stop is not None:
         qs = qs[:stop]
-
-       # Only return the latest results
-    if params.get('show_all_marks', 0) == 0:
-        qs = qs.filter(mark=F('latest_mark'))
 
     # Useful for profiling / checking out query complexity
     logger.info(qs.query)

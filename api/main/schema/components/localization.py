@@ -244,11 +244,6 @@ localization_id_query = {
                 'minimum': 1,
             },
         },
-        'version':
-        {
-            'description': 'Version id to scan for elemental_ids',
-            'type': 'integer',
-        },
         'state_ids': {
             'description': 'Array of parent state IDs for which localizations should be retrieved.',
             'type': 'array',

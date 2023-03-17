@@ -940,6 +940,29 @@ class AttributeTestMixin:
                                         format='json')
             assert(response.data['attributes'][attribute_name] == null_value)
 
+
+        if hasattr(self.entities[0],'mark') and hasattr(self.entities[0],'elemental_id'):
+            version = self.entities[0].version.pk
+            many_eids = [e.elemental_id for e in self.entities]
+            # verify bulk modifications via mark-based bulk update
+            response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                            {'elemental_ids': many_eids, 'reset_attributes': [attribute_name]},
+                                            format='json')
+            assertResponse(self, response, status.HTTP_200_OK)
+            for eid in many_eids:
+                response = self.client.get(f'/rest/{self.detail_uri}/{version}/{eid}',
+                                                format='json')
+                assert(response.data['attributes'][attribute_name] == default_value)
+
+            response = self.client.patch(f'/rest/{self.list_uri}/{project.pk}',
+                                            {'elemental_ids': many_eids, 'null_attributes': [attribute_name]},
+                                            format='json')
+            assertResponse(self, response, status.HTTP_200_OK)
+            for eid in many_eids:
+                response = self.client.get(f'/rest/{self.detail_uri}/{version}/{eid}',
+                                            format='json')
+                assert(response.data['attributes'][attribute_name] == null_value)
+
     def test_bool_attr(self):
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
         # Test setting an invalid bool

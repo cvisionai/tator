@@ -242,13 +242,25 @@ class LocalizationListAPI(BaseListView):
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
 
-            bulk_update_and_log_changes(
-                qs,
-                params["project"],
-                self.request.user,
-                update_kwargs=update_kwargs,
-                new_attributes=new_attrs,
-            )
+            if params.get('in_place', 1):
+                bulk_update_and_log_changes(
+                    qs,
+                    params["project"],
+                    self.request.user,
+                    update_kwargs=update_kwargs,
+                    new_attributes=new_attrs,
+                )
+            else:
+                objs=[]
+                for original in qs.iterator():
+                    original.pk=None
+                    original.id=None
+                    for key,value in update_kwargs.items():
+                        setattr(original, key, value)
+                    original.attributes.update(new_attrs)
+                    objs.append(original)
+                Localization.objects.bulk_create(objs)
+
 
         return {'message': f'Successfully updated {count} localizations!'}
 
