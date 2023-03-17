@@ -386,19 +386,23 @@ class MediaListAPI(BaseListView):
         if len(media_spec_list) == 1:
             # Creates a single media object synchronously, works with video and images
             obj, msg = _create_media(project, media_spec_list[0], self.request.user)
-            response = {"message": msg, "id": [obj.id]}
+            response = {"message": msg, "id": [obj.id], "object": [obj]}
         elif media_spec_list:
             # Creates multiple media objects asynchronously, works with images only
             assert_list_of_image_specs(project, media_spec_list)
             ids = []
+            objs = []
             for media_spec in media_spec_list:
                 try:
-                    obj, msg = _create_media(project, media_spec, self.request.user, use_rq=True)
+                    obj, _ = _create_media(project, media_spec, self.request.user, use_rq=True)
                 except Exception:
                     logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
                 ids.append(obj.id)
+                objs.append(obj)
 
-            response = {"message": f"Started import of {len(ids)} images!", "id": ids}
+            response = {
+                "message": f"Started import of {len(ids)} images!", "id": ids, "object": [objs]
+            }
         else:
             raise ValueError(f"Expected one or more media specs, received zero!")
         return response
