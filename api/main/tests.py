@@ -902,22 +902,28 @@ class AttributeTestMixin:
     def generic_reset_nullification(self, attribute_name, default_value, null_value=None):
          # Test attribute reset / nullification
          # Of note; this also tests PATCH/GET via version/UUID path
-        version = self.entities[0].version.pk
-        elemental_id = self.entities[0].elemental_id
+        if hasattr(self.entities[0], 'mark') and hasattr(self.entities[0], 'elemental_id'):
+            elemental_id = self.entities[0].elemental_id
+            version = self.entities[0].version.pk
+            fetch_url = f'/rest/{self.detail_uri}/{self.entities[0].version.pk}/{elemental_id}?'
+        else:
+            pk = self.entities[0].pk
+            fetch_url = f'/rest/{self.detail_uri}/{pk}'
+        
         project = self.entities[0].project
         many_pks = [e.pk for e in self.entities]
-        response = self.client.patch(f'/rest/{self.detail_uri}/{version}/{elemental_id}',
+        response = self.client.patch(fetch_url,
                                          {'reset_attributes': [attribute_name]},
                                          format='json')
         assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f'/rest/{self.detail_uri}/{version}/{elemental_id}',
+        response = self.client.get(fetch_url,
                                          format='json')
         assert(response.data['attributes'][attribute_name] == default_value)
-        response = self.client.patch(f'/rest/{self.detail_uri}/{version}/{elemental_id}',
+        response = self.client.patch(fetch_url,
                                          {'null_attributes': [attribute_name]},
                                          format='json')
         assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f'/rest/{self.detail_uri}/{version}/{elemental_id}',
+        response = self.client.get(fetch_url,
                                          format='json')
         assert(response.data['attributes'][attribute_name] == null_value)
 
