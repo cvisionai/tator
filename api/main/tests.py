@@ -1763,7 +1763,7 @@ class VideoTestCase(
                                'name': 'test cross author',
                                'md5': 'b81e32eb9957ea4e965ca36680d4adfb',
                                'user_elemental_id': self.user_two.elemental_id}, format='json')
-        new_id = response.data['id']
+        new_id = response.data['id'][0]
         response = self.client.get(f'/rest/Media/{new_id}')
         assert(response.data['created_by'] == self.user_two.pk)
 
@@ -2372,13 +2372,13 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id1 = response.data['id']
+        media_id1 = response.data['id'][0]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id2 = response.data['id']
+        media_id2 = response.data['id'][0]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id3 = response.data['id']
+        media_id3 = response.data['id'][0]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id4 = response.data['id']
+        media_id4 = response.data['id'][0]
 
         create_json = [{
             'project': self.project.pk,
@@ -2464,7 +2464,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id1 = response.data['id']
+        media_id1 = response.data['id'][0]
 
         body = [
             {
@@ -2476,7 +2476,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id2 = response.data['id']
+        media_id2 = response.data['id'][0]
 
         create_json = [{
             'project': self.project.pk,
@@ -2592,7 +2592,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id = response.data['id']
+        media_id = response.data['id'][0]
 
         create_json = [{
             'project': self.project.pk,
@@ -2641,7 +2641,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id1 = response.data['id']
+        media_id1 = response.data['id'][0]
 
         body = [
             {
@@ -2653,7 +2653,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id2 = response.data['id']
+        media_id2 = response.data['id'][0]
 
         body = [
             {
@@ -2665,7 +2665,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        media_id3 = response.data['id']
+        media_id3 = response.data['id'][0]
 
         create_json = [{
             'project': self.project.pk,
@@ -3906,7 +3906,7 @@ class ResourceTestCase(TatorTransactionTest):
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
-        image_id = response.data['id']
+        image_id = response.data['id'][0]
 
         # Make sure we have an image and thumbnail key.
         image = Media.objects.get(pk=image_id)
@@ -3937,7 +3937,7 @@ class ResourceTestCase(TatorTransactionTest):
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
-        image_id = response.data['id']
+        image_id = response.data['id'][0]
 
         # Make sure we have an image and thumbnail key.
         image = Media.objects.get(pk=image_id)
@@ -3968,7 +3968,7 @@ class ResourceTestCase(TatorTransactionTest):
         ]
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         assertResponse(self, response, status.HTTP_201_CREATED)
-        video_id = response.data['id']
+        video_id = response.data['id'][0]
 
         # Make sure we have an video and thumbnail key.
         video = Media.objects.get(pk=video_id)
