@@ -75,3 +75,12 @@ user = {
         **user_properties,
     },
 }
+
+user_post = {
+    'type': 'object',
+    'properties': {
+        **user["properties"],
+        **user_properties,
+        'qrcode': {'$ref': '#/components/schemas/TemporaryFile'},
+    },
+}

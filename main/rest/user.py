@@ -3,13 +3,18 @@ from uuid import uuid1
 from django.db import transaction
 from django.conf import settings
 import pyotp
+import qrcode
+import tempfile
 from rest_framework.exceptions import ValidationError
 
 from ..models import User
 from ..models import Invitation
 from ..models import Affiliation
 from ..models import PasswordReset
+from ..models import TemporaryFile
+from ..models import Project
 from ..serializers import UserSerializerBasic
+from ..serializers import TemporaryFileSerializer
 from ..ses import TatorSES
 from ..schema import UserExistsSchema
 from ..schema import UserListSchema
@@ -82,7 +87,7 @@ class UserListAPI(BaseListView):
                 if settings.EMAIL_CONFIRMATION_REQUIRED:
                     if settings.TATOR_EMAIL_ENABLED:
                         user.is_active = False
-                        user.confirmation_token = uuid.uuid1()
+                        user.confirmation_token = uuid1()
                         # Send email
                         TatorSES().email(
                             sender=settings.TATOR_EMAIL_SENDER,
@@ -124,9 +129,20 @@ class UserListAPI(BaseListView):
         response = {'message': f"User {username} created!", 'id': user.id}
         if settings.MFA_ENABLED:
             uri = pyotp.totp.TOTP(user.mfa_hash).provisioning_uri(user.email, issuer_name="Tator")
-            response["qrcode_uri"] = (
-                f"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl={uri}"
+            img = qrcode.make(uri)
+            temp_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+            img.save(temp_image.name)
+            img_name = temp_image.name.split("/")[-1]
+            temp_file = TemporaryFile.from_local(
+                temp_image.name,
+                img_name,
+                Project.objects.all().first(),
+                user,
+                "",
+                24,
+                is_upload=True,
             )
+            response["qrcode"] = TemporaryFileSerializer(temp_file, context={"view": self}).data
         return response
 
 class UserDetailAPI(BaseDetailView):
