@@ -759,7 +759,10 @@ class AttributeTestMixin:
             format='json')
         assertResponse(self, response, status.HTTP_200_OK)
         for entity in self.entities:
-            response = self.client.get(f'/rest/{self.detail_uri}/{entity.pk}')
+            if hasattr(entity, 'mark') and hasattr(entity, 'elemental_id'):
+                response = self.client.get(f'/rest/{self.detail_uri}/{entity.version.pk}/{entity.elemental_id}')
+            else:
+                response = self.client.get(f'/rest/{self.detail_uri}/{entity.pk}')
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(response.data['attributes']['Bool Test'], test_val)
 
