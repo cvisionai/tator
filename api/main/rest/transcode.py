@@ -8,9 +8,6 @@ from rest_framework.authtoken.models import Token
 from django.http import Http404
 import requests
 
-from ..kube import TatorTranscode
-from ..kube import get_jobs
-from ..kube import cancel_jobs
 from ..store import get_tator_store
 from ..cache import TatorCache
 from ..models import Project
@@ -31,7 +28,13 @@ from ._job import workflow_to_job
 logger = logging.getLogger(__name__)
 
 SCHEME = 'https://' if os.getenv('REQUIRE_HTTPS') == 'TRUE' else 'http://'
+
 HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
+GUNICORN_HOST = os.getenv('GUNICORN_HOST')
+COMPOSE_DEPLOY = os.getenv('COMPOSE_DEPLOY')
+if GUNICORN_HOST is not None and COMPOSE_DEPLOY is not None:
+    if COMPOSE_DEPLOY.lower() == 'true':
+        HOST = GUNICORN_HOST
 ENDPOINT = f"{os.getenv('TRANSCODE_HOST')}/jobs"
 
 def _filter_jobs_by_media(project, params, job_list):
@@ -149,6 +152,7 @@ class TranscodeListAPI(BaseListView):
         elif entity_type != -1:
             media_obj, _ = _create_media(project, params, self.request.user)
             media_id = media_obj.id
+        logger.info(f"HOST: {HOST}")
         response = requests.post(ENDPOINT, json=[{
             'url': url,
             'size': upload_size,

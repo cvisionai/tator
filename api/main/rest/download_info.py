@@ -1,6 +1,7 @@
 import os
 import logging
 from uuid import uuid1
+from urllib.parse import urlparse
 
 from rest_framework.exceptions import PermissionDenied
 
@@ -12,6 +13,7 @@ from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
+from ._util import _use_internal_host
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,8 @@ class DownloadInfoAPI(BaseListView):
                 # Store url in cache.
                 if ttl > 0:
                     cache.set_presigned(user_id, key, url, ttl)
+            # For compose deploys, use internal url.
+            url = _use_internal_host(self.request, url)
             response_data.append({'key': key, 'url': url})
         return response_data
 

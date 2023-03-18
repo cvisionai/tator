@@ -29,7 +29,7 @@ ALLOWED_MUTATIONS = {
 def get_connection(db_name):
     conn = psycopg2.connect(database=db_name,
                          host=os.getenv('POSTGRES_HOST'),
-                         user=os.getenv('POSTGRES_USERNAME'),
+                         user=os.getenv('POSTGRES_USER'),
                          password=os.getenv('POSTGRES_PASSWORD'))
 
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)

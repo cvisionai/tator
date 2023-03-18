@@ -1,0 +1,15 @@
+10 * * * * cd /tator_online && python3 manage.py updateprojects > /proc/1/fd/1 2>/proc/1/fd/2
+20 * * * * cd /tator_online && python3 manage.py prunetemporaryfiles > /proc/1/fd/1 2>/proc/1/fd/2
+30 0 * * * cd /tator_online && python3 manage.py prunemedia > /proc/1/fd/1 2>/proc/1/fd/2
+30 1 * * * cd /tator_online && python3 manage.py prunelocalizations > /proc/1/fd/1 2>/proc/1/fd/2
+30 2 * * * cd /tator_online && python3 manage.py prunestates > /proc/1/fd/1 2>/proc/1/fd/2
+30 3 * * * cd /tator_online && python3 manage.py pruneleaves > /proc/1/fd/1 2>/proc/1/fd/2
+30 4 * * * cd /tator_online && python3 manage.py prunefiles > /proc/1/fd/1 2>/proc/1/fd/2
+40 18 * * * cd /tator_online && python3 manage.py movebackups > /proc/1/fd/1 2>/proc/1/fd/2
+40 0 * * * cd /tator_online && python3 manage.py archivemedia > /proc/1/fd/1 2>/proc/1/fd/2
+0 1 * * * cd /tator_online && python3 manage.py backupresources > /proc/1/fd/1 2>/proc/1/fd/2
+40 1 * * * cd /tator_online && python3 manage.py requestrestoration > /proc/1/fd/1 2>/proc/1/fd/2
+50 1 * * * cd /tator_online && python3 manage.py finishrestoration > /proc/1/fd/1 2>/proc/1/fd/2
+50 2 * * * cd /tator_online && python3 manage.py expireinvitations > /proc/1/fd/1 2>/proc/1/fd/2
+50 3 * * * cd /tator_online && python3 manage.py expireannouncements > /proc/1/fd/1 2>/proc/1/fd/2
+40 * * * * cd /tator_online && python3 manage.py expirepasswordresets > /proc/1/fd/1 2>/proc/1/fd/2

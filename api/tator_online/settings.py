@@ -24,21 +24,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-
-if os.getenv("TATOR_DEBUG").lower() == "true":
-    # SECURITY WARNING: don't run with debug turned on in production!
-    DEBUG = True
-else:
-    DEBUG = False
-
-# Control whether minified JS is used
-if os.getenv("TATOR_USE_MIN_JS").lower() == "true":
-    USE_MIN_JS = True
-else:
-    USE_MIN_JS = False
+DEBUG = False
 
 MAIN_HOST = os.getenv('MAIN_HOST')
-ALLOWED_HOSTS = [MAIN_HOST, 'gunicorn-svc']
+ALLOWED_HOSTS = [MAIN_HOST, 'gunicorn-svc', 'gunicorn']
 ALIAS_HOSTS = os.getenv('ALIAS_HOSTS')
 if ALIAS_HOSTS:
     ALLOWED_HOSTS += ALIAS_HOSTS.split(',')
@@ -122,7 +111,7 @@ if DEBUG:
         'default': {
             'ENGINE': 'django.contrib.gis.db.backends.postgis',
             'NAME': 'tator_online',
-            'USER': os.getenv('POSTGRES_USERNAME'),
+            'USER': os.getenv('POSTGRES_USER'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
             'HOST': os.getenv('POSTGRES_HOST'),
             'PORT': os.getenv('POSTGRES_PORT', 5432),
@@ -133,7 +122,7 @@ else:
         'default': {
             'ENGINE': 'django.contrib.gis.db.backends.postgis',
             'NAME': 'tator_online',
-            'USER': os.getenv('POSTGRES_USERNAME'),
+            'USER': os.getenv('POSTGRES_USER'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
             'HOST': os.getenv('POSTGRES_HOST'),
             'PORT': os.getenv('POSTGRES_PORT', 5432),
@@ -278,7 +267,9 @@ ANONYMOUS_REGISTRATION_ENABLED = os.getenv('ANONYMOUS_REGISTRATION_ENABLED')
 if ANONYMOUS_REGISTRATION_ENABLED is not None:
     ANONYMOUS_REGISTRATION_ENABLED = ANONYMOUS_REGISTRATION_ENABLED.lower() == 'true'
 if ANONYMOUS_REGISTRATION_ENABLED:
-    EMAIL_CONFIRMATION_REQUIRED = os.getenv('EMAIL_CONFIRMATION').lower() == 'true'
+    EMAIL_CONFIRMATION_REQUIRED = os.getenv('EMAIL_CONFIRMATION')
+    if EMAIL_CONFIRMATION_REQUIRED is not None:
+        EMAIL_CONFIRMATION_REQUIRED = EMAIL_CONFIRMATION_REQUIRED.lower() == 'true'
         
 SILENCED_SYSTEM_CHECKS = ['fields.W342']
 

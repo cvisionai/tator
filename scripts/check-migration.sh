@@ -36,20 +36,19 @@ function confirm_continue()
     
     
 }
-gunicorn_pod=`kubectl get pods | grep gunicorn-deployment | grep Running | head -n1 | awk '{print $1}'`
 
-if [ ${gunicorn_pod} == "" ]; then
+if [ $( docker ps -a -f name=gunicorn | wc -l ) -eq 1 ]; then
     echo "Cluster is not deemed to be running."
     confirm_continue
 fi
 
 our_models=`md5sum $root/api/main/models.py | awk '{print $1}'`
-their_models=`kubectl exec ${gunicorn_pod} -- md5sum /tator_online/main/models.py | awk '{print $1}'`
+their_models=`docker exec gunicorn md5sum /tator_online/main/models.py | awk '{print $1}'`
 
 if [ ${our_models} != ${their_models} ]; then
     echo "$(tput setaf 1)$(tput bold)Models.py change detected$(tput sgr 0)"
     tmp_file=`mktemp`
-    kubectl cp ${gunicorn_pod}:/tator_online/main/models.py ${tmp_file}
+    docker cp gunicorn:/tator_online/main/models.py ${tmp_file}
     echo "==================DIFF=========================="
     diff --color=always -U5 ${tmp_file} $root/api/main/models.py
     echo "================================================"

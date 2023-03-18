@@ -1,6 +1,8 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
-CONTAINERS=ui postgis pgbouncer redis client gunicorn nginx pruner sizer
+include .env
+
+CONTAINERS=ui postgis redis gunicorn nginx minio transcode transcode-worker db-worker image-worker gunicorn-cron postgis-cron
 
 OPERATIONS=reset logs bash
 
@@ -16,10 +18,6 @@ else
 YAML_ARGS=
 endif
 
-DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["dockerRegistry"])')
-
-SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("systemImageRepo"))')
-
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 FAKE_DEV_VERSION=248.434.5508
@@ -28,8 +26,8 @@ TATOR_PY_DEV_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(FAKE_DEV_VERSION)
 TATOR_JS_MODULE_FILE=ui/server/static/tator.min.js
 
 # default to dockerhub cvisionai organization
-ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
-SYSTEM_IMAGE_REGISTRY=cvisionai
+ifeq ($(REGISTRY),None)
+REGISTRY=cvisionai
 endif
 
 # Defaults to detecting what the current's node APT is, if cross-dist building:
@@ -40,10 +38,6 @@ endif
 # faster builds on Oracle OCI 
 APT_REPO_HOST ?= $(shell cat /etc/apt/sources.list | grep "focal main" | grep -v cdrom | head -n1 | awk '{print $$2}')
 
-
-POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresHost"])')
-POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresUsername"])')
-POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresPassword"])')
 
 #############################
 ## Help Rule + Generic targets
@@ -71,39 +65,27 @@ help:
 
 # Create backup with pg_dump
 backup:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
-
-ecr_update:
-	$(eval LOGIN := $(shell aws ecr get-login --no-include-email))
-	$(eval KEY := $(shell echo $(LOGIN) | python3 -c 'import sys; print(sys.stdin.read().split()[5])'))
-	$(LOGIN)
-	echo $(KEY) | python3 -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
+	docker exec postgis pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
 
 # Restore database from specified backup (base filename only)
 # Example:
 #   make restore SQL_FILE=backup_to_use.sql DB_NAME=backup_db_name
 restore: check_restore
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- createdb -U django $(DB_NAME) 
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
+	docker exec postgis createdb -U django $(DB_NAME) 
+	docker exec postgis pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
 
 .PHONY: check_restore
 check_restore:
 	@echo -n "This will create a backup database and restore. Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-init-logs:
-	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
-
 dump-logs:
 	mkdir -p /tmp/logs
-	kubectl logs $$(kubectl get pod -l "app=db-worker" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/db-worker-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=image-worker" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/image-worker-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/gunicorn-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=nginx" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/nginx-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/postgis-logs.txt
-	kubectl logs $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///') > /tmp/logs/ui-logs.txt
+	for name in $(CONTAINERS); do
+		GIT_VERSION=$(GIT_VERSION) docker compose logs $$name > /tmp/logs/$$name-logs.txt
+	done
 
 ui_bash:
-	kubectl exec -it $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh
+	docker exec -it ui /bin/sh
 
 # Top-level rule to catch user action + podname and whether it is present
 # Sets pod name to the command to execute on each pod.
@@ -116,25 +98,26 @@ $(foreach action,$(OPERATIONS),$(foreach container,$(CONTAINERS),$(eval $(call g
 
 # Generic handlers (variable podname is set to the requested pod)
 _reset:
-	kubectl delete pods -l app=$(podname)
+	GIT_VERSION=$(GIT_VERSION) docker compose restart $(podname)
 
 _bash:
-	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/bash
+	docker exec -it $(podname) /bin/bash
 
 _logs:
-	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
-	kubectl logs $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -f
+	GIT_VERSION=$(GIT_VERSION) docker compose logs -f $(podname)
 
 django-shell:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py shell
+	docker exec -it gunicorn python3 manage.py shell
 
+psql-shell:
+	docker exec -it postgis psql -U $(POSTGRES_USER) -d tator_online
 
 #####################################
 ## Custom rules below:
 #####################################
 .PHONY: status
 status:
-	kubectl get --watch pods -o wide --sort-by="{.spec.nodeName}"
+	GIT_VERSION=$(GIT_VERSION) docker compose ps
 
 .ONESHELL:
 
@@ -142,35 +125,38 @@ status:
 check-migration:
 	scripts/check-migration.sh $(pwd)
 
-cluster: api/main/version.py clean_schema
-	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-deps cluster-install
+.PHONY: tator
+tator: api/main/version.py clean_schema
+	docker network inspect public >/dev/null 2>&1 || \
+    docker network create public
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d postgis --wait
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d minio --wait
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d redis --wait
+	GIT_VERSION=$(GIT_VERSION) docker compose run --rm create-extensions
+	GIT_VERSION=$(GIT_VERSION) docker compose run --rm migrate
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d
 
-cluster-deps:
-	helm dependency update helm/tator
+cluster: api/main/version.py clean_schema
+	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-install
 
 cluster-install:
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
-	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	$(MAKE) tator
 
 cluster-upgrade: check-migration api/main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
-	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	$(MAKE) cluster-update
 
 cluster-update: 
-	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d --force-recreate
 
 cluster-uninstall:
-	kubectl delete apiservice v1beta1.metrics.k8s.io
-	kubectl delete all --namespace kubernetes-dashboard --all
-	helm uninstall tator
+	$(MAKE) clean
 
 .PHONY: clean
-clean: cluster-uninstall clean-tokens
+clean:
+	GIT_VERSION=$(GIT_VERSION) docker compose down
 
 clean-tokens:
 	rm -fr .token
-
-dashboard-token:
-	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 # GIT-based diff for image generation
 # Available for tator-image, change dep to ".token/tator_online_$(GIT_VERSION)"
@@ -188,20 +174,17 @@ endif
 
 .PHONY: tator-image
 tator-image:
-	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) --network host -t $(REGISTRY)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	mkdir -p .token
 	touch .token/tator_online_$(GIT_VERSION)
 
 .PHONY: ui-image
 ui-image: webpack
-	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --network host -t $(REGISTRY)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
 
 .PHONY: postgis-image
 postgis-image:
-	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/postgis/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_postgis:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_postgis:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/postgis/Dockerfile . || exit 255
 
 EXPERIMENTAL_DOCKER=$(shell docker version --format '{{json .Client.Experimental}}')
 ifeq ($(EXPERIMENTAL_DOCKER), true)
@@ -219,12 +202,10 @@ experimental_docker:
 endif
 
 
-USE_VPL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("enableVpl","False"))')
-ifeq ($(USE_VPL),True)
+ifeq ($(USE_VPL),true)
 .PHONY: client-vpl
 client-vpl: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
 else
 .PHONY: client-vpl
 client-vpl: $(TATOR_PY_WHEEL_FILE)
@@ -233,38 +214,31 @@ endif
 
 .PHONY: client-amd64
 client-amd64: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
 
 .PHONY: client-aarch64
 client-aarch64: $(TATOR_PY_WHEEL_FILE)
-		DOCKER_BUILDKIT=1 docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
+	echo "Skipping aarch64"
+	#DOCKER_BUILDKIT=1 docker build --no-cache --platform linux/aarch64 --network host -t $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: experimental_docker client-vpl client-amd64 client-aarch64
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
-	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
-	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) 
-	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
-	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
+client-image: experimental_docker client-vpl client-amd64 #client-aarch64
+	docker tag $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) $(REGISTRY)/tator_client:$(GIT_VERSION)
+	docker tag $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
 
 .PHONY: client-latest
 client-latest: client-image
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
-	docker push cvisionai/tator_client:latest
+	docker tag $(REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
 
 .PHONY: braw-image
 braw-image:
-	DOCKER_BUILDKIT=1 docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
+	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
+	docker tag $(REGISTRY)/tator_client_braw:$(GIT_VERSION) $(REGISTRY)/tator_client_braw:latest
 
 .PHONY: transcode-image
 transcode-image:
-	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_transcode:$(GIT_VERSION) -f containers/tator_transcode/Dockerfile containers/tator_transcode || exit 255
-	docker push $(DOCKERHUB_USER)/tator_transcode:$(GIT_VERSION)
+	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_transcode:$(GIT_VERSION) -f containers/tator_transcode/Dockerfile containers/tator_transcode || exit 255
 
 
 ifeq ($(shell cat api/main/version.py), $(shell ./scripts/version.sh))
@@ -284,8 +258,7 @@ collect-static: webpack
 dev-push:
 	@scripts/dev-push.sh
 
-USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
-ifeq ($(USE_MIN_JS),True)
+ifeq ($(USE_MIN_JS),true)
 webpack: $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
 	cd ui && npm install && python3 make_index_files.py && npm run build
@@ -295,38 +268,35 @@ webpack: $(TATOR_JS_MODULE_FILE)
 	cd ui && npm install && python3 make_index_files.py && npm run buildDev
 endif
 
+.PHONY: superuser
+superuser:
+	docker exec -it gunicorn python3 manage.py createsuperuser
+
 .PHONY: migrate
 migrate:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py makemigrations
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py migrate
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d create-extensions
+	GIT_VERSION=$(GIT_VERSION) docker compose up -d migrate
 
 .PHONY: testinit
 testinit:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+	docker exec postgis psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS LTREE';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS POSTGIS';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
+	docker exec postgis psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
 	
 .PHONY: test
 test:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'bash scripts/addExtensionsToInit.sh'
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
+	docker exec gunicorn sh -c 'bash scripts/addExtensionsToInit.sh'
+	docker exec gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
 
 .PHONY: cache_clear
 cache-clear:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
-
-.PHONY: cleanup-evicted
-cleanup-evicted:
-	kubectl get pods | grep Evicted | awk '{print $$1}' | xargs kubectl delete pod
+	docker exec gunicorn python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
 
 .PHONY: images
 images: ${IMAGES}
 	@echo "Built ${IMAGES}"
-
-lazyPush:
-	rsync -a -e ssh --exclude api/main/migrations --exclude api/main/__pycache__ main adamant:/home/brian/working/tator_online
 
 $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
@@ -383,7 +353,7 @@ js-bindings: .token/tator_online_$(GIT_VERSION)
 
 .PHONY: r-docs
 r-docs: doc/_build/schema.yaml
-	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
+	docker inspect --type=image $(REGISTRY)/tator_online:$(GIT_VERSION) && \
 	cp doc/_build/schema.yaml scripts/packages/tator-r/.
 	rm -rf scripts/packages/tator-r/tmp
 	mkdir -p scripts/packages/tator-r/tmp
@@ -417,18 +387,9 @@ r-docs: doc/_build/schema.yaml
 	cd ../../..
 
 TOKEN=$(shell cat token.txt)
-HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')
 .PHONY: pytest
 pytest:
-	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(HOST) --token $(TOKEN)
-
-.PHONY: letsencrypt
-letsencrypt:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/letsencrypt.sh 
-
-.PHONY: selfsigned
-selfsigned:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/selfsigned.sh
+	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(MAIN_HOST) --token $(TOKEN)
 
 .PHONY: markdown-docs
 markdown-docs:
@@ -444,7 +405,7 @@ markdown-docs:
 doc/_build/schema.yaml: $(shell find api/main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
 	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
-	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
+	docker run --rm -e DJANGO_SECRET_KEY=1337 $(REGISTRY)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 # Hold over
@@ -454,7 +415,7 @@ schema:
 
 .PHONY: check_schema
 check_schema:
-	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
+	docker run --rm -e DJANGO_SECRET_KEY=1337 $(REGISTRY)/tator_online:$(GIT_VERSION) python3 manage.py getschema
 
 .PHONY: clean_schema
 clean_schema:
@@ -476,19 +437,19 @@ endif
 # make announce FILE=blah.md USER_ID=1
 .PHONY: announce
 announce:
-	kubectl cp $(FILE) $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///'):/tmp/announce.md
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- $(ANNOUNCE_CMD) 
+	docker cp $(FILE) gunicorn:/tmp/announce.md
+	docker exec gunicorn $(ANNOUNCE_CMD) 
 
 .PHONY: rq-info
 rq-info:
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq info
+	docker exec gunicorn rq info
 
 .PHONY: rq-empty
 rq-empty:
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty async_jobs
-	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- rq empty db_jobs
+	docker exec gunicorn rq empty async_jobs
+	docker exec gunicorn rq empty db_jobs
 
 .PHONY: check-clean-db-logs
 check-clean-db-logs:
-	scripts/check_for_errors.sh $$(kubectl get pod -l "app=db-worker" -o name | head -n 1 | sed 's/pod\///')
+	scripts/check_for_errors.sh db-worker
 

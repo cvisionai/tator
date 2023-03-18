@@ -19,8 +19,6 @@ from ..models import Affiliation
 from ..models import User
 from ..models import Media
 from ..models import Algorithm
-from ..kube import TatorTranscode
-from ..kube import TatorAlgorithm
 from ..cache import TatorCache
 
 logger = logging.getLogger(__name__)

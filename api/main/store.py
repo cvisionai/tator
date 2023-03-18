@@ -696,11 +696,12 @@ def get_tator_store(
         if config:
             # Quoted json string needs to be json-loaded twice
             for _ in range(2):
-                try:
-                    config = json.loads(config)
-                except Exception:
-                    logger.error(f"Could not parse json string:\n'{config}'", exc_info=True)
-                    raise
+                if not isinstance(config, dict):
+                    try:
+                        config = json.loads(config)
+                    except Exception:
+                        logger.error(f"Could not parse json string:\n'{config}'", exc_info=True)
+                        raise
         else:
             # If a backup store was requested but not provided (`bucket` is None and the environment
             # variables are empty), return `None` to signal no store exists
