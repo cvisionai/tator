@@ -21,7 +21,7 @@ Quick start
 Install [Docker](https://www.docker.com/), then:
 
 ```bash
-git clone --recurse-submodules -b stable https://github.com/cvisionai/tator
+git clone --recurse-submodules https://github.com/cvisionai/tator
 cd tator
 make tator
 make superuser
