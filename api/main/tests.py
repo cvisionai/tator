@@ -1844,7 +1844,7 @@ class LocalizationBoxTestCase(
             }
         }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'box1'}
+        self.patch_json = {'name': 'box1', 'in_place': 1}
 
 class LocalizationLineTestCase(
         TatorTransactionTest,
@@ -1912,7 +1912,7 @@ class LocalizationLineTestCase(
             }
         }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'line1'}
+        self.patch_json = {'name': 'line1', 'in_place': 1}
 
 class LocalizationDotTestCase(
         TatorTransactionTest,
@@ -1978,7 +1978,7 @@ class LocalizationDotTestCase(
             }
         }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'dot1'}
+        self.patch_json = {'name': 'dot1', 'in_place': 1}
 
 class LocalizationPolyTestCase(
         TatorTransactionTest,
@@ -2043,7 +2043,7 @@ class LocalizationPolyTestCase(
             }
         }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'box1'}
+        self.patch_json = {'name': 'box1', 'in_place': 1}
 
 class StateTestCase(
         TatorTransactionTest,
