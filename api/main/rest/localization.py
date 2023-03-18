@@ -222,7 +222,7 @@ class LocalizationListAPI(BaseListView):
     def _patch(self, params):
         patched_version = params.pop("new_version", None)
         # Adding an id query a
-        if params.get('ids', []) != []:
+        if params.get('ids', []) != [] or params.get('user_elemental_id', None):
             params['show_all_marks'] = 1
             params['in_place'] = 1
         qs = get_annotation_queryset(params['project'], params, 'localization')
@@ -302,6 +302,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             obj.version = Version.objects.get(pk=version)
 
         if params.get('user_elemental_id', None):
+            params['in_place'] = 1
             computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
             obj.created_by = computed_author
             obj.user = computed_author

@@ -204,7 +204,7 @@ localization_update = {
         },
         'in_place': {
             'type': 'integer',
-            'description': 'Set to 1 to edit this record in-place, else mark-based versioning rules apply.',
+            'description': 'Set to 1 to edit this record in-place, else mark-based versioning rules apply. This changes to 1 for authorship changes automatically.',
             'minimum': 0,
             'maximum': 1,
             'default': 0
@@ -317,7 +317,7 @@ localization_bulk_update = {
         },
         'in_place': {
             'type': 'integer',
-            'description': 'Set to 1 to edit this record in-place, else mark-based versioning rules apply. Note: If querying by ids this is always treated as 1.',
+            'description': 'Set to 1 to edit this record in-place, else mark-based versioning rules apply. Note: If querying by ids or applying a author change this is always treated as 1.',
             'minimum': 0,
             'maximum': 1,
             'default': 0
