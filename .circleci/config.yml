@@ -93,19 +93,6 @@ jobs:
         name: Publish tator-js
         command: |
           ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
-  update-earlyaccess:
-    machine:
-      image: ubuntu-2004:202010-01
-    steps:
-    - checkout
-    - run:
-        name: Clone private repo
-        command: cd "$HOME" && git clone "$PRIVATE_REPO"
-    - run:
-        name: Update earlyaccess
-        command: |
-          mv $HOME/project $HOME/tator
-          $HOME/$PRIVATE_REPO_NAME/oci/update.sh
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
@@ -325,17 +312,6 @@ workflows:
         - tator-py-tests
         context: cvisionai
         filters:
-          tags:
-            only: /.*/
-    - update-earlyaccess:
-        requires:
-        - rest-tests
-        - tator-py-tests
-        context: cd
-        filters:
-          branches:
-            only:
-            - rc/1.0.0
           tags:
             only: /.*/
     - cleanup-lightsail:
