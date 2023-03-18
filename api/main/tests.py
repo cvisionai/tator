@@ -773,7 +773,7 @@ class AttributeTestMixin:
             # Update objects with a string so we know which to delete
             response = self.client.patch(
                 f'/rest/{self.detail_uri}/{obj_id}',
-                {'attributes': {'String Test': 'DELETE ME!!!'}},
+                {'in_place': 1, 'attributes': {'String Test': 'DELETE ME!!!'}},
                 format='json')
 
         response = self.client.delete(
