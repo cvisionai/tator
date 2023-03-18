@@ -342,7 +342,7 @@ r-docs: doc/_build/schema.yaml
 	touch $(shell pwd)/doc/tator-r/reference/api.rst
 	cd ../../..
 
-TOKEN=$(shell cat token.txt)
+TOKEN=$(shell cat token.txt 2>/dev/null)
 .PHONY: pytest
 pytest:
 	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(MAIN_HOST) --token $(TOKEN)
