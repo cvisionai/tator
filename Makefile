@@ -190,7 +190,7 @@ postgis-image:
 .PHONY: client-image
 client-image: $(TATOR_PY_WHEEL_FILE)
 	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/tator_client/Dockerfile . || exit 255
-	docker tag $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
+	docker tag $(REGISTRY)/tator_client:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
 
 .PHONY: transcode-image
 transcode-image:
