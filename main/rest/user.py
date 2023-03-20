@@ -7,6 +7,7 @@ from django.conf import settings
 import pyotp
 import qrcode
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from ..models import User
 from ..models import Invitation
@@ -131,10 +132,12 @@ class UserListAPI(BaseListView):
             img_buf = io.BytesIO()
             img.save(img_buf, "png", quality=95)
             response = img_buf.getvalue()
+            status = 201
         else:
             response = {'message': f"User {username} created!", 'id': user.id}
+            status = 200
 
-        return response
+        return Response(response, status=status)
 
 class UserDetailAPI(BaseDetailView):
     """ Interact with an individual user.
