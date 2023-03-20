@@ -12,6 +12,13 @@ from ..models import User
 from ..models import Invitation
 from ..models import Affiliation
 from ..models import PasswordReset
+from ..renderers import (
+    GifRenderer,
+    JpegRenderer,
+    Mp4Renderer,
+    PngRenderer,
+    TatorRenderer,
+)
 from ..serializers import UserSerializerBasic
 from ..ses import TatorSES
 from ..schema import UserExistsSchema
@@ -50,6 +57,7 @@ class UserListAPI(BaseListView):
     """
     schema = UserListSchema()
     queryset = User.objects.all()
+    renderer_classes = (GifRenderer, JpegRenderer, Mp4Renderer, PngRenderer, TatorRenderer)
     permission_classes = [UserListPermission]
     http_method_names = ['get', 'post']
 
