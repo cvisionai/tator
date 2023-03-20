@@ -119,21 +119,21 @@ class UserListSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of user list.',
-                'content': {'application/json': {'schema': {
-                    'type': 'array',
-                    'items': {'$ref': '#/components/schemas/User'},
-                }}},
+                'content': {
+                    'application/json': {
+                        'schema': {'type': 'array', 'items': {'$ref': '#/components/schemas/User'}},
+                    },
+                    'image/*': {'schema': {'type': 'string', 'format': 'binary'}},
+                },
             }
         if method == 'POST':
-            responses['201'] = {
+            responses['200'] = {
                 'description': 'Successful creation of user.',
                 'content': {
-                    'image/*': {
-                        'schema': {
-                            'type': 'string',
-                            'format': 'binary',
-                        },
+                    'application/json': {
+                        'schema': {'type': 'array', 'items': {'$ref': '#/components/schemas/User'}},
                     },
+                    'image/*': {'schema': {'type': 'string', 'format': 'binary'}},
                 },
             }
         return responses

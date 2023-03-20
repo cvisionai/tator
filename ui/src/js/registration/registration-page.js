@@ -119,13 +119,13 @@ export class RegistrationPage extends TatorElement {
         credentials: "same-origin",
         headers: {
           "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
+          "Accept": "*/*",
           "Content-Type": "application/json"
         },
         body: JSON.stringify(body),
       })
       .then(response => {
-        if (response.status != 201) {
+        if (response.status >= 400) {
           return response.json();
         } else {
           return response.blob();
