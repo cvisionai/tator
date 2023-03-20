@@ -186,55 +186,11 @@ ui-image: webpack
 postgis-image:
 	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_postgis:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/postgis/Dockerfile . || exit 255
 
-EXPERIMENTAL_DOCKER=$(shell docker version --format '{{json .Client.Experimental}}')
-ifeq ($(EXPERIMENTAL_DOCKER), true)
-# exists if experimental docker is not found
-.PHONY: experimental_docker
-experimental_docker:
-	@echo "NOTICE:\tDetected experimental docker"
-else
-.PHONY: experimental_docker
-experimental_docker:
-	@echo  "ERROR:\tImage build requires '--platform' argument which requires docker client experimental features"
-	@echo "\tUpgrade to docker client version >= 20.10.17 or turn on the experimental flag manually in config.json"
-	@echo "\tFor more info, see 'man docker-config-json'"
-	exit 255
-endif
-
-
-ifeq ($(USE_VPL),true)
-.PHONY: client-vpl
-client-vpl: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
-else
-.PHONY: client-vpl
-client-vpl: $(TATOR_PY_WHEEL_FILE)
-	@echo "Skipping VPL Build"
-endif
-
-.PHONY: client-amd64
-client-amd64: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST)  -f containers/tator_client/Dockerfile . || exit 255
-
-.PHONY: client-aarch64
-client-aarch64: $(TATOR_PY_WHEEL_FILE)
-	echo "Skipping aarch64"
-	#DOCKER_BUILDKIT=1 docker build --no-cache --platform linux/aarch64 --network host -t $(REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
-
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: experimental_docker client-vpl client-amd64 #client-aarch64
-	docker tag $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) $(REGISTRY)/tator_client:$(GIT_VERSION)
-	docker tag $(REGISTRY)/tator_client_amd64:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
-
-.PHONY: client-latest
-client-latest: client-image
-	docker tag $(REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
-
-.PHONY: braw-image
-braw-image:
-	DOCKER_BUILDKIT=1 docker build --network host -t $(REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
-	docker tag $(REGISTRY)/tator_client_braw:$(GIT_VERSION) $(REGISTRY)/tator_client_braw:latest
+client-image: $(TATOR_PY_WHEEL_FILE)
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/tator_client/Dockerfile . || exit 255
+	docker tag $(REGISTRY)/tator_client:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
 
 .PHONY: transcode-image
 transcode-image:
@@ -386,7 +342,7 @@ r-docs: doc/_build/schema.yaml
 	touch $(shell pwd)/doc/tator-r/reference/api.rst
 	cd ../../..
 
-TOKEN=$(shell cat token.txt)
+TOKEN=$(shell cat token.txt 2>/dev/null)
 .PHONY: pytest
 pytest:
 	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(MAIN_HOST) --token $(TOKEN)
