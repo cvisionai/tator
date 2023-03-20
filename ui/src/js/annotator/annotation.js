@@ -2544,6 +2544,7 @@ export class AnnotationCanvas extends TatorElement
 
   mouseOutHandler(mouseEvent)
   {
+    this._mouseOverActive = false;
     let needRefresh = false;
     this._textOverlay.classList.remove("select-pointer");
     this._textOverlay.toggleTextDisplay(this._coordinateOverlayIdx,false);
@@ -2564,6 +2565,7 @@ export class AnnotationCanvas extends TatorElement
 
   mouseOverHandler(mouseEvent)
   {
+    this._mouseOverActive = true;
     if (this._playing)
     {
       return;
