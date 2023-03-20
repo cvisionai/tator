@@ -1,17 +1,17 @@
+# pylint: disable=import-error
+import io
 from uuid import uuid1
 
 from django.db import transaction
 from django.conf import settings
 import pyotp
 import qrcode
-import tempfile
 from rest_framework.exceptions import ValidationError
 
 from ..models import User
 from ..models import Invitation
 from ..models import Affiliation
 from ..models import PasswordReset
-from ..models import TemporaryFile
 from ..serializers import UserSerializerBasic
 from ..serializers import TemporaryFileSerializer
 from ..ses import TatorSES
@@ -125,22 +125,15 @@ class UserListAPI(BaseListView):
                                            permission=invite.permission,
                                            user=user)
 
-        response = {'message': f"User {username} created!", 'id': user.id}
         if settings.MFA_ENABLED:
             uri = pyotp.totp.TOTP(user.mfa_hash).provisioning_uri(user.email, issuer_name="Tator")
             img = qrcode.make(uri)
-            temp_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-            img.save(temp_image.name)
-            img_name = temp_image.name.split("/")[-1]
-            temp_file = TemporaryFile.from_local(
-                temp_image.name,
-                img_name,
-                None,
-                user,
-                "",
-                24,
-            )
-            response["qrcode"] = TemporaryFileSerializer(temp_file, context={"view": self}).data
+            img_buf = io.BytesIO()
+            img.save(img_buf, "png", quality=95)
+            response = img_buf.getvalue()
+        else:
+            response = {'message': f"User {username} created!", 'id': user.id}
+
         return response
 
 class UserDetailAPI(BaseDetailView):

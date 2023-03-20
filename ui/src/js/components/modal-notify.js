@@ -10,6 +10,10 @@ export class ModalNotify extends ModalDialog {
     this._successIcon = document.createElement("modal-success");
     this._header.insertBefore(this._successIcon, this._titleDiv);
 
+    this._img = document.createElement("img");
+    this._main.appendChild(this._img);
+
+    this._link.appendChild(this._img);
     this._message = document.createElement("p");
     this._message.setAttribute("class", "text-semibold py-3 text-center");
     this._main.appendChild(this._message);
@@ -24,7 +28,7 @@ export class ModalNotify extends ModalDialog {
     });
   }
 
-  init(title, message, error_or_ok, buttonText, is_html) {
+  init(title, message, error_or_ok, buttonText, is_html, qrcode = null) {
     this._title.nodeValue = title;
     if (is_html)
     {
@@ -49,6 +53,10 @@ export class ModalNotify extends ModalDialog {
       this._accept.classList.add("btn-purple");
       if (buttonText) {
         this._accept.textContent = buttonText;
+      }
+
+      if (qrcode) {
+        this._img.setAttribute("src", qrcode);
       }
     }
   }

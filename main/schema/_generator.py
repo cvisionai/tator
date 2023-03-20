@@ -161,7 +161,6 @@ class CustomGenerator(SchemaGenerator):
                 'UserSpec': user_spec,
                 'UserUpdate': user_update,
                 'User': user,
-                'UserPost': user_post,
                 'VersionSpec': version_spec,
                 'VersionUpdate': version_update,
                 'Version': version,

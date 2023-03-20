@@ -125,7 +125,6 @@ from .upload_info import upload_info
 from .user import user_spec
 from .user import user_update
 from .user import user
-from .user import user_post
 from .version import version_spec
 from .version import version_update
 from .version import version

@@ -125,37 +125,35 @@ export class RegistrationPage extends TatorElement {
         body: JSON.stringify(body),
       })
       .then(response => {
-        if (response.status == 400) {
-          throw response.json();
-        } else {
+        if (response.status != 201) {
           return response.json();
+        } else {
+          return response.blob();
         }
       })
       .then(data => {
-        if ("qrcode" in data) {
-          return data["qrcode"];
+        console.log("DATA DATA DATA");
+        console.log(data);
+        console.log("DATA DATA DATA");
+
+        if (typeof data === 'object') {
+          this._modalNotify.init("Registration failed!", e.message, "error", "Close");
+          this._modalNotify.setAttribute("is-open", "");
+          this.setAttribute("has-open-modal", "");
         } else {
-          return data;
+          this._modalNotify.addEventListener("close", evt => {
+            window.location.replace("/accounts/login");
+          });
+          this._modalNotify.init(
+            "Registration succeeded!",
+            "Scan the QR code with Google Authenticator and then press Continue to go to login screen.",
+            "ok",
+            "Continue",
+            data,
+          );
+          this._modalNotify.setAttribute("is-open", "");
+          this.setAttribute("has-open-modal", "");
         }
-      })
-      .then(data => {
-        let message;
-        if ("path" in data) {
-          message = "Click <a href=" + data["path"] + ">here</a> to obtain your QR code for multi-factor authentication.";
-        } else {
-          message = data.message;
-        }
-        this._modalNotify.addEventListener("close", evt => {
-          window.location.replace("/accounts/login");
-        });
-        this._modalNotify.init("Registration succeeded!", message, "ok", "Continue");
-        this._modalNotify.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-      })
-      .catch(e => {
-        this._modalNotify.init("Registration failed!", e.message, "error", "Close");
-        this._modalNotify.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
       })
     });
   }

@@ -1,5 +1,7 @@
+# pylint: disable=import-error
 from textwrap import dedent
 
+from django.conf import settings
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -120,8 +122,20 @@ class UserListSchema(AutoSchema):
                 'description': 'Successful retrieval of user list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schemas/UserPost'},
+                    'items': {'$ref': '#/components/schemas/User'},
                 }}},
+            }
+        elif settings.MFA_ENABLED and method == 'POST':
+            responses['201'] = {
+                'description': 'Successful creation of user.',
+                'content': {
+                    'image/*': {
+                        'schema': {
+                            'type': 'string',
+                            'format': 'binary',
+                        },
+                    },
+                },
             }
         return responses
 
