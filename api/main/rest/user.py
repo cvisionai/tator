@@ -152,7 +152,7 @@ class UserListAPI(BaseListView):
                 if settings.EMAIL_CONFIRMATION_REQUIRED:
                     if settings.TATOR_EMAIL_ENABLED:
                         user.is_active = False
-                        user.confirmation_token = uuid.uuid1()
+                        user.confirmation_token = uuid1()
                         # Send email
                         TatorSES().email(
                             sender=settings.TATOR_EMAIL_SENDER,
