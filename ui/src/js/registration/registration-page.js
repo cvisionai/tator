@@ -132,15 +132,7 @@ export class RegistrationPage extends TatorElement {
         }
       })
       .then(data => {
-        console.log("DATA DATA DATA");
-        console.log(data);
-        console.log("DATA DATA DATA");
-
-        if (typeof data === 'object') {
-          this._modalNotify.init("Registration failed!", e.message, "error", "Close");
-          this._modalNotify.setAttribute("is-open", "");
-          this.setAttribute("has-open-modal", "");
-        } else {
+        if (data instanceof Blob) {
           this._modalNotify.addEventListener("close", evt => {
             window.location.replace("/accounts/login");
           });
@@ -149,11 +141,14 @@ export class RegistrationPage extends TatorElement {
             "Scan the QR code with Google Authenticator and then press Continue to go to login screen.",
             "ok",
             "Continue",
-            data,
+            false,
+            URL.createObjectURL(data),
           );
-          this._modalNotify.setAttribute("is-open", "");
-          this.setAttribute("has-open-modal", "");
+        } else {
+          this._modalNotify.init("Registration failed!", data.message, "error", "Close");
         }
+        this._modalNotify.setAttribute("is-open", "");
+        this.setAttribute("has-open-modal", "");
       })
     });
   }

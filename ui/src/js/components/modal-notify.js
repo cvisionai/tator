@@ -13,7 +13,6 @@ export class ModalNotify extends ModalDialog {
     this._img = document.createElement("img");
     this._main.appendChild(this._img);
 
-    this._link.appendChild(this._img);
     this._message = document.createElement("p");
     this._message.setAttribute("class", "text-semibold py-3 text-center");
     this._main.appendChild(this._message);
