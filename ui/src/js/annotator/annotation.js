@@ -1835,6 +1835,16 @@ export class AnnotationCanvas extends TatorElement
       return;
     }
 
+    // Handle sensitive keyboard shortcuts only when mouseover is active
+    if (this._mouseMode == MouseMode.SELECT && this._mouseOverActive == true)
+    {
+      if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
+      {
+        this._delConfirm.objectName = this.getObjectDescription(this.activeLocalization).name;
+        this._delConfirm.confirm()
+      }
+    }
+
     if (event.ctrlKey && event.code == "Digit9")
     {
       this._effectManager.grayscale();
