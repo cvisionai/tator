@@ -46,12 +46,12 @@ def _related_search(qs, project, relevant_state_type_ids, relevant_localization_
     related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
     related_matches = []
     for entity_type in related_state_types:
-        state_qs = State.objects.filter(project=project, type=entity_type)
+        state_qs = State.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
         state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
         if state_qs.count():
             related_matches.append(state_qs)
     for entity_type in related_localization_types:
-        local_qs = Localization.objects.filter(project=project, type=entity_type)
+        local_qs = Localization.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
         local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
         if local_qs.count():
             related_matches.append(local_qs)
