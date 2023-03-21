@@ -403,8 +403,18 @@ export class ProjectDetail extends TatorPage {
           },
           body: JSON.stringify(spec),
         })
-          .then(response => response.json())
-          .then(section => {
+          .then(async response => {
+            let section = await response.json();
+            if (response.status != 201)
+            {
+              if (this._modalError == undefined)
+              {
+                this._modalError = document.createElement("modal-dialog");
+                this._shadow.appendChild(this._modalError);
+              }
+              this._modalError._error(`Unable to create section '${spec.name}'. ${section.message}`, "Error");
+              return;
+            }
             const card = document.createElement("entity-card");
             const sectionObj = {
               id: section.id,
