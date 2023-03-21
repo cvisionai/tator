@@ -58,4 +58,3 @@ COPY manage.py /tator_online/manage.py
 
 # Delete front end unit tests
 RUN rm -fr /tator_online/test
-RUN rm -rf helm
