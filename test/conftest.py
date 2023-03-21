@@ -351,7 +351,7 @@ def multi(request, base_url, token, project, video2, video3):
     multi_types = [m for m in media_types if m.dtype == "multi"]
     multi_type_id = multi_types[0]
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[video2,video3], "Multis")
-    yield response.id
+    yield response.id[0]
 
 @pytest.fixture(scope='session')
 def image_file(request):
@@ -402,7 +402,7 @@ def referenced_image(request, base_url, token, page_factory, project, image_sect
                   'reference_only': 1
                   }
     response = api.create_media_list(project, [media_spec])
-    yield response.id
+    yield response.id[0]
 
 @pytest.fixture(scope='session')
 def referenced_video(request, base_url, token, page_factory, project):
@@ -422,7 +422,7 @@ def referenced_video(request, base_url, token, page_factory, project):
                   'fps': 30.0
                   }
     response = api.create_media_list(project, [media_spec])
-    media_id = response.id
+    media_id = response.id[0]
     video_def = {
         'codec': 'h264',
         'codec_description': 'H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10',
@@ -542,7 +542,7 @@ def multi_rgb(request, base_url, token, project, rgb_test, rgb_test_2):
     multi_types = [m for m in media_types if m.dtype == "multi"]
     multi_type_id = multi_types[0]
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[rgb_test,rgb_test_2], "Multis")
-    yield response.id
+    yield response.id[0]
 
 @pytest.fixture(scope='session')
 def small_video(request, base_url, project, token, video_files):
@@ -627,7 +627,7 @@ def multi_count(request, base_url, token, project, count_test, count_test_2):
     multi_types = [m for m in media_types if m.dtype == "multi"]
     multi_type_id = multi_types[0]
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[count_test,count_test_2], "Multis")
-    yield response.id
+    yield response.id[0]
 
 @pytest.fixture(scope='session')
 def multi_offset_count(request, base_url, token, project, count_test, count_test_2):
@@ -636,8 +636,8 @@ def multi_offset_count(request, base_url, token, project, count_test, count_test
     multi_types = [m for m in media_types if m.dtype == "multi"]
     multi_type_id = multi_types[0]
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test_offset.multi",[count_test,count_test_2], "Multis")
-    api.update_media(response.id, {'multi': {'frameOffset': [0,100]}})
-    yield response.id
+    api.update_media(response.id[0], {'multi': {'frameOffset': [0,100]}})
+    yield response.id[0]
 
 @pytest.fixture(scope='session')
 def concat_test(request, base_url, token, project, rgb_test, rgb_test_2):
@@ -646,4 +646,4 @@ def concat_test(request, base_url, token, project, rgb_test, rgb_test_2):
     multi_types = [m for m in media_types if m.dtype == "multi"]
     multi_type_id = multi_types[0]
     response = tator.util.make_concat(api, "test_concat",[rgb_test,rgb_test_2], "Concat")
-    yield response.id
+    yield response.id[0]
