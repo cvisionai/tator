@@ -2121,7 +2121,7 @@ class StateTestCase(
             }
         }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'state1'}
+        self.patch_json = {'name': 'state1', 'in_place': 1}
 
     def test_elemental_id(self):
         # Test on type object

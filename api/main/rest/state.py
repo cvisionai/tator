@@ -318,6 +318,9 @@ class StateListAPI(BaseListView):
         return {'message': f'Successfully deleted {count} states!'}
 
     def _patch(self, params):
+        if params.get('ids', []) != [] or params.get('user_elemental_id', None):
+            params['show_all_marks'] = 1
+            params['in_place'] = 1
         qs = get_annotation_queryset(params['project'], params, 'state')
         patched_version = params.pop("new_version", None)
         count = qs.count()
@@ -331,9 +334,27 @@ class StateListAPI(BaseListView):
                 update_kwargs['created_by'] = computed_author
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
-            bulk_update_and_log_changes(
-                qs, params["project"], self.request.user, update_kwargs=update_kwargs, new_attributes=new_attrs
-            )
+
+            if params.get('in_place', 0):
+                bulk_update_and_log_changes(
+                    qs, params["project"], self.request.user, update_kwargs=update_kwargs, new_attributes=new_attrs
+                )
+            else:
+                objs=[]
+                many_to_many=[]
+
+                for original in qs.iterator():
+                    many_to_many.append((original.media.all(), original.localizations.all()))
+                    original.pk=None
+                    original.id=None
+                    for key,value in update_kwargs.items():
+                        setattr(original, key, value)
+                    original.attributes.update(new_attrs)
+                    objs.append(original)
+                new_objs = State.objects.bulk_create(objs)
+                for p_obj, m2m in zip(new_objs, many_to_many):
+                    p_obj.media.set(m2m[0])
+                    p_obj.localizations.set(m2m[1])
 
         return {'message': f'Successfully updated {count} states!'}
 
@@ -392,6 +413,7 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.localizations.remove(*list(localizations))
         
         if params.get('user_elemental_id', None):
+            params['in_place'] = 1
             computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
             obj.created_by = computed_author
 
@@ -423,10 +445,24 @@ class StateDetailBaseAPI(BaseDetailView):
         if 'elemental_id' in params:
             obj.elemental_id = params['elemental_id']
 
-        obj.save()
-        log_changes(obj, model_dict, obj.project, self.request.user)
+        if params.get('in_place', 0):
+            obj.save()
+            log_changes(obj, model_dict, obj.project, self.request.user)
+        else:
+            if obj.mark != obj.latest_mark:
+                raise ValueError(f"Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                                 f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}")
 
-        return {'message': f'State {params["id"]} successfully updated!'}
+            old_media = obj.media.all()
+            old_localizations = obj.localizations.all()
+            # Save edits as new object, mark is calculated in trigger
+            obj.id = None
+            obj.pk = None
+            obj.save()
+            obj.media.set(old_media)
+            obj.localizations.set(old_localizations)
+
+        return {'message': f'State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!'}
 
     def delete_qs(self, params, qs):
         if not qs.exists():

@@ -242,7 +242,7 @@ class LocalizationListAPI(BaseListView):
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
 
-            if params.get('in_place', 1):
+            if params.get('in_place', 0):
                 bulk_update_and_log_changes(
                     qs,
                     params["project"],
@@ -387,6 +387,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
                                  f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}")
 
             # Save edits as new object, mark is calculated in trigger
+            obj.id = None
             obj.pk = None
             obj.save()
 
