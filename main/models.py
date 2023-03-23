@@ -662,7 +662,7 @@ class TemporaryFile(Model):
     """ Represents a temporary file in the system, can be used for algorithm results or temporary outputs """
     name = CharField(max_length=128)
     """ Human readable name for display purposes """
-    project = ForeignKey(Project, null=True, blank=True, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
     """ Project the temporary file resides in """
     user = ForeignKey(User, on_delete=PROTECT)
     """ User who created the temporary file """
