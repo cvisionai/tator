@@ -32,9 +32,14 @@ tags*
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux/*
 google-chrome-stable_current_amd64.deb
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
-.DS_Store
-*.DS_Store
 h
 .vscode/settings.json
 containers/tator_client_braw/Blackmagic_RAW_Linux_2.2.1.tar
 helm/tator/configs/*
+
+# Hidden mac files
+._.
+._.*
+.DS_Store
+*.DS_Store
+*DS_Store*
