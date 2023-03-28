@@ -121,7 +121,7 @@ class JobListAPI(BaseListView):
         gid = params.get('gid', None)
         project = params['project']
 
-        selector = f'project={project},job_type=algorithm'
+        selector = f'project={project}'
         if gid is not None:
             selector += f',gid={gid}'
             cache = TatorCache().get_jobs_by_gid(gid)
@@ -130,7 +130,7 @@ class JobListAPI(BaseListView):
             else:
                 assert(cache[0]['project'] == project)
         else:
-            cache = TatorCache().get_jobs_by_project(project, 'algorithm')
+            cache = [*TatorCache().get_jobs_by_project(project, 'algorithm'), *TatorCache().get_jobs_by_project(project, 'transcode')]
         cancelled = cancel_jobs(selector, cache)
         return {'message': f"Deleted {cancelled} jobs for project {project}!"}
 
