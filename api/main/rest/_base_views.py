@@ -1,7 +1,6 @@
 """ TODO: add documentation for this """
 import traceback
 import logging
-import datetime
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,7 +12,6 @@ from django.http import response
 from ..schema import parse
 
 from ..rest import _base_views
-from ._audit import create_record, update_record
 
 logger = logging.getLogger(__name__)
 
@@ -88,31 +86,18 @@ class PutMixin:
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
-class BaseView(APIView):
-    """ Base class for all views.
-    """
-    def initial(self, request, *args, **kwargs):
-        self._record = create_record(request)
-        self._start = datetime.datetime.now()
-        return super().initial(request, *args, **kwargs)
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        duration = datetime.datetime.now() - self._start
-        update_record(self._record, response, duration.microseconds // 1000)
-        self._record = None
-        self._start = None
-        return super().finalize_response(request, response, *args, **kwargs)
-
-    def handle_exception(self, exc):
-        return process_exception(exc)
-
-
-class BaseListView(BaseView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
+class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
     """ Base class for list views.
     """
     http_method_names = ['get', 'post', 'patch', 'delete', 'put']
 
-class BaseDetailView(BaseView, GetMixin, PatchMixin, DeleteMixin):
+    def handle_exception(self, exc):
+        return process_exception(exc)
+
+class BaseDetailView(APIView, GetMixin, PatchMixin, DeleteMixin):
     """ Base class for detail views.
     """
     http_method_names = ['get', 'patch', 'delete']
+
+    def handle_exception(self, exc):
+        return process_exception(exc)
