@@ -66,6 +66,7 @@ def _job_to_transcode(job):
         'name': job['name'],
         'md5': job['md5'],
         'attributes': job['attributes'],
+        'email_spec': job['email_spec'],
         'media_id': job['media_id'],
     }
 
@@ -101,6 +102,7 @@ class TranscodeListAPI(BaseListView):
         md5 = params['md5']
         project = params['project']
         attributes = params.get('attributes',None)
+        email_spec = params.get('email_spec', None)
         media_id = params.get('media_id', None)
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
@@ -167,6 +169,7 @@ class TranscodeListAPI(BaseListView):
             'gid': gid,
             'uid': uid,
             'attributes': attributes,
+            'email_spec': email_spec,
         }])
         job_list = response.json()
         msg = (f"Transcode job {uid} started for file "
