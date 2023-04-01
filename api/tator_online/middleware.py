@@ -1,7 +1,14 @@
 import time
+import os
+import logging
 
 from django.utils.deprecation import MiddlewareMixin
 from datadog import DogStatsd
+from django.http import QueryDict
+import requests
+
+logger = logging.getLogger(__name__)
+logger.setLevel("INFO")
 
 statsd = DogStatsd(host="tator-prometheus-statsd-exporter", port=9125)
 
@@ -26,4 +33,41 @@ class StatsdMiddleware(MiddlewareMixin):
                          response_time,
                          tags=['service:tator',
                               f'endpoint:{endpoint}'])
+        return response
+
+HOST = 'http://audit-svc'
+
+class AuditMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.enabled = os.getenv('AUDIT_ENABLED')
+
+    def __call__(self, request):
+        # Create an audit record
+        if self.enabled:
+            r = requests.post(f"{HOST}/rest", json={
+                "method": request.method,
+                "uri": request.path,
+                "query": QueryDict(request.META['QUERY_STRING']),
+                "headers": dict(request.headers),
+                "user": request.user.id,
+            })
+            if(r.status_code != 200):
+                raise RuntimeError("Failed to create audit record!")
+            record = r.json()
+
+        # Process the request
+        start_time = time.time()
+        response = self.get_response(request)
+        duration = int(1000 * (time.time() - start_time))
+
+        # Update the audit record
+        if self.enabled:
+            r = requests.patch(f"{HOST}/rest/{record['id']}", json={
+                "status": response.status_code,
+                "duration": duration,
+            })
+            if(r.status_code != 200):
+                raise RuntimeError("Failed to update audit record!")
+
         return response
