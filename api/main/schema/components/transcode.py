@@ -51,7 +51,10 @@ transcode_spec = {
             'type': 'object',
             'nullable': True,
         },
-        'email_spec': {'$ref': '#/components/schemas/EmailSpec'},
+        'email_spec': {
+            '$ref': '#/components/schemas/EmailSpec',
+            'nullable': True,
+        },
         'media_id': {
             'description': 'ID of an existing media. If given, this media '
                            'will be used for the transcode operation rather than '
