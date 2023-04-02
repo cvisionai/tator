@@ -1,3 +1,5 @@
+from .email import email_spec
+
 transcode_spec = {
     'type': 'object',
     'required': ['type', 'gid', 'uid', 'url', 'section', 'name', 'md5'],
@@ -52,9 +54,7 @@ transcode_spec = {
             'nullable': True,
         },
         'email_spec': {
-            'allOf': [
-                {'$ref': '#/components/schemas/EmailSpec'},
-            ],
+            **email_spec,
             'nullable': True,
         },
         'media_id': {
