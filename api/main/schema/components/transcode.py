@@ -52,7 +52,9 @@ transcode_spec = {
             'nullable': True,
         },
         'email_spec': {
-            '$ref': '#/components/schemas/EmailSpec',
+            'allOf': [
+                {'$ref': '#/components/schemas/EmailSpec'},
+            ],
             'nullable': True,
         },
         'media_id': {
