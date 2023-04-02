@@ -18,6 +18,7 @@ email_spec = {
     'type': 'object',
     'description': 'Send an email message to members of the project using the Tator configured AWS email service',
     'required': ['recipients', 'subject', 'text'],
+    'nullable': True,
     'properties': {
         'recipients': {
             'description': 'Recipients of the email message. They must be members of this project. Entries are either in "Name <email@email.com>" or "email@email.com" format',
