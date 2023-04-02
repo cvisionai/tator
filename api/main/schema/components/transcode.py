@@ -1,3 +1,5 @@
+from .email import email_spec
+
 transcode_spec = {
     'type': 'object',
     'required': ['type', 'gid', 'uid', 'url', 'section', 'name', 'md5'],
@@ -49,6 +51,10 @@ transcode_spec = {
         'attributes': {
             'description': 'Attributes to apply upon upload',
             'type': 'object',
+            'nullable': True,
+        },
+        'email_spec': {
+            **email_spec,
             'nullable': True,
         },
         'media_id': {
