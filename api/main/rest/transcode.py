@@ -164,7 +164,6 @@ class TranscodeListAPI(BaseListView):
             'type': entity_type,
             'name': name,
             'section': section,
-            'md5': md5,
             'media_id': media_id,
             'gid': gid,
             'uid': uid,
