@@ -3120,7 +3120,6 @@ class TranscodeTestCase(
             'url': 'http://asdf.com',
             'name': 'asdf.mp4',
             'section': 'asdf section',
-            'md5': '',
             'size': 1,
         }
         self.edit_permission = Permission.CAN_TRANSFER
