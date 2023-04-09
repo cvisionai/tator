@@ -13,18 +13,22 @@ const argv = yargs(process.argv.slice(2))
   .alias('b', 'backend')
   .alias('e', 'email_enabled')
   .alias('o', 'okta_enabled')
+  .alias('k', 'keycloak_enabled')
   .boolean('e')
   .boolean('o')
+  .boolean('k')
   .describe('b', 'Backend host, including protocol. Default is same origin (blank).')
   .describe('e', 'Include this argument if email is enabled in the backend.')
   .describe('o', 'Include this argument if Okta is enabled for authentication.')
+  .describe('k', 'Include this argument if Keycloak is enabled for authentication.')
   .default('b', '')
   .argv
 
 const params = { 
   backend: argv.backend,
   email_enabled: argv.email_enabled,
-  okta_enabled: argv.okta_enabled
+  okta_enabled: argv.okta_enabled,
+  keycloak_enabled: argv.keycloak_enabled
 };
 
 nunjucks.configure('server/views', {
@@ -35,6 +39,7 @@ app.set('view engine', 'html');
 app.use('/static', express.static('./dist'));
 app.use('/static', express.static('./server/static'));
 app.use(favicon('./server/static/images/favicon.ico'));
+app.use(express.json());
 
 
 app.get('/', (req, res) => {
@@ -99,6 +104,48 @@ app.get('/token', (req, res) => {
 
 app.get('/rest', (req, res) => {
   res.render('browser', params);
+});
+
+app.get('/callback', (req, res) => {
+  res.render('callback', params);
+});
+
+app.post('/exchange', async (req, res) => {
+  const body = new URLSearchParams();
+  body.append('grant_type', 'authorization_code');
+  body.append('client_id', 'tator');
+  body.append('code', req.body.code);
+  body.append('redirect_uri', `${req.body.origin}/callback`);
+  const url = `${req.body.origin}/auth/realms/tator/protocol/openid-connect/token`;
+  await fetch(url, {
+    method: "POST",
+    body: body,
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+  })
+  .then(response => {
+    if (!response.ok) {
+      console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+      throw new Error("Response from keycloak failed!");
+    }
+    return response.json();
+  })
+  .then((data) => {
+    res.cookie("refresh_token", data.refresh_token, {
+      maxAge: data.refresh_expires_in, 
+      httpOnly: true,
+    });
+    res.status(200).json({
+      access_token: data.access_token,
+      expires_in: data.expires_in,
+      token_type: data.token_type,
+      id_token: data.id_token,
+    });
+  })
+  .catch((error) => {
+    res.status(403);
+  });
 });
 
 app.listen(port, () => {
