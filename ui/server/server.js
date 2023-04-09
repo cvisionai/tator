@@ -4,6 +4,7 @@ const express = require('express');
 const nunjucks = require('nunjucks');
 const favicon = require('serve-favicon');
 const proxy = require('express-http-proxy');
+const cookieParser = require('cookie-parser');
 const yargs = require('yargs/yargs');
 const app = express();
 const port = 3000;
@@ -40,6 +41,7 @@ app.use('/static', express.static('./dist'));
 app.use('/static', express.static('./server/static'));
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
+app.use(cookieParser());
 
 
 app.get('/', (req, res) => {
@@ -117,35 +119,80 @@ app.post('/exchange', async (req, res) => {
   body.append('code', req.body.code);
   body.append('redirect_uri', `${req.body.origin}/callback`);
   const url = `${req.body.origin}/auth/realms/tator/protocol/openid-connect/token`;
-  await fetch(url, {
-    method: "POST",
-    body: body,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-  })
-  .then(response => {
-    if (!response.ok) {
-      console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
-      throw new Error("Response from keycloak failed!");
-    }
-    return response.json();
-  })
-  .then((data) => {
-    res.cookie("refresh_token", data.refresh_token, {
-      maxAge: data.refresh_expires_in, 
-      httpOnly: true,
+  try {
+    await fetch(url, {
+      method: "POST",
+      body: body,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+    })
+    .then(response => {
+      if (!response.ok) {
+        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+        throw new Error("Response from keycloak failed!");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      res.cookie("refresh_token", data.refresh_token, {
+        maxAge: data.refresh_expires_in, 
+        httpOnly: true,
+      });
+      res.status(200).json({
+        access_token: data.access_token,
+        expires_in: data.expires_in,
+        token_type: data.token_type,
+        id_token: data.id_token,
+      });
+    })
+    .catch((error) => {
+      res.status(403);
     });
-    res.status(200).json({
-      access_token: data.access_token,
-      expires_in: data.expires_in,
-      token_type: data.token_type,
-      id_token: data.id_token,
-    });
-  })
-  .catch((error) => {
+  } catch (error) {
     res.status(403);
-  });
+  }
+});
+
+app.get('/refresh', async (req, res) => {
+  const body = new URLSearchParams();
+  body.append('grant_type', 'refresh_token');
+  body.append('client_id', 'tator');
+  body.append('refresh_token', req.cookies.refresh_token);
+  const url = `${req.body.origin}/auth/realms/tator/protocol/openid-connect/token`;
+  try {
+    await fetch(url, {
+      method: "POST",
+      body: body,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+    })
+    .then(response => {
+      if (!response.ok) {
+        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+        throw new Error("Response from keycloak failed!");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      res.cookie("refresh_token", data.refresh_token, {
+        maxAge: data.refresh_expires_in, 
+        httpOnly: true,
+      });
+      res.status(200).json({
+        access_token: data.access_token,
+        expires_in: data.expires_in,
+        token_type: data.token_type,
+        id_token: data.id_token,
+      });
+    })
+    .catch((error) => {
+      res.status(403);
+    });
+  } catch (error) {
+    res.status(403);
+  }
 });
 
 app.listen(port, () => {

@@ -28,6 +28,7 @@
   "dependencies": {
     "autocompleter": "6.1.2",
     "construct-style-sheets-polyfill": "3.1.0",
+    "cookie-parser": "^1.4.6",
     "d3": "7.3.0",
     "express": "^4.18.2",
     "express-http-proxy": "^1.6.3",
@@ -36,6 +37,7 @@
     "isomorphic-fetch": "3.0.0",
     "js-yaml": "4.1.0",
     "jszip": "^3.8.0",
+    "libtess": "1.2.0",
     "marked": "4.0.12",
     "mp4box": "0.4.9",
     "nodemon": "^2.0.20",
@@ -46,7 +48,6 @@
     "uuid": "8.3.2",
     "webrtc-streamer": "0.6.5-9-g0031565",
     "yargs": "^17.6.0",
-    "zustand": "^4.1.1",
-    "libtess": "1.2.0"
+    "zustand": "^4.1.1"
   }
 }

@@ -26,6 +26,7 @@ function exchangeAuthToken () {
     localStorage.setItem("id_token", data.id_token);
     localStorage.setItem("token_type", data.token_type);
     localStorage.setItem("issue_time", issueTime.toISOString());
+    window.location.href = "/projects";
   })
   .catch((error) => {
     console.error("Error exchanging token!");
