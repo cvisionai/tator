@@ -24,7 +24,9 @@ async function keycloakCredentials() {
   };
 }
 
-async function fetchCredentials(url, opts={}, retry=false) {
+async function fetchCredentials(url, opts={}, retry=false, credsOnly=false) {
+
+  // Get credentials
   const keycloakEnabled = localStorage.getItem("keycloak_enabled");
   let credentials;
   if (keycloakEnabled == 'true') {
@@ -32,10 +34,22 @@ async function fetchCredentials(url, opts={}, retry=false) {
   } else {
     credentials = djangoCredentials();
   }
-  if (retry) {
-    return fetchRetry(url, {...credentials, ...opts});
+
+  // Merge options
+  let newOpts;
+  if (credsOnly) {
+    credKey = keycloakEnabled == 'true' ? 'Authorization' : 'X-CSRFToken';
+    newOpts = opts;
+    newOpts.headers[credKey] = credentials[credKey];
   } else {
-    return fetch(url, {...credentials, ...opts});
+    newOpts = {...credentials, ...opts};
+  }
+
+  // Do fetch
+  if (retry) {
+    return fetchRetry(url, newOpts);
+  } else {
+    return fetch(url, newOpts);
   }
 }
 

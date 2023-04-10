@@ -302,11 +302,10 @@ export class TatorData {
       mode: "cors",
       credentials: "include",
       headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
+        "Content-Type": "image/*",
         "Accept": "image/*",
-        "Content-Type": "image/*"
       }
-    });
+    }, false, true);
 
     const data = await response.blob();
 
