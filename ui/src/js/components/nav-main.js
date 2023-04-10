@@ -55,7 +55,7 @@ export class NavMain extends TatorElement {
     logout.setAttribute("class", "nav__link");
     if (localStorage.getItem('keycloak_enabled')) {
       const idToken = localStorage.getItem('id_token');
-      logout.setAttribute("href", `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=/accounts/login`);
+      logout.setAttribute("href", `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=${window.location.origin}/accounts/login`);
       logout.addEventListener("click", (evt) => {
         localStorage.removeItem("access_token");
         localStorage.removeItem("id_token");
