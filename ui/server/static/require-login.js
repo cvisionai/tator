@@ -14,9 +14,9 @@ const backend = localStorage.getItem("backend");
 const keycloakEnabled = localStorage.getItem("keycloak_enabled");
 if (window.location.pathname != "/accounts/login") {
   if (keycloakEnabled) {
-    let accessToken = localStorage.getItem("accessToken");
+    let accessToken = localStorage.getItem("access_token");
     if (accessToken === null) {
-      toToLogin();
+      goToLogin();
     }
   } else {
     fetch(`${backend}/accounts/account-profile`, {

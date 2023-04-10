@@ -5,7 +5,10 @@ import logging
 from django.utils.deprecation import MiddlewareMixin
 from datadog import DogStatsd
 from django.http import QueryDict
+import jwt
+from jwt.algorithms import RSAAlgorithm
 import requests
+import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
@@ -70,4 +73,63 @@ class AuditMiddleware:
             if(r.status_code != 200):
                 raise RuntimeError("Failed to update audit record!")
 
+        return response
+
+MAIN_HOST = os.getenv('MAIN_HOST')
+
+class KeycloakMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.enabled = os.getenv('KEYCLOAK_ENABLED')
+
+    def _get_pub_key(self):
+        from main.cache import TatorCache
+        cache = TatorCache()
+        # Get the public key from keycloak (may be cached)
+        pub_key = cache.get_keycloak_public_key()
+        if pub_key is None:
+            url = f"https://{MAIN_HOST}/auth/realms/tator/protocol/openid-connect/certs"
+            r = requests.get(url)
+            r.raise_for_status()
+            json_data = r.json()
+            for key_data in json_data["keys"]:
+                if key_data["use"] == "sig":
+                    pub_key = RSAAlgorithm.from_jwk(json.dumps(key_data))
+                    break
+            cache.set_keycloak_public_key(pub_key)
+        return pub_key
+
+    def _get_token(self, request):
+        # Get the bearer token
+        token = None
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+        return token
+
+    def __call__(self, request):
+        from main.models import User
+
+        if self.enabled and request.user.is_anonymous:
+            pub_key = self._get_pub_key()
+            token = self._get_token(request)
+            if token is not None:
+                try:
+                    decoded = jwt.decode(token, pub_key, algorithms=["RS256"], audience="account")
+                    keycloak_user_id = decoded['sub']
+                    user_id = int(keycloak_user_id.split(':')[-1])
+                    request.user = User.objects.get(pk=user_id)
+                except jwt.ExpiredSignatureError:
+                    logger.warning(f"Access token has expired!")
+                except jwt.InvalidAudienceError:
+                    logger.warning(f"Access token decode failed: Invalid audience!")
+                except jwt.InvalidIssuerError:
+                    logger.warning(f"Access token decode failed: Invalid issuer!")
+                except jwt.DecodeError:
+                    logger.warning(f"Access token decode failed: Invalid signature!")
+                except Exception as e:
+                    logger.error(f"Access token decode failed: {e}")
+                
+                
+        response = self.get_response(request);
         return response

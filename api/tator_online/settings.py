@@ -70,12 +70,13 @@ MESSAGE_TAGS = {
 }
 
 MIDDLEWARE = [
-    'tator_online.StatsdMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'tator_online.KeycloakMiddleware',
+    'tator_online.StatsdMiddleware',
     'tator_online.AuditMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
