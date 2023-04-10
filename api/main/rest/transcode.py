@@ -64,7 +64,6 @@ def _job_to_transcode(job):
         'size': job['size'],
         'section': job['section'],
         'name': job['name'],
-        'md5': job['md5'],
         'attributes': job['attributes'],
         'email_spec': job['email_spec'],
         'media_id': job['media_id'],
@@ -99,7 +98,6 @@ class TranscodeListAPI(BaseListView):
         upload_size = params.get('size', -1)
         section = params['section']
         name = params['name']
-        md5 = params['md5']
         project = params['project']
         attributes = params.get('attributes',None)
         email_spec = params.get('email_spec', None)
