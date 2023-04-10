@@ -53,7 +53,18 @@ export class NavMain extends TatorElement {
 
     const logout = document.createElement("a");
     logout.setAttribute("class", "nav__link");
-    logout.setAttribute("href", "/accounts/logout/");
+    if (localStorage.getItem('keycloak_enabled')) {
+      const idToken = localStorage.getItem('id_token');
+      logout.setAttribute("href", `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=/accounts/login`);
+      logout.addEventListener("click", (evt) => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("id_token");
+        localStorage.removeItem("token_type");
+        localStorage.removeItem("issue_time");
+      });
+    } else {
+      logout.setAttribute("href", "/accounts/logout/");
+    }
     logout.textContent = "Logout";
     this._primary.appendChild(logout);
 

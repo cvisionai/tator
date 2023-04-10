@@ -3,6 +3,7 @@ function exchangeAuthToken () {
   const searchParams = currentUrl.searchParams;
   const origin = currentUrl.origin;
   const code = searchParams.get("code");
+  const next = searchParams.get("next");
   fetch("/exchange", {
     method: "POST",
     headers: {
@@ -26,7 +27,11 @@ function exchangeAuthToken () {
     localStorage.setItem("id_token", data.id_token);
     localStorage.setItem("token_type", data.token_type);
     localStorage.setItem("issue_time", issueTime.toISOString());
-    window.location.href = "/projects";
+    if (next) {
+      window.location.href = next;
+    } else {
+      window.location.href = "/projects";
+    }
   })
   .catch((error) => {
     console.error("Error exchanging token!");
