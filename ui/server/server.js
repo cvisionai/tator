@@ -137,6 +137,8 @@ app.post('/exchange', async (req, res) => {
     .then((data) => {
       res.cookie("refresh_token", data.refresh_token, {
         maxAge: data.refresh_expires_in, 
+        path: "/refresh",
+        sameSite: "strict",
         httpOnly: true,
       });
       res.status(200).json({
@@ -147,10 +149,11 @@ app.post('/exchange', async (req, res) => {
       });
     })
     .catch((error) => {
-      res.status(403);
+      return Promise.reject(error);
     });
   } catch (error) {
-    res.status(403);
+    console.error(`Error in exchange endpoint: ${error}`);
+    res.status(403).send({message: "Failed to retrieve access token!"});
   }
 });
 
@@ -159,39 +162,40 @@ app.get('/refresh', async (req, res) => {
   body.append('grant_type', 'refresh_token');
   body.append('client_id', 'tator');
   body.append('refresh_token', req.cookies.refresh_token);
-  const url = `${req.body.origin}/auth/realms/tator/protocol/openid-connect/token`;
-  try {
-    await fetch(url, {
-      method: "POST",
-      body: body,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-    })
-    .then(response => {
-      if (!response.ok) {
-        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
-        throw new Error("Response from keycloak failed!");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      res.cookie("refresh_token", data.refresh_token, {
-        maxAge: data.refresh_expires_in, 
-        httpOnly: true,
+  if (typeof req.cookies.refresh_token === "undefined") {
+    res.status(403).send({message: "No refresh token!"});
+  } else {
+    const url = `${req.body.origin}/auth/realms/tator/protocol/openid-connect/token`;
+    try {
+      await fetch(url, {
+        method: "POST",
+        body: body,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+      })
+      .then(response => {
+        if (!response.ok) {
+          console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+          throw new Error("Response from keycloak failed!");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        res.status(200).json({
+          access_token: data.access_token,
+          expires_in: data.expires_in,
+          token_type: data.token_type,
+          id_token: data.id_token,
+        });
+      })
+      .catch((error) => {
+        return Promise.reject(error);
       });
-      res.status(200).json({
-        access_token: data.access_token,
-        expires_in: data.expires_in,
-        token_type: data.token_type,
-        id_token: data.id_token,
-      });
-    })
-    .catch((error) => {
-      res.status(403);
-    });
-  } catch (error) {
-    res.status(403);
+    } catch (error) {
+      console.error(`Error in refresh endpoint: ${error}`);
+      res.status(403).send({message: "Failed to refresh access token!"});
+    }
   }
 });
 
