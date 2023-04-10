@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 import { svgNamespace } from "../components/tator-element.js";
 
 export class ActivityNav extends TatorElement {
@@ -59,15 +59,7 @@ export class ActivityNav extends TatorElement {
 
   reload() {
     this._reloadButton.classList.add("is-rotating");
-    fetch(`/rest/Jobs/${this._project}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    })
+    fetchCredentials(`/rest/Jobs/${this._project}`)
     .then(response => response.json())
     .then(jobs => {
       while (this._panel.firstChild) {
