@@ -1,6 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { hasPermission } from "../util/has-permission.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 import { TatorData } from "../util/tator-data.js";
 import { svgNamespace } from "../components/tator-element.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
@@ -351,15 +351,7 @@ export class ProjectDetail extends TatorPage {
           const params = new URLSearchParams(document.location.search.substring(1));
           if (params.has("section")) {
             const sectionId = Number(params.get("section"));
-            await fetch(`/rest/Section/${sectionId}`, {
-              method: "GET",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
-            })
+            await fetchCredentials(`/rest/Section/${sectionId}`)
               .then(response => response.json())
               .then(section => { spec = section; });
           }
@@ -393,14 +385,8 @@ export class ProjectDetail extends TatorPage {
           //TODO: Handle adding playlist
         }
         const projectId = Number(this.getAttribute("project-id"));
-        fetch(`/rest/Sections/${projectId}`, {
+        fetchCredentials(`/rest/Sections/${projectId}`, {
           method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify(spec),
         })
           .then(async response => {
@@ -695,59 +681,19 @@ export class ProjectDetail extends TatorPage {
     this._activityNav.init(projectId);
 
     // Get info about the project.
-    const projectPromise = fetch("/rest/Project/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const projectPromise = fetchCredentials("/rest/Project/" + projectId);
 
     // Get sections
-    const sectionPromise = fetch("/rest/Sections/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
 
     // Get project bookmarks
-    const bookmarkPromise = fetch("/rest/Bookmarks/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const bookmarkPromise = fetchCredentials("/rest/Bookmarks/" + projectId);
 
     // Get Algorithms
-    const algoPromise = fetch("/rest/Algorithms/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const algoPromise = fetchCredentials("/rest/Algorithms/" + projectId);
 
     // Get MediaType data for attributes
-    const mediaTypePromise = fetch("/rest/MediaTypes/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const mediaTypePromise = fetchCredentials("/rest/MediaTypes/" + projectId);
 
     // Run all above promises
     Promise.all([
@@ -1097,14 +1043,8 @@ export class ProjectDetail extends TatorPage {
         });
       }
 
-      fetch("/rest/Jobs/" + evt.detail.projectId, {
+      fetchCredentials("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: body,
       })
         .then(response => {
@@ -1230,15 +1170,7 @@ export class ProjectDetail extends TatorPage {
 
   reloadSections() {
     // Get sections
-    const sectionPromise = fetch("/rest/Sections/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
   }
 
 }

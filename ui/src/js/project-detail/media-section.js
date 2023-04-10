@@ -1,6 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
@@ -259,15 +259,7 @@ export class MediaSection extends TatorElement {
       if (this._after.has(current - 5000)) {
         after = `&after=${this._after.get(current - 5000)}`;
       }
-      return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
+      return fetchCredentials(`${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`)
         .then(response => response.json())
         .then(data => {
           this._after.set(current, data[0].id);
@@ -310,15 +302,7 @@ export class MediaSection extends TatorElement {
       if (afterId) {
         sectionQuery.append("after", afterId);
       }
-      return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
+      return fetchCredentials(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`)
         .then(response => response.json())
         .then(media => {
           this._files.numMedia = this._paginator_top._numFiles;
@@ -334,15 +318,7 @@ export class MediaSection extends TatorElement {
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
-    const response = await fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const response = await fetchCredentials(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`);
     const count = await response.json();
     this.numMedia = count;
 
@@ -373,16 +349,7 @@ export class MediaSection extends TatorElement {
       const params = joinParams(this._sectionParams(), mediaParams);
       return `/rest/${endpoint}/${this._project}?${params.toString()}`;
     };
-    const headers = {
-      "X-CSRFToken": getCookie("csrftoken"),
-      "Accept": "application/json",
-      "Content-Type": "application/json"
-    };
-    fetchRetry(getUrl("MediaStats"), {
-      method: "GET",
-      credentials: "same-origin",
-      headers: headers,
-    })
+    fetchCredentials(getUrl("MediaStats"), {}, true)
       .then(response => response.json())
       .then(async mediaStats => {
         let lastId = null;
@@ -420,11 +387,7 @@ export class MediaSection extends TatorElement {
             if (lastId != null) {
               url += "&after=" + encodeURIComponent(lastId);
             }
-            await fetchRetry(url, {
-              method: "GET",
-              credentials: "same-origin",
-              headers: headers,
-            })
+            await fetchCredentials(url, {}, true)
               .then(response => response.json())
               .then(async medias => {
                 if (medias.length == 0) {
@@ -442,7 +405,7 @@ export class MediaSection extends TatorElement {
                   }
                   filenames.add(basename);
 
-                  const request = Utilities.getDownloadInfo(media, headers)["request"];
+                  const request = Utilities.getDownloadInfo(media)["request"];
                   if (request !== null) { // Media objects with no downloadable files will return null.
                     // Download media file.
                     console.log("Downloading " + media.name + " from " + request.url + "...");
@@ -492,10 +455,6 @@ export class MediaSection extends TatorElement {
     let stateTypes = null;
     let stateFetcher = null;
     let statesDone = false;
-    const headers = {
-      "X-CSRFToken": getCookie("csrftoken"),
-      "Content-Type": "application/json"
-    };
     Number.prototype.pad = function (size) {
       var s = String(this);
       while (s.length < (size || 2)) { s = "0" + s; }
@@ -507,11 +466,7 @@ export class MediaSection extends TatorElement {
 
         // Function for dumping types to file.
         const getTypes = (endpoint, fname) => {
-          return fetchRetry(`/rest/${endpoint}/${project}`, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: headers,
-          })
+          return fetchCredentials(`/rest/${endpoint}/${project}`)
             .then(response => {
               const clone = response.clone();
               const stream = () => response.body;
@@ -534,20 +489,16 @@ export class MediaSection extends TatorElement {
           if (idQuery != null) {
             request = {
               method: "PUT",
-              credentials: "same-origin",
-              headers: headers,
               body: JSON.stringify(idQuery),
             };
           } else {
             request = {
               method: "GET",
-              credentials: "same-origin",
-              headers: headers,
             };
           }
 
           // Fetch csv data first.
-          await fetchRetry(url + "&format=csv", request)
+          await fetchCredentials(url + "&format=csv", request, true)
             .then(response => {
               const stream = () => response.body;
               const batch_str = "__batch_" + Number(batchNum).pad(5);
@@ -556,7 +507,7 @@ export class MediaSection extends TatorElement {
             });
 
           // Fetch and return json data.
-          return fetchRetry(url, request)
+          return fetchCredentials(url, request, true)
             .then(response => {
               const clone = response.clone();
               const stream = () => response.body;
@@ -689,14 +640,8 @@ export class MediaSection extends TatorElement {
           this._sectionName = evt.target.value;
         }
         // console.log(this._section);
-        fetch("/rest/Section/" + this._section.id, {
+        fetchCredentials("/rest/Section/" + this._section.id, {
           method: "PATCH",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify({
             "name": this._sectionName
           }),
