@@ -2,7 +2,7 @@ from .email import email_spec
 
 transcode_spec = {
     'type': 'object',
-    'required': ['type', 'gid', 'uid', 'url', 'section', 'name', 'md5'],
+    'required': ['type', 'gid', 'uid', 'url', 'section', 'name'],
     'properties': {
         'type': {
             'description': 'Unique integer identifying a video type.',

@@ -54,8 +54,6 @@ class TranscodeListSchema(AutoSchema):
             """)
         return f"{short_desc}\n\n{long_desc}"
 
-        return msg
-
     def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
@@ -95,7 +93,6 @@ class TranscodeListSchema(AutoSchema):
                     '$ref': '#/components/schemas/MediaIdQuery',
                 },
             }}}
-        return body
         return body
 
     def get_responses(self, path, method):
