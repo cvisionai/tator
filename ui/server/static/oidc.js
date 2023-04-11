@@ -29,8 +29,11 @@ function exchangeAuthToken () {
     localStorage.setItem("token_type", data.token_type);
     localStorage.setItem("issue_time", issueTime.toISOString());
     if (next) {
-      const url = new URL(next);
-      window.location.href = url.pathname;;
+      if (next[0] == '/') {
+        window.location.href = next;
+      } else {
+        window.location.href = "/projects";
+      }
     } else {
       window.location.href = "/projects";
     }
