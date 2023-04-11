@@ -1,6 +1,5 @@
 import { TatorElement } from "../../tator-element.js";
 import { hasPermission } from "../../../util/has-permission.js";
-import { getCookie } from "../../../util/get-cookie.js";
 import { InputValidation } from "../input-validation.js";
 import { InlineWarning } from "../../../components/inline-warning.js";
 import { SingleUpload } from "./single-upload.js";
@@ -162,7 +161,6 @@ export class ThumbInput extends TatorElement {
         section : "",
         mediaTypeId : null,
         username : "",
-        token : getCookie("csrftoken"),
         isImage : true
       };
 

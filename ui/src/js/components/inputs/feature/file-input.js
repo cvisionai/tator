@@ -182,7 +182,6 @@ export class FileInput extends TatorElement {
       section: "",
       mediaTypeId: null,
       username: "",
-      token: getCookie("csrftoken"),
       isImage: this._isImage
     };
 
@@ -209,15 +208,9 @@ export class FileInput extends TatorElement {
           ]
         }
 
-        fetch(`/rest/DownloadInfo/${this._projectId}`, {
+        fetchCredentials(`/rest/DownloadInfo/${this._projectId}`, {
           method: "POST",
-          credentials: "same-origin",
           body: JSON.stringify(bodyData),
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
         }).then((resp) => {
           return resp.json();
         }).then((data) => {
