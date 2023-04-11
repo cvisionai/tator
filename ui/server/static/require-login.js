@@ -7,19 +7,21 @@ function getCookie(name) {
 }
 
 function goToLogin() {
-  window.location.href = `/accounts/login?next=${window.location.pathname}`;
+  if (KEYCLOAK_ENABLED) {
+    window.location.href = `/accounts/login&state=${window.location.pathname}`;
+  } else {
+    window.location.href = `/accounts/login?next=${window.location.pathname}`;
+  }
 }
 
-const backend = localStorage.getItem("backend");
-const keycloakEnabled = localStorage.getItem("keycloak_enabled");
 if (window.location.pathname != "/accounts/login") {
-  if (keycloakEnabled == 'true') {
+  if (KEYCLOAK_ENABLED) {
     let accessToken = localStorage.getItem("access_token");
     if (accessToken === null) {
       goToLogin();
     }
   } else {
-    fetch(`${backend}/accounts/account-profile`, {
+    fetch(`${BACKEND}/accounts/account-profile`, {
       method: "GET",
       credentials: "include",
       headers: {
