@@ -136,11 +136,12 @@ app.post('/exchange', async (req, res) => {
     })
     .then((data) => {
       res.cookie("refresh_token", data.refresh_token, {
-        maxAge: data.refresh_expires_in, 
-        path: "/refresh",
+        maxAge: data.refresh_expires_in * 1000, 
         sameSite: "strict",
+        secure: true,
         httpOnly: true,
       });
+      res.setHeader("Access-Control-Allow-Credentials", 'true');
       res.status(200).json({
         access_token: data.access_token,
         expires_in: data.expires_in,
@@ -165,7 +166,7 @@ app.get('/refresh', async (req, res) => {
   if (typeof req.cookies.refresh_token === "undefined") {
     res.status(403).send({message: "No refresh token!"});
   } else {
-    const url = `${req.body.origin}/auth/realms/tator/protocol/openid-connect/token`;
+    const url = `https://${req.headers.host}/auth/realms/tator/protocol/openid-connect/token`;
     try {
       await fetch(url, {
         method: "POST",

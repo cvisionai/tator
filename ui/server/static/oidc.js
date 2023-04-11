@@ -6,6 +6,7 @@ function exchangeAuthToken () {
   const next = searchParams.get("next");
   fetch("/exchange", {
     method: "POST",
+    credentials: "same-origin",
     headers: {
       "Content-Type": "application/json",
     },

@@ -13,7 +13,7 @@ function goToLogin() {
 const backend = localStorage.getItem("backend");
 const keycloakEnabled = localStorage.getItem("keycloak_enabled");
 if (window.location.pathname != "/accounts/login") {
-  if (keycloakEnabled) {
+  if (keycloakEnabled == 'true') {
     let accessToken = localStorage.getItem("access_token");
     if (accessToken === null) {
       goToLogin();
