@@ -167,7 +167,7 @@ class StateListAPI(BaseListView):
                 default_version = Version.objects.create(
                     name="Baseline",
                     description="Initial version",
-                    project=project,
+                    project=params["project"],
                     number=0,
                 )
 
@@ -307,8 +307,6 @@ class StateListAPI(BaseListView):
                 # Delete states.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
-                obj = qs.first()
-                entity_type = obj.type
                 bulk_update_and_log_changes(
                 qs,
                 params["project"],
@@ -436,7 +434,6 @@ class StateDetailAPI(BaseDetailView):
     def _delete(self, params):
         state = State.objects.get(pk=params['id'], deleted=False)
         project = state.project
-        model_dict = state.model_dict
         delete_localizations = []
         if state.type.delete_child_localizations:
 
