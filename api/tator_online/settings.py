@@ -32,6 +32,9 @@ ALIAS_HOSTS = os.getenv('ALIAS_HOSTS')
 if ALIAS_HOSTS:
     ALLOWED_HOSTS += ALIAS_HOSTS.split(',')
 
+# Whether keycloak is being used for authentication
+KEYCLOAK_ENABLED = os.getenv('KEYCLOAK_ENABLED') == 'TRUE'
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -75,7 +78,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'tator_online.KeycloakMiddleware',
     'tator_online.StatsdMiddleware',
     'tator_online.AuditMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -222,6 +224,10 @@ LOGGING = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':
+    (
+        'rest_framework.authentication.TokenAuthentication',
+        'tator_online.authentication.KeycloakAuthentication',
+    ) if KEYCLOAK_ENABLED else
     (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication'
