@@ -53,7 +53,7 @@ export class NavMain extends TatorElement {
 
     const logout = document.createElement("a");
     logout.setAttribute("class", "nav__link");
-    if (localStorage.getItem('keycloak_enabled') == 'true') {
+    if (KEYCLOAK_ENABLED) {
       const idToken = localStorage.getItem('id_token');
       logout.setAttribute("href", `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=${window.location.origin}/accounts/login`);
       logout.addEventListener("click", (evt) => {

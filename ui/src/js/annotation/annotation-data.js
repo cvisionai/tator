@@ -1,4 +1,4 @@
-import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class AnnotationData extends HTMLElement {
   constructor() {
@@ -282,7 +282,7 @@ export class AnnotationData extends HTMLElement {
     url.search = searchParams;
 
     // Fetch new ones from server
-    fetchRetry(url)
+    fetchCredentials(url, {}, true)
     .then(response => {
       if (response.ok) {
         return response.json();

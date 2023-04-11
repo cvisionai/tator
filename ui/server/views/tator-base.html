@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <script>
-      localStorage.setItem("backend", '{{ backend }}');
-      localStorage.setItem("keycloak_enabled", '{{ keycloak_enabled }}'=='true');
+      const BACKEND = '{{ backend }}';
+      const KEYCLOAK_ENABLED = {{ keycloak_enabled }};
     </script>
     <script src="/static/require-login.js"></script>
     <script src="/static/components.js"></script>

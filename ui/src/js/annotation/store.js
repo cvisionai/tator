@@ -2,7 +2,7 @@ import create from 'zustand/vanilla';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
-const api = getApi(window.localStorage.getItem('backend'));
+const api = getApi(BACKEND);
 const projectId = window.location.pathname.split("/")[1];
 const mediaId = window.location.pathname.split("/")[3];
 
