@@ -1,5 +1,5 @@
 import { TypeFormTemplate } from "../components/type-form-template.js";
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../util/fetch-credentials.js";
 import { Utilities } from "../../util/utilities.js";
 import { getCompiledList, store } from "../store.js";
 
@@ -152,15 +152,9 @@ export class AlgorithmEdit extends TypeFormTemplate {
 
       // override the fetch call on this web component
       this._manifestPath._fetchCall = async (bodyData) => {
-         const resp = await fetch(`/rest/SaveAlgorithmManifest/${this.projectId}`, {
+         const resp = await fetchCredential(`/rest/SaveAlgorithmManifest/${this.projectId}`, {
                method: "POST",
-               credentials: "same-origin",
                body: JSON.stringify(bodyData),
-               headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-               }
          });
          if (resp.ok) {
             const manifestData = await resp.json()
