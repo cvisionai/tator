@@ -1,4 +1,4 @@
-import { getCookie } from "../../../util/get-cookie.js";
+import { fetchCredentials } from "../../../util/fetch-credentials.js";
 
 // Manages an upload.
 export class SingleUpload {
@@ -41,15 +41,8 @@ export class SingleUpload {
       throw new Error("Upload requires organization ID or project ID!")
     }
     
-    return fetch(url, {
-      method: "GET",
+    return fetchCredentials(url, {
       signal: this.controller.signal,
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
     })
     .then(response => response.json());
   }

@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 import TatorLogo from "../../images/tator-logo.png";
 
 export class PasswordResetRequestPage extends TatorElement {
@@ -76,14 +76,8 @@ export class PasswordResetRequestPage extends TatorElement {
       const body = {
         email: this._email.getValue(),
       };
-      fetch("/rest/PasswordReset", {
+      fetchCredentials("/rest/PasswordReset", {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
       .then(response => {

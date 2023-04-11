@@ -1,5 +1,5 @@
 import { ModalDialog } from "./modal-dialog.js";
-import { sameOriginCredentials } from "../util/same-origin-credentials.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 
 export class AnnouncementDialog extends ModalDialog {
   constructor() {
@@ -43,9 +43,8 @@ export class AnnouncementDialog extends ModalDialog {
       buttonDiv.appendChild(button);
 
       button.addEventListener("click", evt => {
-        fetch(`/rest/Announcement/${announcement.id}`, {
+        fetchCredentials(`/rest/Announcement/${announcement.id}`, {
           method: "DELETE",
-          ...sameOriginCredentials(),
         });
         div.parentNode.removeChild(div);
         if (!this._announcements.firstChild) {

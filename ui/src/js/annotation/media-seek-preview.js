@@ -1,6 +1,4 @@
 import { TatorElement } from "../components/tator-element.js";
-import { fetchRetry } from "../util/fetch-retry.js";
-import { getCookie } from "../util/get-cookie.js";
 
 export class MediaSeekPreview extends TatorElement {
    constructor() {

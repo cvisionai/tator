@@ -2,7 +2,6 @@ import { TatorPage } from "../../components/tator-page.js";
 import { TatorData } from "../../util/tator-data.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { FilterData } from "../../components/filter-data.js";
-import { getCookie } from "../../util/get-cookie.js";
 import { store } from "./store.js";
 
 /**

@@ -1,4 +1,4 @@
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../util/fetch-credentials.js";
 import { Utilities } from "../../util/utilities.js";
 import { EntityCardGallery } from "../../components/entity-gallery/entity-gallery_grid.js";
 
@@ -234,14 +234,8 @@ export class AnnotationsGallery extends EntityCardGallery {
           this._modalNotify._accept.addEventListener("click", () => {
             this._modalNotify.closeCallback();
             console.log("OL!");
-            fetch(`/rest/Localization/${this.cardObj.id}`, {
+            fetchCredentials(`/rest/Localization/${this.cardObj.id}`, {
               method: "DELETE",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              }
             })
               .then(response => { return response.json(); })
               .then(result => {
@@ -344,15 +338,10 @@ export class AnnotationsGallery extends EntityCardGallery {
   }
 
   async formChange({ type, id, values } = {}) {
-    var result = await fetch(`/rest/${type}/${id}`, {
+    var result = await fetchCredentials(`/rest/${type}/${id}`, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
       body: JSON.stringify(values)
     });
 
@@ -376,15 +365,9 @@ export class AnnotationsGallery extends EntityCardGallery {
       Utilities.warningAlert(msg, "#ff3e1d", false);
     }
 
-    result = await fetch(`/rest/${type}/${id}`, {
-      method: "GET",
+    result = await fetchCredentials(`/rest/${type}/${id}`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
     });
     data = await result.json();
     return data;

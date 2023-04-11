@@ -1,4 +1,4 @@
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 import autocomplete from "autocompleter";
 
 export class WormsAutoComplete {
@@ -362,15 +362,7 @@ export class TatorAutoComplete {
                         {
                           url += `&${key}=${value}`
                         });
-    fetch(url, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    })
+    fetchCredentials(url)
       .then(response => {
         return response.json()
       })

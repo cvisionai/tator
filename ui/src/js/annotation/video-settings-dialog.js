@@ -1,5 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
 
 export class VideoSettingsDialog extends ModalDialog {
@@ -402,15 +402,7 @@ export class VideoSettingsDialog extends ModalDialog {
     this._multiMedias = [];
 
     for (const singleId of this._parentMedia.media_files.ids) {
-      var response = await fetchRetry(`/rest/Media/${singleId}?presigned=28800`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-           "X-CSRFToken": getCookie("csrftoken"),
-           "Accept": "application/json",
-           "Content-Type": "application/json"
-        }
-      });
+      var response = await fetchCredentials(`/rest/Media/${singleId}?presigned=28800`, {}, true);
       var media = await response.json();
       this._multiMedias.push(media);
     }

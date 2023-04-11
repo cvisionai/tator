@@ -1,5 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 
 export class DeleteFileForm extends ModalDialog {
   constructor() {
@@ -49,14 +49,8 @@ export class DeleteFileForm extends ModalDialog {
   }
 
   _deleteSingle(projecId, mediaId) {
-    return fetch("/rest/Media/" + mediaId, {
+    return fetchCredentials("/rest/Media/" + mediaId, {
       method: "DELETE",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
     }).then(() => { 
       this.dispatchEvent(new CustomEvent("confirmFileDelete", {
         detail: {mediaId: mediaId}
@@ -68,14 +62,8 @@ export class DeleteFileForm extends ModalDialog {
 
   _deleteMultiple(projecId, mediaId) { this._deleteId
     const url = `/rest/Medias/${projecId}?media_id=${mediaId}`
-    return fetch(url, {
+    return fetchCredentials(url, {
       method: "DELETE",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
     })
       .then(() => { 
         this.dispatchEvent(new CustomEvent("confirmFileDelete", {

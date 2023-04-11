@@ -1,5 +1,5 @@
 import { TatorElement } from "../tator-element.js";
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../util/fetch-credentials.js";
 
 export class GalleryBulkEdit extends TatorElement {
    constructor() {
@@ -477,31 +477,21 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _patchMedia(formData) {
-      return fetch(`/rest/Medias/${this._projectId}`, {
+      return fetchCredentials(`/rest/Medias/${this._projectId}`, {
          method: "PATCH",
          mode: "cors",
          credentials: "include",
          body: JSON.stringify(formData),
-         headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-         }
       });
    }
 
    _patchLocalizations(formData) {
       // console.log("Bulk edit this._projectId" + this._projectId);
-      return fetch(`/rest/Localizations/${this._projectId}`, {
+      return fetchCredentials(`/rest/Localizations/${this._projectId}`, {
          method: "PATCH",
          mode: "cors",
          credentials: "include",
          body: JSON.stringify(formData),
-         headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-         }
       });
    }
 

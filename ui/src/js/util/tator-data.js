@@ -1,4 +1,3 @@
-import { getCookie } from "./get-cookie.js";
 import { FilterConditionData } from "./filter-utilities.js";
 import { fetchCredentials } from "./fetch-credentials.js";
 

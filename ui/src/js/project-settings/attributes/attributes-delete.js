@@ -1,4 +1,4 @@
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../util/fetch-credentials.js";
 
 export class AttributesDelete {
     constructor({
@@ -22,15 +22,10 @@ export class AttributesDelete {
             "name": this.attributeName
         };
     
-        return fetch(`/rest/AttributeType/${this.typeId}`, {
+        return fetchCredentials(`/rest/AttributeType/${this.typeId}`, {
         method: "DELETE",
         mode: "cors",
         credentials: "include",
-        headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-        },
         body : JSON.stringify(formData)
         })
     }

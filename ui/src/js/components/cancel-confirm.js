@@ -1,5 +1,5 @@
 import { ModalDialog } from "./modal-dialog.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 
 export class CancelConfirm extends ModalDialog {
   constructor() {
@@ -29,14 +29,8 @@ export class CancelConfirm extends ModalDialog {
 
     this._accept.addEventListener("click", async evt => {
       await new Promise(resolve => setTimeout(resolve, 300));
-      fetch(this._url, {
+      fetchCredentials(this._url, {
         method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
       })
       .catch(err => console.log(err));
       this.dispatchEvent(new Event("confirmGroupCancel"));

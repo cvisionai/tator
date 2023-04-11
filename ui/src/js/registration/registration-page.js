@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 import TatorLogo from "../../images/tator-logo.png";
 
 export class RegistrationPage extends TatorElement {
@@ -114,14 +114,8 @@ export class RegistrationPage extends TatorElement {
       if (params.has("registration_token")) {
         body.registration_token = params.get("registration_token");
       }
-      fetch("/rest/Users", {
+      fetchCredentials("/rest/Users", {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
       .then(response => {
@@ -189,15 +183,7 @@ export class RegistrationPage extends TatorElement {
     if (username.length == 0) {
       this._valid = false;
     } else {
-      return fetch(`/rest/User/Exists?username=${encodeURIComponent(username)}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
+      return fetchCredentials(`/rest/User/Exists?username=${encodeURIComponent(username)}`)
       .then(response => response.json())
       .then(exists => {
         if (exists) {
@@ -257,15 +243,7 @@ export class RegistrationPage extends TatorElement {
     if (email.length == 0) {
       this._valid = false;
     } else {
-      return fetch(`/rest/User/Exists?email=${email}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
+      return fetchCredentials(`/rest/User/Exists?email=${email}`)
       .then(response => response.json())
       .then(exists => {
         if (exists) {

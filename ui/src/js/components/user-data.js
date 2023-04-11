@@ -1,5 +1,5 @@
 import { TatorElement } from "./tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../util/fetch-credentials.js";
 
 export class UserData extends TatorElement {
   constructor() {
@@ -18,26 +18,10 @@ export class UserData extends TatorElement {
       let promise;
       if (username.indexOf("@") > -1) {
         // This is an email address.
-        promise = fetch(`/rest/Users?email=${username}`, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-        });
+        promise = fetchCredentials(`/rest/Users?email=${username}`);
       } else {
         // This is a username.
-        promise = fetch(`/rest/Users?username=${username}`, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-        });
+        promise = fetchCredentials(`/rest/Users?username=${username}`);
       }
       promise
       .then(response => response.json())
@@ -64,34 +48,14 @@ export class UserData extends TatorElement {
   }
 
   async getCurrentUser() {
-    let resp = await fetch('/rest/User/GetCurrent', {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-
+    let resp = await fetchCredentials('/rest/User/GetCurrent');
     let data = resp.json();
-
     return data;
   }
 
   async getUserById(id) {
-    let resp = await fetch('/rest/User/'+id, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-
+    let resp = await fetchCredentials('/rest/User/'+id);
     let data = resp.json();
-
     return data;
   }
 
