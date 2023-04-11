@@ -1,6 +1,6 @@
 import { TatorElement } from "../../tator-element.js";
 import { hasPermission } from "../../../util/has-permission.js";
-import { fetchCredentials } from "../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { InputValidation } from "../input-validation";
 import { InlineWarning } from "../../inline-warning.js";
 import { SingleUpload } from "./single-upload.js";

@@ -1,5 +1,5 @@
 import { TatorPage } from "../components/tator-page.js";
-import { fetchCredentials } from "../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
 import TatorLoading from "../../images/tator_loading.gif";
 import { store } from "./store.js";

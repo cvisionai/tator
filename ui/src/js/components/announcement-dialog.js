@@ -1,5 +1,5 @@
 import { ModalDialog } from "./modal-dialog.js";
-import { fetchCredentials } from "../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class AnnouncementDialog extends ModalDialog {
   constructor() {

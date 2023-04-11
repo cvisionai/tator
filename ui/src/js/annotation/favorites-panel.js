@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { fetchCredentials } from "../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { identifyingAttribute } from "../util/identifying-attribute.js";
 import { svgNamespace } from "../components/tator-element.js";
 

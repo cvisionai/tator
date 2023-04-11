@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { fetchCredentials } from "../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import TatorLogo from "../../images/tator-logo.png";
 
 export class PasswordResetRequestPage extends TatorElement {

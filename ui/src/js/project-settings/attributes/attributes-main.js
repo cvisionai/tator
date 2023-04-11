@@ -1,5 +1,5 @@
 import { LoadingSpinner } from "../../components/loading-spinner.js";
-import { fetchCredentials } from "../../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { AttributesClone } from "./attributes-clone.js";
 import { AttributesData } from "./data-attributes-clone.js";
 import { AttributesDelete } from "./attributes-delete.js";

@@ -1,7 +1,7 @@
 import { TatorElement } from "../tator-element.js";
 import { svgNamespace } from "../tator-element.js";
 import { hasPermission } from "../../util/has-permission.js";
-import { fetchCredentials } from "../../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import Spinner from "../../../images/spinner-transparent.svg";
 import LiveThumb from "../../../images/live-thumb.png";
 

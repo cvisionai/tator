@@ -1,4 +1,4 @@
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
 
 export class AnnotationData extends HTMLElement {
   constructor() {

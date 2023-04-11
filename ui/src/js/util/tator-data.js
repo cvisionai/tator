@@ -1,5 +1,5 @@
 import { FilterConditionData } from "./filter-utilities.js";
-import { fetchCredentials } from "./fetch-credentials.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 /**
  * Assumptions:

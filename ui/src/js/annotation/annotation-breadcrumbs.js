@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { fetchCredentials } from "../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class AnnotationBreadcrumbs extends TatorElement {
   constructor() {

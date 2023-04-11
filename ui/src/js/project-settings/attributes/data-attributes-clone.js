@@ -1,4 +1,4 @@
-import { fetchCredentials } from "../../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { AttributesForm } from "./attributes-form.js";
 
 /* Class with methods return input types with preset values for editing.*/

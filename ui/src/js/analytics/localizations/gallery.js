@@ -1,4 +1,4 @@
-import { fetchCredentials } from "../../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../../util/utilities.js";
 import { EntityCardGallery } from "../../components/entity-gallery/entity-gallery_grid.js";
 

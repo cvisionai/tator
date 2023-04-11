@@ -1,7 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
-import { fetchCredentials } from "../util/fetch-credentials.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
 import streamSaver from "../util/StreamSaver.js";

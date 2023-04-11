@@ -1,6 +1,6 @@
 import { TypeFormTemplate } from "../components/type-form-template.js";
 import { Utilities } from "../../util/utilities.js";
-import { fetchCredentials } from "../../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class AppletEdit extends TypeFormTemplate {
    constructor() {

@@ -1,5 +1,5 @@
 import { TatorElement } from "../tator-element.js";
-import { fetchCredentials } from "../../util/fetch-credentials.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import "../../annotation/attribute-panel.js";
 
 export class EntityGalleryPanelForm extends TatorElement {
