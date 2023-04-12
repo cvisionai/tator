@@ -217,11 +217,15 @@ dev-push:
 ifeq ($(USE_MIN_JS),true)
 webpack: $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
-	cd ui && npm install && python3 make_index_files.py && npm run build
+	ln -s scripts/packages/tator-js/pkg/node_modules node_modules
+	cd ui && npm install && python3 make_index_files.py && npm run build && cd ..
+	unlink node_modules
 else
 webpack: $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
-	cd ui && npm install && python3 make_index_files.py && npm run buildDev
+	ln -s scripts/packages/tator-js/pkg/node_modules node_modules
+	cd ui && npm install && python3 make_index_files.py && npm run buildDev && cd ..
+	unlink node_modules
 endif
 
 .PHONY: superuser
