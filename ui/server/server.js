@@ -23,13 +23,14 @@ const argv = yargs(process.argv.slice(2))
   .describe('o', 'Include this argument if Okta is enabled for authentication.')
   .describe('k', 'Include this argument if Keycloak is enabled for authentication.')
   .default('b', '')
+  .default('k', false)
   .argv
 
 const params = { 
   backend: argv.backend,
   email_enabled: argv.email_enabled,
   okta_enabled: argv.okta_enabled,
-  keycloak_enabled: argv.keycloak_enabled
+  keycloak_enabled: argv.keycloak_enabled,
 };
 
 nunjucks.configure('server/views', {
