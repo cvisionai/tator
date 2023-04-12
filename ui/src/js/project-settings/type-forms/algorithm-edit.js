@@ -152,7 +152,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
 
       // override the fetch call on this web component
       this._manifestPath._fetchCall = async (bodyData) => {
-         const resp = await fetchCredential(`/rest/SaveAlgorithmManifest/${this.projectId}`, {
+         const resp = await fetchCredentials(`/rest/SaveAlgorithmManifest/${this.projectId}`, {
                method: "POST",
                body: JSON.stringify(bodyData),
          });
