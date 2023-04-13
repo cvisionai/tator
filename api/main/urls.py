@@ -14,6 +14,7 @@ import django_saml2_auth.views
 from .views import (
     AuthAdminView,
     AuthProjectView,
+    check_login,
     LoginRedirect,
     StreamSaverMITMLocal,
     StreamSaverSWLocal,
@@ -40,6 +41,7 @@ urlpatterns = [
     path('auth-admin', AuthAdminView.as_view()),
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(),
          name='anonymous-gateway'),
+    path('check-login/', check_login),
     path('accounts/logout/', LogoutView.as_view()),
     path("redirect/login/", LoginRedirect.as_view()),
     path(

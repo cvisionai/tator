@@ -21,7 +21,7 @@ if (window.location.pathname != "/accounts/login") {
       goToLogin();
     }
   } else {
-    fetch(`${BACKEND}/accounts/account-profile`, {
+    fetch(`${BACKEND}/check-login`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -30,12 +30,16 @@ if (window.location.pathname != "/accounts/login") {
         "Content-Type": "application/json"
       }
     })
-    .then(response => {
-      const url = new URL(response.url);
-      if (response.status == 301 || url.pathname.startsWith('/accounts/login')) {
+    .then(response => response.json())
+    .then(data => {
+      if (!data.is_authenticated) {
         goToLogin();
       }
+    })
+    .catch(error => {
+      console.error("Error checking login status: ", error);
     });
+      
   }
 }
   

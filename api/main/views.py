@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
+from django.http import JsonResponse
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
@@ -31,6 +32,11 @@ import traceback
 # Load the main.view logger
 logger = logging.getLogger(__name__)
 
+def check_login(request):
+    if request.user.is_authenticated:
+        return JsonResponse({"is_authenticated": True})
+    else:
+        return JsonResponse({"is_authenticated": False})
 
 class LoginRedirect(View):
     def dispatch(self, request, *args, **kwargs):
