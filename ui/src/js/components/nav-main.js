@@ -29,13 +29,13 @@ export class NavMain extends TatorElement {
 
     this._changePassword = document.createElement("a");
     this._changePassword.setAttribute("class", "nav__link");
-    this._changePassword.setAttribute("href", "/accounts/password_change");
+    this._changePassword.setAttribute("href", "/password-reset-request");
     this._changePassword.textContent = "Change Password";
     this._primary.appendChild(this._changePassword);
 
     this._accountProfile = document.createElement("a");
     this._accountProfile.setAttribute("class", "nav__link");
-    this._accountProfile.setAttribute("href", "/accounts/account-profile");
+    this._accountProfile.setAttribute("href", "/account-profile");
     this._accountProfile.textContent = "Account Profile";
     this._primary.appendChild(this._accountProfile);
 

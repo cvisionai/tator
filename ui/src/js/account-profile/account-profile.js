@@ -88,7 +88,7 @@ export class AccountProfile extends TatorPage {
     div.appendChild(this._modalNotify);
     this._modalNotify.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal", "");
-      window.location.replace("/accounts/account-profile");
+      window.location.replace("/account-profile");
     });
 
     window.addEventListener("load", () => {

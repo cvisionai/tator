@@ -105,7 +105,7 @@ app.get('/token', (req, res) => {
   res.render('token', params);
 });
 
-app.get('/accounts/account-profile', (req, res) => {
+app.get('/account-profile', (req, res) => {
   res.render('account-profile', params);
 });
 
@@ -117,7 +117,7 @@ app.get('/accept', (req, res) => {
   res.render('accept', params);
 });
 
-app.get('/accounts/password_change', (req, res) => {
+app.get('/password-reset-request', (req, res) => {
   res.render('password-reset-request', params);
 });
 

@@ -14,7 +14,11 @@ function goToLogin() {
   }
 }
 
-if (window.location.pathname != "/accounts/login") {
+const NO_LOGIN_VIEWS = [
+  '/accounts/login', '/registration',
+  '/accept', '/password-reset', '/password-reset-request',
+]
+if (!NO_LOGIN_VIEWS.includes(window.location.pathname)) {
   if (KEYCLOAK_ENABLED) {
     let accessToken = localStorage.getItem("access_token");
     if (accessToken === null) {
