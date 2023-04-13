@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-NameArray=("updateprojects" "prunetemporaryfiles" "prunemedia" "prunelocalizations" "prunestates" "pruneleaves" "prunefiles" "movebackups" "archivemedia" "backupresources" "requestrestoration" "finishrestoration" "expireinvitations" "expireannouncements" "expirepasswordresets" "disable-inactive-users")
+NameArray=("updateprojects" "prunetemporaryfiles" "prunemedia" "prunelocalizations" "prunestates" "pruneleaves" "prunefiles" "movebackups" "archivemedia" "backupresources" "requestrestoration" "finishrestoration" "expireinvitations" "expireannouncements" "expirepasswordresets" "disableinactiveusers")
 
 for name in ${NameArray[*]}; do
   echo ""
