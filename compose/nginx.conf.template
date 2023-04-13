@@ -90,7 +90,7 @@ server {
     proxy_set_header X-Original-URI $request_uri;
     proxy_pass_header Authorization;
   }
-  location ~ ^/$|^/rest$|^/rest/$|^/static|^/(projects|token|organizations)|^/\d+/ {
+  location ~ ^/$|^/rest$|^/rest/$|^/static|^/(callback|exchange|refresh|projects|token|organizations|registration|accept|account-profile|password-reset-request|password-reset)|^/\d+/ {
     add_header Cross-Origin-Opener-Policy same-origin;
     add_header Cross-Origin-Embedder-Policy credentialless;
     proxy_pass http://ui:3000;
