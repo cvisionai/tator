@@ -206,6 +206,7 @@ def ErrorNotifierView(request, code, message, details=None):
     context['code'] = code
     context['msg'] = message
     context['details'] = details
+    context['keycloak_enabled'] = settings.KEYCLOAK_ENABLED
     response = render(request, 'error-page.html', context=context)
     response.status_code = code
 
