@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
+from django.http import JsonResponse
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
@@ -31,6 +32,11 @@ import traceback
 # Load the main.view logger
 logger = logging.getLogger(__name__)
 
+def check_login(request):
+    if request.user.is_authenticated:
+        return JsonResponse({"is_authenticated": True})
+    else:
+        return JsonResponse({"is_authenticated": False})
 
 class LoginRedirect(View):
     def dispatch(self, request, *args, **kwargs):
@@ -46,41 +52,6 @@ class LoginRedirect(View):
                 out += f"?next={next_url}"
 
         return redirect(out)
-
-class RegistrationView(TemplateView):
-    template_name = 'registration/registration.html'
-
-class AcceptView(TemplateView):
-    template_name = 'registration/accept.html'
-    def dispatch(self, request, *args, **kwargs):
-        if 'registration_token' in request.GET:
-            invites = Invitation.objects.filter(registration_token=request.GET['registration_token'],
-                                                status='Pending')
-            if invites.count() == 0:
-                return HttpResponse(status=403)
-            else:
-                invite = invites[0]
-                user = User.objects.filter(email=invite.email)
-                if user.count() == 0:
-                    return HttpResponse(status=403)
-                user = user[0]
-                Affiliation.objects.create(organization=invite.organization,
-                                           permission=invite.permission,
-                                           user=user)
-                invite.status = "Accepted"
-                invite.save()
-        else:
-            return HttpResponse(status=403)
-        return super().dispatch(request, *args, **kwargs)
-
-class PasswordResetRequestView(TemplateView):
-    template_name = 'password-reset/password-reset-request.html'
-
-class PasswordResetView(TemplateView):
-    template_name = 'password-reset/password-reset.html'
-
-class AccountProfileView(LoginRequiredMixin, TemplateView):
-    template_name = 'account-profile/account-profile.html'
 
 class ProjectBase(LoginRequiredMixin):
 
@@ -235,6 +206,7 @@ def ErrorNotifierView(request, code, message, details=None):
     context['code'] = code
     context['msg'] = message
     context['details'] = details
+    context['keycloak_enabled'] = settings.KEYCLOAK_ENABLED
     response = render(request, 'error-page.html', context=context)
     response.status_code = code
 

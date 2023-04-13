@@ -1,4 +1,4 @@
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { AttributesForm } from "./attributes-form.js";
 
 /* Class with methods return input types with preset values for editing.*/
@@ -15,15 +15,10 @@ export class AttributesData {
 
   _fetchPostPromise({ formData = null } = {}) {
     if (formData != null) {
-      return fetch("/rest/AttributeType/" + this.typeId, {
+      return fetchCredentials("/rest/AttributeType/" + this.typeId, {
         method: "POST",
         mode: "cors",
         credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(formData)
       });
     } else {

@@ -1,8 +1,7 @@
 import { TatorElement } from "../tator-element.js";
 import { svgNamespace } from "../tator-element.js";
 import { hasPermission } from "../../util/has-permission.js";
-import { getCookie } from "../../util/get-cookie.js";
-import { fetchRetry } from "../../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import Spinner from "../../../images/spinner-transparent.svg";
 import LiveThumb from "../../../images/live-thumb.png";
 
@@ -213,14 +212,8 @@ export class EntityCard extends TatorElement {
           const full = evt.target.value + this._ext.textContent;
           this._li.setAttribute("title", full);
         }
-        fetch("/rest/Media/" + this.getAttribute("media-id"), {
+        fetchCredentials("/rest/Media/" + this.getAttribute("media-id"), {
           method: "PATCH",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify({
             name: `${this._name.textContent}.${this._ext.textContent}`,
           }),
@@ -889,14 +882,8 @@ export class EntityCard extends TatorElement {
       archiveToggle.addEventListener("click", evt => {
         this._section.visible = !this._section.visible;
         const sectionId = Number();
-        fetch(`/rest/Section/${this._section.id}`, {
+        fetchCredentials(`/rest/Section/${this._section.id}`, {
           method: "PATCH",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify({
             "visible": this._section.visible,
           })
@@ -1023,15 +1010,10 @@ export class EntityCard extends TatorElement {
           this._title.textContent = evt.target.value;
           this._link.style.pointerEvents = "";
           this._section.name = evt.target.value;
-          fetchRetry("/rest/Bookmark/" + this._section.id, {
+          fetchCredentials("/rest/Bookmark/" + this._section.id, {
             method: "PATCH",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            },
             body: JSON.stringify({ "name": evt.target.value }),
-          });
+          }, true);
         }
         input.style.display = "none";
         this._title.style.display = "block";
@@ -1039,14 +1021,9 @@ export class EntityCard extends TatorElement {
 
       remove.addEventListener("click", () => {
         this.parentNode.removeChild(this);
-        fetchRetry("/rest/Bookmark/" + this._section.id, {
+        fetchCredentials("/rest/Bookmark/" + this._section.id, {
           method: "DELETE",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-        });
+        }, true);
       });
 
       window.addEventListener("click", evt => {

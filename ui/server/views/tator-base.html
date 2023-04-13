@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <script>
-      window.localStorage.setItem("backend", '{{ backend }}');
+      const BACKEND = '{{ backend }}';
+      const KEYCLOAK_ENABLED = {{ keycloak_enabled }};
     </script>
     <script src="/static/require-login.js"></script>
     <script src="/static/components.js"></script>

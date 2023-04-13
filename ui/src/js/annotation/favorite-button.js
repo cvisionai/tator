@@ -1,6 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class FavoriteButton extends TatorElement {
   constructor() {
@@ -61,15 +60,10 @@ export class FavoriteButton extends TatorElement {
         this.dispatchEvent(new CustomEvent("rename", {
           detail: this._favorite,
         }));
-        fetchRetry("/rest/Favorite/" + this._favorite.id, {
+        fetchCredentials("/rest/Favorite/" + this._favorite.id, {
           method: "PATCH",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify({"name": evt.target.value}),
-        });
+        }, true);
       }
       input.style.display = "none";
       this._button.style.display = "block";
@@ -80,14 +74,9 @@ export class FavoriteButton extends TatorElement {
       this.dispatchEvent(new CustomEvent("remove", {
         detail: this._favorite,
       }));
-      fetchRetry("/rest/Favorite/" + this._favorite.id, {
+      fetchCredentials("/rest/Favorite/" + this._favorite.id, {
         method: "DELETE",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      }, true);
     });
 
     window.addEventListener("click", evt => {

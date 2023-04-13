@@ -1,6 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { getCookie } from "../util/get-cookie.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { svgNamespace } from "../components/tator-element.js";
 
 export class ProgressDialog extends ModalDialog {
@@ -48,16 +47,7 @@ export class ProgressDialog extends ModalDialog {
    */
   async getJobCompleteStatus(jobUid, jobPromise) {
 
-    let response = await fetchRetry("/rest/Job/" + jobUid, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    });
-
+    let response = await fetchCredentials("/rest/Job/" + jobUid, {}, true);
     let jobStatus = await response.json();
     var jobSucceeded = true;
 
@@ -81,15 +71,7 @@ export class ProgressDialog extends ModalDialog {
 
     var promises = [];
     for (let index = 0; index < this._jobList.length; index++) {
-      var jobPromise = fetchRetry("/rest/Job/" + this._jobList[index].jobUid, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      var jobPromise = fetchCredentials("/rest/Job/" + this._jobList[index].jobUid, {}, true);
       promises.push(jobPromise);
     }
 

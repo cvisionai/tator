@@ -1,4 +1,4 @@
-import { getCookie } from "../../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 // Manages an upload.
 export class SingleUpload {
@@ -13,7 +13,6 @@ export class SingleUpload {
     this.section = uploadData.section;
     this.mediaTypeId = uploadData.mediaTypeId;
     this.username = uploadData.username;
-    this.token = uploadData.token;
     this.uploadData = uploadData;
     this.isImage = uploadData.isImage;
     this.aborted = false;
@@ -41,15 +40,8 @@ export class SingleUpload {
       throw new Error("Upload requires organization ID or project ID!")
     }
     
-    return fetch(url, {
-      method: "GET",
+    return fetchCredentials(url, {
       signal: this.controller.signal,
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
     })
     .then(response => response.json());
   }
@@ -68,25 +60,6 @@ export class SingleUpload {
                         filename: this.file.name});
 
       return info.key;
-    });
-  }
-
-  // Create presigned url for transcode/media create.
-  getDownloadInfo(key) {
-    return fetch(`/rest/DownloadInfo/${this.projectId}?expiration=86400`, {
-      method: "POST",
-      signal: this.controller.signal,
-      credentials: "omit",
-      headers: {
-        "Authorization": "Token " + this.token,
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({keys: [key]}),
-    })
-    .then(response => response.json())
-    .then(data => {
-      return data[0].url
     });
   }
 

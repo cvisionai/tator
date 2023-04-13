@@ -1,5 +1,4 @@
 import { TatorElement } from "./tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
 import { v1 as uuidv1 } from "uuid";
 import { uploadMedia } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import TatorLoading from "../../images/tator_loading.gif";

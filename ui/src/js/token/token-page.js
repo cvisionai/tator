@@ -1,5 +1,5 @@
 import { TatorPage } from "../components/tator-page.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
 
 export class TokenPage extends TatorPage {
@@ -97,14 +97,8 @@ export class TokenPage extends TatorPage {
         password: this._password.getValue(),
         refresh: this._refresh.getValue(),
       };
-      fetch("/rest/Token", {
+      fetchCredentials("/rest/Token", {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
       .then(response => response.json())

@@ -2,6 +2,8 @@ import redis
 import json
 import os
 import logging
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,17 @@ class TatorCache:
     def invalidate_cred_cache(self, project_id):
         group = f'creds_{project_id}'
         self.rds.delete(group)
+
+    def get_keycloak_public_key(self):
+        public_key = self.rds.get('keycloak_public_key')
+        return public_key
+
+    def set_keycloak_public_key(self, public_key):
+        pem_public_key = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        self.rds.set('keycloak_public_key', pem_public_key)
 
     def set_job(self, job, hkey):
         """ Stores a job for cancellation or authentication. Job is a dict including

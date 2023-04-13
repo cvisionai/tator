@@ -1,6 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { fetchRetry } from "../util/fetch-retry.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { v1 as uuidv1 } from "uuid";
 
 export class MediaMoveDialog extends ModalDialog {
@@ -75,15 +74,7 @@ export class MediaMoveDialog extends ModalDialog {
 
     // get sections
     try {
-      const sectionResp = await fetchRetry(`/rest/Sections/${this._projectId}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      });
+      const sectionResp = await fetchCredentials(`/rest/Sections/${this._projectId}`, {}, true);
 
       if (sectionResp.status !== 200) {
         const respObj = await sectionResp.json();
@@ -159,27 +150,15 @@ export class MediaMoveDialog extends ModalDialog {
         try {
           let resp;
           if (this._single) {
-            resp = await fetchRetry(`/rest/Media/${this._mediaId}`, {
+            resp = await fetchCredentials(`/rest/Media/${this._mediaId}`, {
               method: "PATCH",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
               body: JSON.stringify({ "attributes": { "tator_user_sections": this._sectionTo.tator_user_sections } })
-            });
+            }, true);
           } else {
-              resp = await fetchRetry(`/rest/Medias/${this._projectId}?media_id=${this._mediaId}`, {
+              resp = await fetchCredentials(`/rest/Medias/${this._projectId}?media_id=${this._mediaId}`, {
                 method: "PATCH",
-                credentials: "same-origin",
-                headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-                },
                 body: JSON.stringify({ "attributes": { "tator_user_sections": this._sectionTo.tator_user_sections } })
-              });
+              }, true);
           }
 
 
@@ -233,21 +212,15 @@ export class MediaMoveDialog extends ModalDialog {
 
         try {
           //fetch call
-          const sectionResp = await fetchRetry(`/rest/Sections/${this._projectId}`, {
+          const sectionResp = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
             method: "POST",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            },
             body: JSON.stringify({
               name: this._newNameInput.value,
               tator_user_sections: uuidv1(),
               visible: true
             })
 
-          });
+          }, true);
 
 
           const respJSON = await sectionResp.json();
@@ -269,15 +242,7 @@ export class MediaMoveDialog extends ModalDialog {
             this._newNameInput.value = ""; // reset form
             
             // get the new section fetch call
-            const getSection = await fetchRetry(`/rest/Section/${respJSON.id}`, {
-              method: "GET",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              }
-            });
+            const getSection = await fetchCredentials(`/rest/Section/${respJSON.id}`);
 
             // to do if sectionResp.status !== 200
             const data = await getSection.json();

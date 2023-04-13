@@ -1,6 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { fetchRetry } from "../util/fetch-retry.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class MediaNavPreview extends TatorElement {
    constructor() {
@@ -86,15 +85,8 @@ export class MediaNavPreview extends TatorElement {
       
       this._info = val;
       if (val !== null && val !== -1) {
-         fetchRetry(`/rest/Media/${val}?presigned=28800`, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-               "X-CSRFToken": getCookie("csrftoken"),
-               "Accept": "application/json",
-               "Content-Type": "application/json"
-            }
-         }).then(resp => {
+         fetchCredentials(`/rest/Media/${val}?presigned=28800`, {}, true)
+         .then(resp => {
             return resp.json();
          }).then(data => {
             //

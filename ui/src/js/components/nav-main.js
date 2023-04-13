@@ -29,13 +29,13 @@ export class NavMain extends TatorElement {
 
     this._changePassword = document.createElement("a");
     this._changePassword.setAttribute("class", "nav__link");
-    this._changePassword.setAttribute("href", "/accounts/password_change");
+    this._changePassword.setAttribute("href", "/password-reset-request");
     this._changePassword.textContent = "Change Password";
     this._primary.appendChild(this._changePassword);
 
     this._accountProfile = document.createElement("a");
     this._accountProfile.setAttribute("class", "nav__link");
-    this._accountProfile.setAttribute("href", "/accounts/account-profile");
+    this._accountProfile.setAttribute("href", "/account-profile");
     this._accountProfile.textContent = "Account Profile";
     this._primary.appendChild(this._accountProfile);
 
@@ -53,7 +53,18 @@ export class NavMain extends TatorElement {
 
     const logout = document.createElement("a");
     logout.setAttribute("class", "nav__link");
-    logout.setAttribute("href", "/accounts/logout/");
+    if (KEYCLOAK_ENABLED) {
+      const idToken = localStorage.getItem('id_token');
+      logout.setAttribute("href", `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=${window.location.origin}/accounts/login`);
+      logout.addEventListener("click", (evt) => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("id_token");
+        localStorage.removeItem("token_type");
+        localStorage.removeItem("issue_time");
+      });
+    } else {
+      logout.setAttribute("href", "/accounts/logout/");
+    }
     logout.textContent = "Logout";
     this._primary.appendChild(logout);
 

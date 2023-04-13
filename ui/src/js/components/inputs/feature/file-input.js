@@ -1,6 +1,6 @@
 import { TatorElement } from "../../tator-element.js";
 import { hasPermission } from "../../../util/has-permission.js";
-import { getCookie } from "../../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { InputValidation } from "../input-validation";
 import { InlineWarning } from "../../inline-warning.js";
 import { SingleUpload } from "./single-upload.js";
@@ -182,7 +182,6 @@ export class FileInput extends TatorElement {
       section: "",
       mediaTypeId: null,
       username: "",
-      token: getCookie("csrftoken"),
       isImage: this._isImage
     };
 
@@ -209,15 +208,9 @@ export class FileInput extends TatorElement {
           ]
         }
 
-        fetch(`/rest/DownloadInfo/${this._projectId}`, {
+        fetchCredentials(`/rest/DownloadInfo/${this._projectId}`, {
           method: "POST",
-          credentials: "same-origin",
           body: JSON.stringify(bodyData),
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
         }).then((resp) => {
           return resp.json();
         }).then((data) => {

@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import "../../annotation/attribute-panel.js";
 
 export class EntityGalleryPanelForm extends TatorElement {
@@ -73,15 +74,7 @@ export class EntityGalleryPanelForm extends TatorElement {
   async setupApplets() {
     try {
       const projectId = window.location.pathname.split("/")[1];
-      const response = await fetch("/rest/Applets/" + projectId, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      const response = await fetchCredentials("/rest/Applets/" + projectId);
       const applets = await response.json();
 
       for (let applet of applets) {

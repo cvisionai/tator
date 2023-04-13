@@ -3,7 +3,7 @@ import { Utilities } from "../util/utilities.js";
 import { MultiRenderer } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { handle_video_error, handle_decoder_error, frameToTime, PlayInteraction } from "./annotation-common.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
 import { TimeStore } from "./time-store.js"
 
 import { VideoCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";

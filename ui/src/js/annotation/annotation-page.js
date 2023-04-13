@@ -1,6 +1,5 @@
 import { TatorPage } from "../components/tator-page.js";
-import { getCookie } from "../util/get-cookie.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
 import TatorLoading from "../../images/tator_loading.gif";
 import { store } from "./store.js";
@@ -166,15 +165,7 @@ export class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         const searchParams = new URLSearchParams(window.location.search);
-        fetchRetry(`/rest/Media/${newValue}?presigned=28800`, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
-        })
+        fetchCredentials(`/rest/Media/${newValue}?presigned=28800`, {}, true)
         .then(response => response.json())
         .then(data => {
           this._archive_state = data.archive_state;
@@ -215,15 +206,7 @@ export class AnnotationPage extends TatorPage {
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
 
-          fetchRetry("/rest/MediaType/" + data.type, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            }
-          })
+          fetchCredentials("/rest/MediaType/" + data.type, {}, true)
           .then((response) => response.json())
           .then(type_data => {
             this._mediaType = type_data;
@@ -352,22 +335,8 @@ export class AnnotationPage extends TatorPage {
               playerControlManagement(player, false);
             });
           });
-          const nextPromise = fetchRetry(`/rest/MediaNext/${newValue}${window.location.search}`, {
-            method: "GET",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json",
-            }
-          });
-          const prevPromise = fetchRetry(`/rest/MediaPrev/${newValue}${window.location.search}`, {
-            method: "GET",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json",
-            }
-          });
+          const nextPromise = fetchCredentials(`/rest/MediaNext/${newValue}${window.location.search}`, {}, true);
+          const prevPromise = fetchCredentials(`/rest/MediaPrev/${newValue}${window.location.search}`, {}, true);
           Promise.all([nextPromise, prevPromise])
           .then(responses => Promise.all(responses.map(resp => resp.json())))
           .then(([nextData, prevData]) => {
@@ -449,15 +418,7 @@ export class AnnotationPage extends TatorPage {
             }
           })
           .catch(err => console.log("Failed to fetch adjacent media! " + err));
-          fetchRetry("/rest/Project/" + data.project, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            }
-          })
+          fetchCredentials("/rest/Project/" + data.project, {}, true)
           .then(response => response.json())
           .then(data => {
             this._permission = data.permission;
@@ -468,24 +429,8 @@ export class AnnotationPage extends TatorPage {
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after", data.id);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
-          const countPromise = fetchRetry(countUrl, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            }
-          });
-          const afterPromise = fetchRetry(afterUrl, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            }
-          });
+          const countPromise = fetchCredentials(countUrl, {}, true);
+          const afterPromise = fetchCredentials(afterUrl, {}, true);
           Promise.all([countPromise, afterPromise])
           .then(([countResponse, afterResponse]) => {
             const countData = countResponse.json();
@@ -761,14 +706,8 @@ export class AnnotationPage extends TatorPage {
         let uri = window.location.pathname;
         uri += "?" + this._settings._queryParams(searchParams).toString();
         const name = this._bookmarkDialog._input.value;
-        fetch("/rest/Bookmarks/" + this.getAttribute("project-id"), {
+        fetchCredentials("/rest/Bookmarks/" + this.getAttribute("project-id"), {
           method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify({
             name: name,
             uri: uri,
@@ -857,53 +796,13 @@ export class AnnotationPage extends TatorPage {
       mediaId = subelement_id;
     }
     const query = "?media_id=" + mediaId;
-    const favoritePromise = fetchRetry("/rest/Favorites/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const versionPromise = fetchRetry("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const membershipPromise = fetchRetry(`/rest/Memberships/${projectId}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const userPromise = fetchRetry(`/rest/User/GetCurrent`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const favoritePromise = fetchCredentials("/rest/Favorites/" + projectId, {}, true);
+    const versionPromise = fetchCredentials("/rest/Versions/" + projectId + "?media_id=" + mediaId, {}, true);
+    const membershipPromise = fetchCredentials(`/rest/Memberships/${projectId}`, {}, true);
+    const userPromise = fetchCredentials(`/rest/User/GetCurrent`, {}, true);
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
-      return fetchRetry(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      });
+      return fetchCredentials(url, {}, true);
     };
     Promise.all([
       getMetadataType("LocalizationTypes"),
@@ -1362,15 +1261,7 @@ export class AnnotationPage extends TatorPage {
     });
 
     const projectId = Number(this.getAttribute("project-id"));
-    fetchRetry("/rest/Applets/" + projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    })
+    fetchCredentials("/rest/Applets/" + projectId, {}, true)
     .then(response => response.json())
     .then(applets => {
       this._appletMap = {};
@@ -1437,15 +1328,7 @@ export class AnnotationPage extends TatorPage {
     this._fill_track_gaps_algo_name = "tator_fill_track_gaps";
     const projectId = Number(this.getAttribute("project-id"));
     const algUrl = "/rest/Algorithms/" + projectId;
-    const algorithmPromise = fetchRetry(algUrl, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    })
+    const algorithmPromise = fetchCredentials(algUrl, {}, true)
     .then(response => { return response.json(); })
     .then(result => {
       var registeredAnnotatorAlgos = [];
@@ -1484,14 +1367,8 @@ export class AnnotationPage extends TatorPage {
         body["media_ids"] = [evt.detail.localization.media_id];
       }
 
-      fetch("/rest/Jobs/" + evt.detail.project, {
+      fetchCredentials("/rest/Jobs/" + evt.detail.project, {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
       .then(response => {
@@ -1557,18 +1434,12 @@ export class AnnotationPage extends TatorPage {
         }
 
         // Make the request
-        const promise = fetchRetry("/rest/Localizations/" + evt.detail.project, {
+        const promise = fetchCredentials("/rest/Localizations/" + evt.detail.project, {
           method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify(
             localizationList
           ),
-        })
+        }, true)
         .then (response => {
           return response.json();
         })
@@ -1578,20 +1449,14 @@ export class AnnotationPage extends TatorPage {
               throw "Problem creating localizations";
             }
 
-            const trackPromise = fetchRetry("/rest/State/" + evt.detail.trackId, {
+            const trackPromise = fetchCredentials("/rest/State/" + evt.detail.trackId, {
               method: "PATCH",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
               body: JSON.stringify(
                 {
                   localization_ids_add: newLocIds.id
                 }
               ),
-            })
+            }, true)
             .then (response => response.json());
 
             return trackPromise;
@@ -1627,14 +1492,8 @@ export class AnnotationPage extends TatorPage {
           body["media_ids"] = [evt.detail.localization.media_id];
         }
 
-        fetch("/rest/Jobs/" + evt.detail.project, {
+        fetchCredentials("/rest/Jobs/" + evt.detail.project, {
           method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify(body),
         })
         .then(response => {
@@ -1668,21 +1527,15 @@ export class AnnotationPage extends TatorPage {
 
     menu.addEventListener("trimTrack", evt => {
 
-      const promise = fetchRetry("/rest/TrimStateEnd/" + evt.detail.trackId, {
+      const promise = fetchCredentials("/rest/TrimStateEnd/" + evt.detail.trackId, {
         method: "PATCH",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(
           {
             frame: evt.detail.frame,
             endpoint: evt.detail.endpoint
           }
         ),
-      })
+      }, true)
       .then(response => response.json())
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
@@ -1694,20 +1547,14 @@ export class AnnotationPage extends TatorPage {
 
     this._addDetectionToTrack = evt => {
 
-      const promise = fetchRetry("/rest/State/" + evt.detail.mainTrackId, {
+      const promise = fetchCredentials("/rest/State/" + evt.detail.mainTrackId, {
         method: "PATCH",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(
           {
             localization_ids_add: [evt.detail.detectionId],
           }
         ),
-      })
+      }, true)
       .then(response => response.json())
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
@@ -1725,20 +1572,14 @@ export class AnnotationPage extends TatorPage {
 
     menu.addEventListener("mergeTracks", evt => {
 
-      const promise = fetchRetry("/rest/MergeStates/" + evt.detail.mainTrackId, {
+      const promise = fetchCredentials("/rest/MergeStates/" + evt.detail.mainTrackId, {
         method: "PATCH",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(
           {
             merge_state_id: evt.detail.mergeTrackId,
           }
         ),
-      })
+      }, true)
       .then(response => response.json())
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
@@ -1798,14 +1639,8 @@ export class AnnotationPage extends TatorPage {
 
       body["media_ids"] = [evt.detail.mediaId];
 
-      fetch("/rest/Jobs/" + evt.detail.projectId, {
+      fetchCredentials("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
       .then(response => {
@@ -1980,40 +1815,20 @@ export class AnnotationPage extends TatorPage {
     const uri = `${window.location.pathname}${window.location.search}`;
     const name = "Last visited";
     // Get the last visited, if it exists.
-    fetchRetry(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    })
+    fetchCredentials(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {}, true)
     .then(response => response.json())
     .then(data => {
       if (data.length == 0) {
-        fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}`, {
+        fetchCredentials(`/rest/Bookmarks/${this.getAttribute("project-id")}`, {
           method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify({name: name, uri: uri}),
         });
       } else {
         const id = data[0].id;
-        fetchRetry(`/rest/Bookmark/${id}`, {
+        fetchCredentials(`/rest/Bookmark/${id}`, {
           method: "PATCH",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
           body: JSON.stringify({name: name, uri: uri}),
-        });
+        }, true);
       }
     });
 

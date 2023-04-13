@@ -4,8 +4,6 @@ import logging
 from django.urls import path, re_path
 from django.urls import include
 from django.conf import settings
-from django.contrib.auth.views import PasswordChangeView
-from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.views import LoginView
 
@@ -14,14 +12,10 @@ from rest_framework.schemas import get_schema_view
 import django_saml2_auth.views
 
 from .views import (
-    AcceptView,
-    AccountProfileView,
     AuthAdminView,
     AuthProjectView,
+    check_login,
     LoginRedirect,
-    PasswordResetRequestView,
-    PasswordResetView,
-    RegistrationView,
     StreamSaverMITMLocal,
     StreamSaverSWLocal,
 )
@@ -41,19 +35,13 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('accounts/account-profile/',
-         AccountProfileView.as_view(), name='account-profile'),
     path('stream-saver/sw.js', StreamSaverSWLocal.as_view(), name='sw'),
     path('stream-saver/mitm.html', StreamSaverMITMLocal.as_view(), name='mitm'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(),
          name='anonymous-gateway'),
-    path('registration', RegistrationView.as_view(), name='registration'),
-    path('accept', AcceptView.as_view(), name='accept'),
-    path('accounts/password_change/', PasswordChangeView.as_view()),
-    path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
-         name='password_change_done'),
+    path('check-login/', check_login),
     path('accounts/logout/', LogoutView.as_view()),
     path("redirect/login/", LoginRedirect.as_view()),
     path(
@@ -75,11 +63,6 @@ if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
 
 if settings.SAML_ENABLED:
     urlpatterns.append(re_path(r'^saml2_auth/', include('django_saml2_auth.urls')))
-
-if settings.TATOR_EMAIL_ENABLED:
-    urlpatterns += [
-        path('password-reset-request', PasswordResetRequestView.as_view(), name='password-reset-request'),
-        path('password-reset', PasswordResetView.as_view(), name='password-reset')]
 
 # This is used for REST calls
 urlpatterns += [

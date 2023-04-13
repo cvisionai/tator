@@ -1,5 +1,4 @@
 import { TatorPage } from "../../components/tator-page.js";
-import { getCookie } from "../../util/get-cookie.js";
 import TatorLoading from "../../../images/tator_loading.gif";
 import { store } from "./dashboard-store.js";
 

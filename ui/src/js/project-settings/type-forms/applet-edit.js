@@ -1,6 +1,6 @@
 import { TypeFormTemplate } from "../components/type-form-template.js";
-import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class AppletEdit extends TypeFormTemplate {
    constructor() {
@@ -51,16 +51,10 @@ export class AppletEdit extends TypeFormTemplate {
       this._htmlFilePath.default = this._data.html_file;
 
       this._htmlFilePath._fetchCall = (bodyData) => {
-         fetch(`/rest/SaveGenericFile/${this.projectId}`,
+         fetchCredentials(`/rest/SaveGenericFile/${this.projectId}`,
             {
                method: "POST",
-               credentials: "same-origin",
                body: JSON.stringify(bodyData),
-               headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-               }
             }
          ).then(resp => resp.json()).then(
             htmlData => {

@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { svgNamespace } from "../components/tator-element.js";
 import { frameToTime } from "./annotation-common.js";
 import { TimeStore} from "./time-store.js"
@@ -947,15 +947,7 @@ export class AttributePanel extends TatorElement {
 
   _getUsername(userId, widget) {
     if (userId){
-      fetch("/rest/User/" + userId, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
+      fetchCredentials("/rest/User/" + userId)
       .then(response => { return response.json(); })
       .then(result => {
         this._userList.push({result});
@@ -966,15 +958,7 @@ export class AttributePanel extends TatorElement {
 
   _getVersion(versionId, widget) {
     if (versionId){
-      fetch("/rest/Version/" + versionId, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
+      fetchCredentials("/rest/Version/" + versionId)
       .then(response => { return response.json(); })
       .then(result => {
         this._versionList.push({result});

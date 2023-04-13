@@ -1,5 +1,4 @@
 import { TatorPage } from "../components/tator-page.js";
-import { getCookie } from "../util/get-cookie.js";
 import { store } from "./store.js";
 
 export class OrganizationsDashboard extends TatorPage {

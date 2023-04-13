@@ -1,5 +1,5 @@
-import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { AttributesClone } from "./attributes-clone.js";
 import { AttributesData } from "./data-attributes-clone.js";
 import { AttributesDelete } from "./attributes-delete.js";
@@ -473,15 +473,10 @@ export class AttributesMain extends HTMLElement {
 
   _fetchPostPromise({formData = null } = {}){
     if(formData != null){
-      return fetch("/rest/AttributeType/"+this.fromId, {
+      return fetchCredentials("/rest/AttributeType/"+this.fromId, {
         method: "POST",
         mode: "cors",
         credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(formData)
       });
     } else {
@@ -501,15 +496,10 @@ export class AttributesMain extends HTMLElement {
     const attributeOldName = dataObject.oldName;
 
     promise = promise.then(() => {
-      return fetch("/rest/AttributeType/" + parentTypeId, {
+      return fetchCredentials("/rest/AttributeType/" + parentTypeId, {
         method: "PUT",
         mode: "cors",
         credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(formData)
       });
     }).then(response => {

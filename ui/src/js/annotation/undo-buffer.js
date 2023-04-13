@@ -1,5 +1,4 @@
-import { getCookie } from "../util/get-cookie.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
 
 export class UndoBuffer extends HTMLElement {
@@ -30,14 +29,13 @@ export class UndoBuffer extends HTMLElement {
     window.addEventListener("beforeunload", () => {
       if (this._editsMade) {
         const sessionEnd = new Date();
-        fetchRetry("/rest/Media/" + this._media.id, {
+        fetchCredentials("/rest/Media/" + this._media.id, {
           method: "PATCH",
           body: JSON.stringify({
             last_edit_start: this._sessionStart.toISOString(),
             last_edit_end: sessionEnd.toISOString(),
           }),
-          ...this._headers(),
-        })
+        }, true)
         .then(response => {
           if (response.ok) {
             return response;
@@ -52,19 +50,13 @@ export class UndoBuffer extends HTMLElement {
         if (edit_triggers)
         {
           edit_triggers.forEach(algo_name=>{
-            fetchRetry("/rest/Jobs/" + this._media['project'], {
+            fetchCredentials("/rest/Jobs/" + this._media['project'], {
               method: "POST",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
               body: JSON.stringify({
                 "algorithm_name": algo_name,
                 "media_ids": [this._media['id']],
               }),
-            })
+            }, true)
           });
         }
       }
@@ -282,10 +274,7 @@ export class UndoBuffer extends HTMLElement {
 
   _get(detailUri, id) {
     const url = "/rest/" + detailUri + "/" + id;
-    return fetchRetry(url, {
-      method: "GET",
-      ...this._headers(),
-    })
+    return fetchCredentials(url, {}, true)
     .then(response => {
       if (response.ok) {
         return response.json();
@@ -302,7 +291,6 @@ export class UndoBuffer extends HTMLElement {
     const url = "/rest/" + uri + "/" + id;
     const obj = {
       method: method,
-      ...this._headers(),
     };
     if (body) {
       if (method == "POST") {
@@ -332,7 +320,7 @@ export class UndoBuffer extends HTMLElement {
       console.error("Error during fetch!");
     }
 
-    return fetchRetry(url, obj)
+    return fetchCredentials(url, obj, true)
     .then(response => {
       if (response.ok) {
         console.log("Fetch successful!");
@@ -372,17 +360,6 @@ export class UndoBuffer extends HTMLElement {
     this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
                                        {composed: true,
                                         detail: {enabled: false}}));
-  }
-
-  _headers() {
-    return {
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    };
   }
 
   _resetFromNow() {

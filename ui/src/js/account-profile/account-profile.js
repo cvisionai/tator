@@ -1,5 +1,5 @@
 import { TatorPage } from "../components/tator-page.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
 
 export class AccountProfile extends TatorPage {
@@ -88,19 +88,11 @@ export class AccountProfile extends TatorPage {
     div.appendChild(this._modalNotify);
     this._modalNotify.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal", "");
-      window.location.replace("/accounts/account-profile");
+      window.location.replace("/account-profile");
     });
 
     window.addEventListener("load", () => {
-      fetch("/rest/User/GetCurrent", {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
+      fetchCredentials("/rest/User/GetCurrent")
         .then(response => { return response.json(); })
         .then(result => {
           this.userId = result.id;
@@ -118,14 +110,8 @@ export class AccountProfile extends TatorPage {
     evt.preventDefault();
 
     const url = "/rest/User/" + this.userId;
-    const response = await fetch(url, {
+    const response = await fetchCredentials(url, {
       method: "PATCH",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
       body: JSON.stringify({
         "first_name": this.firstName.getValue(),
         "last_name": this.lastName.getValue(),

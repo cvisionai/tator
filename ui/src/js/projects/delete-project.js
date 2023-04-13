@@ -1,5 +1,4 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { getCookie } from "../util/get-cookie.js";
 import { store } from "./store.js";
 
 export class DeleteProject extends ModalDialog {

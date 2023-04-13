@@ -5,7 +5,10 @@ import logging
 from django.utils.deprecation import MiddlewareMixin
 from datadog import DogStatsd
 from django.http import QueryDict
+import jwt
+from jwt.algorithms import RSAAlgorithm
 import requests
+import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
@@ -71,3 +74,6 @@ class AuditMiddleware:
                 raise RuntimeError("Failed to update audit record!")
 
         return response
+
+MAIN_HOST = os.getenv('MAIN_HOST')
+

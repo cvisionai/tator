@@ -1,5 +1,5 @@
 import { TatorPage } from "../../components/tator-page.js";
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import TatorLoading from "../../../images/tator_loading.gif";
 import { store } from "./store.js";
 
@@ -76,15 +76,7 @@ export class DashboardPortal extends TatorPage {
     }
 
     _getDashboards() {
-      fetch("/rest/Applets/" + this._projectId, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
+      fetchCredentials("/rest/Applets/" + this._projectId)
       .then(response => response.json())
       .then(dashboards => {
         for (let dashboard of dashboards) {

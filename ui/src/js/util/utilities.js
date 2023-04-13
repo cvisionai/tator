@@ -1,4 +1,4 @@
-import { getCookie } from "./get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 // Misc. Utilities for Tator
 
@@ -144,15 +144,9 @@ export class Utilities
     {
       request_body["send_as_file"] = 1;
     }
-    return fetch("/rest/Notify",
+    return fetchCredentials("/rest/Notify",
                  {method: "POST",
                   body: JSON.stringify(request_body),
-                  credentials: "same-origin",
-                  headers: {
-                    "X-CSRFToken": getCookie("csrftoken"),
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
-                  }
                  });
   }
 

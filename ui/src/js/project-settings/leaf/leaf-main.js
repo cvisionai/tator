@@ -1,4 +1,3 @@
-import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { store } from "../store.js";
 import { TatorElement } from "../../components/tator-element.js";

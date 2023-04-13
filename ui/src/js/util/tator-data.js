@@ -1,6 +1,5 @@
-import { getCookie } from "./get-cookie.js";
 import { FilterConditionData } from "./filter-utilities.js";
-import { fetchRetry } from "./fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 /**
  * Assumptions:
@@ -96,16 +95,7 @@ export class TatorData {
 
     var donePromise = new Promise(resolve => {
       const restUrl = "/rest/Memberships/" + this._project;
-      const dataPromise = fetchRetry(restUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
-
+      const dataPromise = fetchCredentials(restUrl, {}, true);
       dataPromise
       .then(response => response.json())
       .then(memberships => {
@@ -125,16 +115,7 @@ export class TatorData {
     var donePromise = new Promise(resolve => {
 
       const restUrl = "/rest/StateTypes/" + this._project;
-      const dataPromise = fetchRetry(restUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
-
+      const dataPromise = fetchCredentials(restUrl, {}, true);
       Promise.all([dataPromise])
         .then(([dataResponse]) => {
           const dataJson = dataResponse.json();
@@ -176,15 +157,7 @@ export class TatorData {
     var donePromise = new Promise(resolve => {
 
       const localizationRestUrl = "/rest/LocalizationTypes/" + this._project;
-      const localizationPromise = fetchRetry(localizationRestUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      const localizationPromise = fetchCredentials(localizationRestUrl, {}, true);
 
       Promise.all([localizationPromise])
         .then(([localizationResponse]) => {
@@ -214,15 +187,7 @@ export class TatorData {
     var donePromise = new Promise(resolve => {
 
       const mediaRestUrl = "/rest/MediaTypes/" + this._project;
-      const mediaPromise = fetchRetry(mediaRestUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      const mediaPromise = fetchCredentials(mediaRestUrl, {}, true);
 
       Promise.all([mediaPromise])
         .then(([mediaResponse]) => {
@@ -250,15 +215,7 @@ export class TatorData {
     var donePromise = new Promise(resolve => {
 
       const versionsRestUrl = "/rest/Versions/" + this._project;
-      const versionsPromise = fetchRetry(versionsRestUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      const versionsPromise = fetchCredentials(versionsRestUrl, {}, true);
 
       Promise.all([versionsPromise])
         .then(([versionsResponse]) => {
@@ -282,15 +239,7 @@ export class TatorData {
     var donePromise = new Promise(resolve => {
 
       const sectionsRestUrl = "/rest/Sections/" + this._project;
-      const sectionsPromise = fetchRetry(sectionsRestUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      const sectionsPromise = fetchCredentials(sectionsRestUrl, {}, true);
 
       Promise.all([sectionsPromise])
         .then(([sectionsResponse]) => {
@@ -314,15 +263,7 @@ export class TatorData {
     var donePromise = new Promise(resolve => {
 
       const restUrl = "/rest/Algorithms/" + this._project;
-      const resultsPromise = fetchRetry(restUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      const resultsPromise = fetchCredentials(restUrl, {}, true);
 
       Promise.all([resultsPromise])
         .then(([resultsPromise]) => {
@@ -343,15 +284,9 @@ export class TatorData {
    * Returns data for getFrame with project ID
    */
   async getFrame( frameId ){
-    const response = await fetch(`/rest/GetFrame/${frameId}`, {
-      method: "GET",
+    const response = await fetchCredentials(`/rest/GetFrame/${frameId}`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
     });
     const data = await response.json();
 
@@ -362,16 +297,14 @@ export class TatorData {
    * Returns data for getLocalizationGraphic with project ID
    */
   async getLocalizationGraphic( localizationID ){
-    const response = await fetch(`/rest/LocalizationGraphic/${localizationID}`, {
-      method: "GET",
+    const response = await fetchCredentials(`/rest/LocalizationGraphic/${localizationID}`, {
       mode: "cors",
       credentials: "include",
       headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
+        "Content-Type": "image/*",
         "Accept": "image/*",
-        "Content-Type": "image/*"
       }
-    });
+    }, false, true);
 
     const data = await response.blob();
 
@@ -382,15 +315,9 @@ export class TatorData {
    * Gets localization object based on ID
    */
   async getLocalization(localizationId){
-    const response = await fetch(`/rest/Localization/${localizationId}`, {
-      method: "GET",
+    const response = await fetchCredentials(`/rest/Localization/${localizationId}`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
     });
     const data = await response.json();
     return data;
@@ -400,15 +327,9 @@ export class TatorData {
    * Returns a data for user with user ID
    */
   async getUser( userId ){
-    const response = await fetch(`/rest/User/${userId}`, {
-      method: "GET",
+    const response = await fetchCredentials(`/rest/User/${userId}`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
     });
     const data = await response.json();
 
@@ -419,15 +340,9 @@ export class TatorData {
    * Returns a Media data
    */
   async getMedia( mediaId ){
-    const response = await fetch(`/rest/Media/${mediaId}?presigned=28800`, {
-      method: "GET",
+    const response = await fetchCredentials(`/rest/Media/${mediaId}?presigned=28800`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
     });
     const data = await response.json();
 
@@ -438,15 +353,9 @@ export class TatorData {
    * Returns a MediaType data
    */
   async getMediaType( mediaId ){
-    const response = await fetch(`/rest/MediaType/${mediaId}`, {
-      method: "GET",
+    const response = await fetchCredentials(`/rest/MediaType/${mediaId}`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
     });
     const data = await response.json();
 
@@ -502,15 +411,7 @@ export class TatorData {
       if (afterMap.has(current - 5000)) {
         after = `&after=${afterMap.get(current - 5000)}`;
       }
-      return fetch(`${url}&start=4999&stop=5000${after}&presigned=28800`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
+      return fetchCredentials(`${url}&start=4999&stop=5000${after}&presigned=28800`)
       .then(response => response.json())
       .then(data => {
         afterMap.set(current, data[0].id);
@@ -768,15 +669,7 @@ export class TatorData {
     }
 
     console.log("Getting data with URL: " + url);
-    promises.push(fetchRetry(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-    }));
+    promises.push(fetchCredentials(url, {}, true));
 
     let resultsJson = [];
     await Promise.all(promises).then((responses) => {
@@ -1211,15 +1104,8 @@ export class TatorData {
     // Have to provide a valid media ID list or query for now. #TODO revisit
 
     var media_id;
-    await fetchRetry(`/rest/Medias/${this._project}?start=0&stop=1`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    }).then((response) => {
+    await fetchCredentials(`/rest/Medias/${this._project}?start=0&stop=1`, {}, true)
+    .then((response) => {
       return response.json()
     }).then((results) => {
       media_id = results[0].id;
@@ -1232,14 +1118,8 @@ export class TatorData {
     }
 
     var launched = false;
-    await fetchRetry("/rest/Jobs/" + this._project, {
+    await fetchCredentials("/rest/Jobs/" + this._project, {
       method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
       body: JSON.stringify(body),
     })
     .then(response => {

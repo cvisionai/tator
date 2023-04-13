@@ -1,6 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { identifyingAttribute } from "../util/identifying-attribute.js";
 import { svgNamespace } from "../components/tator-element.js";
 
@@ -171,16 +170,10 @@ export class FavoritesPanel extends TatorElement {
       'values': values,
       'entity_type_name': this._entityTypeName
     };
-    fetchRetry("/rest/Favorites/" + this._dataType.project, {
+    fetchCredentials("/rest/Favorites/" + this._dataType.project, {
       method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
       body: JSON.stringify(favorite),
-    })
+    }, true)
     .then(response => response.json())
     .then(data => {
       favorite.id = data.id;

@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import TatorLogo from "../../images/tator-logo.png";
 
 export class PasswordResetPage extends TatorElement {
@@ -90,14 +90,8 @@ export class PasswordResetPage extends TatorElement {
       if (params.has("user")) {
         user_id = params.get("user");
       }
-      fetch(`/rest/User/${user_id}`, {
+      fetchCredentials(`/rest/User/${user_id}`, {
         method: "PATCH",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
       .then(response => {

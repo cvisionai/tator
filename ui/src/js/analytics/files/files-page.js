@@ -1,5 +1,5 @@
 import { TatorPage } from "../../components/tator-page.js";
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
 import TatorLoading from "../../../images/tator_loading.gif";
 
@@ -85,15 +85,7 @@ export class FilesPage extends TatorPage {
   _init(project) {
     this._breadcrumbs.setAttribute("project-name", project.name);
     this._projectId = project.id;
-    const fileTypesPromise = fetch("/rest/FileTypes/" + this._projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const fileTypesPromise = fetchCredentials("/rest/FileTypes/" + this._projectId);
     fileTypesPromise.then((response) => {
       const fileTypesData = response.json();
       fileTypesData.then((fileTypes) => {
@@ -309,14 +301,8 @@ export class FilesPage extends TatorPage {
           }
           else {
             // Path is an object key
-            fetch(`/rest/DownloadInfo/${fileType.project}?expiration=3600`, {
+            fetchCredentials(`/rest/DownloadInfo/${fileType.project}?expiration=3600`, {
               method: "POST",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
               body: JSON.stringify({keys: [fileData.path]}),
             })
             .then(response => { return response.json(); })
@@ -347,15 +333,7 @@ export class FilesPage extends TatorPage {
     this._fileTypeButton.text = fileType.name;
     this._loading.style.display = "block";
 
-    const fileListPromise = fetch(`/rest/Files/${this._projectId}?meta=${fileType.id}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const fileListPromise = fetchCredentials(`/rest/Files/${this._projectId}?meta=${fileType.id}`);
     fileListPromise.then((response) => {
       const fileListData = response.json();
       fileListData.then((fileList) => {

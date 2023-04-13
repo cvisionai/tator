@@ -2,7 +2,7 @@ import create from 'zustand/vanilla';
 import { subscribeWithSelector, devtools } from 'zustand/middleware';
 import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
-const api = getApi(window.localStorage.getItem('backend'));
+const api = getApi(BACKEND);
 
 const getMap = new Map();
 getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
