@@ -47,41 +47,6 @@ class LoginRedirect(View):
 
         return redirect(out)
 
-class RegistrationView(TemplateView):
-    template_name = 'registration/registration.html'
-
-class AcceptView(TemplateView):
-    template_name = 'registration/accept.html'
-    def dispatch(self, request, *args, **kwargs):
-        if 'registration_token' in request.GET:
-            invites = Invitation.objects.filter(registration_token=request.GET['registration_token'],
-                                                status='Pending')
-            if invites.count() == 0:
-                return HttpResponse(status=403)
-            else:
-                invite = invites[0]
-                user = User.objects.filter(email=invite.email)
-                if user.count() == 0:
-                    return HttpResponse(status=403)
-                user = user[0]
-                Affiliation.objects.create(organization=invite.organization,
-                                           permission=invite.permission,
-                                           user=user)
-                invite.status = "Accepted"
-                invite.save()
-        else:
-            return HttpResponse(status=403)
-        return super().dispatch(request, *args, **kwargs)
-
-class PasswordResetRequestView(TemplateView):
-    template_name = 'password-reset/password-reset-request.html'
-
-class PasswordResetView(TemplateView):
-    template_name = 'password-reset/password-reset.html'
-
-class AccountProfileView(LoginRequiredMixin, TemplateView):
-    template_name = 'account-profile/account-profile.html'
-
 class ProjectBase(LoginRequiredMixin):
 
     def get_context_data(self, **kwargs):
