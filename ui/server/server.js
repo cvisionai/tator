@@ -7,10 +7,11 @@ const proxy = require('express-http-proxy');
 const cookieParser = require('cookie-parser');
 const yargs = require('yargs/yargs');
 const app = express();
-const port = 3000;
 
 const argv = yargs(process.argv.slice(2))
   .usage('Usage: $0 -b https://cloud.tator.io -o -e')
+  .alias('h', 'host')
+  .alias('p', 'port')
   .alias('b', 'backend')
   .alias('e', 'email_enabled')
   .alias('o', 'okta_enabled')
@@ -18,10 +19,14 @@ const argv = yargs(process.argv.slice(2))
   .boolean('e')
   .boolean('o')
   .boolean('k')
+  .describe('h', 'Express host. Default is localhost.')
+  .describe('p', 'Express port. Default is 3000.')
   .describe('b', 'Backend host, including protocol. Default is same origin (blank).')
   .describe('e', 'Include this argument if email is enabled in the backend.')
   .describe('o', 'Include this argument if Okta is enabled for authentication.')
   .describe('k', 'Include this argument if Keycloak is enabled for authentication.')
+  .default('h', 'localhost')
+  .default('p', 3000)
   .default('b', '')
   .default('k', false)
   .argv
@@ -138,8 +143,8 @@ app.post('/exchange', async (req, res) => {
   body.append('grant_type', 'authorization_code');
   body.append('client_id', 'tator');
   body.append('code', req.body.code);
-  body.append('redirect_uri', `${req.body.origin}/callback`);
-  const url = `${req.body.origin}/auth/realms/tator/protocol/openid-connect/token`;
+  body.append('redirect_uri', `${req.body.origin}/callback`); // Callback URL is validated by keycloak
+  const url = `${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
   try {
     await fetch(url, {
       method: "POST",
@@ -187,7 +192,7 @@ app.get('/refresh', async (req, res) => {
   if (typeof req.cookies.refresh_token === "undefined") {
     res.status(403).send({message: "No refresh token!"});
   } else {
-    const url = `https://${req.headers.host}/auth/realms/tator/protocol/openid-connect/token`;
+    const url = `https://${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
     try {
       await fetch(url, {
         method: "POST",
@@ -221,7 +226,7 @@ app.get('/refresh', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+app.listen(argv.port, argv.host, () => {
   console.log('Started express server!');
 });
 
