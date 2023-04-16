@@ -365,22 +365,27 @@ export class ProjectDetail extends TatorPage {
           }
           spec.name = newSectionDialog._input.value;
 
-          // TODO
-          if (params.has("search")) {
-            if (spec.lucene_search) {
-              spec.lucene_search = `(${spec.lucene_search}) AND (${params.get("search")})`;
+          if (params.has("encoded_search")) {
+            let object_search = JSON.parse(atob(params.get("encoded_search")));
+            if (spec.object_search) {
+              let union_operation = {"method": "and", operations:[spec.object_search, object_search]}
+              spec.object_search = union_operation;
             } else {
-              spec.lucene_search = params.get("search");
+              spec.object_search = object_search;
+            }
+          }
+
+          if (params.has("encoded_related_search")) {
+            let related_search = JSON.parse(atob(params.get("encoded_related_search")));
+            if (spec.related_search) {
+              let union_operation = {"method": "and", operations:[spec.object_search, related_search]}
+              spec.related_search = union_operation;
+            } else {
+              spec.related_search = related_search;
             }
           }
 
           delete spec.id;
-          if (spec.annotation_bools === null) {
-            delete spec.annotation_bools;
-          }
-          if (spec.media_bools === null) {
-            delete spec.media_bools;
-          }
           if (spec.tator_user_sections === null) {
             delete spec.tator_user_sections;
           }
@@ -398,8 +403,18 @@ export class ProjectDetail extends TatorPage {
           },
           body: JSON.stringify(spec),
         })
-          .then(response => response.json())
-          .then(section => {
+          .then(async response => {
+            let section = await response.json();
+            if (response.status != 201)
+            {
+              if (this._modalError == undefined)
+              {
+                this._modalError = document.createElement("modal-dialog");
+                this._shadow.appendChild(this._modalError);
+              }
+              this._modalError._error(`Unable to create section '${spec.name}'. ${section.message}`, "Error");
+              return;
+            }
             const card = document.createElement("entity-card");
             const sectionObj = {
               id: section.id,
@@ -757,6 +772,7 @@ export class ProjectDetail extends TatorPage {
             const hiddenAlgoCategories = ['annotator-view', 'disabled'];
 
             this._cardAttributeLabels.init(projectId);
+            this._sections = sections;
 
             //
             // Set up attributes for bulk edit
@@ -915,9 +931,9 @@ export class ProjectDetail extends TatorPage {
                 }
 
                 // Is there a search to apply?
-                if (params.has("search")) {
+                if (params.has("encoded_search")) {
                   // console.log(params.get("search"));
-                  this._mediaSection.searchString = params.get("search");
+                  this._mediaSection.searchString = params.get("encoded_search");
                   this._addSavedSearchButton.style.opacity = 1.0;
                   this._addSavedSearchButton.style.cursor = "pointer";
                 }
@@ -928,7 +944,7 @@ export class ProjectDetail extends TatorPage {
                 this._mediaSection._files.memberships = this._modelData._memberships;
 
                 this._filterDataView = new FilterData(
-                  this._modelData, null, ["MediaStates", "LocalizationStates", "Localizations"], null);
+                  this._modelData, null, [], null);
                 this._filterDataView.init();
                 this._filterView.dataView = this._filterDataView;
 
@@ -1030,6 +1046,10 @@ export class ProjectDetail extends TatorPage {
       }
     }
 
+    // Add section filter information
+    this._filterView.sections = this._sections;
+    this._filterView.section = section;
+
     return true;
   }
 
@@ -1077,7 +1097,7 @@ export class ProjectDetail extends TatorPage {
         });
       }
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.projectId, {
+      fetch("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
         credentials: "same-origin",
         headers: {

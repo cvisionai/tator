@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from django.db import transaction
 
@@ -29,17 +30,24 @@ class SectionListAPI(BaseListView):
         qs = Section.objects.filter(project=params['project'])
         if 'name' in params:
             qs = qs.filter(name__iexact=f"\'{params['name']}\'")
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
         qs = qs.order_by('name')
         return database_qs(qs)
 
     def _post(self, params):
         project = params['project']
         name = params['name']
-        lucene_search = params.get('lucene_search', None)
-        media_bools = params.get('media_bools', None)
-        annotation_bools = params.get('annotation_bools', None)
+        object_search = params.get('object_search', None)
+        related_search = params.get('related_search', None)
         tator_user_sections = params.get('tator_user_sections', None)
         visible = params.get("visible", True)
+        elemental_id = params.get('elemental_id', uuid.uuid4())
 
         if Section.objects.filter(
             project=project, name__iexact=params['name']).exists():
@@ -49,11 +57,11 @@ class SectionListAPI(BaseListView):
         section = Section.objects.create(
             project=project,
             name=name,
-            lucene_search=lucene_search,
-            media_bools=media_bools,
-            annotation_bools=annotation_bools,
+            object_search=object_search,
+            related_object_search=related_search,
             tator_user_sections=tator_user_sections,
             visible=visible,
+            elemental_id=elemental_id
         )
         return {'message': f"Section {name} created!",
                 'id': section.id}
@@ -86,16 +94,15 @@ class SectionDetailAPI(BaseDetailView):
                 project=section.project, name__iexact=params['name']).exists():
                 raise Exception("Section with this name already exists!")
             section.name = params['name']
-        if 'lucene_search' in params:
-            section.lucene_search = params['lucene_search']
-        if 'media_bools' in params:
-            section.media_bools = params['media_bools']
-        if 'annotation_bools' in params:
-            section.annotation_bools = params['annotation_bools']
+        if 'object_search' in params:
+            section.object_search = params['object_search']
         if 'tator_user_sections' in params:
             section.tator_user_sections = params['tator_user_sections']
         if "visible" in params:
             section.visible = params["visible"]
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id:
+            section.elemental_id = elemental_id
         section.save()
         return {'message': f"Section {section.name} updated successfully!"}
 

@@ -6,6 +6,8 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._errors import error_responses
 
+from ._type_query import type_filter_parameter_schema
+
 boilerplate = dedent("""\
 Sections represent groups of media using saved queries. The queries can be in the form
 of a [lucene search string](https://www.elastic.co/guide/en/elasticsearch/reference/7.10/query-dsl-query-string-query.html#query-string-syntax) or a list of [boolean filter queries](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html) applied to
@@ -50,7 +52,7 @@ class SectionListSchema(AutoSchema):
                 'required': False,
                 'description': 'Name of the section.',
                 'schema': {'type': 'string'},
-            }]
+            }, *type_filter_parameter_schema]
         return params
 
     def get_request_body(self, path, method):

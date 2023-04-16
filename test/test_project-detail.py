@@ -32,7 +32,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_1 = '/tmp/hubble-sees-the-wings-of-a-butterfly.jpg'
    if not os.path.exists(nasa_space_photo_1):
-      url = 'https://images-assets.nasa.gov/image/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o~small.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/hubble.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_1, 'wb') as f:
@@ -42,7 +42,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_2 = '/tmp/layers-in-galle-crater.jpg'
    if not os.path.exists(nasa_space_photo_2):
-      url = 'https://images-assets.nasa.gov/image/PIA21575/PIA21575~medium.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/galle.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_2, 'wb') as f:
@@ -52,7 +52,7 @@ def test_basic(request, page_factory, project): #video
 
    nasa_space_photo_3 = '/tmp/behemoth-black-hole.jpg'
    if not os.path.exists(nasa_space_photo_3):
-      url = 'https://images-assets.nasa.gov/image/behemoth-black-hole-found-in-an-unlikely-place_26209716511_o/behemoth-black-hole-found-in-an-unlikely-place_26209716511_o~medium.jpg'
+      url = 'https://s3.amazonaws.com/tator-ci/behemoth.jpg'
       with requests.get(url, stream=True) as r:
          r.raise_for_status()
          with open(nasa_space_photo_3, 'wb') as f:
@@ -140,7 +140,7 @@ def test_basic(request, page_factory, project): #video
    page.click('filter-condition-group button.btn.btn-outline.btn-small')
 
    page.wait_for_selector('enum-input[name="Field"]')
-   page.select_option('enum-input[name="Field"] select', value="filename")
+   page.select_option('enum-input[name="Field"] select', label="Filename")
 
    page.wait_for_selector('text-input[name="Value"] input')
    page.fill('text-input[name="Value"] input', "black-hole")

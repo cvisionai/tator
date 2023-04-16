@@ -225,7 +225,7 @@ def image_set(request):
 
     # Download Labeled Faces in the Wild dataset.
     if not os.path.exists(out_path):
-        url = 'http://vis-www.cs.umass.edu/lfw/lfw.tgz'
+        url = 'https://s3.amazonaws.com/tator-ci/lfw.tgz'
         subprocess.run(['wget', '-O', out_path, url], check=True)
 
     # Extract the images.
@@ -244,7 +244,7 @@ def video_file(request):
     print("Getting video file...")
     out_path = '/tmp/AudioVideoSyncTest_BallastMedia.mp4'
     if not os.path.exists(out_path):
-        url = 'http://www.ballastmedia.com/wp-content/uploads/AudioVideoSyncTest_BallastMedia.mp4'
+        url = 'https://s3.amazonaws.com/tator-ci/AudioVideoSyncTest_BallastMedia.mp4'
         subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
@@ -357,7 +357,7 @@ def multi(request, base_url, token, project, video2, video3):
 def image_file(request):
     out_path = '/tmp/test1.jpg'
     if not os.path.exists(out_path):
-        url = 'https://www.gstatic.com/webp/gallery/1.jpg'
+        url = 'https://s3.amazonaws.com/tator-ci/landscape.jpg'
         subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 

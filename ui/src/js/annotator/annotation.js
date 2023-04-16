@@ -1721,7 +1721,7 @@ export class AnnotationCanvas extends TatorElement
         // Reset auto track
         this._lastAutoTrackColor = null;
         this._data._trackDb.forEach((trackObj, localizationIdx, map) => {
-          if (trackObj.meta == typeObj.id) {
+          if (trackObj.type == typeObj.id) {
             this._data._trackDb.delete(localizationIdx);
           }
         }, this);
@@ -1833,6 +1833,16 @@ export class AnnotationCanvas extends TatorElement
     if (document.body.classList.contains("shortcuts-disabled")) {
       console.log("Shortcuts are disabled!");
       return;
+    }
+
+    // Handle sensitive keyboard shortcuts only when mouseover is active
+    if (this._mouseMode == MouseMode.SELECT && this._mouseOverActive == true)
+    {
+      if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
+      {
+        this._delConfirm.objectName = this.getObjectDescription(this.activeLocalization).name;
+        this._delConfirm.confirm()
+      }
     }
 
     if (event.ctrlKey && event.code == "Digit9")
@@ -2070,8 +2080,8 @@ export class AnnotationCanvas extends TatorElement
 
   computeLocalizationColor(localization, meta)
   {
-    // Default fill is solid
-    var fill = {"style": "solid","color":color.TEAL,"alpha":0.15*255};
+    // Default fill is fill
+    var fill = {"style": "fill","color":color.TEAL,"alpha":0.15*255};
     var drawColor = color.TEAL;
     var trackColor = null;
     var alpha = annotation_alpha;
@@ -2116,47 +2126,47 @@ export class AnnotationCanvas extends TatorElement
 
       if (skipDefault == false)
       {
-        if (meta.colorMap.default)
+        if (meta.color_map.default)
         {
-          decodeColor(meta.colorMap.default);
+          decodeColor(meta.color_map.default);
         }
 
-        if (meta.colorMap.defaultFill)
+        if (meta.color_map.default_fill)
         {
-          decodeFill(meta.colorMap.defaultFill);
+          decodeFill(meta.color_map.default_fill);
         }
 
-        if (meta.colorMap.version)
+        if (meta.color_map.version)
         {
-          if (localization.version in meta.colorMap.version)
+          if (localization.version in meta.color_map.version)
           {
-            decodeColor(meta.colorMap.version[localization.version]);
+            decodeColor(meta.color_map.version[localization.version]);
           }
         }
       }
 
-      var keyname = meta.colorMap.key;
+      var keyname = meta.color_map.key;
       if (keyname && keyname in objAttributes)
       {
         var keyvalue = objAttributes[keyname];
-        if (meta.colorMap.map && keyvalue in meta.colorMap.map)
+        if (meta.color_map.map && keyvalue in meta.color_map.map)
         {
-          decodeColor(meta.colorMap.map[keyvalue]);
+          decodeColor(meta.color_map.map[keyvalue]);
         }
-        if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
+        if (meta.color_map.fill_map && keyvalue in meta.color_map.fill_map)
         {
-          decodeFill(meta.colorMap.fillMap[keyvalue]);
+          decodeFill(meta.color_map.fill_map[keyvalue]);
         }
       }
 
       // If we define a alpha_ranges routine
-      if (meta.colorMap.alpha_ranges)
+      if (meta.color_map.alpha_ranges)
       {
-        keyname = meta.colorMap.alpha_ranges.key;
+        keyname = meta.color_map.alpha_ranges.key;
         var keyvalue=localization.attributes[keyname];
         if (keyvalue)
         {
-          for (let ranges of meta.colorMap.alpha_ranges.alphas)
+          for (let ranges of meta.color_map.alpha_ranges.alphas)
           {
             if (keyvalue >= ranges[0] && keyvalue < ranges[1])
             {
@@ -2188,7 +2198,8 @@ export class AnnotationCanvas extends TatorElement
       }
     }
 
-    if (meta.colorMap)
+    fill.color = drawColor;
+    if (meta.color_map)
     {
       if (localizationInTrack)
       {
@@ -2199,7 +2210,6 @@ export class AnnotationCanvas extends TatorElement
         colorMap(localization.attributes, false);
       }
     }
-    fill.color = drawColor;
 
     // Handle state based color choices
     // If we are cutting the localization apply half alpha at gray
@@ -2534,6 +2544,7 @@ export class AnnotationCanvas extends TatorElement
 
   mouseOutHandler(mouseEvent)
   {
+    this._mouseOverActive = false;
     let needRefresh = false;
     this._textOverlay.classList.remove("select-pointer");
     this._textOverlay.toggleTextDisplay(this._coordinateOverlayIdx,false);
@@ -2554,6 +2565,7 @@ export class AnnotationCanvas extends TatorElement
 
   mouseOverHandler(mouseEvent)
   {
+    this._mouseOverActive = true;
     if (this._playing)
     {
       return;
@@ -3042,7 +3054,7 @@ export class AnnotationCanvas extends TatorElement
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
       // all localizations to find the track
       this._data._dataByType.forEach((value, key, map) => {
-        if (key != track.meta) {
+        if (key != track.type) {
           for (const localization of value) {
             if (localization.id in this._data._trackDb) {
               const sameId = this._data._trackDb[localization.id].id == track.id;
@@ -3302,7 +3314,7 @@ export class AnnotationCanvas extends TatorElement
             {
               that.accentWithHandles(that._draw, meta.dtype, poly, getColorForFrame(frameIdx), width, alpha);
             }
-            if (colorInfo.fill.style == "solid")
+            if (colorInfo.fill.style == "fill")
             {
               that._draw.fillPolygon(poly, width, getColorForFrame(frameIdx), fillAlpha);
             }
@@ -3467,7 +3479,7 @@ export class AnnotationCanvas extends TatorElement
   getObjectDescription(localization)
   {
     var objDescription = null;
-    const key = localization.meta;
+    const key = localization.type;
     if (key in this._data._dataTypes)
     {
       return objDescription=this._data._dataTypes[key];
@@ -3685,7 +3697,7 @@ export class AnnotationCanvas extends TatorElement
   cloneToNewVersion(localization, dest_version)
   {
     const objDescription = this.getObjectDescription(localization);
-    let original_meta = localization.meta;
+    let original_meta = localization.type;
     let frame = localization.frame;
     let current = [];
     try
@@ -3734,9 +3746,9 @@ export class AnnotationCanvas extends TatorElement
     // Make the clone
     let newObject = AnnotationCanvas.updatePositions(localization,objDescription);
     newObject.parent = localization.id;
-    newObject = Object.assign(newObject, localization.attributes);
+    newObject.attributes = {...localization.attributes};
     newObject.version = dest_version;
-    newObject.type = Number(localization.meta.split("_")[1]);
+    newObject.type = Number(localization.type.split("_")[1]);
     newObject.media_id = localization.media;
     newObject.frame = localization.frame;
     console.info(newObject);
@@ -3777,7 +3789,7 @@ export class AnnotationCanvas extends TatorElement
       localization.frame = frame;
     }
     const objDescription = this.getObjectDescription(localization);
-    let original_meta = localization.meta;
+    let original_meta = localization.type;
     if (this._data.getVersion().bases.indexOf(localization.version) >= 0)
     {
       console.info("Modifying a localization from another layer!");
@@ -3884,6 +3896,33 @@ export class AnnotationCanvas extends TatorElement
     return new_box;
   }
 
+  encompassing_box(poly)
+  {
+    let min_x=0xFFFFFFFF,min_y=0xFFFFFF,max_x=-1,max_y=-1;
+    for (let idx = 0; idx < poly.length; idx++)
+    {
+      const this_x = poly[idx][0];
+      const this_y = poly[idx][1];
+      if (this_x > max_x)
+      {
+        max_x = this_x;
+      }
+      if (this_x < min_x)
+      {
+        min_x = this_x;
+      }
+      if (this_y > max_y)
+      {
+        max_y = this_y;
+      }
+      if (this_y < min_y)
+      {
+        min_y = this_y;
+      }
+    }
+    return [[min_x, min_y],[max_x, min_y], [max_x,max_y], [min_x,max_y]];
+  }
+
   accentWithHandles(drawCtx, type, item, color_req, width, alpha, activeSelection)
   {
     let allZeros = true;
@@ -3979,9 +4018,9 @@ export class AnnotationCanvas extends TatorElement
     }
   }
 
-  blackoutOutside(box)
+  blackoutOutside(poly)
   {
-    box = this.fix_box(box);
+    let box = this.encompassing_box(poly);
 
     const maxX = this._canvas.width;
     const maxY = this._canvas.height;
@@ -4049,10 +4088,9 @@ export class AnnotationCanvas extends TatorElement
       var y1 = dragEnd.y;
 
       var lineCoords = [[x0,y0],[x1,y1]];
-      var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 
       that._draw.beginDraw();
-      that.blackoutOutside(fauxBoxCoords);
+      that.blackoutOutside(lineCoords);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
                           colorReq,
@@ -4468,7 +4506,7 @@ export class AnnotationCanvas extends TatorElement
                                     colorInfo.alpha,
                                     match);
             }
-            if (fill.style == "solid")
+            if (fill.style == "fill")
             {
               drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
             }
@@ -4704,10 +4742,10 @@ export class AnnotationCanvas extends TatorElement
   }
 
   moveToLocalization(localization) {
-    if (localization.meta.startsWith('box')) {
+    if (localization.type.startsWith('box')) {
       this.moveOffscreenBuffer([localization.x, localization.y,
                                 localization.width, localization.height]);
-    } else if (localization.meta.startsWith('line')) {
+    } else if (localization.type.startsWith('line')) {
       const x0 = localization.x;
       const y0 = localization.y;
       const x1 = localization.x + localization.u;
@@ -4717,13 +4755,13 @@ export class AnnotationCanvas extends TatorElement
       const x = Math.min(x0, x1);
       const y = Math.min(y0, y1);
       this.moveOffscreenBuffer([x, y, width, height]);
-    } else if (localization.meta.startsWith('dot')) {
+    } else if (localization.type.startsWith('dot')) {
       const width = 0.2;
       const height = 0.2;
       const x = Math.min(Math.max(0, localization.x - 0.1), 0.8);
       const y = Math.min(Math.max(0, localization.y - 0.1), 0.8);
       this.moveOffscreenBuffer([x, y, width, height]);
-    } else if (localization.meta.startsWith('poly')) {
+    } else if (localization.type.startsWith('poly')) {
       let x0 = 1.0;
       let y0 = 1.0;
       let x1 = 0.0;

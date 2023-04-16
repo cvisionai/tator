@@ -45,7 +45,12 @@ state_type_properties = {
         'description': 'If this is a track type, this is a unique integer identifying '
                        'the default localization type that is created when a track is '
                        'created via the web interface.',
-    }
+    },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 state_type_spec = {
@@ -82,7 +87,8 @@ state_type_update = {
             'deleted when this state is deleted. '
             'Localizations will only be deleted if they are not '
             'associated with another state. '
-        }
+        },
+        'elemental_id': state_type_properties['elemental_id'],
     },
 }
 

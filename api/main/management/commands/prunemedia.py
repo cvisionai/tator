@@ -1,5 +1,6 @@
 import logging
 import datetime
+import os
 
 from django.core.management.base import BaseCommand
 from main.models import Media
@@ -10,7 +11,8 @@ class Command(BaseCommand):
     help = 'Deletes any media files marked for deletion with null project or type.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--min_age_days', type=int, default=30,
+        parser.add_argument('--min_age_days', type=int,
+                            default=int(os.getenv('EXPIRATION_AGE_DAYS', 30)),
                             help="Minimum age in days of media objects for deletion.")
 
     def handle(self, **options):
@@ -25,9 +27,9 @@ class Command(BaseCommand):
                                            modified_datetime__lte=max_datetime)
             null_project = Media.objects.filter(project__isnull=True, 
                                                 modified_datetime__lte=max_datetime)
-            null_meta = Media.objects.filter(meta__isnull=True,
+            null_type = Media.objects.filter(type__isnull=True,
                                              modified_datetime__lte=max_datetime)
-            media_ids = (deleted | null_project | null_meta)\
+            media_ids = (deleted | null_project | null_type)\
                         .distinct()\
                         .values_list('pk', flat=True)[:BATCH_SIZE]
             medias = Media.objects.filter(pk__in=media_ids)

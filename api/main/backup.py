@@ -37,74 +37,72 @@ class TatorBackupManager:
         return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
 
     @classmethod
-    def _multipart_upload(cls, path, upload_urls, upload_id, source_url):
+    def _multipart_upload(cls, path, upload_urls, upload_id, stream):
         num_chunks = len(upload_urls)
         parts = []
         last_progress = 0
         gcp_upload = upload_id == upload_urls[0]
-        with requests.get(source_url, stream=True).raw as f:
-            for chunk_count, url in enumerate(upload_urls):
-                file_part = f.read(cls.chunk_size)
-                default_etag_val = str(chunk_count) if gcp_upload else None
-                for attempt in range(MAX_RETRIES):
-                    try:
-                        kwargs = {"data": file_part}
-                        if gcp_upload:
-                            first_byte = chunk_count * chunk_size
-                            last_byte = min(first_byte + chunk_size, file_size) - 1
-                            kwargs["headers"] = {
-                                "Content-Length": str(last_byte - first_byte),
-                                "Content-Range": f"bytes {first_byte}-{last_byte}/{file_size}",
-                            }
-                        response = requests.put(url, **kwargs)
-                        etag_str = response.headers.get("ETag", default_etag_val)
-                        if etag_str == None:
-                            raise RuntimeError("No ETag in response!")
-                        parts.append(
-                            {
-                                "ETag": etag_str,
-                                "PartNumber": chunk_count + 1,
-                            }
-                        )
-                        break
-                    except Exception as e:
-                        logger.warning(
-                            f"Upload of {upload_id} chunk {chunk_count} failed ({e})! Attempt "
-                            f"{attempt + 1}/{MAX_RETRIES}"
-                        )
-                        if attempt == MAX_RETRIES - 1:
-                            raise RuntimeError(f"Upload of {upload_id} failed!")
-                        else:
-                            sleep(10 * attempt)
-                            logger.warning(f"Backing off for {10 * attempt} seconds...")
-                this_progress = round((chunk_count / num_chunks) * 100, 1)
-                if this_progress != last_progress:
-                    last_progress = this_progress
+        for chunk_count, url in enumerate(upload_urls):
+            file_part = stream.read(cls.chunk_size)
+            default_etag_val = str(chunk_count) if gcp_upload else None
+            for attempt in range(MAX_RETRIES):
+                try:
+                    kwargs = {"data": file_part}
+                    if gcp_upload:
+                        first_byte = chunk_count * chunk_size
+                        last_byte = min(first_byte + chunk_size, file_size) - 1
+                        kwargs["headers"] = {
+                            "Content-Length": str(last_byte - first_byte),
+                            "Content-Range": f"bytes {first_byte}-{last_byte}/{file_size}",
+                        }
+                    response = requests.put(url, **kwargs)
+                    etag_str = response.headers.get("ETag", default_etag_val)
+                    if etag_str == None:
+                        raise RuntimeError("No ETag in response!")
+                    parts.append(
+                        {
+                            "ETag": etag_str,
+                            "PartNumber": chunk_count + 1,
+                        }
+                    )
+                    break
+                except Exception as e:
+                    logger.warning(
+                        f"Upload of {upload_id} chunk {chunk_count} failed ({e})! Attempt "
+                        f"{attempt + 1}/{MAX_RETRIES}"
+                    )
+                    if attempt == MAX_RETRIES - 1:
+                        raise RuntimeError(f"Upload of {upload_id} failed!")
+                    else:
+                        sleep(10 * attempt)
+                        logger.warning(f"Backing off for {10 * attempt} seconds...")
+            this_progress = round((chunk_count / num_chunks) * 100, 1)
+            if this_progress != last_progress:
+                last_progress = this_progress
 
         return parts
 
     @staticmethod
-    def _single_upload(path, upload_url, source_url):
-        with requests.get(source_url, stream=True).raw as f:
-            data = f.read()
-            for attempt in range(MAX_RETRIES):
-                response = requests.put(upload_url, data=data)
-                if response.status_code == 200:
-                    return True
-                else:
-                    logger.warning(
-                        f"Upload of '{upload_url}' failed ({response.text}) size={len(data)}! "
-                        f"Attempt {attempt + 1}/{MAX_RETRIES}"
-                    )
-                    if attempt < MAX_RETRIES - 1:
-                        logger.warning("Backing off for 5 seconds...")
-                        sleep(5)
+    def _single_upload(path, upload_url, stream):
+        data = stream.read()
+        for attempt in range(MAX_RETRIES):
+            response = requests.put(upload_url, data=data)
+            if response.status_code == 200:
+                return True
             else:
-                logger.error(f"Upload of '{upload_url}' failed!")
+                logger.warning(
+                    f"Upload of '{upload_url}' failed ({response.text}) size={len(data)}! "
+                    f"Attempt {attempt + 1}/{MAX_RETRIES}"
+                )
+                if attempt < MAX_RETRIES - 1:
+                    logger.warning("Backing off for 5 seconds...")
+                    sleep(5)
+        else:
+            logger.error(f"Upload of '{upload_url}' failed!")
         return False
 
     @classmethod
-    def _upload_from_url(cls, store, path, url, size, domain):
+    def _upload_from_stream(cls, store, path, stream, size, domain):
         num_chunks = math.ceil(size / cls.chunk_size)
         urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
 
@@ -113,9 +111,19 @@ class TatorBackupManager:
             return False
 
         if num_chunks > 1:
-            parts = cls._multipart_upload(path, urls, upload_id, url)
+            parts = cls._multipart_upload(path, urls, upload_id, stream)
             return store.complete_multipart_upload(path, parts, upload_id)
-        return cls._single_upload(path, urls[0], url)
+        return cls._single_upload(path, urls[0], stream)
+
+    @classmethod
+    def _upload_from_url(cls, store, path, url, size, domain):
+        with requests.get(url, stream=True).raw as stream:
+            return cls._upload_from_stream(store, path, stream, size, domain)
+
+    @classmethod
+    def _upload_from_file(cls, store, path, filepath, size, domain):
+        with open(filepath, 'rb') as stream:
+            return cls._upload_from_stream(store, path, stream, size, domain)
 
     @staticmethod
     def get_backup_store(store_info):
@@ -150,24 +158,38 @@ class TatorBackupManager:
         # Determine if the default bucket is being used for all StoreTypes or none
         use_default_bucket = project.get_bucket() is None
 
-        # Get the `TatorStore` object that connects to object storage for the given type
-        for store_type in StoreType:
-            is_backup = store_type == StoreType.BACKUP
-            project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
-            try:
-                store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
-            except:
-                success = False
-                logger.error(
-                    f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
-                    exc_info=True,
-                )
-                break
+        # Get the `TatorStore` object that connects to object storage for live storage first
+        try:
+            store = get_tator_store(project.get_bucket())
+        except:
+            success = False
+            bucket_str = "default" if use_default_bucket else "project-specific"
+            logger.error(
+                f"Could not get {bucket_str}live bucket for project {project_id}", exc_info=True
+            )
+        else:
+            project_store_info[StoreType.LIVE] = {
+                "store": store,
+                "remote_name": f"{project_id}_{StoreType.LIVE}",
+                "bucket_name": store.bucket_name,
+            }
 
+        # Get the `TatorStore` object that connects to object storage for backup storage, if
+        # applicable
+        project_bucket = None if use_default_bucket else project.get_bucket(backup=True)
+        try:
+            store = get_tator_store(project_bucket, backup=use_default_bucket)
+        except:
+            success = False
+            bucket_str = "default" if use_default_bucket else "project-specific"
+            logger.error(
+                f"Could not get {bucket_str} backup bucket for project {project_id}", exc_info=True
+            )
+        else:
             if store:
-                project_store_info[store_type] = {
+                project_store_info[StoreType.BACKUP] = {
                     "store": store,
-                    "remote_name": f"{project_id}_{store_type}",
+                    "remote_name": f"{project_id}_{StoreType.BACKUP}",
                     "bucket_name": store.bucket_name,
                 }
 
@@ -177,7 +199,7 @@ class TatorBackupManager:
         return bool(project_store_info), project_store_info
 
     @classmethod
-    def backup_resources(cls, resource_qs, domain) -> Generator[tuple, None, None]:
+    def backup_resources(cls, projects, resource_qs, domain) -> Generator[tuple, None, None]:
         """
         Creates a generator that copies the resources in the given queryset from the live store to
         the backup store for their respective projects. Yields a tuple with the first element being
@@ -195,36 +217,18 @@ class TatorBackupManager:
         :rtype: Generator[tuple, None, None]
         """
         successful_backups = set()
-        project_store_map = {}
         Resource = type(resource_qs.first())
-        for resource in resource_qs.iterator():
-            success = True
-            path = resource.path
-            try:
-                project = cls.project_from_resource(resource)
-            except:
-                logger.warning(
-                    f"Could not get project from resource with path '{path}', skipping",
-                    exc_info=True,
-                )
-                success = False
-                project = None
-
-            if success:
-                if project.id not in project_store_map:
-                    success, store_info = cls.get_store_info(project)
-                    if success:
-                        project_store_map[project.id] = store_info
-                else:
-                    store_info = project_store_map[project.id]
-                success = success and StoreType.BACKUP in store_info
-
+        for project in projects.iterator():
+            resource_project_qs = resource_qs.filter(media__project=project)
+            num_backups = resource_project_qs.count()
+            logger.info(f"Backing up {num_backups} resources in project {project}...")
+            success, store_info = cls.get_store_info(project)
             if success:
                 backup_info = store_info[StoreType.BACKUP]
                 backup_store = backup_info["store"]
-                live_info = store_info[StoreType.LIVE]
-                live_store = live_info["store"]
-
+            for resource in resource_project_qs.iterator():
+                path = resource.path
+                live_store = get_tator_store(resource.bucket)
                 backup_size = backup_store.get_size(path)
                 live_size = live_store.get_size(path)
                 if backup_size < 0 or live_size != backup_size:
@@ -240,21 +244,20 @@ class TatorBackupManager:
                             exc_info=True,
                         )
 
-            if success:
-                successful_backups.add(resource.id)
+                if success:
+                    successful_backups.add(resource.id)
+                if len(successful_backups) > 500:
+                    with transaction.atomic():
+                        update_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                        update_qs.update(backed_up=True, backup_bucket=backup_store.bucket)
+                    successful_backups.clear()
 
-            if len(successful_backups) > 500:
+                yield success, resource
+
+            if successful_backups:
                 with transaction.atomic():
-                    resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
-                    resource_qs.update(backed_up=True)
-                successful_backups.clear()
-
-            yield success, resource
-
-        if successful_backups:
-            with transaction.atomic():
-                resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
-                resource_qs.update(backed_up=True)
+                    update_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                    update_qs.update(backed_up=True, backup_bucket=backup_store.bucket)
 
     @classmethod
     def request_restore_resource(cls, path, project, min_exp_days) -> bool:

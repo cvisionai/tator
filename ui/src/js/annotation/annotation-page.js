@@ -214,7 +214,7 @@ export class AnnotationPage extends TatorPage {
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
 
-          fetchRetry("/rest/MediaType/" + data.meta, {
+          fetchRetry("/rest/MediaType/" + data.type, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -457,7 +457,7 @@ export class AnnotationPage extends TatorPage {
 
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
-          searchParams.set("after_id", data.id);
+          searchParams.set("after", data.id);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           const countPromise = fetchRetry(countUrl, {
             method: "GET",
@@ -1001,7 +1001,7 @@ export class AnnotationPage extends TatorPage {
                                                                   || Number(type.id.split('_')[1]) == localizationTypeId))[0];
           }
         }
-        this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
+        this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals, versions, memberships);
         this._data.addEventListener("freshData", evt => {
           if (this._newEntityId) {
             for (const elem of evt.detail.data) {
@@ -1093,8 +1093,8 @@ export class AnnotationPage extends TatorPage {
           this._browser.selectEntity(evt.detail);
           canvas.selectTimelineData(evt.detail);
           this._settings.setAttribute("entity-id", evt.detail.id);
-          this._settings.setAttribute("entity-type", evt.detail.meta);
-          this._settings.setAttribute("type-id", evt.detail.meta);
+          this._settings.setAttribute("entity-type", evt.detail.type);
+          this._settings.setAttribute("type-id", evt.detail.type);
 
           //Update the URL
           this._updateURL();
@@ -1156,6 +1156,9 @@ export class AnnotationPage extends TatorPage {
 
             this._updateURL();
           }
+          this._settings.setAttribute("entity-id", evt.detail.data.id);
+          this._settings.setAttribute("entity-type", evt.detail.data.type);
+          this._settings.setAttribute("type-id", evt.detail.data.type);
         });
         this._browser.addEventListener("capture", evt => {
           if ('_video' in canvas)
@@ -1472,7 +1475,7 @@ export class AnnotationPage extends TatorPage {
         body["media_ids"] = [evt.detail.localization.media_id];
       }
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+      fetch("/rest/Jobs/" + evt.detail.project, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -1491,11 +1494,11 @@ export class AnnotationPage extends TatorPage {
       .then(data => {
         console.log(data);
         this.showAlgoRunningDialog(
-          data.uid,
+          data.id,
           `Filling gaps in track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
           (jobSuccessful) => {
             if (jobSuccessful) {
-              this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+              this._data.updateType(this._data._dataTypes[evt.detail.localization.type]);
               this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
               Utilities.showSuccessIcon(`Filled gaps in track ${evt.detail.trackId}`);
               //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
@@ -1518,7 +1521,7 @@ export class AnnotationPage extends TatorPage {
 
           var newLocalization = {
             media_id: baseLocalization.media,
-            type: Number(baseLocalization.meta.split("_")[1]),
+            type: Number(baseLocalization.type.split("_")[1]),
             x: baseLocalization.x,
             y: baseLocalization.y,
             u: baseLocalization.u,
@@ -1532,7 +1535,8 @@ export class AnnotationPage extends TatorPage {
             newLocalization.media_id = baseLocalization.media_id;
           }
 
-          newLocalization = {...newLocalization, ...baseLocalization.attributes};
+          newLocalization = {...newLocalization},
+          newLocalization.attributes = {...baseLocalization.attributes};
 
           if (evt.detail.direction == "Forward") {
             newLocalization.frame = evt.detail.localization.frame + offset;
@@ -1589,7 +1593,7 @@ export class AnnotationPage extends TatorPage {
           }
         })
         .then(() => {
-          this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+          this._data.updateType(this._data._dataTypes[evt.detail.localization.type]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
           Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
           canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
@@ -1614,7 +1618,7 @@ export class AnnotationPage extends TatorPage {
           body["media_ids"] = [evt.detail.localization.media_id];
         }
 
-        fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+        fetch("/rest/Jobs/" + evt.detail.project, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -1633,11 +1637,11 @@ export class AnnotationPage extends TatorPage {
         .then(data => {
           console.log(data);
           this.showAlgoRunningDialog(
-            data.uid,
+            data.id,
             `Extending track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
             (jobSuccessful) => {
               if (jobSuccessful) {
-                this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+                this._data.updateType(this._data._dataTypes[evt.detail.localization.type]);
                 this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
                 Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
                 //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
@@ -1785,7 +1789,7 @@ export class AnnotationPage extends TatorPage {
 
       body["media_ids"] = [evt.detail.mediaId];
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.projectId, {
+      fetch("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -1804,7 +1808,7 @@ export class AnnotationPage extends TatorPage {
       .then(data => {
         console.log(data);
         this.showAlgoRunningDialog(
-          data.uid,
+          data.id,
           `Launched ${algoName}. Status will be provided in the annotator when complete.`,
           (jobSuccessful) => {
             if (jobSuccessful) {
@@ -1863,6 +1867,8 @@ export class AnnotationPage extends TatorPage {
 
   _updateURL()
   {
+    if (!this._dataInitialized || !this._canvasInitialized) { return; }
+
     let existingSearchParams = new URLSearchParams(window.location.search);
     if (this._canvas._rate) // annotation-player or annotation-image
     {

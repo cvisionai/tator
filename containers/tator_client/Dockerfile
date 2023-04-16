@@ -1,22 +1,19 @@
-FROM cvisionai/svt_encoder:v0.0.8 as builder
-ENV LANG C.UTF-8
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        wget unzip \
-        && rm -rf /var/lib/apt/lists
-RUN mkdir -p /opt/cvision
-RUN wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
-RUN unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
-RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /opt/cvision/bin
-RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4info /opt/cvision/bin
-
-FROM ubuntu:20.04 AS cvtranscoder
+FROM cvisionai/svt_encoder:v0.0.9 AS cvtranscoder
 MAINTAINER CVision AI <info@cvisionai.com>
+
+ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
+ENV APT_REPO_HOST=${APT_REPO_HOST}
+RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
+
 # Install apt packages
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip \
-        python3-setuptools python3-dev gcc git vim curl unzip wget \
+        python3-setuptools git vim curl unzip wget \
+        fastjar libsm6 libxext6 libxrender1 libx265-179 libx264-155 \
+        libpng16-16 libfreetype6 python3-opencv \
         && rm -rf /var/lib/apt/lists
-COPY --from=builder /opt/cvision /opt/cvision
+
 ENV PATH="/opt/cvision/bin/:$PATH"
 RUN echo "/opt/cvision/lib" > /etc/ld.so.conf.d/cvision.conf
 RUN ldconfig
@@ -24,9 +21,6 @@ RUN ldconfig
 # Install pip packages
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
 RUN pip3 --no-cache-dir --timeout=1000 install pillow==9.0.0 imageio==2.14.0 progressbar2==4.0.0 boto3==1.20.41 pandas==1.4.0
-
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 libxext6 libxrender-dev libx265-179 libx264-155 libpng16-16 libfreetype6 python3-opencv && rm -rf /var/lib/apt/lists
 
 # Copy over scripts
 COPY scripts/transcoder /scripts

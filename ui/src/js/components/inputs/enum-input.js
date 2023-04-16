@@ -91,21 +91,58 @@ export class EnumInput extends TatorElement {
     let selectedDefault = null;
     this._choices = val;
     // Add attribute type choices.
-    for (const choice of val) {
-      const option = document.createElement("option");
-      option.setAttribute("value", choice.value);
-      if ('label' in choice) {
-        option.textContent = choice.label;
-      } else {
-        option.textContent = choice.value;
+    if (Array.isArray(val)) // flat option
+    {
+      for (const choice of val) {
+        const option = document.createElement("option");
+        option.setAttribute("value", choice.value);
+        if ('label' in choice) {
+          option.textContent = choice.label;
+        } else {
+          option.textContent = choice.value;
+        }
+        if (choice.selected) {
+          selectedDefault = choice.value;
+        }
+        this._select.appendChild(option);
       }
-      if (choice.selected) {
-        selectedDefault = choice.value;
+      if (selectedDefault !== null) {
+        this.setValue(selectedDefault)
       }
-      this._select.appendChild(option);
     }
-    if (selectedDefault !== null) {
-      this.setValue(selectedDefault)
+    else // use groups
+    {
+      while(this._select.firstChild)
+      {
+        this._select.removeChild(this._select.firstChild);
+      }
+      let groups = Object.keys(val);
+      for (const group of groups)
+      {
+        // Skip over empty groups
+        if (val[group].length == 0)
+        {
+          continue;
+        }
+        const optgroup = document.createElement("optgroup");
+        optgroup.setAttribute("label", group);
+        optgroup.setAttribute("class", "form-control");
+        this._select.appendChild(optgroup);
+        for (const choice of val[group])
+        {
+          const option = document.createElement("option");
+          option.setAttribute("value", choice.value);
+          if ('label' in choice) {
+            option.textContent = choice.label;
+          } else {
+            option.textContent = choice.value;
+          }
+          if (choice.selected) {
+            selectedDefault = choice.value;
+          }
+          optgroup.appendChild(option);
+        }
+      }
     }
   }
 

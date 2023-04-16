@@ -45,26 +45,41 @@ annotation_filter_parameter_schema = [
         'schema': {'type': 'integer'},
     },
     {
-        'name': 'media_search',
+        'name': 'elemental_id',
         'in': 'query',
-        'required': False,
-        'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See [reference](https://www.elastic.co/guide/en/elasticsearch/'
-                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax). '
-                       'This search is applied to parent media of annotations only.',
+        'description': 'Elemental ID to search for',
         'schema': {'type': 'string'},
+        'required': False,
     },
     {
-        'name': 'excludeParents',
+        'name': 'merge',
         'in': 'query',
         'required': False,
-        'description': 'If a clone is present, do not send parent. This parameter will cause an '
-                       'exception if an Elasticsearch query is triggered and pagination parameters '
+        'description': 'Reduce result set based on a server side merge. '
+                       'If multiple versions are selected and a variant of the object exists in both versions, '
+                       'the merge logic will return 1 or 0 objects. '
+                       'Example: \nVersion B derives off Version A. An object, with the same elemental id "foo" exists on both.'
+                       '\n'
+                       'If Version B over A is selected and merge is turned on:'
+                       ' + The "foo" present on Version B is returned '
+                       ' + If the "foo" on version B is deleted, no "foo" is returned.'
+                       'An exception occurs if an Elasticsearch query is triggered and pagination parameters '
                        '(start or stop) are included.',
+        'schema': {'type': 'integer',
+                   'minimum': 0,
+                   'maximum': 1,
+                   'default': 1
+                   }
+    },
+    {
+        'name': 'show_deleted',
+        'in': 'query',
+        'required': False,
+        'description': 'Include in the return set objects that have `variant_deleted` set to True.',
         'schema': {'type': 'integer',
                    'minimum': 0,
                    'maximum': 1,
                    'default': 0
                    }
-    }
+    },
 ]

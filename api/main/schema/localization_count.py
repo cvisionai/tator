@@ -4,7 +4,8 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._annotation_query import annotation_filter_parameter_schema
-from ._attributes import attribute_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
+from .localization import localization_filter_schema
 
 boilerplate = dedent("""\
 This endpoint accepts the same query parameters as a GET or PUT request to the `Localizations`
@@ -40,7 +41,7 @@ class LocalizationCountSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PUT']:
-            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
+            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema + related_attribute_filter_parameter_schema
         return params
 
     def get_request_body(self, path, method):

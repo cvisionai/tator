@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from uuid import uuid4
 
 from django.db import transaction
 from django.conf import settings
@@ -29,6 +30,7 @@ from ._permissions import ProjectExecutePermission
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._util import check_file_resource_prefix
+from ._util import compute_user
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,7 @@ class FileListAPI(BaseListView):
     def _post(self, params: dict) -> dict:
         # Does the project ID exist?
         project_id = params[fields.project]
+        elemental_id = params.get('elemental_id', uuid4())
         try:
             project = Project.objects.get(pk=project_id)
         except Exception as exc:
@@ -63,15 +66,15 @@ class FileListAPI(BaseListView):
             raise ValueError(log_msg)
 
         # Does the FileType ID exist?
-        entity_type = params[fields.meta]
+        entity_type = params[fields.type]
         try:
             associated_file_type = FileType.objects.get(pk=int(entity_type))
             if associated_file_type.project.id != project.id:
-                log_msg = f"Provided meta not associated with given project"
+                log_msg = f"Provided type not associated with given project"
                 logging.error(log_msg)
                 raise ValueError(log_msg)
         except:
-            log_msg = f"Invalid meta provided - {entity_type}"
+            log_msg = f"Invalid type provided - {entity_type}"
             logging.error(log_msg)
             raise ValueError(log_msg)
 
@@ -92,25 +95,20 @@ class FileListAPI(BaseListView):
         if attributes is None:
             attributes = []
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
-        attrs = check_required_fields(required_fields[params[fields.meta]][0],
-                                      required_fields[params[fields.meta]][2],
-                                      attributes)
+        attrs = check_required_fields(required_fields[params[fields.type]][0],
+                                      required_fields[params[fields.type]][2],
+                                      {'attributes': attributes} if attributes else {'attributes':{}})
 
         # Create File object
         new_file = File.objects.create(
             project=project,
             name=params[fields.name],
             description=description,
-            meta=associated_file_type,
-            created_by=self.request.user,
-            modified_by=self.request.user,
-            attributes=attrs)
-
-        # Build ES document
-        ts = TatorSearch()
-        documents = []
-        documents += ts.build_document(new_file)
-        ts.bulk_add_documents(documents)
+            type=associated_file_type,
+            created_by=compute_user(project, self.request.user, params.get('user_elemental_id', None)),
+            modified_by=compute_user(project, self.request.user, params.get('user_elemental_id', None)),
+            attributes=attrs,
+            elemental_id=elemental_id)
 
         return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
@@ -131,8 +129,6 @@ class FileDetailAPI(BaseDetailView):
                 drop_file_from_resource(obj.path.name, obj)
                 safe_delete(obj.path.name, obj.project.id)
 
-        # Delete ES document
-        TatorSearch().delete_document(obj)
         msg = f'Registered file deleted successfully!'
 
         # Delete from database
@@ -151,6 +147,14 @@ class FileDetailAPI(BaseDetailView):
         name = params.get(fields.name, None)
         if name is not None:
             obj.name = name
+
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id:
+            obj.elemental_id = elemental_id
+
+        if params.get('user_elemental_id', None):
+            computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
+            obj.created_by = computed_author
 
         description = params.get(fields.description, None)
         if description is not None:

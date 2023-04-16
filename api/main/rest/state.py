@@ -17,9 +17,6 @@ from ..models import Membership
 from ..models import Version
 from ..models import User
 from ..models import InterpolationMethods
-from ..models import database_qs
-from ..models import database_query_ids
-from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
 from ..schema import MergeStatesSchema
@@ -29,7 +26,6 @@ from ..schema.components import state as state_schema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -42,7 +38,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    construct_elemental_id_from_parent
+    construct_elemental_id_from_parent,
+    compute_user
 )
 from ._permissions import ProjectEditPermission
 
@@ -113,7 +110,7 @@ class StateListAPI(BaseListView):
             filename_dict = {media['id']:media['name'] for media in medias}
 
             for element in response_data:
-                del element['meta']
+                del element['type']
 
                 oldAttributes = element['attributes']
                 del element['attributes']
@@ -151,6 +148,8 @@ class StateListAPI(BaseListView):
         # Check that we are getting a state list.
         if 'body' in params:
             state_specs = params['body']
+            if not isinstance(state_specs, list):
+                state_specs = [state_specs]
         else:
             raise Exception('State creation requires list of states!')
 
@@ -236,10 +235,10 @@ class StateListAPI(BaseListView):
         objs = (
             State(
                 project=project,
-                meta=metas[state_spec["type"]],
+                type=metas[state_spec["type"]],
                 attributes=attrs,
-                created_by=self.request.user,
-                modified_by=self.request.user,
+                created_by=compute_user(project, self.request.user, state_spec.get('user_elemental_id', None)),
+                modified_by=compute_user(project, self.request.user, state_spec.get('user_elemental_id', None)),
                 version=versions[state_spec.get("version", None)],
                 frame=state_spec.get("frame", None),
                 parent=State.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None,
@@ -296,16 +295,6 @@ class StateListAPI(BaseListView):
                 state.segments = [[int(segment[0]), int(segment[-1])] for segment in segments]
         State.objects.bulk_update(states, ['segments'])
 
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for state in states:
-            documents += ts.build_document(state)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
         ids = bulk_log_creation(states, project, self.request.user)
 
         return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
@@ -314,24 +303,38 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            # Delete states.
-            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_annotation_es_query(params['project'], params, 'state')
-            TatorSearch().delete(self.kwargs['project'], query)
+            if params['prune'] == 1:
+                # Delete states.
+                bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+            else:
+                obj = qs.first()
+                entity_type = obj.type
+                bulk_update_and_log_changes(
+                qs,
+                params["project"],
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
 
         return {'message': f'Successfully deleted {count} states!'}
 
     def _patch(self, params):
         qs = get_annotation_queryset(params['project'], params, 'state')
+        patched_version = params.pop("new_version", None)
         count = qs.count()
         if count > 0:
+            if qs.values('type').distinct().count() != 1:
+                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
             new_attrs = validate_attributes(params, qs[0])
+            update_kwargs = {"modified_by": self.request.user}
+            if params.get('user_elemental_id', None):
+                computed_author = compute_user(params['project'], self.request.user, params.get('user_elemental_id', None))
+                update_kwargs['created_by'] = computed_author
+            if patched_version is not None:
+                update_kwargs["version"] = patched_version
             bulk_update_and_log_changes(
-                qs, params["project"], self.request.user, new_attributes=new_attrs
+                qs, params["project"], self.request.user, update_kwargs=update_kwargs, new_attributes=new_attrs
             )
-
-            query = get_annotation_es_query(params['project'], params, 'state')
-            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
 
         return {'message': f'Successfully updated {count} states!'}
 
@@ -357,7 +360,7 @@ class StateDetailAPI(BaseDetailView):
         qs = State.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        state = database_qs(qs)[0]
+        state = qs.values(*STATE_PROPERTIES)[0]
         # Get many to many fields.
         state['localizations'] = list(State.localizations.through.objects\
                                       .filter(state_id=state['id'])\
@@ -392,6 +395,10 @@ class StateDetailAPI(BaseDetailView):
         if 'localization_ids_remove' in params:
             localizations = Localization.objects.filter(pk__in=params['localization_ids_remove'])
             obj.localizations.remove(*list(localizations))
+        
+        if params.get('user_elemental_id', None):
+            computed_author = compute_user(obj.project.pk, self.request.user, params.get('user_elemental_id', None))
+            obj.created_by = computed_author
 
         # Make sure media and localizations are part of this project.
         media_qs = Media.objects.filter(pk__in=obj.media.all())
@@ -431,7 +438,7 @@ class StateDetailAPI(BaseDetailView):
         project = state.project
         model_dict = state.model_dict
         delete_localizations = []
-        if state.meta.delete_child_localizations:
+        if state.type.delete_child_localizations:
 
             # Only delete localizations that are not not a part of other states
             for loc in state.localizations.all():
@@ -441,13 +448,21 @@ class StateDetailAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        delete_and_log_changes(state, project, self.request.user)
-        TatorSearch().delete_document(state)
-
-        qs = Localization.objects.filter(pk__in=delete_localizations)
-        bulk_delete_and_log_changes(qs, project, self.request.user)
-        for loc in qs.iterator():
-            TatorSearch().delete_document(loc)
+        if params['prune'] == 1:
+            delete_and_log_changes(state, project, self.request.user)
+            qs = Localization.objects.filter(pk__in=delete_localizations)
+            bulk_delete_and_log_changes(qs, project, self.request.user)
+        else:
+            state.variant_deleted = True
+            state.save()
+            log_changes(state, state.model_dict, state.project, self.request.user)
+            qs = Localization.objects.filter(pk__in=delete_localizations)
+            bulk_update_and_log_changes(
+                qs,
+                project,
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
 
         return {'message': f'State {params["id"]} successfully deleted!'}
 

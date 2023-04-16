@@ -90,7 +90,11 @@ def test_basic(request, page_factory, project, image1, video): #image
    print("Going to localizations gallery")
    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
-   page.goto(f"/{project}/analytics/localizations", wait_until='networkidle')
+
+   # Note: This timeout was increased when running in a test environment on production. The data was being accessed
+   # on a production database with larger index creation times. Whilst the indices were being created, the accesses
+   # were slightly slower.
+   page.goto(f"/{project}/analytics/localizations", wait_until='networkidle', timeout=60000)
    
    # Get all the loc on page
    page.select_option('.pagination select.form-select', value="100")
@@ -137,13 +141,13 @@ def test_basic(request, page_factory, project, image1, video): #image
    page.click('filter-condition-group button.btn.btn-outline.btn-small')
 
    page.wait_for_selector('enum-input[name="Category"]')
-   page.select_option('enum-input[name="Category"] select', value="Annotation")
+   page.select_option('enum-input[name="Category"] select', label="Localization")
 
    page.wait_for_selector('enum-input[name="Field"]')
    page.select_option('enum-input[name="Field"] select', value=attr_name)
 
    page.wait_for_selector('enum-input[name="Modifier"]')
-   page.select_option('enum-input[name="Modifier"] select', value="==")
+   page.select_option('enum-input[name="Modifier"] select', label="Equals")
 
    page.wait_for_selector('text-input[name="Value"] input')
    page.fill('text-input[name="Value"] input', choice_three_text)

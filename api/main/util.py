@@ -13,9 +13,12 @@ from progressbar import progressbar, ProgressBar
 from dateutil.parser import parse
 from boto3.s3.transfer import S3Transfer
 
+import uuid
+
 from main.models import *
 from main.search import TatorSearch
 from main.store import get_tator_store
+from main.backup import TatorBackupManager
 
 from django.conf import settings
 
@@ -83,92 +86,55 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
     """
     count = 1
     if section in CLASS_MAPPING:
-        qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
+        qs = CLASS_MAPPING[section].objects.filter(project=project_number, type__isnull=False)
         if max_age_days:
             min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
             qs = qs.filter(modified_datetime__gte=min_modified)
         count = ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
-def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
+
+def buildSearchIndices(project_ids=None, flush=False, concurrent=True):
     """ Builds search index for a project.
-        section must be one of:
-        'index' - create the index for the project if it does not exist
-        'mappings' - create mappings for the project if they do not exist
-        'media' - create documents for media
-        'states' - create documents for states
-        'localizations' - create documents for localizations
-        'treeleaves' - create documents for treeleaves
-        'files' - create documents for files
+        project_number - if supplied will limit to just these project(s)
+        flush - whether to clear existing indices
+        concurrent - Whether to build the indices concurrently with other access.
+
+        Examples:
+        buildSearchIndices(1,True, True) # Rebuilds project 1 indices concurrently
+        
+        buildSearchIndices(None, False, False) # Rebuilds all indices not present, using an exclusive lock (faster)
+
+        Warning:
+        Non-concurrent index building is not recommended in production systems. It will prevent database writes
+        during index creation.
     """
-    project_name = Project.objects.get(pk=project_number).name
-    logger.info(f"Building search indices for project {project_number}: {project_name}")
+    projects = Project.objects.all()
+    if type(project_ids) == list:
+        projects = projects.filter(pk__in=project_ids)
+    elif type(project_ids) == int:
+        projects = projects.filter(pk=project_ids)
+    
+    logger.info(f"Building search indices for projects: {projects.values('name')}")
 
-    if section == 'index':
-        # Create indices
-        logger.info("Building index...")
-        TatorSearch().create_index(project_number)
-        logger.info("Build index complete!")
-        return
-
-    if section == 'mappings':
-        # Create mappings
-        logger.info("Building mappings for media types...")
-        for type_ in progressbar(list(MediaType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for localization types...")
-        for type_ in progressbar(list(LocalizationType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for state types...")
-        for type_ in progressbar(list(StateType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for leaf types...")
-        for type_ in progressbar(list(LeafType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Building mappings for file types...")
-        for type_ in progressbar(list(FileType.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(type_)
-        logger.info("Build mappings complete!")
-        return
-
-    class DeferredCall:
-        def __init__(self, qs):
-            self._qs = qs
-        def __call__(self):
-            for entity in self._qs.iterator():
-                if not entity.deleted:
-                    for doc in TatorSearch().build_document(entity, mode):
-                        yield doc
-
-    # Get queryset based on selected section.
-    logger.info(f"Building documents for {section}...")
-    qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
-
-    # Apply max age filter.
-    if max_age_days:
-        min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
-        qs = qs.filter(modified_datetime__gte=min_modified)
-
-    # Apply limit/offset if chunk parameter given.
-    if chunk is not None:
-        offset = INDEX_CHUNK_SIZE * chunk
-        qs = qs.order_by('id')[offset:offset+INDEX_CHUNK_SIZE]
-
-    batch_size = 500
-    count = 0
-    bar = ProgressBar(redirect_stderr=True, redirect_stdout=True)
-    dc = DeferredCall(qs)
-    total = qs.count()
-    bar.start(max_value=total)
-    for ok, result in streaming_bulk(TatorSearch().es, dc(),chunk_size=batch_size, raise_on_error=False):
-        action, result = result.popitem()
-        if not ok:
-            print(f"Failed to {action} document! {result}")
-        bar.update(min(count, total))
-        count += 1
-        if count > total:
-            print(f"Count exceeds list size by {total - count}")
-    bar.finish()
+    # Create mappings
+    logger.info("Building mappings for media types...")
+    for type_ in list(MediaType.objects.filter(project__in=projects)):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Building mappings for localization types...")
+    for type_ in list(LocalizationType.objects.filter(project__in=projects)):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Building mappings for state types...")
+    for type_ in list(StateType.objects.filter(project__in=projects)):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Building mappings for leaf types...")
+    for type_ in list(LeafType.objects.filter(project__in=projects)):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Building mappings for file types...")
+    for type_ in list(FileType.objects.filter(project__in=projects)):
+        TatorSearch().create_mapping(type_, flush, concurrent)
+    logger.info("Dispatch complete!")
+    logger.info("To watch status, use `rq info` at the gunicorn shell OR the top-level rq-info make target")
 
 def makeDefaultVersion(project_number):
     """ Creates a default version for a project and sets all localizations
@@ -213,7 +179,7 @@ def make_video_definition(disk_file, url_path):
         return video_def
 
 def migrateVideosToNewSchema(project):
-    videos = Media.objects.filter(project=project, meta__dtype='video')
+    videos = Media.objects.filter(project=project, type__dtype='video')
     for video in progressbar(videos):
         streaming_definition = make_video_definition(
             os.path.join(settings.MEDIA_ROOT,
@@ -234,7 +200,7 @@ def migrateVideosToNewSchema(project):
         video.save()
 
 def fixVideoDims(project):
-    videos = Media.objects.filter(project=project, meta__dtype='video')
+    videos = Media.objects.filter(project=project, type__dtype='video')
     for video in progressbar(videos):
         try:
             if video.original:
@@ -374,14 +340,15 @@ def move_backups_to_s3():
     else:
         bucket_name = os.getenv("BACKUP_STORAGE_BUCKET_NAME")
 
-    client = store.client
-    transfer = S3Transfer(client)
     num_moved = 0
     for backup in os.listdir('/backup'):
         logger.info(f"Moving {backup} to S3...")
         key = f'backup/{backup}'
         path = os.path.join('/backup', backup)
-        transfer.upload_file(path, bucket_name, key)
+        size = os.stat(path).st_size
+        success = TatorBackupManager._upload_from_file(store, key, path, size, "DOMAIN")
+        if not success:
+            raise Exception(f"Failed to upload {path} to key {key}!")
         os.remove(path)
         num_moved += 1
     logger.info(f"Finished moving {num_moved} files!")
@@ -505,11 +472,11 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
                     f"Processed {idx} of {media_count} archived media for project {project.id}"
                 )
 
-            if not media.meta:
+            if not media.type:
                 logger.warning(f"No dtype for '{media.id}'")
                 continue
 
-            media_dtype = media.meta.dtype
+            media_dtype = media.type.dtype
             if media_dtype in ["image", "video"]:
                 success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
             elif media_dtype == "multi":
@@ -671,11 +638,11 @@ def fix_bad_restores(
         if idx % 250 == 0 or idx == media_count:
             logger.info(f"Processed {idx} of {media_count} media")
 
-        if not media.meta:
+        if not media.type:
             logger.warning(f"No dtype for '{media.id}'")
             continue
 
-        media_dtype = media.meta.dtype
+        media_dtype = media.type.dtype
         tator_store = tator_store_lookup[proj_id]
         if media_dtype in ["image", "video"]:
             success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
@@ -820,7 +787,7 @@ def get_clone_info(media: Media) -> dict:
     # Set up the return dict
     media_dict = {"clones": set(), "original": {"project": None, "media": None}}
 
-    dtype = getattr(media.meta, "dtype", None)
+    dtype = getattr(media.type, "dtype", None)
 
     if dtype not in ["image", "video"]:
         raise ValueError(f"get_clone_info expects media dtype `image` or `video`, got '{dtype}'")
@@ -871,7 +838,7 @@ def update_queryset_archive_state(media_qs, target_state):
             continue
 
         # Get clone info
-        media_dtype = getattr(media.meta, "dtype", None)
+        media_dtype = getattr(media.type, "dtype", None)
         if media_dtype in ["image", "video"]:
             clone_info = get_clone_info(media)
 
@@ -988,6 +955,49 @@ def notify_admins(not_ready, ses=None):
                 title=f"Nightly archive for {project.name} ({project.id}) failed",
                 text="\n\n".join(email_text_list),
             )
+
+def add_elemental_id(project, metadata_type):
+    assert metadata_type in ['localization', 'state']
+    if metadata_type == 'localization':
+        type_obj = LocalizationType
+        obj_obj = Localization
+    elif metadata_type == 'state':
+        type_obj = StateType
+        obj_obj = State
+
+    types = type_obj.objects.filter(project=project)
+    parents_to_change = obj_obj.objects.filter(project=project, type__in=types, parent__isnull=True, elemental_id__isnull=True)
+    print(f"Updating {parents_to_change.count()} parents ")
+    for parent in progressbar.progressbar(parents_to_change):
+        parent.elemental_id = uuid.uuid4()
+        parent.save()
+
+    children_to_change = obj_obj.objects.filter(project=project, type__in=types, parent__isnull=False)
+    for child in progressbar.progressbar(children_to_change):
+        child.elemental_id = child.parent.elemental_id
+        child.save()
+
+def find_legacy_sections():
+    sections = Section.objects.filter(lucene_search__isnull=False).filter(object_search__isnull=True)
+    for s in sections:
+        print(f"{s.pk}\t{s.name}\t{s.lucene_search}")
+
+def convert_legacy_sections(filename):
+    """ PIPE format
+    pk | name | lucene | object search
+    """
+    import json
+    with open(filename) as fp:
+        lines = fp.readlines()
+        for l in [x for x in lines if x != '\n']:
+            comps = l.split('|')
+            assert len(comps) == 4
+            pk=comps[0]
+            object_search=comps[3]
+            s=Section.objects.get(pk=pk)
+            s.object_search = json.loads(object_search)
+            s.save()
+            print(f"Updated {s.pk}")
 
 
 def _convert_s3_bucket(bucket, store_type):

@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from oci.config import validate_config
 
 from ..models import Organization
 from ..models import Affiliation
@@ -19,27 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 def _get_endpoint_url(bucket):
-    if bucket.config:
-        if bucket.store_type == ObjectStore.GCP:
-            return None
-        if bucket.store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
-            return bucket.config.get("endpoint_url", None)
-        if bucket.store_type == ObjectStore.OCI:
-            return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
-        raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
-    return bucket.endpoint_url
-
-
-def _get_store_type(bucket):
-    if bucket.store_type:
-        return bucket.store_type.value
-    if bucket.gcs_key_info:
-        return ObjectStore.GCP.value
-    if "amazonaws" in bucket.endpoint_url:
-        return ObjectStore.AWS.value
-    if "oci" in bucket.endpoint_url:
-        return ObjectStore.OCI.value
-    return ObjectStore.MINIO.value
+    if bucket.store_type == ObjectStore.GCP:
+        return None
+    if bucket.store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
+        return bucket.config.get("endpoint_url", None)
+    if bucket.store_type == ObjectStore.OCI:
+        return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
+    raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
 
 
 def serialize_bucket(bucket):
@@ -50,7 +37,8 @@ def serialize_bucket(bucket):
         "endpoint_url": _get_endpoint_url(bucket),
         "archive_sc": bucket.archive_sc,
         "live_sc": bucket.live_sc,
-        "store_type": _get_store_type(bucket),
+        "store_type": bucket.store_type.value,
+        "external_host": bucket.external_host,
     }
 
 
@@ -77,8 +65,12 @@ class BucketListAPI(BaseListView):
         del params['body']
         store_type = params["store_type"]
 
-        # Validate live and archive storage classes
+        # Validate configuration parameters
         params = Bucket.validate_storage_classes(ObjectStore(store_type), params)
+        if params["store_type"] == ObjectStore.OCI:
+            validate_config(params["config"]["native_config"])
+
+        # Create the bucket
         bucket = Bucket.objects.create(**params)
         return {'message': f"Bucket {bucket.name} created!", 'id': bucket.id}
 
@@ -125,8 +117,13 @@ class BucketDetailAPI(BaseDetailView):
             mutated = True
             bucket.store_type = params["store_type"]
         if "config" in params:
+            if store_type == ObjectStore.OCI:
+                validate_config(params["config"]["native_config"])
             mutated = True
             bucket.config = params["config"]
+        if "external_host" in params:
+            mutated = True
+            bucket.external_host = params["external_host"]
         if mutated:
             bucket.save()
         return {"message": f"Bucket {params['id']} updated successfully!"}

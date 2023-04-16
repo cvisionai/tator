@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.contrib.postgres.aggregates import ArrayAgg
 
+import uuid
+
 from ..models import Media
 from ..models import MediaType
 from ..models import StateType
@@ -17,7 +19,7 @@ from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible', 'grouping_default',
-          'delete_child_localizations', 'default_localization']
+          'delete_child_localizations', 'default_localization', 'elemental_id']
 
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
@@ -43,14 +45,23 @@ class StateTypeListAPI(BaseListView):
                 raise Exception(
                     'Entity type list endpoints expect only one media ID!')
             media_element = Media.objects.get(pk=media_id[0])
-            states = StateType.objects.filter(media=media_element.meta)
+            states = StateType.objects.filter(media=media_element.type)
             for state in states:
                 if state.project.id != self.kwargs['project']:
                     raise Exception('State not in project!')
-            response_data = states.order_by('name').values(*fields)
+            qs = states
         else:
-            response_data = StateType.objects.filter(
-                project=self.kwargs['project']).order_by('name').values(*fields)
+            qs = StateType.objects.filter(project=self.kwargs['project'])
+
+        elemental_id = params.get('elemental_id', None)
+        if elemental_id is not None:
+            # Django 3.X has a bug where UUID fields aren't escaped properly
+            # Use .extra to manually validate the input is UUID
+            # Then construct where clause manually.
+            safe = uuid.UUID(elemental_id)
+            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+
+        response_data = qs.order_by('name').values(*fields)
         # Get many to many fields.
         state_ids = [state['id'] for state in response_data]
         media = {obj['statetype_id']: obj['media'] for obj in
@@ -76,6 +87,8 @@ class StateTypeListAPI(BaseListView):
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
         del params['body']
+        if params.get('elemental_id',None) is None:
+            params['elemental_id'] = uuid.uuid4()
         obj = StateType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(
@@ -133,6 +146,7 @@ class StateTypeDetailAPI(BaseDetailView):
         association = params.get('association', None)
         interpolation = params.get('interpolation', None)
         media_types = params.get('media_types', None)
+        elemental_id = params.get('elemental_id', None)
 
         obj = StateType.objects.get(pk=params['id'])
         if name is not None:
@@ -154,7 +168,8 @@ class StateTypeDetailAPI(BaseDetailView):
                 project=obj.project.pk, pk__in=media_types)
             for media in media_ids:
                 obj.media.add(media)
-
+        if elemental_id:
+            obj.elemental_id = elemental_id
         obj.save()
         return {'message': 'State type updated successfully!'}
 

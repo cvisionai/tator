@@ -1,8 +1,13 @@
 from uuid import uuid1
+import base64
+import magic
+import mimetypes
+import logging
 
 from django.db import transaction
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
+from rest_framework.utils.serializer_helpers import ReturnList
 
 from ..models import User
 from ..models import Invitation
@@ -14,11 +19,71 @@ from ..schema import UserExistsSchema
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema
 from ..schema import CurrentUserSchema
+from ..store import get_tator_store
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import UserPermission
 from ._permissions import UserListPermission
+
+logger = logging.getLogger(__name__)
+
+MAX_PROFILE_IMAGE_SIZE = 1*1024*1024
+ACCEPTABLE_PROFILE_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png']
+
+def handle_avatar_management(user, params):
+    new_avatar = params.get('new_avatar', None)
+    clear_avatar = params.get('clear_avatar', 0)
+    if new_avatar == None and clear_avatar == 0:
+        return
+
+    generic_store = get_tator_store()
+    existing_avatar = user.profile.get('avatar')
+    # Handle deleting an avatar
+    if clear_avatar and existing_avatar:
+        if existing_avatar.startswith(f'user_data/{user.pk}'):
+            generic_store.delete_object(existing_avatar)
+            del user.profile['avatar']
+            user.save()
+        else:
+            raise ValueError(f"Unable to clear avatar image")
+
+    if new_avatar:
+        img_data = base64.b64decode(new_avatar)
+        if len(img_data) > MAX_PROFILE_IMAGE_SIZE:
+            raise ValueError(f"Supplied profile image is too large {len(img_data)} > {MAX_PROFILE_IMAGE_SIZE}")
+        mime_type = magic.from_buffer(img_data, mime=True)
+        if not mime_type in ACCEPTABLE_PROFILE_IMAGE_MIME_TYPES:
+            raise ValueError(f'Supplied image is not an acceptable mime format {mime_type}')
+
+        if existing_avatar:
+            if existing_avatar.startswith(f'user_data/{user.pk}'):
+                generic_store.delete_object(existing_avatar)
+                del user.profile['avatar']
+            else:
+                raise ValueError(f"Unable to clear old avatar image")
+        file_extension = mimetypes.guess_extension(mime_type)
+        avatar_keypath = f"user_data/{user.pk}/avatar{file_extension}"
+        generic_store.put_object(avatar_keypath, img_data)
+        user.profile['avatar'] = avatar_keypath
+        user.save()
+
+def user_serializer_helper(response_data, presigned_ttl):
+    """ Presign any object keys provided in the user object
+        :param presigned_ttl: Number of seconds to presign the object.
+    """
+    if presigned_ttl == None:
+        return response_data
+    generic_store = get_tator_store()
+ 
+    if type(response_data) == ReturnList:
+        for row in response_data:
+            avatar_key = row['profile'].get('avatar')
+            row['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+    else:
+        avatar_key = response_data['profile'].get('avatar')
+        response_data['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+    return response_data
 
 class UserExistsAPI(BaseDetailView):
     """ Determine whether user exists.
@@ -31,14 +96,15 @@ class UserExistsAPI(BaseDetailView):
     def _get(self, params):
         email = params.get('email', None)
         username = params.get('username', None)
-        if email is None and username is None:
+        elemental_id = params.get('elemental_id', None)
+        if email is None and username is None and elemental_id is None:
             raise Exception("One of username or email must be supplied!")
-        elif email is not None:
+        if email is not None:
             users = User.objects.filter(email=email)
-        elif username is not None:
+        if username is not None:
             users = User.objects.filter(username=username)
-        else:
-            users = User.objects.filter(username=username, email=email)
+        if elemental_id is not None:
+            users = User.objects.filter(elemental_id=elemental_id)
         return users.exists()
 
 class UserListAPI(BaseListView):
@@ -52,15 +118,16 @@ class UserListAPI(BaseListView):
     def _get(self, params):
         email = params.get('email', None)
         username = params.get('username', None)
-        if email is None and username is None:
-            raise Exception("One of username or email must be supplied!")
-        elif email is not None:
+        elemental_id = params.get('elemental_id', None)
+        if email is None and username is None and elemental_id is None:
+            raise Exception("One of username or email or elemental_id must be supplied!")
+        if email is not None:
             users = User.objects.filter(email=email)
-        elif username is not None:
+        if username is not None:
             users = User.objects.filter(username=username)
-        else:
-            users = User.objects.filter(username=username, email=email)
-        return UserSerializerBasic(users, many=True).data
+        if elemental_id is not None:
+            users = User.objects.filter(elemental_id=elemental_id)
+        return user_serializer_helper(UserSerializerBasic(users, many=True).data, params.get('presigned', None))
 
     def _post(self, params):
         first_name = params['first_name']
@@ -119,6 +186,9 @@ class UserListAPI(BaseListView):
                 Affiliation.objects.create(organization=invite.organization,
                                            permission=invite.permission,
                                            user=user)
+
+        handle_avatar_management(user, params)
+
         return {'message': f"User {username} created!",
                 'id': user.id}
 
@@ -133,7 +203,7 @@ class UserDetailAPI(BaseDetailView):
 
     def _get(self, params):
         user = User.objects.get(pk=params['id'])
-        return UserSerializerBasic(user).data
+        return user_serializer_helper(UserSerializerBasic(user).data, params.get('presigned', None))
 
     @transaction.atomic
     def _patch(self, params):
@@ -162,6 +232,9 @@ class UserDetailAPI(BaseDetailView):
                 user.set_password(params['password'])
                 user.failed_login_count = 0
         user.save()
+
+        handle_avatar_management(user, params)
+        user = User.objects.get(pk=params['id'])
         return {'message': f'Updated user {params["id"]} successfully!'}
 
 class CurrentUserAPI(BaseDetailView):
@@ -173,4 +246,5 @@ class CurrentUserAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
-        return UserSerializerBasic(self.request.user).data
+        user = User.objects.get(pk=self.request.user.pk)
+        return user_serializer_helper(UserSerializerBasic(user).data, params.get('presigned', None))

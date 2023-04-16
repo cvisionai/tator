@@ -1178,7 +1178,7 @@ export class DrawGL
     {
       vertices[s_idx] = Math.min(points[s_idx],this.clientWidth);
       vertices[s_idx+1] = Math.min(points[s_idx+1], this.clientHeight);
-      bgCoords[bg_idx] = globalizeTexCoord([vertices[0]/this.clientWidth,vertices[1]/this.clientHeight]);
+      bgCoords[bg_idx] = globalizeTexCoord([vertices[s_idx]/this.clientWidth,vertices[s_idx+1]/this.clientHeight]);
     }
     
 

@@ -79,36 +79,6 @@ class DeleteKey(Func): #pylint: disable=abstract-method
             expression, key=key, create_missing='true' if create_missing else 'false', **extra
         )
 
-
-def bulk_mutate_attributes(attribute_type, q_s):
-    """
-    Mutates the given attribute type in all entries of the QuerySet that have it.
-    """
-    name = attribute_type["name"]
-    dtype = attribute_type["dtype"]
-
-    if dtype == "int":
-        fn = int
-    elif dtype == "float":
-        fn = float
-    elif dtype == "enum":
-        fn = str
-    elif dtype == "string":
-        fn = str
-    else:
-        raise ValueError(f"'{dtype}' not a valid mutation destination type")
-
-    entities = []
-    for entity in q_s:
-        if entity.attributes:
-            if name in entity.attributes:
-                entity.attributes[name] = fn(entity.attributes[name])
-                entities.append(entity)
-
-    if entities:
-        type(entities[0]).objects.bulk_update(entities, ["attributes"], batch_size=1000)
-
-
 def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
     """Attempts to convert an attribute to its expected datatype. Raises an
        exception if conversion fails.
@@ -217,9 +187,9 @@ def validate_attributes(params, obj):
     """Validates attributes by looking up attribute type and attempting
        a type conversion.
     """
-    attributes = params.get("attributes", None)
+    attributes = params.get("attributes", {})
+    attr_types = {a['name']:a for a in obj.type.attribute_types}
     if attributes:
-        attr_types = {a['name']:a for a in obj.meta.attribute_types}
         for attr_name in attributes:
             if attr_name == 'tator_user_sections':
                 # This is a built-in attribute used for organizing media sections.
@@ -227,8 +197,15 @@ def validate_attributes(params, obj):
             if attr_name in attr_types:
                 attr_type = attr_types[attr_name]
             else:
-                raise Exception(f"Invalid attribute {attr_name} for entity type {obj.meta.name}")
+                raise Exception(f"Invalid attribute {attr_name} for entity type {obj.type.name}")
             attributes[attr_name] = convert_attribute(attr_type, attributes[attr_name])
+    for attr in params.get("reset_attributes", []):
+        attributes[attr] = attr_types[attr].get('default',None)
+    for attr in params.get("null_attributes", []):
+        if attr_types[attr]['dtype'] != "geopos":
+            attributes[attr] = None
+        else:
+            attributes[attr] = [-1.0,-1.0]
     return attributes
 
 def patch_attributes(new_attrs, obj):
@@ -255,6 +232,8 @@ def _process_for_bulk_op(raw_value):
         return f'"{raw_value}"'
     if isinstance(raw_value, bool):
         return f"{str(raw_value).lower()}"
+    if raw_value == None:
+        return 'null'
 
     return raw_value
 

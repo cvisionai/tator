@@ -6,8 +6,9 @@ from ..models import Media
 from ..search import TatorSearch
 from ..schema import MediaNextSchema
 
+from ._media_query import get_media_queryset
+
 from ._base_views import BaseDetailView
-from ._media_query import get_media_es_query
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
@@ -24,42 +25,24 @@ class MediaNextAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
-        
         # Find this object.
         media_id = params['id']
         media = Media.objects.get(pk=media_id)
 
-        # Get query associated with media filters.
-        query = get_media_es_query(media.project.pk, params)
+        qs = get_media_queryset(media.project.id, params)
+        iter_obj = qs.iterator()
+        next_id = -1
+        try:
+            for x in range(qs.count()):
+                record = next(iter_obj)
+                if record.id == media_id:
+                    next_record = next(iter_obj)
+                    next_id = next_record.id
+                    break
+        except StopIteration:
+            pass
 
-        # Find media with either the same name and higher ID or higher name.
-        next_filter = [{
-            'bool': {
-                'should': [{
-                    'bool': {
-                        'must': [
-                            {'match': {'_exact_name': {'query': media.name}}},
-                            {'range': {'_postgres_id': {'gt': media.id}}},
-                        ],
-                    },
-                }, {
-                    'range': {'_exact_name': {'gt': media.name}},
-                }],
-                'minimum_should_match': 1,
-            },
-        }]
-        if query['query']['bool']['filter']:
-            query['query']['bool']['filter'] += next_filter
-        else:
-            query['query']['bool']['filter'] = next_filter
-        query['sort'] = [{'_exact_name': 'asc'}, {'_postgres_id': 'asc'}]
-        query['size'] = 1
-        media_ids, count = TatorSearch().search(media.project.pk, query)
-        if len(media_ids) == 0:
-            response_data = {'next': -1}
-        else:
-            response_data = {'next': media_ids[0]}
-
+        response_data = {'next': next_id}
         return response_data
 
     def get_queryset(self):

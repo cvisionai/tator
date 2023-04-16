@@ -28,7 +28,7 @@ from ..schema.components import media as media_schema
 from ..store import get_tator_store, get_storage_lookup
 
 from ._base_views import process_exception
-from ._permissions import ProjectTransferPermission
+from ._permissions import PermalinkPermission
 
 import sys
 
@@ -74,7 +74,7 @@ class PermalinkAPI(APIView):
         sub-element.
     """
     schema = PermalinkSchema()
-    permission_classes = [ProjectTransferPermission]
+    permission_classes = [PermalinkPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
 
@@ -103,11 +103,11 @@ class PermalinkAPI(APIView):
 
         element = params['element']
         if element == 'auto':
-            if qs[0].meta.dtype == 'video':
+            if qs[0].type.dtype == 'video':
                 element = 'streaming'
-            elif qs[0].meta.dtype == 'image':
+            elif qs[0].type.dtype == 'image':
                 element = 'image'
-            elif qs[0].meta.dtype == 'multi':
+            elif qs[0].type.dtype == 'multi':
                 return None
         if element == 'audio':
             return response_data[0].get('media_files',{}).get('audio',[])[0]['path']

@@ -10,7 +10,7 @@ fi
 set -e
 
 # Define environment variables.
-BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
+BENTO4_URL="https://s3.amazonaws.com/tator-ci/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
 GIT_REVISION=$(git rev-parse HEAD)
 KUBECTL_URL="https://dl.k8s.io/release/v1.22.9/bin/linux/amd64/kubectl"
 ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/argo-linux-amd64.gz"
@@ -18,7 +18,7 @@ ARGO_MANIFEST_URL="https://github.com/argoproj/argo-workflows/releases/download/
 
 # Install snaps.
 sudo snap install helm --classic
-sudo snap install microk8s --classic --channel=1.22/stable
+sudo snap install microk8s --classic --channel=1.26/stable
 sudo snap install yq
 
 # Install apt packages.
@@ -127,7 +127,7 @@ echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
 pip3 install pillow
-pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pyyaml
+pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pytest-xdist pyyaml
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 
 # Copy over values.yaml.

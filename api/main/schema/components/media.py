@@ -22,9 +22,10 @@ media_properties = {
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
     'elemental_id': {
-        'description': 'Unique ID of an element',
-        'type': 'string'
-    }
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 media_get_properties = {
@@ -36,7 +37,7 @@ media_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying project of this media.',
     },
-    'meta': {
+    'type': {
         'type': 'integer',
         'description': 'Unique integer identifying entity type of this media.',
     },
@@ -80,7 +81,7 @@ media_get_properties = {
         'type': 'integer',
         'description': 'Vertical resolution in pixels.',
     },
-    'summaryLevel': {
+    'summary_level': {
             'description': 'If supplied, this video is best summarized at this frame interval',
             'type': 'integer',
         },
@@ -158,19 +159,24 @@ media_spec = {
             'description': 'Vertical resolution in pixels.',
             'nullable': True,
         },
-        'summaryLevel': {
+        'summary_level': {
             'description': 'If supplied, this video is best summarized at this frame interval',
             'type': 'integer',
         },
         'attributes': {
             'nullable': True,
-            'description': 'Attributes for the media',
+            'description': 'Object containing attribute values.',
             'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
         'elemental_id': {
             'description': 'Unique ID of an element',
             'type': 'string'
-        }
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
     },
 }
 
@@ -199,7 +205,7 @@ media_update = {
             'description': 'Pixel height of the video.',
             'type': 'integer',
         },
-        'summaryLevel': {
+        'summary_level': {
             'description': 'If supplied, this video is best summarized at this frame interval',
             'type': 'integer',
         },
@@ -220,7 +226,27 @@ media_update = {
         'elemental_id': {
             'description': 'Unique ID of an element',
             'type': 'string'
-        }
+        },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
     },
 }
 
@@ -258,6 +284,7 @@ media_id_query = {
             'type': 'array',
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
+        'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     }
 }
 
@@ -276,6 +303,10 @@ media_bulk_update = {
                            'user.',
             'enum': ['to_archive', 'to_live']
         },
+        'user_elemental_id': {
+            'description': 'Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id',
+            'type': 'string'
+        },
         'ids': {
             'description': 'Specific IDs to update. This is applied in addition to query '
                            'parameters.',
@@ -283,6 +314,22 @@ media_bulk_update = {
             'items': {'type': 'integer'},
         },
         **media_id_query['properties'],
+        'null_attributes': {
+            'description': 'Null a value in the attributes body',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
+        'reset_attributes': {
+            'description': 'Reset an attribute to the default value specified in the Type object',
+            'type': 'array',
+            'items': {
+                'type': 'string',
+                'minimum': 1,
+            },
+        },
     },
 }
 

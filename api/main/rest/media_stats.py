@@ -1,15 +1,21 @@
+import logging
 from collections import defaultdict
 
-from django.db.models import Sum
+from django.db.models import Sum, Avg, Count
+from django.db.models import Func, F
+from django.db.models.functions import Cast
+from django.contrib.gis.db.models import BigIntegerField
 
 from ..models import Media
 from ..search import TatorSearch
 from ..schema import MediaStatsSchema
 
+from ._media_query import get_media_queryset
+
 from ._base_views import BaseDetailView
-from ._media_query import get_media_es_query
 from ._permissions import ProjectViewOnlyPermission
 
+logger = logging.getLogger(__name__)
 class MediaStatsAPI(BaseDetailView):
     """ Count, download size, and total size of a media list.
 
@@ -22,21 +28,42 @@ class MediaStatsAPI(BaseDetailView):
 
     def _get(self, params):
         
-        # Get query associated with media filters.
-        query = get_media_es_query(params['project'], params)
+        qs = get_media_queryset(params['project'], params)
+        # Count
+        # Download size
+        # total_size
+        # duration
+        duration = 0
+        total_size = 0
 
-        # Update query with aggregations.
-        query['aggs']['download_size'] = {'sum': {'field': '_download_size'}}
-        query['aggs']['total_size'] = {'sum': {'field': '_total_size'}}
-        query['aggs']['duration'] = {'sum': {'field': '_duration'}}
-        query['size'] = 0
+        # Run aggregations
+        agg = qs.filter(type__dtype='video').aggregate(total_frames=Sum('num_frames'), total_fps=Sum('fps'))
 
-        # Do query.
-        response_data = {}
-        response_data['count'] = TatorSearch().count(params['project'], query)
-        result = TatorSearch().search_raw(params['project'], query)
-        response_data['download_size'] = result['aggregations']['download_size']['value']
-        response_data['total_size'] = result['aggregations']['total_size']['value']
-        response_data['duration'] = result['aggregations']['duration']['value']
+        extracted=qs.annotate(image=Func(F('media_files__image'), function='jsonb_array_elements'),
+                                streaming=Func(F('media_files__streaming'), function='jsonb_array_elements'),
+                                thumbnail_gif=Func(F('media_files__thumbnail_gif'), function='jsonb_array_elements'),
+                                thumbnail=Func(F('media_files__thumbnail'), function='jsonb_array_elements'),
+                                archival=Func(F('media_files__archival'), function='jsonb_array_elements'),
+                                attachment=Func(F('media_files__attachment'), function='jsonb_array_elements'))
+        type_agg=extracted.aggregate(image_size=Sum(Cast('image__size', BigIntegerField())),
+                                    streaming_size=Sum(Cast('streaming__size', BigIntegerField())),
+                                    thumbnail_gif_size=Sum(Cast('thumbnail_gif__size', BigIntegerField())),
+                                    thumbnail_size=Sum(Cast('thumbnail__size', BigIntegerField())),
+                                    archival_size=Sum(Cast('archival__size', BigIntegerField())),
+                                    attachment_size=Sum(Cast('attachment__size', BigIntegerField())),
+                                    )
+        logger.info(type_agg)
+        for k in type_agg.keys():
+            if type_agg[k]:
+                total_size+=type_agg[k]
+
+        num_vids = qs.filter(type__dtype='video').count()
+        if num_vids > 0:
+            avg_fps = agg['total_fps'] / num_vids
+            duration = agg['total_frames'] / avg_fps
+
+        response_data = {'count': qs.count(), 'duration': duration, 'total_size': total_size, 'download_size': total_size}
+        
+        
         return response_data
 

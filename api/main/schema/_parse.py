@@ -30,6 +30,11 @@ def parse(request):
         out['body'] = result.body
         if not isinstance(result.body, list):
             out = {**result.body, **out}
+
+    # Handle turning off merge if single version is selected
+    if 'merge' in out:
+        if len(out.get('version',[])) <= 1:
+            out['merge'] = 0
     return out
 
 parse.validator = None

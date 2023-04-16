@@ -1,47 +1,47 @@
 import { TatorElement } from "../../tator-element.js";
 
 export class RadioSet extends TatorElement {
-   constructor() {
-      super();
+  constructor() {
+    super();
 
-      const div = document.createElement("div");
-      div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
-      this._shadow.appendChild(div);
+    const div = document.createElement("div");
+    div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this._shadow.appendChild(div);
 
-      this._name = document.createTextNode("");
-      div.appendChild(this._name);
+    this._name = document.createTextNode("");
+    div.appendChild(this._name);
 
-      //
-     this._setName = "radio-set";
-      this._inputs = []
+    //
+    this._setName = "radio-set";
+    this._inputs = []
 
-      this._inputDiv = document.createElement("div");
-      this._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap flex-justify-between col-8");
-     div.appendChild(this._inputDiv);
+    this._inputDiv = document.createElement("div");
+    this._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap flex-justify-between col-8");
+    div.appendChild(this._inputDiv);
 
-     // default 2 columns
-     this._colSize = "col-6";
+    // default 2 columns
+    this._colSize = "col-6";
+  }
+
+  static get observedAttributes() {
+    return ["name", "type"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "name":
+        this._name.nodeValue = newValue;
+        this._setName = encodeURI(newValue);
+        break;
+      case "type":
+        switch (newValue) {
+          case "number":
+            this.getValue = this.getValueAsNumber;
+            this.type = newValue;
+            break;
+        }
     }
-
-    static get observedAttributes() {
-      return ["name", "type"];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-      switch (name) {
-        case "name":
-          this._name.nodeValue = newValue;
-          this._setName = encodeURI(newValue);
-          break;
-        case "type":
-          switch (newValue) {
-            case "number":
-              this.getValue = this.getValueAsNumber;
-              this.type = newValue;
-              break;
-          }
-      }
-    }
+  }
 
   set default(val) {
     this._default = val;

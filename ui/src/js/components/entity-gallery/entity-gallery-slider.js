@@ -275,7 +275,7 @@ export class EntityGallerySlider extends TatorElement {
 
       // Apply preference to newly created Label
       // Or default to hidden
-      const currentLabels = this.currentLabelValues[this.state.meta];
+      const currentLabels = this.currentLabelValues[this.state.type];
       if (currentLabels && !currentLabels.includes(encodeURI(attr))) {
          attributeLabel.setAttribute("class", "hidden");
       }

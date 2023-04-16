@@ -47,7 +47,12 @@ postgresUsername: "django"
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
-objectStorageHost: "minio-master"
+# liveBucket may be left unconfigured if using local minio
+liveBucket:
+  config: "json in folded block (>- ...)"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
@@ -68,6 +73,15 @@ maintenanceCron:
   # Enable this to allow maintenance cron jobs to run, such as garbage collection
   # of deleted database objects and database backups.
   enabled: true
+  # If maintenance cron jobs are enabled, this optionally specifies the minimum
+  # age of objects after deletion before they are actually deleted. This allows
+  # for a grace period in which the `deleted` flag for objects in the database 
+  # can be reset to `False` to recover them.
+  expirationAgeDays: 0
+  # If maintenance cron jobs are enabled, this optionally specifies the minimum
+  # age of objects after archiving before they are actually archived. This allows
+  # for a grace period in which the archive request can be revoked.
+  archiveAgeDays: 0
 migrations:
   # Enable this if database migrations are allowed.
   enabled: true
@@ -92,18 +106,16 @@ pvc:
   size: 10Ti
 uploadBucket:
   enabled: false
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  config: "json in folded block (>- ...)"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 backupBucket:
   enabled: false
-  host: "https://<Your S3 bucket endpoint>"
-  name: "<Your S3 bucket name>"
-  region: "<Your S3 bucket region>"
-  accessKey: "<Your S3 bucket access key>"
-  secretKey: "<Your S3 bucket secret key>"
+  config: "json in folded block (>- ...)"
+  storeType: "<one of AWS, MINIO, GCP, or OCI>"
+  name: "<your bucket name>"
+  # proxy: "<proxy domain, if required>"
 hpa:
   nginxMinReplicas: 1
   nginxMaxReplicas: 1
@@ -151,7 +163,7 @@ metrics-server:
   enabled: false
 elasticsearch:
   # Enable this to install the elasticsearch helm chart.
-  enabled: true
+  enabled: false
   hostPath: "/media/kubernetes_share/elasticsearch"
   persistence:
     enabled: true
@@ -195,6 +207,15 @@ minio:
   enabled: true
   accessKey: "AKIAIOSFODNN7EXAMPLE"
   secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  config: >-
+    {
+      "aws_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+      "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      "endpoint_url": "http://tator-minio:9000",
+      "region_name": "us-east-2"
+    }
+  name: tator
+  storeType: "MINIO"
   persistence:
     size: "1Ti"
     existingClaim: "main-pv-claim"

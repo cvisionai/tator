@@ -124,7 +124,7 @@ if DEBUG:
             'NAME': 'tator_online',
             'USER': os.getenv('POSTGRES_USERNAME'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-            'HOST': 'postgis-svc',
+            'HOST': os.getenv('POSTGRES_HOST'),
             'PORT': os.getenv('POSTGRES_PORT', 5432),
         }
     }

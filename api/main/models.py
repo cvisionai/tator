@@ -45,6 +45,7 @@ from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
 from django.db import transaction
+from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
 from .search import TatorSearch
@@ -293,6 +294,12 @@ class User(AbstractUser):
     confirmation_token = UUIDField(primary_key=False, db_index=True, null=True, blank=True)
     """ Used for email address confirmation for anonymous registrations. """
 
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
+
+    profile = JSONField(default=dict)
+    """ Store user specific information (avatar image, tbd elements) """
+
     def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
         response = cognito.create_user(self, email_verified, temp_pw)
@@ -337,6 +344,17 @@ def user_save(sender, instance, created, **kwargs):
             Affiliation.objects.create(organization=organization,
                                        user=instance,
                                        permission='Admin')
+
+@receiver(post_delete, sender=User)
+def user_post_delete(sender, instance, **kwargs):
+    """ Clean up avatar on user deletion. """
+    if instance.profile.get('avatar'):
+        avatar_key = instance.profile.get('avatar')
+        # Out of an abundance of caution check to make sure the object key
+        # matches the user's scope
+        if avatar_key.startswith(f"user_data/{instance.pk}"):
+            generic_store = get_tator_store()
+            generic_store.delete_object(avatar_key)
 
 class PasswordReset(Model):
     user = ForeignKey(User, on_delete=CASCADE)
@@ -404,12 +422,7 @@ class Bucket(Model):
     name = CharField(max_length=63)
     config = JSONField(null=True, blank=True)
     store_type = EnumField(ObjectStore, max_length=32, null=True, blank=True)
-    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
-    access_key = CharField(max_length=128, null=True, blank=True)
-    secret_key = CharField(max_length=40, null=True, blank=True)
-    endpoint_url = CharField(max_length=1024, null=True, blank=True)
-    region = CharField(max_length=16, null=True, blank=True)
-    # TODO remove fields access_key, secret_key, endpoint_url, and region ##########################
+    external_host = CharField(max_length=128, null=True, blank=True)
     archive_sc = CharField(
         max_length=16,
         choices=[
@@ -419,9 +432,15 @@ class Bucket(Model):
         ],
     )
     live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")])
-    # TODO remove field gcs_key_info ###############################################################
-    gcs_key_info = TextField(null=True, blank=True)
-    # TODO remove field gcs_key_info ###############################################################
+
+    def __str__(self):
+        return " | ".join(
+            [
+                f"{self.name} ({self.id})",
+                str(self.store_type),
+                f"{self.organization} ({self.organization.id})",
+            ]
+        )
 
     def validate_storage_classes(store_type, params):
         """
@@ -475,21 +494,26 @@ class Project(Model):
         maintaining elasticsearch field aliases.
     """
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                        related_name='+')
+                        related_name='+', db_column='bucket')
     """ If set, media will use this bucket by default.
     """
     upload_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='upload_bucket')
     """ If set, uploads will use this bucket by default.
     """
     backup_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='backup_bucket')
     """ If set, backups will use this bucket by default.
     """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
-                               related_name='+')
+                               related_name='+', db_column='default_media')
+
     """ Default media type for uploads.
     """
+
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
@@ -536,6 +560,8 @@ class Version(Model):
         for each generation of a state-based inference algorithm; all referencing localizations
         in another layer.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
     def __str__(self):
         out = f"{self.name}"
@@ -578,7 +604,6 @@ def add_org_users(project):
 
 @receiver(post_save, sender=Project)
 def project_save(sender, instance, created, **kwargs):
-    TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
         add_org_users(instance)
@@ -586,14 +611,11 @@ def project_save(sender, instance, created, **kwargs):
         Resource.add_resource(instance.thumb, None)
 
 @receiver(post_delete, sender=Project)
-def project_delete(sender, instance, **kwargs):
+def project_post_delete(sender, instance, **kwargs):
+    TatorSearch().delete_project_indices(instance.pk)
     if instance.thumb:
         safe_delete(instance.thumb, instance.id)
-
-@receiver(pre_delete, sender=Project)
-def delete_index_project(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance.pk)
-
+    
 class Membership(Model):
     """Stores a user and their access level for a project.
     """
@@ -716,7 +738,7 @@ class MediaType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    editTriggers = JSONField(null=True,
+    edit_triggers = JSONField(null=True,
                              blank=True)
     file_format = CharField(max_length=4,
                             null=True,
@@ -775,6 +797,8 @@ class MediaType(Model):
     """ Dot type used as default in UI. """
     default_poly = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
                               related_name='+')
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -795,7 +819,7 @@ class LocalizationType(Model):
     grouping_default = BooleanField(default=True)
     """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
-    colorMap = JSONField(null=True, blank=True)
+    color_map = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
     attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
@@ -822,6 +846,8 @@ class LocalizationType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -879,6 +905,8 @@ class StateType(Model):
     """ If this is a track type, this is the default localization that is created when
         a track is created via the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -918,6 +946,8 @@ class LeafType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -983,7 +1013,7 @@ class Media(Model, ModelDiffMixin):
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                          db_column='project', related_name='media_project')
-    meta = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
@@ -1019,7 +1049,7 @@ class Media(Model, ModelDiffMixin):
     width=IntegerField(null=True)
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
     restoration_requested = BooleanField(default=False)
     archive_status_date = DateTimeField(auto_now_add=True, null=True, blank=True)
     archive_state = CharField(
@@ -1037,9 +1067,9 @@ class Media(Model, ModelDiffMixin):
     )
     source_url = CharField(max_length=2048, blank=True, null=True)
     """ URL where original media was hosted. """
-    summaryLevel = IntegerField(null=True, blank=True)
+    summary_level = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
-    elemental_id = UUIDField(primary_key=False, db_index=True, editable=True, null=True, blank=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
     """ Unique ID for a media to facilitate cross-cluster sync operations """
 
     def get_file_sizes(self):
@@ -1080,7 +1110,7 @@ class Media(Model, ModelDiffMixin):
         """
         Returns True if all resources referenced by the media are backed up.
         """
-        if self.meta.dtype == "multi":
+        if self.type.dtype == "multi":
             media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
             return all(media.is_backed_up() for media in media_qs.iterator())
 
@@ -1157,6 +1187,8 @@ class FileType(Model):
     dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
     """ Required as part of building the TatorSearch documents
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 @receiver(post_save, sender=FileType)
 def file_type_save(sender, instance, **kwargs):
@@ -1183,17 +1215,20 @@ class File(Model, ModelDiffMixin):
     """ Project associated with the file """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     """ Project associated with the file """
-    meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Type associated with file """
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
     generic_files = ManyToManyField(File, related_name='resource_files')
-    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
+    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name='bucket')
+    backup_bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name='backup_bucket')
     backed_up = BooleanField(default=False)
 
     def get_project_from_path(path):
@@ -1297,7 +1332,6 @@ class Resource(Model):
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
     if instance.media_files and created:
         for path in instance.path_iterator():
             Resource.add_resource(path, instance)
@@ -1335,11 +1369,6 @@ def drop_media_from_resource(path, media):
     except:
         logger.warning(f"Could not remove {media} from {path}", exc_info=True)
 
-@receiver(pre_delete, sender=Media)
-def media_delete(sender, instance, **kwargs):
-    if instance.project:
-        TatorSearch().delete_document(instance)
-
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
     # Delete all the files referenced in media_files
@@ -1349,13 +1378,8 @@ def media_post_delete(sender, instance, **kwargs):
 
 @receiver(post_save, sender=File)
 def file_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
     if instance.path and created:
         Resource.add_resource(instance.path, None, instance)
-
-@receiver(pre_delete, sender=File)
-def file_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
 
 @receiver(post_delete, sender=File)
 def file_post_delete(sender, instance, **kwargs):
@@ -1365,7 +1389,7 @@ def file_post_delete(sender, instance, **kwargs):
 
 class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
@@ -1386,12 +1410,6 @@ class Localization(Model, ModelDiffMixin):
                                  related_name='localization_thumbnail_image',
                                  db_column='thumbnail_image')
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
-    modified = BooleanField(default=True, null=True, blank=True)
-    """ Indicates whether an annotation is original or modified.
-        null: Original upload, no modifications.
-        false: Original upload, but was modified or deleted.
-        true: Modified since upload or created via web interface.
-    """
     x = FloatField(null=True, blank=True)
     """ Horizontal position."""
     y = FloatField(null=True, blank=True)
@@ -1408,21 +1426,15 @@ class Localization(Model, ModelDiffMixin):
     """ List of points used by poly dtype. """
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
-    deleted = BooleanField(default=False)
-    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
-    variant_deleted = BooleanField(default=False, null=True, blank=True)
+    deleted = BooleanField(default=False, db_index=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
-
-@receiver(post_save, sender=Localization)
-def localization_save(sender, instance, created, **kwargs):
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
 
 @receiver(pre_delete, sender=Localization)
 def localization_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
 
@@ -1433,7 +1445,7 @@ class State(Model, ModelDiffMixin):
     elements. If a frame is supplied it was collected at that time point.
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1449,12 +1461,6 @@ class State(Model, ModelDiffMixin):
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
-    modified = BooleanField(default=True, null=True, blank=True)
-    """ Indicates whether an annotation is original or modified.
-        null: Original upload, no modifications.
-        false: Original upload, but was modified or deleted.
-        true: Modified since upload or created via web interface.
-    """
     media = ManyToManyField(Media, related_name='media')
     localizations = ManyToManyField(Localization)
     segments = JSONField(null=True, blank=True)
@@ -1466,20 +1472,14 @@ class State(Model, ModelDiffMixin):
                            blank=True,
                            related_name='extracted',
                            db_column='extracted')
-    deleted = BooleanField(default=False)
-    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
-    variant_deleted = BooleanField(default=False, null=True, blank=True)
+    deleted = BooleanField(default=False, db_index=True)
+    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True, default = uuid.uuid4)
+    variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
+    mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the revision number of the element  """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
-
-@receiver(post_save, sender=State)
-def state_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=State)
-def state_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
 
 @receiver(m2m_changed, sender=State.localizations.through)
 def calc_segments(sender, **kwargs):
@@ -1511,7 +1511,7 @@ def calc_segments(sender, **kwargs):
 
 class Leaf(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    type = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1527,7 +1527,7 @@ class Leaf(Model, ModelDiffMixin):
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
     path=PathField()
     name = CharField(max_length=255)
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
 
     class Meta:
         verbose_name_plural = "Leaves"
@@ -1554,21 +1554,6 @@ class Leaf(Model, ModelDiffMixin):
             pathStr=projName+"."+pathStr
         return pathStr
 
-@receiver(post_save, sender=Leaf)
-def leaf_save(sender, instance, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=Leaf)
-def leaf_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
-
-class Analysis(Model):
-    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
-    name = CharField(max_length=64)
-    data_query = CharField(max_length=1024, default='*')
-    def __str__(self):
-        return f"{self.project} | {self.name}"
-
 class Section(Model):
     """ Stores either a lucene search or raw elasticsearch query.
     """
@@ -1579,14 +1564,17 @@ class Section(Model):
     lucene_search = CharField(max_length=1024, null=True, blank=True)
     """ Optional lucene query syntax search string.
     """
-    media_bools = JSONField(null=True, blank=True)
-    """ Optional list of elasticsearch boolean queries that should be applied
-        to media. These are applied to the boolean query "filter" list.
+
+    object_search = JSONField(null=True, blank=True)
     """
-    annotation_bools = JSONField(null=True, blank=True)
-    """ Optional list of elasticsearch boolean queries that should be applied
-        to annotations. These are applied to the boolean query "filter" list.
+    Object search using a search structure defined as AttributeOperationSpec
     """
+
+    related_object_search = JSONField(null=True, blank=True)
+    """
+    Object search for using a search struction on related metadata and retreiving the media
+    """
+
     tator_user_sections = CharField(max_length=128, null=True, blank=True)
     """ Identifier used to label media that is part of this section via the
         tator_user_sections attribute. If not set, this search is not scoped
@@ -1603,19 +1591,21 @@ class Section(Model):
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.
     """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True, default = uuid.uuid4)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class Favorite(Model):
     """ Stores an annotation saved by a user.
     """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
-    localization_meta = ForeignKey(LocalizationType, on_delete=CASCADE, null=True, blank=True)
-    state_meta = ForeignKey(StateType, on_delete=CASCADE, null=True, blank=True)
-    meta = PositiveIntegerField()
+    localization_type = ForeignKey(LocalizationType, on_delete=CASCADE, null=True, blank=True)
+    state_type = ForeignKey(StateType, on_delete=CASCADE, null=True, blank=True)
+    type = PositiveIntegerField()
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()
-    entityTypeName = CharField(max_length=16, choices=[('Localization', 'Localization'), ('State','State')], null=True, blank=True)
+    entity_type_name = CharField(max_length=16, choices=[('Localization', 'Localization'), ('State','State')], null=True, blank=True)
 
 class Bookmark(Model):
     """ Stores a link saved by a user.
@@ -1624,6 +1614,7 @@ class Bookmark(Model):
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
     name = CharField(max_length=128)
     uri = CharField(max_length=1024)
+    """ Unique ID for a to facilitate cross-cluster sync operations """
 
 class ChangeLog(Model):
     """ Stores individual changesets for entities """
@@ -1740,3 +1731,89 @@ def database_query_ids(table, ids, order):
              f'(VALUES ({"), (".join([str(id_) for id_ in ids])})) '
              f'ORDER BY {order}')
     return database_query(query)
+
+class Group(Model):
+    """ Represents a group of users in an organization, presumably that share access levels """
+    organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    """ Organization that the group belongs to """
+    name = CharField(max_length=128)
+    """ Descriptive name for the group """
+
+class GroupMembership(Model):
+    """ Associates a user to a group """
+    project = ForeignKey(Project, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
+    group = ForeignKey(Group, on_delete=CASCADE)
+    group_admin = BooleanField(default=False)
+    """ Can add/remove people from the group if set to true """
+    name = CharField(max_length=128, blank=True, null=True)
+    """ Descriptive name for the role of this user in the group """
+
+
+class RowProtection(Model):
+    # Pointer to protected row element, one of the following should be non-null.
+    # Note: Currently type objects are protected by project membership status
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
+
+    # One of the following must be non-null
+    user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the user this permission/rule refers to """
+    organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the organization this permission/rule refers to """
+    group = ForeignKey(Group, on_delete=CASCADE, null=True, blank=True)
+    """ Pointer to the group this permission/rule refers to """
+
+    permission = BigIntegerField(default=0, db_index=True)
+    """ Permission bitmask for the row in question
+        0 - Can not see
+        0x1 - Exist
+        0x2 - Read
+        0x4 - Write
+        0x8 - Full control (ability to delete)
+        bits above this are reserved for future use.
+    """
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['project',
+                                     'media',
+                                     'localization',
+                                     'state',
+                                     'file',
+                                     'user',
+                                     'organization',
+                                     'group'], name='permission_uniqueness_check')
+        ]
+
+
+# Structure to handle identifying columns with project-scoped indices
+# e.g. Not relaying solely on `db_index=True` in django.
+BUILT_IN_INDICES = {
+    MediaType: [
+        {'name': '$name', 'dtype': 'native_string'},
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'},
+        {'name': 'tator_user_sections', 'dtype': 'section'},
+        {'name': '$restoration_requested', 'dtype': 'native'},
+        {'name': '$archive_status_date', 'dtype': 'native'},
+        {'name': '$archive_state', 'dtype': 'native_string'}
+    ],
+    LocalizationType: [
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'}
+    ],
+    StateType: [
+        {'name': '$created_datetime', 'dtype': 'native'},
+        {'name': '$modified_datetime', 'dtype': 'native'},
+    ],
+    LeafType: [
+        {'name': '$name', 'dtype': 'string'},
+        {'name': '$path', 'dtype': 'string'},
+        {'name': '$name', 'dtype': 'upper_string'},
+        {'name': '$path', 'dtype': 'upper_string'}
+    ]
+}

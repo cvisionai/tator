@@ -16,6 +16,8 @@ from ..models import Project
 from ..models import Membership
 from ..models import Organization
 from ..models import Affiliation
+from ..models import User
+from ..models import Media
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
@@ -51,10 +53,10 @@ class ProjectPermissionBase(BasePermission):
                 raise Http404
         elif 'uid' in view.kwargs:
             uid = view.kwargs['uid']
-            try:
-                cache = TatorCache().get_jobs_by_uid(uid)
-                project = cache[0]['project']
-            except:
+            cache = TatorCache().get_jobs_by_uid(uid)
+            if cache is not None and len(cache) == 1: 
+                project = get_object_or_404(Project, pk=cache[0]['project'])
+            else:
                 raise Http404
         else:
             # If this is a request from schema view, show all endpoints.
@@ -140,6 +142,35 @@ class ProjectFullControlPermission(ProjectPermissionBase):
         Permission.CAN_EXECUTE,
     ]
 
+class PermalinkPermission(BasePermission):
+    """
+    1.) Let request through if project has anonymous membership
+    2.) Let request through if requesting user any membership.
+    Note: Because the lowest level of access allows READ the existence check for membership is sufficient.
+    """
+    def has_permission(self, request, view):
+        try:
+            media_id = view.kwargs['id']
+            m = Media.objects.filter(pk=media_id)
+            if not m.exists():
+                return False # If the media doesn't exist, do not authenticate
+            project = m[0].project
+            # Not all deployments have an anonymous user
+            anonymous_user = User.objects.filter(username='anonymous')
+            if anonymous_user.exists():
+                anonymous_membership = Membership.objects.filter(project=project, user=anonymous_user[0])
+                if anonymous_membership.exists():
+                    return True
+            if not isinstance(request.user, AnonymousUser):
+                user_membership = Membership.objects.filter(project=project, user=request.user)
+                if user_membership.exists():
+                    return True
+        except Exception as e:
+            # This is an untrusted endpoint, so don't leak any exceptions to response if possible
+            logger.error(f"Error {e}", exc_info=True)
+
+        return False
+
 class UserPermission(BasePermission):
     """ 1.) Reject all anonymous requests
         2.) Allow all super-user requests
@@ -150,13 +181,9 @@ class UserPermission(BasePermission):
         if isinstance(request.user, AnonymousUser):
             # If user is anonymous but request contains a reset token and password, allow it.
             has_password = 'password' in request.data 
-            logger.info(f"HAS PASSWORD: {has_password}")
             has_token = 'reset_token' in request.data
-            logger.info(f"HAS TOKEN: {has_token}")
             has_two = len(list(request.data.values())) == 2
-            logger.info(f"HAS TWO: {has_two}")
             is_patch = request.method == 'PATCH'
-            logger.info(f"IS PATCH: {is_patch}")
             if has_password and has_token and has_two and is_patch:
                 return True
             return False

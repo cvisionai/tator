@@ -1,5 +1,6 @@
 import logging
 import datetime
+import os
 
 from django.core.management.base import BaseCommand
 from main.models import File
@@ -14,7 +15,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--min-age-days",
             type=int,
-            default=30,
+            default=int(os.getenv('EXPIRATION_AGE_DAYS', 30)),
             help="Minimum age in days of file objects for deletion.",
         )
 
@@ -30,9 +31,9 @@ class Command(BaseCommand):
             null_project = File.objects.filter(
                 project__isnull=True, modified_datetime__lte=max_datetime
             )
-            null_meta = File.objects.filter(meta__isnull=True, modified_datetime__lte=max_datetime)
+            null_type = File.objects.filter(type__isnull=True, modified_datetime__lte=max_datetime)
             file_ids = (
-                (deleted | null_project | null_meta)
+                (deleted | null_project | null_type)
                 .distinct()
                 .values_list("pk", flat=True)[:BATCH_SIZE]
             )

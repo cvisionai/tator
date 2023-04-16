@@ -25,23 +25,21 @@ class Command(BaseCommand):
         # Check for existence of default backup store
         default_backup_store = get_tator_store(backup=True)
 
-        if default_backup_store is None:
-            logger.info("No default backup bucket found, looking for project specific ones...")
-            projects_with_backup_buckets = Project.objects.exclude(backup_bucket=None)
-            if projects_with_backup_buckets.count() == 0:
-                logger.info("No project specific backup buckets found!")
-                return
+        # Find projects with a project-specific backup bucket
+        projects_needing_backup = Project.objects.filter(backup_bucket__isnull=False)
 
-            # If there is no default backup bucket, restrict the resource queryset to those that
-            # reside in projects with defined project-specific backup buckets
-            project_ids = [str(p.id) for p in projects_with_backup_buckets]
-            logger.info(
-                f"Found project-specific backup buckets for: {','.join(project_ids)}, backing up "
-                f"resources in those projects, if necessary."
-            )
-            # Use the fact that paths for resources take the form of `<org_id>/<proj_id>/<media_id>`
-            # and filter for only project ids with backup buckets
-            resource_qs = resource_qs.filter(path__iregex=f"\\d+/({'|'.join(project_ids)})/\\d+")
+        # If the default backup store exists, add any buckets without a project specific live bucket.
+        if default_backup_store is not None:
+            projects_using_default_live = Project.objects.filter(bucket__isnull=True)
+            projects_needing_backup = projects_needing_backup.union(projects_using_default_live)
+
+        if projects_needing_backup.count() == 0:
+            logger.info("No project specific backup buckets found!")
+            return
+
+        project_ids = projects_needing_backup.values_list('pk', flat=True)
+
+        resource_qs = resource_qs.filter(media__project__in=project_ids)
 
         total_to_back_up = resource_qs.count()
         if total_to_back_up == 0:
@@ -52,7 +50,7 @@ class Command(BaseCommand):
         failed_backups = defaultdict(set)
         successful_backups = set()
         domain = os.getenv("MAIN_HOST", "MAIN_HOST")
-        for idx, (success, resource) in enumerate(tbm.backup_resources(resource_qs, domain)):
+        for idx, (success, resource) in enumerate(tbm.backup_resources(projects_needing_backup, resource_qs, domain)):
             if success:
                 successful_backups.add(resource.id)
             else:
@@ -75,18 +73,30 @@ class Command(BaseCommand):
 
             for project_id, failed_media_ids in failed_backups.items():
                 msg = (
-                    f"Failed to back up at least one resource from each of the following media: "
-                    f"{list(failed_media_ids)}"
+                    f"Failed to back up at least one resource from each of the following media in "
+                    f"project '{project_id}': {', '.join(str(mid) for mid in failed_media_ids)}"
                 )
                 logger.warning(msg)
 
                 if ses:
-                    project = Project.objects.get(pk=project_id)
+                    try:
+                        project = Project.objects.get(pk=project_id)
+                    except Exception:
+                        logger.info(
+                            f"Could not find project with id '{project_id}', alerting deployment staff",
+                            exc_info=True,
+                        )
+                        recipient_ids = User.objects.filter(
+                            is_staff=True
+                        ).values_list("id", flat=True)
+                        project_name = project_id
+                    else:
+                        # Get project administrators
+                        recipient_ids = Affiliation.objects.filter(
+                            organization=project.organization, permission="Admin"
+                        ).values_list("user", flat=True)
+                        project_name = project.name
 
-                    # Get project administrators
-                    recipient_ids = Affiliation.objects.filter(
-                        organization=project.organization, permission="Admin"
-                    ).values_list("user", flat=True)
                     recipients = list(
                         User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
                     )
@@ -94,6 +104,6 @@ class Command(BaseCommand):
                     ses.email(
                         sender=settings.TATOR_EMAIL_SENDER,
                         recipients=recipients,
-                        title=f"Nightly backup for {project.name} ({project.id}) failed",
+                        title=f"Nightly backup for {project_name} ({project_id}) failed",
                         text=msg,
                     )
