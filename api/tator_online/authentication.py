@@ -1,5 +1,11 @@
+import os
+
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+import jwt
+from jwt.algorithms import RSAAlgorithm
+import requests
+import json
 
 class KeycloakAuthentication(BaseAuthentication):
     def _get_pub_key(self):
@@ -8,7 +14,7 @@ class KeycloakAuthentication(BaseAuthentication):
         # Get the public key from keycloak (may be cached)
         pub_key = cache.get_keycloak_public_key()
         if pub_key is None:
-            url = f"https://{MAIN_HOST}/auth/realms/tator/protocol/openid-connect/certs"
+            url = f"https://{os.getenv('MAIN_HOST')}/auth/realms/tator/protocol/openid-connect/certs"
             r = requests.get(url)
             r.raise_for_status()
             json_data = r.json()
