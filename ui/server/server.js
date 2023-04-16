@@ -49,6 +49,15 @@ app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
 
+if (params.backend) {
+  let opts = {};
+  if (params.keycloak_enabled) {
+    opts.proxyReqPathResolver = function(req) {
+      return `/auth/realms/tator/protocol/openid-connect/auth?scope=openid&client_id=tator&response_type=code&redirect_uri=http://localhost:${port}/callback`;
+    };
+  }
+  app.use('/accounts/login', proxy(params.backend, opts));
+}
 
 app.get('/', (req, res) => {
   res.redirect('/projects');
