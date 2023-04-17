@@ -1,0 +1,2 @@
+207304c7f1b83715e86565149f91bb08  acme_tiny.py
+6aa92cc181c895eca9753dea3ffce0b8  kubectl

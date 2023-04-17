@@ -41,10 +41,12 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
+COPY containers/tator/md5sum_checks.txt checks.txt
 RUN wget https://raw.githubusercontent.com/diafygi/acme-tiny/4.1.0/acme_tiny.py 
 
 # Install kubectl
 RUN wget https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl
+RUN md5sum --check checks.txt
 RUN chmod +x kubectl
 RUN mv kubectl /usr/local/bin/.
 
