@@ -1,6 +1,7 @@
 import time
 import os
 import logging
+import requests
 
 from django.utils.deprecation import MiddlewareMixin
 from datadog import DogStatsd
