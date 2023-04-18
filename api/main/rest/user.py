@@ -14,7 +14,7 @@ from ..models import Invitation
 from ..models import Affiliation
 from ..models import PasswordReset
 from ..serializers import UserSerializerBasic
-from ..ses import TatorSES
+from ..tator_mail import TatorSES
 from ..schema import UserExistsSchema
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema

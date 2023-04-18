@@ -9,7 +9,7 @@ from django.db import transaction
 
 from main.backup import TatorBackupManager
 from main.models import Affiliation, Project, Resource, User
-from main.ses import TatorSES
+from main.tator_mail import TatorSES
 from main.store import get_tator_store
 
 

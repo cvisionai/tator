@@ -49,7 +49,7 @@ from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
 from .search import TatorSearch
-from .ses import TatorSES
+from .tator_mail import TatorSES
 from .download import download_file
 from .encoders import TatorJSONEncoder
 from .store import (
