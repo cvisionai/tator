@@ -65,7 +65,16 @@ class TatorSES(TatorMail):
         super().__init__()
         self.service = boto3.client("ses", **settings.TATOR_EMAIL_CONFIG)
 
-    def email(self, sender, recipients, title, text, html, attachments, raise_on_failure):
+    def email(
+        self,
+        sender,
+        recipients,
+        title,
+        text=None,
+        html=None,
+        attachments=None,
+        raise_on_failure=None,
+    ):
         """Sends an email via AWS SES. See :class:`main.tator_mail.TatorMail` for details"""
         multipart_content_subtype = "alternative" if text and html else "mixed"
         msg = MIMEMultipart(multipart_content_subtype)
