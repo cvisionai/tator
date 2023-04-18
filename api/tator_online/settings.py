@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
+import json
 import os
 import socket
 from django.contrib.messages import constants as messages
@@ -267,9 +268,18 @@ else:
 
 if TATOR_EMAIL_ENABLED:
     TATOR_EMAIL_SENDER = os.getenv('TATOR_EMAIL_SENDER')
-    TATOR_EMAIL_AWS_REGION = os.getenv('TATOR_EMAIL_AWS_REGION')
-    TATOR_EMAIL_AWS_ACCESS_KEY_ID = os.getenv('TATOR_EMAIL_AWS_ACCESS_KEY_ID')
-    TATOR_EMAIL_AWS_SECRET_ACCESS_KEY = os.getenv('TATOR_EMAIL_AWS_SECRET_ACCESS_KEY')
+    TATOR_EMAIL_CONFIG = os.getenv("TATOR_EMAIL_CONFIG")
+
+    # Quoted json string needs to be loaded twice
+    for _ in range(2):
+        if not isinstance(TATOR_EMAIL_CONFIG, dict):
+            try:
+                TATOR_EMAIL_CONFIG = json.loads(TATOR_EMAIL_CONFIG)
+            except Exception:
+                raise ValueError(
+                    f"Could not parse json string:\n'{TATOR_EMAIL_CONFIG}'",
+                    exc_info=True,
+                )
 
 ANONYMOUS_REGISTRATION_ENABLED = os.getenv('ANONYMOUS_REGISTRATION_ENABLED')
 if ANONYMOUS_REGISTRATION_ENABLED is not None:

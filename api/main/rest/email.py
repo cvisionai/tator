@@ -9,7 +9,7 @@ from ..models import Membership
 from ..schema import EmailSchema
 from ._base_views import BaseListView
 from ._permissions import ProjectExecutePermission
-from ..ses import TatorSES
+from ..tator_mail import TatorSES
 
 logger = logging.getLogger(__name__)
 
