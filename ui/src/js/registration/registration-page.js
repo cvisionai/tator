@@ -1,5 +1,4 @@
 import { TatorElement } from "../components/tator-element.js";
-import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import TatorLogo from "../../images/tator-logo.png";
 
 export class RegistrationPage extends TatorElement {
@@ -114,8 +113,9 @@ export class RegistrationPage extends TatorElement {
       if (params.has("registration_token")) {
         body.registration_token = params.get("registration_token");
       }
-      fetchCredentials("/rest/Users", {
+      fetch("/rest/Users", {
         method: "POST",
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify(body),
       })
       .then(response => {
@@ -183,7 +183,9 @@ export class RegistrationPage extends TatorElement {
     if (username.length == 0) {
       this._valid = false;
     } else {
-      return fetchCredentials(`/rest/User/Exists?username=${encodeURIComponent(username)}`)
+      return fetch(`/rest/User/Exists?username=${encodeURIComponent(username)}`, {
+        headers: {"Content-Type": "application/json"},
+      })
       .then(response => response.json())
       .then(exists => {
         if (exists) {
@@ -243,7 +245,9 @@ export class RegistrationPage extends TatorElement {
     if (email.length == 0) {
       this._valid = false;
     } else {
-      return fetchCredentials(`/rest/User/Exists?email=${email}`)
+      return fetch(`/rest/User/Exists?email=${email}`, {
+        headers: {"Content-Type": "application/json"},
+      })
       .then(response => response.json())
       .then(exists => {
         if (exists) {
