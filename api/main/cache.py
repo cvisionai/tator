@@ -132,6 +132,7 @@ class TatorCache:
             for key in self.rds.scan_iter(match=prefix + '*'):
                 logger.info(f"Deleting cache key {key}...")
                 self.rds.delete(key)
+        self.rds.delete('keycloak_public_key')
         logger.info("Cache cleared!")
 
 TatorCache.setup_redis()
