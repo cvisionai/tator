@@ -201,7 +201,7 @@ app.get('/refresh', async (req, res) => {
   if (typeof req.cookies.refresh_token === "undefined") {
     res.status(403).send({message: "No refresh token!"});
   } else {
-    const url = `https://${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
+    const url = `${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
     try {
       await fetch(url, {
         method: "POST",
