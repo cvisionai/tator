@@ -1,5 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import TatorLogo from "../../images/tator-logo.png";
+import { getCookie } from "../../../../scripts/packages/tator-js/src/utils/get-cookie.js";
 
 export class RegistrationPage extends TatorElement {
   constructor() {
@@ -113,12 +114,16 @@ export class RegistrationPage extends TatorElement {
       if (params.has("registration_token")) {
         body.registration_token = params.get("registration_token");
       }
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      if (!KEYCLOAK_ENABLED) {
+        headers["X-CSRFToken"] = getCookie("csrftoken");
+      }
       fetch("/rest/Users", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(body),
       })
       .then(response => {
