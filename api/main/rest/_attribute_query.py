@@ -6,6 +6,7 @@ import logging
 import datetime
 from dateutil.parser import parse as dateutil_parse
 import pytz
+import re
 
 from django.db.models.functions import Cast
 from django.db.models import Func, F, Q
@@ -221,20 +222,21 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
             field_type,_ = _get_field_for_attribute(project, entity_type, key)
             if field_type:
                 # Annotate with a typed object prior to query to ensure index usage
+                alias_key = re.sub(r"[^\w]", "__", key)
                 if field_type == PointField:
-                    qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
-                    qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
-                    qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_0_float"), F(f"{key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
-                    qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                    qs = qs.annotate(**{f'{alias_key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
+                    qs = qs.annotate(**{f'{alias_key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
+                    qs = qs.annotate(**{f"{alias_key}_typed": Cast(Func(F(f"{alias_key}_0_float"), F(f"{alias_key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
+                    qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
                 elif field_type == DateTimeField:
-                    qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
-                    qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})
-                    qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                    qs = qs.annotate(**{f'{alias_key}_text': Cast(f'attributes__{key}', CharField())})
+                    qs = qs.annotate(**{f'{alias_key}_typed': Cast(f'{alias_key}_text', DateTimeField())})
+                    qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
                 elif field_type == CharField:
                     qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
                 else:
-                    qs = qs.annotate(**{f'{key}_typed': Cast(f'attributes__{key}', field_type())})
-                    qs = qs.filter(**{f'{key}_typed{OPERATOR_SUFFIXES[op]}': value})
+                    qs = qs.annotate(**{f'{alias_key}_typed': Cast(f'attributes__{key}', field_type())})
+                    qs = qs.filter(**{f'{alias_key}_typed{OPERATOR_SUFFIXES[op]}': value})
                 found_it=True
 
     if attribute_null is not None:
