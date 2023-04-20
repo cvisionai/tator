@@ -115,7 +115,10 @@ export class RegistrationPage extends TatorElement {
       }
       fetch("/rest/Users", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
         body: JSON.stringify(body),
       })
       .then(response => {
@@ -184,7 +187,10 @@ export class RegistrationPage extends TatorElement {
       this._valid = false;
     } else {
       return fetch(`/rest/User/Exists?username=${encodeURIComponent(username)}`, {
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
       })
       .then(response => response.json())
       .then(exists => {
@@ -246,7 +252,10 @@ export class RegistrationPage extends TatorElement {
       this._valid = false;
     } else {
       return fetch(`/rest/User/Exists?email=${email}`, {
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
       })
       .then(response => response.json())
       .then(exists => {
