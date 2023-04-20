@@ -176,13 +176,13 @@ def build_query_recursively(query_object):
             operation = operation.replace('date_','')
             if operation=='range':
                 utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
-                value_0 = utc.datetime.isoformat()
+                value_0 = utc_datetime.isoformat()
                 utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
-                value_1 = utc.datetime.isoformat()
+                value_1 = utc_datetime.isoformat()
                 value = (value_0,value_1)
             else:
                 utc_datetime = dateutil_parse(value).astimezone(pytz.UTC)
-                value = utc.datetime.isoformat()
+                value = utc_datetime.isoformat()
         elif operation.startswith('distance_'):
             distance, lat, lon = value
             value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
