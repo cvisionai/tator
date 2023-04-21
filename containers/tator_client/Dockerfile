@@ -14,6 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpng16-16 libfreetype6 python3-opencv \
         && rm -rf /var/lib/apt/lists
 
+COPY containers/tator_client/md5sum_checks.txt checks.txt
+RUN wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
+RUN md5sum --check checks.txt
+RUN unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
+RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /opt/cvision/bin
+RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4info /opt/cvision/bin
+
 ENV PATH="/opt/cvision/bin/:$PATH"
 RUN echo "/opt/cvision/lib" > /etc/ld.so.conf.d/cvision.conf
 RUN ldconfig
