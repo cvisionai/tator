@@ -1,3 +1,5 @@
+from .email import email_spec
+
 job_node = {
     'type': 'object',
     'description': 'Represents a step or node (for DAGs) in a job.',
@@ -71,6 +73,14 @@ job_spec = {
             'description': 'Extra parameters to pass into the algorithm',
             'type': 'array',
             'items': {'$ref': '#/components/schemas/AlgorithmParameter'},
+        },
+        'success_email_spec': {
+            **email_spec,
+            'nullable': True,
+        },
+        'failure_email_spec': {
+            **email_spec,
+            'nullable': True,
         },
     },
 }

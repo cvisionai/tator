@@ -148,7 +148,7 @@ class PermalinkPermission(BasePermission):
     """
     def has_permission(self, request, view):
         try:
-            media_id = view.kwargs['id']
+            media_id = view.kwargs.get('id')
             m = Media.objects.filter(pk=media_id)
             if not m.exists():
                 return False # If the media doesn't exist, do not authenticate

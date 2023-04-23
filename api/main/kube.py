@@ -294,6 +294,7 @@ class TatorAlgorithm(JobManagerMixin):
         self.alg = alg
 
     def start_algorithm(self, media_ids, sections, gid, uid, token, project, user, 
+                        success_email_spec=None, failure_email_spec=None,
                         extra_params: list=[]):
         """ Starts an algorithm job, substituting in parameters in the
             workflow spec.
@@ -367,6 +368,56 @@ class TatorAlgorithm(JobManagerMixin):
             'media_ids': media_ids,
             'name': self.alg.name,
         }
+
+        # Set exit handler that sends an email if email specs are given
+        if success_email_spec is not None or failure_email_spec is not None:
+            manifest['spec']['onExit'] = 'exit-handler'
+            exit_handler_steps = []
+            email_templates = []
+            if success_email_spec is not None:
+                exit_handler_steps.append({
+                    'name': 'send-success-email',
+                    'template': 'send-success-email',
+                    'when': '{{workflow.status}} == Succeeded',
+                })
+                email_templates.append({
+                    'name': 'send-success-email',
+                    'container': {
+                        'image': 'curlimages/curl:8.00.1',
+                        'command': ['curl'],
+                        'args': [
+                            '-X', 'POST',
+                            '-H', 'Content-Type: application/json',
+                            '-H', f'Authorization: Token {token}',
+                            '-d', json.dumps(success_email_spec),
+                            f'{PROTO}{os.getenv("MAIN_HOST")}/rest/Email/{project}',
+                        ],
+                    },
+                })
+            if failure_email_spec is not None:
+                exit_handler_steps.append({
+                  'name': 'send-failure-email',
+                  'template': 'send-failure-email',
+                  'when': '{{workflow.status}} != Succeeded',
+                })
+                email_templates.append({
+                    'name': 'send-failure-email',
+                    'container': {
+                        'image': 'curlimages/curl:8.00.1',
+                        'command': ['curl'],
+                        'args': [
+                            '-X', 'POST',
+                            '-H', 'Content-Type: application/json',
+                            '-H', f'Authorization: Token {token}',
+                            '-d', json.dumps(failure_email_spec),
+                            f'{PROTO}{os.getenv("MAIN_HOST")}/rest/Email/{project}',
+                        ],
+                    },
+                })
+            manifest['spec']['templates'] += [{
+                'name': 'exit-handler',
+                'steps': [exit_handler_steps],
+            }, *email_templates]
 
         manifest['metadata']['generateName'] = _algo_name(self.alg.id, project, user, self.alg.name)
         response = self.create_workflow(manifest)

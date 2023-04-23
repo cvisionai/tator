@@ -84,7 +84,9 @@ class JobListAPI(BaseListView):
                 token=token,
                 project=project_id,
                 user=self.request.user.pk,
-                extra_params=extra_params
+                success_email_spec=params.get('success_email_spec'),
+                failure_email_spec=params.get('failure_email_spec'),
+                extra_params=extra_params,
             )
 
         # Retrieve the jobs so we have a list
