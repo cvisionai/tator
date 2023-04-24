@@ -1,11 +1,16 @@
+# pylint: disable=import-error
 from abc import ABC, abstractmethod
 import os
 import io
 import logging
 from typing import List, Optional
+from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+import email.utils
+import smtplib
+import ssl
 
 from django.conf import settings
 from django.db import models
@@ -20,10 +25,19 @@ logger = logging.getLogger(__name__)
 class TatorMail(ABC):
     """Abstract base class for sending emails from Tator"""
 
-    def __init__(self):
-        self.service = None
-
     @abstractmethod
+    def _email(self, message, sender, recipients):
+        """
+        Service-specific implementation of sending an email
+
+        :param sender: The email address of the sender
+        :type sender: str
+        :param recipients: The list of recipient email addresses
+        :type recipients: List[str]
+        :param message: The message to send
+        :type message: MIMEMultipart
+        """
+
     def email(
         self,
         sender: str,
@@ -55,27 +69,6 @@ class TatorMail(ABC):
         :type raise_on_failure: Optional[str]
         :rtype: bool
         """
-
-
-class TatorSES(TatorMail):
-    """Interface for AWS Simple Email Service."""
-
-    def __init__(self):
-        """Creates the SES interface."""
-        super().__init__()
-        self.service = boto3.client("ses", **settings.TATOR_EMAIL_CONFIG)
-
-    def email(
-        self,
-        sender,
-        recipients,
-        title,
-        text=None,
-        html=None,
-        attachments=None,
-        raise_on_failure=None,
-    ):
-        """Sends an email via AWS SES. See :class:`main.tator_mail.TatorMail` for details"""
         multipart_content_subtype = "alternative" if text and html else "mixed"
         msg = MIMEMultipart(multipart_content_subtype)
         msg["Subject"] = title
@@ -112,11 +105,7 @@ class TatorSES(TatorMail):
                 part.add_header("Content-Disposition", "attachment", filename=attachment["name"])
                 msg.attach(part)
 
-        email_response = self.service.send_raw_email(
-            Source=settings.TATOR_EMAIL_SENDER,
-            Destinations=recipients,
-            RawMessage={"Data": msg.as_string()},
-        )
+        email_response = self._email(msg, settings.TATOR_EMAIL_SENDER, recipients)
 
         # If the email was successful, return True
         if email_response["ResponseMetadata"]["HTTPStatusCode"] == 200:
@@ -130,3 +119,53 @@ class TatorSES(TatorMail):
             raise ValueError(raise_on_failure)
 
         return False
+
+
+class TatorSES(TatorMail):
+    """Interface for AWS Simple Email Service."""
+
+    def __init__(self):
+        """Creates the SES interface."""
+        super().__init__()
+        self.service = boto3.client("ses", **settings.TATOR_EMAIL_CONFIG)
+
+    def _email(self, message, sender, recipients):
+        """Sends an email via AWS SES. See :class:`main.tator_mail.TatorMail` for details"""
+        return self.service.send_raw_email(
+            Source=sender,
+            Destinations=recipients,
+            RawMessage={"Data": message.as_string()},
+        )
+
+
+class TatorEmailDelivery(TatorMail):
+    """Interface for OCI Email Delivery Service."""
+
+    def __init__(self):
+        """Creates the SMTP interface."""
+        super().__init__()
+        self._host = settings.TATOR_EMAIL_CONFIG["host"]
+        self._port = settings.TATOR_EMAIL_CONFIG["port"]
+        self._user = settings.TATOR_EMAIL_CONFIG["username"]
+        self._pass = settings.TATOR_EMAIL_CONFIG["password"]
+        self._server = None
+
+    def _email(self, message, sender, recipients):
+        """Sends an email via AWS SES. See :class:`main.tator_mail.TatorMail` for details"""
+
+        # Set up mail server and test access
+        with smtplib.SMTP(self._host, self._port) as smtp:
+            smtp.ehlo()
+
+            # Start tls with trusted CA; may need to manually provide path if the default
+            # path does not contain any (or contains outdated) CAs
+            smtp.starttls(
+                context=ssl.create_default_context(
+                    purpose=ssl.Purpose.SERVER_AUTH, cafile=None, capath=None
+                )
+            )
+            smtp.ehlo()
+
+            # Log in and send message
+            smtp.login(self._user, self._pass)
+            return smtp.send_message(message)
