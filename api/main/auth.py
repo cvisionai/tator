@@ -5,7 +5,7 @@ from django.conf import settings
 from .notify import Notify
 from datetime import datetime,timezone,timedelta
 
-from .tator_mail import TatorSES
+from .tator_mail import get_email_service
 
 import logging
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class TatorAuth(ModelBackend):
                 Notify.notify_admin_msg(msg)
             # Send an email if the failed login count has been reached.
             if (user.failed_login_count == LOCKOUT_LIMIT) and settings.TATOR_EMAIL_ENABLED:
-                TatorSES().email(
+                get_email_service().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[user.email],
                     title=f"Tator account has been locked",

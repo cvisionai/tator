@@ -1,5 +1,6 @@
 # pylint: disable=import-error
 from abc import ABC, abstractmethod
+from enum import Enum, unique
 import os
 import io
 import logging
@@ -143,7 +144,9 @@ class TatorEmailDelivery(TatorMail):
 
     def __init__(self):
         """Creates the SMTP interface."""
-        super().__init__()
+        # TODO Remove exception when implementation is complete
+        raise RuntimeError("OCI Email Delivery integration is incomplete, do not use!")
+        super().__init__() # pylint: disable=unreachable
         self._host = settings.TATOR_EMAIL_CONFIG["host"]
         self._port = settings.TATOR_EMAIL_CONFIG["port"]
         self._user = settings.TATOR_EMAIL_CONFIG["username"]
@@ -151,7 +154,10 @@ class TatorEmailDelivery(TatorMail):
         self._server = None
 
     def _email(self, message, sender, recipients):
-        """Sends an email via AWS SES. See :class:`main.tator_mail.TatorMail` for details"""
+        """
+        Sends an email via OCI Email Delivery. See :class:`main.tator_mail.TatorMail`
+        for details
+        """
 
         # Set up mail server and test access
         with smtplib.SMTP(self._host, self._port) as smtp:
@@ -169,3 +175,19 @@ class TatorEmailDelivery(TatorMail):
             # Log in and send message
             smtp.login(self._user, self._pass)
             return smtp.send_message(message)
+
+
+@unique
+class EmailService(Enum):
+    AWS = TatorSES
+    OCI = TatorEmailDelivery
+
+
+def get_email_service():
+    """Instantiates the correct subclass of :class:`main.tator_mail.TatorMail`"""
+
+    # If email is not enabled, return None
+    if not settings.TATOR_EMAIL_ENABLED:
+        return None
+
+    return EmailService(settings.TATOR_EMAIL_SERVICE)()

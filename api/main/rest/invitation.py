@@ -14,7 +14,7 @@ from ..models import database_qs
 from ..schema import InvitationListSchema
 from ..schema import InvitationDetailSchema
 from ..schema.components import invitation as invitation_schema
-from ..tator_mail import TatorSES
+from ..tator_mail import get_email_service
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -43,7 +43,6 @@ class InvitationListAPI(BaseListView):
         return _serialize_invitations(invites)
 
     def _post(self, params):
-        organization = params['organization']
         email = params['email']
         permission = params['permission']
 
@@ -80,7 +79,7 @@ class InvitationListAPI(BaseListView):
             )
 
             if settings.TATOR_EMAIL_ENABLED:
-                TatorSES().email(
+                get_email_service().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[email],
                     title=f"Tator invitation from {organization}",

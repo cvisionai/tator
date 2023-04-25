@@ -902,7 +902,7 @@ def update_queryset_archive_state(media_qs, target_state):
     return not_ready
 
 
-def notify_admins(not_ready, ses=None):
+def notify_admins(not_ready, email_service=None):
     """
     Using the dict returned by `update_queryset_archive_state`, this logs all blocked operations
     and, if enabled, emails all project admins with the same information.
@@ -949,7 +949,7 @@ def notify_admins(not_ready, ses=None):
                 User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
             )
 
-            ses.email(
+            email_service.email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=f"Nightly archive for {project.name} ({project.id}) failed",

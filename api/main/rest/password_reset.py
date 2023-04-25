@@ -9,7 +9,7 @@ from django.http import Http404
 from ..models import PasswordReset
 from ..models import User
 from ..schema import PasswordResetListSchema
-from ..tator_mail import TatorSES
+from ..tator_mail import get_email_service
 
 from ._base_views import BaseListView
 
@@ -32,7 +32,7 @@ class PasswordResetListAPI(BaseListView):
         reset = PasswordReset(user=user, reset_token=uuid.uuid1())
         url = f"{os.getenv('MAIN_HOST')}/password-reset?reset_token={reset.reset_token}&user={user.id}"
         if settings.TATOR_EMAIL_ENABLED:
-            TatorSES().email(
+            get_email_service().email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=[email],
                 title=f"Tator password reset",

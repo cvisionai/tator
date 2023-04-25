@@ -9,7 +9,7 @@ from ..models import Membership
 from ..schema import EmailSchema
 from ._base_views import BaseListView
 from ._permissions import ProjectExecutePermission
-from ..tator_mail import TatorSES
+from ..tator_mail import get_email_service
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class EmailAPI(BaseListView):
             attachments = params.get('attachments', [])
 
             # Send email
-            TatorSES().email(
+            get_email_service().email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=subject,
