@@ -14,7 +14,7 @@ from ..models import Invitation
 from ..models import Affiliation
 from ..models import PasswordReset
 from ..serializers import UserSerializerBasic
-from ..tator_mail import TatorSES
+from ..tator_mail import get_email_service
 from ..schema import UserExistsSchema
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema
@@ -154,7 +154,7 @@ class UserListAPI(BaseListView):
                         user.is_active = False
                         user.confirmation_token = uuid1()
                         # Send email
-                        TatorSES().email(
+                        get_email_service().email(
                             sender=settings.TATOR_EMAIL_SENDER,
                             recipients=[email],
                             title="Tator email confirmation",

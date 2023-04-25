@@ -9,7 +9,7 @@ from django.db import transaction
 
 from main.backup import TatorBackupManager
 from main.models import Affiliation, Project, Resource, User
-from main.tator_mail import TatorSES
+from main.tator_mail import get_email_service
 from main.store import get_tator_store
 
 
@@ -66,10 +66,7 @@ class Command(BaseCommand):
 
         if failed_backups:
             # Notify owners of failed backup attempt
-            if settings.TATOR_EMAIL_ENABLED:
-                ses = TatorSES()
-            else:
-                ses = None
+            email_service = get_email_service()
 
             for project_id, failed_media_ids in failed_backups.items():
                 msg = (
@@ -78,7 +75,7 @@ class Command(BaseCommand):
                 )
                 logger.warning(msg)
 
-                if ses:
+                if email_service:
                     try:
                         project = Project.objects.get(pk=project_id)
                     except Exception:
@@ -101,7 +98,7 @@ class Command(BaseCommand):
                         User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
                     )
 
-                    ses.email(
+                    email_service.email(
                         sender=settings.TATOR_EMAIL_SENDER,
                         recipients=recipients,
                         title=f"Nightly backup for {project_name} ({project_id}) failed",

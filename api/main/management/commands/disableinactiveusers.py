@@ -6,7 +6,7 @@ import os
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import User
-from main.tator_mail import TatorSES
+from main.tator_mail import get_email_service
 from main.util import notify_admins, update_queryset_archive_state
 
 logger = logging.getLogger(__name__)
@@ -48,12 +48,12 @@ class Command(BaseCommand):
                 failed.append(user)
 
         # Notify owners of failed attempts
-        ses = TatorSES() if settings.TATOR_EMAIL_ENABLED else None
-        if ses:
+        email_service = get_email_service()
+        if email_service:
             recipients = list(User.objects.filter(is_staff=True).values_list("email", flat=True))
             msg = "Could not disable the following users:"
             users = "\n".join(f"{user.username} ({user.id})" for user in failed)
-            ses.email(
+            email_service.email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=f"Disabling inactive users on {settings.MAIN_HOST} failed.",

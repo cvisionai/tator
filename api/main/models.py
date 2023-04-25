@@ -49,7 +49,7 @@ from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
 from .search import TatorSearch
-from .tator_mail import TatorSES
+from .tator_mail import get_email_service
 from .download import download_file
 from .encoders import TatorJSONEncoder
 from .store import (
@@ -415,7 +415,7 @@ def affiliation_save(sender, instance, created, **kwargs):
                                             .values_list('user', flat=True)
             recipients = User.objects.filter(pk__in=recipients).values_list('email', flat=True)
             recipients = list(recipients)
-            TatorSES().email(
+            get_email_service().email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=f"{user} added to {organization}",
