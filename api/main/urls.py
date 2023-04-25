@@ -39,8 +39,6 @@ urlpatterns = [
     path('stream-saver/mitm.html', StreamSaverMITMLocal.as_view(), name='mitm'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
-    path('anonymous-gateway', AnonymousGatewayAPI.as_view(),
-         name='anonymous-gateway'),
     path('check-login/', check_login),
     path('accounts/logout/', LogoutView.as_view()),
     path("redirect/login/", LoginRedirect.as_view()),
@@ -50,11 +48,16 @@ urlpatterns = [
             extra_context={
                 "email_enabled": settings.TATOR_EMAIL_ENABLED,
                 "okta_enabled": settings.OKTA_ENABLED,
+                "anonymous_gateway_enabled": settings.ANONYMOUS_GATEWAY_ENABLED,
             }
         ),
         name="login",
     ),
 ]
+
+if settings.ANONYMOUS_GATEWAY_ENABLED:
+    urlpatterns.append(path('anonymous-gateway', AnonymousGatewayAPI.as_view(),
+         name='anonymous-gateway'))
 
 if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
     urlpatterns.append(path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'))
