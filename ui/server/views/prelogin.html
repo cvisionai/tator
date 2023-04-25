@@ -7,7 +7,9 @@
 <main class="layout-max py-4">
   <div class="main__header d-flex flex-column flex-items-center flex-justify-center">
     <h2 class="h2 py-6">
-    {{ prelogin_message }}
+    {% for item in prelogin_message %}
+    {{ item }}<br>
+    {% endfor %}
     </h2>
     <a href="{{ prelogin_redirect }}" class="btn">Accept</a>
   </div>
