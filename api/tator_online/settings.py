@@ -269,8 +269,9 @@ else:
 if TATOR_EMAIL_ENABLED:
     TATOR_EMAIL_SENDER = os.getenv('TATOR_EMAIL_SENDER')
     TATOR_EMAIL_CONFIG = os.getenv("TATOR_EMAIL_CONFIG")
+    TATOR_EMAIL_SERVICE = os.getenv("TATOR_EMAIL_SERVICE")
 
-    # Quoted json string needs to be loaded twice
+    # Quoted json string may need to be loaded twice
     for _ in range(2):
         if not isinstance(TATOR_EMAIL_CONFIG, dict):
             try:
