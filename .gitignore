@@ -14,6 +14,7 @@ ui/server/static/vid_downloader.js
 containers/nginx/nginx.conf
 examples/algorithms/groundfish_demo/fishtrackingdata
 api/main/version.py
+scripts/cert/*
 tator-image
 tator-transcoder
 tus-image
