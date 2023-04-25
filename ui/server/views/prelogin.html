@@ -1,17 +1,16 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+<html>
+<head>
 <title>Tator | Notice</title>
-<script src="/static/registration.js"></script>
-{% endblock head %}
-
-{% block body %}
+<link rel="stylesheet" type="text/css" href="/static/components.css" />
+</head>
+<body>
 <main class="layout-max py-4">
-  <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-6">
-    <h1 class="h1">
+  <div class="main__header d-flex flex-column flex-items-center flex-justify-center">
+    <h2 class="h2 py-6">
     {{ prelogin_message }}
-    </h1>
+    </h2>
     <a href="{{ prelogin_redirect }}" class="btn">Accept</a>
   </div>
 </main>
-{% endblock body %}
+</body>
+</html>
