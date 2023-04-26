@@ -193,7 +193,7 @@ def get_email_service():
 
     if settings.TATOR_EMAIL_ENABLED:
         try:
-            return EmailService(settings.TATOR_EMAIL_SERVICE)()
+            return EmailService[settings.TATOR_EMAIL_SERVICE].value()
         except ValueError:
             valid = ", ".join(service.name for service in EmailService)
             logger.error(
