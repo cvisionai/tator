@@ -50,9 +50,9 @@ class TatorMail(ABC):
         raise_on_failure: Optional[str] = None,
     ) -> bool:
         """
-        Interface for sending an email. Returns `True` if successful or email is disabled, False if
-        raise_on_failure is unset and the email was unsuccessful, and raises an exception if
-        raise_on_failure is set and the email was unsuccessful.
+        Interface for sending an email. Returns `True` if successful or email is
+        disabled, False if raise_on_failure is unset and the email was unsuccessful, and
+        raises an exception if raise_on_failure is set and the email was unsuccessful.
 
         :param sender: The sender's email address
         :type sender: str
@@ -77,7 +77,8 @@ class TatorMail(ABC):
         msg["To"] = ", ".join(recipients)
 
         # Record the MIME types of both parts - text/plain and text/html.
-        # According to RFC 2046, the last part of a multipart message, in this case the HTML message, is best and preferred.
+        # According to RFC 2046, the last part of a multipart message, in this case the HTML
+        # message, is best and preferred.
         if text:
             part = MIMEText(text, "plain")
             msg.attach(part)
@@ -128,11 +129,16 @@ class TatorSES(TatorMail):
     def __init__(self):
         """Creates the SES interface."""
         super().__init__()
-        self.service = boto3.client("ses", **settings.TATOR_EMAIL_CONFIG)
+        self.ses = boto3.client(
+            "ses",
+            region_name=settings.TATOR_EMAIL_AWS_REGION,
+            aws_access_key_id=settings.TATOR_EMAIL_AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.TATOR_EMAIL_AWS_SECRET_ACCESS_KEY,
+        )
 
     def _email(self, message, sender, recipients):
         """Sends an email via AWS SES. See :class:`main.tator_mail.TatorMail` for details"""
-        return self.service.send_raw_email(
+        return self.ses.send_raw_email(
             Source=sender,
             Destinations=recipients,
             RawMessage={"Data": message.as_string()},
@@ -146,12 +152,11 @@ class TatorEmailDelivery(TatorMail):
         """Creates the SMTP interface."""
         # TODO Remove exception when implementation is complete
         raise RuntimeError("OCI Email Delivery integration is incomplete, do not use!")
-        super().__init__() # pylint: disable=unreachable
-        self._host = settings.TATOR_EMAIL_CONFIG["host"]
-        self._port = settings.TATOR_EMAIL_CONFIG["port"]
-        self._user = settings.TATOR_EMAIL_CONFIG["username"]
-        self._pass = settings.TATOR_EMAIL_CONFIG["password"]
-        self._server = None
+        super().__init__()  # pylint: disable=unreachable
+        self._host = settings.TATOR_EMAIL_OCI_HOST
+        self._port = settings.TATOR_EMAIL_OCI_PORT
+        self._user = settings.TATOR_EMAIL_OCI_USERNAME
+        self._pass = settings.TATOR_EMAIL_OCI_PASSWORD
 
     def _email(self, message, sender, recipients):
         """
@@ -163,8 +168,8 @@ class TatorEmailDelivery(TatorMail):
         with smtplib.SMTP(self._host, self._port) as smtp:
             smtp.ehlo()
 
-            # Start tls with trusted CA; may need to manually provide path if the default
-            # path does not contain any (or contains outdated) CAs
+            # Start tls with trusted CA; may need to manually provide path if the default path does
+            # not contain any (or contains outdated) CAs
             smtp.starttls(
                 context=ssl.create_default_context(
                     purpose=ssl.Purpose.SERVER_AUTH, cafile=None, capath=None
@@ -186,8 +191,14 @@ class EmailService(Enum):
 def get_email_service():
     """Instantiates the correct subclass of :class:`main.tator_mail.TatorMail`"""
 
-    # If email is not enabled, return None
-    if not settings.TATOR_EMAIL_ENABLED:
-        return None
+    if settings.TATOR_EMAIL_ENABLED:
+        try:
+            return EmailService(settings.TATOR_EMAIL_SERVICE)()
+        except ValueError:
+            valid = ", ".join(service.name for service in EmailService)
+            logger.error(
+                f"Invalid email service '{settings.TATOR_EMAIL_SERVICE}', must be one of [{valid}]",
+                exc_info=True,
+            )
 
-    return EmailService(settings.TATOR_EMAIL_SERVICE)()
+    return None
