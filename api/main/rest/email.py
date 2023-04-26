@@ -33,14 +33,12 @@ class EmailAPI(BaseListView):
         recipients = params["recipients"]
         for entry in recipients:
             # Check if in RFC 5322 compliant format
-            try:
-                email_addr = re.search(
-                    r"^([^<]*?<)?(?P<email>[^<@\s]+@[^@\s]+[.][^@\s]+?)>?$", entry
-                ).group("email")
-            except AttributeError:
+            match = re.search(r"<?(?P<email>[^<@\s]+@[^@\s]+[.][^@\s>]{2,})>?", entry)
+            if not match:
                 raise ValueError(
-                    f"Invalid email address '{entry}' received; addresses must be RFC 5322 compliant"
+                    f"Invalid email address '{entry}' received; must be RFC 5322 compliant"
                 )
+            email_addr = match.group("email")
 
             # Correlate with a user object
             qs = User.objects.filter(email=email_addr)
