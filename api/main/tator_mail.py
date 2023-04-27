@@ -39,6 +39,31 @@ class TatorMail(ABC):
         :type message: MIMEMultipart
         """
 
+    def email_staff(
+        self,
+        sender: str,
+        title: str,
+        text: Optional[str] = None,
+        html: Optional[str] = None,
+        attachments: Optional[list] = None,
+        raise_on_failure: Optional[str] = None,
+    ) -> bool:
+        """
+        Sends an email to all deployment staff members, see :meth:`main.tator_mail.TatorMail.email`
+        for details
+        """
+        staff_qs = main.models.User.objects.filter(is_staff=True)
+        staff_emails = [user.email for user in staff_qs if user.email]
+        return self.email(
+            sender=sender,
+            recipients=staff_emails,
+            title=title,
+            text=text,
+            html=html,
+            attachments=attachments,
+            raise_on_failure=raise_on_failure,
+        )
+
     def email(
         self,
         sender: str,

@@ -338,6 +338,8 @@ class User(AbstractUser):
 
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):
+    fields = ["id", "username", "first_name", "last_name", "email", "is_active"]
+    user_desc = "\n".join(f"{field}={getattr(instance, field)}" for field in fields)
     if os.getenv('COGNITO_ENABLED') == 'TRUE':
         if created:
             instance.move_to_cognito()
@@ -356,10 +358,24 @@ def user_save(sender, instance, created, **kwargs):
             Affiliation.objects.create(organization=organization,
                                        user=instance,
                                        permission='Admin')
+        msg = f"New user created:\n{user_desc}"
+    else:
+        msg = f"User modified:\n{user_desc}"
+
+    logger.info(msg)
+    email_service = get_email_service()
+    if email_service:
+        email_service.email_staff(
+            sender=settings.TATOR_EMAIL_SENDER,
+            title=f"{'Created' if created else 'Modified'} user",
+            text=msg,
+        )
 
 @receiver(post_delete, sender=User)
 def user_post_delete(sender, instance, **kwargs):
-    """ Clean up avatar on user deletion. """
+    """ Clean up avatar and notify deployment staff on user deletion. """
+    fields = ["id", "username", "first_name", "last_name", "email", "is_active"]
+    user_desc = "\n".join(f"{field}={getattr(instance, field)}" for field in fields)
     if instance.profile.get('avatar'):
         avatar_key = instance.profile.get('avatar')
         # Out of an abundance of caution check to make sure the object key
@@ -367,6 +383,16 @@ def user_post_delete(sender, instance, **kwargs):
         if avatar_key.startswith(f"user_data/{instance.pk}"):
             generic_store = get_tator_store()
             generic_store.delete_object(avatar_key)
+
+    msg = f"User deleted:\n{user_desc}"
+    logger.info(msg)
+    email_service = get_email_service()
+    if email_service:
+        email_service.email_staff(
+            sender=settings.TATOR_EMAIL_SENDER,
+            title="Deleted user",
+            text=msg,
+        )
 
 class PasswordReset(Model):
     user = ForeignKey(User, on_delete=CASCADE)
