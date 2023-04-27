@@ -14,7 +14,7 @@ from ..models import database_qs
 from ..schema import InvitationListSchema
 from ..schema import InvitationDetailSchema
 from ..schema.components import invitation as invitation_schema
-from ..tator_mail import get_email_service
+from ..mail import get_email_service
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView

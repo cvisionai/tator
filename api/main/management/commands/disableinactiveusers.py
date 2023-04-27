@@ -6,7 +6,7 @@ import os
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import User
-from main.tator_mail import get_email_service
+from main.mail import get_email_service
 from main.util import notify_admins, update_queryset_archive_state
 
 logger = logging.getLogger(__name__)

@@ -49,20 +49,22 @@ class TatorMail(ABC):
         raise_on_failure: Optional[str] = None,
     ) -> bool:
         """
-        Sends an email to all deployment staff members, see :meth:`main.tator_mail.TatorMail.email`
+        Sends an email to all deployment staff members, see :meth:`main.mail.TatorMail.email`
         for details
         """
         staff_qs = main.models.User.objects.filter(is_staff=True)
-        staff_emails = [user.email for user in staff_qs if user.email]
-        return self.email(
-            sender=sender,
-            recipients=staff_emails,
-            title=title,
-            text=text,
-            html=html,
-            attachments=attachments,
-            raise_on_failure=raise_on_failure,
-        )
+        staff_emails = [email for email in staff_qs.values_list("email", flat=True) if email]
+        if staff_emails:
+            return self.email(
+                sender=sender,
+                recipients=staff_emails,
+                title=title,
+                text=text,
+                html=html,
+                attachments=attachments,
+                raise_on_failure=raise_on_failure,
+            )
+        return True
 
     def email(
         self,
@@ -162,7 +164,7 @@ class TatorSES(TatorMail):
         )
 
     def _email(self, message, sender, recipients):
-        """Sends an email via AWS SES. See :class:`main.tator_mail.TatorMail` for details"""
+        """Sends an email via AWS SES. See :class:`main.mail.TatorMail` for details"""
         return self.ses.send_raw_email(
             Source=sender,
             Destinations=recipients,
@@ -185,7 +187,7 @@ class TatorEmailDelivery(TatorMail):
 
     def _email(self, message, sender, recipients):
         """
-        Sends an email via OCI Email Delivery. See :class:`main.tator_mail.TatorMail`
+        Sends an email via OCI Email Delivery. See :class:`main.mail.TatorMail`
         for details
         """
 
@@ -214,7 +216,7 @@ class EmailService(Enum):
 
 
 def get_email_service():
-    """Instantiates the correct subclass of :class:`main.tator_mail.TatorMail`"""
+    """Instantiates the correct subclass of :class:`main.mail.TatorMail`"""
 
     if settings.TATOR_EMAIL_ENABLED:
         try:
