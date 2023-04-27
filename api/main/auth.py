@@ -5,7 +5,7 @@ from django.conf import settings
 from .notify import Notify
 from datetime import datetime,timezone,timedelta
 
-from .tator_mail import get_email_service
+from .mail import get_email_service
 
 import logging
 logger = logging.getLogger(__name__)

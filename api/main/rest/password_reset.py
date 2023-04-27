@@ -9,7 +9,7 @@ from django.http import Http404
 from ..models import PasswordReset
 from ..models import User
 from ..schema import PasswordResetListSchema
-from ..tator_mail import get_email_service
+from ..mail import get_email_service
 
 from ._base_views import BaseListView
 
