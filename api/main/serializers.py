@@ -1,3 +1,4 @@
+import os
 import re
 
 from rest_framework import serializers
@@ -6,7 +7,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.functions import Cast
 
-from .models import *
+from .models import TemporaryFile, User, Version
 import logging
 import datetime
 import traceback
