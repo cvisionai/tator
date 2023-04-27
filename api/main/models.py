@@ -336,22 +336,38 @@ class User(AbstractUser):
     def natural_key(self):
         return (self.username.lower(),)
 
+    def get_description(self):
+        return "\n".join(
+            f"{field}={getattr(self, field)}"
+            for field in ["id", "username", "first_name", "last_name", "email", "is_active"]
+        )
+
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):
-    fields = ["id", "username", "first_name", "last_name", "email", "is_active"]
-    user_desc = "\n".join(f"{field}={getattr(instance, field)}" for field in fields)
+    user_desc = instance.get_description()
     if os.getenv('COGNITO_ENABLED') == 'TRUE':
         if created:
+            # Adds attribute to suppress email from save during creation, then removes it
+            instance.saving = True
             instance.move_to_cognito()
+            del instance.saving
         else:
             TatorCognito().update_attributes(instance)
     if created:
         if instance.username:
             instance.username = instance.username.strip()
+
+            # Adds attribute to suppress email from save during creation, then removes it
+            instance.saving = True
             instance.save()
+            del instance.saving
         if settings.SAML_ENABLED and not instance.email:
             instance.email = instance.username
+
+            # Adds attribute to suppress email from save during creation, then removes it
+            instance.saving = True
             instance.save()
+            del instance.saving
         invites = Invitation.objects.filter(email=instance.email, status='Pending')
         if (invites.count() == 0) and (os.getenv('AUTOCREATE_ORGANIZATIONS')):
             organization = Organization.objects.create(name=f"{instance}'s Team")
@@ -362,20 +378,19 @@ def user_save(sender, instance, created, **kwargs):
     else:
         msg = f"User modified:\n{user_desc}"
 
-    logger.info(msg)
-    email_service = get_email_service()
-    if email_service:
-        email_service.email_staff(
-            sender=settings.TATOR_EMAIL_SENDER,
-            title=f"{'Created' if created else 'Modified'} user",
-            text=msg,
-        )
+    if not hasattr(instance, "saving"):
+        logger.info(msg)
+        email_service = get_email_service()
+        if email_service:
+            email_service.email_staff(
+                sender=settings.TATOR_EMAIL_SENDER,
+                title=f"{'Created' if created else 'Modified'} user",
+                text=msg,
+            )
 
 @receiver(post_delete, sender=User)
 def user_post_delete(sender, instance, **kwargs):
     """ Clean up avatar and notify deployment staff on user deletion. """
-    fields = ["id", "username", "first_name", "last_name", "email", "is_active"]
-    user_desc = "\n".join(f"{field}={getattr(instance, field)}" for field in fields)
     if instance.profile.get('avatar'):
         avatar_key = instance.profile.get('avatar')
         # Out of an abundance of caution check to make sure the object key
@@ -384,7 +399,7 @@ def user_post_delete(sender, instance, **kwargs):
             generic_store = get_tator_store()
             generic_store.delete_object(avatar_key)
 
-    msg = f"User deleted:\n{user_desc}"
+    msg = f"User deleted:\n{instance.get_description()}"
     logger.info(msg)
     email_service = get_email_service()
     if email_service:
@@ -432,25 +447,44 @@ class Affiliation(Model):
 
 @receiver(post_save, sender=Affiliation)
 def affiliation_save(sender, instance, created, **kwargs):
+    organization = instance.organization
+    user = instance.user
+    email_service = get_email_service()
     if created:
         # Send email notification to organizational admins.
-        organization = instance.organization
-        user = instance.user
-        if settings.TATOR_EMAIL_ENABLED:
+        if email_service:
             recipients = Affiliation.objects.filter(organization=organization, permission='Admin')\
                                             .values_list('user', flat=True)
             recipients = User.objects.filter(pk__in=recipients).values_list('email', flat=True)
             recipients = list(recipients)
-            get_email_service().email(
-                sender=settings.TATOR_EMAIL_SENDER,
-                recipients=recipients,
-                title=f"{user} added to {organization}",
-                text=f"You are being notified that a new user {user} (username {user.username}, "
-                     f"email {user.email}) has been added to the Tator organization "
-                     f"{organization}. This message has been sent to all organization admins. "
-                      "No action is required.",
-                )
+            title = f"{user} added to {organization}"
+            text = (
+                f"You are being notified that a new user {user} (username {user.username}, email "
+                f"{user.email}) has been added to the Tator organization {organization}. This "
+                f"message has been sent to all organization admins. No action is required."
+            )
+
+            email_service.email(
+                sender=settings.TATOR_EMAIL_SENDER, recipients=recipients, title=title, text=text
+            )
             logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
+    else:
+        title = f"{user}'s Affiliation with {organization} modified"
+        text = f"{instance}: {instance.permission}"
+
+    if email_service:
+        email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
+
+
+@receiver(post_delete, sender=Affiliation)
+def affiliation_delete(sender, instance, using, **kwargs):
+    email_service = get_email_service()
+    if email_service:
+        user = instance.user
+        organization = instance.organization
+        title = f"{user} affiliation removed"
+        text = f"{user} is no longer affiliated with {organization}"
+        email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
 
 
 class Bucket(Model):
@@ -663,6 +697,33 @@ class Membership(Model):
     default_version = ForeignKey(Version, null=True, blank=True, on_delete=SET_NULL)
     def __str__(self):
         return f'{self.user} | {self.permission} | {self.project}'
+
+
+@receiver(post_save, sender=Membership)
+def membership_save(sender, instance, created, **kwargs):
+    email_service = get_email_service()
+    if email_service:
+        project = instance.project
+        user = instance.user
+        if created:
+            title = f"{user} added to {project}"
+            text = f"{instance}"
+        else:
+            title = f"{user}'s Membership with project {project} modified"
+            text = f"{instance}"
+
+        email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
+
+
+@receiver(post_delete, sender=Membership)
+def membership_delete(sender, instance, using, **kwargs):
+    email_service = get_email_service()
+    if email_service:
+        user = instance.user
+        project = instance.project
+        title = f"{user} membership removed"
+        text = f"{user} is no longer affiliated with project {project}"
+        email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
 
 def getVideoDefinition(path, codec, resolution, **kwargs):
     """ Convenience function to generate video definiton dictionary """
