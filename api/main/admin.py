@@ -1,3 +1,5 @@
+import logging
+
 from django.forms import ModelForm
 from django.contrib import admin
 from django.contrib.admin.models import LogEntry, DELETION
@@ -27,6 +29,10 @@ from .models import LeafType
 from .models import JobCluster
 from .models import Algorithm
 from .models import Version
+
+
+logger = logging.getLogger(__name__)
+
 
 admin.site.register(Organization)
 admin.site.register(Affiliation)
@@ -83,16 +89,26 @@ class LogEntryAdmin(admin.ModelAdmin):
     object_link.short_description = "object"
 
 
+def _repr(obj, model_class):
+    return ", ".join(
+        f"{f.name}={getattr(obj, f.name)}"
+        for f in model_class._meta.get_fields()
+        if f.name not in ["password"]
+    )
+
+
 @receiver(post_save, sender=LogEntry)
 def log_entry_save(sender, instance, created, **kwargs):
     """
     Replaces the `object_repr` with `object.__repr__()`, since most `LogEntry` objects are created
-    using `object.__str__()`
+    using `object.__str__()`, and logs the resulting `LogEntry` object
     """
     if created:
         model_class = instance.content_type.model_class()
         obj = model_class.objects.get(id=instance.object_id)
-        args = ", ".join(f"{f.name}={getattr(obj, f.name)}" for f in model_class.get_fields() if f.name not in ["password"])
+        args = _repr(obj, model_class)
 
         instance.object_repr = f"{model_class.__name__}({args})"
         instance.save()
+
+        logger.info(_repr(instance, LogEntry))
