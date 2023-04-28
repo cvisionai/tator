@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.contrib.admin.models import LogEntry, DELETION
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.gis.db import models
+from django.db.models import Model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -89,12 +90,24 @@ class LogEntryAdmin(admin.ModelAdmin):
     object_link.short_description = "object"
 
 
-def _repr(obj, model_class):
-    return ", ".join(
-        f"{f.name}={getattr(obj, f.name)}"
-        for f in model_class._meta.get_fields()
-        if f.name not in ["password"]
-    )
+def _repr(obj, recurse=0, prettyprint=False, _depth=0):
+    if isinstance(obj, Model):
+        _depth += 1
+        tab = "  " * _depth * bool(prettyprint)
+        newline = "\n" * bool(prettyprint)
+        fn = _repr if recurse else lambda *args: str(args[0])
+        recurse -= 1
+        model_class = obj._meta.model
+        args = ",{newline}".join(
+            f"{tab}{f.name}={fn(getattr(obj, f.name), recurse, prettyprint, _depth)}"
+            for f in model_class._meta.get_fields()
+            if f.name not in ["password", "auth_token"]
+            and hasattr(obj, f.name)
+            and not (f.is_relation and (f.many_to_many or f.one_to_many))
+        )
+        tab = tab[:-1]
+        return f"{model_class.__name__}({newline}{args}{newline}{tab})"
+    return str(obj)
 
 
 @receiver(post_save, sender=LogEntry)
@@ -106,9 +119,17 @@ def log_entry_save(sender, instance, created, **kwargs):
     if created:
         model_class = instance.content_type.model_class()
         obj = model_class.objects.get(id=instance.object_id)
-        args = _repr(obj, model_class)
+        args = _repr(obj)
 
         instance.object_repr = f"{model_class.__name__}({args})"
         instance.save()
 
-        logger.info(_repr(instance, LogEntry))
+        # Full _repr too long for db column, log it
+        args = _repr(obj, recurse=3)
+        instance.object_repr = f"{model_class.__name__}({args})"
+        logger.info(
+            f"Admin action taken (formatted):\n{_repr(instance, recurse=4, prettyprint=True)}"
+        )
+        logger.info(
+            f"Admin action taken (single line):\n{_repr(instance, recurse=4, prettyprint=False)}"
+        )
