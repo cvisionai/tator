@@ -2,7 +2,7 @@ import logging
 
 from django.forms import ModelForm
 from django.contrib import admin
-from django.contrib.admin.models import LogEntry, DELETION
+from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.gis.db import models
 from django.db.models import Model
@@ -90,23 +90,41 @@ class LogEntryAdmin(admin.ModelAdmin):
     object_link.short_description = "object"
 
 
-def _repr(obj, recurse=0, prettyprint=False, _depth=0):
+def _repr(obj, recurse=0, prettyprint=False, starting_depth=0):
     if isinstance(obj, Model):
-        _depth += 1
-        tab = "  " * _depth * bool(prettyprint)
-        newline = "\n" * bool(prettyprint)
+        starting_depth += 1
+        tab = "  " * starting_depth * bool(prettyprint)
+        args_newline = "\n" if prettyprint else " "
+        class_newline = "\n" if prettyprint else ""
+
+        # Keep `recurse` non-negative
+        recurse = max(recurse, 0)
         fn = _repr if recurse else lambda *args: str(args[0])
         recurse -= 1
         model_class = obj._meta.model
-        args = ",{newline}".join(
-            f"{tab}{f.name}={fn(getattr(obj, f.name), recurse, prettyprint, _depth)}"
-            for f in model_class._meta.get_fields()
-            if f.name not in ["password", "auth_token"]
-            and hasattr(obj, f.name)
-            and not (f.is_relation and (f.many_to_many or f.one_to_many))
-        )
-        tab = tab[:-1]
-        return f"{model_class.__name__}({newline}{args}{newline}{tab})"
+        args = []
+        for f in model_class._meta.get_fields():
+            if (
+                f.name not in ["password", "auth_token", "confirmation_token"]
+                and hasattr(obj, f.name)
+                and getattr(obj, f.name)
+                and not (f.is_relation and (f.many_to_many or f.one_to_many))
+            ):
+                value = fn(getattr(obj, f.name), recurse, prettyprint, starting_depth)
+                if f.name == "action_flag" and value.isnumeric():
+                    value = int(value)
+                    if value == ADDITION:
+                        value = '"Addition"'
+                    elif value == CHANGE:
+                        value = '"Change"'
+                    elif value == DELETION:
+                        value = '"Deletion"'
+                args.append(f"{tab}{f.name}={value}")
+        args = f",{args_newline}".join(args)
+        tab = tab[:-2]
+        return f"{model_class.__name__}({class_newline}{args}{class_newline}{tab})"
+    if isinstance(obj, str):
+        return f'"{obj}"'
     return str(obj)
 
 
@@ -119,17 +137,18 @@ def log_entry_save(sender, instance, created, **kwargs):
     if created:
         model_class = instance.content_type.model_class()
         obj = model_class.objects.get(id=instance.object_id)
-        args = _repr(obj)
 
-        instance.object_repr = f"{model_class.__name__}({args})"
+        instance.object_repr = _repr(obj, starting_depth=1)
         instance.save()
 
         # Full _repr too long for db column, log it
-        args = _repr(obj, recurse=3)
-        instance.object_repr = f"{model_class.__name__}({args})"
+        instance.object_repr = _repr(obj, recurse=6, prettyprint=True, starting_depth=1)
         logger.info(
-            f"Admin action taken (formatted):\n{_repr(instance, recurse=4, prettyprint=True)}"
+            f"Admin action taken (formatted):\n{_repr(instance, recurse=7, prettyprint=True)}"
         )
+
+        # Also log the unformatted version
+        instance.object_repr = _repr(obj, recurse=6, prettyprint=False, starting_depth=1)
         logger.info(
-            f"Admin action taken (single line):\n{_repr(instance, recurse=4, prettyprint=False)}"
+            f"Admin action taken (single line):\n{_repr(instance, recurse=7, prettyprint=False)}"
         )
