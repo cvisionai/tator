@@ -47,11 +47,17 @@ class TatorMail(ABC):
         html: Optional[str] = None,
         attachments: Optional[list] = None,
         raise_on_failure: Optional[str] = None,
+        add_footer: Optional[bool] = True,
     ) -> bool:
         """
         Sends an email to all deployment staff members, see :meth:`main.mail.TatorMail.email`
         for details
         """
+        if add_footer and text:
+            footer = "\n\nThis message has been sent to all deployment staff. No action is required."
+            text += footer
+
+        # Get all non-empty staff emails
         staff_qs = main.models.User.objects.filter(is_staff=True)
         staff_emails = [email for email in staff_qs.values_list("email", flat=True) if email]
         if staff_emails:

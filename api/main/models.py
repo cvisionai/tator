@@ -374,9 +374,16 @@ def user_save(sender, instance, created, **kwargs):
             Affiliation.objects.create(organization=organization,
                                        user=instance,
                                        permission='Admin')
-        msg = f"New user created:\n{user_desc}"
+        msg = (
+            f"You are being notified that a new user {instance} (username {instance.username}, "
+            f"email {instance.email}) has been added to the Tator deployment with the following "
+            f"attributes:\n\n{user_desc}"
+        )
     else:
-        msg = f"User modified:\n{user_desc}"
+        msg = (
+            f"You are being notified that an existing user {instance} been modified with the "
+            f"following values:\n\n{user_desc}"
+        )
 
     if not hasattr(instance, "saving"):
         logger.info(msg)
@@ -399,13 +406,13 @@ def user_post_delete(sender, instance, **kwargs):
             generic_store = get_tator_store()
             generic_store.delete_object(avatar_key)
 
-    msg = f"User deleted:\n{instance.get_description()}"
+    msg = f"You are being notified that the user {instance} has been removed from the system."
     logger.info(msg)
     email_service = get_email_service()
     if email_service:
         email_service.email_staff(
             sender=settings.TATOR_EMAIL_SENDER,
-            title="Deleted user",
+            title=f"Deleted user {instance}",
             text=msg,
         )
 
@@ -469,8 +476,11 @@ def affiliation_save(sender, instance, created, **kwargs):
             )
             logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
     else:
-        title = f"{user}'s Affiliation with {organization} modified"
-        text = f"{instance}: {instance.permission}"
+        title = f"{user}'s affiliation with {organization} modified"
+        text = (
+            f"You are being notified that {user}'s affiliation with {organization} has been "
+            f"modified to the {instance.permission} level."
+        )
 
     if email_service:
         email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
@@ -483,7 +493,7 @@ def affiliation_delete(sender, instance, using, **kwargs):
         user = instance.user
         organization = instance.organization
         title = f"{user} affiliation removed"
-        text = f"{user} is no longer affiliated with {organization}"
+        text = f"You are being notified that {user} is no longer affiliated with {organization}."
         email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
 
 
@@ -705,12 +715,20 @@ def membership_save(sender, instance, created, **kwargs):
     if email_service:
         project = instance.project
         user = instance.user
+        permission = instance.permission
+        default_version = instance.default_version
         if created:
             title = f"{user} added to {project}"
-            text = f"{instance}"
+            text = (
+                f"You are being notified that {user} was added to {project} with permission "
+                f"{permission} and default version {default_version}."
+            )
         else:
             title = f"{user}'s Membership with project {project} modified"
-            text = f"{instance}"
+            text = (
+                f"You are being notified that {user}'s membership with {project} was modified to "
+                f"have permission {permission} and default version {default_version}."
+            )
 
         email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
 
@@ -722,7 +740,7 @@ def membership_delete(sender, instance, using, **kwargs):
         user = instance.user
         project = instance.project
         title = f"{user} membership removed"
-        text = f"{user} is no longer affiliated with project {project}"
+        text = f"You are being notified that {user}'s membership with {project} has been deleted."
         email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
 
 def getVideoDefinition(path, codec, resolution, **kwargs):
