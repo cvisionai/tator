@@ -56,40 +56,6 @@ admin.site.register(Version)
 TokenAdmin.raw_id_fields = ("user",)
 
 
-@admin.register(LogEntry)
-class LogEntryAdmin(admin.ModelAdmin):
-    date_hierarchy = "action_time"
-    list_filter = ["user", "content_type", "action_flag"]
-    search_fields = ["object_repr", "change_message"]
-    list_display = ["action_time", "user", "content_type", "object_link", "action_flag"]
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_view_permission(self, request, obj=None):
-        return request.user.is_staff
-
-    def object_link(self, obj):
-        if obj.action_flag == DELETION:
-            link = escape(obj.object_repr)
-        else:
-            ct = obj.content_type
-            link = '<a href="%s">%s</a>' % (
-                reverse("admin:%s_%s_change" % (ct.app_label, ct.model), args=[obj.object_id]),
-                escape(obj.object_repr),
-            )
-        return mark_safe(link)
-
-    object_link.admin_order_field = "object_repr"
-    object_link.short_description = "object"
-
-
 def _repr(obj, recurse=0, prettyprint=False, starting_depth=0):
     if isinstance(obj, Model):
         starting_depth += 1
@@ -110,7 +76,11 @@ def _repr(obj, recurse=0, prettyprint=False, starting_depth=0):
                 and getattr(obj, f.name)
                 and not (f.is_relation and (f.many_to_many or f.one_to_many))
             ):
-                value = fn(getattr(obj, f.name), recurse, prettyprint, starting_depth)
+                raw_value = getattr(obj, f.name)
+                try:
+                    value = fn(raw_value, recurse, prettyprint, starting_depth)
+                except RecursionError:
+                    value = str(raw_value)
                 if f.name == "action_flag" and value.isnumeric():
                     value = int(value)
                     if value == ADDITION:
@@ -138,10 +108,7 @@ def log_entry_save(sender, instance, created, **kwargs):
         model_class = instance.content_type.model_class()
         obj = model_class.objects.get(id=instance.object_id)
 
-        instance.object_repr = _repr(obj, starting_depth=1)
-        instance.save()
-
-        # Full _repr too long for db column, log it
+        # Use `_repr` method defined above to get the log entry's formatted representation
         instance.object_repr = _repr(obj, recurse=6, prettyprint=True, starting_depth=1)
         logger.info(
             f"Admin action taken (formatted):\n{_repr(instance, recurse=7, prettyprint=True)}"
