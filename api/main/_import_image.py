@@ -10,8 +10,10 @@ try:
 except Exception:
     pass
 
+import imageio
 from PIL import Image
 import pillow_avif # add AVIF support to pillow
+import rawpy
 import tempfile
 from urllib.parse import urlparse
 

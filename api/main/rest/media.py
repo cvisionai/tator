@@ -15,8 +15,6 @@ from django.db.models import Case, When
 from django.http import Http404
 from PIL import Image
 import pillow_avif # add AVIF support to pillow
-import rawpy
-import imageio
 
 from ..models import (
     Media,
