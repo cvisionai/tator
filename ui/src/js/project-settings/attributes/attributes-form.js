@@ -748,6 +748,12 @@ export class AttributesForm extends TatorElement {
         "fully-reversible": [],
         "reversible-with-warning": [],
         "irreversible": ["enum", "string"]
+      },
+      "float_array": {
+        "allowed": [],
+        "fully-reversible": [],
+        "reversible-with-warning": [],
+        "irreversible": []
       }
     });
   }
