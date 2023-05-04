@@ -85,6 +85,9 @@ export class AttributesMain extends HTMLElement {
       attributeList.setAttribute("class", `attributes-edit--list`);
       attributesSection.appendChild(attributeList);
 
+      // Sort the attributes according to their `order` for display
+      attributeTypes.sort((a, b) => a["order"] - b["order"]);
+
       // Loop through and output attribute forms
       for(let a in attributeTypes){
         let attributeContent = this.attributesOutput( {
