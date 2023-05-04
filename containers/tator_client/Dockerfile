@@ -1,4 +1,4 @@
-FROM cvisionai/svt_encoder:v0.1.0 AS cvtranscoder
+FROM cvisionai/svt_encoder:v0.0.10 AS cvtranscoder
 MAINTAINER CVision AI <info@cvisionai.com>
 
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
@@ -13,13 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         fastjar libsm6 libxext6 libxrender1 libx265-179 libx264-155 \
         libpng16-16 libfreetype6 python3-opencv \
         && rm -rf /var/lib/apt/lists
-
-COPY containers/tator_client/md5sum_checks.txt checks.txt
-RUN wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
-RUN md5sum --check checks.txt
-RUN unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
-RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /opt/cvision/bin
-RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4info /opt/cvision/bin
 
 ENV PATH="/opt/cvision/bin/:$PATH"
 RUN echo "/opt/cvision/lib" > /etc/ld.so.conf.d/cvision.conf
