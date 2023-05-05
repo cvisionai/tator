@@ -228,6 +228,14 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType['name']] = castLookup[attributeType['dtype']]
     attributeCast['tator_user_sections'] = str
+    for key in ['$x', '$y', '$u', '$v', '$width', '$height']:
+        attributeCast[key] = float
+    for key in ['$created_by', '$modified_by']:
+        attributeCast[key] = int
+    for key in ['$created_datetime', '$modified_datetime']:
+        attributeCast[key] = dateutil_parse
+    for key in ['$name']:
+        attributeCast[key] = str
 
     q_object = build_query_recursively(query_object, attributeCast)
     return qs.filter(q_object)
