@@ -219,7 +219,8 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         'string': str,
         'datetime': dateutil_parse,
         'geopos': None,
-        'float_array': None
+        'float_array': None,
+        'tator_user_sections': str,
     }
     attributeCast = {}
     typeModel = typeLookup[type(qs[1])]
