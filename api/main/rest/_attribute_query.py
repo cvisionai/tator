@@ -221,7 +221,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         'float_array': None,
     }
     attributeCast = {}
-    typeModel = typeLookup[type(qs[1])]
+    typeModel = typeLookup[type(qs[0])]
     typeObjects = qs.values('type').distinct()
     for typeObjectPk in typeObjects:
         typeObject = typeModel.objects.get(pk=typeObjectPk['type'])
