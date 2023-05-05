@@ -216,6 +216,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         'float': float,
         'enum': str,
         'string': str,
+        'datetime': dateutil_parse,
         'geopos': None,
         'float_array': None
     }
