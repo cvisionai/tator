@@ -219,7 +219,6 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         'datetime': dateutil_parse,
         'geopos': None,
         'float_array': None,
-        'tator_user_sections': str,
     }
     attributeCast = {}
     typeModel = typeLookup[type(qs[1])]
@@ -228,6 +227,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         typeObject = typeModel.objects.get(pk=typeObjectPk['type'])
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType['name']] = castLookup[attributeType['dtype']]
+    attributeCast['tator_user_sections'] = str
 
     q_object = build_query_recursively(query_object, attributeCast)
     return qs.filter(q_object)
