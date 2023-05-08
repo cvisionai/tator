@@ -11,7 +11,7 @@ jobs:
     - checkout
     - run:
         name: Check code formatting
-        command: pip install black && make check-format
+        command: pip3 install black && make check-format
   build-docker-images:
     machine:
       image: ubuntu-2004:2022.04.2
