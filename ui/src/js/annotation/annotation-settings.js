@@ -23,11 +23,11 @@ export class AnnotationSettings extends TatorElement {
     this._link = document.createElement("media-link-button");
     div.appendChild(this._link);
 
-    this._fill_boxes = document.createElement("fill-boxes-button")
-    div.appendChild(this._fill_boxes)
+    this._fill_boxes = document.createElement("fill-boxes-button");
+    div.appendChild(this._fill_boxes);
 
-    this._toggle_text = document.createElement("toggle-text-button")
-    div.appendChild(this._toggle_text)
+    this._toggle_text = document.createElement("toggle-text-button");
+    div.appendChild(this._toggle_text);
 
     this._link.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -41,7 +41,6 @@ export class AnnotationSettings extends TatorElement {
       document.execCommand("copy");
       document.body.removeChild(text);
     });
-
   }
 
   static get observedAttributes() {
@@ -65,22 +64,17 @@ export class AnnotationSettings extends TatorElement {
   }
 
   _queryParams(params) {
-    if (params == undefined)
-    {
-      params = new URLSearchParams(window.location.search)
+    if (params == undefined) {
+      params = new URLSearchParams(window.location.search);
     }
     if (this.hasAttribute("entity-id")) {
       params.set("selected_entity", this.getAttribute("entity-id"));
-    }
-    else
-    {
+    } else {
       params.delete("selected_entity");
     }
     if (this._typeParams()) {
       params.set("selected_type", this._typeParams());
-    }
-    else
-    {
+    } else {
       params.delete("selected_type");
     }
     if (this.hasAttribute("frame")) {
@@ -106,9 +100,7 @@ export class AnnotationSettings extends TatorElement {
     }
     if (this.hasAttribute("timeline-display")) {
       params.set("timeline-display", this.getAttribute("timeline-display"));
-    }
-    else
-    {
+    } else {
       params.delete("timeline-display");
     }
     return params;

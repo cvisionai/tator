@@ -13,21 +13,23 @@ from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
-class MediaPrevAPI(BaseDetailView):
-    """ Retrieve ID of previous media in a media list.
 
-        This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
-        but only returns the previous media ID from the media passed as a path parameter. This 
-        allows iteration through a media list without serializing the entire list, which may be 
-        large.
+class MediaPrevAPI(BaseDetailView):
+    """Retrieve ID of previous media in a media list.
+
+    This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
+    but only returns the previous media ID from the media passed as a path parameter. This
+    allows iteration through a media list without serializing the entire list, which may be
+    large.
     """
+
     schema = MediaPrevSchema()
     permission_classes = [ProjectViewOnlyPermission]
-    http_method_names = ['get']
+    http_method_names = ["get"]
 
     def _get(self, params):
         # Find this object.
-        media_id = params['id']
+        media_id = params["id"]
         media = Media.objects.get(pk=media_id)
 
         qs = get_media_queryset(media.project.id, params).reverse()
@@ -43,9 +45,8 @@ class MediaPrevAPI(BaseDetailView):
         except StopIteration:
             pass
 
-        response_data = {'prev': next_id}
+        response_data = {"prev": next_id}
         return response_data
 
     def get_queryset(self):
         return Media.objects.all()
-

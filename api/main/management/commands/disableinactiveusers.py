@@ -57,5 +57,5 @@ class Command(BaseCommand):
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=f"Disabling inactive users on {settings.MAIN_HOST} failed.",
-                text=f"{msg}\n{users}"
+                text=f"{msg}\n{users}",
             )

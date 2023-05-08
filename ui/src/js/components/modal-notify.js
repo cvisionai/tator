@@ -19,22 +19,19 @@ export class ModalNotify extends ModalDialog {
     this._accept.textContent = "Close";
     this._footer.appendChild(this._accept);
 
-    this._accept.addEventListener("click", evt => {
+    this._accept.addEventListener("click", (evt) => {
       this._closeCallback();
     });
   }
 
   init(title, message, error_or_ok, buttonText, is_html) {
     this._title.nodeValue = title;
-    if (is_html)
-    {
+    if (is_html) {
       this._message.innerHTML = message;
-    }
-    else
-    {
+    } else {
       this._message.textContent = message;
     }
-    if (error_or_ok == 'error') {
+    if (error_or_ok == "error") {
       this._warningIcon.style.display = "block";
       this._successIcon.style.display = "none";
       this._accept.classList.remove("btn-charcoal");
@@ -58,7 +55,12 @@ export class ModalNotify extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "is-open":
         break;

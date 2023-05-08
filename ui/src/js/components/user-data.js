@@ -24,21 +24,22 @@ export class UserData extends TatorElement {
         promise = fetchCredentials(`/rest/Users?username=${username}`);
       }
       promise
-      .then(response => response.json())
-      .then(users => {
-        if (users.length > 0) {
-          for (const user of users) {
-            this._users.set(user.id, user);
+        .then((response) => response.json())
+        .then((users) => {
+          if (users.length > 0) {
+            for (const user of users) {
+              this._users.set(user.id, user);
+            }
+          } else {
+            missing.push(username);
           }
-        } else {
-          missing.push(username);
-        }
-        // Emit current list of users and usernames that could not be found.
-        this.dispatchEvent(new CustomEvent("users", {
-          detail: {users: this.getUsers(),
-                   missing: missing},
-        }));
-      });
+          // Emit current list of users and usernames that could not be found.
+          this.dispatchEvent(
+            new CustomEvent("users", {
+              detail: { users: this.getUsers(), missing: missing },
+            })
+          );
+        });
     }
   }
 
@@ -48,13 +49,13 @@ export class UserData extends TatorElement {
   }
 
   async getCurrentUser() {
-    let resp = await fetchCredentials('/rest/User/GetCurrent');
+    let resp = await fetchCredentials("/rest/User/GetCurrent");
     let data = resp.json();
     return data;
   }
 
   async getUserById(id) {
-    let resp = await fetchCredentials('/rest/User/'+id);
+    let resp = await fetchCredentials("/rest/User/" + id);
     let data = resp.json();
     return data;
   }
@@ -62,16 +63,20 @@ export class UserData extends TatorElement {
   removeUser(userId) {
     // Removes a user by user ID and emits updated list of users.
     this._users.delete(userId);
-    this.dispatchEvent(new CustomEvent("users", {
-      detail: {users: this.getUsers()}
-    }));
+    this.dispatchEvent(
+      new CustomEvent("users", {
+        detail: { users: this.getUsers() },
+      })
+    );
   }
 
   reset() {
     this._users.clear();
-    this.dispatchEvent(new CustomEvent("users", {
-      detail: {users: this.getUsers()}
-    }));
+    this.dispatchEvent(
+      new CustomEvent("users", {
+        detail: { users: this.getUsers() },
+      })
+    );
   }
 }
 customElements.define("user-data", UserData);

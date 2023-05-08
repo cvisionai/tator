@@ -6,9 +6,7 @@
  *
  */
 export class TimelineSettings {
-
   constructor(projectId, dataTypes) {
-
     this._projectId = projectId;
     this._localStorageKey = `tator_timeline_settings_proj_${projectId}`;
 
@@ -19,37 +17,31 @@ export class TimelineSettings {
     this._defaultColor = "#797991";
 
     for (const dataType of dataTypes) {
-
       if (dataType.interpolation == "latest") {
-
         let sortedAttributeTypes = dataType.attribute_types;
-        sortedAttributeTypes.sort((a,b) => {return a.order - b.order});
+        sortedAttributeTypes.sort((a, b) => {
+          return a.order - b.order;
+        });
         for (let attrType of sortedAttributeTypes) {
           if (attrType.dtype == "bool") {
-
             this._frameBooleanTypes.push({
               timelineType: "frameBoolean",
               dataType: dataType,
               name: attrType.name,
               color: this._defaultColor,
-              visible: true
+              visible: true,
             });
-
-          }
-          else if (attrType.dtype == "float" || attrType.dtype == "int") {
-
+          } else if (attrType.dtype == "float" || attrType.dtype == "int") {
             this._frameNumericalTypes.push({
               timelineType: "frameNumerical",
               dataType: dataType,
               name: attrType.name,
               color: this._defaultColor,
-              visible: true
-            })
-
+              visible: true,
+            });
           }
         }
-      }
-      else if (dataType.interpolation == "attr_style_range") {
+      } else if (dataType.interpolation == "attr_style_range") {
         // To support attr_style_range, there must at least be one set of
         // start_frame|end_frame style attributes. Grab the start_frame/end_frame info.
         // Same applies to start_utc|end_utc style attributes
@@ -74,49 +66,53 @@ export class TimelineSettings {
         var mode;
 
         for (const attr of dataType.attribute_types) {
-          const style = attr['style'];
+          const style = attr["style"];
 
           if (style) {
-
-            const styleOptions = style.split(' ');
-            const name = attr['name'];
+            const styleOptions = style.split(" ");
+            const name = attr["name"];
 
             if (styleOptions.includes("start_frame")) {
               mode = "frame";
               startFrameAttrList.push(name);
-            }
-            else if (styleOptions.includes("end_frame")) {
+            } else if (styleOptions.includes("end_frame")) {
               mode = "frame";
               endFrameAttrList.push(name);
-            }
-            else if (styleOptions.includes("start_frame_check") || styleOptions.includes("start_in_video_check")) {
+            } else if (
+              styleOptions.includes("start_frame_check") ||
+              styleOptions.includes("start_in_video_check")
+            ) {
               startInVideoCheckAttr = name;
-            }
-            else if (styleOptions.includes("end_frame_check") || styleOptions.includes("end_in_video_check")) {
+            } else if (
+              styleOptions.includes("end_frame_check") ||
+              styleOptions.includes("end_in_video_check")
+            ) {
               endInVideoCheckAttr = name;
-            }
-            else if (styleOptions.includes("start_utc")) {
+            } else if (styleOptions.includes("start_utc")) {
               mode = "utc";
               startUTCAttrList.push(name);
-            }
-            else if (styleOptions.includes("end_utc")) {
+            } else if (styleOptions.includes("end_utc")) {
               mode = "utc";
               endUTCAttrList.push(name);
-            }
-            else if (styleOptions.includes("in_video_check")) {
+            } else if (styleOptions.includes("in_video_check")) {
               inVideoCheckAttrList.push(name);
-            }
-            else if (styleOptions.includes("range_set")) {
-              rangeList.push({name: name, data: attr["default"], order: attr["order"]});
-            }
-            else if (styleOptions.includes("range_set_utc")) {
-              rangeUtcList.push({name: name, data: attr["default"], order: attr["order"]});
+            } else if (styleOptions.includes("range_set")) {
+              rangeList.push({
+                name: name,
+                data: attr["default"],
+                order: attr["order"],
+              });
+            } else if (styleOptions.includes("range_set_utc")) {
+              rangeUtcList.push({
+                name: name,
+                data: attr["default"],
+                order: attr["order"],
+              });
             }
           }
         }
 
         if (startFrameAttrList.length == 1 && endFrameAttrList.length == 1) {
-
           startFrameAttr = startFrameAttrList[0];
           endFrameAttr = endFrameAttrList[0];
           startUTCAttr = null;
@@ -136,29 +132,29 @@ export class TimelineSettings {
             endInVideoCheckAttr: endInVideoCheckAttr,
             inVideoCheckAttr: null,
             color: this._defaultColor,
-            visible: true
+            visible: true,
           });
-        }
-        else if (
+        } else if (
           startUTCAttrList.length >= 1 &&
           endUTCAttrList.length >= 1 &&
           startUTCAttrList.length == endUTCAttrList.length &&
-          rangeUtcList.length == startUTCAttrList.length) {
-
-          rangeUtcList.sort(function(a, b) {
-              if (a.order < b.order) {
-                return 1;
-              }
-              if (a.order > b.order) {
-                return -1;
-              }
-              return 0;
+          rangeUtcList.length == startUTCAttrList.length
+        ) {
+          rangeUtcList.sort(function (a, b) {
+            if (a.order < b.order) {
+              return 1;
             }
-          );
+            if (a.order > b.order) {
+              return -1;
+            }
+            return 0;
+          });
           for (const rangeInfo of rangeUtcList) {
-            const rangeTokens = rangeInfo.data.split('|');
+            const rangeTokens = rangeInfo.data.split("|");
             if (rangeTokens.length != 5) {
-              console.error("Incorrect datatype setup with attr_style_range interpolation.")
+              console.error(
+                "Incorrect datatype setup with attr_style_range interpolation."
+              );
               break;
             }
 
@@ -181,12 +177,10 @@ export class TimelineSettings {
               endInVideoCheckAttr: endInVideoCheckAttr,
               inVideoCheckAttr: inVideoCheckAttr,
               color: this._defaultColor,
-              visible: true
+              visible: true,
             });
           }
-        }
-        else if (startUTCAttrList.length == 1 && endUTCAttrList.length == 1) {
-
+        } else if (startUTCAttrList.length == 1 && endUTCAttrList.length == 1) {
           startUTCAttr = startUTCAttrList[0];
           endUTCAttr = endUTCAttrList[0];
 
@@ -203,29 +197,30 @@ export class TimelineSettings {
             endInVideoCheckAttr: endInVideoCheckAttr,
             inVideoCheckAttr: null,
             color: this._defaultColor,
-            visible: true
+            visible: true,
           });
-        }
-        else if (startFrameAttrList.length > 1 &&
+        } else if (
+          startFrameAttrList.length > 1 &&
           endFrameAttrList.length > 1 &&
           startFrameAttrList.length == endFrameAttrList.length &&
-          startFrameAttrList.length == rangeList.length) {
-
-          rangeList.sort(function(a, b) {
-              if (a.order < b.order) {
-                return 1;
-              }
-              if (a.order > b.order) {
-                return -1;
-              }
-              return 0;
+          startFrameAttrList.length == rangeList.length
+        ) {
+          rangeList.sort(function (a, b) {
+            if (a.order < b.order) {
+              return 1;
             }
-          );
+            if (a.order > b.order) {
+              return -1;
+            }
+            return 0;
+          });
 
           for (const rangeInfo of rangeList) {
-            const rangeTokens = rangeInfo.data.split('|');
+            const rangeTokens = rangeInfo.data.split("|");
             if (rangeTokens.length != 3) {
-              console.error("Incorrect datatype setup with attr_style_range interpolation.")
+              console.error(
+                "Incorrect datatype setup with attr_style_range interpolation."
+              );
               break;
             }
 
@@ -246,16 +241,16 @@ export class TimelineSettings {
               endInVideoCheckAttr: null,
               inVideoCheckAttr: inVideoCheckAttr,
               color: this._defaultColor,
-              visible: true
+              visible: true,
             });
           }
-        }
-        else {
-          console.error("Incorrect datatype setup with attr_style_range interpolation.")
+        } else {
+          console.error(
+            "Incorrect datatype setup with attr_style_range interpolation."
+          );
           continue;
         }
       }
-
     }
 
     this._allTypes.push(...this._frameBooleanTypes);
@@ -269,7 +264,10 @@ export class TimelineSettings {
         if (storageObject.attributeTypesInfo) {
           for (const cachedInfo of storageObject.attributeTypesInfo) {
             for (var thisInfo of this._allTypes) {
-              if (thisInfo.dataType.id == cachedInfo.dataTypeId && thisInfo.name == cachedInfo.name) {
+              if (
+                thisInfo.dataType.id == cachedInfo.dataTypeId &&
+                thisInfo.name == cachedInfo.name
+              ) {
                 thisInfo.color = cachedInfo.color;
                 thisInfo.visible = cachedInfo.visible;
                 break;
@@ -278,11 +276,9 @@ export class TimelineSettings {
           }
         }
       }
-    }
-    catch (exc) {
+    } catch (exc) {
       console.warn(exc);
     }
-
   }
 
   setColor(dataTypeId, attributeName, color) {
@@ -312,14 +308,17 @@ export class TimelineSettings {
         dataTypeId: info.dataType.id,
         name: info.name,
         color: info.color,
-        visible: info.visible
+        visible: info.visible,
       });
     }
     var storageObject = {
       projectId: this._projectId,
-      attributeTypesInfo: attributeTypesInfo
-    }
-    window.localStorage.setItem(this._localStorageKey, JSON.stringify(storageObject));
+      attributeTypesInfo: attributeTypesInfo,
+    };
+    window.localStorage.setItem(
+      this._localStorageKey,
+      JSON.stringify(storageObject)
+    );
   }
 
   getFrameBooleanInfo() {
@@ -337,5 +336,4 @@ export class TimelineSettings {
   getSelectedColor() {
     return "#FFFFFF";
   }
-
 }

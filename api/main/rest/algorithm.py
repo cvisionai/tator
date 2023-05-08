@@ -23,29 +23,28 @@ from ..schema import parse
 
 logger = logging.getLogger(__name__)
 
+
 class AlgorithmListAPI(BaseListView):
-    """ Retrieves registered algorithms and register new algorithm workflows
-    """
+    """Retrieves registered algorithms and register new algorithm workflows"""
+
     # pylint: disable=no-member,no-self-use
     schema = AlgorithmListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['get', 'post']
+    http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
-        """ Returns the full database entries of algorithm registered with this project
-        """
-        qs = Algorithm.objects.filter(project=params['project'])
+        """Returns the full database entries of algorithm registered with this project"""
+        qs = Algorithm.objects.filter(project=params["project"])
         return database_qs(qs)
 
     def get_queryset(self):
-        """ Returns a queryset of algorithms related with the current request's project
-        """
+        """Returns a queryset of algorithms related with the current request's project"""
         params = parse(self.request)
-        qs = Algorithm.objects.filter(project__id=params['project'])
+        qs = Algorithm.objects.filter(project__id=params["project"])
         return qs
 
     def _post(self, params: dict) -> dict:
-        """ Registers a new algorithm argo workflow using the provided parameters
+        """Registers a new algorithm argo workflow using the provided parameters
 
         Parameters are checked first for validity. If there's a problem with any of the
         following, an exception is raised:
@@ -69,7 +68,7 @@ class AlgorithmListAPI(BaseListView):
         try:
             project = Project.objects.get(pk=project_id)
         except Exception as exc:
-            log_msg = f'Provided project ID ({project_id}) does not exist'
+            log_msg = f"Provided project ID ({project_id}) does not exist"
             logger.error(log_msg)
             raise exc
 
@@ -85,7 +84,7 @@ class AlgorithmListAPI(BaseListView):
         try:
             user = User.objects.get(pk=user_id)
         except Exception as exc:
-            log_msg = f'Provided user ID ({user_id}) does not exist'
+            log_msg = f"Provided user ID ({user_id}) does not exist"
             logger.error(log_msg)
             raise exc
 
@@ -94,22 +93,22 @@ class AlgorithmListAPI(BaseListView):
         manifest_url = os.path.join(str(project_id), manifest_file)
         manifest_path = os.path.join(settings.MEDIA_ROOT, manifest_url)
         if not os.path.exists(manifest_path):
-            log_msg = f'Provided manifest ({manifest_file}) does not exist in {settings.MEDIA_ROOT}'
+            log_msg = f"Provided manifest ({manifest_file}) does not exist in {settings.MEDIA_ROOT}"
             logging.error(log_msg)
             raise ValueError(log_msg)
 
         try:
-            with open(manifest_path, 'r') as fp:
+            with open(manifest_path, "r") as fp:
                 loaded_yaml = yaml.safe_load(fp)
         except Exception as exc:
-            log_msg = 'Provided yaml file has syntax errors'
+            log_msg = "Provided yaml file has syntax errors"
             logging.error(log_msg)
             raise exc
 
         # Number of files per job greater than 1?
         files_per_job = int(params[fields.files_per_job])
         if files_per_job < 1:
-            log_msg = f'Provided files_per_job ({files_per_job}) must be at least 1'
+            log_msg = f"Provided files_per_job ({files_per_job}) must be at least 1"
             logger.error(log_msg)
             raise ValueError(log_msg)
 
@@ -137,21 +136,22 @@ class AlgorithmListAPI(BaseListView):
             cluster=cluster,
             files_per_job=files_per_job,
             categories=categories,
-            parameters=parameters)
+            parameters=parameters,
+        )
         alg_obj.save()
 
-        return {'message': 'Successfully registered algorithm argo workflow.', 'id': alg_obj.id}
+        return {"message": "Successfully registered algorithm argo workflow.", "id": alg_obj.id}
+
 
 class AlgorithmDetailAPI(BaseDetailView):
-    """ Interact with a single registered algorithm
-    """
+    """Interact with a single registered algorithm"""
 
     schema = AlgorithmDetailSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['get', 'patch', 'delete']
+    http_method_names = ["get", "patch", "delete"]
 
     def safe_delete(self, path: str) -> None:
-        """ Attempts to delete the file at the provided path.
+        """Attempts to delete the file at the provided path.
 
         Args:
             path: Server side path for file to be deleted. If an exception is raised
@@ -165,7 +165,7 @@ class AlgorithmDetailAPI(BaseDetailView):
             logger.warning(f"Could not remove {path}")
 
     def _delete(self, params: dict) -> dict:
-        """ Deletes the provided registered algorithm and the corresponding manifest file
+        """Deletes the provided registered algorithm and the corresponding manifest file
 
         Args:
             params: Parameters provided as part of the delete request. Only care about ID
@@ -175,7 +175,7 @@ class AlgorithmDetailAPI(BaseDetailView):
         """
 
         # Grab the algorithm object and delete it from the database
-        alg = Algorithm.objects.get(pk=params['id'])
+        alg = Algorithm.objects.get(pk=params["id"])
         manifest_file = alg.manifest.name
         alg.delete()
 
@@ -183,18 +183,16 @@ class AlgorithmDetailAPI(BaseDetailView):
         path = os.path.join(settings.MEDIA_ROOT, manifest_file)
         self.safe_delete(path=path)
 
-        msg = 'Registered algorithm deleted successfully!'
-        return {'message': msg}
+        msg = "Registered algorithm deleted successfully!"
+        return {"message": msg}
 
     def _get(self, params):
-        """ Retrieve the requested algortihm entry by ID
-        """
-        return database_qs(Algorithm.objects.filter(pk=params['id']))[0]
+        """Retrieve the requested algortihm entry by ID"""
+        return database_qs(Algorithm.objects.filter(pk=params["id"]))[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:
-        """ Patch operation on the algorithm entry
-        """
+        """Patch operation on the algorithm entry"""
         alg_id = params["id"]
         obj = Algorithm.objects.get(pk=alg_id)
 
@@ -219,7 +217,7 @@ class AlgorithmDetailAPI(BaseDetailView):
         if parameters is not None:
             obj.parameters = parameters
 
-        #TODO Should this delete the manifest if it's not registered to anything else?
+        # TODO Should this delete the manifest if it's not registered to anything else?
         manifest = params.get(fields.manifest, None)
         if manifest is not None:
             obj.manifest = manifest
@@ -239,9 +237,8 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         obj.save()
 
-        return {'message': f'Algorithm {alg_id} successfully updated!'}
+        return {"message": f"Algorithm {alg_id} successfully updated!"}
 
     def get_queryset(self):
-        """ Returns a queryset of all registered algorithms
-        """
+        """Returns a queryset of all registered algorithms"""
         return Algorithm.objects.all()

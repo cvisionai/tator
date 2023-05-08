@@ -13,18 +13,28 @@ export class TypeFormContainer extends TatorElement {
     this.editH1 = this._shadow.getElementById("type-form--edit-h1");
     this.newH1 = this._shadow.getElementById("type-form--new-h1");
     this.typeNameSet = this._shadow.querySelectorAll(".type-form-typeName");
-    this.objectNameDisplay = this._shadow.getElementById("type-form-objectName");
+    this.objectNameDisplay = this._shadow.getElementById(
+      "type-form-objectName"
+    );
     this.idDisplay = this._shadow.getElementById("type-form-id");
-    this.saveResetDiv = this._shadow.getElementById("type-form--save-reset-section");
+    this.saveResetDiv = this._shadow.getElementById(
+      "type-form--save-reset-section"
+    );
     this.save = this._shadow.getElementById("type-form-save");
     this.resetLink = this._shadow.getElementById("type-form-reset");
     this.deleteDiv = this._shadow.getElementById("type-form-delete-div");
     this.delete = this._shadow.getElementById("type-form-delete");
     this.typeFormDiv = this._shadow.getElementById("type-form-div");
-    this._attributeContainer = this._shadow.getElementById("type-form-attr-column");
+    this._attributeContainer = this._shadow.getElementById(
+      "type-form-attr-column"
+    );
     this._addLeaves = this._shadow.getElementById("type-form--add-edit-leaves");
-    this._addLeavesLink = this._shadow.getElementById("type-form--add-edit-leaves_link");
-    this._leavesFormHeading = this._shadow.getElementById("type-form--leaves-active");
+    this._addLeavesLink = this._shadow.getElementById(
+      "type-form--add-edit-leaves_link"
+    );
+    this._leavesFormHeading = this._shadow.getElementById(
+      "type-form--leaves-active"
+    );
 
     // this is outside the template and references by all parts of page to sync the dimmer
     this.modal = document.createElement("modal-dialog");
@@ -33,27 +43,42 @@ export class TypeFormContainer extends TatorElement {
 
   connectedCallback() {
     // Subscribe to selection and projectId
-    store.subscribe((state) => state.selection, this._updateFormSelection.bind(this));
-    store.subscribe(state => state.projectId, this.setProjectId.bind(this));
-    store.subscribe(state => state.status, this.handleButtonsActive.bind(this));
-    
+    store.subscribe(
+      (state) => state.selection,
+      this._updateFormSelection.bind(this)
+    );
+    store.subscribe((state) => state.projectId, this.setProjectId.bind(this));
+    store.subscribe(
+      (state) => state.status,
+      this.handleButtonsActive.bind(this)
+    );
+
     // Create in the inner form handles
     const formName = this.getAttribute("form");
     this._form = document.createElement(formName);
     this.typeFormDiv.appendChild(this._form);
 
     // Once we know what type, listen to changes
-    store.subscribe(state => state[this._form.typeName], this._newData.bind(this));
-    
+    store.subscribe(
+      (state) => state[this._form.typeName],
+      this._newData.bind(this)
+    );
+
     const canDeleteProject = store.getState().deletePermission;
     this.typeName = this._form.typeName;
     this._addLeaves.hidden = !(this._typeName == "LeafType");
 
     // Event listeners for container actions
     this.save.addEventListener("click", this._form._saveData.bind(this._form));
-    this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
-    this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
-    this.deleteDiv.hidden = (this._typeName === "Project" && !canDeleteProject);
+    this.resetLink.addEventListener(
+      "click",
+      this._form._resetForm.bind(this._form)
+    );
+    this.delete.addEventListener(
+      "click",
+      this._form._deleteType.bind(this._form)
+    );
+    this.deleteDiv.hidden = this._typeName === "Project" && !canDeleteProject;
 
     this._form.addEventListener("hide-save", () => {
       this.saveResetDiv.classList.add("hidden");
@@ -76,44 +101,43 @@ export class TypeFormContainer extends TatorElement {
     this.projectId = newId;
   }
 
-   /**
+  /**
    * @param {string} val
    */
-    set typeName(val) {
-      this._typeName = val;
-      for (let span of this.typeNameSet) {
-        span.textContent = val;
-      }
+  set typeName(val) {
+    this._typeName = val;
+    for (let span of this.typeNameSet) {
+      span.textContent = val;
     }
-  
-    /**
-     * @param {int} val
-     */
-    set typeId(val) {
-      this._typeId = val;
-      this.idDisplay.textContent = val;
-      if (!this._addLeaves.hidden) {
-        this._addLeavesLink.setAttribute("href", `#Leaf-${this._typeId}`)
-      }
-      this.deleteDiv.hidden = (val == "New");
-    }
-  
-    /**
+  }
+
+  /**
    * @param {int} val
    */
-    set attributeTypes(val) {
-      this._attributeTypes = val;
-
-      if (val && val !== null) {
-        // Creates/Re-creates this.attributeSection & appends it
-        this._getAttributeSection();       
-      }
-
+  set typeId(val) {
+    this._typeId = val;
+    this.idDisplay.textContent = val;
+    if (!this._addLeaves.hidden) {
+      this._addLeavesLink.setAttribute("href", `#Leaf-${this._typeId}`);
     }
+    this.deleteDiv.hidden = val == "New";
+  }
 
-    /**
- * @param {int} val
- */
+  /**
+   * @param {int} val
+   */
+  set attributeTypes(val) {
+    this._attributeTypes = val;
+
+    if (val && val !== null) {
+      // Creates/Re-creates this.attributeSection & appends it
+      this._getAttributeSection();
+    }
+  }
+
+  /**
+   * @param {int} val
+   */
   set objectName(val) {
     this._objectName = val;
     if (this._typeId === "New") {
@@ -128,7 +152,8 @@ export class TypeFormContainer extends TatorElement {
 
   setUpData(data) {
     this._form.data = data;
-    this.objectName = (this._typeName === "Membership") ? data.username : data.name;
+    this.objectName =
+      this._typeName === "Membership" ? data.username : data.name;
 
     // attribute section
     if (!this._hideAttributes && typeof data.attribute_types !== "undefined") {
@@ -140,32 +165,39 @@ export class TypeFormContainer extends TatorElement {
 
   /**
    * Subscription callback for [type] updates
-   * @param {*} newData 
+   * @param {*} newData
    */
   _newData(newData) {
     // Nothing new or deleted
-    if (this._typeName == store.getState().selection.typeName && this._typeId !== "New") {
+    if (
+      this._typeName == store.getState().selection.typeName &&
+      this._typeId !== "New"
+    ) {
       if (newData.setList.has(Number(this._typeId))) {
         // Refresh the view for typeId we're looking at within update
-        const data = newData.map.get(Number(this._typeId))
+        const data = newData.map.get(Number(this._typeId));
         this.setUpData(data);
       } else {
         // We have new data, but even tho Our typeName is selected the typeId isn't shown...
         // Just select something and let the subscribers take it from there....
-        const selectType = (newData.setList[0]) ? newData.setList[0] : "New";
-        window.history.pushState({}, "", `#${this._typeName}-${selectType}`)
-        store.setState({ selection: { ...store.getState().selection, typeId: selectType } });
+        const selectType = newData.setList[0] ? newData.setList[0] : "New";
+        window.history.pushState({}, "", `#${this._typeName}-${selectType}`);
+        store.setState({
+          selection: { ...store.getState().selection, typeId: selectType },
+        });
       }
     }
   }
 
   /**
    * Subscription callback for [selection] updates
-   * @param {*} newData 
+   * @param {*} newData
    */
   async _updateFormSelection(newSelection, oldSelection) {
-    const affectsMe = (this._typeName == newSelection.typeName || this._typeName == oldSelection.typeName);
-    
+    const affectsMe =
+      this._typeName == newSelection.typeName ||
+      this._typeName == oldSelection.typeName;
+
     if (affectsMe) {
       const newType = newSelection.typeName;
       const oldType = oldSelection.typeName;
@@ -181,15 +213,17 @@ export class TypeFormContainer extends TatorElement {
       const newId = newSelection.typeId;
       this.typeId = newId;
 
-      if (newId !== "New") {        
-        const data = await store.getState().getData(this._typeName, this._typeId);
+      if (newId !== "New") {
+        const data = await store
+          .getState()
+          .getData(this._typeName, this._typeId);
         // console.log(`DEBUG: selection found newData for  ${this._typeName}, id: ${this._typeId}`, data);
-        
+
         if (data) {
           this.setUpData(data);
           this._form.data = data;
           return;
-        }    
+        }
       }
 
       /* Clear container in any other case */
@@ -213,9 +247,16 @@ export class TypeFormContainer extends TatorElement {
 
     // Setup
     this.attributeSection = document.createElement("attributes-main");
-    this.attributeSection.setAttribute("data-from-id", `${this._typeId}`)
-    this.attributeSection._init(this._typeName, this._form._data.id, this._form._data.name, this.projectId, this._form._data.attribute_types, this.modal);
-    
+    this.attributeSection.setAttribute("data-from-id", `${this._typeId}`);
+    this.attributeSection._init(
+      this._typeName,
+      this._form._data.id,
+      this._form._data.name,
+      this.projectId,
+      this._form._data.attribute_types,
+      this.modal
+    );
+
     // Append and show
     this._attributeContainer.appendChild(this.attributeSection);
     this._attributeContainer.hidden = false;
@@ -228,8 +269,6 @@ export class TypeFormContainer extends TatorElement {
     this.removeAttributeSection();
   }
 }
-
-
 
 if (!customElements.get("type-form-container")) {
   customElements.define("type-form-container", TypeFormContainer);

@@ -18,17 +18,23 @@ export class RateControl extends TatorElement {
     div.appendChild(select);
     this._select = select;
 
-    this._defaultAvailable = [0.125, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 6, 8, 16, 32, 64];
+    this._defaultAvailable = [
+      0.125, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 6, 8, 16, 32, 64,
+    ];
     this._max = Math.max(...this._defaultAvailable);
     this._setRates();
-    select.selectedIndex = this._rates.findIndex((val)=>{return val == 1});
+    select.selectedIndex = this._rates.findIndex((val) => {
+      return val == 1;
+    });
 
-    select.addEventListener("change", evt => {
+    select.addEventListener("change", (evt) => {
       const rate = Number(evt.target.value);
-      this.dispatchEvent(new CustomEvent("rateChange", {
-        detail: {rate: rate},
-        composed: true
-      }));
+      this.dispatchEvent(
+        new CustomEvent("rateChange", {
+          detail: { rate: rate },
+          composed: true,
+        })
+      );
     });
   }
 
@@ -55,56 +61,54 @@ export class RateControl extends TatorElement {
    */
   setValue(rate, noEvent) {
     this._value = rate;
-    this.setIdx(this._rates.findIndex(el => el == rate), noEvent);
+    this.setIdx(
+      this._rates.findIndex((el) => el == rate),
+      noEvent
+    );
   }
 
-  get value()
-  {
+  get value() {
     return this._value;
   }
 
-  setIdx(idx, noEvent)
-  {
-    if (idx < 0 || idx >= this._rates.length)
-    {
+  setIdx(idx, noEvent) {
+    if (idx < 0 || idx >= this._rates.length) {
       return;
     }
     // Change the UI element
     this._select.selectedIndex = idx;
 
     // Send out the rate change event
-    if (noEvent) { return; }
-    this.dispatchEvent(new CustomEvent("rateChange", {
-      detail: {rate: this._rates[idx]},
-      composed: true
-    }));
+    if (noEvent) {
+      return;
+    }
+    this.dispatchEvent(
+      new CustomEvent("rateChange", {
+        detail: { rate: this._rates[idx] },
+        composed: true,
+      })
+    );
   }
 
-  set max(val)
-  {
+  set max(val) {
     this._max = val;
     this._setRates();
   }
 
-  get max()
-  {
+  get max() {
     return this._max;
   }
 
-  _setRates()
-  {
-    this._rates=[];
-    for (let idx = 0; idx < this._defaultAvailable.length; idx++)
-    {
-      if (this._defaultAvailable[idx] <= this._max)
-      {
+  _setRates() {
+    this._rates = [];
+    for (let idx = 0; idx < this._defaultAvailable.length; idx++) {
+      if (this._defaultAvailable[idx] <= this._max) {
         this._rates.push(this._defaultAvailable[idx]);
       }
     }
     const oldIdx = this._select.selectedIndex;
     this._select.options.length = 0;
-    for (const rate of this._rates)
-    {
+    for (const rate of this._rates) {
       let option = document.createElement("option");
       option.setAttribute("value", rate);
       option.textContent = `${rate}x`;
@@ -113,19 +117,14 @@ export class RateControl extends TatorElement {
     this._select.selectedIndex = oldIdx;
   }
 
-  getIdx()
-  {
+  getIdx() {
     return this._select.selectedIndex;
   }
 
-  rateForIdx(idx)
-  {
-    if (idx < 0 || idx >= this._rates.length)
-    {
+  rateForIdx(idx) {
+    if (idx < 0 || idx >= this._rates.length) {
       return null;
-    }
-    else
-    {
+    } else {
       return this._rates[idx];
     }
   }

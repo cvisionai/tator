@@ -6,7 +6,10 @@ export class MediaMoveButton extends TatorElement {
     super();
 
     this._button = document.createElement("button");
-    this._button.setAttribute("class", "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center");
+    this._button.setAttribute(
+      "class",
+      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+    );
     this._shadow.appendChild(this._button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -21,14 +24,15 @@ export class MediaMoveButton extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+    path.setAttribute(
+      "d",
+      "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+    );
     svg.appendChild(path);
-    
 
     this._span = document.createElement("span");
     this._span.setAttribute("class", "px-2");
     this._button.appendChild(this._span);
-
   }
   static get observedAttributes() {
     return ["text"];

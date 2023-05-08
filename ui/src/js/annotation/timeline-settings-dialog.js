@@ -24,7 +24,6 @@ export class TimelineSettingsDialog extends ModalDialog {
    *
    */
   _createViewSettingsPage() {
-
     const parentWrapper = document.createElement("div");
     this._viewSettingsDiv.appendChild(parentWrapper);
 
@@ -39,15 +38,22 @@ export class TimelineSettingsDialog extends ModalDialog {
 
     var span = document.createElement("span");
     span.setAttribute("class", "text-gray f2 py-1 d-flex");
-    span.textContent = "Set the color for each attribute when displayed on the entity timeline. Attributes can be hidden."
+    span.textContent =
+      "Set the color for each attribute when displayed on the entity timeline. Attributes can be hidden.";
     headerDiv.appendChild(span);
 
     var infoDiv = document.createElement("div");
-    infoDiv.setAttribute("class", "d-flex flex-grow flex-column col-12 annotation_browser_settings_wrapper")
+    infoDiv.setAttribute(
+      "class",
+      "d-flex flex-grow flex-column col-12 annotation_browser_settings_wrapper"
+    );
     parentWrapper.appendChild(infoDiv);
 
     var table = document.createElement("table");
-    table.setAttribute("class", "f2 text-gray timeline-settings-view-table box-border");
+    table.setAttribute(
+      "class",
+      "f2 text-gray timeline-settings-view-table box-border"
+    );
     infoDiv.appendChild(table);
 
     var thead = document.createElement("thead");
@@ -90,25 +96,27 @@ export class TimelineSettingsDialog extends ModalDialog {
     graphEntries.push(...numericalStates);
 
     var availableColors = [
-      {value: "#797991", label: "Default"},
-      {value: "#40e0d0", label: "Teal"},
-      {value: "#1b9ffb", label: "Blue"},
-      {value: "#4A4EAE", label: "Blue Iris"},
-      {value: "#696cff", label: "Slate Blue"},
-      {value: "#FF69B4", label: "Pink"},
-      {value: "#DB7093", label: "Mauve"},
-      {value: "#85d81d", label: "Green"},
-      {value: "#03c04a", label: "Parakeet Green"},
-      {value: "#00755e", label: "Rainforest Green"},
-      {value: "#FFAD00", label: "Orange"},
-      {value: "#ff6969", label: "Coral"},
-      {value: "#ff3e1d", label: "Red"},
+      { value: "#797991", label: "Default" },
+      { value: "#40e0d0", label: "Teal" },
+      { value: "#1b9ffb", label: "Blue" },
+      { value: "#4A4EAE", label: "Blue Iris" },
+      { value: "#696cff", label: "Slate Blue" },
+      { value: "#FF69B4", label: "Pink" },
+      { value: "#DB7093", label: "Mauve" },
+      { value: "#85d81d", label: "Green" },
+      { value: "#03c04a", label: "Parakeet Green" },
+      { value: "#00755e", label: "Rainforest Green" },
+      { value: "#FFAD00", label: "Orange" },
+      { value: "#ff6969", label: "Coral" },
+      { value: "#ff3e1d", label: "Red" },
     ];
 
     for (const entry of graphEntries) {
-
       const colorEnum = document.createElement("select");
-      colorEnum.setAttribute("class", "form-select has-border select-sm text-semibold");
+      colorEnum.setAttribute(
+        "class",
+        "form-select has-border select-sm text-semibold"
+      );
       for (const colorInfo of availableColors) {
         var option = document.createElement("option");
         option.setAttribute("value", colorInfo.value);
@@ -125,7 +133,11 @@ export class TimelineSettingsDialog extends ModalDialog {
         var attrName = colorEnum.getAttribute("attrName");
         var dataTypeId = colorEnum.getAttribute("dataTypeId");
         var selectedColor = option.getAttribute("value");
-        if (attrName == entry.name && dataTypeId == entry.dataType.id && selectedColor == entry.color) {
+        if (
+          attrName == entry.name &&
+          dataTypeId == entry.dataType.id &&
+          selectedColor == entry.color
+        ) {
           option.selected = true;
           colorEnum.style.backgroundColor = entry.color;
           break;
@@ -139,11 +151,17 @@ export class TimelineSettingsDialog extends ModalDialog {
             var dataTypeId = colorEnum.getAttribute("dataTypeId");
             var selectedColor = option.getAttribute("value");
             colorEnum.style.backgroundColor = selectedColor;
-            this._timelineSettings.setColor(dataTypeId, attrName, selectedColor);
-            this.dispatchEvent(new CustomEvent("settingsChanged", {composed: true}));
+            this._timelineSettings.setColor(
+              dataTypeId,
+              attrName,
+              selectedColor
+            );
+            this.dispatchEvent(
+              new CustomEvent("settingsChanged", { composed: true })
+            );
           }
         }
-      })
+      });
 
       const viewable = document.createElement("bool-input");
       viewable.setAttribute("on-text", "On");
@@ -158,8 +176,14 @@ export class TimelineSettingsDialog extends ModalDialog {
       viewable.addEventListener("change", () => {
         var attrName = viewable.getAttribute("attrName");
         var dataTypeId = viewable.getAttribute("dataTypeId");
-        this._timelineSettings.setVisible(dataTypeId, attrName, viewable.getValue());
-        this.dispatchEvent(new CustomEvent("settingsChanged", {composed: true}));
+        this._timelineSettings.setVisible(
+          dataTypeId,
+          attrName,
+          viewable.getValue()
+        );
+        this.dispatchEvent(
+          new CustomEvent("settingsChanged", { composed: true })
+        );
       });
 
       var trData = document.createElement("tr");
@@ -189,7 +213,7 @@ export class TimelineSettingsDialog extends ModalDialog {
    * @param {TimelineSettings} timelineSettings - Initialized settings that will be used to populate
    *                                              this dialog
    */
-  init (timelineSettings) {
+  init(timelineSettings) {
     this._timelineSettings = timelineSettings;
     this._createViewSettingsPage();
   }

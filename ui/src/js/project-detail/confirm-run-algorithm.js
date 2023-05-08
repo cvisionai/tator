@@ -15,7 +15,7 @@ export class ConfirmRunAlgorithm extends ModalDialog {
     this._accept.setAttribute("class", "btn btn-clear btn-purple");
     this._accept.textContent = "Yes";
     this._footer.appendChild(this._accept);
-    
+
     this._cancel = document.createElement("button");
     this._cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     this._cancel.textContent = "No";
@@ -23,38 +23,43 @@ export class ConfirmRunAlgorithm extends ModalDialog {
 
     this._cancel.addEventListener("click", () => {
       this.dispatchEvent(
-        new CustomEvent("close",
-          {composed: true,
-           detail: {
-             confirm: false}}));
+        new CustomEvent("close", {
+          composed: true,
+          detail: {
+            confirm: false,
+          },
+        })
+      );
     });
 
     this._accept.addEventListener("click", () => {
       this.dispatchEvent(
-        new CustomEvent("close",
-          {composed: true,
-           detail: {
-             confirm: true,
-             projectId: this._projectId,
-             mediaIds: this._mediaIds,
-             mediaQuery: this._mediaQuery,
-             algorithmName: this._algorithmName,
-             extraParameters: this._extraParameters}}));
+        new CustomEvent("close", {
+          composed: true,
+          detail: {
+            confirm: true,
+            projectId: this._projectId,
+            mediaIds: this._mediaIds,
+            mediaQuery: this._mediaQuery,
+            algorithmName: this._algorithmName,
+            extraParameters: this._extraParameters,
+          },
+        })
+      );
     });
   }
 
   /**
    * Initialize the dialog window with the algorithm information prior
    * to displaying it
-   * 
+   *
    * @param {integer} projectId Project ID associate with algorithm
    * @param {string} algorithmName Name of algorithm to run
    * @param {array} mediaIds List of media IDs to process
    * @param {string} mediaQuery Media query string when launching algorithm
    * @param {array} extraParameters #TODO add useful info
    */
-  init(algorithmName, projectId, mediaIds, mediaQuery, extraParameters)
-  {
+  init(algorithmName, projectId, mediaIds, mediaQuery, extraParameters) {
     this._title.nodeValue = "Run Algorithm";
     this._message.textContent = "Do you want to run " + algorithmName + "?";
     this._algorithmName = algorithmName;
@@ -69,7 +74,12 @@ export class ConfirmRunAlgorithm extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 }
 

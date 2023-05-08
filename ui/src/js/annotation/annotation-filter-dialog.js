@@ -4,26 +4,19 @@ import { FilterConditionData } from "../util/filter-utilities.js";
 import { TatorData } from "../util/tator-data.js";
 
 /// Class to wrap a TatorData with values from annotation-data.
-class ModelDataConverter extends TatorData
-{
-  constructor(projectId, data)
-  {
+class ModelDataConverter extends TatorData {
+  constructor(projectId, data) {
     super(projectId);
     for (const dataType of data._dataTypesRaw) {
-      if (dataType.dtype == "state")
-      {
+      if (dataType.dtype == "state") {
         if (dataType.association == "Media") {
           this._stateTypeAssociations.media.push(dataType);
-        }
-        else if (dataType.association == "Localization") {
+        } else if (dataType.association == "Localization") {
           this._stateTypeAssociations.localization.push(dataType);
-        }
-        else if (dataType.association == "Frame") {
+        } else if (dataType.association == "Frame") {
           this._stateTypeAssociations.frame.push(dataType);
         }
-      }
-      else 
-      {
+      } else {
         this._localizationTypes.push(dataType);
       }
     }
@@ -37,9 +30,7 @@ class ModelDataConverter extends TatorData
  * Element used to encapsulate the filter modal dialog.
  */
 export class AnnotationFilterDialog extends ModalDialog {
-
-  constructor()
-  {
+  constructor() {
     super();
 
     this._div.setAttribute("class", "modal-wrap modal-extra-wide d-flex");
@@ -51,7 +42,10 @@ export class AnnotationFilterDialog extends ModalDialog {
     this._main.remove();
 
     this._conditionsDiv = document.createElement("div");
-    this._conditionsDiv.setAttribute("class", "analysis__filter_conditions_list");
+    this._conditionsDiv.setAttribute(
+      "class",
+      "analysis__filter_conditions_list"
+    );
     this._header.appendChild(this._conditionsDiv);
 
     const apply = document.createElement("button");
@@ -72,21 +66,30 @@ export class AnnotationFilterDialog extends ModalDialog {
 
     // Handler when user hits the apply button.
     apply.addEventListener("click", () => {
-      var searchObject = {'method': 'and', 'operations': []};
+      var searchObject = { method: "and", operations: [] };
       let clear = true;
-      for (let condition of this._filterConditionGroup.getConditions())
-      {
-        searchObject.operations.push(this._td._convertFilterForTator(condition));
+      for (let condition of this._filterConditionGroup.getConditions()) {
+        searchObject.operations.push(
+          this._td._convertFilterForTator(condition)
+        );
         clear = false;
       }
-      if (clear == false)
-      {
-        console.info(`Constructed search object = ${JSON.stringify(searchObject)}`);
-        this.dispatchEvent(new CustomEvent("annotationFilter", {detail: {filterObject: searchObject}}));
+      if (clear == false) {
+        console.info(
+          `Constructed search object = ${JSON.stringify(searchObject)}`
+        );
+        this.dispatchEvent(
+          new CustomEvent("annotationFilter", {
+            detail: { filterObject: searchObject },
+          })
+        );
       }
-      if (clear == true)
-      {
-        this.dispatchEvent(new CustomEvent("annotationFilter", {detail: {filterObject: null}}));
+      if (clear == true) {
+        this.dispatchEvent(
+          new CustomEvent("annotationFilter", {
+            detail: { filterObject: null },
+          })
+        );
       }
     });
 
@@ -96,60 +99,57 @@ export class AnnotationFilterDialog extends ModalDialog {
     });
   }
 
-
   /**
    * Sets the available dataset that can be selected by the user
    *
    * @param {int} project to load
    */
-  set project(project)
-  {
-    if (this._project != null)
-    {
+  set project(project) {
+    if (this._project != null) {
       console.warn("filter-dialog already bound with a dataset");
     }
   }
 
-  set dataType(val)
-  {
+  set dataType(val) {
     this._dataType = val;
-    this._isLocalization = 'dtype' in val;
+    this._isLocalization = "dtype" in val;
   }
-  set data(data)
-  {
+  set data(data) {
     this._td = new ModelDataConverter(data.project, data);
     let excludeList = [];
-    let excludeCategories = ['Medias'];
-    if (this._dataType)
-    {
-      if (this._isLocalization)
-      {
-        excludeCategories.push(...['MediaStates', 'LocalizationStates','FrameStates']);
-        for (let t of this._td.getStoredLocalizationTypes())
-        {
-          if (t.id != this._dataType.id)
-          {
+    let excludeCategories = ["Medias"];
+    if (this._dataType) {
+      if (this._isLocalization) {
+        excludeCategories.push(
+          ...["MediaStates", "LocalizationStates", "FrameStates"]
+        );
+        for (let t of this._td.getStoredLocalizationTypes()) {
+          if (t.id != this._dataType.id) {
             excludeList.push(t.id);
           }
         }
-      }
-      else
-      {
-        excludeCategories.push('Localizations');
-        for (let t of this._td.getStoredStateTypes())
-        {
-          if (t.id != this._dataType.id)
-          {
+      } else {
+        excludeCategories.push("Localizations");
+        for (let t of this._td.getStoredStateTypes()) {
+          if (t.id != this._dataType.id) {
             excludeList.push(t.id);
           }
         }
       }
     }
-    this._filterData = new FilterData(this._td, [], excludeCategories, excludeList, true);
+    this._filterData = new FilterData(
+      this._td,
+      [],
+      excludeCategories,
+      excludeList,
+      true
+    );
     this._filterData.init();
 
     // Set the GUI elements
-    this._filterConditionGroup = document.createElement("filter-condition-group");
+    this._filterConditionGroup = document.createElement(
+      "filter-condition-group"
+    );
     this._filterConditionGroup.data = this._filterData.getAllTypes();
     this._filterConditionGroup._div.style.marginTop = "10px";
     this._conditionsDiv.appendChild(this._filterConditionGroup);

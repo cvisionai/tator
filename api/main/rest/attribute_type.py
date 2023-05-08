@@ -53,7 +53,7 @@ class AttributeTypeListAPI(BaseListView):
 
         if "name" not in attribute_type:
             raise ValueError("Attribute type definition missing 'name' field")
-        if attribute_type['name'].startswith('$'):
+        if attribute_type["name"].startswith("$"):
             raise ValueError("Attribute type name can not start with '$' character")
         if "dtype" not in attribute_type:
             raise ValueError("Attribute type definition missing 'dtype' field")
@@ -253,8 +253,8 @@ class AttributeTypeListAPI(BaseListView):
 
             # Add the attribute to the desired entity type
             if entity_type.attribute_types:
-                existing_names = [a['name'] for a in entity_type.attribute_types]
-                if attribute_type_update['name'] in existing_names:
+                existing_names = [a["name"] for a in entity_type.attribute_types]
+                if attribute_type_update["name"] in existing_names:
                     raise ValueError(f"{a['name']} is already an attribute.")
                 entity_type.attribute_types.append(attribute_type_update)
             else:

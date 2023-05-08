@@ -6,7 +6,10 @@ export class EntityButton extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    div.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._shadow.appendChild(div);
 
     this._label = document.createTextNode("");
@@ -16,9 +19,12 @@ export class EntityButton extends TatorElement {
     div.appendChild(this._span);
 
     this._button = document.createElement("button");
-    this._button.setAttribute("class", "btn btn-outline btn-small d-flex f2 text-semibold");
+    this._button.setAttribute(
+      "class",
+      "btn btn-outline btn-small d-flex f2 text-semibold"
+    );
     this._button.style.justifyContent = "space-between";
-    this._button.style.width = (100 * 8 / 12) + "%";
+    this._button.style.width = (100 * 8) / 12 + "%";
     div.appendChild(this._button);
 
     const span = document.createElement("span");
@@ -37,7 +43,10 @@ export class EntityButton extends TatorElement {
     this._button.appendChild(svg);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+    path.setAttribute(
+      "d",
+      "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z"
+    );
     svg.appendChild(path);
   }
 
@@ -55,7 +64,7 @@ export class EntityButton extends TatorElement {
   }
 
   set annotationData(val) {
-    val.addEventListener("freshData", evt => {
+    val.addEventListener("freshData", (evt) => {
       if (evt.detail.typeObj.id === this._dataType.id) {
         const name = this._dataType.name;
         const count = evt.detail.data.length;
@@ -63,8 +72,7 @@ export class EntityButton extends TatorElement {
 
         if (count == 0) {
           this.style.display = "none";
-        }
-        else {
+        } else {
           this.style.display = null;
         }
       }
@@ -73,17 +81,18 @@ export class EntityButton extends TatorElement {
 
   set dataType(val) {
     this._dataType = val;
-    this._button.addEventListener("click", evt => {
-      this.dispatchEvent(new CustomEvent("open", {
-        detail: {id: val.id}
-      }));
+    this._button.addEventListener("click", (evt) => {
+      this.dispatchEvent(
+        new CustomEvent("open", {
+          detail: { id: val.id },
+        })
+      );
     });
     this._text.textContent = val.count + " " + val.name;
 
     if (val.count == 0) {
       this.style.display = "none";
-    }
-    else {
+    } else {
       this.style.display = null;
     }
   }

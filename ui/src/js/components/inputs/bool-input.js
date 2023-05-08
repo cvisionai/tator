@@ -9,7 +9,10 @@ export class BoolInput extends TatorElement {
     this._shadow.appendChild(fieldset);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "radio-slide-wrap d-flex flex-justify-between flex-items-center");
+    div.setAttribute(
+      "class",
+      "radio-slide-wrap d-flex flex-justify-between flex-items-center"
+    );
     fieldset.appendChild(div);
 
     this._legend = document.createElement("legend");
@@ -103,8 +106,8 @@ export class BoolInput extends TatorElement {
   set default(val) {
     this._default = val;
   }
-  
-  changed(){
+
+  changed() {
     return this.getValue() !== this._default;
   }
 
@@ -130,7 +133,7 @@ export class BoolInput extends TatorElement {
         val = false;
       } else {
         // which returns true for any string in JS
-        val = Boolean(val); 
+        val = Boolean(val);
       }
     }
     if (val) {
@@ -146,17 +149,13 @@ export class BoolInput extends TatorElement {
     }
   }
 
-  setDisable(val)
-  {
-    if (val)
-    {
+  setDisable(val) {
+    if (val) {
       this._on.setAttribute("disabled", true);
       this._off.setAttribute("disabled", true);
       this._span.style.backgroundColor = "#6d7a96";
       this._span.style.cursor = "not-allowed";
-    }
-    else
-    {
+    } else {
       this._on.removeAttribute("disabled");
       this._off.removeAttribute("disabled");
       this._span.style.backgroundColor = null;

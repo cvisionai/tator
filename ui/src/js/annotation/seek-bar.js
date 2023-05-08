@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { frameToTime } from "./annotation-common.js"
+import { frameToTime } from "./annotation-common.js";
 
 export class SeekBar extends TatorElement {
   constructor() {
@@ -18,164 +18,147 @@ export class SeekBar extends TatorElement {
     this._active = false;
 
     this._timeStore = null;
-    this._timeMode = "relative"; "utc" | "relative"
+    this._timeMode = "relative";
+    "utc" | "relative";
 
     var that = this;
-    var clickHandler=(evt)=>
-    {
-      if (this._disabled == true)
-      {
+    var clickHandler = (evt) => {
+      if (this._disabled == true) {
         return;
       }
       this._active = false;
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
-      if (width == 0)
-      {
-        width =
-          that.parentElement.offsetWidth;
+      if (width == 0) {
+        width = that.parentElement.offsetWidth;
         startX = that.parentElement.offsetLeft;
       }
-      const percentage = ((evt.clientX-startX)/
-                          width);
-      that.value = Math.round((percentage * (that._max - that._min) + that._min));
+      const percentage = (evt.clientX - startX) / width;
+      that.value = Math.round(percentage * (that._max - that._min) + that._min);
       that.dispatchEvent(
-        new CustomEvent("change",
-                        {composed: true,
-                         detail: {frame: that.value}}));
+        new CustomEvent("change", {
+          composed: true,
+          detail: { frame: that.value },
+        })
+      );
       evt.stopPropagation();
       return false;
-    }
+    };
     this.bar.addEventListener("click", clickHandler);
 
-    var mouseOver=(evt)=>
-    {
+    var mouseOver = (evt) => {
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
-      if (width == 0)
-      {
-        width =
-          that.parentElement.offsetWidth;
+      if (width == 0) {
+        width = that.parentElement.offsetWidth;
         startX = that.parentElement.offsetLeft;
       }
-      const percentage = ((evt.clientX-startX)/
-                          width);
-      const proposed_value = Math.round((percentage * (that._max - that._min) + that._min));
+      const percentage = (evt.clientX - startX) / width;
+      const proposed_value = Math.round(
+        percentage * (that._max - that._min) + that._min
+      );
 
-
-      if (proposed_value > 0)
-      {
+      if (proposed_value > 0) {
         if (this._timeMode == "utc") {
-
-          let timeStr = this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+          let timeStr =
+            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
           timeStr = timeStr.split("T")[1].split(".")[0];
 
-          this.preview.info = {frame: proposed_value,
-                               margin: evt.clientX-startX,
-                               time: timeStr};
+          this.preview.info = {
+            frame: proposed_value,
+            margin: evt.clientX - startX,
+            time: timeStr,
+          };
+        } else {
+          this.preview.info = {
+            frame: proposed_value,
+            margin: evt.clientX - startX,
+            time: frameToTime(proposed_value, this._fps),
+          };
         }
-        else {
-          this.preview.info = {frame:proposed_value,
-                               margin:evt.clientX-startX,
-                               time: frameToTime(proposed_value, this._fps)};
-        }
-      }
-      else
-      {
+      } else {
         this.preview.hide();
       }
 
       evt.stopPropagation();
       return false;
-    }
-    this.preview = document.createElement('media-seek-preview');
+    };
+    this.preview = document.createElement("media-seek-preview");
     this.bar.appendChild(this.preview);
     this.bar.addEventListener("mousemove", mouseOver);
-    this.bar.addEventListener("mouseout", ()=>{this.preview.hide()});
+    this.bar.addEventListener("mouseout", () => {
+      this.preview.hide();
+    });
 
-    var dragHandler=function(evt)
-    {
-      if (evt.button == 0)
-      {
+    var dragHandler = function (evt) {
+      if (evt.button == 0) {
         var width = that.offsetWidth;
-        if (width == 0)
-        {
+        if (width == 0) {
           width = that.parentElement.offsetWidth;
         }
-        var relativeX =
-            Math.min(Math.max(evt.pageX - that.offsetLeft,0),
-                     width);
-        const percentage = Math.min(relativeX/width,
-                                    that._loadedPercentage);
+        var relativeX = Math.min(
+          Math.max(evt.pageX - that.offsetLeft, 0),
+          width
+        );
+        const percentage = Math.min(relativeX / width, that._loadedPercentage);
 
-        that.value = Math.round((percentage * (that._max - that._min) + that._min));
+        that.value = Math.round(
+          percentage * (that._max - that._min) + that._min
+        );
         evt.stopPropagation();
         return false;
       }
-      evt.cancelBubble=true;
+      evt.cancelBubble = true;
       return false;
-    }
-    var releaseMouse=(evt)=>
-    {
+    };
+    var releaseMouse = (evt) => {
       this.bar.addEventListener("mousemove", mouseOver);
       that.bar.removeAttribute("wide-tooltip");
       console.info("RELEASE MOUSE.");
       this._active = false;
       clearInterval(that._periodicCheck);
-      document.removeEventListener("mouseup",
-                                   releaseMouse);
-      document.removeEventListener("mousemove",
-                                   dragHandler);
-      that.dispatchEvent(new CustomEvent("change",
-                                         {composed: true}));
+      document.removeEventListener("mouseup", releaseMouse);
+      document.removeEventListener("mousemove", dragHandler);
+      that.dispatchEvent(new CustomEvent("change", { composed: true }));
       that.handle.classList.remove("range-handle-selected");
       // Add back in event handler next iteration (time=0)
-      setTimeout(() =>
-                 {
-                   that.bar.addEventListener("click", clickHandler);
-                 },0);
-    }
-    this.handle.addEventListener("mousedown", evt =>
-                                 {
-                                  if (this._disabled == true)
-                                  {
-                                    return;
-                                  }
-                                  this.preview.hide();
-                                  this.bar.removeEventListener("mousemove", mouseOver);
-                                   this._active = true;
-                                   this._lastValue = this.value;
+      setTimeout(() => {
+        that.bar.addEventListener("click", clickHandler);
+      }, 0);
+    };
+    this.handle.addEventListener("mousedown", (evt) => {
+      if (this._disabled == true) {
+        return;
+      }
+      this.preview.hide();
+      this.bar.removeEventListener("mousemove", mouseOver);
+      this._active = true;
+      this._lastValue = this.value;
 
-                                   this._periodicCheck = setInterval(() =>
-                                     {
-                                      if (that._active == false)
-                                      {
-                                        clearInterval(this._periodicCheck);
-                                        return;
-                                      }
-                                      //console.info(`Checking scrub bar @ ${this.value}`);
-                                      if (this._value == this._lastValue || this._loadedPercentage == 0.00)
-                                      {
-                                        return;
-                                      }
-                                      this._lastValue = this.value;
-                                      this.dispatchEvent(
-                                        new CustomEvent("input",
-                                                        {composed: true,
-                                                        detail: {frame: this.value}}));
-                                     }
-                                    , 33);
-                                   that.bar.removeEventListener("click", clickHandler);
-                                   document.addEventListener("mouseup",
-                                                             releaseMouse);
-                                   document.addEventListener("mousemove",
-                                                             dragHandler);
-                                   this.handle.classList.add("range-handle-selected");
-                                   evt.stopPropagation();
-                                   return false;
-                                 });
-
-
+      this._periodicCheck = setInterval(() => {
+        if (that._active == false) {
+          clearInterval(this._periodicCheck);
+          return;
+        }
+        //console.info(`Checking scrub bar @ ${this.value}`);
+        if (this._value == this._lastValue || this._loadedPercentage == 0.0) {
+          return;
+        }
+        this._lastValue = this.value;
+        this.dispatchEvent(
+          new CustomEvent("input", {
+            composed: true,
+            detail: { frame: this.value },
+          })
+        );
+      }, 33);
+      that.bar.removeEventListener("click", clickHandler);
+      document.addEventListener("mouseup", releaseMouse);
+      document.addEventListener("mousemove", dragHandler);
+      this.handle.classList.add("range-handle-selected");
+      evt.stopPropagation();
+      return false;
+    });
 
     this.loadProgress = document.createElement("div");
     this.loadProgress.setAttribute("class", "range-loaded");
@@ -197,33 +180,29 @@ export class SeekBar extends TatorElement {
     }
   }
 
-  updateVisuals()
-  {
-    const percentage = ((this._value-this._min)/(this._max - this._min))*100;
+  updateVisuals() {
+    const percentage =
+      ((this._value - this._min) / (this._max - this._min)) * 100;
     if (percentage > 100 || percentage < 0) {
       this.handle.style.display = "none";
-    }
-    else {
+    } else {
       this.handle.style.display = "block";
-        this.handle.style.left = `${percentage}%`;
-      }
+      this.handle.style.left = `${percentage}%`;
+    }
   }
 
-  get active()
-  {
+  get active() {
     return this._active;
   }
 
-  attributeChangedCallback(name, oldValue, newValue)
-  {
-    switch(name)
-    {
-      case 'min':
-      this._min = Number(newValue);
-      break;
-      case 'max':
-      this._max = Number(newValue);
-      break;
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "min":
+        this._min = Number(newValue);
+        break;
+      case "max":
+        this._max = Number(newValue);
+        break;
       case "disabled":
         if (newValue === null) {
           this._disabled = false;
@@ -239,64 +218,57 @@ export class SeekBar extends TatorElement {
     this.updateVisuals();
   }
 
-  set value(val)
-  {
-    this._value=val;
+  set value(val) {
+    this._value = val;
     this.updateVisuals();
   }
 
-  set fps(val)
-  {
+  set fps(val) {
     this._fps = val;
   }
 
-  get value()
-  {
+  get value() {
     return this._value;
   }
 
-  useUtcTime(timeStore)
-  {
+  useUtcTime(timeStore) {
     this._timeStore = timeStore;
     this._timeMode = "utc";
   }
 
-  useRelativeTime()
-  {
+  useRelativeTime() {
     this._timeMode = "relative";
   }
 
-  setPair(other)
-  {
+  setPair(other) {
     // Link up twin sliders
     this._pair = other;
     other._pair = this;
   }
 
-  onBufferLoaded(evt)
-  {
-    this._loadedPercentage = evt.detail['percent_complete'];
-    const percent_complete = evt.detail['percent_complete']*100;
+  onBufferLoaded(evt) {
+    this._loadedPercentage = evt.detail["percent_complete"];
+    const percent_complete = evt.detail["percent_complete"] * 100;
 
-    this.loadProgress.style.width=`${percent_complete}%`;
+    this.loadProgress.style.width = `${percent_complete}%`;
   }
 
-  onDemandLoaded(evt)
-  {
+  onDemandLoaded(evt) {
     // If it is 0, that means we reset.
-    if (evt.detail.ranges.length == 0)
-    {
+    if (evt.detail.ranges.length == 0) {
       this.onDemandProgress.style.marginLeft = `0px`;
       this.onDemandProgress.style.width = `0px`;
       return;
     }
-    let range = evt.detail.ranges[0]
+    let range = evt.detail.ranges[0];
     const start = range[0];
     const end = range[1];
     const startPercentage = start / this._max;
     const endPercentage = end / this._max;
-    this.onDemandProgress.style.marginLeft = `${startPercentage*100}%`;
-    const widthPx = Math.round((endPercentage-startPercentage)*this.bar.clientWidth);
+    this.onDemandProgress.style.marginLeft = `${startPercentage * 100}%`;
+    const widthPx = Math.round(
+      (endPercentage - startPercentage) * this.bar.clientWidth
+    );
     this.onDemandProgress.style.width = `${widthPx}px`;
   }
 
@@ -304,19 +276,19 @@ export class SeekBar extends TatorElement {
    * Alternative to onBufferLoaded. Uses a passed in frame
    */
   setLoadProgress(frame) {
-    const percentage = ((frame-this._min)/(this._max - this._min));
+    const percentage = (frame - this._min) / (this._max - this._min);
     if (percentage > 1) {
-      this.onBufferLoaded({detail: {percent_complete: 1.0}});
-    }
-    else if (percentage < 0) {
-      this.onBufferLoaded({detail: {percent_complete: 0.0}});
-    }
-    else {
-      this.onBufferLoaded({detail: {percent_complete: percentage}});
+      this.onBufferLoaded({ detail: { percent_complete: 1.0 } });
+    } else if (percentage < 0) {
+      this.onBufferLoaded({ detail: { percent_complete: 0.0 } });
+    } else {
+      this.onBufferLoaded({ detail: { percent_complete: percentage } });
     }
   }
 
-  static get observedAttributes() { return ['min', 'max', 'disabled']; }
+  static get observedAttributes() {
+    return ["min", "max", "disabled"];
+  }
 }
 
 customElements.define("seek-bar", SeekBar);

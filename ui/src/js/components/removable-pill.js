@@ -6,7 +6,10 @@ export class RemovablePill extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "form-control input-sm d-flex flex-items-center rounded-1");
+    div.setAttribute(
+      "class",
+      "form-control input-sm d-flex flex-items-center rounded-1"
+    );
     this._shadow.appendChild(div);
     this._div = div;
 
@@ -30,26 +33,27 @@ export class RemovablePill extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M5.293 6.707l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l5.293-5.293 5.293 5.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5.293-5.293 5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
+    path.setAttribute(
+      "d",
+      "M5.293 6.707l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l5.293-5.293 5.293 5.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5.293-5.293 5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z"
+    );
     svg.appendChild(path);
 
     this._id = null;
 
     button.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("removeId", {
-        detail: {id: this._id}
-      }));
+      this.dispatchEvent(
+        new CustomEvent("removeId", {
+          detail: { id: this._id },
+        })
+      );
     });
   }
 
-  set removable(val)
-  {
-    if (val)
-    {
+  set removable(val) {
+    if (val) {
       this._button.style.display = null;
-    }
-    else
-    {
+    } else {
       this._button.style.display = "none";
     }
   }

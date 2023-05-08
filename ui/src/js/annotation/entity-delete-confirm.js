@@ -44,7 +44,7 @@ export class EntityDeleteConfirm extends ModalDialog {
       console.log("always allow value " + allSessionDelete);
 
       if (allSessionDelete == "on") {
-        sessionStorage.setItem('allowSessionDelete', 'true');
+        sessionStorage.setItem("allowSessionDelete", "true");
       }
 
       this._closeCallback();
@@ -52,21 +52,25 @@ export class EntityDeleteConfirm extends ModalDialog {
     });
   }
 
-  set objectName(val)
-  {
+  set objectName(val) {
     this._title.nodeValue = `Delete '${val}'?`;
   }
 
   confirm() {
-    console.log("Checking session var... allowSessionDelete: " + sessionStorage.getItem('allowSessionDelete'));
+    console.log(
+      "Checking session var... allowSessionDelete: " +
+        sessionStorage.getItem("allowSessionDelete")
+    );
     // Check for stored item and dispatch event to delete; or open confirm
-    if (typeof sessionStorage.getItem('allowSessionDelete') !== "undefined" && sessionStorage.getItem('allowSessionDelete') == "true") {
+    if (
+      typeof sessionStorage.getItem("allowSessionDelete") !== "undefined" &&
+      sessionStorage.getItem("allowSessionDelete") == "true"
+    ) {
       this.dispatchEvent(new Event("confirmDelete"));
     } else {
       this.setAttribute("is-open", "true");
     }
   }
-
 }
 
 customElements.define("entity-delete-confirm", EntityDeleteConfirm);

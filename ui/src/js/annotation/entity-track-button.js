@@ -6,7 +6,10 @@ export class EntityTrackButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button"
+    );
     this._shadow.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -30,11 +33,17 @@ export class EntityTrackButton extends TatorElement {
     svg.appendChild(rect);
 
     const poly1 = document.createElementNS(svgNamespace, "polyline");
-    poly1.setAttribute("points", "6.70 4.25 4.99 4.25 4.99 18.77 19.50 18.77 19.50 17.43");
+    poly1.setAttribute(
+      "points",
+      "6.70 4.25 4.99 4.25 4.99 18.77 19.50 18.77 19.50 17.43"
+    );
     svg.appendChild(poly1);
 
     const poly2 = document.createElementNS(svgNamespace, "polyline");
-    poly2.setAttribute("points", "2.52 8.22 0.83 8.22 0.83 22.57 15.18 22.57 15.18 21.26");
+    poly2.setAttribute(
+      "points",
+      "2.52 8.22 0.83 8.22 0.83 22.57 15.18 22.57 15.18 21.26"
+    );
     svg.appendChild(poly2);
   }
 }

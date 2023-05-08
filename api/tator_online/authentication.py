@@ -7,14 +7,18 @@ from jwt.algorithms import RSAAlgorithm
 import requests
 import json
 
+
 class KeycloakAuthentication(BaseAuthentication):
     def _get_pub_key(self):
         from main.cache import TatorCache
+
         cache = TatorCache()
         # Get the public key from keycloak (may be cached)
         pub_key = cache.get_keycloak_public_key()
         if pub_key is None:
-            url = f"https://{os.getenv('MAIN_HOST')}/auth/realms/tator/protocol/openid-connect/certs"
+            url = (
+                f"https://{os.getenv('MAIN_HOST')}/auth/realms/tator/protocol/openid-connect/certs"
+            )
             r = requests.get(url)
             r.raise_for_status()
             json_data = r.json()
@@ -28,8 +32,8 @@ class KeycloakAuthentication(BaseAuthentication):
     def _get_token(self, request):
         # Get the bearer token
         token = None
-        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        if auth_header.startswith('Bearer '):
+        auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+        if auth_header.startswith("Bearer "):
             token = auth_header[7:]
         return token
 
@@ -42,8 +46,8 @@ class KeycloakAuthentication(BaseAuthentication):
         if token is not None:
             try:
                 decoded = jwt.decode(token, pub_key, algorithms=["RS256"], audience="account")
-                keycloak_user_id = decoded['sub']
-                user_id = int(keycloak_user_id.split(':')[-1])
+                keycloak_user_id = decoded["sub"]
+                user_id = int(keycloak_user_id.split(":")[-1])
                 user = User.objects.get(pk=user_id)
                 out = (user, None)
             except jwt.ExpiredSignatureError:

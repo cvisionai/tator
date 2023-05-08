@@ -4,7 +4,7 @@ import { TatorElement } from "../components/tator-element.js";
  * Module for the settings portion of the analytics dashboard
  */
 export class AnalyticsSettings extends TatorElement {
-  constructor () {
+  constructor() {
     super();
 
     const div = document.createElement("div");
@@ -32,12 +32,17 @@ export class AnalyticsSettings extends TatorElement {
     this._bulkCorrect.hidden = true;
     div.appendChild(this._bulkCorrect);
 
-    this._localizationsView = document.createElement("localizations-gallery-button");
+    this._localizationsView = document.createElement(
+      "localizations-gallery-button"
+    );
     this._localizationsView.hidden = true;
     div.appendChild(this._localizationsView);
 
     this._localizationsView.addEventListener("click", () => {
-      let url = String(window.location.href).replace("corrections", "localizations");
+      let url = String(window.location.href).replace(
+        "corrections",
+        "localizations"
+      );
       window.location = url;
     });
 
@@ -46,10 +51,9 @@ export class AnalyticsSettings extends TatorElement {
       let url = window.location.origin + window.location.pathname;
       url = url.replace("localizations", "corrections");
       url += "?" + this._queryParams(searchParams).toString();
-      console.log(url)
+      console.log(url);
       window.location.href = url;
     });
-
 
     this._link.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -71,7 +75,7 @@ export class AnalyticsSettings extends TatorElement {
 
   _queryParams(params) {
     if (params == undefined) {
-      params = new URLSearchParams(window.location.search)
+      params = new URLSearchParams(window.location.search);
     }
     if (this.hasAttribute("selectedState")) {
       params.set("selectedState", this.getAttribute("selectedState"));
@@ -94,9 +98,10 @@ export class AnalyticsSettings extends TatorElement {
 
   getFilterConditionsObject() {
     if (this.hasAttribute("filterConditions")) {
-      return JSON.parse(decodeURIComponent(this.getAttribute("filterConditions")));
-    }
-    else {
+      return JSON.parse(
+        decodeURIComponent(this.getAttribute("filterConditions"))
+      );
+    } else {
       return [];
     }
   }
@@ -104,8 +109,7 @@ export class AnalyticsSettings extends TatorElement {
   getPageSize() {
     if (this.hasAttribute("pageSize")) {
       return Number(this.getAttribute("pageSize"));
-    }
-    else {
+    } else {
       return NaN;
     }
   }
@@ -113,8 +117,7 @@ export class AnalyticsSettings extends TatorElement {
   getPage() {
     if (this.hasAttribute("page")) {
       return Number(this.getAttribute("page"));
-    }
-    else {
+    } else {
       return NaN;
     }
   }
@@ -122,8 +125,7 @@ export class AnalyticsSettings extends TatorElement {
   getLock() {
     if (this.hasAttribute("lock")) {
       return Number(this.getAttribute("lock"));
-    }
-    else {
+    } else {
       return NaN;
     }
   }
@@ -138,7 +140,10 @@ export class AnalyticsSettings extends TatorElement {
   processURL() {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has("filterConditions")) {
-      this.setAttribute("filterConditions", searchParams.get("filterConditions"));
+      this.setAttribute(
+        "filterConditions",
+        searchParams.get("filterConditions")
+      );
     }
     if (searchParams.has("pageSize")) {
       this.setAttribute("pageSize", searchParams.get("pageSize"));

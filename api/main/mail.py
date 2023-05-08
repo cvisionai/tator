@@ -54,7 +54,9 @@ class TatorMail(ABC):
         for details
         """
         if add_footer and text:
-            footer = "\n\nThis message has been sent to all deployment staff. No action is required."
+            footer = (
+                "\n\nThis message has been sent to all deployment staff. No action is required."
+            )
             text += footer
 
         # Get all non-empty staff emails

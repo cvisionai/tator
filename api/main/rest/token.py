@@ -6,17 +6,18 @@ from ..schema import TokenSchema
 
 from ._base_views import BaseListView
 
+
 class TokenAPI(BaseListView):
-    """ Get list of users.
-    """
+    """Get list of users."""
+
     schema = TokenSchema()
     queryset = Token.objects.all()
-    http_method_names = ['post']
+    http_method_names = ["post"]
 
     def _post(self, params):
-        username = params['username']
-        password = params['password']
-        refresh = params.get('refresh', False)
+        username = params["username"]
+        password = params["password"]
+        refresh = params.get("refresh", False)
 
         user = authenticate(self.request, username=username, password=password)
         if not user:
@@ -30,5 +31,4 @@ class TokenAPI(BaseListView):
         if (not created) and refresh:
             token.delete()
             token = Token.objects.create(user=user)
-        return {'token': token.key}
-
+        return {"token": token.key}

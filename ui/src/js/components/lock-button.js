@@ -6,7 +6,10 @@ export class LockButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
+    );
     this._shadow.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -50,7 +53,7 @@ export class LockButton extends TatorElement {
           this.lock();
         } else {
           this.unlock();
-        }      
+        }
       }
     });
   }

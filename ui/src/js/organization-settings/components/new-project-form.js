@@ -3,7 +3,7 @@ import { store } from "../store.js";
 
 export class OrgNewProjectDialog extends OrgTypeFormTemplate {
   constructor() {
-    super(); 
+    super();
 
     this._name = document.createElement("text-input");
     this._name.setAttribute("name", "Name");
@@ -17,26 +17,35 @@ export class OrgNewProjectDialog extends OrgTypeFormTemplate {
 
     this._preset = document.createElement("enum-input");
     this._preset.setAttribute("name", "Preset");
-    this._preset.choices = [{
-      value: "imageClassification",
-      label: "Image classification",
-    }, {
-      value: "objectDetection",
-      label: "Object detection",
-    }, {
-      value: "multiObjectTracking",
-      label: "Multi-object tracking",
-    }, {
-      value: "activityRecognition",
-      label: "Activity recognition",
-    }, {
-      value: "none",
-      label: "None (no preset)",
-    }];
+    this._preset.choices = [
+      {
+        value: "imageClassification",
+        label: "Image classification",
+      },
+      {
+        value: "objectDetection",
+        label: "Object detection",
+      },
+      {
+        value: "multiObjectTracking",
+        label: "Multi-object tracking",
+      },
+      {
+        value: "activityRecognition",
+        label: "Activity recognition",
+      },
+      {
+        value: "none",
+        label: "None (no preset)",
+      },
+    ];
     this._shadow.appendChild(this._preset);
 
     const messages = document.createElement("div");
-    messages.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center");
+    messages.setAttribute(
+      "class",
+      "main__header d-flex flex-items-center flex-justify-center"
+    );
     this._shadow.appendChild(messages);
 
     this._messageList = document.createElement("ul");
@@ -66,8 +75,8 @@ export class OrgNewProjectDialog extends OrgTypeFormTemplate {
 
   set projects(projects) {
     this._existingNames = [];
-    for(let [id, project] of projects)
-    this._existingNames.push(project.name.toLowerCase());
+    for (let [id, project] of projects)
+      this._existingNames.push(project.name.toLowerCase());
   }
 
   async init() {
@@ -93,24 +102,24 @@ export class OrgNewProjectDialog extends OrgTypeFormTemplate {
     return this._preset.getValue();
   }
 
-//   _validateName() {
-//     let valid = true;
-//     const name = this._name.getValue();
-//     this._nameWarning.style.display = "none";
-//     if (name.length == 0) {
-//       valid = false;
-//     } else {
-//       if (this._existingNames.includes(name.toLowerCase())) {
-//         valid = false;
-//         this._nameWarning.style.display = "block";
-//       }
-//     }
-//     if (valid) {
-//       this._accept.removeAttribute("disabled");
-//     } else {
-//       this._accept.setAttribute("disabled", "");
-//     }
-//   }
+  //   _validateName() {
+  //     let valid = true;
+  //     const name = this._name.getValue();
+  //     this._nameWarning.style.display = "none";
+  //     if (name.length == 0) {
+  //       valid = false;
+  //     } else {
+  //       if (this._existingNames.includes(name.toLowerCase())) {
+  //         valid = false;
+  //         this._nameWarning.style.display = "block";
+  //       }
+  //     }
+  //     if (valid) {
+  //       this._accept.removeAttribute("disabled");
+  //     } else {
+  //       this._accept.setAttribute("disabled", "");
+  //     }
+  //   }
 }
 
 customElements.define("org-new-project-dialog", OrgNewProjectDialog);

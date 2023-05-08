@@ -7,40 +7,52 @@ export class StateTypeEdit extends TypeFormTemplate {
     this.typeName = "StateType";
     this.readableTypeName = "State Type";
     this._hideAttributes = false;
-    
-    // 
+
+    //
     var templateInner = document.getElementById("state-type-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("state-type-edit--form");
     this._editName = this._shadow.getElementById("state-type-edit--name");
-    this._editDescription = this._shadow.getElementById("state-type-edit--description");
-    this.dtypeSelect = this._shadow.getElementById("state-type-edit--data-type");
+    this._editDescription = this._shadow.getElementById(
+      "state-type-edit--description"
+    );
+    this.dtypeSelect = this._shadow.getElementById(
+      "state-type-edit--data-type"
+    );
     this._visibleBool = this._shadow.getElementById("state-type-edit--visible");
-    this._groupingDefault = this._shadow.getElementById("state-type-edit--grouping-default");
-    this._mediaCheckboxes = this._shadow.getElementById("state-type-edit--media");
-    this._association = this._shadow.getElementById("state-type-edit--association");
-    this._interpolation = this._shadow.getElementById("state-type-edit--interpolation");
-    this._deleteChildLoc = this._shadow.getElementById("state-type-edit--delete-child");
+    this._groupingDefault = this._shadow.getElementById(
+      "state-type-edit--grouping-default"
+    );
+    this._mediaCheckboxes = this._shadow.getElementById(
+      "state-type-edit--media"
+    );
+    this._association = this._shadow.getElementById(
+      "state-type-edit--association"
+    );
+    this._interpolation = this._shadow.getElementById(
+      "state-type-edit--interpolation"
+    );
+    this._deleteChildLoc = this._shadow.getElementById(
+      "state-type-edit--delete-child"
+    );
 
     // set enum values once
-    this.dtypeSelect.choices = [
-      { "label": "State", "value": "state" }
-    ];
+    this.dtypeSelect.choices = [{ label: "State", value: "state" }];
 
     this._association.choices = [
-      { "label" : "Select", "value" : ""},
-      { "value": "Media"},
-      { "value": "Frame" },
-      { "value": "Localization" }
+      { label: "Select", value: "" },
+      { value: "Media" },
+      { value: "Frame" },
+      { value: "Localization" },
     ];
 
     this._interpolation.choices = [
-      { "label" : "Select", "value" : ""},
-      { "label": "None", "value": "none" },
-      { "label": "Latest", "value": "latest" },
-      { "label": "Attr Style Range", "value": "attr_style_range" }
+      { label: "Select", value: "" },
+      { label: "None", value: "none" },
+      { label: "Latest", value: "latest" },
+      { label: "Attr Style Range", value: "attr_style_range" },
     ];
   }
 
@@ -67,15 +79,15 @@ export class StateTypeEdit extends TypeFormTemplate {
     this._groupingDefault.setValue(this._data.grouping_default);
     this._groupingDefault.default = this._data.grouping_default;
 
-    // const MEDIA = "Media"; 
+    // const MEDIA = "Media";
     if (typeof this._data.media !== "undefined") {
       try {
         const mediaListWithChecked = await getCompiledList({
           type: "MediaType",
-          check: this._data.media
+          check: this._data.media,
         });
-        this._mediaCheckboxes.setValue( mediaListWithChecked );
-        this._mediaCheckboxes.default = mediaListWithChecked; 
+        this._mediaCheckboxes.setValue(mediaListWithChecked);
+        this._mediaCheckboxes.default = mediaListWithChecked;
       } catch (err) {
         console.error("Error populating media list.", err);
       }
@@ -83,7 +95,7 @@ export class StateTypeEdit extends TypeFormTemplate {
 
     // Associations
     if (!this._data.association) {
-      this._association.default = ""; 
+      this._association.default = "";
     } else {
       this._association.setValue(this._data.association);
       this._association.default = this._data.association;
@@ -91,7 +103,7 @@ export class StateTypeEdit extends TypeFormTemplate {
 
     // Interpolation
     if (!this._data.interpolation) {
-      this._interpolation.default = ""; 
+      this._interpolation.default = "";
     } else {
       this._interpolation.setValue(this._data.interpolation);
       this._interpolation.default = this._data.interpolation;
@@ -100,10 +112,9 @@ export class StateTypeEdit extends TypeFormTemplate {
     // Child Localizations
     this._deleteChildLoc.setValue(this._data.delete_child_localizations);
     this._deleteChildLoc.default = this._data.delete_child_localizations;
-
   }
 
-  _getFormData(){
+  _getFormData() {
     const formData = {};
     const isNew = this._data.id == "New" ? true : false;
 
@@ -112,7 +123,7 @@ export class StateTypeEdit extends TypeFormTemplate {
     }
 
     if (this.dtypeSelect.changed() || isNew) {
-      formData.dtype = this.dtypeSelect.getValue()
+      formData.dtype = this.dtypeSelect.getValue();
     }
 
     if (this._editDescription.changed() || isNew) {
@@ -145,7 +156,6 @@ export class StateTypeEdit extends TypeFormTemplate {
 
     return formData;
   }
-
 }
 
 customElements.define("state-type-edit", StateTypeEdit);

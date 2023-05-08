@@ -17,7 +17,10 @@ export class ProjectDetail extends TatorPage {
     // Success and warning Utility hooks
     const utilitiesDiv = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
-    utilitiesDiv.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-6 f3");
+    utilitiesDiv.setAttribute(
+      "class",
+      "annotation__header d-flex flex-items-center flex-justify-between px-6 f3"
+    );
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(utilitiesDiv, user);
 
@@ -33,7 +36,10 @@ export class ProjectDetail extends TatorPage {
 
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
-    this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-12 d-flex");
+    this.mainWrapper.setAttribute(
+      "class",
+      "analysis--main--wrapper col-12 d-flex"
+    );
     this._shadow.appendChild(this.mainWrapper);
 
     // Original main element
@@ -44,7 +50,7 @@ export class ProjectDetail extends TatorPage {
 
     /* LEFT*** Navigation Pane - Project Detail Viewer */
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container-left col-3"); //slide-close 
+    this.aside.setAttribute("class", "entity-panel--container-left col-3"); //slide-close
     this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 
@@ -54,10 +60,13 @@ export class ProjectDetail extends TatorPage {
 
     //
     const section = document.createElement("section");
-    section.setAttribute("class", "sections-wrap py-6 col-3 px-5 text-gray"); // 
+    section.setAttribute("class", "sections-wrap py-6 col-3 px-5 text-gray"); //
 
     const folderHeader = document.createElement("div");
-    folderHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
+    folderHeader.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-4"
+    );
     section.appendChild(folderHeader);
 
     const folderText = document.createElement("h2");
@@ -66,7 +75,10 @@ export class ProjectDetail extends TatorPage {
     folderHeader.appendChild(folderText);
 
     const addFolderButton = document.createElement("button");
-    addFolderButton.setAttribute("class", "px-0 f2 btn-clear text-gray hover-text-white");
+    addFolderButton.setAttribute(
+      "class",
+      "px-0 f2 btn-clear text-gray hover-text-white"
+    );
     folderHeader.appendChild(addFolderButton);
 
     const addFolderSpan = document.createElement("span");
@@ -82,7 +94,10 @@ export class ProjectDetail extends TatorPage {
     section.appendChild(this._folders);
 
     const savedSearchHeader = document.createElement("div");
-    savedSearchHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
+    savedSearchHeader.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-4"
+    );
     section.appendChild(savedSearchHeader);
 
     const savedSearchText = document.createElement("h2");
@@ -91,7 +106,10 @@ export class ProjectDetail extends TatorPage {
     savedSearchHeader.appendChild(savedSearchText);
 
     this._addSavedSearchButton = document.createElement("button");
-    this._addSavedSearchButton.setAttribute("class", "px-0 f2 btn-clear text-gray hover-text-white");
+    this._addSavedSearchButton.setAttribute(
+      "class",
+      "px-0 f2 btn-clear text-gray hover-text-white"
+    );
     this._addSavedSearchButton.style.opacity = 0.5;
     this._addSavedSearchButton.style.cursor = "not-allowed";
     savedSearchHeader.appendChild(this._addSavedSearchButton);
@@ -109,7 +127,10 @@ export class ProjectDetail extends TatorPage {
     section.appendChild(this._savedSearches);
 
     const bookmarkHeader = document.createElement("div");
-    bookmarkHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
+    bookmarkHeader.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-4"
+    );
     section.appendChild(bookmarkHeader);
 
     const bookmarkText = document.createElement("h2");
@@ -122,7 +143,10 @@ export class ProjectDetail extends TatorPage {
     section.appendChild(this._bookmarks);
 
     const archivedFoldersButton = document.createElement("button");
-    archivedFoldersButton.setAttribute("class", "collapsible px-0 f2 btn-clear text-gray hover-text-white py-4");
+    archivedFoldersButton.setAttribute(
+      "class",
+      "collapsible px-0 f2 btn-clear text-gray hover-text-white py-4"
+    );
     section.appendChild(archivedFoldersButton);
 
     this.archivedFolderText = document.createElement("h2");
@@ -136,7 +160,7 @@ export class ProjectDetail extends TatorPage {
     section.appendChild(this._archivedFolders);
 
     this._mainSection = document.createElement("section");
-    this._mainSection.setAttribute("class", "py-3 px-6 flex-grow"); //project__main 
+    this._mainSection.setAttribute("class", "py-3 px-6 flex-grow"); //project__main
     this.main.appendChild(this._mainSection);
 
     this.gallery = {};
@@ -159,7 +183,10 @@ export class ProjectDetail extends TatorPage {
     nameDiv.appendChild(h1);
 
     this._settingsButton = document.createElement("a");
-    this._settingsButton.setAttribute("class", "px-2 h2 text-gray hover-text-white");
+    this._settingsButton.setAttribute(
+      "class",
+      "px-2 h2 text-gray hover-text-white"
+    );
     this._settingsButton.style.marginTop = "6px";
     nameDiv.appendChild(this._settingsButton);
 
@@ -220,38 +247,57 @@ export class ProjectDetail extends TatorPage {
     // Media section
     this._mediaSection = document.createElement("media-section");
     this._projects.appendChild(this._mediaSection);
-    this._mediaSection.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));
+    this._mediaSection.addEventListener(
+      "runAlgorithm",
+      this._openConfirmRunAlgoModal.bind(this)
+    );
 
     // Card attribute stuff related to mediaSection
     /**
-    * CARD Label display options link for menu, and checkbox div
-    */
+     * CARD Label display options link for menu, and checkbox div
+     */
     this._cardAttributeLabels = document.createElement("entity-gallery-labels");
-    this._cardAttributeLabels.setAttribute("id", "showMediaAttributes")
+    this._cardAttributeLabels.setAttribute("id", "showMediaAttributes");
     this._cardAttributeLabels.titleEntityTypeName = "media";
-    this._cardAttributeLabels._titleText = document.createTextNode("Select media labels to display.");
-    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Show file attributes";
+    this._cardAttributeLabels._titleText = document.createTextNode(
+      "Select media labels to display."
+    );
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML =
+      "Show file attributes";
 
     this._mediaSection._hiddenMediaLabel.appendChild(this._cardAttributeLabels);
-    this._mediaSection._more._cardLink.appendChild(this._cardAttributeLabels.menuLink);
-    this._mediaSection._more.addEventListener("bulk-edit", this._openBulkEdit.bind(this));
+    this._mediaSection._more._cardLink.appendChild(
+      this._cardAttributeLabels.menuLink
+    );
+    this._mediaSection._more.addEventListener(
+      "bulk-edit",
+      this._openBulkEdit.bind(this)
+    );
 
     this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
       // updates labels on cards
-      this._mediaSection._files.dispatchEvent(new CustomEvent("labels-update", evt.detail));
-      this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
-      this._mediaSection._files.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;
+      this._mediaSection._files.dispatchEvent(
+        new CustomEvent("labels-update", evt.detail)
+      );
+      this._bulkEdit._updateShownAttributes({
+        typeId: evt.detail.typeId,
+        values: evt.detail.value,
+      });
+      this._mediaSection._files.cardLabelsChosenByType[evt.detail.typeId] =
+        evt.detail.value;
     });
 
     // references inner for card setup and pagination checkbox clear
     this._mediaSection.bulkEdit = this._bulkEdit;
     this._mediaSection._files.bulkEdit = this._bulkEdit;
 
-
     // Confirm algorithm
     this._confirmRunAlgorithm = document.createElement("confirm-run-algorithm");
     this._projects.appendChild(this._confirmRunAlgorithm);
-    this._confirmRunAlgorithm.addEventListener("close", this._closeConfirmRunAlgoModal.bind(this));
+    this._confirmRunAlgorithm.addEventListener(
+      "close",
+      this._closeConfirmRunAlgoModal.bind(this)
+    );
 
     const deleteSection = document.createElement("delete-section-form");
     this._projects.appendChild(deleteSection);
@@ -286,16 +332,19 @@ export class ProjectDetail extends TatorPage {
 
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
-    this._shadow.appendChild(this.loading.getImg())
+    this._shadow.appendChild(this.loading.getImg());
 
     // Create store subscriptions
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
 
-    window.addEventListener("beforeunload", evt => {
+    window.addEventListener("beforeunload", (evt) => {
       if (this._uploadDialog.hasAttribute("is-open")) {
         evt.preventDefault();
-        evt.returnValue = '';
+        evt.returnValue = "";
         window.alert("Uploads are in progress. Still leave?");
       }
     });
@@ -309,15 +358,15 @@ export class ProjectDetail extends TatorPage {
       this._bulkEdit._clearSelection();
     });
 
-    addFolderButton.addEventListener("click", evt => {
+    addFolderButton.addEventListener("click", (evt) => {
       newSectionDialog.init("Add Folder", "folder");
       newSectionDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
 
-    archivedFoldersButton.addEventListener("click", evt => {
+    archivedFoldersButton.addEventListener("click", (evt) => {
       this.classList.toggle("active");
-      const content = this._archivedFolders
+      const content = this._archivedFolders;
       if (content.style.display === "block") {
         content.style.display = "none";
         this.archivedFolderText.textContent = "+ Archived Folders";
@@ -327,7 +376,7 @@ export class ProjectDetail extends TatorPage {
       }
     });
 
-    this._addSavedSearchButton.addEventListener("click", evt => {
+    this._addSavedSearchButton.addEventListener("click", (evt) => {
       if (this._addSavedSearchButton.style.cursor == "pointer") {
         newSectionDialog.init("Save current search", "savedSearch");
         newSectionDialog.setAttribute("is-open", "");
@@ -335,32 +384,39 @@ export class ProjectDetail extends TatorPage {
       }
     });
 
-    newSectionDialog.addEventListener("close", async evt => {
+    newSectionDialog.addEventListener("close", async (evt) => {
       if (newSectionDialog._confirm) {
         let spec;
         if (newSectionDialog._sectionType == "folder") {
           spec = {
             name: newSectionDialog._input.value,
             tator_user_sections: uuidv1(),
-            visible: true
+            visible: true,
           };
         } else if (newSectionDialog._sectionType == "savedSearch") {
           spec = { visible: true };
 
           // Check if an existing section is selected.
-          const params = new URLSearchParams(document.location.search.substring(1));
+          const params = new URLSearchParams(
+            document.location.search.substring(1)
+          );
           if (params.has("section")) {
             const sectionId = Number(params.get("section"));
             await fetchCredentials(`/rest/Section/${sectionId}`)
-              .then(response => response.json())
-              .then(section => { spec = section; });
+              .then((response) => response.json())
+              .then((section) => {
+                spec = section;
+              });
           }
           spec.name = newSectionDialog._input.value;
 
           if (params.has("encoded_search")) {
             let object_search = JSON.parse(atob(params.get("encoded_search")));
             if (spec.object_search) {
-              let union_operation = {"method": "and", operations:[spec.object_search, object_search]}
+              let union_operation = {
+                method: "and",
+                operations: [spec.object_search, object_search],
+              };
               spec.object_search = union_operation;
             } else {
               spec.object_search = object_search;
@@ -368,9 +424,14 @@ export class ProjectDetail extends TatorPage {
           }
 
           if (params.has("encoded_related_search")) {
-            let related_search = JSON.parse(atob(params.get("encoded_related_search")));
+            let related_search = JSON.parse(
+              atob(params.get("encoded_related_search"))
+            );
             if (spec.related_search) {
-              let union_operation = {"method": "and", operations:[spec.object_search, related_search]}
+              let union_operation = {
+                method: "and",
+                operations: [spec.object_search, related_search],
+              };
               spec.related_search = union_operation;
             } else {
               spec.related_search = related_search;
@@ -388,96 +449,102 @@ export class ProjectDetail extends TatorPage {
         fetchCredentials(`/rest/Sections/${projectId}`, {
           method: "POST",
           body: JSON.stringify(spec),
-        })
-          .then(async response => {
-            let section = await response.json();
-            if (response.status != 201)
-            {
-              if (this._modalError == undefined)
-              {
-                this._modalError = document.createElement("modal-dialog");
-                this._shadow.appendChild(this._modalError);
-              }
-              this._modalError._error(`Unable to create section '${spec.name}'. ${section.message}`, "Error");
-              return;
+        }).then(async (response) => {
+          let section = await response.json();
+          if (response.status != 201) {
+            if (this._modalError == undefined) {
+              this._modalError = document.createElement("modal-dialog");
+              this._shadow.appendChild(this._modalError);
             }
-            const card = document.createElement("entity-card");
-            const sectionObj = {
-              id: section.id,
-              project: projectId,
-              ...spec
-            };
-            if (newSectionDialog._sectionType == "folder") {
-              card.sectionInit(sectionObj, "folder");
-              if (sectionObj.visible) {
-                this._folders.appendChild(card);
-              } else {
-                this._archivedFolders.appendChild(card);
-              }
-              //
-              card.addEventListener("click", () => {
-                const clearPage = true;
-                this._selectSection(sectionObj, projectId, clearPage);
-                for (const child of this._allSections()) {
-                  child.active = false;
-                }
-                card.active = true;
-              });
-
-              card.addEventListener("visibilityChange", this._sectionVisibilityEL.bind(this));
-
-            } else if (newSectionDialog._sectionType == "savedSearch") {
-              card.sectionInit(sectionObj, "savedSearch");
-              this._savedSearches.appendChild(card);
-
-              // Notifiy media section about section renames
-              card.addEventListener("renameSection", (evt) => {
-                // console.log(evt);
-                this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
-              });
-              card.addEventListener("deleteSection", (evt) => {
-                this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.detail));
-              });
-
-              card.addEventListener("click", () => {
-                const clearPage = true;
-                this._selectSection(sectionObj, projectId, clearPage);
-                for (const child of this._allSections()) {
-                  child.active = false;
-                }
-                card.active = true;
-              });
+            this._modalError._error(
+              `Unable to create section '${spec.name}'. ${section.message}`,
+              "Error"
+            );
+            return;
+          }
+          const card = document.createElement("entity-card");
+          const sectionObj = {
+            id: section.id,
+            project: projectId,
+            ...spec,
+          };
+          if (newSectionDialog._sectionType == "folder") {
+            card.sectionInit(sectionObj, "folder");
+            if (sectionObj.visible) {
+              this._folders.appendChild(card);
+            } else {
+              this._archivedFolders.appendChild(card);
             }
-          });
+            //
+            card.addEventListener("click", () => {
+              const clearPage = true;
+              this._selectSection(sectionObj, projectId, clearPage);
+              for (const child of this._allSections()) {
+                child.active = false;
+              }
+              card.active = true;
+            });
+
+            card.addEventListener(
+              "visibilityChange",
+              this._sectionVisibilityEL.bind(this)
+            );
+          } else if (newSectionDialog._sectionType == "savedSearch") {
+            card.sectionInit(sectionObj, "savedSearch");
+            this._savedSearches.appendChild(card);
+
+            // Notifiy media section about section renames
+            card.addEventListener("renameSection", (evt) => {
+              // console.log(evt);
+              this._mediaSection.dispatchEvent(
+                new CustomEvent("renameSection", { detail: evt.detail })
+              );
+            });
+            card.addEventListener("deleteSection", (evt) => {
+              this._mediaSection.dispatchEvent(
+                new CustomEvent("deleteSection", evt.detail)
+              );
+            });
+
+            card.addEventListener("click", () => {
+              const clearPage = true;
+              this._selectSection(sectionObj, projectId, clearPage);
+              for (const child of this._allSections()) {
+                child.active = false;
+              }
+              card.active = true;
+            });
+          }
+        });
       }
       this.removeAttribute("has-open-modal");
     });
 
-    this._mediaSection.addEventListener("filesadded", evt => {
+    this._mediaSection.addEventListener("filesadded", (evt) => {
       this._uploadDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
 
-    this._uploadDialog.addEventListener("cancel", evt => {
+    this._uploadDialog.addEventListener("cancel", (evt) => {
       store.getState().uploadCancel();
       this.removeAttribute("has-open-modal");
     });
 
-    this._uploadDialog.addEventListener("close", evt => {
+    this._uploadDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal");
     });
 
-    this._mediaSection.addEventListener("attachments", evt => {
+    this._mediaSection.addEventListener("attachments", (evt) => {
       attachmentDialog.init(evt.detail);
       attachmentDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
 
-    attachmentDialog.addEventListener("close", evt => {
+    attachmentDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal");
     });
 
-    this._mediaSection.addEventListener("newName", evt => {
+    this._mediaSection.addEventListener("newName", (evt) => {
       for (const child of this._allSections()) {
         if (child._section) {
           if (child._section.id == evt.detail.id) {
@@ -493,32 +560,44 @@ export class ProjectDetail extends TatorPage {
       this.setAttribute("has-open-modal", "");
     });
 
-    this._activityNav.addEventListener("close", evt => {
+    this._activityNav.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    this._activityNav.addEventListener("deleteJobs", evt => {
-      cancelJob.init(evt.detail.uid, evt.detail.gid, this.getAttribute("project-id"));
+    this._activityNav.addEventListener("deleteJobs", (evt) => {
+      cancelJob.init(
+        evt.detail.uid,
+        evt.detail.gid,
+        this.getAttribute("project-id")
+      );
       cancelJob.setAttribute("is-open", "");
     });
 
-    this._moveFileCallback = evt => {
+    this._moveFileCallback = (evt) => {
       // console.log(evt);
-      this.moveFile.open(evt.detail.mediaId, evt.detail.mediaName, this.getAttribute("project-id"));
+      this.moveFile.open(
+        evt.detail.mediaId,
+        evt.detail.mediaName,
+        this.getAttribute("project-id")
+      );
     };
 
-    this._removeCallback = evt => {
-      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams,
-        evt.detail.deleteMedia);
+    this._removeCallback = (evt) => {
+      deleteSection.init(
+        evt.detail.projectId,
+        evt.detail.section,
+        evt.detail.sectionParams,
+        evt.detail.deleteMedia
+      );
       deleteSection.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
 
-    deleteSection.addEventListener("close", evt => {
+    deleteSection.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    deleteSection.addEventListener("confirmDelete", evt => {
+    deleteSection.addEventListener("confirmDelete", (evt) => {
       for (const child of this._allSections()) {
         if (child._section) {
           if (child._section.id == evt.detail.id) {
@@ -531,32 +610,31 @@ export class ProjectDetail extends TatorPage {
 
       deleteSection.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
-
     });
 
-    this._deleteFileCallback = evt => {
+    this._deleteFileCallback = (evt) => {
       this.deleteFileForm.setAttribute("media-id", evt.detail.mediaId);
       this.deleteFileForm.setAttribute("media-name", evt.detail.mediaName);
       this.deleteFileForm.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
 
-    this.deleteFileForm.addEventListener("close", evt => {
+    this.deleteFileForm.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    this.deleteFileForm.addEventListener("confirmFileDelete", evt => {
+    this.deleteFileForm.addEventListener("confirmFileDelete", (evt) => {
       this._mediaSection.removeMedia(evt.detail.mediaId);
       this.deleteFileForm.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
     });
 
-    this._newAlgorithmCallback = evt => {
+    this._newAlgorithmCallback = (evt) => {
       const newAlgorithm = document.createElement("new-algorithm-form");
       this._projects.appendChild(newAlgorithm);
       newAlgorithm.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
-      newAlgorithm.addEventListener("close", evt => {
+      newAlgorithm.addEventListener("close", (evt) => {
         this.removeAttribute("has-open-modal", "");
         this._projects.removeChild(evt.target);
       });
@@ -575,7 +653,6 @@ export class ProjectDetail extends TatorPage {
 
     this._lastQuery = null;
 
-
     /* Init after modal is defined */
     // Init panel side behavior
     this._panelContainer.init({
@@ -586,9 +663,8 @@ export class ProjectDetail extends TatorPage {
       gallery: this.gallery,
       contents: section,
       position: "left",
-      isMediaSection: true
+      isMediaSection: true,
     });
-
 
     //
     this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
@@ -602,7 +678,10 @@ export class ProjectDetail extends TatorPage {
   }
 
   connectedCallback() {
-    this.setAttribute("project-id", Number(window.location.pathname.split('/')[1]));
+    this.setAttribute(
+      "project-id",
+      Number(window.location.pathname.split("/")[1])
+    );
     // Initialize store data
     store.getState().init();
     this._uploadDialog.init(store);
@@ -639,15 +718,19 @@ export class ProjectDetail extends TatorPage {
     } else {
       this._archivedFolders.appendChild(card);
     }
-    card.addEventListener("visibilityChange", evt => {
-      this._sectionVisibilityEL(evt)
+    card.addEventListener("visibilityChange", (evt) => {
+      this._sectionVisibilityEL(evt);
     });
     // Notifiy media section about section renames
     card.addEventListener("renameSection", (evt) => {
-      this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
+      this._mediaSection.dispatchEvent(
+        new CustomEvent("renameSection", { detail: evt.detail })
+      );
     });
     card.addEventListener("deleteSection", (evt) => {
-      this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.detail));
+      this._mediaSection.dispatchEvent(
+        new CustomEvent("deleteSection", evt.detail)
+      );
     });
     card.addEventListener("click", () => {
       const clearPage = true;
@@ -701,233 +784,292 @@ export class ProjectDetail extends TatorPage {
       sectionPromise,
       bookmarkPromise,
       algoPromise,
-      mediaTypePromise
+      mediaTypePromise,
     ])
-      .then(([projectResponse, sectionResponse, bookmarkResponse, algoResponse, mediaTypeResponse]) => {
-        const projectData = projectResponse.json();
-        const sectionData = sectionResponse.json();
-        const bookmarkData = bookmarkResponse.json();
-        const algoData = algoResponse.json();
-        const mediaTypeData = mediaTypeResponse.json();
+      .then(
+        ([
+          projectResponse,
+          sectionResponse,
+          bookmarkResponse,
+          algoResponse,
+          mediaTypeResponse,
+        ]) => {
+          const projectData = projectResponse.json();
+          const sectionData = sectionResponse.json();
+          const bookmarkData = bookmarkResponse.json();
+          const algoData = algoResponse.json();
+          const mediaTypeData = mediaTypeResponse.json();
 
-        Promise.all([projectData, sectionData, bookmarkData, algoData, mediaTypeData])
-          .then(([project, sections, bookmarks, algos, mediaTypes]) => {
-            // First hide algorithms if needed. These are not appropriate to be
-            // run at the project/this._section/media level.
-            var hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
-            const hiddenAlgoCategories = ['annotator-view', 'disabled'];
+          Promise.all([
+            projectData,
+            sectionData,
+            bookmarkData,
+            algoData,
+            mediaTypeData,
+          ])
+            .then(([project, sections, bookmarks, algos, mediaTypes]) => {
+              // First hide algorithms if needed. These are not appropriate to be
+              // run at the project/this._section/media level.
+              var hiddenAlgos = ["tator_extend_track", "tator_fill_track_gaps"];
+              const hiddenAlgoCategories = ["annotator-view", "disabled"];
 
-            this._cardAttributeLabels.init(projectId);
-            this._sections = sections;
+              this._cardAttributeLabels.init(projectId);
+              this._sections = sections;
 
-            //
-            // Set up attributes for bulk edit
-            for (let mediaTypeData of mediaTypes) {
+              //
+              // Set up attributes for bulk edit
+              for (let mediaTypeData of mediaTypes) {
+                //init card labels with localization entity type definitions
+                this._cardAttributeLabels.add({
+                  typeData: mediaTypeData,
+                  checkedFirst: false,
+                });
 
-              //init card labels with localization entity type definitions
-              this._cardAttributeLabels.add({
-                typeData: mediaTypeData,
-                checkedFirst: false
+                //init panel with localization entity type definitions
+                // console.log("ADDING MEDIA TYPE")
+                this._bulkEdit._editPanel.addLocType(mediaTypeData);
+                this.mediaTypesMap.set(mediaTypeData.id, mediaTypeData);
+              }
+
+              this._mediaSection.mediaTypesMap = this.mediaTypesMap;
+
+              //
+              const moveSelectedButton =
+                document.createElement("media-move-button");
+              moveSelectedButton.setAttribute(
+                "name",
+                "Move selected files to folder"
+              );
+              moveSelectedButton._span.textContent =
+                "Move selected files to folder";
+              // this._bulkEdit._otherTools.appendChild(moveSelectedButton);
+              this._bulkEdit._editPanel._otherTools.appendChild(
+                moveSelectedButton
+              );
+
+              moveSelectedButton.addEventListener("click", () => {
+                const list = Array.from(this._bulkEdit._currentMultiSelection);
+                if (list && list.length > 0) {
+                  const listString = String(list);
+                  this.moveFile.open(
+                    list,
+                    null,
+                    this.getAttribute("project-id"),
+                    false
+                  );
+                } else {
+                  this._notify(
+                    "Make a selection",
+                    "Nothing to move! Make a selection first.",
+                    "error"
+                  );
+                }
               });
 
-              //init panel with localization entity type definitions
-              // console.log("ADDING MEDIA TYPE")
-              this._bulkEdit._editPanel.addLocType(mediaTypeData);
-              this.mediaTypesMap.set(mediaTypeData.id, mediaTypeData);
-            }
+              //
+              const deleteSelectedButton =
+                document.createElement("delete-button");
+              deleteSelectedButton.setAttribute(
+                "name",
+                "Delete selected files"
+              );
+              deleteSelectedButton._span.textContent = "Delete selected files";
+              // this._bulkEdit._otherTools.appendChild(deleteSelectedButton);
+              this._bulkEdit._editPanel._otherTools.appendChild(
+                deleteSelectedButton
+              );
 
-            this._mediaSection.mediaTypesMap = this.mediaTypesMap;
+              deleteSelectedButton.addEventListener(
+                "click",
+                this._deleteSelection.bind(this)
+              );
 
-            //
-            const moveSelectedButton = document.createElement("media-move-button");
-            moveSelectedButton.setAttribute("name", "Move selected files to folder");
-            moveSelectedButton._span.textContent = "Move selected files to folder";
-            // this._bulkEdit._otherTools.appendChild(moveSelectedButton);
-            this._bulkEdit._editPanel._otherTools.appendChild(moveSelectedButton);
+              //
+              this._mediaSection._files._cardAttributeLabels =
+                this._cardAttributeLabels;
+              this._mediaSection._bulkEdit = this._bulkEdit;
 
-            moveSelectedButton.addEventListener("click", () => {
-              const list = Array.from(this._bulkEdit._currentMultiSelection);
-              if (list && list.length > 0) {
-                const listString = String(list);
-                this.moveFile.open(list, null, this.getAttribute("project-id"), false);
-              } else {
-                this._notify("Make a selection", "Nothing to move! Make a selection first.", "error");
-              }
-            });
+              this._bulkEdit.init({
+                page: this,
+                gallery: this._mediaSection._files,
+                type: "media",
+                projectId,
+                additionalTools: true,
+                permission: project.permission,
+              });
 
-            //
-            const deleteSelectedButton = document.createElement("delete-button");
-            deleteSelectedButton.setAttribute("name", "Delete selected files");
-            deleteSelectedButton._span.textContent = "Delete selected files";
-            // this._bulkEdit._otherTools.appendChild(deleteSelectedButton);
-            this._bulkEdit._editPanel._otherTools.appendChild(deleteSelectedButton);
-
-            deleteSelectedButton.addEventListener("click", this._deleteSelection.bind(this));
-
-            //
-            this._mediaSection._files._cardAttributeLabels = this._cardAttributeLabels;
-            this._mediaSection._bulkEdit = this._bulkEdit;
-
-
-            this._bulkEdit.init({
-              page: this,
-              gallery: this._mediaSection._files,
-              type: "media",
-              projectId,
-              additionalTools: true,
-              permission: project.permission
-            });              
-
-
-
-            const parsedAlgos = algos.filter(function (alg) {
-              if (Array.isArray(alg.categories)) {
-                for (const category of alg.categories) {
-                  if (hiddenAlgoCategories.includes(category)) {
-                    return false;
-                  }
-                }
-              }
-              return !hiddenAlgos.includes(alg.name);
-            });
-            if (!hasPermission(project.permission, "Full Control")) {
-              this._settingsButton.style.display = "none";
-            }
-            this._algorithms = parsedAlgos;
-            this._mediaSection.project = project;
-            this._mediaSection.algorithms = this._algorithms;
-            this._projectText.nodeValue = project.name;
-            // this._search.setAttribute("project-name", project.name);
-            this._description.setAttribute("text", project.summary);
-            this._collaborators.usernames = project.usernames;
-            // this._search.autocomplete = project.filter_autocomplete;
-
-            let projectParams = null;
-
-            // Home folder
-            const home = document.createElement("entity-card");
-            home.sectionInit(null, false);
-            home.addEventListener("click", () => {
-              this._selectSection(null, projectId, true);
-              for (const child of this._allSections()) {
-                child.active = false;
-              }
-              home.active = true;
-            });
-            this._folders.appendChild(home);
-
-            // Model data & filter setup
-            try {
-              this._modelData = new TatorData(projectId);
-              this._modelData.init().then(() => {
-
-                // Sorts sections into Folder (archive/not), and Saved Search
-                this._makeFolders(sections, projectId);
-
-                // Put "Last visited" bookmark on top
-                const first = "Last visited";
-                bookmarks.sort((a, b) => { return a.name == first ? -1 : b.name == first ? 1 : 0; });
-                for (const bookmark of bookmarks) {
-                  const card = document.createElement("entity-card");
-                  card.sectionInit(bookmark, "bookmark");
-                  this._bookmarks.appendChild(card);
-                }
-
-                // If there is a selected section click that otherwise
-                const params = new URLSearchParams(document.location.search.substring(1));
-                if (params.has("section")) {
-                  const sectionId = Number(params.get("section"));
-                  for (const child of this._allSections()) {
-                    if (child._section) {
-                      if (child._section.id == sectionId) {
-                        for (const other of this._allSections()) {
-                          other.active = false;
-                        }
-                        child.active = true;
-                        try {
-                          this._selectSection(child._section, child._section.project).then(() => {
-                            this.loading.hideSpinner();
-                            this.hideDimmer();
-                          });
-                        } catch (err) {
-                          console.error("Error getting section.", err);
-                          child.click();
-                          this.loading.hideSpinner();
-                          this.hideDimmer();
-                        }
-
-                        break;
-                      }
+              const parsedAlgos = algos.filter(function (alg) {
+                if (Array.isArray(alg.categories)) {
+                  for (const category of alg.categories) {
+                    if (hiddenAlgoCategories.includes(category)) {
+                      return false;
                     }
                   }
-                } else {
-                  //
-                  try {
-                    home.active = true;
-                    this._selectSection(null, projectId).then(async () => {
+                }
+                return !hiddenAlgos.includes(alg.name);
+              });
+              if (!hasPermission(project.permission, "Full Control")) {
+                this._settingsButton.style.display = "none";
+              }
+              this._algorithms = parsedAlgos;
+              this._mediaSection.project = project;
+              this._mediaSection.algorithms = this._algorithms;
+              this._projectText.nodeValue = project.name;
+              // this._search.setAttribute("project-name", project.name);
+              this._description.setAttribute("text", project.summary);
+              this._collaborators.usernames = project.usernames;
+              // this._search.autocomplete = project.filter_autocomplete;
+
+              let projectParams = null;
+
+              // Home folder
+              const home = document.createElement("entity-card");
+              home.sectionInit(null, false);
+              home.addEventListener("click", () => {
+                this._selectSection(null, projectId, true);
+                for (const child of this._allSections()) {
+                  child.active = false;
+                }
+                home.active = true;
+              });
+              this._folders.appendChild(home);
+
+              // Model data & filter setup
+              try {
+                this._modelData = new TatorData(projectId);
+                this._modelData.init().then(() => {
+                  // Sorts sections into Folder (archive/not), and Saved Search
+                  this._makeFolders(sections, projectId);
+
+                  // Put "Last visited" bookmark on top
+                  const first = "Last visited";
+                  bookmarks.sort((a, b) => {
+                    return a.name == first ? -1 : b.name == first ? 1 : 0;
+                  });
+                  for (const bookmark of bookmarks) {
+                    const card = document.createElement("entity-card");
+                    card.sectionInit(bookmark, "bookmark");
+                    this._bookmarks.appendChild(card);
+                  }
+
+                  // If there is a selected section click that otherwise
+                  const params = new URLSearchParams(
+                    document.location.search.substring(1)
+                  );
+                  if (params.has("section")) {
+                    const sectionId = Number(params.get("section"));
+                    for (const child of this._allSections()) {
+                      if (child._section) {
+                        if (child._section.id == sectionId) {
+                          for (const other of this._allSections()) {
+                            other.active = false;
+                          }
+                          child.active = true;
+                          try {
+                            this._selectSection(
+                              child._section,
+                              child._section.project
+                            ).then(() => {
+                              this.loading.hideSpinner();
+                              this.hideDimmer();
+                            });
+                          } catch (err) {
+                            console.error("Error getting section.", err);
+                            child.click();
+                            this.loading.hideSpinner();
+                            this.hideDimmer();
+                          }
+
+                          break;
+                        }
+                      }
+                    }
+                  } else {
+                    //
+                    try {
+                      home.active = true;
+                      this._selectSection(null, projectId).then(async () => {
+                        this.loading.hideSpinner();
+                        this.hideDimmer();
+                      });
+                    } catch (err) {
+                      console.error("Error getting home section.", err);
+                      home.click();
                       this.loading.hideSpinner();
                       this.hideDimmer();
-                    });
-                  } catch (err) {
-                    console.error("Error getting home section.", err);
-                    home.click();
-                    this.loading.hideSpinner();
-                    this.hideDimmer();
+                    }
                   }
-                }
 
-                // Is there a search to apply?
-                if (params.has("encoded_search")) {
-                  // console.log(params.get("search"));
-                  this._mediaSection.searchString = params.get("encoded_search");
-                  this._addSavedSearchButton.style.opacity = 1.0;
-                  this._addSavedSearchButton.style.cursor = "pointer";
-                }
+                  // Is there a search to apply?
+                  if (params.has("encoded_search")) {
+                    // console.log(params.get("search"));
+                    this._mediaSection.searchString =
+                      params.get("encoded_search");
+                    this._addSavedSearchButton.style.opacity = 1.0;
+                    this._addSavedSearchButton.style.cursor = "pointer";
+                  }
 
+                  // used to setup filter options & string utils
+                  this._mediaSection._modelData = this._modelData;
+                  this._mediaSection._files.memberships =
+                    this._modelData._memberships;
 
-                // used to setup filter options & string utils
-                this._mediaSection._modelData = this._modelData;
-                this._mediaSection._files.memberships = this._modelData._memberships;
+                  this._filterDataView = new FilterData(
+                    this._modelData,
+                    null,
+                    [],
+                    null
+                  );
+                  this._filterDataView.init();
+                  this._filterView.dataView = this._filterDataView;
 
-                this._filterDataView = new FilterData(
-                  this._modelData, null, [], null);
-                this._filterDataView.init();
-                this._filterView.dataView = this._filterDataView;
+                  // Set UI and results to any url param conditions that exist (from URL)
+                  this._mediaSection._filterConditions =
+                    this._mediaSection.getFilterConditionsObject();
+                  this._bulkEdit.checkForFilters(
+                    this._mediaSection._filterConditions
+                  );
+                  if (this._mediaSection._filterConditions.length > 0) {
+                    this._updateFilterResults({
+                      detail: {
+                        conditions: this._mediaSection._filterConditions,
+                      },
+                    });
+                  }
 
-                // Set UI and results to any url param conditions that exist (from URL)
-                this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
-                this._bulkEdit.checkForFilters(this._mediaSection._filterConditions);
-                if (this._mediaSection._filterConditions.length > 0) {
-                  this._updateFilterResults({ detail: { conditions: this._mediaSection._filterConditions } });
-                }
-
-                // Listen for filter events
-                this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
-              });
-
-            } catch (err) {
-              console.error("Could not initialize filter interface.", err);
+                  // Listen for filter events
+                  this._filterView.addEventListener(
+                    "filterParameters",
+                    this._updateFilterResults.bind(this)
+                  );
+                });
+              } catch (err) {
+                console.error("Could not initialize filter interface.", err);
+                this.loading.hideSpinner();
+                this.hideDimmer();
+              }
+            })
+            .catch((err) => {
+              console.error("Error setting up page with all promises", err);
               this.loading.hideSpinner();
               this.hideDimmer();
-            }
-
-          }).catch(err => {
-            console.error("Error setting up page with all promises", err);
-            this.loading.hideSpinner();
-            this.hideDimmer();
-          });
-
-      }).catch(err => {
+            });
+        }
+      )
+      .catch((err) => {
         console.error("Error setting up page with all promises", err);
         this.loading.hideSpinner();
         this.hideDimmer();
       });
-
-
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    TatorPage.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "username":
         break;
@@ -949,7 +1091,10 @@ export class ProjectDetail extends TatorPage {
     this._mediaSection.addEventListener("remove", this._removeCallback);
     this._mediaSection.addEventListener("moveFile", this._moveFileCallback);
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
-    this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
+    this._mediaSection.addEventListener(
+      "newAlgorithm",
+      this._newAlgorithmCallback
+    );
 
     params.delete("section");
     if (section !== null) {
@@ -965,7 +1110,11 @@ export class ProjectDetail extends TatorPage {
     if (section !== null) {
       sectionName = section.name;
     }
-    window.history.replaceState(`${this._projectText.textContent}|${sectionName}`, "Filter", newUrl);
+    window.history.replaceState(
+      `${this._projectText.textContent}|${sectionName}`,
+      "Filter",
+      newUrl
+    );
 
     await this._mediaSection.init(projectId, section);
 
@@ -1004,14 +1153,20 @@ export class ProjectDetail extends TatorPage {
    * This launches the confirm run algorithm modal window.
    */
   _openConfirmRunAlgoModal(evt) {
-
-    if ('mediaIds' in evt.detail) {
+    if ("mediaIds" in evt.detail) {
       this._confirmRunAlgorithm.init(
-        evt.detail.algorithmName, evt.detail.projectId, evt.detail.mediaIds, null);
-    }
-    else {
+        evt.detail.algorithmName,
+        evt.detail.projectId,
+        evt.detail.mediaIds,
+        null
+      );
+    } else {
       this._confirmRunAlgorithm.init(
-        evt.detail.algorithmName, evt.detail.projectId, null, evt.detail.mediaQuery);
+        evt.detail.algorithmName,
+        evt.detail.projectId,
+        null,
+        evt.detail.mediaQuery
+      );
     }
 
     this._confirmRunAlgorithm.setAttribute("is-open", "");
@@ -1023,7 +1178,6 @@ export class ProjectDetail extends TatorPage {
    * Callback from confirm run algorithm modal choice
    */
   _closeConfirmRunAlgoModal(evt) {
-
     this._confirmRunAlgorithm.removeAttribute("is-open");
     this.removeAttribute("has-open-modal");
     document.body.classList.remove("shortcuts-disabled");
@@ -1032,14 +1186,13 @@ export class ProjectDetail extends TatorPage {
     if (evt.detail.confirm) {
       if (evt.detail.mediaIds != null) {
         var body = JSON.stringify({
-          "algorithm_name": evt.detail.algorithmName,
-          "media_ids": evt.detail.mediaIds
+          algorithm_name: evt.detail.algorithmName,
+          media_ids: evt.detail.mediaIds,
         });
-      }
-      else {
+      } else {
         var body = JSON.stringify({
-          "algorithm_name": evt.detail.algorithmName,
-          "media_query": evt.detail.mediaQuery
+          algorithm_name: evt.detail.algorithmName,
+          media_query: evt.detail.mediaQuery,
         });
       }
 
@@ -1047,20 +1200,23 @@ export class ProjectDetail extends TatorPage {
         method: "POST",
         body: body,
       })
-        .then(response => {
+        .then((response) => {
           if (response.status == 201) {
-            that._notify("Algorithm launched!",
+            that._notify(
+              "Algorithm launched!",
               `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
-              "ok");
-          }
-          else {
-            that._notify("Error launching algorithm!",
+              "ok"
+            );
+          } else {
+            that._notify(
+              "Error launching algorithm!",
               `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
-              "error");
+              "error"
+            );
           }
           return response.json();
         })
-        .then(data => console.log(data));
+        .then((data) => console.log(data));
     }
   }
 
@@ -1072,7 +1228,9 @@ export class ProjectDetail extends TatorPage {
     this.loading.showSpinner();
 
     try {
-      const query = await this._mediaSection.updateFilterResults(this._filterConditions);
+      const query = await this._mediaSection.updateFilterResults(
+        this._filterConditions
+      );
       if (typeof query != "undefined" && query != this._lastQuery) {
         if (query !== "") {
           this._lastQuery = query;
@@ -1103,7 +1261,11 @@ export class ProjectDetail extends TatorPage {
       this.deleteFileForm.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     } else {
-      this._notify("Make a selection", "Nothing to delete! Make a selection first.", "error");
+      this._notify(
+        "Make a selection",
+        "Nothing to delete! Make a selection first.",
+        "error"
+      );
     }
   }
 
@@ -1119,9 +1281,10 @@ export class ProjectDetail extends TatorPage {
   _makeFolders(sections, projectId) {
     for (const section of sections) {
       const hasSection = Boolean(section.tator_user_sections);
-      const hasSearch = (Boolean(section.lucene_search)
-        || Boolean(section.media_bools)
-        || Boolean(section.annotation_bools));
+      const hasSearch =
+        Boolean(section.lucene_search) ||
+        Boolean(section.media_bools) ||
+        Boolean(section.annotation_bools);
       let sectionType;
       if (hasSection && !hasSearch) {
         sectionType = "folder";
@@ -1131,17 +1294,25 @@ export class ProjectDetail extends TatorPage {
       const card = document.createElement("entity-card");
       // Notifiy media section about section renames
       card.addEventListener("renameSection", (evt) => {
-        console.log("HEARD RENAME SECTION!")
+        console.log("HEARD RENAME SECTION!");
         const clearPage = true;
-        this._selectSection(evt.detail.section, evt.detail.section.project, clearPage);
+        this._selectSection(
+          evt.detail.section,
+          evt.detail.section.project,
+          clearPage
+        );
         for (const child of this._allSections()) {
           child.active = false;
         }
         card.active = true;
-        this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
+        this._mediaSection.dispatchEvent(
+          new CustomEvent("renameSection", { detail: evt.detail })
+        );
       });
       card.addEventListener("deleteSection", (evt) => {
-        this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.detail));
+        this._mediaSection.dispatchEvent(
+          new CustomEvent("deleteSection", evt.detail)
+        );
       });
 
       card.sectionInit(section, sectionType);
@@ -1151,8 +1322,8 @@ export class ProjectDetail extends TatorPage {
         } else {
           this._archivedFolders.appendChild(card);
         }
-        card.addEventListener("visibilityChange", evt => {
-          this._sectionVisibilityEL(evt)
+        card.addEventListener("visibilityChange", (evt) => {
+          this._sectionVisibilityEL(evt);
         });
       } else {
         this._savedSearches.appendChild(card);
@@ -1172,7 +1343,6 @@ export class ProjectDetail extends TatorPage {
     // Get sections
     const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
   }
-
 }
 
 customElements.define("project-detail", ProjectDetail);

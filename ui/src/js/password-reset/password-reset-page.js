@@ -11,7 +11,10 @@ export class PasswordResetPage extends TatorElement {
     this._shadow.appendChild(main);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    div.setAttribute(
+      "class",
+      "main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(div);
 
     const img = document.createElement("img");
@@ -54,7 +57,10 @@ export class PasswordResetPage extends TatorElement {
     footer.appendChild(this._submit);
 
     const errors = document.createElement("div");
-    errors.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    errors.setAttribute(
+      "class",
+      "main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(errors);
 
     this._errorList = document.createElement("ul");
@@ -68,16 +74,18 @@ export class PasswordResetPage extends TatorElement {
     // Whether the form is valid or not
     this._valid = false;
 
-    this._password.addEventListener("change", evt => this._validateForm(evt));
-    this._passwordConfirm.addEventListener("input", evt => this._validateForm(evt));
+    this._password.addEventListener("change", (evt) => this._validateForm(evt));
+    this._passwordConfirm.addEventListener("input", (evt) =>
+      this._validateForm(evt)
+    );
 
     this._modalNotify = document.createElement("modal-notify");
     div.appendChild(this._modalNotify);
-    this._modalNotify.addEventListener("close", evt => {
+    this._modalNotify.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    form.addEventListener("submit", evt => {
+    form.addEventListener("submit", (evt) => {
       evt.preventDefault();
       let user_id = 0;
       const body = {
@@ -94,31 +102,35 @@ export class PasswordResetPage extends TatorElement {
         method: "PATCH",
         body: JSON.stringify(body),
       })
-      .then(response => {
-        if (response.status == 400) {
-          return response.json();
-        } else {
-          return Promise.resolve("success");
-        }
-      })
-      .then(data => {
-        if (data == "success") {
-          this._modalNotify.init("Password reset succeeded!",
-                                 "Press Continue to go to login screen.",
-                                 "ok",
-                                 "Continue");
-          this._modalNotify.addEventListener("close", evt => {
-            window.location.replace("/accounts/login");
-          });
-        } else {
-          this._modalNotify.init("Password reset failed!",
-                                 data.message,
-                                 "error",
-                                 "Close");
-        }
-        this._modalNotify.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-      })
+        .then((response) => {
+          if (response.status == 400) {
+            return response.json();
+          } else {
+            return Promise.resolve("success");
+          }
+        })
+        .then((data) => {
+          if (data == "success") {
+            this._modalNotify.init(
+              "Password reset succeeded!",
+              "Press Continue to go to login screen.",
+              "ok",
+              "Continue"
+            );
+            this._modalNotify.addEventListener("close", (evt) => {
+              window.location.replace("/accounts/login");
+            });
+          } else {
+            this._modalNotify.init(
+              "Password reset failed!",
+              data.message,
+              "error",
+              "Close"
+            );
+          }
+          this._modalNotify.setAttribute("is-open", "");
+          this.setAttribute("has-open-modal", "");
+        });
     });
   }
 
