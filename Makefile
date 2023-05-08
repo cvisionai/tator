@@ -413,3 +413,12 @@ rq-empty:
 check-clean-db-logs:
 	scripts/check_for_errors.sh db-worker
 
+.PHONY: format
+format:
+	black api
+	cd ui && npx prettier --write src
+
+.PHONY: check-format
+check-format:
+	black --check api
+	cd ui && npx prettier --check src
