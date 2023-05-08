@@ -5,6 +5,8 @@ orbs:
   aws-cli: circleci/aws-cli@1.4.1
 jobs:
   check-format:
+    machine:
+      image: ubuntu-2004:2022.04.2
     steps:
     - checkout
     - run:
