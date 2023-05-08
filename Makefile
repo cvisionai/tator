@@ -415,10 +415,8 @@ check-clean-db-logs:
 
 .PHONY: format
 format:
-	black api
-	cd ui && npx prettier --write src
+	black api && cd ui && npx prettier --write src
 
 .PHONY: check-format
 check-format:
-	black --check api
-	cd ui && npx prettier --check src
+	black --check api && cd ui && npx prettier --check src
