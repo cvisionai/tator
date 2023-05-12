@@ -19,11 +19,11 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
 from pgvector.django import VectorField
 
-from ..models import LocalizationType
-from ..models import StateType
-from ..models import MediaType
-from ..models import LeafType
-from ..models import FileType
+from ..models import LocalizationType, Localization
+from ..models import StateType, State
+from ..models import MediaType, Media
+from ..models import LeafType, Leaf
+from ..models import FileType, File
 from ..models import Section
 
 from ._attributes import KV_SEPARATOR
@@ -143,10 +143,10 @@ def get_attribute_filter_ops(project, params, data_type):
                         filter_ops.append((key, value, op))
     return filter_ops
 
-def build_query_recursively(query_object):
+def build_query_recursively(query_object, castLookup):
     if 'method' in query_object:
         method = query_object['method'].lower()
-        sub_queries = [build_query_recursively(x) for x in query_object['operations']]
+        sub_queries = [build_query_recursively(x, castLookup) for x in query_object['operations']]
         if len(sub_queries) == 0:
             return Q()
         if method == 'not':
@@ -187,6 +187,9 @@ def build_query_recursively(query_object):
             distance, lat, lon = value
             value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
         
+        castFunc = castLookup[attr_name]
+        if castFunc:
+            value = castFunc(value)
         if operation in ['date_eq','eq']:
             query = Q(**{f"{db_lookup}": value})
         else:
@@ -198,7 +201,43 @@ def build_query_recursively(query_object):
     return query
         
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
-    q_object = build_query_recursively(query_object)
+    if qs.count() == 0:
+        return qs.filter(pk=-1)
+    typeLookup={
+        Media: MediaType,
+        Localization: LocalizationType,
+        State: StateType,
+        Leaf: LeafType,
+        File: FileType
+    }
+    castLookup={
+        'bool': bool,
+        'int': int,
+        'float': float,
+        'enum': str,
+        'string': str,
+        'datetime': dateutil_parse,
+        'geopos': None,
+        'float_array': None,
+    }
+    attributeCast = {}
+    typeModel = typeLookup[type(qs[0])]
+    typeObjects = qs.values('type').distinct()
+    for typeObjectPk in typeObjects:
+        typeObject = typeModel.objects.get(pk=typeObjectPk['type'])
+        for attributeType in typeObject.attribute_types:
+            attributeCast[attributeType['name']] = castLookup[attributeType['dtype']]
+    attributeCast['tator_user_sections'] = str
+    for key in ['$x', '$y', '$u', '$v', '$width', '$height']:
+        attributeCast[key] = float
+    for key in ['$created_by', '$modified_by']:
+        attributeCast[key] = int
+    for key in ['$created_datetime', '$modified_datetime']:
+        attributeCast[key] = dateutil_parse
+    for key in ['$name']:
+        attributeCast[key] = str
+
+    q_object = build_query_recursively(query_object, attributeCast)
     return qs.filter(q_object)
 
 def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
