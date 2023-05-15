@@ -37,5 +37,5 @@ class Oauth2LoginAPI(APIView):
             # build redirect_path
             base_url = settings.OKTA_OAUTH2_AUTH_URI
             query_params = requests.compat.urlencode(query_params_dict)
-            return redirect(f"{base_url}?{query_params}")
+            return redirect(f"{base_url}?{query_params}", permanent=True)
         return Response({"message": "Not Found"}, status=status.HTTP_404_NOT_FOUND)

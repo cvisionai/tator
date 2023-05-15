@@ -119,4 +119,4 @@ class JwtGatewayAPI(APIView):
         # Upgrade the connection to a session
         login(request, user)
 
-        return redirect("/projects")
+        return redirect("/projects", permanent=True)

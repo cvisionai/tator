@@ -20,7 +20,7 @@ class AnonymousGatewayAPI(APIView):
             email='info@cvisionai.com',
         )
         url = request.query_params.get("redirect", '/projects')
-        response = redirect(url)
+        response = redirect(url, permanent=True)
 
         # Upgrade the connection to a session
         login(request, user)

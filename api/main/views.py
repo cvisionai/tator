@@ -51,7 +51,7 @@ class LoginRedirect(View):
             if next_url:
                 out += f"?next={next_url}"
 
-        return redirect(out)
+        return redirect(out, permanent=True)
 
 class ProjectBase(LoginRequiredMixin):
 
