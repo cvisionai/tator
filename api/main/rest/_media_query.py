@@ -242,8 +242,10 @@ def _get_section_and_params(project, params):
     return filter_ops
 
 def get_media_queryset(project, params):
+    # Get the filter operations
     filter_ops = _get_section_and_params(project, params)
-    # If using PSQL, construct the queryset.
+
+    # Construct the queryset
     qs = _get_media_psql_queryset(project, filter_ops, params)
     return qs
 

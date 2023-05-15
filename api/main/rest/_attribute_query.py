@@ -139,7 +139,7 @@ def get_attribute_filter_ops(project, params, data_type):
         for op in ALLOWED_TYPES.keys():
             if op in params:
                 for kv in params[op]:
-                    key, value, dtype = _convert_attribute_filter_value(kv, project, data_type, op)
+                    key, value, _ = _convert_attribute_filter_value(kv, project, data_type, op)
                     if key:
                         filter_ops.append((key, value, op))
     return filter_ops
