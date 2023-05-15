@@ -42,7 +42,7 @@ const params = {
   email_enabled: argv.email_enabled,
   okta_enabled: argv.okta_enabled,
   keycloak_enabled: argv.keycloak_enabled,
-  prelogin_message: argv.prelogin_message.split("\\n"),
+  prelogin_message: argv.prelogin_message.replaceAll("COLON", ":").split("\\n"),
   prelogin_redirect: argv.prelogin_redirect,
 };
 
