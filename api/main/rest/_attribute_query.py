@@ -63,6 +63,8 @@ OPERATOR_SUFFIXES = {
 }
 
 def _convert_boolean(value):
+    if type(value) == bool:
+        return value
     if value.lower() == 'false':
         value = False
     elif value.lower() == 'true':
@@ -188,12 +190,12 @@ def build_query_recursively(query_object, castLookup):
             value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
         
         castFunc = castLookup[attr_name]
-        if castFunc:
+        if operation in ['isnull']:
+            value = _convert_boolean(value)
+        elif castFunc:
             value = castFunc(value)
         if operation in ['date_eq','eq']:
             query = Q(**{f"{db_lookup}": value})
-        elif operation in ['isnull']:
-            query = Q(**{f"{db_lookup}__{operation}": _convert_boolean(value)})
         else:
             query = Q(**{f"{db_lookup}__{operation}": value})
 
