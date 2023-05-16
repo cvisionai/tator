@@ -55,8 +55,9 @@ class LocalizationListSchema(AutoSchema):
         elif method == 'POST':
             short_desc = 'Create localiazation list.'
             long_desc = dedent("""\
-            This method does a bulk create on a list of `LocalizationSpec` objects. A 
-            maximum of 500 localizations may be created in one request.
+            This method does a bulk create on a list of :class:`tator.models.LocalizationSpec`
+            objects; it also accepts a single instance. A maximum of 500 localizations may be
+            created in one request.
             """)
         elif method == 'PATCH':
             short_desc = 'Update localiazation list.'
