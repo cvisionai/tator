@@ -78,7 +78,7 @@ def _get_info_for_attribute(project, entity_type, key):
     if key.startswith('$'):
         if key in ['$x', '$y', '$u', '$v', '$width', '$height', '$fps']:
             return {'name': key[1:], 'dtype': 'float'}
-        elif key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames']:
+        elif key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
             return {'name': key[1:], 'dtype': 'int'}
         elif key in ['$created_datetime', '$modified_datetime']:
             return {'name': key[1:], 'dtype': 'datetime'}
@@ -145,10 +145,10 @@ def get_attribute_filter_ops(project, params, data_type):
                         filter_ops.append((key, value, op))
     return filter_ops
 
-def build_query_recursively(query_object, castLookup):
+def build_query_recursively(query_object, castLookup, is_media, project):
     if 'method' in query_object:
         method = query_object['method'].lower()
-        sub_queries = [build_query_recursively(x, castLookup) for x in query_object['operations']]
+        sub_queries = [build_query_recursively(x, castLookup, is_media, project) for x in query_object['operations']]
         if len(sub_queries) == 0:
             return Q()
         if method == 'not':
@@ -168,36 +168,66 @@ def build_query_recursively(query_object, castLookup):
         operation = query_object['operation']
         inverse = query_object.get('inverse',False)
         value = query_object['value']
-        if attr_name.startswith('$'):
-            db_lookup=attr_name[1:]
-        else:
-            db_lookup=f"attributes__{attr_name}"
-        if operation.startswith('date_'):
-            # python is more forgiving then SQL so convert any partial dates to 
-            # full-up ISO8601 datetime strings WITH TIMEZONE.
-            operation = operation.replace('date_','')
-            if operation=='range':
-                utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
-                value_0 = utc.datetime.isoformat()
-                utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
-                value_1 = utc.datetime.isoformat()
-                value = (value_0,value_1)
+
+        if attr_name == "$section":
+            # Handle section based look-up
+            section = Section.objects.filter(pk=value)
+            if not section.exists():
+                raise Http404
+
+            relevant_state_type_ids = StateType.objects.filter(project=project)
+            relevant_localization_type_ids = LocalizationType.objects.filter(project=project)
+            media_qs = Media.objects.filter(project=project)
+            section_uuid = section[0].tator_user_sections
+            if section_uuid:
+                media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
+
+            if section[0].object_search:
+                media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, section[0].object_search)
+
+            if section[0].related_object_search:
+                media_qs = _related_search(media_qs,
+                                            project,
+                                            relevant_state_type_ids,
+                                            relevant_localization_type_ids,
+                                            section[0].related_object_search)
+            if media_qs.count() == 0:
+                query = Q(pk=-1)
+            elif is_media:
+                query = Q(pk__in=media_qs)
             else:
-                utc_datetime = dateutil_parse(value).astimezone(pytz.UTC)
-                value = utc.datetime.isoformat()
-        elif operation.startswith('distance_'):
-            distance, lat, lon = value
-            value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
-        
-        castFunc = castLookup[attr_name]
-        if operation in ['isnull']:
-            value = _convert_boolean(value)
-        elif castFunc:
-            value = castFunc(value)
-        if operation in ['date_eq','eq']:
-            query = Q(**{f"{db_lookup}": value})
+                query = Q(media__in=media_qs)
         else:
-            query = Q(**{f"{db_lookup}__{operation}": value})
+            if attr_name.startswith('$'):
+                db_lookup=attr_name[1:]
+            else:
+                db_lookup=f"attributes__{attr_name}"
+            if operation.startswith('date_'):
+                # python is more forgiving then SQL so convert any partial dates to
+                # full-up ISO8601 datetime strings WITH TIMEZONE.
+                operation = operation.replace('date_','')
+                if operation=='range':
+                    utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
+                    value_0 = utc.datetime.isoformat()
+                    utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
+                    value_1 = utc.datetime.isoformat()
+                    value = (value_0,value_1)
+                else:
+                    utc_datetime = dateutil_parse(value).astimezone(pytz.UTC)
+                    value = utc.datetime.isoformat()
+            elif operation.startswith('distance_'):
+                distance, lat, lon = value
+                value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
+
+            castFunc = castLookup[attr_name]
+            if operation in ['isnull']:
+                value = _convert_boolean(value)
+            elif castFunc:
+                value = castFunc(value)
+            if operation in ['date_eq','eq']:
+                query = Q(**{f"{db_lookup}": value})
+            else:
+                query = Q(**{f"{db_lookup}__{operation}": value})
 
         if inverse:
             query = ~query
@@ -207,6 +237,11 @@ def build_query_recursively(query_object, castLookup):
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     if qs.count() == 0:
         return qs.filter(pk=-1)
+
+    is_media = False
+    if type(qs[0]) == Media:
+        is_media = True
+
     typeLookup={
         Media: MediaType,
         Localization: LocalizationType,
@@ -234,14 +269,14 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     attributeCast['tator_user_sections'] = str
     for key in ['$x', '$y', '$u', '$v', '$width', '$height', '$fps']:
         attributeCast[key] = float
-    for key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames']:
+    for key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
         attributeCast[key] = int
     for key in ['$created_datetime', '$modified_datetime']:
-        attributeCast[key] = dateutil_parse
+        attributeCast[key] = str
     for key in ['$name']:
         attributeCast[key] = str
 
-    q_object = build_query_recursively(query_object, attributeCast)
+    q_object = build_query_recursively(query_object, attributeCast, is_media, qs[0].project)
     return qs.filter(q_object)
 
 def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
