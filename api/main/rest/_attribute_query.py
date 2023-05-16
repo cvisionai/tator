@@ -193,6 +193,8 @@ def build_query_recursively(query_object, castLookup):
             value = castFunc(value)
         if operation in ['date_eq','eq']:
             query = Q(**{f"{db_lookup}": value})
+        elif operation in ['isnull']:
+            query = Q(**{f"{db_lookup}__{operation}": _convert_boolean(value)})
         else:
             query = Q(**{f"{db_lookup}__{operation}": value})
 
@@ -217,7 +219,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         'float': float,
         'enum': str,
         'string': str,
-        'datetime': dateutil_parse,
+        'datetime': str,
         'geopos': None,
         'float_array': None,
     }
