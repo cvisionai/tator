@@ -211,7 +211,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         File: FileType
     }
     castLookup={
-        'bool': bool,
+        'bool': _convert_boolean,
         'int': int,
         'float': float,
         'enum': str,
