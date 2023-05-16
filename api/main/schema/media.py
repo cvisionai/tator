@@ -37,13 +37,14 @@ class MediaListSchema(AutoSchema):
         elif method == 'POST':
             short_desc = "Create media list."
             long_desc = dedent("""\
-            This method creates a `Media` object in the database for each spec. For images, the
-            media must already be uploaded and an upload URL must be provided, as well as the group
-            and job IDs associated with the upload. For videos, it is recommended to use the
-            `Transcode` endpoint, which will create the media object itself. This method is only
-            needed for local transcodes. In that case, it will create an empty Media object;
-            thumbnails, streaming, and archival videos must be subsequently uploaded and saved via
-            the `Media` PATCH method.
+            This method creates a `Media` object in the database for each
+            :class:`tator.models.MediaSpec` in `body`. `body` must be a list or single instance of
+            :class:`tator.models.MediaSpec`. For images, the media must already be uploaded and an
+            upload URL must be provided, as well as the group and job IDs associated with the
+            upload. For videos, it is recommended to use the `Transcode` endpoint, which will create
+            the media object itself. This method is only needed for local transcodes. In that case,
+            it will create an empty Media object; thumbnails, streaming, and archival videos must be
+            subsequently uploaded and saved via the `Media` PATCH method.
             """)
         elif method == 'PATCH':
             short_desc = "Update media list."
