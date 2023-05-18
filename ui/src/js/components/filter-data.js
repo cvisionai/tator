@@ -80,23 +80,23 @@ export class FilterData {
     var stateTypeOptions = [];
     for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
       let stateType = this.mediaStateTypes[idx];
-      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: stateType.id});
+      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: `${stateType.name} (ID:${stateType.id})`});
     }
     for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
       let stateType = this.localizationStateTypes[idx];
-      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: stateType.id});
+      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: `${stateType.name} (ID:${stateType.id})`});
     }
 
     var localizationTypeOptions = [];
     for (let idx = 0; idx < this.localizationTypes.length; idx++) {
       let locType = this.localizationTypes[idx];
-      localizationTypeOptions.push({label: `${locType.dtype}/${locType.name} (ID:${locType.id})`, value: locType.id});
+      localizationTypeOptions.push({label: `${locType.dtype}/${locType.name} (ID:${locType.id})`, value: `${locType.dtype}/${locType.name} (ID:${locType.id})`});
     }
 
     var mediaTypeOptions = [];
     for (let idx = 0; idx < this.mediaTypes.length; idx++) {
       let mediaType = this.mediaTypes[idx];
-      mediaTypeOptions.push({label: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`, value:mediaType.id});
+      mediaTypeOptions.push({label: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`, value: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`});
     }
 
     // Allow options to filter by users
@@ -106,8 +106,8 @@ export class FilterData {
       let user = this.users[idx];
       userNames.push(`${user.username} (ID:${user.user})`);
       userFirstLastNames.push({
-        label: `${user.username}(ID: ${user.user})`,
-        value: user.user
+        label: `${user.username} (ID: ${user.user})`,
+        value: `${user.username} (ID: ${user.user})`
       });
     }
     userNames.sort();
@@ -119,7 +119,7 @@ export class FilterData {
     var versionNames = [];
     for (let idx = 0; idx < this.versions.length; idx++) {
       let version = this.versions[idx];
-      versionNames.push({label: `${version.name} (ID:${version.id})`, value: version.id});
+      versionNames.push({label: `${version.name} (ID:${version.id})`, value: `${version.name} (ID:${version.id})`});
     }
 
     // Media sections aren't typically part of the media type's user attribute list.
@@ -128,7 +128,7 @@ export class FilterData {
     var sectionNames = [];
     for (let idx = 0; idx < this.sections.length; idx++) {
       let section = this.sections[idx];
-      sectionNames.push({label: `${section.name} (ID:${section.id})`, value: section.id});
+      sectionNames.push({label: `${section.name} (ID:${section.id})`, value: `${section.name} (ID:${section.id})`});
     }
 
     // Create the filter options
@@ -259,6 +259,14 @@ export class FilterData {
             };
             entityType.attribute_types.push(geo_height);
           }
+
+          var frameAttribute = {
+            name: "$frame",
+            label: "Frame",
+            dtype: "int"
+          };
+          entityType.attribute_types.push(frameAttribute);
+
           var versionAttribute = {
             choices: versionNames,
             name: "$version",
