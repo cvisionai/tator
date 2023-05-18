@@ -63,6 +63,30 @@ OPERATOR_SUFFIXES = {
     'attribute_distance': '__distance_lte',
 }
 
+def _related_search(qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj):
+    related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
+    related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
+    related_matches = []
+    for entity_type in related_state_types:
+        state_qs = State.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
+        state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
+        if state_qs.count():
+            related_matches.append(state_qs)
+    for entity_type in related_localization_types:
+        local_qs = Localization.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
+        local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
+        if local_qs.count():
+            related_matches.append(local_qs)
+    if related_matches:
+        related_match = related_matches.pop()
+        query = Q(pk__in=related_match.values('media'))
+        for r in related_matches:
+            query = query | Q(pk__in=r.values('media'))
+        qs = qs.filter(query).distinct()
+    else:
+        qs = qs.filter(pk=-1)
+    return qs
+
 def _convert_boolean(value):
     if type(value) == bool:
         return value
@@ -118,7 +142,7 @@ def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     if info is None:
         return None, None,None
     dtype = info['dtype']
-    
+
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
     if dtype == 'bool':
@@ -234,7 +258,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
             query = ~query
 
     return query
-        
+
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     if qs.count() == 0:
         return qs.filter(pk=-1)

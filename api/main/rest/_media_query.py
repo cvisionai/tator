@@ -22,6 +22,7 @@ from ..schema._attributes import related_keys
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attribute_query import get_attribute_psql_queryset_from_query_obj
+from ._attribute_query import _related_search
 from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
@@ -40,30 +41,6 @@ def _get_archived_filter(params):
         f"Received invalid value '{archive_lifecycle}' for 'archive_lifecycle'. Valid values are "
         f"['archived', 'live', 'all']."
     )
-
-def _related_search(qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj):
-    related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
-    related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
-    related_matches = []
-    for entity_type in related_state_types:
-        state_qs = State.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
-        state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
-        if state_qs.count():
-            related_matches.append(state_qs)
-    for entity_type in related_localization_types:
-        local_qs = Localization.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
-        local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
-        if local_qs.count():
-            related_matches.append(local_qs)
-    if related_matches:
-        related_match = related_matches.pop()
-        query = Q(pk__in=related_match.values('media'))
-        for r in related_matches:
-            query = query | Q(pk__in=r.values('media'))
-        qs = qs.filter(query).distinct()
-    else:
-        qs = qs.filter(pk=-1)
-    return qs
 
 def _get_media_psql_queryset(project, filter_ops, params):
     """ Constructs a psql queryset.
