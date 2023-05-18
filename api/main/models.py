@@ -1794,6 +1794,7 @@ class RowProtection(Model):
 # e.g. Not relaying solely on `db_index=True` in django.
 BUILT_IN_INDICES = {
     MediaType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$name', 'dtype': 'native_string'},
         {'name': '$created_datetime', 'dtype': 'native'},
         {'name': '$modified_datetime', 'dtype': 'native'},
@@ -1803,14 +1804,17 @@ BUILT_IN_INDICES = {
         {'name': '$archive_state', 'dtype': 'native_string'}
     ],
     LocalizationType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$created_datetime', 'dtype': 'native'},
         {'name': '$modified_datetime', 'dtype': 'native'}
     ],
     StateType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$created_datetime', 'dtype': 'native'},
         {'name': '$modified_datetime', 'dtype': 'native'},
     ],
     LeafType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$name', 'dtype': 'string'},
         {'name': '$path', 'dtype': 'string'},
         {'name': '$name', 'dtype': 'upper_string'},
