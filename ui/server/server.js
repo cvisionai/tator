@@ -187,6 +187,14 @@ app.post('/exchange', async (req, res) => {
         sameSite: "strict",
         secure: true,
         httpOnly: true,
+        path: "/refresh",
+      });
+      res.cookie("access_token", data.access_token, {
+        maxAge: data.expires_in * 1000, 
+        sameSite: "strict",
+        secure: true,
+        httpOnly: true,
+        path: "/admin",
       });
       res.setHeader("Access-Control-Allow-Credentials", 'true');
       res.status(200).json({
@@ -230,6 +238,13 @@ app.get('/refresh', async (req, res) => {
         return response.json();
       })
       .then((data) => {
+        res.cookie("access_token", data.access_token, {
+          maxAge: data.expires_in * 1000, 
+          sameSite: "strict",
+          secure: true,
+          httpOnly: true,
+          path: "/admin",
+        });
         res.status(200).json({
           access_token: data.access_token,
           expires_in: data.expires_in,
