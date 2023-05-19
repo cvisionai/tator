@@ -521,9 +521,9 @@ export class TatorData {
     var filter_object = {};
     filter_object.attribute = field;
     filter_object.value = value;
-    filter_object.operation = modifier_lookup[filter.modifier];
-    filter_object.inverse = (filter.modifier.startsWith('NOT') ? true : false);
- 
+    filter_object.operation = modifier_lookup[modifier];
+    filter_object.inverse = (modifier.startsWith('NOT') ? true : false);
+
     return filter_object;
   }
 
@@ -536,8 +536,6 @@ export class TatorData {
    * @param {integer} listStop
    * @param {Map} afterMap
    * @param {array} mediaIds
-   * @param {array} versionIds
-   * @param {integer} dtype
    */
   async _getAnnotationData(
     outputType,
@@ -547,65 +545,35 @@ export class TatorData {
     listStart,
     listStop,
     afterMap,
-    mediaIds,
-    versionIds,
-    dtype) {
+    mediaIds) {
 
-    var promises = [];
-
-    var paramString = "";
-    var section = null;
     var finalAnnotationFilters = [];
     for (const filter of annotationFilterData) {
-      if (filter.field == "_section")
-      {
-        section = field.value;
-      }
-      else
-      {
-        finalAnnotationFilters.push(this._convertFilterForTator(filter));
-      }
+      finalAnnotationFilters.push(this._convertFilterForTator(filter));
     }
 
     // Annotation Search
-    var annotationSearch = "";
+    var paramString = "";
     var annotationSearchObject = {'method': 'and', 'operations': [...finalAnnotationFilters]};
     var annotationSearchBlob = btoa(JSON.stringify(annotationSearchObject));
     if (finalAnnotationFilters.length && annotationType != "Medias") {
       paramString += "&encoded_search=" + annotationSearchBlob;
     } else if (finalAnnotationFilters.length && annotationType == "Medias") {
-      paramString += "&encoded_related_search" + annotationSearchBlob;
+      paramString += "&encoded_related_search=" + annotationSearchBlob;
     }
 
      // Media Filters
     var finalMediaFilters = [];
     for (const filter of mediaFilterData) {
-      if (filter.field == "_section")
-      {
-        section = field.value;
-      }
-      else
-      {
-        finalMediaFilters.push(this._convertFilterForTator(filter));
-      }
+      finalMediaFilters.push(this._convertFilterForTator(filter));
     }
 
     var mediaSearchObject = {'method': "and", 'operations':[...finalMediaFilters]};
-    var mediaSearchBlob = btoa(JSON.stringify(mediaSearchObject)); 
+    var mediaSearchBlob = btoa(JSON.stringify(mediaSearchObject));
     if (finalMediaFilters.length && annotationType != "Medias") {
-      paramString += "&related_search=" + mediaSearchBlob;
+      paramString += "&encoded_related_search=" + mediaSearchBlob;
     } else if (finalMediaFilters.length && annotationType == "Medias") {
       paramString += "&encoded_search=" + mediaSearchBlob;
-    }
-
-    if (versionIds != undefined && versionIds.length > 0) {
-      paramString += "&version=";
-      for (let idx = 0; idx < versionIds.length; idx++) {
-        paramString += versionIds[idx];
-        if (idx < versionIds.length - 1) {
-          paramString += ","
-        }
-      }
     }
 
     if (mediaIds != undefined && mediaIds.length > 0) {
@@ -616,15 +584,6 @@ export class TatorData {
           paramString += ","
         }
       }
-    }
-
-    if (dtype != undefined) {
-      paramString += `&type=${dtype}`
-    }
-
-    if (section != null)
-    {
-      paramString += `&section=${section}`;
     }
 
     let url = "/rest";
@@ -669,6 +628,7 @@ export class TatorData {
     }
 
     console.log("Getting data with URL: " + url);
+    var promises = [];
     promises.push(fetchCredentials(url, {}, true));
 
     let resultsJson = [];
@@ -726,50 +686,29 @@ export class TatorData {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
-    var dtypeIds = [];
-    var versionIds = [];
-    var typePromises = [];
     var mediaIds = [];
 
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field == "_section") {
-            var newFilter = Object.assign({}, filter);
-            newFilter.field = "tator_user_sections";
-            newFilter.value = filter.value;
-            mediaFilters.push(newFilter);
+          if (filter.field == "$id") {
+            mediaIds.push(Number(filter.value));
           }
-          else if (filter.field == "_dtype") {
+          else if (filter.field.includes("$") && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "_meta";
-            newFilter.value = filter.value;
+            newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
-          }
-          else if (filter.field == "_id") {
-            mediaIds.push(Number(filter.value))
           }
           else {
             mediaFilters.push(filter);
           }
         }
         else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field == "_version") {
-            versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
-          }
-          else if (filter.field == "_dtype") {
-            dtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
-          }
-          else if (filter.field == "_user") {
+          if (filter.field.includes("$") && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "_user";
-            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             localizationFilters.push(newFilter);
-          }
-          else if (filter.field == "Modified By") {
-            filter.field = "_modified_by";
-            mediaFilters.push(filter);            
           }
           else {
             localizationFilters.push(filter);
@@ -778,58 +717,23 @@ export class TatorData {
       });
     }
 
-    if (dtypeIds.length > 0) {
-      dtypeIds.forEach(dtypeId => {
-        typePromises.push(this._getAnnotationData(
-          outputType,
-          "Localizations",
-          localizationFilters,
-          mediaFilters,
-          listStart,
-          listStop,
-          afterMap,
-          mediaIds,
-          versionIds,
-          dtypeId
-        ));
-      });
-    }
-    else {
-      typePromises.push(this._getAnnotationData(
-        outputType,
-        "Localizations",
-        localizationFilters,
-        mediaFilters,
-        listStart,
-        listStop,
-        afterMap,
-        mediaIds,
-        versionIds
-      ));
-    }
+    var outData = await this._getAnnotationData(
+      outputType,
+      "Localizations",
+      localizationFilters,
+      mediaFilters,
+      listStart,
+      listStop,
+      afterMap,
+      mediaIds,
+    );
 
-    // Wait for all the data requests to complete. Once complete, return the appropriate data.
-    var typeResults = await Promise.all(typePromises);
-    var outData;
-    if (outputType == "count") {
-      outData = 0;
-    }
-    else {
-      outData = [];
-    }
-
-    for (let idx = 0; idx < typeResults.length; idx++) {
-      if (outputType == "count") {
-        outData += Number(typeResults[idx]);
-      }
-      else {
-        outData.push(...typeResults[idx]);
-      }
-    }
     return outData;
   }
 
   /**
+   * #TODO Requires testing when the collections gallery is exposed.
+   *
    * Retrieves a list of state data matching the filter criteria
    *
    * @param {string} outputType -
@@ -868,14 +772,11 @@ export class TatorData {
     if (Array.isArray(filters)) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field == "_section") {
+          if (filter.field == "$section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "_section";
             newFilter.value = filter.value;
             mediaFilters.push(newFilter);
-          }
-          else if (filter.field == "_id") {
-            mediaIds.push(Number(filter.value))
           }
           else if (filter.field == "_dtype") {
             var newFilter = Object.assign({}, filter);
@@ -885,7 +786,7 @@ export class TatorData {
           }
           else if (filter.field == "Modified By") {
             filter.field = "_modified_by";
-            mediaFilters.push(filter);            
+            mediaFilters.push(filter);
           }
           else {
             mediaFilters.push(filter);
@@ -958,7 +859,7 @@ export class TatorData {
     }
     return outData;
    }
-  
+
   /**
    * Retrieves a list of media data matching the filter criteria
    *
@@ -1015,22 +916,22 @@ export class TatorData {
           }
           else if (filter.field == "Modified By") {
             filter.field = "_modified_by";
-            mediaFilters.push(filter);            
+            mediaFilters.push(filter);
           }
           else {
             mediaFilters.push(filter);
           }
         }
         else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field == "_version") {
+          if (filter.field == "$version" && filter.field.includes("(ID:")) {
             versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
-          else if (filter.field == "_dtype") {
+          else if (filter.field == "$type" && filter.field.includes("(ID:")) {
             locDtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
-          else if (filter.field == "_user") {
+          else if (filter.field == "$user" && filter.field.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "_user";
+            newFilter.field = "$user";
             newFilter.value = filter.value.split('(ID:')[1].replace(")","");
             localizationFilters.push(newFilter);
           }

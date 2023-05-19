@@ -61,7 +61,7 @@ export class FilterInterface extends TatorElement {
     cancel.textContent = "Cancel";
     footerDiv.appendChild(cancel);
 
-    
+
 
     /**
      * Filter condition pill boxes
@@ -212,7 +212,7 @@ export class FilterInterface extends TatorElement {
   /**
    * Sets the information displayed in the filter bar based on the
    */
-  setFilterBar() {
+  setFilterBar(sectionBasedOnly) {
     // Remove all the children (if there are any)
     while (this._filterStringDiv.firstChild) {
       this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
@@ -221,7 +221,11 @@ export class FilterInterface extends TatorElement {
     if (this._section)
     {
       this._addBreadcrumbsForSearches(this._section);
+      if (sectionBasedOnly) {
+        return;
+      }
     }
+
     // Loop through all the conditions and create the string
     var conditions = this._filterConditionGroup.getConditions();
 
@@ -243,17 +247,17 @@ export class FilterInterface extends TatorElement {
   _operationToString(filter)
   {
     const operator_convert = {
-      'eq': '==', 
-      'gt' : '>', 
-      'gte' : '>=', 
-      'lt' : '<', 
-      'lte': '<=', 
-      'date_eq': '==', 
-      'date_gte': 'After', 
-      'date_gt' : 'After', 
-      'date_lt' : 'Before', 
-      'date_lte' : 'Before', 
-      'date_range' : 'Within', 
+      'eq': '==',
+      'gt' : '>',
+      'gte' : '>=',
+      'lt' : '<',
+      'lte': '<=',
+      'date_eq': '==',
+      'date_gte': 'After (Inclusive)',
+      'date_gt' : 'After',
+      'date_lt' : 'Before',
+      'date_lte' : 'Before (Inclusive)',
+      'date_range' : 'Within',
       'distance_lte' : 'Within'
     }
     const humanReadable = operator_convert[filter.operation];
@@ -280,7 +284,7 @@ export class FilterInterface extends TatorElement {
   set section(section)
   {
     this._section = section;
-    this.setFilterBar();
+    this.setFilterBar(true);
   }
 
   _addBreadcrumbsForSearches(section) {
