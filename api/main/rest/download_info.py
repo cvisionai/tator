@@ -42,7 +42,7 @@ class DownloadInfoAPI(BaseListView):
         user_id = self.request.user.pk
         ttl = expiration - 3600
         for key in keys:
-            url = cache.get_presigned(user_id, key)
+            url = cache.get_presigned(user_id, key, ttl)
             if url is None:
                 upload = key.startswith('_uploads')
                 bucket = project_obj.get_bucket(upload=upload)

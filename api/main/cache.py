@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import redis
 import json
 import os
@@ -118,11 +119,19 @@ class TatorCache:
         """ Stores presigned url. """
         self.rds.set(f"{user}__{key}", url, ex=ttl)
 
-    def get_presigned(self, user, key):
+    def get_presigned(self, user, key, ttl=3600):
         """ Retrieves presigned url. """
-        url = self.rds.get(f"{user}__{key}")
+        url_key = f"{user}__{key}"
+        url = self.rds.get(url_key)
         if url is not None:
             url = url.decode()
+            cached_ttl = self.rds.ttl(url_key)
+            current_dt = datetime.now()
+            cached_exp = current_dt + timedelta(seconds=cached_ttl)
+            desired_exp = current_dt + timedelta(seconds=ttl)
+            if desired_exp < cached_exp:
+                self.rds.delete(url_key)
+                url = None
         return url
             
     def invalidate_all(self):

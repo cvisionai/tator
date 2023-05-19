@@ -110,7 +110,7 @@ def _presign(user_id, expiration, medias, fields=None):
                 # If the path is a bona fide URL, don't attempt to presign it
                 if urlparse(media_def["path"]).scheme != "":
                     continue
-                url = cache.get_presigned(user_id, media_def["path"])
+                url = cache.get_presigned(user_id, media_def["path"], ttl)
                 if url is None:
                     tator_store = store_lookup[media_def["path"]]
                     url = tator_store.get_download_url(media_def["path"], expiration)
@@ -120,7 +120,7 @@ def _presign(user_id, expiration, medias, fields=None):
                 # Get segment url
                 if field == "streaming":
                     if "segment_info" in media_def:
-                        url = cache.get_presigned(user_id, media_def["segment_info"])
+                        url = cache.get_presigned(user_id, media_def["segment_info"], ttl)
                         if url is None:
                             tator_store = store_lookup[media_def["segment_info"]]
                             url = tator_store.get_download_url(

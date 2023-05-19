@@ -41,7 +41,7 @@ def _serialize_projects(projects, user_id):
         thumb = "" # TODO put default value here
         thumb_path = project_data[idx]["thumb"]
         if thumb_path:
-            url = cache.get_presigned(user_id, thumb_path)
+            url = cache.get_presigned(user_id, thumb_path, ttl)
             if url is None:
                 try:
                     url = stores[None].get_download_url(thumb_path, ttl)

@@ -34,7 +34,7 @@ def _serialize_organizations(organizations, user_id):
         organization_data[idx]["default_membership_permission"] = default_membership_permission
         thumb_path = organization_data[idx]['thumb']
         if thumb_path:
-            url = cache.get_presigned(user_id, thumb_path)
+            url = cache.get_presigned(user_id, thumb_path, ttl)
             if url is None:
                 url = store.get_download_url(thumb_path, ttl)
                 cache.set_presigned(user_id, thumb_path, url, ttl)
