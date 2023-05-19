@@ -38,7 +38,7 @@ app.use(favicon('./server/static/images/favicon.ico'));
 
 
 app.get('/', (req, res) => {
-  res.redirect('/projects');
+  res.redirect(301, '/projects');
 });
 
 app.get('/:projectId/analytics', (req, res) => {

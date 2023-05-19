@@ -17,6 +17,7 @@ from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
+from django.http import Http404
 from pgvector.django import VectorField
 
 from ..models import LocalizationType, Localization
@@ -62,7 +63,33 @@ OPERATOR_SUFFIXES = {
     'attribute_distance': '__distance_lte',
 }
 
+def _related_search(qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj):
+    related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
+    related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
+    related_matches = []
+    for entity_type in related_state_types:
+        state_qs = State.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
+        state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
+        if state_qs.count():
+            related_matches.append(state_qs)
+    for entity_type in related_localization_types:
+        local_qs = Localization.objects.filter(project=project, type=entity_type, deleted=False, variant_deleted=False)
+        local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
+        if local_qs.count():
+            related_matches.append(local_qs)
+    if related_matches:
+        related_match = related_matches.pop()
+        query = Q(pk__in=related_match.values('media'))
+        for r in related_matches:
+            query = query | Q(pk__in=r.values('media'))
+        qs = qs.filter(query).distinct()
+    else:
+        qs = qs.filter(pk=-1)
+    return qs
+
 def _convert_boolean(value):
+    if type(value) == bool:
+        return value
     if value.lower() == 'false':
         value = False
     elif value.lower() == 'true':
@@ -74,9 +101,9 @@ def _convert_boolean(value):
 def _get_info_for_attribute(project, entity_type, key):
     """ Returns the first matching dtype with a matching key """
     if key.startswith('$'):
-        if key in ['$x', '$y', '$u', '$v', '$width', '$height']:
+        if key in ['$x', '$y', '$u', '$v', '$width', '$height', '$fps']:
             return {'name': key[1:], 'dtype': 'float'}
-        elif key in ['$created_by', '$modified_by']:
+        elif key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
             return {'name': key[1:], 'dtype': 'int'}
         elif key in ['$created_datetime', '$modified_datetime']:
             return {'name': key[1:], 'dtype': 'datetime'}
@@ -115,7 +142,7 @@ def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     if info is None:
         return None, None,None
     dtype = info['dtype']
-    
+
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
     if dtype == 'bool':
@@ -143,10 +170,10 @@ def get_attribute_filter_ops(project, params, data_type):
                         filter_ops.append((key, value, op))
     return filter_ops
 
-def build_query_recursively(query_object, castLookup):
+def build_query_recursively(query_object, castLookup, is_media, project):
     if 'method' in query_object:
         method = query_object['method'].lower()
-        sub_queries = [build_query_recursively(x, castLookup) for x in query_object['operations']]
+        sub_queries = [build_query_recursively(x, castLookup, is_media, project) for x in query_object['operations']]
         if len(sub_queries) == 0:
             return Q()
         if method == 'not':
@@ -166,43 +193,80 @@ def build_query_recursively(query_object, castLookup):
         operation = query_object['operation']
         inverse = query_object.get('inverse',False)
         value = query_object['value']
-        if attr_name.startswith('$'):
-            db_lookup=attr_name[1:]
-        else:
-            db_lookup=f"attributes__{attr_name}"
-        if operation.startswith('date_'):
-            # python is more forgiving then SQL so convert any partial dates to 
-            # full-up ISO8601 datetime strings WITH TIMEZONE.
-            operation = operation.replace('date_','')
-            if operation=='range':
-                utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
-                value_0 = utc.datetime.isoformat()
-                utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
-                value_1 = utc.datetime.isoformat()
-                value = (value_0,value_1)
+
+        if attr_name == "$section":
+            # Handle section based look-up
+            section = Section.objects.filter(pk=value)
+            if not section.exists():
+                raise Http404
+
+            relevant_state_type_ids = StateType.objects.filter(project=project)
+            relevant_localization_type_ids = LocalizationType.objects.filter(project=project)
+            media_qs = Media.objects.filter(project=project)
+            section_uuid = section[0].tator_user_sections
+            if section_uuid:
+                media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
+
+            if section[0].object_search:
+                media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, section[0].object_search)
+
+            if section[0].related_object_search:
+                media_qs = _related_search(media_qs,
+                                            project,
+                                            relevant_state_type_ids,
+                                            relevant_localization_type_ids,
+                                            section[0].related_object_search)
+            if media_qs.count() == 0:
+                query = Q(pk=-1)
+            elif is_media:
+                query = Q(pk__in=media_qs)
             else:
-                utc_datetime = dateutil_parse(value).astimezone(pytz.UTC)
-                value = utc.datetime.isoformat()
-        elif operation.startswith('distance_'):
-            distance, lat, lon = value
-            value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
-        
-        castFunc = castLookup[attr_name]
-        if castFunc:
-            value = castFunc(value)
-        if operation in ['date_eq','eq']:
-            query = Q(**{f"{db_lookup}": value})
+                query = Q(media__in=media_qs)
         else:
-            query = Q(**{f"{db_lookup}__{operation}": value})
+            if attr_name.startswith('$'):
+                db_lookup=attr_name[1:]
+            else:
+                db_lookup=f"attributes__{attr_name}"
+            if operation.startswith('date_'):
+                # python is more forgiving then SQL so convert any partial dates to
+                # full-up ISO8601 datetime strings WITH TIMEZONE.
+                operation = operation.replace('date_','')
+                if operation=='range':
+                    utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
+                    value_0 = utc_datetime.isoformat()
+                    utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
+                    value_1 = utc_datetime.isoformat()
+                    value = (value_0,value_1)
+                else:
+                    utc_datetime = dateutil_parse(value).astimezone(pytz.UTC)
+                    value = utc_datetime.isoformat()
+            elif operation.startswith('distance_'):
+                distance, lat, lon = value
+                value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
+
+            castFunc = castLookup[attr_name]
+            if operation in ['isnull']:
+                value = _convert_boolean(value)
+            elif castFunc:
+                value = castFunc(value)
+            if operation in ['date_eq','eq']:
+                query = Q(**{f"{db_lookup}": value})
+            else:
+                query = Q(**{f"{db_lookup}__{operation}": value})
 
         if inverse:
             query = ~query
 
     return query
-        
+
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     if qs.count() == 0:
         return qs.filter(pk=-1)
+
+    is_media = False
+    if type(qs[0]) == Media:
+        is_media = True
+
     typeLookup={
         Media: MediaType,
         Localization: LocalizationType,
@@ -211,12 +275,12 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         File: FileType
     }
     castLookup={
-        'bool': bool,
+        'bool': _convert_boolean,
         'int': int,
         'float': float,
         'enum': str,
         'string': str,
-        'datetime': dateutil_parse,
+        'datetime': str,
         'geopos': None,
         'float_array': None,
     }
@@ -228,16 +292,14 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType['name']] = castLookup[attributeType['dtype']]
     attributeCast['tator_user_sections'] = str
-    for key in ['$x', '$y', '$u', '$v', '$width', '$height']:
+    for key in ['$x', '$y', '$u', '$v', '$width', '$height', '$fps']:
         attributeCast[key] = float
-    for key in ['$created_by', '$modified_by']:
+    for key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
         attributeCast[key] = int
-    for key in ['$created_datetime', '$modified_datetime']:
-        attributeCast[key] = dateutil_parse
-    for key in ['$name']:
+    for key in ['$created_datetime', '$modified_datetime', '$name', '$archive_state']:
         attributeCast[key] = str
 
-    q_object = build_query_recursively(query_object, attributeCast)
+    q_object = build_query_recursively(query_object, attributeCast, is_media, qs[0].project)
     return qs.filter(q_object)
 
 def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):

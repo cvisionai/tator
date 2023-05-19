@@ -21,6 +21,7 @@ attribute_filter_schema = {
     
               | Name              | Description                            | Localizations | States | Medias | Leaves | Files | 
               |-------------------|----------------------------------------|---------------|--------|--------|--------|-------|
+              | section           | Media section                          |       X       |   X    |   X    |        |       |
               | created_datetime  | The time of creation for this datum    |       X       |   X    |   X    |    X   |   X   |
               | created_by        | The user id who created this datum     |       X       |   X    |   X    |    X   |   X   |
               | modified_datetime | The last modification time             |       X       |   X    |   X    |    X   |   X   |
