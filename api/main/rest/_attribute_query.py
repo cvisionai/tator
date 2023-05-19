@@ -297,9 +297,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         attributeCast[key] = float
     for key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
         attributeCast[key] = int
-    for key in ['$created_datetime', '$modified_datetime']:
-        attributeCast[key] = str
-    for key in ['$name']:
+    for key in ['$created_datetime', '$modified_datetime', '$name', '$archive_state']:
         attributeCast[key] = str
 
     q_object = build_query_recursively(query_object, attributeCast, is_media, qs[0].project)

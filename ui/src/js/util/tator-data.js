@@ -518,6 +518,11 @@ export class TatorData {
     var modifier = filter.modifier;
     var value = filter.value;
     var field = filter.field;
+
+    if (field.includes("$") && value.includes("(ID:")) {
+      value = Number(value.split('(ID:')[1].replace(")",""));
+    }
+
     var filter_object = {};
     filter_object.attribute = field;
     filter_object.value = value;
@@ -760,6 +765,8 @@ export class TatorData {
    */
    async getFilteredStates(outputType, filters, listStart, listStop, afterMap) {
 
+    throw new Error("#TODO getFilteredStates requires a v1 related update!");
+
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var stateFilters = [];
@@ -899,41 +906,23 @@ export class TatorData {
     if (Array.isArray(filters)) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field == "_section") {
+          if (filter.field.includes("$id")) {
+            mediaIds.push(Number(filter.value));
+          }
+          else if (filter.field.includes("$") && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "_section";
-            newFilter.value = filter.value;
+            newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
-          }
-          else if (filter.field == "_dtype") {
-            var newFilter = Object.assign({}, filter);
-            newFilter.field = "_meta";
-            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
-            mediaFilters.push(newFilter);
-          }
-          else if (filter.field == "_id") {
-            mediaIds.push(Number(filter.value))
-          }
-          else if (filter.field == "Modified By") {
-            filter.field = "_modified_by";
-            mediaFilters.push(filter);
           }
           else {
             mediaFilters.push(filter);
           }
         }
         else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field == "$version" && filter.field.includes("(ID:")) {
-            versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
-          }
-          else if (filter.field == "$type" && filter.field.includes("(ID:")) {
-            locDtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
-          }
-          else if (filter.field == "$user" && filter.field.includes("(ID:")) {
+          if (filter.field.includes("$") && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
-            newFilter.field = "$user";
-            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
-            localizationFilters.push(newFilter);
+            newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
+            mediaFilters.push(newFilter);
           }
           else {
             localizationFilters.push(filter);
@@ -942,54 +931,17 @@ export class TatorData {
       });
     }
 
-    if (locDtypeIds.length > 0) {
-      locDtypeIds.forEach(dtypeId => {
-        typePromises.push(this._getAnnotationData(
-          outputType,
-          "Medias",
-          localizationFilters,
-          mediaFilters,
-          listStart,
-          listStop,
-          afterMap,
-          mediaIds,
-          versionIds,
-          dtypeId
-        ));
-      });
-    }
-    else {
-      typePromises.push(this._getAnnotationData(
-        outputType,
-        "Medias",
-        localizationFilters,
-        mediaFilters,
-        listStart,
-        listStop,
-        afterMap,
-        mediaIds,
-        versionIds
-      ));
-    }
+    var outData = await this._getAnnotationData(
+      outputType,
+      "Medias",
+      localizationFilters,
+      mediaFilters,
+      listStart,
+      listStop,
+      afterMap,
+      mediaIds,
+    );
 
-    // Wait for all the data requests to complete. Once complete, return the appropriate data.
-    var typeResults = await Promise.all(typePromises);
-    var outData;
-    if (outputType == "count") {
-      outData = 0;
-    }
-    else {
-      outData = [];
-    }
-
-    for (let idx = 0; idx < typeResults.length; idx++) {
-      if (outputType == "count") {
-        outData += Number(typeResults[idx]);
-      }
-      else {
-        outData.push(...typeResults[idx]);
-      }
-    }
     return outData;
   }
 

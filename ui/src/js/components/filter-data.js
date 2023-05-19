@@ -386,6 +386,14 @@ export class FilterData {
         entityType.typeGroupName = (category_lookup.FrameStates ? category_lookup.FrameStates : "State");
 
         if (this.skipTypeIds.indexOf(this.frameStateTypes[idx].id) < 0) {
+
+          var frameAttribute = {
+            name: "$frame",
+            label: "Frame",
+            dtype: "int"
+          };
+          entityType.attribute_types.push(frameAttribute);
+
           var versionAttribute = {
             choices: versionNames,
             name: "$version",
