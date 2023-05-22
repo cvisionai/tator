@@ -1140,14 +1140,14 @@ export class ProjectDetail extends TatorPage {
         body: body,
       });
       var data = await response.json();
-      if (data.status == 201) {
+      if (response.status == 201) {
         that._notify("Workflow launched!",
           `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
           "ok");
       }
       else {
         that._notify("Error launching workflow!",
-          `Failed to launch ${evt.detail.algorithmName}: ${data.statusText}.`,
+          `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
           "error");
       }
     }
