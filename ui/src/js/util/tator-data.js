@@ -299,7 +299,6 @@ export class TatorData {
   async getLocalizationGraphic( localizationID ){
     const response = await fetchCredentials(`/rest/LocalizationGraphic/${localizationID}`, {
       mode: "cors",
-      credentials: "include",
       headers: {
         "Content-Type": "image/*",
         "Accept": "image/*",
