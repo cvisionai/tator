@@ -618,7 +618,7 @@ export class TatorData {
     var value = filter.value;
     var field = filter.field;
 
-    if (field.includes("$") && value.includes("(ID:")) {
+    if (field.includes("$") && typeof(value) === "string" && value.includes("(ID:")) {
       value = Number(value.split('(ID:')[1].replace(")",""));
     }
 
@@ -808,7 +808,7 @@ export class TatorData {
           if (filter.field == "$id") {
             mediaIds.push(Number(filter.value));
           }
-          else if (filter.field.includes("$") && filter.value.includes("(ID:")) {
+          else if (filter.field.includes("$") && typeof(filter.value) === "string" && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
             newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
@@ -818,7 +818,7 @@ export class TatorData {
           }
         }
         else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field.includes("$") && filter.value.includes("(ID:")) {
+          if (filter.field.includes("$") && typeof(filter.value) === "string" && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
             newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             localizationFilters.push(newFilter);
@@ -886,7 +886,7 @@ export class TatorData {
           if (filter.field == "$id") {
             mediaIds.push(Number(filter.value));
           }
-          else if (filter.field.includes("$") && filter.value.includes("(ID:")) {
+          else if (filter.field.includes("$") && typeof(filter.value) === "string" && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
             newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
@@ -899,7 +899,7 @@ export class TatorData {
           stateFilters.push(filter);
         }
         else if (this._stateTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field.includes("$") && filter.value.includes("(ID:")) {
+          if (filter.field.includes("$") && typeof(filter.value) === "string" && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
             newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             stateFilters.push(newFilter);
@@ -971,7 +971,7 @@ export class TatorData {
           if (filter.field.includes("$id")) {
             mediaIds.push(Number(filter.value));
           }
-          else if (filter.field.includes("$") && filter.value.includes("(ID:")) {
+          else if (filter.field.includes("$") && typeof(filter.value) === "string" && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
             newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
@@ -981,7 +981,7 @@ export class TatorData {
           }
         }
         else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field.includes("$") && filter.value.includes("(ID:")) {
+          if (filter.field.includes("$") && typeof(filter.value) === "string" && filter.value.includes("(ID:")) {
             var newFilter = Object.assign({}, filter);
             newFilter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
