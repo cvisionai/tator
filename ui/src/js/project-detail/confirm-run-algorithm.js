@@ -99,7 +99,7 @@ export class ConfirmRunAlgorithm extends ModalDialog {
           }
         });
         var count = await response.json();
-        var msgText = `Do you want to run <span class="text-purple text-semibold">` + algorithmName + `</span> on <br />the <span class="text-purple text-semibold">ALL media (media count: ${count})</span>?`;
+        var msgText = `Do you want to run <span class="text-purple text-semibold">` + algorithmName + `</span> on <br /><span class="text-purple text-semibold">ALL media (media count: ${count})</span>?`;
       }
       else {
         var response = await fetchRetry(`/rest/MediaCount/${projectId}?section=${section.id}`, {
