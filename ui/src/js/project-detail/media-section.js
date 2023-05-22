@@ -792,13 +792,7 @@ export class MediaSection extends TatorElement {
       // Media Filters
       var finalMediaFilters = [];
       var finalMetadataFilters = [];
-      this._filterSection = null;
       for (var filter of this._filterConditions) {
-        if (filter.field == "_section")
-        {
-          this._filterSection = filter.value;
-          continue;
-        }
         if (filter.categoryGroup == "Media")
         {
           finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
