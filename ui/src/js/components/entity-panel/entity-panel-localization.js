@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class GalleryPanelLocalization extends TatorElement {
   constructor() {
@@ -66,7 +67,7 @@ export class GalleryPanelLocalization extends TatorElement {
       mediaData = this.savedMediaData.get(mediaId)
     } else {
       // --> Get mediaData and save it to this card object
-      const resp = await fetch(`/rest/Media/${mediaId}?presigned=28800`);
+      const resp = await fetchCredentials(`/rest/Media/${mediaId}?presigned=28800`);
       mediaData = await resp.json();
 
       // save this data in local memory until we need it again
