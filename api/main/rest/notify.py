@@ -3,6 +3,7 @@ import traceback
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.conf import settings
 
 from ..notify import Notify
 from ..schema import NotifySchema
@@ -39,6 +40,6 @@ class NotifyAPI(APIView):
                                   status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+                               'details': traceback.format_exc() if settings.DEBUG else ""}, status=status.HTTP_400_BAD_REQUEST)
         return response
 

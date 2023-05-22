@@ -61,7 +61,7 @@ class KeycloakAuthenticationMixin:
             except jwt.DecodeError:
                 raise AuthenticationFailed(f"Access token decode failed: Invalid signature!")
             except Exception as e:
-                raise AuthenticationFailed(f"Access token decode failed: {e}")
+                raise AuthenticationFailed(f"Access token decode failed!")
         return out
 
 class KeycloakAuthentication(KeycloakAuthenticationMixin, BaseAuthentication):

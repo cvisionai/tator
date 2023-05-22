@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 from django.http import response
 
 from ..schema import parse
@@ -34,7 +35,7 @@ def process_exception(exc):
     else:
         logger.error(f"Exception in request: {traceback.format_exc()}")
         resp = Response({'message' : str(exc),
-                         'details': traceback.format_exc()},
+                         'details': traceback.format_exc() if settings.DEBUG else ""},
                         status=status.HTTP_400_BAD_REQUEST)
     return resp
 class GetMixin:
