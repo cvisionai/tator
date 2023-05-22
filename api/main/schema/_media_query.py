@@ -72,6 +72,15 @@ media_filter_parameter_schema = [
         'schema': {'type': 'integer'},
     },
     {
+        'name': 'after_name',
+        'in': 'query',
+        'required': False,
+        'description': 'If given, all results returned will be after the '
+                       'media with this name. The `start` and `stop` '
+                       'parameters are relative to this modified range.',
+        'schema': {'type': 'string'},
+    },
+    {
         "name": "archive_lifecycle",
         "in": "query",
         "required": False,

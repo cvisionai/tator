@@ -457,7 +457,7 @@ export class AnnotationPage extends TatorPage {
 
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
-          searchParams.set("after", data.id);
+          searchParams.set("after_name", data.name);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           const countPromise = fetchRetry(countUrl, {
             method: "GET",
