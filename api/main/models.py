@@ -1,6 +1,8 @@
 import json
 import os
 import psycopg2
+import random
+import string
 from typing import List, Generator, Tuple
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -345,29 +347,31 @@ class User(AbstractUser):
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):
     user_desc = instance.get_description()
+    attr_prefix = "_saving_"
+    random_attr = f"{attr_prefix}{''.join(random.sample(string.ascii_lowercase, 16))}"
     if os.getenv('COGNITO_ENABLED') == 'TRUE':
         if created:
-            # Adds attribute to suppress email from save during creation, then removes it
-            instance.saving = True
+            # Adds random attribute to suppress email from save during creation, then removes it
+            setattr(instance, random_attr, True)
             instance.move_to_cognito()
-            del instance.saving
+            delattr(instance, random_attr)
         else:
             TatorCognito().update_attributes(instance)
     if created:
         if instance.username:
             instance.username = instance.username.strip()
 
-            # Adds attribute to suppress email from save during creation, then removes it
-            instance.saving = True
+            # Adds random attribute to suppress email from save during creation, then removes it
+            setattr(instance, random_attr, True)
             instance.save()
-            del instance.saving
+            delattr(instance, random_attr)
         if settings.SAML_ENABLED and not instance.email:
             instance.email = instance.username
 
-            # Adds attribute to suppress email from save during creation, then removes it
-            instance.saving = True
+            # Adds random attribute to suppress email from save during creation, then removes it
+            setattr(instance, random_attr, True)
             instance.save()
-            del instance.saving
+            delattr(instance, random_attr)
         invites = Invitation.objects.filter(email=instance.email, status='Pending')
         if (invites.count() == 0) and (os.getenv('AUTOCREATE_ORGANIZATIONS')):
             organization = Organization.objects.create(name=f"{instance}'s Team")
@@ -385,7 +389,9 @@ def user_save(sender, instance, created, **kwargs):
             f"following values:\n\n{user_desc}"
         )
 
-    if not hasattr(instance, "saving"):
+    # Only send an email if this is the root `post_save` trigger, i.e. does not have a random
+    # attribute added to it
+    if all(not attr.startswith(attr_prefix) for attr in dir(instance)):
         logger.info(msg)
         email_service = get_email_service()
         if email_service:
