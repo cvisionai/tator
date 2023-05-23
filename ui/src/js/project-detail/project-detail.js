@@ -9,7 +9,6 @@ import { v1 as uuidv1 } from "uuid";
 import { store } from "./store.js";
 import { api } from "./store.js";
 import { FilterConditionData } from "../util/filter-utilities.js"
-import { fetchRetry } from "../util/fetch-retry.js";
 import Gear from "../../images/svg/gear.svg";
 
 export class ProjectDetail extends TatorPage {
