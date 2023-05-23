@@ -1483,6 +1483,33 @@ class CurrentUserTestCase(TatorTransactionTest):
         response = self.client.get(f'/rest/Users?elemental_id={random_uuid}')
         self.assertEqual(len(response.data), 0)
 
+    def test_profile(self):
+        response = self.client.get('/rest/User/GetCurrent')
+        user_id = response.data['id']
+        response = self.client.patch(f'/rest/User/{user_id}', {'set_profile_keys': {'Test Key': 123, 'Test Key 2': 345}},format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get('/rest/User/GetCurrent')
+        user_profile = response.data['profile']
+        assert (user_profile['Test Key'] == 123)
+        assert (user_profile['Test Key 2'] == 345)
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'clear_profile_keys': ['Test Key 2']},format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get('/rest/User/GetCurrent')
+        user_profile = response.data['profile']
+        assert (user_profile['Test Key'] == 123)
+        assert (user_profile.get('Test Key 2',None) == None)
+
+        response = self.client.patch(f'/rest/User/{user_id}', {'clear_profile_keys': ['Test Key 2']},format='json')
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get('/rest/User/GetCurrent')
+        user_profile = response.data['profile']
+        assert (user_profile['Test Key'] == 123)
+        assert (user_profile.get('Test Key 2',None) == None)
+
+
+
     def test_avatar(self):
         response = self.client.get('/rest/User/GetCurrent')
         has_avatar = 'avatar' in response.data['profile']
