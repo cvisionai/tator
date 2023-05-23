@@ -110,7 +110,7 @@ export class GalleryPanelLocalization extends TatorElement {
 
     if (mediaData.typeName === "video" && !this.savedImageSource.has(localizationData.id)) {
       // get the frame
-      const resp = await fetch(`/rest/GetFrame/${mediaData.id}?frames=${localizationData.frame}`);
+      const resp = await fetchCredentials(`/rest/GetFrame/${mediaData.id}?frames=${localizationData.frame}`);
       const sourceBlob = await resp.blob();
       imageSource = URL.createObjectURL(sourceBlob);
       this.savedImageSource.set(localizationData.id, imageSource);

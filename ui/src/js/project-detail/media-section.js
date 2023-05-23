@@ -23,7 +23,10 @@ export class MediaSection extends TatorElement {
     header.appendChild(this._name);
 
     this._nameText = document.createTextNode("");
+    this._nameIdText = document.createElement("span");
+    this._nameIdText.setAttribute("class", "text-dark-gray px-1");
     this._name.appendChild(this._nameText);
+    this._name.appendChild(this._nameIdText);
 
     const numFiles = document.createElement("span");
     numFiles.setAttribute("class", "text-gray px-2");
@@ -31,7 +34,7 @@ export class MediaSection extends TatorElement {
 
     this._numFiles = document.createTextNode("");
     numFiles.appendChild(this._numFiles);
-    
+
     const pagePosition = document.createElement("div");
     pagePosition.setAttribute("class", "py-3 f1 text-normal text-gray");
     this._name.appendChild(pagePosition);
@@ -75,7 +78,7 @@ export class MediaSection extends TatorElement {
     this._files = document.createElement("section-files");
     this._files.setAttribute("class", "col-12");
     this._files.mediaParams = this._sectionParams.bind(this);
-    
+
     div.appendChild(this._files);
 
     this._paginator_bottom = document.createElement("entity-gallery-paginator");
@@ -87,7 +90,7 @@ export class MediaSection extends TatorElement {
     this._searchParams = new URLSearchParams();
     this._numFilesCount = 0;
     this._searchString = "";
-    
+
     this._setCallbacks();
   }
 
@@ -95,17 +98,19 @@ export class MediaSection extends TatorElement {
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
+      this._nameText.nodeValue = "All Media";
+      this._nameIdText.textContent = "";
     } else {
       this._sectionName = section.name;
       this._upload.setAttribute("section", section.name);
+      this._nameText.nodeValue = `${section.name}`;
+      this._nameIdText.textContent = `(ID: ${section.id})`;
     }
     this._project = project;
     this._section = section;
     this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
-    
-    
-    this._nameText.nodeValue = this._sectionName;
+
     this._upload.setAttribute("project-id", project);
     this._more.section = section;
 
@@ -113,7 +118,7 @@ export class MediaSection extends TatorElement {
     this._stop = this._paginator_top._pageSize;
     this._after = new Map();
 
-    
+
     return this.reload();
   }
 
@@ -193,7 +198,7 @@ export class MediaSection extends TatorElement {
 
   removeMedia(mediaId) {
     const single = !(mediaId.indexOf(",") > -1);
-    if (!single) mediaId = mediaId.split(","); 
+    if (!single) mediaId = mediaId.split(",");
     console.log("MEDIA ID (list or single? ... "+single);
     console.log(mediaId);
 
@@ -205,13 +210,13 @@ export class MediaSection extends TatorElement {
         mediaCard.parentNode.removeChild(mediaCard);
         const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
         this._updateNumFiles(numFiles); // do this at the end
-      } 
+      }
     }
-    
+
     // clear any selected cards & reload
     this.reload();
     this._bulkEdit.clearAllCheckboxes();
-    
+
   }
 
   _updateNumFiles(numFiles) {
@@ -221,7 +226,7 @@ export class MediaSection extends TatorElement {
     }
     this._numFiles.nodeValue = `${numFiles} ${fileText}`;
     this._numFilesCount = Number(numFiles);
-    
+
     if (numFiles != this._paginator_top._numFiles) {
       this._start = 0;
       this._stop = this._paginator_top._pageSize;
@@ -332,7 +337,7 @@ export class MediaSection extends TatorElement {
           composed: true,
           detail: {
             algorithmName: evt.detail.algorithmName,
-            mediaQuery: `?${this._sectionParams().toString()}`,
+            section: this._section,
             projectId: this._project,
           }
         }));
@@ -654,7 +659,7 @@ export class MediaSection extends TatorElement {
         setTimeout(() => {
           this._name.classList.remove("text-green");
         }, 800)
-        
+
         this.dispatchEvent(new CustomEvent("newName", {
           detail: {
             id: this._section.id,
@@ -724,11 +729,11 @@ export class MediaSection extends TatorElement {
     });
 
     this._paginator_top.addEventListener("selectPage", (evt) => {
-      this._setPage(evt, this._paginator_bottom); 
+      this._setPage(evt, this._paginator_bottom);
     });
 
     this._paginator_bottom.addEventListener("selectPage", (evt) => {
-      this._setPage(evt, this._paginator_top); 
+      this._setPage(evt, this._paginator_top);
     });
 
     this._reload.addEventListener("click", this.reload.bind(this));
@@ -742,8 +747,8 @@ export class MediaSection extends TatorElement {
     // clear any selected cards
     this._bulkEdit.clearAllCheckboxes();
 
-    otherPaginator.init(otherPaginator._numFiles, this._paginationState);        
-    
+    otherPaginator.init(otherPaginator._numFiles, this._paginationState);
+
     this._updatePageArgs();
     await this._loadMedia();
   }
@@ -767,7 +772,7 @@ export class MediaSection extends TatorElement {
         newUrl += `${key}=${value}`;
         firstParm = false;
       }
-      
+
     }
 
     // Only add back params if we're not on default page 1, and pageSize 10
@@ -777,7 +782,7 @@ export class MediaSection extends TatorElement {
       } else {
         newUrl += "?";
       }
-      newUrl += `page=${Number(this._paginator_top._page) + 1}&pagesize=${this._paginator_top._pageSize}`      
+      newUrl += `page=${Number(this._paginator_top._page) + 1}&pagesize=${this._paginator_top._pageSize}`
     }
 
     window.history.pushState({}, "", newUrl);
@@ -801,7 +806,7 @@ export class MediaSection extends TatorElement {
         {
           finalMetadataFilters.push(this._modelData._convertFilterForTator(filter));
         }
-          
+
       }
 
       if (finalMediaFilters.length > 0)
