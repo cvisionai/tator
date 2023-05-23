@@ -76,18 +76,25 @@ class MediaListSchema(AutoSchema):
         if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
             params = media_filter_parameter_schema + attribute_filter_parameter_schema + related_attribute_filter_parameter_schema
         if method in ['GET', 'PUT']:
-            params += [{
-                'name': 'presigned',
-                'in': 'query',
-                'required': False,
-                'description': 'If given, all `path` fields in `media_files` will be '
-                               'replaced with presigned URLs that can be downloaded without '
-                               'authentication. The value is the expiration time of the URLs '
-                               'in seconds.',
-                'schema': {'type': 'integer',
-                           'minimum': 1,
-                           'maximum': 86400},
-            }]
+            params += [
+                {
+                    'name': 'presigned',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'If given, all `path` fields in `media_files` will be '
+                                   'replaced with presigned URLs that can be downloaded without '
+                                   'authentication. The value is the expiration time of the URLs '
+                                   'in seconds.',
+                    'schema': {'type': 'integer', 'minimum': 1, 'maximum': 86400},
+                },
+                {
+                    "name": "no_cache",
+                    "in": "query",
+                    "required": False,
+                    "description": "If `True`, and `presigned` is specified, a new presigned url will be generated.",
+                    "schema": {"type": "boolean"},
+                },
+            ]
         return params
 
     def get_request_body(self, path, method):
@@ -201,18 +208,25 @@ class MediaDetailSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method == 'GET':
-            params = [{
-                'name': 'presigned',
-                'in': 'query',
-                'required': False,
-                'description': 'If given, all `path` fields in `media_files` will be '
-                               'replaced with presigned URLs that can be downloaded without '
-                               'authentication. The value is the expiration time of the URLs '
-                               'in seconds.',
-                'schema': {'type': 'integer',
-                           'minimum': 1,
-                           'maximum': 86400},
-            }]
+            params += [
+                {
+                    'name': 'presigned',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'If given, all `path` fields in `media_files` will be '
+                                   'replaced with presigned URLs that can be downloaded without '
+                                   'authentication. The value is the expiration time of the URLs '
+                                   'in seconds.',
+                    'schema': {'type': 'integer', 'minimum': 1, 'maximum': 86400},
+                },
+                {
+                    "name": "no_cache",
+                    "in": "query",
+                    "required": False,
+                    "description": "If `True`, and `presigned` is specified, a new presigned url will be generated.",
+                    "schema": {"type": "boolean"},
+                },
+            ]
         return params
 
     def get_request_body(self, path, method):

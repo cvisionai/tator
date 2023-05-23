@@ -45,7 +45,7 @@ def _serialize_projects(projects, user_id):
             if url is None:
                 try:
                     url = stores[None].get_download_url(thumb_path, ttl)
-                except:
+                except Exception:
                     bucket_id = project.bucket and project.bucket.id
                     if bucket_id:
                         logger.warning(
