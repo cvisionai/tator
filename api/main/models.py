@@ -339,7 +339,7 @@ class User(AbstractUser):
     def get_description(self):
         return "\n".join(
             f"{field}={getattr(self, field)}"
-            for field in ["id", "username", "first_name", "last_name", "email", "is_active"]
+            for field in ["id", "username", "first_name", "last_name", "email", "is_active", "profile"]
         )
 
 @receiver(post_save, sender=User)
