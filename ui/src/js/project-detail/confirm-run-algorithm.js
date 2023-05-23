@@ -1,5 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { svgNamespace } from "../components/tator-element.js";
 
 export class ConfirmRunAlgorithm extends ModalDialog {
@@ -89,28 +89,12 @@ export class ConfirmRunAlgorithm extends ModalDialog {
     if (mediaIds == null) {
 
       if (section == null) {
-        var response = await fetchRetry(`/rest/MediaCount/${projectId}`, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
-        });
+        var response = await fetchCredentials(`/rest/MediaCount/${projectId}`, {}, true);
         var count = await response.json();
         var msgText = `Do you want to run <span class="text-purple text-semibold">` + algorithmName + `</span> on <br /><span class="text-purple text-semibold">ALL media (media count: ${count})</span>?`;
       }
       else {
-        var response = await fetchRetry(`/rest/MediaCount/${projectId}?section=${section.id}`, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
-        });
+        var response = await fetchCredentials(`/rest/MediaCount/${projectId}?section=${section.id}`, {}, true);
         var count = await response.json();
         var msgText = `Do you want to run <span class="text-purple text-semibold">` + algorithmName + `</span> on <br />media in <span class="text-purple text-semibold">${section.name} (media count: ${count})</span>?`;
       }
@@ -123,15 +107,7 @@ export class ConfirmRunAlgorithm extends ModalDialog {
       var count = mediaIds.length;
       if (count == 1) {
 
-        var response = await fetchRetry(`/rest/Media/${mediaIds[0]}`, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
-        });
+        var response = await fetchCredentials(`/rest/Media/${mediaIds[0]}`, {}, true);
         var media = await response.json();
         var msgText = `Do you want to run <span class="text-purple text-semibold">` + algorithmName + `</span> on <br /><span class="text-purple text-semibold">${media.name} (ID: ${media.id})</span>?`;
       }
