@@ -31,14 +31,28 @@ logger = logging.getLogger(__name__)
 MAX_PROFILE_IMAGE_SIZE = 1*1024*1024
 ACCEPTABLE_PROFILE_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png']
 
-def handle_avatar_management(user, params):
+def handle_profile_management(user, params):
     new_avatar = params.get('new_avatar', None)
     clear_avatar = params.get('clear_avatar', 0)
-    if new_avatar == None and clear_avatar == 0:
-        return
+    set_profile_keys = params.get('set_profile_keys', {})
+    clear_profile_keys = params.get('clear_profile_keys', [])
 
     generic_store = get_tator_store()
     existing_avatar = user.profile.get('avatar')
+
+
+    # Handle keys
+    if set_profile_keys:
+        for key,value in set_profile_keys.items():
+            user.profile[key] = value
+        user.save()
+
+    if clear_profile_keys:
+        for key in clear_profile_keys:
+            if key in user.profile:
+                del user.profile[key]
+        user.save()
+
     # Handle deleting an avatar
     if clear_avatar and existing_avatar:
         if existing_avatar.startswith(f'user_data/{user.pk}'):
@@ -79,10 +93,16 @@ def user_serializer_helper(response_data, presigned_ttl):
     if type(response_data) == ReturnList:
         for row in response_data:
             avatar_key = row['profile'].get('avatar')
-            row['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+            if avatar_key:
+                row['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+            else:
+                row['profile']['avatar'] = None
     else:
         avatar_key = response_data['profile'].get('avatar')
-        response_data['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+        if avatar_key:
+            response_data['profile']['avatar'] = generic_store.get_download_url(avatar_key, presigned_ttl)
+        else:
+            response_data['profile']['avatar'] = None
     return response_data
 
 class UserExistsAPI(BaseDetailView):
@@ -191,7 +211,7 @@ class UserListAPI(BaseListView):
                                            permission=invite.permission,
                                            user=user)
 
-        handle_avatar_management(user, params)
+        handle_profile_management(user, params)
 
         return {'message': f"User {username} created!",
                 'id': user.id}
@@ -237,7 +257,7 @@ class UserDetailAPI(BaseDetailView):
                 user.failed_login_count = 0
         user.save()
 
-        handle_avatar_management(user, params)
+        handle_profile_management(user, params)
         user = User.objects.get(pk=params['id'])
         return {'message': f'Updated user {params["id"]} successfully!'}
 
