@@ -29,9 +29,6 @@ export class FilterInterface extends TatorElement {
     const filterButton = document.createElement("filter-data-button");
     this._filterNavDiv.appendChild(filterButton);
 
-    this._algoButton = document.createElement("algorithm-button");
-    this._filterNavDiv.appendChild(this._algoButton);
-
     /**
      * Filter condition interface
      */
@@ -61,8 +58,6 @@ export class FilterInterface extends TatorElement {
     cancel.textContent = "Cancel";
     footerDiv.appendChild(cancel);
 
-
-
     /**
      * Filter condition pill boxes
      */
@@ -80,9 +75,6 @@ export class FilterInterface extends TatorElement {
     this._moreNavDiv = document.createElement("div");
     this._moreNavDiv.setAttribute("class", "analysis__more_nav px-1");
     this._topNav.appendChild(this._moreNavDiv);
-
-    this._confirmRunAlgorithm = document.createElement("confirm-run-algorithm");
-    this._shadow.appendChild(this._confirmRunAlgorithm);
 
     this._modalNotify = document.createElement("modal-notify");
     this._shadow.appendChild(this._modalNotify);
@@ -111,61 +103,12 @@ export class FilterInterface extends TatorElement {
       this._filterStringDiv.style.display = "flex";
       this._moreNavDiv.style.display = "block";
     });
-
-    // Respond to user requesting to run an algorithm
-    this._algoButton.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));
-    this._confirmRunAlgorithm.addEventListener("close", this._closeConfirmRunAlgoModal.bind(this));
   }
 
   _notify(title, message, error_or_ok) {
     this._modalNotify.init(title, message, error_or_ok);
     this._modalNotify.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
-  }
-
-  /**
-   * Callback when user clicks on an algorithm button.
-   * This launches the confirm run algorithm modal window.
-   */
-   _openConfirmRunAlgoModal(evt) {
-
-    var extraParameters = [
-      {
-        name: "encoded_filters",
-        value: encodeURIComponent(encodeURIComponent(JSON.stringify(this._filterConditionGroup.getConditions()))),
-      }
-    ]
-    console.log(extraParameters);
-    this._confirmRunAlgorithm.init(evt.detail.algorithmName, evt.detail.projectId, [], null, extraParameters);
-    this._confirmRunAlgorithm.setAttribute("is-open","");
-    this.setAttribute("has-open-modal", "");
-    document.body.classList.add("shortcuts-disabled");
-  }
-
-  /**
-   * Callback from confirm run algorithm modal choice
-   */
-  _closeConfirmRunAlgoModal(evt) {
-
-    this._confirmRunAlgorithm.removeAttribute("is-open");
-    this.removeAttribute("has-open-modal");
-    document.body.classList.remove("shortcuts-disabled");
-
-    var that = this;
-    if (evt.detail.confirm) {
-      this._dataView.launchAlgorithm(evt.detail.algorithmName, evt.detail.extraParameters).then(launched => {
-        if (launched) {
-          that._notify("Algorithm launched!",
-                       `Successfully launched ${evt.detail.algorithmName}!`,
-                       "ok");
-        }
-        else {
-          that._notify("Error launching algorithm!",
-                      `Failed to launch ${evt.detail.algorithmName}`,
-                      "error");
-        }
-      });
-    }
   }
 
   /**
@@ -202,11 +145,6 @@ export class FilterInterface extends TatorElement {
     this._filterConditionGroup.data = this._dataView.getAllTypes();
     this._filterConditionGroup._div.style.marginTop = "10px";
     this._conditionsDiv.appendChild(this._filterConditionGroup);
-
-    // Get the algorithm information. If there are no registered algorithms, disable the button
-    this._algoButton.setAttribute("project-id", this._dataView.getProjectId());
-    this._algoButton.algorithms = this._dataView.getAlgorithms();
-    this._algoButton.hideNewAlgorithm();
   }
 
   /**

@@ -8,6 +8,8 @@ import { FilterData } from "../components/filter-data.js";
 import { v1 as uuidv1 } from "uuid";
 import { store } from "./store.js";
 import { api } from "./store.js";
+import { FilterConditionData } from "../util/filter-utilities.js"
+import { fetchRetry } from "../util/fetch-retry.js";
 import Gear from "../../images/svg/gear.svg";
 
 export class ProjectDetail extends TatorPage {
@@ -44,7 +46,7 @@ export class ProjectDetail extends TatorPage {
 
     /* LEFT*** Navigation Pane - Project Detail Viewer */
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container-left col-3"); //slide-close 
+    this.aside.setAttribute("class", "entity-panel--container-left col-3"); //slide-close
     this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 
@@ -54,7 +56,7 @@ export class ProjectDetail extends TatorPage {
 
     //
     const section = document.createElement("section");
-    section.setAttribute("class", "sections-wrap py-6 col-3 px-5 text-gray"); // 
+    section.setAttribute("class", "sections-wrap py-6 col-3 px-5 text-gray"); //
 
     const folderHeader = document.createElement("div");
     folderHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
@@ -136,7 +138,7 @@ export class ProjectDetail extends TatorPage {
     section.appendChild(this._archivedFolders);
 
     this._mainSection = document.createElement("section");
-    this._mainSection.setAttribute("class", "py-3 px-6 flex-grow"); //project__main 
+    this._mainSection.setAttribute("class", "py-3 px-6 flex-grow"); //project__main
     this.main.appendChild(this._mainSection);
 
     this.gallery = {};
@@ -202,7 +204,6 @@ export class ProjectDetail extends TatorPage {
     this._mainSection.appendChild(filterdiv);
 
     this._filterView = document.createElement("filter-interface");
-    this._filterView._algoButton.hidden = true;
     filterdiv.appendChild(this._filterView);
 
     this._collaborators = document.createElement("project-collaborators");
@@ -565,17 +566,6 @@ export class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
-    this._newAlgorithmCallback = evt => {
-      const newAlgorithm = document.createElement("new-algorithm-form");
-      this._projects.appendChild(newAlgorithm);
-      newAlgorithm.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-      newAlgorithm.addEventListener("close", evt => {
-        this.removeAttribute("has-open-modal", "");
-        this._projects.removeChild(evt.target);
-      });
-    };
-
     cancelJob.addEventListener("confirmGroupCancel", () => {
       cancelJob.removeAttribute("is-open");
     });
@@ -830,11 +820,11 @@ export class ProjectDetail extends TatorPage {
               projectId,
               additionalTools: true,
               permission: project.permission
-            });              
+            });
 
 
 
-            const parsedAlgos = algos.filter(function (alg) {
+            var parsedAlgos = algos.filter(function (alg) {
               if (Array.isArray(alg.categories)) {
                 for (const category of alg.categories) {
                   if (hiddenAlgoCategories.includes(category)) {
@@ -844,6 +834,8 @@ export class ProjectDetail extends TatorPage {
               }
               return !hiddenAlgos.includes(alg.name);
             });
+            parsedAlgos.sort((a, b) => a.name.localeCompare(b.name));
+
             if (!hasPermission(project.permission, "Full Control")) {
               this._settingsButton.style.display = "none";
             }
@@ -1003,7 +995,6 @@ export class ProjectDetail extends TatorPage {
     this._mediaSection.addEventListener("remove", this._removeCallback);
     this._mediaSection.addEventListener("moveFile", this._moveFileCallback);
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
-    this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
 
     params.delete("section");
     if (section !== null) {
@@ -1059,15 +1050,8 @@ export class ProjectDetail extends TatorPage {
    */
   _openConfirmRunAlgoModal(evt) {
 
-    if ('mediaIds' in evt.detail) {
-      this._confirmRunAlgorithm.init(
-        evt.detail.algorithmName, evt.detail.projectId, evt.detail.mediaIds, null);
-    }
-    else {
-      this._confirmRunAlgorithm.init(
-        evt.detail.algorithmName, evt.detail.projectId, null, evt.detail.mediaQuery);
-    }
-
+    this._confirmRunAlgorithm.init(
+      evt.detail.algorithmName, evt.detail.projectId, evt.detail.mediaIds, evt.detail.section);
     this._confirmRunAlgorithm.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
     document.body.classList.add("shortcuts-disabled");
@@ -1075,29 +1059,77 @@ export class ProjectDetail extends TatorPage {
 
   /**
    * Callback from confirm run algorithm modal choice
+   * @async
    */
-  _closeConfirmRunAlgoModal(evt) {
+  async _closeConfirmRunAlgoModal(evt) {
+
+    console.log(evt);
 
     this._confirmRunAlgorithm.removeAttribute("is-open");
     this.removeAttribute("has-open-modal");
     document.body.classList.remove("shortcuts-disabled");
 
+    if (evt.detail == null) { return; }
+
     var that = this;
+    var jobMediaIds = [];
     if (evt.detail.confirm) {
-      if (evt.detail.mediaIds != null) {
-        var body = JSON.stringify({
-          "algorithm_name": evt.detail.algorithmName,
-          "media_ids": evt.detail.mediaIds
-        });
+
+      // Retrieve media IDs first (if needed)
+      if (evt.detail.mediaIds == null) {
+
+        this.showDimmer();
+        this.loading.showSpinner();
+
+        var filterConditions = [];
+        var mediaTypes = this._modelData.getStoredMediaTypes();
+        if (evt.detail.section != null) {
+          filterConditions.push(new FilterConditionData(mediaTypes[0].name, "$section", "==", `${evt.detail.section.id}`, ""))
+        }
+
+        var totalCounts = await this._modelData.getFilteredMedias("count", filterConditions);
+        console.log(`mediaCounts: ${totalCounts}`);
+        var afterMap = new Map();
+        var pageSize = 5000;
+        var pageStart = 0;
+        var pageEnd = pageStart + pageSize;
+        var allMedia = [];
+        var numPages = Math.floor(totalCounts / pageSize) + 1;
+        var pageCount = 1;
+        while (allMedia.length < totalCounts) {
+
+          console.log(`Processing media page ${pageCount} of ${numPages}`);
+          var pageMedia = await this._modelData.getFilteredMedias(
+            "objects",
+            filterConditions,
+            0,
+            Math.min(totalCounts - allMedia.length, 5000),
+            afterMap,
+            true);
+          allMedia.push(...pageMedia);
+          pageStart = pageEnd;
+          pageEnd = pageStart + pageSize;
+          pageCount += 1;
+        }
+
+        for (const media of allMedia) {
+          jobMediaIds.push(media.id);
+        }
+
+        this.loading.hideSpinner();
+        this.hideDimmer();
       }
       else {
-        var body = JSON.stringify({
-          "algorithm_name": evt.detail.algorithmName,
-          "media_query": evt.detail.mediaQuery
-        });
+        jobMediaIds = evt.detail.mediaIds;
       }
 
-      fetch("/rest/Jobs/" + evt.detail.projectId, {
+      var body = JSON.stringify({
+        "algorithm_name": evt.detail.algorithmName,
+        "media_ids": jobMediaIds
+      });
+      console.log(`${jobMediaIds.length} | ${evt.detail.algorithmName}`);
+
+      var response = await fetchRetry("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -1106,21 +1138,18 @@ export class ProjectDetail extends TatorPage {
           "Content-Type": "application/json"
         },
         body: body,
-      })
-        .then(response => {
-          if (response.status == 201) {
-            that._notify("Algorithm launched!",
-              `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
-              "ok");
-          }
-          else {
-            that._notify("Error launching algorithm!",
-              `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
-              "error");
-          }
-          return response.json();
-        })
-        .then(data => console.log(data));
+      });
+      var data = await response.json();
+      if (response.status == 201) {
+        that._notify("Workflow launched!",
+          `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
+          "ok");
+      }
+      else {
+        that._notify("Error launching workflow!",
+          `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
+          "error");
+      }
     }
   }
 

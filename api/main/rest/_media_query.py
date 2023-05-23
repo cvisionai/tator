@@ -57,6 +57,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
     gid = params.get('gid')
     uid = params.get('uid')
     after = params.get('after')
+    after_name = params.get('after_name')
     start = params.get('start')
     stop = params.get('stop')
     section_id = params.get('section')
@@ -105,6 +106,9 @@ def _get_media_psql_queryset(project, filter_ops, params):
 
     if after is not None:
         qs = qs.filter(pk__gt=after)
+
+    if after_name is not None:
+        qs = qs.filter(name__gt=after_name)
 
     if archive_states is not None:
         qs = qs.filter(archive_state__in=archive_states)
