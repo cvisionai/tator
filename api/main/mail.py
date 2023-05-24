@@ -55,7 +55,7 @@ class TatorMail(ABC):
         """
         if settings.TATOR_EMAIL_NOTIFY_STAFF:
             if add_footer and text:
-                footer = "\n\nThis message has been sent to all deployment staff. No action is required."
+                footer = " This message has been sent to all deployment staff. No action is required."
                 text += footer
 
             # Get all non-empty staff emails
