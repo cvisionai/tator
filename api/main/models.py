@@ -346,9 +346,12 @@ class User(AbstractUser):
 
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):
-    user_desc = instance.get_description()
+    # Create random attribute name with static prefix for determining if this is the root trigger of
+    # this signal
     attr_prefix = "_saving_"
     random_attr = f"{attr_prefix}{''.join(random.sample(string.ascii_lowercase, 16))}"
+
+    user_desc = instance.get_description()
     if os.getenv('COGNITO_ENABLED') == 'TRUE':
         if created:
             # Adds random attribute to suppress email from save during creation, then removes it
@@ -473,12 +476,15 @@ def affiliation_save(sender, instance, created, **kwargs):
             title = f"{user} added to {organization}"
             text = (
                 f"You are being notified that a new user {user} (username {user.username}, email "
-                f"{user.email}) has been added to the Tator organization {organization}. This "
-                f"message has been sent to all organization admins. No action is required."
+                f"{user.email}) has been added to the Tator organization {organization}."
             )
+            footer = " This message has been sent to all organization admins. No action is required."
 
             email_service.email(
-                sender=settings.TATOR_EMAIL_SENDER, recipients=recipients, title=title, text=text
+                sender=settings.TATOR_EMAIL_SENDER,
+                recipients=recipients,
+                title=title,
+                text=text + footer,
             )
             logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
     else:
