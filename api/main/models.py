@@ -1378,7 +1378,7 @@ class Resource(Model):
                 obj.bucket = generic_file.project.bucket
                 obj.save()
             obj.generic_files.add(generic_file)
-        else:
+        elif media is not None:
             if created:
                 obj.bucket = media.project.bucket
                 obj.save()
