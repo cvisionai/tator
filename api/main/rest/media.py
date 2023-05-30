@@ -114,7 +114,7 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
                 if no_cache or (url is None):
                     tator_store = store_lookup[media_def["path"]]
                     url = tator_store.get_download_url(media_def["path"], expiration)
-                    if ttl > 0:
+                    if ttl > 0 and not no_cache:
                         cache.set_presigned(user_id, media_def["path"], url, ttl)
                 media_def["path"] = url
                 # Get segment url
@@ -126,7 +126,7 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
                             url = tator_store.get_download_url(
                                 media_def["segment_info"], expiration
                             )
-                            if ttl > 0:
+                            if ttl > 0 and not no_cache:
                                 cache.set_presigned(user_id, media_def["segment_info"], url, ttl)
                         media_def["segment_info"] = url
                     else:
