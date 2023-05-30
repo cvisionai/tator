@@ -1372,13 +1372,16 @@ class Resource(Model):
             path = os.readlink(path_or_link)
         else:
             path = path_or_link
-        if media is None and generic_file is None:
-            obj, created = Resource.objects.get_or_create(path=path, bucket=None)
-        elif media is None:
-            obj, created = Resource.objects.get_or_create(path=path, bucket=generic_file.project.bucket)
+        obj, created = Resource.objects.get_or_create(path=path)
+        if media is None and generic_file is not None:
+            if created:
+                obj.bucket = generic_file.project.bucket
+                obj.save()
             obj.generic_files.add(generic_file)
         else:
-            obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
+            if created:
+                obj.bucket = media.project.bucket
+                obj.save()
             obj.media.add(media)
 
     @transaction.atomic
