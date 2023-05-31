@@ -89,16 +89,6 @@ media_filter_parameter_schema = [
         "schema": {"type": "string", "enum": ["live", "archived", "all"]},
     },
     {
-        'name': 'annotation_search',
-        'in': 'query',
-        'required': False,
-        'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See [reference](https://www.elastic.co/guide/en/elasticsearch/'
-                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax). '
-                       'This search is applied to child annotations of media only.',
-        'schema': {'type': 'string'},
-    },
-    {
         'name': 'elemental_id',
         'in': 'query',
         'description': 'Elemental ID to search for',
