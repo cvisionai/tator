@@ -1686,8 +1686,6 @@ class Leaf(Model, ModelDiffMixin):
         return pathStr
 
 class Section(Model):
-    """ Stores either a lucene search or raw elasticsearch query.
-    """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     name = CharField(max_length=128)
     """ Name of the section.
