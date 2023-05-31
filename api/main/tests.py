@@ -4310,7 +4310,7 @@ class AttributeTestCase(TatorTransactionTest):
 
 
 class MutateAliasTestCase(TatorTransactionTest):
-    """Tests alias mutation in elasticsearch.
+    """Tests alias mutation.
     """
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)

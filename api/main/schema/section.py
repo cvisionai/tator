@@ -9,9 +9,7 @@ from ._errors import error_responses
 from ._type_query import type_filter_parameter_schema
 
 boilerplate = dedent("""\
-Sections represent groups of media using saved queries. The queries can be in the form
-of a [lucene search string](https://www.elastic.co/guide/en/elasticsearch/reference/7.10/query-dsl-query-string-query.html#query-string-syntax) or a list of [boolean filter queries](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html) applied to
-either media or child annotations of media.
+Sections represent groups of media using saved queries.
 """)
 
 class SectionListSchema(AutoSchema):
@@ -123,10 +121,6 @@ class SectionDetailSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/SectionUpdate'},
-                'example': {
-                    'name': 'New unique name',
-                    'lucene_string': 'Field:value*'
-                }
             }}}
         return body
 
