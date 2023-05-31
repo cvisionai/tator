@@ -35,15 +35,6 @@ from pgvector.django import L2Distance, MaxInnerProduct, CosineDistance
 
 logger = logging.getLogger(__name__)
 
-def format_query_string(query_str: str) -> str:
-    """
-    Preformatting before passing the query to ElasticSearch.
-
-    :param query_str: The raw query string
-    :type query_str: str
-    """
-    return query_str.replace("/", "\\/")
-
 ALLOWED_TYPES = {
     'attribute': ('bool', 'float', 'datetime', 'keyword', 'string', 'int', 'enum'),
     'attribute_lt': ('float', 'datetime', 'int'),

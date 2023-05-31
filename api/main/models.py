@@ -584,9 +584,6 @@ class Project(Model):
     enable_downloads = BooleanField(default=True)
     thumb = CharField(max_length=1024, null=True, blank=True)
     usernames = ArrayField(CharField(max_length=256), default=list)
-    """ Mapping between attribute type names and UUIDs. Used internally for
-        maintaining elasticsearch field aliases.
-    """
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
                         related_name='+', db_column='bucket')
     """ If set, media will use this bucket by default.

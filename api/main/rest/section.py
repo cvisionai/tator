@@ -17,10 +17,6 @@ logger = logging.getLogger(__name__)
 
 class SectionListAPI(BaseListView):
     """ Create or retrieve a list of project media sections.
-
-        Sections correspond to saved queries on media that may consist of a lucene
-        search string, a list of elasticsearch boolean queries applied to media,
-        or a list of elasticsearch boolean queries applied to child annotations.
     """
     schema = SectionListSchema()
     permission_classes = [ProjectEditPermission]
@@ -73,10 +69,6 @@ class SectionListAPI(BaseListView):
 
 class SectionDetailAPI(BaseDetailView):
     """ Interact with an individual section.
-
-        Sections correspond to saved queries on media that may consist of a lucene
-        search string, a list of elasticsearch boolean queries applied to media,
-        or a list of elasticsearch boolean queries applied to child annotations.
     """
     schema = SectionDetailSchema()
     permission_classes = [ProjectEditPermission]
