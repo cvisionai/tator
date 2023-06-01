@@ -8,6 +8,8 @@ jobs:
     machine:
       image: ubuntu-2004:2022.04.2
     steps:
+    - attach_workspace:
+        at: ~/
     - run:
         name: Check code formatting
         command: ssh lightsail 'cd tator && make check-format';
