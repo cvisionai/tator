@@ -8,10 +8,9 @@ jobs:
     machine:
       image: ubuntu-2004:2022.04.2
     steps:
-      - checkout
-      - run:
-          name: Check code formatting
-          command: make check-format
+    - run:
+        name: Check code formatting
+        command: ssh lightsail 'cd tator && make check-format';
   build-docker-images:
     machine:
       image: ubuntu-2004:2022.04.2
@@ -254,12 +253,14 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-    - check-format:
+    - setup-lightsail:
         context: cvisionai
         filters:
           tags:
             only: /.*/
-    - setup-lightsail:
+    - check-format:
+        requires:
+        - setup-lightsail
         context: cvisionai
         filters:
           tags:
