@@ -1,4 +1,4 @@
 [tool.black]
 line-length = 100
-include = '\.pyi?$'
-exclude = '^/scripts/packages'
+include = 'api\/.*\.pyi?$'
+# exclude = ["^scripts/packages", "^ui/node_modules"]

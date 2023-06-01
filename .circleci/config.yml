@@ -4,6 +4,12 @@ orbs:
   slack: circleci/slack@4.4.2
   aws-cli: circleci/aws-cli@1.4.1
 jobs:
+  check-format:
+    steps:
+      - checkout
+      - run:
+          name: Check code formatting
+          command: make check-format
   build-docker-images:
     machine:
       image: ubuntu-2004:2022.04.2
@@ -246,6 +252,11 @@ workflows:
   version: 2
   build-and-test:
     jobs:
+    - check-format:
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
     - setup-lightsail:
         context: cvisionai
         filters:
