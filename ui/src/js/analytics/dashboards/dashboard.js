@@ -12,13 +12,16 @@ export class RegisteredDashboard extends TatorPage {
 
     // Init params
     this._username = "";
-    
+
     //
     // Header
     //
     const header = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
-    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-6 f3");
+    header.setAttribute(
+      "class",
+      "annotation__header d-flex flex-items-center flex-justify-between px-6 f3"
+    );
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
@@ -38,28 +41,35 @@ export class RegisteredDashboard extends TatorPage {
     this._shadow.appendChild(main);
 
     this._dashboardView = document.createElement("iframe");
-    this._dashboardView.setAttribute("class", "d-flex flex-grow")
+    this._dashboardView.setAttribute("class", "d-flex flex-grow");
     main.appendChild(this._dashboardView);
 
     // Create store subscriptions
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
-    store.subscribe(state => state.project, this._updateProject.bind(this));
-    store.subscribe(state => state.dashboard, this._init.bind(this));
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
+    store.subscribe((state) => state.project, this._updateProject.bind(this));
+    store.subscribe((state) => state.dashboard, this._init.bind(this));
 
     // Listen for URL param events
     console.log(window.history.state);
-    window.document.addEventListener('bookmark-update', handleEvent, false)
+    window.document.addEventListener("bookmark-update", handleEvent, false);
     function handleEvent(e) {
       let params = ""; // e.detail { paramsList: [ { name: "foo", value: "bar"} ] }
       for (let pair of e.detail.paramsList) {
-        params += `${pair.name}=${pair.value}&`
+        params += `${pair.name}=${pair.value}&`;
       }
 
-      window.history.pushState(e.detail.state, '', `${window.location.origin}${window.location.pathname}?${params}`);
+      window.history.pushState(
+        e.detail.state,
+        "",
+        `${window.location.origin}${window.location.pathname}?${params}`
+      );
     }
 
-    window.addEventListener('hashchange', this.hashHandler.bind(this), false);
+    window.addEventListener("hashchange", this.hashHandler.bind(this), false);
   }
 
   connectedCallback() {
@@ -71,7 +81,12 @@ export class RegisteredDashboard extends TatorPage {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    TatorPage.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 
   _setUser(user) {
@@ -81,25 +96,32 @@ export class RegisteredDashboard extends TatorPage {
 
   _updateProject(project) {
     this._breadcrumbs.setAttribute("project-name", project.name);
-    this._breadcrumbs.setAttribute("analytics-name-link", window.location.origin + `/${project.id}/dashboards`);
+    this._breadcrumbs.setAttribute(
+      "analytics-name-link",
+      window.location.origin + `/${project.id}/dashboards`
+    );
   }
 
   _init(dashboard) {
     document.title = `Tator | ${dashboard.name}`;
     this._dashboardId = dashboard.id;
     this._dashboard = dashboard;
-    this._dashbordSource = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
+    this._dashbordSource = `${dashboard.html_file}${
+      window.location.search !== "" ? window.location.search + "&" : "?"
+    }username=${this._username}`;
     this._dashboardView.src = this._dashbordSource;
     this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
     this._loading.style.display = "none";
   }
 
   hashHandler(e) {
-      console.log('The hash has changed!');
+    console.log("The hash has changed!");
     console.log(window.history.state);
-    this._dashbordSource = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
+    this._dashbordSource = `${dashboard.html_file}${
+      window.location.search !== "" ? window.location.search + "&" : "?"
+    }username=${this._username}`;
     this._dashboardView.src = this._dashbordSource;
-   }
+  }
 }
 
 customElements.define("registered-dashboard", RegisteredDashboard);

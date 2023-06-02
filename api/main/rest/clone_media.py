@@ -21,13 +21,14 @@ from ._util import bulk_create_from_generator
 
 logger = logging.getLogger(__name__)
 
+
 class CloneMediaListAPI(BaseListView):
-    """ Clone a list of media without copying underlying files.
-    """
+    """Clone a list of media without copying underlying files."""
+
     schema = CloneMediaListSchema()
     permission_classes = [ClonePermission]
-    http_method_names = ['post']
-    entity_type = MediaType # Needed by attribute filter mixin
+    http_method_names = ["post"]
+    entity_type = MediaType  # Needed by attribute filter mixin
     MAX_NUM_MEDIA = 500
 
     @staticmethod
@@ -38,42 +39,45 @@ class CloneMediaListAPI(BaseListView):
             new_obj.project = Project.objects.get(pk=dest_project)
             new_obj.type = MediaType.objects.get(pk=dest_type)
             if section:
-                new_obj.attributes['tator_user_sections'] = section.tator_user_sections
+                new_obj.attributes["tator_user_sections"] = section.tator_user_sections
             yield new_obj
 
     def _post(self, params):
-        dest = params['dest_project']
+        dest = params["dest_project"]
 
         # Make sure destination path exists.
-        os.makedirs(os.path.join('/media', str(dest)), exist_ok=True)
+        os.makedirs(os.path.join("/media", str(dest)), exist_ok=True)
 
         # Retrieve media that will be cloned.
         response_data = []
-        original_medias = get_media_queryset(self.kwargs['project'], params)
+        original_medias = get_media_queryset(self.kwargs["project"], params)
 
         # If there are too many Media to create at once, raise an exception.
         if original_medias.count() > self.MAX_NUM_MEDIA:
-            raise Exception('Maximum number of media that can be cloned in one request is '
-                           f'{self.MAX_NUM_MEDIA}. Try paginating request with start, stop, '
-                            'or after parameters.')
+            raise Exception(
+                "Maximum number of media that can be cloned in one request is "
+                f"{self.MAX_NUM_MEDIA}. Try paginating request with start, stop, "
+                "or after parameters."
+            )
 
         # If given media type is not part of destination project, raise an exception.
-        if params['dest_type'] == -1:
+        if params["dest_type"] == -1:
             type_obj = MediaType.objects.filter(project=dest)[0]
         else:
-            type_obj = MediaType.objects.get(pk=params['dest_type'])
+            type_obj = MediaType.objects.get(pk=params["dest_type"])
             if type_obj.project.pk != dest:
-                raise Exception('Destination media type is not part of destination project!')
+                raise Exception("Destination media type is not part of destination project!")
 
         # Look for destination section, if given.
         section = None
-        if params.get('dest_section'):
-            sections = Section.objects.filter(project=dest,
-                                              name__iexact=params['dest_section'])
+        if params.get("dest_section"):
+            sections = Section.objects.filter(project=dest, name__iexact=params["dest_section"])
             if sections.count() == 0:
-                section = Section.objects.create(project=Project.objects.get(pk=dest),
-                                                 name=params['dest_section'],
-                                                 tator_user_sections=str(uuid1()))
+                section = Section.objects.create(
+                    project=Project.objects.get(pk=dest),
+                    name=params["dest_section"],
+                    tator_user_sections=str(uuid1()),
+                )
             else:
                 section = sections[0]
 
@@ -83,21 +87,28 @@ class CloneMediaListAPI(BaseListView):
         # Update resources.
         for media in medias:
             if media.media_files:
-                for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail',
-                            'thumbnail_gif', 'attachment']:
+                for key in [
+                    "streaming",
+                    "archival",
+                    "audio",
+                    "image",
+                    "thumbnail",
+                    "thumbnail_gif",
+                    "attachment",
+                ]:
                     for f in media.media_files.get(key, []):
-                        Resource.add_resource(f['path'], media)
-                        if key == 'streaming':
-                            Resource.add_resource(f['segment_info'], media)
+                        Resource.add_resource(f["path"], media)
+                        if key == "streaming":
+                            Resource.add_resource(f["segment_info"], media)
 
         # Return created IDs.
         ids = [media.id for media in medias]
-        return {'message': f'Successfully cloned {len(ids)} medias!', 'id': ids}
+        return {"message": f"Successfully cloned {len(ids)} medias!", "id": ids}
 
 
 class GetClonedMediaAPI(BaseDetailView):
-    """ Clone a list of media without copying underlying files.
-    """
+    """Clone a list of media without copying underlying files."""
+
     schema = GetClonedMediaSchema()
     permission_classes = [ProjectEditPermission]
     lookup_field = "id"

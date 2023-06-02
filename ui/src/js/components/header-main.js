@@ -5,7 +5,10 @@ export class HeaderMain extends TatorElement {
     super();
 
     const header = document.createElement("header");
-    header.setAttribute("class", "header d-flex px-3 flex-items-center flex-justify-between");
+    header.setAttribute(
+      "class",
+      "header d-flex px-3 flex-items-center flex-justify-between"
+    );
     this._shadow.appendChild(header);
 
     const menu = document.createElement("header-menu");
@@ -15,7 +18,7 @@ export class HeaderMain extends TatorElement {
     header.appendChild(this._user);
 
     menu.addEventListener("click", () => {
-      this.dispatchEvent(new Event("openNav", {composed: true}));
+      this.dispatchEvent(new Event("openNav", { composed: true }));
     });
   }
 

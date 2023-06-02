@@ -1,6 +1,6 @@
 media_next = {
-    'type': 'object',
-    'properties': {
-        'next': {'type': 'integer', 'minimum': 0},
+    "type": "object",
+    "properties": {
+        "next": {"type": "integer", "minimum": 0},
     },
 }

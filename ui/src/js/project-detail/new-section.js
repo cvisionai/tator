@@ -5,15 +5,24 @@ export class NewSection extends UploadElement {
     super();
 
     this._details = document.createElement("details");
-    this._details.setAttribute("class", "project__section project__section--new");
+    this._details.setAttribute(
+      "class",
+      "project__section project__section--new"
+    );
     this._shadow.appendChild(this._details);
 
     const summary = document.createElement("summary");
-    summary.setAttribute("class", "project__header d-flex flex-items-center flex-justify-between");
+    summary.setAttribute(
+      "class",
+      "project__header d-flex flex-items-center flex-justify-between"
+    );
     this._details.appendChild(summary);
 
     const h2 = document.createElement("h2");
-    h2.setAttribute("class", "d-flex flex-items-center col-12 h3 text-gray hover-text-white");
+    h2.setAttribute(
+      "class",
+      "d-flex flex-items-center col-12 h3 text-gray hover-text-white"
+    );
     summary.appendChild(h2);
 
     const span = document.createElement("span");
@@ -26,7 +35,10 @@ export class NewSection extends UploadElement {
     this._details.appendChild(div);
 
     const drop = document.createElement("div");
-    drop.setAttribute("class", "project__file--is-empty add-new d-flex flex-items-center flex-justify-center flex-column col-9 rounded-2");
+    drop.setAttribute(
+      "class",
+      "project__file--is-empty add-new d-flex flex-items-center flex-justify-center flex-column col-9 rounded-2"
+    );
     div.appendChild(drop);
 
     const label = document.createElement("label");
@@ -45,7 +57,7 @@ export class NewSection extends UploadElement {
     info.textContent = "Or drag and drop here";
     drop.appendChild(info);
 
-    drop.addEventListener("dragover", evt => {
+    drop.addEventListener("dragover", (evt) => {
       evt.preventDefault();
     });
     drop.addEventListener("drop", this._fileSelectCallback);
@@ -57,7 +69,12 @@ export class NewSection extends UploadElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    UploadElement.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    UploadElement.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 
   close() {

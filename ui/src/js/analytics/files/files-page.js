@@ -16,7 +16,10 @@ export class FilesPage extends TatorPage {
     // - FileType selector shown next to it (similar to version selector in annotator)
     const header = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
-    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-6 f3");
+    header.setAttribute(
+      "class",
+      "annotation__header d-flex flex-items-center flex-justify-between px-6 f3"
+    );
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
@@ -45,9 +48,12 @@ export class FilesPage extends TatorPage {
     main.appendChild(this._fileTableDiv);
 
     // Create store subscriptions
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
-    store.subscribe(state => state.project, this._init.bind(this));
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
+    store.subscribe((state) => state.project, this._init.bind(this));
 
     // Event listeners
     this._fileTypeButton.addEventListener("click", () => {
@@ -79,20 +85,25 @@ export class FilesPage extends TatorPage {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    TatorPage.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 
   _init(project) {
     this._breadcrumbs.setAttribute("project-name", project.name);
     this._projectId = project.id;
-    const fileTypesPromise = fetchCredentials("/rest/FileTypes/" + this._projectId);
+    const fileTypesPromise = fetchCredentials(
+      "/rest/FileTypes/" + this._projectId
+    );
     fileTypesPromise.then((response) => {
       const fileTypesData = response.json();
       fileTypesData.then((fileTypes) => {
-
         // Grab the list of file types and display them as selectable options.
         if (fileTypes.length > 0) {
-
           var params = new URLSearchParams(window.location.search);
           var selectedIndex = 0;
           if (params.has("fileType")) {
@@ -107,8 +118,7 @@ export class FilesPage extends TatorPage {
 
           this._fileTypeModal.init(fileTypes, selectedIndex);
           this._selectFileType(fileTypes[selectedIndex]);
-        }
-        else {
+        } else {
           // Ready to rock and roll
           this._fileTypeButton.text = "No File Types";
           this._loading.style.display = "none";
@@ -118,27 +128,33 @@ export class FilesPage extends TatorPage {
   }
 
   _getSortedList(fileList, field, ascending) {
-
     var outList = [];
     for (const data of fileList) {
       outList.push(data);
     }
 
-    const built_in_fields = ["id", "name", "description", "created_datetime", "modified_datetime"];
+    const built_in_fields = [
+      "id",
+      "name",
+      "description",
+      "created_datetime",
+      "modified_datetime",
+    ];
     if (built_in_fields.includes(field)) {
       if (ascending) {
         outList.sort((a, b) => (a[field] > b[field] ? 1 : -1));
-      }
-      else {
+      } else {
         outList.sort((a, b) => (a[field] > b[field] ? -1 : 1));
       }
-    }
-    else {
+    } else {
       if (ascending) {
-        outList.sort((a, b) => (a.attributes[field] > b.attributes[field] ? 1 : -1));
-      }
-      else {
-        outList.sort((a, b) => (a.attributes[field] > b.attributes[field] ? -1 : 1));
+        outList.sort((a, b) =>
+          a.attributes[field] > b.attributes[field] ? 1 : -1
+        );
+      } else {
+        outList.sort((a, b) =>
+          a.attributes[field] > b.attributes[field] ? -1 : 1
+        );
       }
     }
 
@@ -170,7 +186,11 @@ export class FilesPage extends TatorPage {
     th.innerHTML += sortSVG;
     th.addEventListener("click", () => {
       this._sortAscending = !this._sortAscending;
-      const sortedList = this._getSortedList(fileList, "id", this._sortAscending);
+      const sortedList = this._getSortedList(
+        fileList,
+        "id",
+        this._sortAscending
+      );
       this._createTable(fileType, sortedList);
     });
     trHead.appendChild(th);
@@ -181,7 +201,11 @@ export class FilesPage extends TatorPage {
     th.innerHTML += sortSVG;
     th.addEventListener("click", () => {
       this._sortAscending = !this._sortAscending;
-      const sortedList = this._getSortedList(fileList, "name", this._sortAscending);
+      const sortedList = this._getSortedList(
+        fileList,
+        "name",
+        this._sortAscending
+      );
       this._createTable(fileType, sortedList);
     });
     trHead.appendChild(th);
@@ -192,7 +216,11 @@ export class FilesPage extends TatorPage {
     th.innerHTML += sortSVG;
     th.addEventListener("click", () => {
       this._sortAscending = !this._sortAscending;
-      const sortedList = this._getSortedList(fileList, "description", this._sortAscending);
+      const sortedList = this._getSortedList(
+        fileList,
+        "description",
+        this._sortAscending
+      );
       this._createTable(fileType, sortedList);
     });
     trHead.appendChild(th);
@@ -203,7 +231,11 @@ export class FilesPage extends TatorPage {
     th.innerHTML += sortSVG;
     th.addEventListener("click", () => {
       this._sortAscending = !this._sortAscending;
-      const sortedList = this._getSortedList(fileList, "created_datetime", this._sortAscending);
+      const sortedList = this._getSortedList(
+        fileList,
+        "created_datetime",
+        this._sortAscending
+      );
       this._createTable(fileType, sortedList);
     });
     trHead.appendChild(th);
@@ -214,12 +246,16 @@ export class FilesPage extends TatorPage {
     th.innerHTML += sortSVG;
     th.addEventListener("click", () => {
       this._sortAscending = !this._sortAscending;
-      const sortedList = this._getSortedList(fileList, "modified_datetime", this._sortAscending);
+      const sortedList = this._getSortedList(
+        fileList,
+        "modified_datetime",
+        this._sortAscending
+      );
       this._createTable(fileType, sortedList);
     });
     trHead.appendChild(th);
 
-    var attrTypeNames = []
+    var attrTypeNames = [];
     for (const attrType of fileType.attribute_types) {
       attrTypeNames.push(attrType.name);
 
@@ -229,7 +265,11 @@ export class FilesPage extends TatorPage {
       th.innerHTML += sortSVG;
       th.addEventListener("click", () => {
         this._sortAscending = !this._sortAscending;
-        const sortedList = this._getSortedList(fileList, attrType.name, this._sortAscending);
+        const sortedList = this._getSortedList(
+          fileList,
+          attrType.name,
+          this._sortAscending
+        );
         this._createTable(fileType, sortedList);
       });
       trHead.appendChild(th);
@@ -274,8 +314,7 @@ export class FilesPage extends TatorPage {
         td = document.createElement("td");
         if (attrName in fileData.attributes) {
           td.textContent = `${fileData.attributes[attrName]}`;
-        }
-        else {
+        } else {
           td.textContent = "";
         }
         trData.appendChild(td);
@@ -295,22 +334,26 @@ export class FilesPage extends TatorPage {
           // Get a presigned URL if the file object has a non-blank path
           if (fileData.path.includes("media")) {
             // Legacy path where the path is not an object
-            var url = fileData.path
+            var url = fileData.path;
             action.setAttribute("href", url);
-            window.open(url, '_blank').focus();
-          }
-          else {
+            window.open(url, "_blank").focus();
+          } else {
             // Path is an object key
-            fetchCredentials(`/rest/DownloadInfo/${fileType.project}?expiration=3600`, {
-              method: "POST",
-              body: JSON.stringify({keys: [fileData.path]}),
-            })
-            .then(response => { return response.json(); })
-            .then(result => {
-              var url = result[0].url;
-              action.setAttribute("href", url);
-              window.open(url, '_blank').focus();
-            });
+            fetchCredentials(
+              `/rest/DownloadInfo/${fileType.project}?expiration=3600`,
+              {
+                method: "POST",
+                body: JSON.stringify({ keys: [fileData.path] }),
+              }
+            )
+              .then((response) => {
+                return response.json();
+              })
+              .then((result) => {
+                var url = result[0].url;
+                action.setAttribute("href", url);
+                window.open(url, "_blank").focus();
+              });
           }
         });
         action.appendChild(svgDiv);
@@ -324,7 +367,6 @@ export class FilesPage extends TatorPage {
   }
 
   _selectFileType(fileType) {
-
     const url = new URL(window.location.href);
     url.searchParams.delete("fileType");
     url.searchParams.set("fileType", fileType.id);
@@ -333,17 +375,21 @@ export class FilesPage extends TatorPage {
     this._fileTypeButton.text = fileType.name;
     this._loading.style.display = "block";
 
-    const fileListPromise = fetchCredentials(`/rest/Files/${this._projectId}?meta=${fileType.id}`);
+    const fileListPromise = fetchCredentials(
+      `/rest/Files/${this._projectId}?meta=${fileType.id}`
+    );
     fileListPromise.then((response) => {
       const fileListData = response.json();
       fileListData.then((fileList) => {
-
         // Default is to show the newest ID at the top of the table
         this._sortOrder = "id";
         this._sortAscending = false;
-        const sortedFileList = this._getSortedList(fileList, this._sortOrder, this._sortAscending);
+        const sortedFileList = this._getSortedList(
+          fileList,
+          this._sortOrder,
+          this._sortAscending
+        );
         this._createTable(fileType, sortedFileList);
-
       });
     });
   }

@@ -14,7 +14,10 @@ export class FormFile extends TatorElement {
     col.appendChild(this._span);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-items-center py-1 position-relative");
+    div.setAttribute(
+      "class",
+      "d-flex flex-items-center py-1 position-relative"
+    );
     col.appendChild(div);
 
     const label = document.createElement("label");
@@ -46,7 +49,10 @@ export class FormFile extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+    path.setAttribute(
+      "d",
+      "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+    );
     svg.appendChild(path);
 
     const browse = document.createElement("input");
@@ -54,7 +60,7 @@ export class FormFile extends TatorElement {
     browse.setAttribute("type", "file");
     file.appendChild(browse);
 
-    browse.addEventListener("change", evt => {
+    browse.addEventListener("change", (evt) => {
       if (evt.target.files.length == 1) {
         this._input.value = evt.target.files[0].name;
       }

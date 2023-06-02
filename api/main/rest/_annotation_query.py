@@ -24,33 +24,32 @@ from ._attribute_query import get_attribute_psql_queryset_from_query_obj
 
 logger = logging.getLogger(__name__)
 
-ANNOTATION_LOOKUP = {'localization': Localization,
-                     'state': State}
+ANNOTATION_LOOKUP = {"localization": Localization, "state": State}
 
-ANNOTATION_TYPE_LOOKUP = {'localization': LocalizationType, 'state': StateType}
+ANNOTATION_TYPE_LOOKUP = {"localization": LocalizationType, "state": StateType}
+
 
 def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
-    """ Constructs a psql queryset.
-    """
+    """Constructs a psql queryset."""
 
     logger.info(f"PARAMS={params}")
     # Get query parameters.
-    media_id = params.get('media_id')
-    media_id_put = params.get('media_ids') # PUT request only
-    if annotation_type == 'localization':
-        localization_id_put = params.get('ids') # PUT request only
-        state_ids = params.get('state_ids') # PUT request only
-    elif annotation_type == 'state':
-        localization_id_put = params.get('localization_ids') # PUT request only
-        state_ids = params.get('ids') # PUT request only
-    filter_type = params.get('type')
-    version = params.get('version')
-    frame = params.get('frame')
-    after = params.get('after')
-    apply_merge = params.get('merge')
-    start = params.get('start')
-    stop = params.get('stop')
-    elemental_id = params.get('elemental_id')
+    media_id = params.get("media_id")
+    media_id_put = params.get("media_ids")  # PUT request only
+    if annotation_type == "localization":
+        localization_id_put = params.get("ids")  # PUT request only
+        state_ids = params.get("state_ids")  # PUT request only
+    elif annotation_type == "state":
+        localization_id_put = params.get("localization_ids")  # PUT request only
+        state_ids = params.get("ids")  # PUT request only
+    filter_type = params.get("type")
+    version = params.get("version")
+    frame = params.get("frame")
+    after = params.get("after")
+    apply_merge = params.get("merge")
+    start = params.get("start")
+    stop = params.get("stop")
+    elemental_id = params.get("elemental_id")
 
     qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project, deleted=False)
     media_ids = []
@@ -66,21 +65,21 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     localization_ids = []
     if localization_id_put:
         localization_ids += localization_id_put
-    if state_ids and (annotation_type == 'localization'):
+    if state_ids and (annotation_type == "localization"):
         localization_ids += list(
             State.localizations.through.objects.filter(state__in=state_ids)
             .values_list("localization_id", flat=True)
             .distinct()
         )
     if localization_ids:
-        if annotation_type == 'localization':
+        if annotation_type == "localization":
             qs = qs.filter(pk__in=localization_ids)
-        elif annotation_type == 'state':
+        elif annotation_type == "state":
             qs = qs.filter(localizations__in=localization_ids).distinct()
 
-    if state_ids and (annotation_type == 'state'):
+    if state_ids and (annotation_type == "state"):
         qs = qs.filter(pk__in=state_ids)
-        
+
     if version is not None:
         qs = qs.filter(version__in=version)
 
@@ -97,12 +96,28 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if after is not None:
         qs = qs.filter(pk__gt=after)
 
-    relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values_list('media').distinct()
+    relevant_media_type_ids = (
+        ANNOTATION_TYPE_LOOKUP[annotation_type]
+        .objects.filter(project=project)
+        .values_list("media")
+        .distinct()
+    )
     if filter_type is not None:
-        qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = get_attribute_psql_queryset(
+            project,
+            ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type),
+            qs,
+            params,
+            filter_ops,
+        )
         qs = qs.filter(type=filter_type)
-        relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values_list('media').distinct()
-    elif filter_ops or params.get('float_array',None):
+        relevant_media_type_ids = (
+            ANNOTATION_TYPE_LOOKUP[annotation_type]
+            .objects.filter(pk=filter_type)
+            .values_list("media")
+            .distinct()
+        )
+    elif filter_ops or params.get("float_array", None):
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
@@ -118,8 +133,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         else:
             qs = sub_qs
 
-    if 'section' in params:
-        section = Section.objects.get(pk=params['section'])
+    if "section" in params:
+        section = Section.objects.get(pk=params["section"])
         media_ids = []
         # This iteration ensures the scoped UUID index is used
         for media_type_id in relevant_media_type_ids:
@@ -134,7 +149,13 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             if related_object_search:
                 media_state_types = StateType.objects.filter(project=project)
                 media_localization_types = Localization.objects.filter(project=project)
-                media_qs = _related_search(media_qs, project, media_state_types, media_localization_types, related_object_search)
+                media_qs = _related_search(
+                    media_qs,
+                    project,
+                    media_state_types,
+                    media_localization_types,
+                    related_object_search,
+                )
             media_ids.append(media_qs)
         query = Q(media__in=media_ids.pop())
         for m in media_ids:
@@ -142,16 +163,24 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs.filter(query)
 
     # Do a related query
-    if any([x in params for x in related_keys if x.startswith('related_')]):
+    if any([x in params for x in related_keys if x.startswith("related_")]):
         related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
         matches = [x for x in related_keys if x in params]
-        faux_params={key.replace('related_',''): params[key] for key in matches}
+        faux_params = {key.replace("related_", ""): params[key] for key in matches}
         logger.info(faux_params)
         related_matches = []
         for entity_type in related_media_types:
             faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
             if faux_filter_ops:
-                related_matches.append(get_attribute_psql_queryset(project, entity_type, Media.objects.filter(project=project), faux_params, faux_filter_ops))
+                related_matches.append(
+                    get_attribute_psql_queryset(
+                        project,
+                        entity_type,
+                        Media.objects.filter(project=project),
+                        faux_params,
+                        faux_filter_ops,
+                    )
+                )
         if related_matches:
             related_match = related_matches.pop()
             query = Q(media__in=related_match)
@@ -159,16 +188,18 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 query = query | Q(media__in=r)
             qs = qs.filter(query).distinct()
 
-    if params.get('object_search'):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+    if params.get("object_search"):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
 
-    if params.get('encoded_related_search'):
-        search_obj = json.loads(base64.b64decode(params.get('encoded_related_search').encode()).decode())
+    if params.get("encoded_related_search"):
+        search_obj = json.loads(
+            base64.b64decode(params.get("encoded_related_search").encode()).decode()
+        )
         related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
         related_matches = []
         for entity_type in related_media_types:
             media_qs = Media.objects.filter(project=project, type=entity_type)
-            media_qs =  get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
+            media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
             if media_qs.count():
                 related_matches.append(media_qs)
         if related_matches:
@@ -181,21 +212,21 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             qs = qs.filter(pk=-1)
 
     # Used by GET queries
-    if params.get('encoded_search'):
-        search_obj = json.loads(base64.b64decode(params.get('encoded_search').encode()).decode())
+    if params.get("encoded_search"):
+        search_obj = json.loads(base64.b64decode(params.get("encoded_search").encode()).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
     if apply_merge:
-        #parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
-        objects_with_parents=qs.filter(parent__isnull=False)
-        qs = qs.exclude(pk__in=objects_with_parents.values('parent'))
+        # parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
+        objects_with_parents = qs.filter(parent__isnull=False)
+        qs = qs.exclude(pk__in=objects_with_parents.values("parent"))
 
-    show_deleted = params.get('show_deleted')
+    show_deleted = params.get("show_deleted")
     if not show_deleted:
         qs = qs.filter(variant_deleted=False)
-        
-    if params.get('float_array',None) == None:
-        qs = qs.order_by('id')
+
+    if params.get("float_array", None) == None:
+        qs = qs.order_by("id")
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
@@ -209,12 +240,13 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     logger.info(qs.explain())
 
     return qs
-        
+
+
 def get_annotation_queryset(project, params, annotation_type):
     # annotation_type is either localization or state
-    filter_type = params.get('type')
-    project = params.get('project')
-    filter_ops=[]
+    filter_type = params.get("type")
+    project = params.get("project")
+    filter_ops = []
     if filter_type:
         types = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type)
     else:
@@ -224,6 +256,6 @@ def get_annotation_queryset(project, params, annotation_type):
     qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
     return qs
 
-def get_annotation_count(project, params, annotation_type):
-    return get_annotation_queryset(project,params,annotation_type).count()
 
+def get_annotation_count(project, params, annotation_type):
+    return get_annotation_queryset(project, params, annotation_type).count()

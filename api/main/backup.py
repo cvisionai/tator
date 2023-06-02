@@ -122,7 +122,7 @@ class TatorBackupManager:
 
     @classmethod
     def _upload_from_file(cls, store, path, filepath, size, domain):
-        with open(filepath, 'rb') as stream:
+        with open(filepath, "rb") as stream:
             return cls._upload_from_stream(store, path, stream, size, domain)
 
     @staticmethod
@@ -350,7 +350,9 @@ class TatorBackupManager:
             live_store = store_info[StoreType.LIVE]["store"]
 
         if success:
-            live_storage_class = live_store.get_live_sc() or LIVE_STORAGE_CLASS  # pylint: disable=used-before-assignment
+            live_storage_class = (
+                live_store.get_live_sc() or LIVE_STORAGE_CLASS
+            )  # pylint: disable=used-before-assignment
             response = backup_store.head_object(path)  # pylint: disable=used-before-assignment
             if not response:
                 logger.warning(f"Object {path} not found, skipping")

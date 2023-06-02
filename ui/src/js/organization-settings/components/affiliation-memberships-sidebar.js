@@ -7,13 +7,15 @@ export class AffiliationMembershipSidebar extends TatorElement {
   constructor() {
     super();
 
-    // 
+    //
     var template = document.getElementById("memberships-sidebar-template");
     var clone = document.importNode(template.content, true);
     this._shadow.appendChild(clone);
 
     this._sidebar = this._shadow.getElementById("memberships-sidebar");
-    this._projListCount = this._shadow.getElementById("memberships-sidebar--count");
+    this._projListCount = this._shadow.getElementById(
+      "memberships-sidebar--count"
+    );
     this._listDiv = this._shadow.getElementById("memberships-sidebar--list");
 
     this._addNew = this._shadow.getElementById("memberships-sidebar--add");
@@ -25,12 +27,15 @@ export class AffiliationMembershipSidebar extends TatorElement {
     this._addNewDialog.pageModal = this.modal;
     this._shadow.appendChild(this.modal);
 
-    store.subscribe(state => state.Membership, this.processNewData.bind(this));
+    store.subscribe(
+      (state) => state.Membership,
+      this.processNewData.bind(this)
+    );
   }
 
   /**
    * @param {Array || null} list of membership ids
-   * 
+   *
    */
   set data(val) {
     this._listDiv.innerHTML = "";
@@ -56,7 +61,7 @@ export class AffiliationMembershipSidebar extends TatorElement {
   processNewData(newMembership) {
     if (this._userName) {
       const newData = newMembership.usernameMembershipsMap.get(this._userName);
-      this.data = newData;      
+      this.data = newData;
     }
   }
 
@@ -67,22 +72,32 @@ export class AffiliationMembershipSidebar extends TatorElement {
     for (let m of this._data) {
       const membership = await store.getState().getData("Membership", m);
       count++;
-      
-      // 
-      const sidebarItem = document.getElementById("memberships-sidebar-item-template");
+
+      //
+      const sidebarItem = document.getElementById(
+        "memberships-sidebar-item-template"
+      );
       const cloneSidebarItem = document.importNode(sidebarItem.content, true);
-      
-      const project = await store.getState().getData("Project", membership.project);
+
+      const project = await store
+        .getState()
+        .getData("Project", membership.project);
       const projectId = project.id;
 
-      const hasControl = store.getState().currentUser.membershipsByProject.has(projectId) ? true : false;
+      const hasControl = store
+        .getState()
+        .currentUser.membershipsByProject.has(projectId)
+        ? true
+        : false;
 
       //
       const projectInfo = cloneSidebarItem.getElementById("projectname");
       projectInfo.classList.remove("hidden");
 
       //
-      const projectThumb = cloneSidebarItem.getElementById("membership-item--thumb");
+      const projectThumb = cloneSidebarItem.getElementById(
+        "membership-item--thumb"
+      );
       projectThumb.style.backgroundColor = "transparent";
       if (project.thumb) {
         projectThumb.setAttribute("src", project.thumb);
@@ -91,21 +106,31 @@ export class AffiliationMembershipSidebar extends TatorElement {
       }
 
       //
-      const projectName = cloneSidebarItem.getElementById("membership-item--project");
+      const projectName = cloneSidebarItem.getElementById(
+        "membership-item--project"
+      );
       if (hasControl) {
-        projectName.setAttribute("href", `/${membership.project}/project-settings`);
+        projectName.setAttribute(
+          "href",
+          `/${membership.project}/project-settings`
+        );
       }
-      
+
       projectName.textContent = project.name;
 
       //
-      const permission = cloneSidebarItem.getElementById("membership-item--permission");
-      permission.textContent = membership.permission
+      const permission = cloneSidebarItem.getElementById(
+        "membership-item--permission"
+      );
+      permission.textContent = membership.permission;
 
       //
       const editLink = cloneSidebarItem.getElementById("membership-item--edit");
       if (hasControl) {
-        editLink.setAttribute("href", `/${membership.project}/project-settings#Membership-${m}`)        
+        editLink.setAttribute(
+          "href",
+          `/${membership.project}/project-settings#Membership-${m}`
+        );
       } else {
         editLink.hidden = true;
       }
@@ -120,4 +145,7 @@ export class AffiliationMembershipSidebar extends TatorElement {
   }
 }
 
-customElements.define("affiliation-membership-sidebar", AffiliationMembershipSidebar);
+customElements.define(
+  "affiliation-membership-sidebar",
+  AffiliationMembershipSidebar
+);

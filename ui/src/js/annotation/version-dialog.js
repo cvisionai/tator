@@ -3,8 +3,8 @@ import { ModalDialog } from "../components/modal-dialog.js";
 export class VersionDialog extends ModalDialog {
   constructor() {
     super();
-   
-    // Rework the styles 
+
+    // Rework the styles
     this._div.setAttribute("class", "modal-wrap modal-wide d-flex");
     this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
     this._header.setAttribute("class", "px-3 py-3");
@@ -22,7 +22,10 @@ export class VersionDialog extends ModalDialog {
     tableDiv.appendChild(this._table);
 
     const thead = document.createElement("thead");
-    thead.setAttribute("class", "f3 text-left text-gray text-uppercase text-semibold");
+    thead.setAttribute(
+      "class",
+      "f3 text-left text-gray text-uppercase text-semibold"
+    );
     this._table.appendChild(thead);
 
     const tr = document.createElement("tr");
@@ -71,7 +74,10 @@ export class VersionDialog extends ModalDialog {
       tr.appendChild(tdViewable);
       let viewable = document.createElement("bool-input");
       viewable.setValue(false);
-      viewable.addEventListener("change", this._handleViewableChange.bind(this));
+      viewable.addEventListener(
+        "change",
+        this._handleViewableChange.bind(this)
+      );
       tdViewable.appendChild(viewable);
 
       const tdSelect = document.createElement("td");
@@ -94,8 +100,7 @@ export class VersionDialog extends ModalDialog {
   }
 
   // A selected layer might have dependent layers that come for the ride.
-  _updatedDependentLayers(selected_idx)
-  {
+  _updatedDependentLayers(selected_idx) {
     const selected_version = this._versions[selected_idx];
     if (typeof selected_version === "undefined") {
       return;
@@ -105,17 +110,12 @@ export class VersionDialog extends ModalDialog {
       const button = this._buttons[idx];
       const viewable = this._viewables[idx];
       // If this row is included make it read only as well
-      if (bases.indexOf(button._version.id) >= 0)
-      {
+      if (bases.indexOf(button._version.id) >= 0) {
         viewable.setDisable(true);
         viewable.setValue(true);
-      }
-      else if (button._version.id == selected_version.id)
-      {
+      } else if (button._version.id == selected_version.id) {
         // no-op
-      }
-      else
-      {
+      } else {
         viewable.setDisable(false);
         viewable.setValue(false);
       }
@@ -127,17 +127,18 @@ export class VersionDialog extends ModalDialog {
     for (let idx = 0; idx < this._viewables.length; idx++) {
       const viewable = this._viewables[idx];
       const version = this._versions[idx];
-      if (viewable.getValue() == true)
-      {
+      if (viewable.getValue() == true) {
         viewables.push(version.id);
       }
     }
-    this.dispatchEvent(new CustomEvent("versionSelect", {
-      "detail": {
-        "version": this._versions[this._selected_idx],
-        "viewables": viewables
-      }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("versionSelect", {
+        detail: {
+          version: this._versions[this._selected_idx],
+          viewables: viewables,
+        },
+      })
+    );
   }
   _handleSelect(evt) {
     const id = evt.detail.version.id;
@@ -159,11 +160,13 @@ export class VersionDialog extends ModalDialog {
     }
     this._updatedDependentLayers(selected_idx);
     this._selected_idx = selected_idx;
-    this.dispatchEvent(new CustomEvent("versionSelect", {
-      "detail": {
-        "version": evt.detail.version,
-      }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("versionSelect", {
+        detail: {
+          version: evt.detail.version,
+        },
+      })
+    );
   }
 }
 

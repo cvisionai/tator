@@ -17,7 +17,7 @@ export class CancelConfirm extends ModalDialog {
     this._accept.setAttribute("class", "btn btn-clear btn-red");
     this._accept.textContent = "Stop Jobs";
     this._footer.appendChild(this._accept);
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -27,12 +27,11 @@ export class CancelConfirm extends ModalDialog {
 
     this._title.nodeValue = "Stop Jobs";
 
-    this._accept.addEventListener("click", async evt => {
-      await new Promise(resolve => setTimeout(resolve, 300));
+    this._accept.addEventListener("click", async (evt) => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
       fetchCredentials(this._url, {
         method: "DELETE",
-      })
-      .catch(err => console.log(err));
+      }).catch((err) => console.log(err));
       this.dispatchEvent(new Event("confirmGroupCancel"));
     });
   }
@@ -50,7 +49,12 @@ export class CancelConfirm extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 }
 

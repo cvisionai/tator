@@ -5,7 +5,10 @@ export class CanvasContextMenu extends TatorElement {
     super();
 
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "btn-clear btn-border d-flex px-2 py-2 rounded-1 f2 annotation__setting");
+    this._div.setAttribute(
+      "class",
+      "btn-clear btn-border d-flex px-2 py-2 rounded-1 f2 annotation__setting"
+    );
     this._div.style.position = "absolute";
     this._div.style.width = "auto";
     this._div.style.height = "auto";
@@ -16,14 +19,15 @@ export class CanvasContextMenu extends TatorElement {
     this._numEntries = 0;
   }
 
-  addMenuEntry(newText, clickCallback, keyboardShortcut)
-  {
+  addMenuEntry(newText, clickCallback, keyboardShortcut) {
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex flex-items-center py-2 text-gray hover-text-white");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex flex-items-center py-2 text-gray hover-text-white"
+    );
     if (keyboardShortcut != undefined) {
       button.textContent = `${newText}${keyboardShortcut}`;
-    }
-    else {
+    } else {
       button.textContent = newText;
     }
     button.style.display = "block";
@@ -37,42 +41,35 @@ export class CanvasContextMenu extends TatorElement {
     this._numEntries += 1;
   }
 
-  hasEntries()
-  {
+  hasEntries() {
     return this._numEntries > 0;
   }
 
-  hideMenu()
-  {
+  hideMenu() {
     this._div.style.display = "none";
   }
 
-  disableEntry(entryText, disable, tooltipText)
-  {
+  disableEntry(entryText, disable, tooltipText) {
     var button = this._buttons[entryText];
     button.disabled = disable;
 
-    button.title = '';
-    if (tooltipText)
-    {
+    button.title = "";
+    if (tooltipText) {
       button.title = tooltipText;
     }
   }
 
-  displayEntry(entryText, display)
-  {
+  displayEntry(entryText, display) {
     var button = this._buttons[entryText];
 
     if (display) {
       button.style.display = "block";
-    }
-    else{
+    } else {
       button.style.display = "none";
     }
   }
 
-  displayMenu(x, y)
-  {
+  displayMenu(x, y) {
     this._div.style.zIndex = 1;
     this._div.style.left = x + "px";
     this._div.style.top = y + "px";

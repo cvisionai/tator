@@ -1,6 +1,6 @@
 media_prev = {
-    'type': 'object',
-    'properties': {
-        'prev': {'type': 'integer', 'minimum': 0},
+    "type": "object",
+    "properties": {
+        "prev": {"type": "integer", "minimum": 0},
     },
 }

@@ -8,19 +8,25 @@ export class FavoritesPanel extends TatorElement {
     super();
 
     const header = document.createElement("div");
-    header.setAttribute("class", "d-flex flex-items-center flex-justify-between");
+    header.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-between"
+    );
     this._shadow.appendChild(header);
 
     const header1 = document.createElement("div");
-    header1.setAttribute("class", "d-flex flex-items-center py-3 text-semibold");
+    header1.setAttribute(
+      "class",
+      "d-flex flex-items-center py-3 text-semibold"
+    );
     header1.textContent = "Favorites";
     header.appendChild(header1);
 
     const addFavorite = document.createElement("button");
     addFavorite.setAttribute("class", "btn btn-outline btn-small f2 px-1");
-    addFavorite.style.marginLeft = "6px"
-    addFavorite.style.width = "24px"
-    addFavorite.style.height = "24px"
+    addFavorite.style.marginLeft = "6px";
+    addFavorite.style.width = "24px";
+    addFavorite.style.height = "24px";
     header1.appendChild(addFavorite);
 
     const addSvg = document.createElementNS(svgNamespace, "svg");
@@ -49,7 +55,10 @@ export class FavoritesPanel extends TatorElement {
     addSvg.appendChild(line2);
 
     this._pageHeader = document.createElement("div");
-    this._pageHeader.setAttribute("class", "d-flex flex-items-center py-3 text-semibold");
+    this._pageHeader.setAttribute(
+      "class",
+      "d-flex flex-items-center py-3 text-semibold"
+    );
     this._pageHeader.textContent = "";
     header.appendChild(this._pageHeader);
 
@@ -58,9 +67,9 @@ export class FavoritesPanel extends TatorElement {
 
     const prevPage = document.createElement("button");
     prevPage.setAttribute("class", "btn btn-outline btn-small f2 px-1");
-    prevPage.style.marginLeft = "6px"
-    prevPage.style.width = "24px"
-    prevPage.style.height = "24px"
+    prevPage.style.marginLeft = "6px";
+    prevPage.style.width = "24px";
+    prevPage.style.height = "24px";
     this._pageHeader.appendChild(prevPage);
 
     const prevSvg = document.createElementNS(svgNamespace, "svg");
@@ -74,14 +83,17 @@ export class FavoritesPanel extends TatorElement {
     prevSvg.appendChild(prevTitle);
 
     const prevPath = document.createElementNS(svgNamespace, "path");
-    prevPath.setAttribute("d", "M20.943 23.057l-7.057-7.057 7.057-7.057c0.521-0.521 0.521-1.365 0-1.885s-1.365-0.521-1.885 0l-8 8c-0.521 0.521-0.521 1.365 0 1.885l8 8c0.521 0.521 1.365 0.521 1.885 0s0.521-1.365 0-1.885z");
+    prevPath.setAttribute(
+      "d",
+      "M20.943 23.057l-7.057-7.057 7.057-7.057c0.521-0.521 0.521-1.365 0-1.885s-1.365-0.521-1.885 0l-8 8c-0.521 0.521-0.521 1.365 0 1.885l8 8c0.521 0.521 1.365 0.521 1.885 0s0.521-1.365 0-1.885z"
+    );
     prevSvg.appendChild(prevPath);
 
     const nextPage = document.createElement("button");
     nextPage.setAttribute("class", "btn btn-outline btn-small f2 px-1");
-    nextPage.style.marginLeft = "6px"
-    nextPage.style.width = "24px"
-    nextPage.style.height = "24px"
+    nextPage.style.marginLeft = "6px";
+    nextPage.style.width = "24px";
+    nextPage.style.height = "24px";
     this._pageHeader.appendChild(nextPage);
 
     const nextSvg = document.createElementNS(svgNamespace, "svg");
@@ -95,7 +107,10 @@ export class FavoritesPanel extends TatorElement {
     nextSvg.appendChild(nextTitle);
 
     const nextPath = document.createElementNS(svgNamespace, "path");
-    nextPath.setAttribute("d", "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z");
+    nextPath.setAttribute(
+      "d",
+      "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z"
+    );
     nextSvg.appendChild(nextPath);
 
     this._buttons = document.createElement("div");
@@ -122,15 +137,14 @@ export class FavoritesPanel extends TatorElement {
   }
 
   init(dataType, favorites) {
-    console.log(`dataType: ${dataType}`)
+    console.log(`dataType: ${dataType}`);
 
     this._identifier = identifyingAttribute(dataType);
     this._dataType = dataType;
     this._isState = this._dataType.id.includes("state");
     if (this._isState) {
       this._entityTypeName = "State";
-    }
-    else {
+    } else {
       this._entityTypeName = "Localization";
     }
 
@@ -140,23 +154,25 @@ export class FavoritesPanel extends TatorElement {
       this._favorites.set(page, []);
     }
     for (const favorite of favorites) {
-
       if (favorite.entity_type_name == null) {
         // Legacy path
         if (favorite.type == this._typeId) {
           this._favorites.get(favorite.page).push(favorite);
         }
-      }
-      else {
+      } else {
         // New path supporting multiple entity types
-        if (favorite.entity_type_name == "State" && favorite.type == this._typeId) {
+        if (
+          favorite.entity_type_name == "State" &&
+          favorite.type == this._typeId
+        ) {
           this._favorites.get(favorite.page).push(favorite);
-        }
-        else if (favorite.entity_type_name == "Localization" && favorite.type == this._typeId) {
+        } else if (
+          favorite.entity_type_name == "Localization" &&
+          favorite.type == this._typeId
+        ) {
           this._favorites.get(favorite.page).push(favorite);
         }
       }
-
     }
     this._updatePage();
   }
@@ -164,22 +180,26 @@ export class FavoritesPanel extends TatorElement {
   store(values) {
     const name = values[this._identifier.name];
     const favorite = {
-      'name': name,
-      'page': this._page,
-      'type': this._typeId,
-      'values': values,
-      'entity_type_name': this._entityTypeName
+      name: name,
+      page: this._page,
+      type: this._typeId,
+      values: values,
+      entity_type_name: this._entityTypeName,
     };
-    fetchCredentials("/rest/Favorites/" + this._dataType.project, {
-      method: "POST",
-      body: JSON.stringify(favorite),
-    }, true)
-    .then(response => response.json())
-    .then(data => {
-      favorite.id = data.id;
-      this._favorites.get(this._page).push(favorite);
-      this._makeButton(favorite);
-    });
+    fetchCredentials(
+      "/rest/Favorites/" + this._dataType.project,
+      {
+        method: "POST",
+        body: JSON.stringify(favorite),
+      },
+      true
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        favorite.id = data.id;
+        this._favorites.get(this._page).push(favorite);
+        this._makeButton(favorite);
+      });
   }
 
   _updatePage() {
@@ -201,18 +221,22 @@ export class FavoritesPanel extends TatorElement {
     const button = document.createElement("favorite-button");
     button.init(favorite);
     this._buttons.appendChild(button);
-    button.addEventListener("rename", evt => {
+    button.addEventListener("rename", (evt) => {
       const update = evt.detail;
-      for (const [index, favorite] of this._favorites.get(update.page).entries()) {
+      for (const [index, favorite] of this._favorites
+        .get(update.page)
+        .entries()) {
         if (favorite.id == update.id) {
           this._favorites.get(update.page)[index] = update;
           break;
         }
       }
     });
-    button.addEventListener("remove", evt => {
+    button.addEventListener("remove", (evt) => {
       const removed = evt.detail;
-      for (const [index, favorite] of this._favorites.get(removed.page).entries()) {
+      for (const [index, favorite] of this._favorites
+        .get(removed.page)
+        .entries()) {
         if (favorite.id == removed.id) {
           this._favorites.get(removed.page).splice(index, 1);
           break;

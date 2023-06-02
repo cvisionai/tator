@@ -5,20 +5,32 @@ export class AnnotationBrowser extends TatorElement {
     super();
 
     var wrapper = document.createElement("div");
-    wrapper.setAttribute("class", "mt-3 mx-3 annotation_browser_wrapper rounded-2");
+    wrapper.setAttribute(
+      "class",
+      "mt-3 mx-3 annotation_browser_wrapper rounded-2"
+    );
     this._shadow.appendChild(wrapper);
 
     var header = document.createElement("div");
-    header.setAttribute("class", "d-flex flex-grow px-3 py-1 rounded-2 flex-justify-center")
+    header.setAttribute(
+      "class",
+      "d-flex flex-grow px-3 py-1 rounded-2 flex-justify-center"
+    );
     wrapper.appendChild(header);
 
     this._minimizeButton = document.createElement("button");
-    this._minimizeButton.setAttribute("class", "annotation-browser-btn flex-justify-left f3");
+    this._minimizeButton.setAttribute(
+      "class",
+      "annotation-browser-btn flex-justify-left f3"
+    );
     this._minimizeButton.style.width = "70px";
     header.appendChild(this._minimizeButton);
 
     this._headerLabel = document.createElement("div");
-    this._headerLabel.setAttribute("class", "px-3 f2 text-bold d-flex flex-items-center flex-justify-center flex-grow");
+    this._headerLabel.setAttribute(
+      "class",
+      "px-3 f2 text-bold d-flex flex-items-center flex-justify-center flex-grow"
+    );
     this._headerLabel.textContent = "Annotation Browser";
     header.appendChild(this._headerLabel);
 
@@ -45,7 +57,7 @@ export class AnnotationBrowser extends TatorElement {
     this._entityPanels = {};
     this._selectEntity = null;
 
-    this._media.addEventListener("open", evt => {
+    this._media.addEventListener("open", (evt) => {
       const typeId = evt.detail.typeId;
       this._openForTypeId(typeId);
     });
@@ -54,24 +66,24 @@ export class AnnotationBrowser extends TatorElement {
       this._minimizeButton.blur();
       if (this._panels.style.display == "none") {
         this._expandBrowser();
-      }
-      else {
+      } else {
         this._collapseBrowser();
       }
     });
 
     this._settingsButton.addEventListener("click", () => {
       this._settingsButton.blur();
-      this.dispatchEvent(new CustomEvent("openBrowserSettings", {
-        composed: true
-      }));
+      this.dispatchEvent(
+        new CustomEvent("openBrowserSettings", {
+          composed: true,
+        })
+      );
     });
 
     this._expandBrowser();
   }
 
   _expandBrowser() {
-
     this._media.showEntities();
 
     if (this._panels.style.display != "none") {
@@ -120,25 +132,23 @@ export class AnnotationBrowser extends TatorElement {
         entity.style.display = "none";
         this._panels.appendChild(entity);
         this._entityPanels[dataType.id] = entity;
-        entity.addEventListener("close", evt => {
+        entity.addEventListener("close", (evt) => {
           this._media.style.display = "block";
           for (const typeId in this._framePanels) {
-
             var count = this._framePanels[typeId].getEntityCount();
             if (count == 0) {
               this._framePanels[typeId].style.display = "none";
-            }
-            else {
+            } else {
               this._framePanels[typeId].style.display = "block";
             }
           }
         });
 
-        entity.addEventListener("goToTrack", evt => {
+        entity.addEventListener("goToTrack", (evt) => {
           this.selectEntity(evt.detail.track, true);
         });
 
-        entity.addEventListener("goToLocalization", evt => {
+        entity.addEventListener("goToLocalization", (evt) => {
           this.selectLocalizationFromTrack(evt.detail.track, evt.detail.frame);
         });
       }
@@ -147,18 +157,20 @@ export class AnnotationBrowser extends TatorElement {
       const isFrameState = dataType.association == "Frame";
       const isInterpolated = dataType.interpolation !== "none";
       if (isFrameState && isInterpolated) {
-        if (dataType.interpolation === "latest"){
+        if (dataType.interpolation === "latest") {
           const frame = document.createElement("frame-panel");
           frame.browserSettings = this._browserSettings;
           frame.style.display = "none";
 
           frame.addEventListener("dataUpdated", () => {
-            if (this._media.style.display == "block" || this._openedTypeId == dataType.id) {
+            if (
+              this._media.style.display == "block" ||
+              this._openedTypeId == dataType.id
+            ) {
               var count = frame.getEntityCount();
               if (count > 0) {
                 frame.style.display = "block";
-              }
-              else {
+              } else {
                 frame.style.display = "none";
               }
             }
@@ -238,10 +250,9 @@ export class AnnotationBrowser extends TatorElement {
     this._openedTypeId = typeId;
     for (const key in this._framePanels) {
       if (key == typeId) {
-        if (this._framePanels[key].getEntityCount() > 0 ){
+        if (this._framePanels[key].getEntityCount() > 0) {
           this._framePanels[key].style.display = "block";
-        }
-        else {
+        } else {
           this._framePanels[key].style.display = "none";
         }
       }
@@ -290,7 +301,6 @@ export class AnnotationBrowser extends TatorElement {
    * @param {bool} forceLocalization - only valid if forceOpen is true
    */
   selectEntity(obj, forceOpen = false, forceLocalization = false) {
-
     this._expandBrowser();
 
     var typeId = obj.type;
@@ -299,53 +309,51 @@ export class AnnotationBrowser extends TatorElement {
 
     // Find the associated track if the given object is a localization
     var associatedState = null;
-    if (objDataType.isLocalization && this._data._trackDb.has(obj.id))
-    {
+    if (objDataType.isLocalization && this._data._trackDb.has(obj.id)) {
       associatedState = this._data._trackDb.get(obj.id);
     }
 
     // This variable can be changed in the future if there's a project setting to
     // force a default behavior when selecting a track
     var selectTrackInstead = !forceLocalization;
-    if (!forceOpen)
-    {
+    if (!forceOpen) {
       // If the user has a state panel open and a track's localization was selected,
       // the panel should not be changed. It should stay on the state panel.
       //
       // If the user has the localization panel open and a track was selected,
       // the panel should not be changed. It should stay on the localization panel.
-      for (const key in this._entityPanels)
-      {
+      for (const key in this._entityPanels) {
         const panel = this._entityPanels[key];
         const dataType = this._data._dataTypes[key];
-        if (dataType.isTrack && panel.style.display == "block" && associatedState != null)
-        {
+        if (
+          dataType.isTrack &&
+          panel.style.display == "block" &&
+          associatedState != null
+        ) {
           typeId = associatedState.type;
           selectObj = associatedState;
           selectTrackInstead = false;
           break;
-        }
-        else if (dataType.isLocalization && panel.style.display == "block" && associatedState != null)
-        {
+        } else if (
+          dataType.isLocalization &&
+          panel.style.display == "block" &&
+          associatedState != null
+        ) {
           selectTrackInstead = false;
           break;
         }
       }
     }
 
-    if (selectTrackInstead && associatedState != null)
-    {
+    if (selectTrackInstead && associatedState != null) {
       typeId = associatedState.type;
       selectObj = associatedState;
     }
 
     this._openForTypeId(typeId);
-    if (typeId in this._entityPanels)
-    {
+    if (typeId in this._entityPanels) {
       this._entityPanels[typeId].selectEntity(selectObj);
-    }
-    else
-    {
+    } else {
       console.warn("No entity browser for object.");
     }
   }

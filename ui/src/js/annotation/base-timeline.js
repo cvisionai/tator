@@ -2,7 +2,6 @@ import { TatorElement } from "../components/tator-element.js";
 
 /** @abstract */
 export class BaseTimeline extends TatorElement {
-
   constructor() {
     super();
 
@@ -34,8 +33,7 @@ export class BaseTimeline extends TatorElement {
     var iso = this._timeStore.getAbsoluteTimeFromFrame(frame);
     if (mode == "time") {
       return iso.split("T")[1].split(".")[0];
-    }
-    else {
+    } else {
       return `${iso.split("T")[0]}\n${iso.split("T")[1].split(".")[0]}`;
     }
   }
@@ -83,7 +81,7 @@ export class BaseTimeline extends TatorElement {
    * @param {string} mode "frame"|"relativeTime"|"utc"
    */
   setDisplayMode(mode) {
-    const validOptions = ["frame", "relativeTime", "utc"]
+    const validOptions = ["frame", "relativeTime", "utc"];
     if (!validOptions.includes(mode)) {
       throw `Invalid mode (${mode}) provided to setDisplayMode`;
     }
@@ -95,15 +93,21 @@ export class BaseTimeline extends TatorElement {
   /**
    * @returns {bool} True if display mode is frame
    */
-  inFrameDisplayMode() { return this._displayMode == "frame"; }
+  inFrameDisplayMode() {
+    return this._displayMode == "frame";
+  }
 
   /**
    * @returns {bool} True if display mode is frame
    */
-  inRelativeTimeDisplayMode() { return this._displayMode == "relativeTime"; }
+  inRelativeTimeDisplayMode() {
+    return this._displayMode == "relativeTime";
+  }
 
-   /**
-    * @returns {bool} True if display mode is frame
-    */
-  inUTCDisplayMode() { return this._displayMode == "utc"; }
+  /**
+   * @returns {bool} True if display mode is frame
+   */
+  inUTCDisplayMode() {
+    return this._displayMode == "utc";
+  }
 }

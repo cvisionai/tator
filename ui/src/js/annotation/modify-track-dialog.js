@@ -5,11 +5,17 @@ export class ModifyTrackDialog extends TatorElement {
     super();
 
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "annotation__panel--popup annotation__panel px-4 rounded-2");
+    this._div.setAttribute(
+      "class",
+      "annotation__panel--popup annotation__panel px-4 rounded-2"
+    );
     this._shadow.appendChild(this._div);
 
     const header = document.createElement("div");
-    header.setAttribute("class", "d-flex flex-items-center flex-justify-between py-3");
+    header.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-between py-3"
+    );
     this._div.appendChild(header);
 
     this._span = document.createElement("span");
@@ -17,7 +23,10 @@ export class ModifyTrackDialog extends TatorElement {
     header.appendChild(this._span);
 
     this._contentDiv = document.createElement("div");
-    this._contentDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between annotation__panel-group py-3");
+    this._contentDiv.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-between annotation__panel-group py-3"
+    );
     this._div.appendChild(this._contentDiv);
 
     this._createFillGapsDiv();
@@ -49,7 +58,6 @@ export class ModifyTrackDialog extends TatorElement {
   }
 
   _createFillGapsDiv() {
-
     const div = document.createElement("div");
     this._fillGapsQuestion = document.createElement("p");
     div.appendChild(this._fillGapsQuestion);
@@ -63,7 +71,6 @@ export class ModifyTrackDialog extends TatorElement {
   }
 
   _createTrimDialogDiv() {
-
     const div = document.createElement("div");
     this._trimTextQuestion = document.createElement("p");
     div.appendChild(this._trimTextQuestion);
@@ -82,7 +89,6 @@ export class ModifyTrackDialog extends TatorElement {
   }
 
   _createMergeDialogDiv() {
-
     const div = document.createElement("div");
 
     var questionText = document.createElement("p");
@@ -103,7 +109,6 @@ export class ModifyTrackDialog extends TatorElement {
   }
 
   _createAddDetectionDialogDiv() {
-
     const div = document.createElement("div");
 
     var questionText = document.createElement("p");
@@ -119,20 +124,19 @@ export class ModifyTrackDialog extends TatorElement {
   }
 
   _createExtendDialogDiv() {
-
     const div = document.createElement("div");
     this._extendMethod = document.createElement("enum-input");
     this._extendMethod.setAttribute("name", "Method");
     this._extendMethodChoices = [];
-    this._extendMethodChoices.push({'value': 'Duplicate'});
+    this._extendMethodChoices.push({ value: "Duplicate" });
     this._extendMethod.choices = this._extendMethodChoices;
     div.appendChild(this._extendMethod);
 
     this._extendDirection = document.createElement("enum-input");
     this._extendDirection.setAttribute("name", "Direction");
     let choices = [];
-    choices.push({'value': 'Forward'});
-    choices.push({'value': 'Backward'});
+    choices.push({ value: "Forward" });
+    choices.push({ value: "Backward" });
     this._extendDirection.choices = choices;
     div.appendChild(this._extendDirection);
 
@@ -146,7 +150,10 @@ export class ModifyTrackDialog extends TatorElement {
     this._applyMaxFrames.setAttribute("on-text", "Yes");
     this._applyMaxFrames.setAttribute("off-text", "No");
     this._applyMaxFrames.setValue(true);
-    this._applyMaxFrames.addEventListener("change", this._setMaxFrameUI.bind(this));
+    this._applyMaxFrames.addEventListener(
+      "change",
+      this._setMaxFrameUI.bind(this)
+    );
     div.appendChild(this._applyMaxFrames);
     this._applyMaxFrames.style.display = "none";
 
@@ -170,8 +177,7 @@ export class ModifyTrackDialog extends TatorElement {
       this._applyMaxFrames.setValue(true);
       this._setMaxFrameUI(); // Sets visibility of this._extendMaxFrames
       this._applyMaxFrames.style.display = "initial";
-    }
-    else {
+    } else {
       this._extendFrames.style.display = "initial";
       this._applyMaxFrames.style.display = "none";
       this._extendMaxFrames.style.display = "none";
@@ -181,126 +187,125 @@ export class ModifyTrackDialog extends TatorElement {
   _setMaxFrameUI() {
     if (this._applyMaxFrames.getValue()) {
       this._extendMaxFrames.style.display = "initial";
-    }
-    else {
+    } else {
       this._extendMaxFrames.style.display = "none";
     }
   }
 
   enableExtendAutoMethod() {
-    this._extendMethod.choices = [{'value': 'Auto'}];
+    this._extendMethod.choices = [{ value: "Auto" }];
   }
 
   _yesClickHandler() {
     this.dispatchEvent(new Event("yes"));
 
-    if (this._data.interface == "mergeTrack")
-    {
+    if (this._data.interface == "mergeTrack") {
       this.dispatchEvent(
-        new CustomEvent("mergeTracks",
-          {composed: true,
-           detail: {
-             localizationType: this._data.localization.type,
-             trackType: this._data.mainTrack.type,
-             frame: this._data.frame,
-             mainTrackId: this._data.mainTrack.id,
-             mergeTrackId: this._data.track.id}}));
-    }
-    else if (this._data.interface == "fillTrackGaps")
-    {
+        new CustomEvent("mergeTracks", {
+          composed: true,
+          detail: {
+            localizationType: this._data.localization.type,
+            trackType: this._data.mainTrack.type,
+            frame: this._data.frame,
+            mainTrackId: this._data.mainTrack.id,
+            mergeTrackId: this._data.track.id,
+          },
+        })
+      );
+    } else if (this._data.interface == "fillTrackGaps") {
       this.dispatchEvent(
-        new CustomEvent("fillTrackGaps",
-          {composed: true,
-           detail: {
+        new CustomEvent("fillTrackGaps", {
+          composed: true,
+          detail: {
             project: this._data.project,
             trackId: this._data.track.id,
             trackType: this._data.track.type,
-            localization: this._data.localization}}));
-    }
-    else if (this._data.interface == "addDetection")
-    {
+            localization: this._data.localization,
+          },
+        })
+      );
+    } else if (this._data.interface == "addDetection") {
       this.dispatchEvent(
-        new CustomEvent("addDetectionToTrack",
-          {composed: true,
-           detail: {
-             localizationType: this._data.localization.type,
-             trackType: this._data.mainTrack.type,
-             frame: this._data.frame,
-             mainTrackId: this._data.mainTrack.id,
-             detectionId: this._data.localization.id,
-             selectTrack: true}}));
-    }
-    else if (this._data.interface == "trim")
-    {
+        new CustomEvent("addDetectionToTrack", {
+          composed: true,
+          detail: {
+            localizationType: this._data.localization.type,
+            trackType: this._data.mainTrack.type,
+            frame: this._data.frame,
+            mainTrackId: this._data.mainTrack.id,
+            detectionId: this._data.localization.id,
+            selectTrack: true,
+          },
+        })
+      );
+    } else if (this._data.interface == "trim") {
       this.dispatchEvent(
-        new CustomEvent("trimTrack",
-          {composed: true,
-           detail: {
-             localizationType: this._data.localization.type,
-             trackType: this._data.track.type,
-             frame: this._data.frame,
-             endpoint: this._data.trimEndpoint,
-             trackId: this._data.track.id}}));
-    }
-    else if (this._data.interface == "extend")
-    {
+        new CustomEvent("trimTrack", {
+          composed: true,
+          detail: {
+            localizationType: this._data.localization.type,
+            trackType: this._data.track.type,
+            frame: this._data.frame,
+            endpoint: this._data.trimEndpoint,
+            trackId: this._data.track.id,
+          },
+        })
+      );
+    } else if (this._data.interface == "extend") {
       // Before proceeding forward, check the frame count and make sure it doesnt
       // exceed the video length (in either direction). If there's a problem a window
       // alert will be presented and the corresponding event is ignored.
       try {
-
         let alg = this._extendMethod.getValue();
         var extendFrames = 0;
         var maxFrames = 0;
         var useMaxFrames = false;
         var direction = this._extendDirection.getValue();
 
-        if (alg === "Duplicate")
-        {
+        if (alg === "Duplicate") {
           extendFrames = parseInt(this._extendFrames.getValue());
-  
+
           if (isNaN(extendFrames)) {
             throw "Invalid number of frames requested.";
           }
-            
+
           var endFrame = this._data.frame;
           if (direction == "Forward") {
             endFrame = endFrame + extendFrames;
             if (endFrame > this._data.maxFrames) {
               throw "Requested frames exceed video length.";
             }
-          }
-          else {
+          } else {
             endFrame = endFrame - extendFrames;
             if (endFrame < 0) {
               throw "Requested frames exceed video length.";
             }
           }
-        }
-        else if (alg == "Auto") {
+        } else if (alg == "Auto") {
           useMaxFrames = this._applyMaxFrames.getValue();
           if (useMaxFrames) {
             maxFrames = parseInt(this._extendMaxFrames.getValue());
-          }
-          else {
-            maxFrames = -1
+          } else {
+            maxFrames = -1;
           }
         }
 
         this.dispatchEvent(
-          new CustomEvent("extendTrack",
-            {composed: true,
-             detail: {
-               project: this._data.project,
-               trackId: this._data.track.id,
-               trackType: this._data.track.type,
-               localization: this._data.localization,
-               algorithm: alg,
-               numFrames: extendFrames,
-               useMaxFrames: useMaxFrames,
-               maxFrames: maxFrames,
-               direction: this._extendDirection.getValue()}}));
-
+          new CustomEvent("extendTrack", {
+            composed: true,
+            detail: {
+              project: this._data.project,
+              trackId: this._data.track.id,
+              trackType: this._data.track.type,
+              localization: this._data.localization,
+              algorithm: alg,
+              numFrames: extendFrames,
+              useMaxFrames: useMaxFrames,
+              maxFrames: maxFrames,
+              direction: this._extendDirection.getValue(),
+            },
+          })
+        );
       } catch (error) {
         window.alert(error + " Extend track command ignored.");
       }
@@ -317,11 +322,12 @@ export class ModifyTrackDialog extends TatorElement {
   }
 
   _setToFillTrackGapsUI() {
-    this._span.textContent = "Fill Track Gaps"
+    this._span.textContent = "Fill Track Gaps";
     this._fillGapsDiv.style.display = "block";
     this._yesButton.textContent = "Fill";
 
-    var text = "This will launch a visual tracker that will attempt to automatically fill in detections where there are track gaps.";
+    var text =
+      "This will launch a visual tracker that will attempt to automatically fill in detections where there are track gaps.";
     var question = "Automatically fill gaps of detections?";
     this._fillGapsQuestion.textContent = question;
     this._fillGapsText.textContent = text;
@@ -339,7 +345,12 @@ export class ModifyTrackDialog extends TatorElement {
     this._mergeDiv.style.display = "block";
     this._yesButton.textContent = "Merge";
 
-    let text = "Detections from track " + this._data.track.id.toString() + " will be merged into track " + this._data.mainTrack.id.toString() + ".";
+    let text =
+      "Detections from track " +
+      this._data.track.id.toString() +
+      " will be merged into track " +
+      this._data.mainTrack.id.toString() +
+      ".";
     this._mergeText.textContent = text;
   }
 
@@ -348,7 +359,12 @@ export class ModifyTrackDialog extends TatorElement {
     this._addDetectionDiv.style.display = "block";
     this._yesButton.textContent = "Add";
 
-    let text = "Detection " + this._data.localization.id.toString() + " will be added to track " + this._data.mainTrack.id.toString() + ".";
+    let text =
+      "Detection " +
+      this._data.localization.id.toString() +
+      " will be added to track " +
+      this._data.mainTrack.id.toString() +
+      ".";
     this._addDetectionText.textContent = text;
   }
 
@@ -359,14 +375,11 @@ export class ModifyTrackDialog extends TatorElement {
 
     var text;
     var question;
-    if (this._data.trimEndpoint == 'start')
-    {
+    if (this._data.trimEndpoint == "start") {
       question = "Set track's new start point?";
       text = "This will trim all previous frames from the track.";
-    }
-    else
-    {
-      question = "Set track's new end point?"
+    } else {
+      question = "Set track's new end point?";
       text = "This will trim all following frames from the track.";
     }
     this._trimTextQuestion.textContent = question;
@@ -378,24 +391,15 @@ export class ModifyTrackDialog extends TatorElement {
     const dialogType = data.interface;
 
     this._resetUI();
-    if (dialogType == "extend")
-    {
+    if (dialogType == "extend") {
       this._setToExtendUI();
-    }
-    else if (dialogType == "mergeTrack")
-    {
+    } else if (dialogType == "mergeTrack") {
       this._setToMergeUI();
-    }
-    else if (dialogType == "addDetection")
-    {
+    } else if (dialogType == "addDetection") {
       this._setToAddDetectionUI();
-    }
-    else if (dialogType == "trim")
-    {
+    } else if (dialogType == "trim") {
       this._setToTrimUI();
-    }
-    else if (dialogType == "fillTrackGaps")
-    {
+    } else if (dialogType == "fillTrackGaps") {
       this._setToFillTrackGapsUI();
     }
   }
@@ -420,8 +424,7 @@ export class ModifyTrackDialog extends TatorElement {
 
   set metaMode(val) {
     this._metaMode = val;
-    if (val == false)
-    {
+    if (val == false) {
       this._metaCache = null;
     }
   }
@@ -438,12 +441,13 @@ export class ModifyTrackDialog extends TatorElement {
       const boxRight = Math.max(this._dragInfo.start.x, this._dragInfo.end.x);
       let thisTop = boxTop + this._canvasPosition.top;
       let thisLeft = boxRight + 20 + this._canvasPosition.left;
-      if ((thisLeft + this.clientWidth) > window.innerWidth) {
+      if (thisLeft + this.clientWidth > window.innerWidth) {
         const boxLeft = Math.min(this._dragInfo.start.x, this._dragInfo.end.x);
         thisLeft = boxLeft - 20 - this.clientWidth + this._canvasPosition.left;
       }
-      if ((thisTop + this.clientHeight) > window.innerHeight) {
-        const boxBottom = Math.max(this._dragInfo.start.y, this._dragInfo.end.y) + 2;
+      if (thisTop + this.clientHeight > window.innerHeight) {
+        const boxBottom =
+          Math.max(this._dragInfo.start.y, this._dragInfo.end.y) + 2;
         thisTop = boxBottom - this.clientHeight + this._canvasPosition.top + 16;
       }
       // Prevent being drawn off screen

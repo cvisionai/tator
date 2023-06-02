@@ -6,39 +6,48 @@ export class MembershipEdit extends TypeFormTemplate {
     super();
     this.typeName = "Membership";
     this.readableTypeName = "Membership";
-    
+
     // TODO
     this._hideAttributes = true;
 
-    // 
+    //
     var templateInner = document.getElementById("membership-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("membership-edit--form");
-    this._userInput = this._shadow.getElementById("membership-edit--search-users");
-    this._permissionSelect = this._shadow.getElementById("membership-edit--permission");
-    this._versionSelect = this._shadow.getElementById("membership-edit--default-version");
+    this._userInput = this._shadow.getElementById(
+      "membership-edit--search-users"
+    );
+    this._permissionSelect = this._shadow.getElementById(
+      "membership-edit--permission"
+    );
+    this._versionSelect = this._shadow.getElementById(
+      "membership-edit--default-version"
+    );
 
     this._userData = document.createElement("user-data");
 
     // Set enum options once
     this._permissionSelect.choices = [
-      { "label": "View Only", "value": "View Only", "selected": true },
-      { "label": "Can Edit", "value": "Can Edit" },
-      { "label": "Can Transfer", "value": "Can Transfer" },
-      { "label": "Can Execute", "value": "Can Execute" },
-      { "label": "Full Control", "value": "Full Control" },
+      { label: "View Only", value: "View Only", selected: true },
+      { label: "Can Edit", value: "Can Edit" },
+      { label: "Can Transfer", value: "Can Transfer" },
+      { label: "Can Execute", value: "Can Execute" },
+      { label: "Full Control", value: "Full Control" },
     ];
 
-    store.subscribe(state => state.Version, this.setVersionChoices.bind(this));
+    store.subscribe(
+      (state) => state.Version,
+      this.setVersionChoices.bind(this)
+    );
   }
 
   async _setupFormUnique() {
     console.log("_setupFormUnique");
     if (store.getState().Version.init === false) {
       await store.getState().initType("Version");
-      await this.setVersionChoices()
+      await this.setVersionChoices();
     }
 
     this._userInput.reset();
@@ -54,18 +63,20 @@ export class MembershipEdit extends TypeFormTemplate {
       //get query params
       const queryString = window.location.search;
       const urlParams = new URLSearchParams(queryString);
-      let username = urlParams.get('un');
+      let username = urlParams.get("un");
 
       // if the exist, take value and populate
       if (username) {
         username = decodeURI(username);
         this._userInput._input.value = `${username};`;
-        this._userInput._input.dispatchEvent(new KeyboardEvent("input", {
-          key: "e",
-          keyCode: 9,        // example values.
-          code: "Tab",       // put everything you need in this object.
-          which: 9
-      }));
+        this._userInput._input.dispatchEvent(
+          new KeyboardEvent("input", {
+            key: "e",
+            keyCode: 9, // example values.
+            code: "Tab", // put everything you need in this object.
+            which: 9,
+          })
+        );
       }
     }
 
@@ -100,11 +111,11 @@ export class MembershipEdit extends TypeFormTemplate {
           project: this.projectId,
           permission: this._permissionSelect.getValue(),
           default_version: Number(this._versionSelect.getValue()),
-          default_version_id: Number(this._versionSelect.getValue()) // ignored by BE, used by FE only
+          default_version_id: Number(this._versionSelect.getValue()), // ignored by BE, used by FE only
         });
       }
     } else {
-    // Otherwise we are just editing one
+      // Otherwise we are just editing one
       formData = {};
 
       if (this._permissionSelect.changed()) {
@@ -119,18 +130,16 @@ export class MembershipEdit extends TypeFormTemplate {
     return formData;
   }
 
-
   _getEmptyData() {
     return {
-      "id" : `New`,
-      "user" : "",
-      "permission": "View Only",
-      "default_version": null,
-      "project" : this.projectId,
-      "form" : "empty"
+      id: `New`,
+      user: "",
+      permission: "View Only",
+      default_version: null,
+      project: this.projectId,
+      form: "empty",
     };
   }
-
 }
 
 customElements.define("membership-edit", MembershipEdit);

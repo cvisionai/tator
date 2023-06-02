@@ -6,7 +6,10 @@ export class UserInput extends TatorElement {
     super();
 
     const label = document.createElement("label");
-    label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._shadow.appendChild(label);
 
     this._name = document.createTextNode("");
@@ -19,7 +22,10 @@ export class UserInput extends TatorElement {
     this._input = document.createElement("input");
     this._input.setAttribute("class", "form-control input-sm col-12");
     this._input.setAttribute("type", "text");
-    this._input.setAttribute("placeholder", "Enter semicolon delimited usernames or email addresses...");
+    this._input.setAttribute(
+      "placeholder",
+      "Enter semicolon delimited usernames or email addresses..."
+    );
     div.appendChild(this._input);
 
     const div1 = document.createElement("div");
@@ -31,7 +37,7 @@ export class UserInput extends TatorElement {
     div1.appendChild(div2);
 
     const div3 = document.createElement("div");
-    div3.setAttribute("class", "d-flex flex-column")
+    div3.setAttribute("class", "d-flex flex-column");
     div1.appendChild(div3);
 
     this._pills = document.createElement("div");
@@ -85,7 +91,7 @@ export class UserInput extends TatorElement {
   init(data) {
     // Initialize with a UserData object.
     this._data = data;
-    this._data.addEventListener("users", evt => {
+    this._data.addEventListener("users", (evt) => {
       const users = evt.detail.users;
       const pillIds = [];
       // Remove pills that are no longer in the list.
@@ -103,7 +109,9 @@ export class UserInput extends TatorElement {
       // Create pills for any IDs that don't exist.
       for (const [userId, user] of users.entries()) {
         if (!pillIds.includes(userId)) {
-          const name = user.first_name ? `${user.first_name} ${user.last_name}` : user.username;
+          const name = user.first_name
+            ? `${user.first_name} ${user.last_name}`
+            : user.username;
           this._addPill(name, user.id);
         }
       }
@@ -122,9 +130,9 @@ export class UserInput extends TatorElement {
 
   reset() {
     // Go back to default value
-    if(this._data?._users) this._data._users = new Map();
+    if (this._data?._users) this._data._users = new Map();
     if (this._pills.length) {
-      this.clear();    
+      this.clear();
     }
   }
 
@@ -133,7 +141,7 @@ export class UserInput extends TatorElement {
     pill.setAttribute("class", "py-1 d-flex");
     pill.init(name, userId);
     this._pills.appendChild(pill);
-    pill.addEventListener("removeId", evt => {
+    pill.addEventListener("removeId", (evt) => {
       this._data.removeUser(evt.detail.id);
     });
   }
@@ -147,7 +155,6 @@ export class UserInput extends TatorElement {
     h3.textContent = msg;
     li.appendChild(h3);
   }
-
 }
 
 customElements.define("user-input", UserInput);

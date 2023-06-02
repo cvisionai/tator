@@ -19,9 +19,12 @@ export class NewAlgorithmForm extends ModalDialog {
     const filesPerJob = document.createElement("form-text");
     filesPerJob.setAttribute("name", "Files Per Job");
     filesPerJob.setAttribute("validator", "int");
-    filesPerJob.setAttribute("placeholder", "Number of files to process per job");
+    filesPerJob.setAttribute(
+      "placeholder",
+      "Number of files to process per job"
+    );
     this._main.appendChild(filesPerJob);
-   
+
     const setup = document.createElement("form-file");
     setup.setAttribute("type", "file");
     setup.setAttribute("name", "Setup Script");
@@ -65,7 +68,7 @@ export class NewAlgorithmForm extends ModalDialog {
     this._accept.setAttribute("disabled", "");
     this._accept.textContent = "Create";
     this._footer.appendChild(this._accept);
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";

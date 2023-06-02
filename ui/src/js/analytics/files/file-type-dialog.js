@@ -21,7 +21,10 @@ export class FileTypeDialog extends ModalDialog {
     tableDiv.appendChild(this._table);
 
     const thead = document.createElement("thead");
-    thead.setAttribute("class", "f3 text-left text-gray text-uppercase text-semibold");
+    thead.setAttribute(
+      "class",
+      "f3 text-left text-gray text-uppercase text-semibold"
+    );
     this._table.appendChild(thead);
 
     const tr = document.createElement("tr");
@@ -81,11 +84,13 @@ export class FileTypeDialog extends ModalDialog {
       }
     }
     this.removeAttribute("is-open");
-    this.dispatchEvent(new CustomEvent("fileTypeSelect", {
-      "detail": {
-        "fileType": evt.detail.fileType,
-      }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("fileTypeSelect", {
+        detail: {
+          fileType: evt.detail.fileType,
+        },
+      })
+    );
   }
 }
 

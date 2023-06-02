@@ -6,7 +6,10 @@ export class EmailListInput extends TatorElement {
     super();
 
     const label = document.createElement("label");
-    label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._shadow.appendChild(label);
 
     this._name = document.createTextNode("");
@@ -19,7 +22,10 @@ export class EmailListInput extends TatorElement {
     this._input = document.createElement("input");
     this._input.setAttribute("class", "form-control input-sm col-12");
     this._input.setAttribute("type", "text");
-    this._input.setAttribute("placeholder", "Enter semicolon delimited email addresses...");
+    this._input.setAttribute(
+      "placeholder",
+      "Enter semicolon delimited email addresses..."
+    );
     div.appendChild(this._input);
 
     const div1 = document.createElement("div");
@@ -31,7 +37,7 @@ export class EmailListInput extends TatorElement {
     div1.appendChild(div2);
 
     const div3 = document.createElement("div");
-    div3.setAttribute("class", "d-flex flex-column")
+    div3.setAttribute("class", "d-flex flex-column");
     div1.appendChild(div3);
 
     this._pills = document.createElement("div");
@@ -108,7 +114,8 @@ export class EmailListInput extends TatorElement {
   }
 
   _validateEmails(emails) {
-    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const re =
+      /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     for (const email of emails) {
       if (re.test(email)) {
         this._addPill(email, email);
@@ -123,11 +130,11 @@ export class EmailListInput extends TatorElement {
     pill.setAttribute("class", "py-1 d-flex");
     pill.init(name, userId);
     this._pills.appendChild(pill);
-    pill.addEventListener("removeId", evt => {
+    pill.addEventListener("removeId", (evt) => {
       const email = evt.detail.id;
       for (const pill of this._pills.children) {
         if (pill.getId() == email) {
-            this._pills.removeChild(pill);
+          this._pills.removeChild(pill);
         }
       }
     });
@@ -147,10 +154,9 @@ export class EmailListInput extends TatorElement {
     if (this._pills.length) {
       for (const pill of this._pills.children) {
         this._pills.removeChild(pill);
-      }      
+      }
     }
   }
-
 }
 
 customElements.define("email-list-input", EmailListInput);

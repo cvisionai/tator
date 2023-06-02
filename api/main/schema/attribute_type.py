@@ -7,10 +7,13 @@ from ._message import message_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 
-boilerplate = dedent("""\
+boilerplate = dedent(
+    """\
 A attribute type is the metadata definition object for a user-defined attribute. It includes
 name, type, and any other associated fields, depending on the type.
-""")
+"""
+)
+
 
 class AttributeTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -46,13 +49,15 @@ existing definition and will delete any existing fields that are not present in 
         return f"{short_desc}\n\n{boilerplate}"
 
     def get_path_parameters(self, path, method):
-        return [{
-            "name": "id",
-            "in": "path",
-            "required": True,
-            "description": "A unique integer identifying a unique entity type.",
-            "schema": {"type": "integer"},
-        }]
+        return [
+            {
+                "name": "id",
+                "in": "path",
+                "required": True,
+                "description": "A unique integer identifying a unique entity type.",
+                "schema": {"type": "integer"},
+            }
+        ]
 
     def get_filter_parameters(self, path, method):
         return []

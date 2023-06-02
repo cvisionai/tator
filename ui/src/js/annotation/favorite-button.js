@@ -16,7 +16,10 @@ export class FavoriteButton extends TatorElement {
     this._shadow.appendChild(input);
 
     const context = document.createElement("div");
-    context.setAttribute("class", "more d-flex flex-column f2 px-3 py-2 lh-condensed");
+    context.setAttribute(
+      "class",
+      "more d-flex flex-column f2 px-3 py-2 lh-condensed"
+    );
     context.style.display = "none";
     this._shadow.appendChild(context);
 
@@ -28,7 +31,7 @@ export class FavoriteButton extends TatorElement {
     remove.init("Delete");
     context.appendChild(remove);
 
-    this._button.addEventListener("contextmenu", evt => {
+    this._button.addEventListener("contextmenu", (evt) => {
       evt.preventDefault();
       context.style.display = "block";
     });
@@ -40,30 +43,36 @@ export class FavoriteButton extends TatorElement {
       input.focus();
     });
 
-    input.addEventListener("focus", evt => {
+    input.addEventListener("focus", (evt) => {
       document.body.classList.add("shortcuts-disabled");
       evt.target.select();
     });
 
-    input.addEventListener("keydown", evt => {
+    input.addEventListener("keydown", (evt) => {
       if (evt.keyCode == 13) {
         evt.preventDefault();
         input.blur();
       }
     });
 
-    input.addEventListener("blur", evt => {
+    input.addEventListener("blur", (evt) => {
       document.body.classList.remove("shortcuts-disabled");
       if (evt.target.value !== "") {
         this._button.textContent = evt.target.value;
         this._favorite.name = evt.target.value;
-        this.dispatchEvent(new CustomEvent("rename", {
-          detail: this._favorite,
-        }));
-        fetchCredentials("/rest/Favorite/" + this._favorite.id, {
-          method: "PATCH",
-          body: JSON.stringify({"name": evt.target.value}),
-        }, true);
+        this.dispatchEvent(
+          new CustomEvent("rename", {
+            detail: this._favorite,
+          })
+        );
+        fetchCredentials(
+          "/rest/Favorite/" + this._favorite.id,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ name: evt.target.value }),
+          },
+          true
+        );
       }
       input.style.display = "none";
       this._button.style.display = "block";
@@ -71,15 +80,21 @@ export class FavoriteButton extends TatorElement {
 
     remove.addEventListener("click", () => {
       this.parentNode.removeChild(this);
-      this.dispatchEvent(new CustomEvent("remove", {
-        detail: this._favorite,
-      }));
-      fetchCredentials("/rest/Favorite/" + this._favorite.id, {
-        method: "DELETE",
-      }, true);
+      this.dispatchEvent(
+        new CustomEvent("remove", {
+          detail: this._favorite,
+        })
+      );
+      fetchCredentials(
+        "/rest/Favorite/" + this._favorite.id,
+        {
+          method: "DELETE",
+        },
+        true
+      );
     });
 
-    window.addEventListener("click", evt => {
+    window.addEventListener("click", (evt) => {
       context.style.display = "none";
     });
   }
@@ -90,10 +105,12 @@ export class FavoriteButton extends TatorElement {
 
     this._button.addEventListener("click", () => {
       this._button.blur();
-      this.dispatchEvent(new CustomEvent("load", {
-        detail: favorite.values,
-        composed: true,
-      }));
+      this.dispatchEvent(
+        new CustomEvent("load", {
+          detail: favorite.values,
+          composed: true,
+        })
+      );
     });
   }
 }

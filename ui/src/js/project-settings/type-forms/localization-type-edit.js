@@ -8,34 +8,51 @@ export class LocalizationEdit extends TypeFormTemplate {
     this.readableTypeName = "Localization Type";
     this._hideAttributes = false;
 
-    // 
+    //
     var templateInner = document.getElementById("localization-type-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("localization-type-edit--form");
-    this._editName = this._shadow.getElementById("localization-type-edit--name");
-    this.dtypeSelect = this._shadow.getElementById("localization-type-edit--data-type");  
-    this._editDescription = this._shadow.getElementById("localization-type-edit--description");
-    this._colorMap = this._shadow.getElementById("localization-type-edit--color-map");
-    this._visibleBool = this._shadow.getElementById("localization-type-edit--visible");
-    this._drawableBool = this._shadow.getElementById("localization-type-edit--drawable");
-    
-    this._lineWidth = this._shadow.getElementById("localization-type-edit--line-width");
+    this._editName = this._shadow.getElementById(
+      "localization-type-edit--name"
+    );
+    this.dtypeSelect = this._shadow.getElementById(
+      "localization-type-edit--data-type"
+    );
+    this._editDescription = this._shadow.getElementById(
+      "localization-type-edit--description"
+    );
+    this._colorMap = this._shadow.getElementById(
+      "localization-type-edit--color-map"
+    );
+    this._visibleBool = this._shadow.getElementById(
+      "localization-type-edit--visible"
+    );
+    this._drawableBool = this._shadow.getElementById(
+      "localization-type-edit--drawable"
+    );
+
+    this._lineWidth = this._shadow.getElementById(
+      "localization-type-edit--line-width"
+    );
     this._lineWidth._input.min = 1;
     this._lineWidth._input.max = 10;
 
-    this._groupingDefault = this._shadow.getElementById("localization-type-edit--grouping-default");
-    this._mediaCheckboxes = this._shadow.getElementById("localization-type-edit--media");
-
+    this._groupingDefault = this._shadow.getElementById(
+      "localization-type-edit--grouping-default"
+    );
+    this._mediaCheckboxes = this._shadow.getElementById(
+      "localization-type-edit--media"
+    );
 
     // Set enum choices onces
     this.dtypeSelect.choices = [
-      { "label": "Select", "value": "" },
-      { "label": "Box", "value": "box" },
-      { "label": "Line", "value": "line" },
-      { "label": "Dot", "value": "dot" },
-      { "label": "Poly", "value": "poly" }
+      { label: "Select", value: "" },
+      { label: "Box", value: "box" },
+      { label: "Line", value: "line" },
+      { label: "Dot", value: "dot" },
+      { label: "Poly", value: "poly" },
     ];
   }
 
@@ -77,15 +94,18 @@ export class LocalizationEdit extends TypeFormTemplate {
     this._lineWidth.setValue(this._data.line_width);
     this._lineWidth.default = this._data.line_width;
 
-
     // grouping default
     this._groupingDefault.setValue(this._data.grouping_default);
     this._groupingDefault.default = this._data.grouping_default;
 
-    // const MEDIA = "Media"; 
+    // const MEDIA = "Media";
     if (typeof this._data.media !== "undefined") {
       try {
-        const mediaListWithChecked = await getCompiledList({ type: "MediaType", skip: null, check: this._data.media});
+        const mediaListWithChecked = await getCompiledList({
+          type: "MediaType",
+          skip: null,
+          check: this._data.media,
+        });
         this._mediaCheckboxes.setValue(mediaListWithChecked);
         this._mediaCheckboxes.default = mediaListWithChecked;
       } catch (err) {
@@ -94,7 +114,7 @@ export class LocalizationEdit extends TypeFormTemplate {
     }
   }
 
-  _getFormData(){
+  _getFormData() {
     const formData = {};
     const isNew = this._data.id == "New" ? true : false;
 
@@ -103,7 +123,7 @@ export class LocalizationEdit extends TypeFormTemplate {
     }
 
     if (this.dtypeSelect.changed() || isNew) {
-      formData.dtype = this.dtypeSelect.getValue()
+      formData.dtype = this.dtypeSelect.getValue();
     }
 
     if (this._editDescription.changed() || isNew) {
@@ -140,7 +160,6 @@ export class LocalizationEdit extends TypeFormTemplate {
 
     return formData;
   }
-  
 }
 
 customElements.define("localization-edit", LocalizationEdit);

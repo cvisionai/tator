@@ -6,7 +6,10 @@ export class SectionPaginator extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "pagination d-flex flex-items-center f3 py-6 text-gray");
+    div.setAttribute(
+      "class",
+      "pagination d-flex flex-items-center f3 py-6 text-gray"
+    );
     this._shadow.appendChild(div);
 
     this._prev = document.createElement("a");
@@ -21,16 +24,19 @@ export class SectionPaginator extends TatorElement {
     this._prev.appendChild(prevSvg);
 
     const prevPath = document.createElementNS(svgNamespace, "path");
-    prevPath.setAttribute("d", "M12.707 18.293l-5.293-5.293h11.586c0.552 0 1-0.448 1-1s-0.448-1-1-1h-11.586l5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-7 7c-0.096 0.096-0.168 0.206-0.217 0.324-0.051 0.122-0.076 0.253-0.076 0.383 0 0.256 0.098 0.512 0.293 0.707l7 7c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414z");
+    prevPath.setAttribute(
+      "d",
+      "M12.707 18.293l-5.293-5.293h11.586c0.552 0 1-0.448 1-1s-0.448-1-1-1h-11.586l5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-7 7c-0.096 0.096-0.168 0.206-0.217 0.324-0.051 0.122-0.076 0.253-0.076 0.383 0 0.256 0.098 0.512 0.293 0.707l7 7c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414z"
+    );
     prevSvg.appendChild(prevPath);
 
     const prevText = document.createTextNode("Previous");
     this._prev.appendChild(prevText);
 
-    this._pages = []
+    this._pages = [];
     for (let idx = 0; idx < 5; idx++) {
       this._pages.push(document.createElement("a"));
-      this._pages[idx].addEventListener("click", evt => {
+      this._pages[idx].addEventListener("click", (evt) => {
         this._setPage(Number(evt.target.textContent) - 1);
         // console.log("Clicked "+  evt.target.textContent );
         this._emit();
@@ -63,7 +69,10 @@ export class SectionPaginator extends TatorElement {
     this._next.appendChild(nextSvg);
 
     const nextPath = document.createElementNS(svgNamespace, "path");
-    nextPath.setAttribute("d", "M11.293 5.707l5.293 5.293h-11.586c-0.552 0-1 0.448-1 1s0.448 1 1 1h11.586l-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l7-7c0.092-0.092 0.166-0.202 0.217-0.324 0.101-0.245 0.101-0.521 0-0.766-0.049-0.118-0.121-0.228-0.217-0.324l-7-7c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
+    nextPath.setAttribute(
+      "d",
+      "M11.293 5.707l5.293 5.293h-11.586c-0.552 0-1 0.448-1 1s0.448 1 1 1h11.586l-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l7-7c0.092-0.092 0.166-0.202 0.217-0.324 0.101-0.245 0.101-0.521 0-0.766-0.049-0.118-0.121-0.228-0.217-0.324l-7-7c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z"
+    );
     nextSvg.appendChild(nextPath);
 
     const pageSizeText = document.createElement("span");
@@ -72,7 +81,10 @@ export class SectionPaginator extends TatorElement {
     div.appendChild(pageSizeText);
 
     this._pageSizeSelect = document.createElement("select");
-    this._pageSizeSelect.setAttribute("class", "form-select select-sm2 has-border");
+    this._pageSizeSelect.setAttribute(
+      "class",
+      "form-select select-sm2 has-border"
+    );
     for (const pageOption of [10, 25, 50, 100]) {
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
@@ -106,7 +118,7 @@ export class SectionPaginator extends TatorElement {
       this._emit();
     });
 
-    this._pageSizeSelect.addEventListener("change", evt => {
+    this._pageSizeSelect.addEventListener("change", (evt) => {
       if (evt.target.value != "Page Size") {
         this._pageSize = Number(evt.target.value);
         this.init(this._numFiles);
@@ -114,7 +126,7 @@ export class SectionPaginator extends TatorElement {
       }
     });
 
-    goToPage.addEventListener("keydown", evt => {
+    goToPage.addEventListener("keydown", (evt) => {
       if (evt.keyCode == 13) {
         evt.preventDefault();
         const page = Number(evt.target.value);
@@ -201,9 +213,9 @@ export class SectionPaginator extends TatorElement {
       }
       this._ellipsis.style.display = "block";
       this._last.style.display = "block";
-    } else if (page > Math.floor(this._numPages - (this._pages.length / 2))) {
+    } else if (page > Math.floor(this._numPages - this._pages.length / 2)) {
       for (let idx = 0; idx < this._pages.length; idx++) {
-        const val = this._numPages - this._pages.length + idx + 1
+        const val = this._numPages - this._pages.length + idx + 1;
         this._pages[idx].textContent = val;
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
@@ -231,13 +243,15 @@ export class SectionPaginator extends TatorElement {
 
   _emit() {
     // Dispatch event indicating start/stop.
-    this.dispatchEvent(new CustomEvent("selectPage", {
-      detail: {
-        start: this._page * this._pageSize,
-        stop: Math.min(this._numFiles, (this._page + 1) * this._pageSize),
-        pageSize: this._pageSize
-      },
-    }));
+    this.dispatchEvent(
+      new CustomEvent("selectPage", {
+        detail: {
+          start: this._page * this._pageSize,
+          stop: Math.min(this._numFiles, (this._page + 1) * this._pageSize),
+          pageSize: this._pageSize,
+        },
+      })
+    );
   }
 }
 

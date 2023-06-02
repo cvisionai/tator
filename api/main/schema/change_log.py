@@ -27,13 +27,12 @@ change_log_filter_schema = [
         "in": "query",
         "required": False,
         "description": "Filters ChangeLogs for the given entity type.",
-        "schema": {"type": "string",
-                   "enum": ["media", "localization", "state", "leaf"]},
+        "schema": {"type": "string", "enum": ["media", "localization", "state", "leaf"]},
     },
 ]
 
 boilerplate = dedent(
-"""
+    """
 A ChangeLog is the object containing information about a change applied to an object. It includes
 the time, user, and description of the change.
 """
@@ -86,9 +85,9 @@ class ChangeLogListSchema(AutoSchema):
                     "application/json": {
                         "schema": {
                             "type": "array",
-                            "items": {"$ref": "#/components/schemas/ChangeLog"}
+                            "items": {"$ref": "#/components/schemas/ChangeLog"},
                         }
                     }
-                }
+                },
             }
         return responses
