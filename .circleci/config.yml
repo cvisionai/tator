@@ -45,9 +45,6 @@ jobs:
         command: |
           ssh lightsail 'cd tator && make api/main/version.py';
     - run:
-        name: Check code formatting
-        command: ssh lightsail 'cd tator && make check-format';
-    - run:
         name: Make docker images
         command: ssh lightsail 'export APT_REPO_HOST='"'$APT_REPO_HOST'"';cd tator && for i in $(seq 1 3); do make -j$(nproc) tator-image images APT_REPO_HOST=$APT_REPO_HOST && s=0 && break || s=$? && sleep 10; done; (exit $s)'
     - store_artifacts:
@@ -96,6 +93,29 @@ jobs:
         name: Publish tator-js
         command: |
           ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
+  check-formatting:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - checkout
+    - run:
+        name: Initialize submodules
+        command: git submodule update --init --recursive
+    - run:
+        name: Install packages from apt for build deps (Python3, etc.)
+        command: |
+          sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential qemu-user-static binfmt-support nodejs jq
+    - run:
+        name: Install pip packages
+        command: |
+          pip3 install black==23.3.0
+    - run:
+        name: Install npm packages
+        command: |
+          npm install prettier@"2.8.8"
+    - run:
+        name: Check code formatting
+        command: make api/main/version.py && make check-format
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
@@ -249,7 +269,14 @@ workflows:
   version: 2
   build-and-test:
     jobs:
+    - check-formatting:
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
     - setup-lightsail:
+        requires:
+        - check-formatting
         context: cvisionai
         filters:
           tags:
