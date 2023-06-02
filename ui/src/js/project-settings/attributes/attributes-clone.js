@@ -8,11 +8,11 @@ export class AttributesClone {
     this.attributeFormHelper = new AttributesForm();
   }
 
-  _init(){
+  _init() {
     return this._getDuplicateAttributesForm();
   }
 
-  _getDuplicateAttributesForm(){
+  _getDuplicateAttributesForm() {
     this.form = document.createElement("form");
     //this.form.addEventListener("change", this._formChanged);
 
@@ -28,28 +28,31 @@ export class AttributesClone {
 
     this.submitForm = null;
 
-    this._typeSelect.addEventListener("change",  (event) => {
+    this._typeSelect.addEventListener("change", (event) => {
       let type = this._typeSelect.getValue();
-      let entitySelect = this._getEntitiesForType( type );
+      let entitySelect = this._getEntitiesForType(type);
       this.placeholderEntities.innerHTML = ""; //empty any current value
       this.placeholderAttributes.innerHTML = ""; //empty any current value
       this.checkedRadio = []; //removed remembered check
       this.placeholderEntities.appendChild(entitySelect);
-  
+
       entitySelect.addEventListener("change", () => {
         const entity = this._entitySelect.getValue();
-        const attributes = (entity == "none") ? false : this.entities[entity];
+        const attributes = entity == "none" ? false : this.entities[entity];
 
         if (attributes && attributes.length > 0) {
-          const checkboxHTML = this._getAttributeCheckboxes( attributes );
-          
+          const checkboxHTML = this._getAttributeCheckboxes(attributes);
+
           this.placeholderAttributes.innerHTML = ""; //empty any current value
           this.placeholderAttributes.appendChild(checkboxHTML);
         } else {
           const label = document.createElement("label");
-          label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1")
-          label.appendChild(document.createTextNode("Attribute(s)"))
-          
+          label.setAttribute(
+            "class",
+            "d-flex flex-justify-between flex-items-center py-1"
+          );
+          label.appendChild(document.createTextNode("Attribute(s)"));
+
           const span = document.createElement("span");
           span.setAttribute("class", "col-8 text-gray");
           const message = document.createTextNode("None");
@@ -59,7 +62,6 @@ export class AttributesClone {
           this.placeholderAttributes.innerHTML = ""; //empty any current value
           this.placeholderAttributes.appendChild(label);
         }
-        
       });
     });
 
@@ -74,17 +76,17 @@ export class AttributesClone {
     return this.form;
   }
 
-  getInputData(){
-    return this.attributeCheckboxes.getData();;
+  getInputData() {
+    return this.attributeCheckboxes.getData();
   }
 
-  _getAttributeCheckboxes( list ){
+  _getAttributeCheckboxes(list) {
     // make a new list
     let newList = [];
 
     if (list) {
-      for(let a of list){
-        let entity = {}
+      for (let a of list) {
+        let entity = {};
         entity.name = a.name; // checkbox label
         entity.id = a.name; // checkbox value
         entity.data = JSON.stringify(a); // checkbox hidden data
@@ -95,32 +97,34 @@ export class AttributesClone {
       this.attributeCheckboxes.setAttribute("name", "Attribute(s)");
       this.attributeCheckboxes.setValue(newList);
       this.attributeCheckboxes.default = newList;
-  
+
       return this.attributeCheckboxes;
     }
   }
 
   // Choose a type and entity to see a list of attributes:
-  _getTypesList(){
-      return [
-        { "label": "Select type", "value": "none" },
-        {"label": "Media Type", "value":"MediaType"},
-        {"label": "Localization Type", "value":"LocalizationType"},
-        {"label": "State Type", "value":"StateType"},
-        {"label": "Leaf Type", "value":"LeafType"},
-      ];
+  _getTypesList() {
+    return [
+      { label: "Select type", value: "none" },
+      { label: "Media Type", value: "MediaType" },
+      { label: "Localization Type", value: "LocalizationType" },
+      { label: "State Type", value: "StateType" },
+      { label: "Leaf Type", value: "LeafType" },
+    ];
   }
 
   _getEntitiesForType(type) {
-    console.log("_getEntitiesForType type" + type, this.attributeDataByType[type]);
-    let entityOptions = [{ "label": "Select", "value": "none" }];
+    console.log(
+      "_getEntitiesForType type" + type,
+      this.attributeDataByType[type]
+    );
+    let entityOptions = [{ label: "Select", value: "none" }];
     this.entities = this.attributeDataByType[type];
-
 
     if (this.entities) {
       for (let o in this.entities) {
-        let option = {"label":o, "value":o};
-        entityOptions.push(option)
+        let option = { label: o, value: o };
+        entityOptions.push(option);
       }
     }
 
@@ -131,6 +135,5 @@ export class AttributesClone {
     this._entitySelect.default = "none";
 
     return this._entitySelect;
-    
   }
 }

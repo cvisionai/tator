@@ -9,10 +9,13 @@ export class ArrayInput extends TatorElement {
     super();
 
     this._div = document.createElement("div");
-    this._shadow.appendChild(this._div)
+    this._shadow.appendChild(this._div);
 
     this.label = document.createElement("label");
-    this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this.label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._div.appendChild(this.label);
 
     this._name = document.createTextNode("");
@@ -24,21 +27,22 @@ export class ArrayInput extends TatorElement {
     this._div.appendChild(this._description);
 
     //
-    this._inputs = []
+    this._inputs = [];
 
     // Add new
     this.addNewButton = this.addNewRow({
-      "labelText": "+ New",
-      "callback": ""
+      labelText: "+ New",
+      callback: "",
     });
     this._div.appendChild(this.addNewButton);
 
     this.addNewButton.addEventListener("click", (e) => {
       e.preventDefault();
       this._newInput("");
-      this.dispatchEvent(new CustomEvent("new-input", { detail: { name: this._name } }));
+      this.dispatchEvent(
+        new CustomEvent("new-input", { detail: { name: this._name } })
+      );
     });
-
   }
 
   static get observedAttributes() {
@@ -54,8 +58,7 @@ export class ArrayInput extends TatorElement {
         this._description.textContent = newValue;
         if (newValue == null || newValue == "") {
           this._description.style.display = "none";
-        }
-        else {
+        } else {
           this._description.style.display = "block";
         }
         break;
@@ -120,12 +123,12 @@ export class ArrayInput extends TatorElement {
     return this.addNewButton.before(wrapper);
   }
 
-  addNewRow({
-    labelText = '',
-    callback = null
-  } = {}) {
+  addNewRow({ labelText = "", callback = null } = {}) {
     const labelWrap = document.createElement("label");
-    labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
+    labelWrap.setAttribute(
+      "class",
+      "d-flex flex-items-center py-1 position-relative f1"
+    );
 
     const spanTextNode = document.createElement("span");
     const spanText = document.createTextNode("");

@@ -35,7 +35,6 @@ organization_update = {
     "type": "object",
     "properties": {
         **organization_properties,
-
     },
 }
 

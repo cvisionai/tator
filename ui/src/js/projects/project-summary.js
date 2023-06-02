@@ -29,7 +29,7 @@ export class ProjectSummary extends TatorElement {
       this._img.setAttribute("src", TatorSymbol);
       this._img.setAttribute("style", "object-fit:contain");
     }
-    
+
     const url = `/${val.id}/project-detail`;
     this._link.setAttribute("href", url);
 
@@ -39,7 +39,7 @@ export class ProjectSummary extends TatorElement {
     this._name.textContent = val.name;
     this._makeAvatars(val.usernames);
     this._setNumFiles(val.num_files);
-    this._setDuration(val.duration); 
+    this._setDuration(val.duration);
 
     // Hide buttons if permissions too low
     if (!hasPermission(val.permission, "Full Control")) {
@@ -49,12 +49,12 @@ export class ProjectSummary extends TatorElement {
       this._removeButton.style.display = "none";
     }
 
-    this._removeButton.addEventListener("click", evt => {
+    this._removeButton.addEventListener("click", (evt) => {
       const remove = new CustomEvent("remove", {
         detail: {
           projectId: val.id,
           projectName: val.name,
-        }
+        },
       });
       this.dispatchEvent(remove);
     });
@@ -66,7 +66,10 @@ export class ProjectSummary extends TatorElement {
     const maxAvatars = 4;
     for (const [index, username] of usernames.entries()) {
       const span = document.createElement("span");
-      span.setAttribute("class", "avatar circle d-flex flex-items-center flex-justify-center f3");
+      span.setAttribute(
+        "class",
+        "avatar circle d-flex flex-items-center flex-justify-center f3"
+      );
       if (!first) {
         span.setAttribute("style", "background-color: #696cff");
       }
@@ -75,7 +78,9 @@ export class ProjectSummary extends TatorElement {
         initials = "+" + String(usernames.length - maxAvatars);
       } else {
         initials = username.match(/\b\w/g) || [];
-        initials = ((initials.shift() || '') + (initials.pop() || '')).toUpperCase();
+        initials = (
+          (initials.shift() || "") + (initials.pop() || "")
+        ).toUpperCase();
       }
       span.textContent = initials;
       this._avatars.appendChild(span);

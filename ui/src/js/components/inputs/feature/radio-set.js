@@ -5,7 +5,10 @@ export class RadioSet extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    div.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._shadow.appendChild(div);
 
     this._name = document.createTextNode("");
@@ -13,10 +16,13 @@ export class RadioSet extends TatorElement {
 
     //
     this._setName = "radio-set";
-    this._inputs = []
+    this._inputs = [];
 
     this._inputDiv = document.createElement("div");
-    this._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap flex-justify-between col-8");
+    this._inputDiv.setAttribute(
+      "class",
+      "d-flex flex-row flex-wrap flex-justify-between col-8"
+    );
     div.appendChild(this._inputDiv);
 
     // default 2 columns
@@ -57,17 +63,17 @@ export class RadioSet extends TatorElement {
   }
 
   set choices(val) {
-    if( val && val.length ){
+    if (val && val.length) {
       for (let item of val) {
         this._newInput(item);
       }
-    }    
+    }
   }
 
   setValue(val) {
     for (let input of this._inputs) {
-      console.log(`${input.value} == ${val} >>> ${input.value == val}`)
-      input.checked = (input.value == val);
+      console.log(`${input.value} == ${val} >>> ${input.value == val}`);
+      input.checked = input.value == val;
     }
   }
 
@@ -111,12 +117,16 @@ export class RadioSet extends TatorElement {
 
   // Array of the checked inputs values
   getValue() {
-    let valArray = this._inputs.filter(input => input.checked).map(checked => checked.value);
+    let valArray = this._inputs
+      .filter((input) => input.checked)
+      .map((checked) => checked.value);
     return String(valArray);
   }
 
   getValueAsNumber() {
-    let valArray = this._inputs.filter(input => input.getChecked()).map(checked => checked.getValue());
+    let valArray = this._inputs
+      .filter((input) => input.getChecked())
+      .map((checked) => checked.getValue());
     return Number(valArray);
   }
 
@@ -124,12 +134,14 @@ export class RadioSet extends TatorElement {
   // @TODO this follows current patter for some radioes to store hidden data
   // should look into setting the data as value instead? or type to data and getValue = this?
   getData() {
-    return this._inputs.filter(input => input.getChecked()).map(checked => checked.getData());
+    return this._inputs
+      .filter((input) => input.getChecked())
+      .map((checked) => checked.getData());
   }
 
   changed() {
     const currentValue = this.getValue();
-    const originalValue = this._default
+    const originalValue = this._default;
 
     if (currentValue && originalValue) {
       if (originalValue.length !== currentValue.length) {
@@ -137,7 +149,7 @@ export class RadioSet extends TatorElement {
       } else {
         // if they are the same lenght they should have the same values
         for (let val of originalValue) {
-          if(!currentValue.includes(val)) return true
+          if (!currentValue.includes(val)) return true;
         }
       }
     }
@@ -147,7 +159,8 @@ export class RadioSet extends TatorElement {
 
   relabelInput({ value, newLabel }) {
     for (let radio of this._inputs) {
-      if(Number(radio._input.value) === Number(value)) return radio.setAttribute("name", newLabel);
+      if (Number(radio._input.value) === Number(value))
+        return radio.setAttribute("name", newLabel);
     }
     return console.log("No matching input found");
   }
@@ -159,7 +172,7 @@ export class RadioSet extends TatorElement {
 
         let idx = this._inputs.indexOf(radio);
         this._inputs.splice(idx, 1);
-        radio.remove()
+        radio.remove();
         const inputWrapper = this._inputDiv.children[idx];
         // console.log(inputWrapper);
         this._inputDiv.removeChild(inputWrapper);
@@ -169,7 +182,6 @@ export class RadioSet extends TatorElement {
     }
     return console.log("No matching input found");
   }
-
 }
 
 customElements.define("radio-set", RadioSet);

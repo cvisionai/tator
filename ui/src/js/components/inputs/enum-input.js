@@ -7,7 +7,10 @@ export class EnumInput extends TatorElement {
     super();
 
     this.label = document.createElement("label");
-    this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this.label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this.label.style.position = "relative";
     this._shadow.appendChild(this.label);
 
@@ -19,7 +22,10 @@ export class EnumInput extends TatorElement {
     this.label.appendChild(span);
 
     this._select = document.createElement("select");
-    this._select.setAttribute("class", "form-select has-border select-sm col-8");
+    this._select.setAttribute(
+      "class",
+      "form-select has-border select-sm col-8"
+    );
     this.label.appendChild(this._select);
 
     // Add unselectable option for null values.
@@ -47,7 +53,10 @@ export class EnumInput extends TatorElement {
     this.label.appendChild(this._svg);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M5.293 9.707l6 6c0.391 0.391 1.024 0.391 1.414 0l6-6c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
+    path.setAttribute(
+      "d",
+      "M5.293 9.707l6 6c0.391 0.391 1.024 0.391 1.414 0l6-6c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z"
+    );
     this._svg.appendChild(path);
 
     this._select.addEventListener("change", () => {
@@ -91,12 +100,12 @@ export class EnumInput extends TatorElement {
     let selectedDefault = null;
     this._choices = val;
     // Add attribute type choices.
-    if (Array.isArray(val)) // flat option
-    {
+    if (Array.isArray(val)) {
+      // flat option
       for (const choice of val) {
         const option = document.createElement("option");
         option.setAttribute("value", choice.value);
-        if ('label' in choice) {
+        if ("label" in choice) {
           option.textContent = choice.label;
         } else {
           option.textContent = choice.value;
@@ -107,32 +116,27 @@ export class EnumInput extends TatorElement {
         this._select.appendChild(option);
       }
       if (selectedDefault !== null) {
-        this.setValue(selectedDefault)
+        this.setValue(selectedDefault);
       }
-    }
-    else // use groups
-    {
-      while(this._select.firstChild)
-      {
+    } // use groups
+    else {
+      while (this._select.firstChild) {
         this._select.removeChild(this._select.firstChild);
       }
       let groups = Object.keys(val);
-      for (const group of groups)
-      {
+      for (const group of groups) {
         // Skip over empty groups
-        if (val[group].length == 0)
-        {
+        if (val[group].length == 0) {
           continue;
         }
         const optgroup = document.createElement("optgroup");
         optgroup.setAttribute("label", group);
         optgroup.setAttribute("class", "form-control");
         this._select.appendChild(optgroup);
-        for (const choice of val[group])
-        {
+        for (const choice of val[group]) {
           const option = document.createElement("option");
           option.setAttribute("value", choice.value);
-          if ('label' in choice) {
+          if ("label" in choice) {
             option.textContent = choice.label;
           } else {
             option.textContent = choice.value;
@@ -151,7 +155,7 @@ export class EnumInput extends TatorElement {
   }
 
   // checks if the current value equals the default
-  changed(){
+  changed() {
     return String(this.getValue()) !== String(this._default);
   }
 
@@ -180,9 +184,8 @@ export class EnumInput extends TatorElement {
           return this._select.options[selected].value;
         }
       }
-
     }
-    
+
     return null;
   }
 
@@ -204,7 +207,7 @@ export class EnumInput extends TatorElement {
             idx++;
           }
         }
-      } else {        
+      } else {
         for (const option of this._select.options) {
           if (option.value == val) {
             this._select.selectedIndex = idx;
@@ -224,7 +227,6 @@ export class EnumInput extends TatorElement {
     return choiceList;
   }
 
-  
   /**
    * Clears the options. Useful for resetting the menu options.
    */

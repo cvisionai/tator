@@ -1,12 +1,11 @@
 import { TatorElement } from "../tator-element.js";
 
-
 export class ToolsAppletGalleryPanel extends TatorElement {
   constructor() {
     super();
 
     this._panel = document.createElement("div");
-    this._panel.setAttribute("style", "width: 100%; height: 100%;")
+    this._panel.setAttribute("style", "width: 100%; height: 100%;");
     this._panel.setAttribute("class", "py-2 px-2");
     this._panel.hidden = true;
     this._shadow.appendChild(this._panel);
@@ -37,7 +36,7 @@ export class ToolsAppletGalleryPanel extends TatorElement {
   /**
    * Set the applet to display using the provided applet name
    * @param {string} appletName - Name of loaded applet to display in modal
-   * 
+   *
    */
   setApplet(appletName) {
     this._appletView.src = this._applets[appletName].html_file;
@@ -46,8 +45,11 @@ export class ToolsAppletGalleryPanel extends TatorElement {
 
   initApplet() {
     //
-    this._appletElement = this._appletView.contentWindow.document.getElementById("toolsApplet");
-    if (this._appletElement == null) { return; }
+    this._appletElement =
+      this._appletView.contentWindow.document.getElementById("toolsApplet");
+    if (this._appletElement == null) {
+      return;
+    }
 
     // RUN THIS LAST! listeners need to be in place above first
     this._appletElement.init({ entityForm: this._entityForm });
@@ -56,7 +58,6 @@ export class ToolsAppletGalleryPanel extends TatorElement {
     //
     this.dispatchEvent(new Event("appletReady"));
   }
-
 }
 
 customElements.define("tools-applet-gallery-panel", ToolsAppletGalleryPanel);

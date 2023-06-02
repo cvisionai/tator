@@ -9,7 +9,7 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     this.readableTypeName = "Project";
     this._hideAttributes = true;
 
-    // 
+    //
     var templateInner = document.getElementById("project-display");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
@@ -54,7 +54,10 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     this._name.innerHTML = this._data.name;
     this._summary.setValue(this._data.summary);
 
-    this._editLink.setAttribute("href", `${window.location.origin}/${this._data.id}/project-settings`);
+    this._editLink.setAttribute(
+      "href",
+      `${window.location.origin}/${this._data.id}/project-settings`
+    );
     this._numFiles.setValue(this._data.num_files);
     this._duration.setValue(this._data.duration);
     this._size.setValue(this._data.size);
@@ -64,31 +67,35 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
   // _getFormData() {
   // }
 
-
   async _saveData() {
     console.log("THIS IS THE OVERRIDE FOR SAVE DATA....");
     const projectSpec = this._newProjectDialog.getProjectSpec();
     const preset = this._newProjectDialog.getProjectPreset();
 
     try {
-      const projectInfo = await store.getState().addProject(projectSpec, preset);
+      const projectInfo = await store
+        .getState()
+        .addProject(projectSpec, preset);
       console.log("Project response info ", projectInfo);
 
       if (projectInfo.response.ok) {
         this.data = null;
-        window.location.replace(`${window.location.origin}${window.location.pathname}#${this.typeName}-${projectInfo.data.id}`);
-        this.modal._success("Project created successfully!",
+        window.location.replace(
+          `${window.location.origin}${window.location.pathname}#${this.typeName}-${projectInfo.data.id}`
+        );
+        this.modal._success(
+          "Project created successfully!",
           "Continue to project settings or close this dialog.",
           "ok",
-          "Continue to settings");        
+          "Continue to settings"
+        );
       } else {
-        this.modal._error(info.data.message);        
+        this.modal._error(info.data.message);
       }
     } catch (err) {
       console.error("Error adding project.", err);
       this.modal._error("Error adding project.");
     }
-
   }
 }
 

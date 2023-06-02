@@ -10,8 +10,7 @@ export class ProjectText extends TatorElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue == newValue)
-    {
+    if (oldValue == newValue) {
       return;
     }
 
@@ -37,7 +36,10 @@ export class ProjectText extends TatorElement {
 
         if (lines.length > 2) {
           const details = document.createElement("details");
-          details.setAttribute("class", "project__description text-gray f2 lh-default");
+          details.setAttribute(
+            "class",
+            "project__description text-gray f2 lh-default"
+          );
           this._shadow.appendChild(details);
 
           const summary = document.createElement("summary");
@@ -50,7 +52,10 @@ export class ProjectText extends TatorElement {
           details.appendChild(detailText);
         } else {
           const div = document.createElement("div");
-          div.setAttribute("class", "project__description text-gray f2 lh-default");
+          div.setAttribute(
+            "class",
+            "project__description text-gray f2 lh-default"
+          );
           this._shadow.appendChild(div);
 
           div.appendChild(summaryText);

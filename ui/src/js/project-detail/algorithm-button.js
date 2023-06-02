@@ -36,14 +36,16 @@ export class AlgorithmButton extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "project-id":
-        this._algorithmMenu.addEventListener("algorithmMenu", evt => {
+        this._algorithmMenu.addEventListener("algorithmMenu", (evt) => {
           this.dispatchEvent(
-            new CustomEvent("runAlgorithm",
-              {composed: true,
+            new CustomEvent("runAlgorithm", {
+              composed: true,
               detail: {
                 algorithmName: evt.detail.algorithmName,
                 projectId: newValue,
-              }}));
+              },
+            })
+          );
         });
     }
   }

@@ -24,13 +24,25 @@
 
 .label-tree__group {
   &:hover {
-    background-image: linear-gradient(to right, $color-charcoal--dark, $color-charcoal--medium70 20%, $color-charcoal--medium70 80%, $color-charcoal--dark);
+    background-image: linear-gradient(
+      to right,
+      $color-charcoal--dark,
+      $color-charcoal--medium70 20%,
+      $color-charcoal--medium70 80%,
+      $color-charcoal--dark
+    );
   }
 }
 
 .label-tree__groupinv {
   &:hover {
-    background-image: linear-gradient(to right, $color-charcoal--medium70, $color-charcoal--dark 20%, $color-charcoal--dark 80%, $color-charcoal--medium70);
+    background-image: linear-gradient(
+      to right,
+      $color-charcoal--medium70,
+      $color-charcoal--dark 20%,
+      $color-charcoal--dark 80%,
+      $color-charcoal--medium70
+    );
   }
 }
 

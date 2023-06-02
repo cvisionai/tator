@@ -27,9 +27,9 @@
 .sort-icon {
   margin-right: 10px;
   float: right;
- svg {
-  fill: $color-white;
-  } 
+  svg {
+    fill: $color-white;
+  }
 }
 
 .analysis__table,
@@ -51,7 +51,6 @@
   td:first-child {
     color: $color-white;
   }
-
 }
 
 .analysis__table {
@@ -64,7 +63,6 @@
   }
 
   & > tbody > tr:not(.analysis__nested-table-wrap) {
-
     &:hover {
       background-color: $color-charcoal--medium;
       border-radius: 6px;
@@ -94,21 +92,21 @@
   th {
     background-color: $color-blue;
     &:hover {
-       color: $color-white;
-       background-color: $color-blue;
-       .sort-icon svg {
-          fill: $color-white;
-       }
+      color: $color-white;
+      background-color: $color-blue;
+      .sort-icon svg {
+        fill: $color-white;
+      }
     }
- }
+  }
 
- th {
-  position: sticky;
-  top: 0;
- }
- 
- th,
- td {
+  th {
+    position: sticky;
+    top: 0;
+  }
+
+  th,
+  td {
     // width: 15%;
     text-align: center;
     padding-top: 10px;
@@ -116,44 +114,42 @@
     border: 1px solid $color-gray--light;
     word-break: break-all;
 
- 
     // &.wide {
     //    width: 20%
     // }
- 
+
     // &.narrow {
     //    min-width: 5%;
     // }
- }
+  }
 
   tr {
     width: 100%;
-    &.even{
-       background-color: $color-charcoal--medium;
-       &.selected,
-       &:hover {
-          background-color: $color-white !important;
-       }
+    &.even {
+      background-color: $color-charcoal--medium;
+      &.selected,
+      &:hover {
+        background-color: $color-white !important;
+      }
     }
-    &.odd{
-       background-color: $color-charcoal--light;
-       &.selected,
-       &:hover {
-          background-color: $color-white !important;
-       }
+    &.odd {
+      background-color: $color-charcoal--light;
+      &.selected,
+      &:hover {
+        background-color: $color-white !important;
+      }
     }
- 
+
     &.selected,
     &:hover {
-       background-color: $color-white;
-       color: $color-charcoal--medium-dark !important;
+      background-color: $color-white;
+      color: $color-charcoal--medium-dark !important;
       //  cursor: pointer;
-       .sort-icon svg {
-          fill: $color-charcoal--medium-dark;
-       }
+      .sort-icon svg {
+        fill: $color-charcoal--medium-dark;
+      }
     }
- }
-  
+  }
 }
 
 .annotations__table img {
@@ -198,11 +194,13 @@
   tr:nth-child(even) {
     background-color: #00070d;
   }
-  tr.selected, tr:hover {
+  tr.selected,
+  tr:hover {
     background-color: #1e2129;
     color: #ffffff;
   }
-  tr.selected, tr:hover {
+  tr.selected,
+  tr:hover {
     fill: #a2afcd;
   }
   th {
@@ -229,7 +227,7 @@
     border-right: none;
     border-bottom: none;
   }
-  
+
   th.no-vertical-border {
     border-left: none;
     border-right: none;
@@ -245,11 +243,13 @@
   tr:nth-child(even) {
     background-color: #00070d;
   }
-  tr.selected, tr:hover {
+  tr.selected,
+  tr:hover {
     background-color: #1e2129;
     color: #ffffff;
   }
-  tr.selected, tr:hover {
+  tr.selected,
+  tr:hover {
     fill: #a2afcd;
   }
   th {
@@ -276,11 +276,13 @@
   tr:nth-child(even) {
     background-color: #00070d;
   }
-  tr.selected, tr:hover {
+  tr.selected,
+  tr:hover {
     background-color: #1e2129;
     color: #ffffff;
   }
-  tr.selected, tr:hover {
+  tr.selected,
+  tr:hover {
     fill: #a2afcd;
   }
   th {

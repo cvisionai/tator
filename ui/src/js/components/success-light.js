@@ -26,7 +26,10 @@ export class SuccessLight extends TatorElement {
     svg.appendChild(this._title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d","M 12 1 C 6 1 1 6 1 12 C 1 18 6 23 12 23 C 18 23 23 18 23 12 C 23 6 18 1 12 1");
+    path.setAttribute(
+      "d",
+      "M 12 1 C 6 1 1 6 1 12 C 1 18 6 23 12 23 C 18 23 23 18 23 12 C 23 6 18 1 12 1"
+    );
     svg.appendChild(path);
 
     const path2 = document.createElementNS(svgNamespace, "path");
@@ -46,15 +49,13 @@ export class SuccessLight extends TatorElement {
     window.tator_success_light = this;
   }
 
-  fade () {
+  fade() {
     if (this.fade_stage == 0) {
       this.fade_stage = 1;
       this.fade();
-    }
-    else if (this.fade_stage == 1) {
-
-      this.style.opacity = '0';
-      this.style.transition = '0.25s';
+    } else if (this.fade_stage == 1) {
+      this.style.opacity = "0";
+      this.style.transition = "0.25s";
 
       var that = this;
       setTimeout(() => {
@@ -63,13 +64,11 @@ export class SuccessLight extends TatorElement {
         }
         that.fade();
       }, 250);
-    }
-    else if (this.fade_stage == 2){
-
+    } else if (this.fade_stage == 2) {
       this._message_div.style.display = null;
       this._svg.style.display = null;
-      this.style.opacity = '100';
-      this.style.transition = '0.25s';
+      this.style.opacity = "100";
+      this.style.transition = "0.25s";
       this.message(this.new_message, this.new_color);
 
       var that = this;
@@ -79,10 +78,9 @@ export class SuccessLight extends TatorElement {
         }
         that.fade();
       }, 2000);
-    }
-    else if (this.fade_stage == 3){
-      this.style.opacity = '0';
-      this.style.transition = '2.0s';
+    } else if (this.fade_stage == 3) {
+      this.style.opacity = "0";
+      this.style.transition = "2.0s";
 
       var that = this;
       setTimeout(() => {
@@ -93,32 +91,26 @@ export class SuccessLight extends TatorElement {
     }
   }
 
-  fade_message(message, color){
+  fade_message(message, color) {
     this.new_message = message;
     this.new_color = color;
     this.fade_stage = 0;
     this.fade();
   }
 
-  message(message, color)
-  {
-    if (color)
-    {
+  message(message, color) {
+    if (color) {
       this._svg.setAttribute("stroke", color);
-    }
-    else
-    {
+    } else {
       this._svg.setAttribute("stroke", "#85d81d");
     }
     this._message_span.textContent = message;
     this._message_div.style.display = null;
     this._title.textContent = message;
     this._svg.style.display = null;
-
   }
 
-  hide()
-  {
+  hide() {
     this._svg.style.display = "none";
     this._message_div.style.display = "none";
   }

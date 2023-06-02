@@ -21,7 +21,10 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.permission = "View Only"; // start as view only - set to user permission on page
     this._div.appendChild(this._attributes);
 
-    this._attributes.addEventListener("change", this._emitChangedData.bind(this));
+    this._attributes.addEventListener(
+      "change",
+      this._emitChangedData.bind(this)
+    );
 
     this._hooksPanel = document.createElement("div");
     this._hooksPanel.setAttribute("class", "col-12");
@@ -49,7 +52,13 @@ export class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    * @param {Media/Localization} attributePanelData
    */
-  _init({ data, attributePanelData, associatedMedia, associatedMediaType, allowDelete = false }) {
+  _init({
+    data,
+    attributePanelData,
+    associatedMedia,
+    associatedMediaType,
+    allowDelete = false,
+  }) {
     if (associatedMedia && associatedMediaType) {
       this._attributes.setAssociatedMedia(associatedMedia, associatedMediaType);
     }
@@ -61,7 +70,6 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.displayGoToLocalization(false);
 
     this._data = data;
-
 
     if (attributePanelData.attributes !== null) {
       this._attributes.setValues(attributePanelData);
@@ -79,7 +87,9 @@ export class EntityGalleryPanelForm extends TatorElement {
 
       for (let applet of applets) {
         if (applet.categories.includes("gallery-panel-tools")) {
-          const appletPanel = document.createElement("tools-applet-gallery-panel");
+          const appletPanel = document.createElement(
+            "tools-applet-gallery-panel"
+          );
           appletPanel.saveApplet(applet, this);
         }
       }
@@ -94,8 +104,8 @@ export class EntityGalleryPanelForm extends TatorElement {
       const detail = {
         detail: {
           id: this._data.id,
-          values: values
-        }
+          values: values,
+        },
       };
       this.dispatchEvent(new CustomEvent("save", detail));
     }

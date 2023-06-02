@@ -7,20 +7,20 @@ export class LeafTypeEdit extends TypeFormTemplate {
     this.readableTypeName = "Leaf Type";
     this._hideAttributes = false;
 
-    // 
+    //
     var templateInner = document.getElementById("leaf-type-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("leaf-type-edit--form");
     this._editName = this._shadow.getElementById("leaf-type-edit--name");
-    this._editDescription = this._shadow.getElementById("leaf-type-edit--description");
+    this._editDescription = this._shadow.getElementById(
+      "leaf-type-edit--description"
+    );
     this.dtypeSelect = this._shadow.getElementById("leaf-type-edit--data-type");
 
     // Set enum choices onces
-    this.dtypeSelect.choices = [
-      { "value": "leaf", "label": "Leaf" }
-    ];
+    this.dtypeSelect.choices = [{ value: "leaf", label: "Leaf" }];
   }
 
   async _setupFormUnique() {
@@ -48,7 +48,6 @@ export class LeafTypeEdit extends TypeFormTemplate {
     // this._visibleBool.setValue(this._data.visible);
     // this._visibleBool.default = this._data.visible;
     // this._visibleBool.addEventListener("change", this._formChanged.bind(this));
-
   }
 
   _getFormData() {
@@ -60,7 +59,7 @@ export class LeafTypeEdit extends TypeFormTemplate {
     }
 
     if (this.dtypeSelect.changed() || isNew) {
-      formData.dtype = this.dtypeSelect.getValue()
+      formData.dtype = this.dtypeSelect.getValue();
     }
 
     if (this._editDescription.changed() || isNew) {
@@ -73,7 +72,6 @@ export class LeafTypeEdit extends TypeFormTemplate {
 
     return formData;
   }
-
 }
 
 customElements.define("leaf-type-edit", LeafTypeEdit);

@@ -20,7 +20,7 @@ export class AnnotationCardData extends HTMLElement {
     this._modelData = modelData;
 
     // this.mediaTypes = this._modelData.getStoredMediaTypes();
-    this.mediaTypes = await this._modelData.getAllMediaTypes()
+    this.mediaTypes = await this._modelData.getAllMediaTypes();
     this.mediaTypeMap = new Map();
     for (const mediaType of this.mediaTypes) {
       this.mediaTypeMap.set(mediaType.id, mediaType);
@@ -44,7 +44,10 @@ export class AnnotationCardData extends HTMLElement {
     this.filterConditions = filterConditions;
     this.cardList = {};
     this.cardList.cards = [];
-    this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
+    this.cardList.total = await this._modelData.getFilteredLocalizations(
+      "count",
+      filterConditions
+    );
     this.afterMap = new Map();
 
     return true;
@@ -56,7 +59,9 @@ export class AnnotationCardData extends HTMLElement {
    * @returns True if reload() needs to be called
    */
   _needReload(filterConditions) {
-    return JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions);
+    return (
+      JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions)
+    );
   }
 
   /**
@@ -65,18 +70,25 @@ export class AnnotationCardData extends HTMLElement {
    */
   _getCardList(localizations, medias) {
     return new Promise((resolve, reject) => {
-
       let counter = localizations.length;
       var haveCardShells = function () {
-        if (counter <= 0) { resolve(); }
-      }
+        if (counter <= 0) {
+          resolve();
+        }
+      };
 
       // Handle the case where we get nothing back
       haveCardShells();
 
       for (let [i, l] of localizations.entries()) {
         let id = l.id;
-        let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.type, l.version);
+        let mediaLink = this._modelData.generateMediaLink(
+          l.media,
+          l.frame,
+          l.id,
+          l.type,
+          l.version
+        );
         let entityType = this.localizationTypeMap.get(l.type);
 
         let attributes = l.attributes;
@@ -100,7 +112,7 @@ export class AnnotationCardData extends HTMLElement {
           entityType: this.mediaTypeMap.get(media.type),
           attributes: media.attributes,
           media: media,
-        }
+        };
 
         let card = {
           id,
@@ -112,7 +124,7 @@ export class AnnotationCardData extends HTMLElement {
           attributes,
           created,
           modified,
-          posText
+          posText,
         };
 
         this.cardList.cards.push(card);
@@ -120,13 +132,15 @@ export class AnnotationCardData extends HTMLElement {
         haveCardShells();
 
         this._modelData.getLocalizationGraphic(l.id).then((image) => {
-          this.dispatchEvent(new CustomEvent("setCardImage", {
-            composed: true,
-            detail: {
-              id: l.id,
-              image: image
-            }
-          }));
+          this.dispatchEvent(
+            new CustomEvent("setCardImage", {
+              composed: true,
+              detail: {
+                id: l.id,
+                image: image,
+              },
+            })
+          );
         });
       }
     });
@@ -152,7 +166,8 @@ export class AnnotationCardData extends HTMLElement {
       filterConditions,
       paginationState.start,
       paginationState.stop,
-      this.afterMap);
+      this.afterMap
+    );
 
     // Query the media data associated with each localization
     var mediaPromises = [];
@@ -192,7 +207,6 @@ export class AnnotationCardData extends HTMLElement {
    * @param {integer} mediaId - Media ID to retrieve and update cards with
    */
   async updateMediaAttributes(mediaId) {
-
     var media = await this._modelData.getMedia(mediaId);
 
     let mediaInfo = {
@@ -200,7 +214,7 @@ export class AnnotationCardData extends HTMLElement {
       entityType: this.mediaTypeMap.get(media.type),
       attributes: media.attributes,
       media: media,
-    }
+    };
 
     for (let card of this.cardList.cards) {
       if (card.mediaId == mediaId) {
@@ -213,36 +227,50 @@ export class AnnotationCardData extends HTMLElement {
     let promise = Promise.resolve();
 
     console.log(filterConditions);
-    if (this._needReload(filterConditions) || (typeof this._bulkCache == "undefined" || this._bulkCache == null)) {
+    if (
+      this._needReload(filterConditions) ||
+      typeof this._bulkCache == "undefined" ||
+      this._bulkCache == null
+    ) {
       this.filterConditions = filterConditions;
-      this.cardList = { cards : [], total : null };
-      this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
+      this.cardList = { cards: [], total: null };
+      this.cardList.total = await this._modelData.getFilteredLocalizations(
+        "count",
+        filterConditions
+      );
       this.afterMap = new Map();
 
-      let stop = this.cardList.total > this._stopChunk ? this._stopChunk : this.cardList.total;
+      let stop =
+        this.cardList.total > this._stopChunk
+          ? this._stopChunk
+          : this.cardList.total;
 
       this._bulkCache = await this._modelData.getFilteredLocalizations(
         "objects",
         filterConditions,
         0,
         stop,
-        this.afterMap);
-      
+        this.afterMap
+      );
+
       console.log("This is the prefetch results:");
-      console.log(this._bulkCache);        
-      
+      console.log(this._bulkCache);
+
       if (this.cardList.total > this._stopChunk) {
         let loops = Math.ceil(this.cardList.total / this._stopChunk);
         let start = this._stopChunk + 1;
         let stop = this._stopChunk + this._stopChunk;
-        for (let x = 0; x < loops; x++){
-          console.log(`Getting next (chunk size ${this._stopChunk}) start: ${start} and stop: ${stop}`)
+        for (let x = 0; x < loops; x++) {
+          console.log(
+            `Getting next (chunk size ${this._stopChunk}) start: ${start} and stop: ${stop}`
+          );
           let next = await this._modelData.getFilteredLocalizations(
             "objects",
             filterConditions,
             start,
             stop,
-            null);
+            null
+          );
           this._bulkCache = [...this._bulkCache, ...next];
           start += this._stopChunk;
           stop += this._stopChunk;
@@ -250,7 +278,6 @@ export class AnnotationCardData extends HTMLElement {
         console.log("This is the prefetch results after loops:");
         console.log(this._bulkCache);
       }
-  
 
       this.filterConditions = filterConditions;
     } else {
@@ -261,23 +288,20 @@ export class AnnotationCardData extends HTMLElement {
   }
 
   /**
- * @param {array} filterConditions array of FilterConditionData objects
- * @param {object} paginationState
- * @returns {object}
- */
+   * @param {array} filterConditions array of FilterConditionData objects
+   * @param {object} paginationState
+   * @returns {object}
+   */
   async makeCardListFromBulk(filterConditions, paginationState) {
-
     if (filterConditions.length == 0) {
       return this.makeCardList(filterConditions, paginationState);
     }
     // this will create a cached list if the filter is new, or if we haven't made it
     await this._bulkCaching(filterConditions);
-    
+
     console.log(paginationState);
     this.cardList.cards = [];
     this.cardList.paginationState = paginationState;
-
-
 
     // Get the localizations for the current page
     const localizations = [];
@@ -285,9 +309,8 @@ export class AnnotationCardData extends HTMLElement {
       // const loc = await this._modelData.getLocalization(this._bulkCache[x]);
       if (this._bulkCache[x]) {
         const loc = this._bulkCache[x];
-        localizations.push(loc);      
+        localizations.push(loc);
       }
-
     }
     // var localizations = await this._modelData.getFilteredLocalizations(
     //   "objects",
@@ -301,7 +324,10 @@ export class AnnotationCardData extends HTMLElement {
       var mediaPromises = [];
       var mediaList = [];
       for (let idx = 0; idx < localizations.length; idx++) {
-        if (localizations[idx] && !mediaList.includes(localizations[idx].media)) {
+        if (
+          localizations[idx] &&
+          !mediaList.includes(localizations[idx].media)
+        ) {
           mediaList.push(localizations[idx].media);
         }
       }
@@ -316,7 +342,7 @@ export class AnnotationCardData extends HTMLElement {
       // Now gather all the card information
       await this._getCardList(localizations, medias);
     }
-    
+
     return this.cardList;
   }
 

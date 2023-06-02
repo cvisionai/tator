@@ -1,7 +1,7 @@
 .add-new {
   border: 2px dashed $color-charcoal--light70;
   height: 100px;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
   transition-property: background-color, border-style, color; // Border-style only for add / remove people from project
   &:hover,
   &:focus {
@@ -29,7 +29,7 @@
 .add-new__icon {
   background-color: $color-charcoal--medium;
   height: 34px;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
   transition-property: background-color, color;
   width: 34px;
   &:hover,

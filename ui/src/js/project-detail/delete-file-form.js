@@ -27,7 +27,7 @@ export class DeleteFileForm extends ModalDialog {
     this._accept.setAttribute("class", "btn btn-clear btn-red");
     this._accept.textContent = "Delete File";
     this._footer.appendChild(this._accept);
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -35,7 +35,7 @@ export class DeleteFileForm extends ModalDialog {
 
     cancel.addEventListener("click", this._closeCallback);
 
-    this._accept.addEventListener("click", async evt => {
+    this._accept.addEventListener("click", async (evt) => {
       const mediaId = this.getAttribute("media-id");
       const projecId = this.getAttribute("project-id");
       const single = !(mediaId.indexOf(",") > -1);
@@ -51,37 +51,47 @@ export class DeleteFileForm extends ModalDialog {
   _deleteSingle(projecId, mediaId) {
     return fetchCredentials("/rest/Media/" + mediaId, {
       method: "DELETE",
-    }).then(() => { 
-      this.dispatchEvent(new CustomEvent("confirmFileDelete", {
-        detail: {mediaId: mediaId}
-      }));
     })
-    .catch(err => console.log(err)); 
-    
+      .then(() => {
+        this.dispatchEvent(
+          new CustomEvent("confirmFileDelete", {
+            detail: { mediaId: mediaId },
+          })
+        );
+      })
+      .catch((err) => console.log(err));
   }
 
-  _deleteMultiple(projecId, mediaId) { this._deleteId
-    const url = `/rest/Medias/${projecId}?media_id=${mediaId}`
+  _deleteMultiple(projecId, mediaId) {
+    this._deleteId;
+    const url = `/rest/Medias/${projecId}?media_id=${mediaId}`;
     return fetchCredentials(url, {
       method: "DELETE",
     })
-      .then(() => { 
-        this.dispatchEvent(new CustomEvent("confirmFileDelete", {
-          detail: { mediaId: mediaId }
-        }));
+      .then(() => {
+        this.dispatchEvent(
+          new CustomEvent("confirmFileDelete", {
+            detail: { mediaId: mediaId },
+          })
+        );
       })
-      .catch(err => console.log(err));  
+      .catch((err) => console.log(err));
   }
 
   static get observedAttributes() {
-    return ["media-name","media-id"].concat(ModalDialog.observedAttributes);
+    return ["media-name", "media-id"].concat(ModalDialog.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "media-name":
-        this._title.nodeValue = "Delete \"" + newValue + "\"";
+        this._title.nodeValue = 'Delete "' + newValue + '"';
         break;
       case "media-id":
         this._deleteId.textContent = newValue.replace(",", ", ");

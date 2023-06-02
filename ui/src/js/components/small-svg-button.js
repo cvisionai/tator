@@ -5,7 +5,10 @@ export class SmallSVGButton extends TatorElement {
   constructor() {
     super();
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex px-2 f3 text-gray hover-text-white");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex px-2 f3 text-gray hover-text-white"
+    );
     this._shadow.appendChild(button);
     this._button = button;
 

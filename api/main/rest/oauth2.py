@@ -19,7 +19,7 @@ class Oauth2LoginAPI(APIView):
 
     def get(self, request, format=None, **kwargs):
         if settings.OKTA_ENABLED:
-            """ redirect to okta for authentication """
+            """redirect to okta for authentication"""
             if os.getenv("REQUIRE_HTTPS") == "TRUE":
                 PROTO = "https"
             else:

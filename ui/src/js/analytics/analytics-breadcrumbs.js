@@ -8,7 +8,10 @@ export class AnalyticsBreadcrumbs extends TatorElement {
     this.projectId = window.location.pathname.split("/")[1];
 
     const div = document.createElement("div");
-    div.setAttribute("class", "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray");
+    div.setAttribute(
+      "class",
+      "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray"
+    );
     this._shadow.appendChild(div);
 
     this._projectText = document.createElement("a");
@@ -46,7 +49,12 @@ export class AnalyticsBreadcrumbs extends TatorElement {
   }
 
   static get observedAttributes() {
-    return["project-name", "analytics-name", "analytics-name-link", "analytics-sub-name"].concat(TatorPage.observedAttributes);
+    return [
+      "project-name",
+      "analytics-name",
+      "analytics-name-link",
+      "analytics-sub-name",
+    ].concat(TatorPage.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

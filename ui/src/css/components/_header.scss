@@ -48,7 +48,7 @@
 
 .header__notification {
   animation-delay: 6s;
-  animation-duration: .25s;
+  animation-duration: 0.25s;
   animation-fill-mode: forwards;
   animation-name: fade-out;
   background-color: $color-white;
@@ -64,7 +64,9 @@
 }
 
 @keyframes fade-out {
-  100% {opacity: 0;}
+  100% {
+    opacity: 0;
+  }
 }
 
 .header__error {

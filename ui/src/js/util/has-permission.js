@@ -4,8 +4,8 @@ const levels = [
   "Can Transfer",
   "Can Execute",
   "Full Control",
-  "Creator"
-]
+  "Creator",
+];
 
 export function hasPermission(level, required) {
   // Checks if permission is greater or equal required level

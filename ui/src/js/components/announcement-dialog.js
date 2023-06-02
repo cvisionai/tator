@@ -4,8 +4,8 @@ import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/util
 export class AnnouncementDialog extends ModalDialog {
   constructor() {
     super();
-   
-    // Rework the styles 
+
+    // Rework the styles
     this._div.setAttribute("class", "modal-wrap modal-wide d-flex");
     this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
     this._header.setAttribute("class", "px-3 py-3");
@@ -15,7 +15,10 @@ export class AnnouncementDialog extends ModalDialog {
     this._footer.remove();
 
     this._announcements = document.createElement("div");
-    this._announcements.setAttribute("class", "py-4 d-flex flex-column annotation__announcement-list");
+    this._announcements.setAttribute(
+      "class",
+      "py-4 d-flex flex-column annotation__announcement-list"
+    );
     this._header.appendChild(this._announcements);
   }
 
@@ -24,7 +27,10 @@ export class AnnouncementDialog extends ModalDialog {
     // announcements: returned object from Announcement endpoint.
     for (const announcement of announcements) {
       const div = document.createElement("div");
-      div.setAttribute("class", "d-flex flex-column col-12 py-2 annotation__announcement");
+      div.setAttribute(
+        "class",
+        "d-flex flex-column col-12 py-2 annotation__announcement"
+      );
       this._announcements.appendChild(div);
 
       const content = document.createElement("markdown-div");
@@ -33,7 +39,10 @@ export class AnnouncementDialog extends ModalDialog {
       div.appendChild(content);
 
       const buttonDiv = document.createElement("div");
-      buttonDiv.setAttribute("class", "d-flex flex-row flex-justify-right py-2 px-2");
+      buttonDiv.setAttribute(
+        "class",
+        "d-flex flex-row flex-justify-right py-2 px-2"
+      );
       div.appendChild(buttonDiv);
 
       const button = document.createElement("a");
@@ -42,7 +51,7 @@ export class AnnouncementDialog extends ModalDialog {
       button.textContent = "Don't show again";
       buttonDiv.appendChild(button);
 
-      button.addEventListener("click", evt => {
+      button.addEventListener("click", (evt) => {
         fetchCredentials(`/rest/Announcement/${announcement.id}`, {
           method: "DELETE",
         });

@@ -12,11 +12,14 @@ export class AnnotationImage extends TatorElement {
     super();
 
     const imageDiv = document.createElement("div");
-    imageDiv.setAttribute("class", "annotation__video-player d-flex flex-column rounded-bottom-2");
+    imageDiv.setAttribute(
+      "class",
+      "annotation__video-player d-flex flex-column rounded-bottom-2"
+    );
     this._shadow.appendChild(imageDiv);
 
     this._image = document.createElement("image-canvas");
-    this._image.domParents.push({"object":this});
+    this._image.domParents.push({ object: this });
     imageDiv.appendChild(this._image);
   }
 
@@ -24,8 +27,7 @@ export class AnnotationImage extends TatorElement {
     this._image.permission = val;
   }
 
-  addDomParent(val)
-  {
+  addDomParent(val) {
     this._image.domParents.push(val);
   }
 
@@ -99,7 +101,7 @@ export class AnnotationImage extends TatorElement {
   }
 
   zoomIn() {
-    this._image.style.cursor="zoom-in";
+    this._image.style.cursor = "zoom-in";
     this._image.zoomIn();
   }
 
@@ -108,7 +110,7 @@ export class AnnotationImage extends TatorElement {
   }
 
   pan() {
-    this._image.style.cursor="move";
+    this._image.style.cursor = "move";
     this._image.pan();
   }
 
@@ -117,11 +119,16 @@ export class AnnotationImage extends TatorElement {
   }
 
   selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
-    this._image.selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame);
+    this._image.selectLocalization(
+      loc,
+      skipAnimation,
+      muteOthers,
+      skipGoToFrame
+    );
   }
 
   selectTrack(track, frameHint, skipGoToFrame) {
-    this._image.selectTrack(track, undefined, false)
+    this._image.selectTrack(track, undefined, false);
   }
 
   selectTimelineData() {

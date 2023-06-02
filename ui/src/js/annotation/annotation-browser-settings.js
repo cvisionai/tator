@@ -2,9 +2,7 @@
  * Dependency: localStorage is used
  */
 export class AnnotationBrowserSettings {
-
   constructor(projectId, dataTypes, mediaType) {
-
     this._projectId = projectId;
     this._localStorageKey = `tator_annotation_browser_settings_proj_${projectId}`;
 
@@ -46,7 +44,9 @@ export class AnnotationBrowserSettings {
       if (storedDataJSON) {
         const storageObject = JSON.parse(storedDataJSON);
         if (storageObject.alwaysVisibleInfoMap) {
-          for (const [dataTypeId, info] of Object.entries(storageObject.alwaysVisibleInfoMap)) {
+          for (const [dataTypeId, info] of Object.entries(
+            storageObject.alwaysVisibleInfoMap
+          )) {
             if (dataTypeId in this._alwaysVisibleInfoMap) {
               for (const [attrName, visible] of Object.entries(info)) {
                 this._alwaysVisibleInfoMap[dataTypeId][attrName] = visible;
@@ -55,8 +55,7 @@ export class AnnotationBrowserSettings {
           }
         }
       }
-    }
-    catch (exc) {
+    } catch (exc) {
       console.warn(exc);
     }
   }
@@ -70,9 +69,12 @@ export class AnnotationBrowserSettings {
 
     var storageObject = {
       projectId: this._projectId,
-      alwaysVisibleInfoMap: this._alwaysVisibleInfoMap
-    }
-    window.localStorage.setItem(this._localStorageKey, JSON.stringify(storageObject));
+      alwaysVisibleInfoMap: this._alwaysVisibleInfoMap,
+    };
+    window.localStorage.setItem(
+      this._localStorageKey,
+      JSON.stringify(storageObject)
+    );
   }
 
   isAlwaysVisible(dataType, attrName) {

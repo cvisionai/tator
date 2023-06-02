@@ -7,7 +7,10 @@ export class EntityBrowser extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "annotation__panel annotation__panel--entity rounded-2");
+    div.setAttribute(
+      "class",
+      "annotation__panel annotation__panel--entity rounded-2"
+    );
     this._shadow.appendChild(div);
 
     const spacer = document.createElement("div");
@@ -15,7 +18,10 @@ export class EntityBrowser extends TatorElement {
     div.appendChild(spacer);
 
     const header = document.createElement("div");
-    header.setAttribute("class", "d-flex flex-items-center flex-justify-between");
+    header.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-between"
+    );
     spacer.appendChild(header);
 
     this._title = document.createElement("h3");
@@ -23,7 +29,10 @@ export class EntityBrowser extends TatorElement {
     header.appendChild(this._title);
 
     const back = document.createElement("button");
-    back.setAttribute("class", "btn-clear d-flex flex-items-center px-0 text-gray hover-text-white");
+    back.setAttribute(
+      "class",
+      "btn-clear d-flex flex-items-center px-0 text-gray hover-text-white"
+    );
     header.appendChild(back);
 
     const span = document.createElement("span");
@@ -39,12 +48,15 @@ export class EntityBrowser extends TatorElement {
     back.appendChild(svg);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z");
+    path.setAttribute(
+      "d",
+      "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z"
+    );
     svg.appendChild(path);
 
     const searchDiv = document.createElement("div");
     searchDiv.setAttribute("class", "annotation__panel-group py-3 d-flex");
-    searchDiv.style.width = 'fit-content';
+    searchDiv.style.width = "fit-content";
     spacer.appendChild(searchDiv);
 
     this._search = document.createElement("filter-data-button");
@@ -54,7 +66,10 @@ export class EntityBrowser extends TatorElement {
     searchDiv.appendChild(this._filterModal);
 
     const filterNotificationSpan = document.createElement("span");
-    filterNotificationSpan.setAttribute("class", "f3 text-green text-center d-flex flex-items-center px-3");
+    filterNotificationSpan.setAttribute(
+      "class",
+      "f3 text-green text-center d-flex flex-items-center px-3"
+    );
     searchDiv.appendChild(filterNotificationSpan);
     this._filterNotificationSpan = filterNotificationSpan;
     const groupDiv = document.createElement("div");
@@ -63,7 +78,7 @@ export class EntityBrowser extends TatorElement {
 
     this._group = document.createElement("enum-input");
     this._group.setAttribute("name", "Grouping");
-    this._group.choices = [{value: "Off"}];
+    this._group.choices = [{ value: "Off" }];
     this._group.default = "Off";
     groupDiv.appendChild(this._group);
 
@@ -83,13 +98,15 @@ export class EntityBrowser extends TatorElement {
     this._media = null;
     this._mediaType = null;
 
-    back.addEventListener("click", evt => {
+    back.addEventListener("click", (evt) => {
       this.style.display = "none";
       this._closeAll();
-      this.dispatchEvent(new CustomEvent("close", {
-        detail: {typeId: this._dataType.id},
-        composed: true,
-      }));
+      this.dispatchEvent(
+        new CustomEvent("close", {
+          detail: { typeId: this._dataType.id },
+          composed: true,
+        })
+      );
     });
   }
 
@@ -108,23 +125,20 @@ export class EntityBrowser extends TatorElement {
     this._dataType = val;
     this._filterModal.dataType = val;
     this._title.textContent = this._dataType.name;
-    let choices = [{value: "Off"}];
-    const sorted = this._dataType.attribute_types.sort((a, b) => a.order - b.order);
-    for (let choice of sorted)
-    {
-      if ((choice.dtype == "string") || (choice.dtype == "enum"))
-      {
-        choices.push({value: choice.name});
+    let choices = [{ value: "Off" }];
+    const sorted = this._dataType.attribute_types.sort(
+      (a, b) => a.order - b.order
+    );
+    for (let choice of sorted) {
+      if (choice.dtype == "string" || choice.dtype == "enum") {
+        choices.push({ value: choice.name });
       }
     }
     this._group.clear();
     this._group.choices = choices;
-    if (this._dataType.grouping_default && this._identifier)
-    {
+    if (this._dataType.grouping_default && this._identifier) {
       this._group.setValue(this._identifier.name);
-    }
-    else
-    {
+    } else {
       this._group.setValue("Off");
     }
   }
@@ -136,7 +150,7 @@ export class EntityBrowser extends TatorElement {
   set annotationData(val) {
     this._data = val;
     this._jumpFrame.setValue(false);
-    this._data.addEventListener("freshData", evt => {
+    this._data.addEventListener("freshData", (evt) => {
       if (evt.detail.typeObj.id === this._dataType.id) {
         if (!this._initialized) {
           this._initialized = true;
@@ -146,7 +160,10 @@ export class EntityBrowser extends TatorElement {
 
         if (this._selectEntityId != null) {
           for (let group in this._selectors) {
-            this._selectors[group].selectEntityWithId(this._selectEntityId, true);
+            this._selectors[group].selectEntityWithId(
+              this._selectEntityId,
+              true
+            );
           }
           this._selectEntityId = null;
         }
@@ -154,25 +171,22 @@ export class EntityBrowser extends TatorElement {
     });
 
     this._filterModal.data = this._data;
-    this._search.addEventListener("click", evt => {
+    this._search.addEventListener("click", (evt) => {
       this._filterModal.setAttribute("is-open", "");
       document.body.classList.add("shortcuts-disabled");
     });
 
-    this._filterModal.addEventListener("close", evt => {
+    this._filterModal.addEventListener("close", (evt) => {
       this._filterModal.removeAttribute("is-open");
       document.body.classList.remove("shortcuts-disabled");
     });
 
-    this._filterModal.addEventListener("annotationFilter", evt => {
-      if (evt.detail.filterObject)
-      {
+    this._filterModal.addEventListener("annotationFilter", (evt) => {
+      if (evt.detail.filterObject) {
         const encoded_query = btoa(JSON.stringify(evt.detail.filterObject));
         this._data.updateType(this._dataType, null, encoded_query);
         this._filterNotificationSpan.textContent = "Filters applied";
-      }
-      else
-      {
+      } else {
         this._data.updateType(this._dataType, null);
         this._filterNotificationSpan.textContent = null;
       }
@@ -181,10 +195,10 @@ export class EntityBrowser extends TatorElement {
       this._filterModal.removeAttribute("is-open");
       document.body.classList.remove("shortcuts-disabled");
     });
-    this._group.addEventListener("change", evt => {
+    this._group.addEventListener("change", (evt) => {
       this._drawControls();
     });
-    this._jumpFrame.addEventListener("change", evt => {
+    this._jumpFrame.addEventListener("change", (evt) => {
       for (const group in this._selectors) {
         const selector = this._selectors[group];
         selector.autoGoToFrame = this._jumpFrame.getValue();
@@ -207,7 +221,7 @@ export class EntityBrowser extends TatorElement {
   set mediaType(val) {
     this._mediaType = val;
   }
-  
+
   set browserSettings(val) {
     this._browserSettings = val;
   }
@@ -218,7 +232,9 @@ export class EntityBrowser extends TatorElement {
     if (this._identifier && this._group.getValue() != "Off") {
       const key = this._group.getValue();
       groups = evt.detail.data.reduce((sec, obj) => {
-        (sec[obj["attributes"][key]] = sec[obj["attributes"][key]] || []).push(obj);
+        (sec[obj["attributes"][key]] = sec[obj["attributes"][key]] || []).push(
+          obj
+        );
         return sec;
       }, {});
     } else {
@@ -309,21 +325,23 @@ export class EntityBrowser extends TatorElement {
               }
               const id = selector.data.id;
               let saved = false;
-              if (this._data.getVersion().bases.indexOf(selector.data.version) >= 0)
-              {
+              if (
+                this._data.getVersion().bases.indexOf(selector.data.version) >=
+                0
+              ) {
                 let tweakedObj = Object.assign({}, selector.data);
                 delete tweakedObj.version;
                 tweakedObj.attributes = values;
-                if (endpoint == "Localization")
-                {
-                  this._canvas.cloneToNewVersion(tweakedObj, this._data.getVersion().id);
-                }
-                else if (endpoint == "State")
-                {
+                if (endpoint == "Localization") {
+                  this._canvas.cloneToNewVersion(
+                    tweakedObj,
+                    this._data.getVersion().id
+                  );
+                } else if (endpoint == "State") {
                   let newObject = {};
                   let state = tweakedObj;
                   newObject.parent = state.id;
-                  newObject.attributes = {...values};
+                  newObject.attributes = { ...values };
                   newObject.version = this._data.getVersion().id;
                   newObject.type = Number(state.type.split("_")[1]);
                   newObject.media_ids = state.media;
@@ -331,35 +349,38 @@ export class EntityBrowser extends TatorElement {
                   newObject.localization_ids = state.localizations;
                   console.info(JSON.stringify(newObject));
                   this._undo.post("States", newObject, this._dataType);
-                }
-                else
-                {
+                } else {
                   console.error(`Unknown endpoint '${endpoint}'`);
                 }
                 document.body.classList.remove("shortcuts-disabled");
                 saved = true;
-              }
-              else if (this._data.getVersion().id == selector.data.version)
-              {
-                this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);
+              } else if (this._data.getVersion().id == selector.data.version) {
+                this._undo.patch(
+                  endpoint,
+                  id,
+                  { attributes: values },
+                  this._dataType
+                );
                 saved = true;
               }
-              if (saved)
-              {
-                this.dispatchEvent(new CustomEvent("save", {
-                  detail: this._values
-                }));
+              if (saved) {
+                this.dispatchEvent(
+                  new CustomEvent("save", {
+                    detail: this._values,
+                  })
+                );
               }
             }
           });
 
-          selector.addEventListener("select", evt => {
+          selector.addEventListener("select", (evt) => {
             attributes.setValues(
               evt.detail.data,
               evt.detail.associatedState,
-              evt.detail.associatedStateType);
+              evt.detail.associatedStateType
+            );
           });
-        };
+        }
 
         selector.addEventListener("open", () => {
           li.classList.add("is-open");
@@ -387,13 +408,18 @@ export class EntityBrowser extends TatorElement {
 
   selectEntity(obj) {
     let group;
-    if (this._identifier && (this._group.getValue() && this._group.getValue() !== "Off")) {
+    if (
+      this._identifier &&
+      this._group.getValue() &&
+      this._group.getValue() !== "Off"
+    ) {
       group = obj.attributes[this._identifier.name];
     } else {
       group = "All " + this._title.textContent;
     }
     const selector = this._selectors[group];
-    if (selector) { // Selector may not exist if element was deleted.
+    if (selector) {
+      // Selector may not exist if element was deleted.
       selector.selectEntity(obj);
     }
   }
@@ -422,7 +448,6 @@ export class EntityBrowser extends TatorElement {
         this._selectors[name]._expand.click();
       }
     }
-
   }
 }
 

@@ -20,14 +20,19 @@ from ._attributes import bulk_patch_attributes, convert_attribute
 
 logger = logging.getLogger(__name__)
 
+
 class Array(Subquery):
-    """ Class to expose ARRAY SQL function to ORM """
-    template = 'ARRAY(%(subquery)s)'
+    """Class to expose ARRAY SQL function to ORM"""
+
+    template = "ARRAY(%(subquery)s)"
+
 
 def compute_user(project, user, user_elemental_id):
-    """ Given a project and a user, if a user_elemental_id is supplied return the appropriate user to specify as the author of an object. """
+    """Given a project and a user, if a user_elemental_id is supplied return the appropriate user to specify as the author of an object."""
     if user_elemental_id:
-        can_change_authorship = Membership.objects.filter(user=user, project=project, permission=Permission.FULL_CONTROL).exists()
+        can_change_authorship = Membership.objects.filter(
+            user=user, project=project, permission=Permission.FULL_CONTROL
+        ).exists()
         if can_change_authorship:
             identified_user = User.objects.filter(elemental_id=user_elemental_id)
             if identified_user:
@@ -35,9 +40,12 @@ def compute_user(project, user, user_elemental_id):
             else:
                 raise NotFound(f"Couldn't find user with {user_elemental_id}")
         else:
-            raise PermissionDenied(f"{user} does not have full permission, required for authorship modifications, on {project.pk}")
+            raise PermissionDenied(
+                f"{user} does not have full permission, required for authorship modifications, on {project.pk}"
+            )
     else:
         return user
+
 
 def reverse_queryArgs(viewname, kwargs=None, queryargs=None):
     """
@@ -45,21 +53,24 @@ def reverse_queryArgs(viewname, kwargs=None, queryargs=None):
     """
     url = reverse(viewname, kwargs=kwargs)
     if queryargs:
-        return '{}?{}'.format(url, urlencode(queryargs))
+        return "{}?{}".format(url, urlencode(queryargs))
     else:
         return url
 
+
 class BadQuery(APIException):
-    status_code=403
-    default_detail="A bad query argument was supplied to the service."
-    default_code="bad_query"
+    status_code = 403
+    default_detail = "A bad query argument was supplied to the service."
+    default_code = "bad_query"
+
 
 def computeRequiredFields(typeObj):
     """Given an entity type object, compute the required fields to construct a new entity object,
-       returns a tuple where the first are the required 1st order fields, and the 2nd are attributes. """
-    newObjType=type_to_obj(type(typeObj))
+    returns a tuple where the first are the required 1st order fields, and the 2nd are attributes.
+    """
+    newObjType = type_to_obj(type(typeObj))
 
-    datafields={}
+    datafields = {}
     for field in newObjType._meta.get_fields(include_parents=False):
         if not field.is_relation and not field.blank and field.default is None:
             datafields[field.name] = field.description
@@ -70,16 +81,17 @@ def computeRequiredFields(typeObj):
         ):
             datafields[field.name] = field.description
 
-    attributes={}
+    attributes = {}
     for column in typeObj.attribute_types:
-        attributes[column['name']] = column.get('description', None)
+        attributes[column["name"]] = column.get("description", None)
 
     return (datafields, attributes, typeObj.attribute_types)
 
+
 def check_required_fields(datafields, attr_types, body):
-    """ Given the output of computeRequiredFields and a request body, assert that required
-        fields exist and that attributes are present. Fill in default values if they exist.
-        Returns a dictionary containing attribute values.
+    """Given the output of computeRequiredFields and a request body, assert that required
+    fields exist and that attributes are present. Fill in default values if they exist.
+    Returns a dictionary containing attribute values.
     """
     # Check for required fields.
     for field in datafields:
@@ -89,32 +101,39 @@ def check_required_fields(datafields, attr_types, body):
     # Check for required attributes. Fill in defaults if available.
     attrs = {}
     for attr_type in attr_types:
-        field = attr_type['name']
-        attribute_body = body.get('attributes', {})
+        field = attr_type["name"]
+        attribute_body = body.get("attributes", {})
         if field in attribute_body:
-            attribute_body[field] = convert_attribute(attr_type, attribute_body[field]) # Validates attr value
-            attrs[field] = attribute_body[field];
-        elif attr_type['dtype'] == 'datetime':
-            if 'use_current' in attr_type and attr_type['use_current']:
+            attribute_body[field] = convert_attribute(
+                attr_type, attribute_body[field]
+            )  # Validates attr value
+            attrs[field] = attribute_body[field]
+        elif attr_type["dtype"] == "datetime":
+            if "use_current" in attr_type and attr_type["use_current"]:
                 # Fill in current datetime.
                 attrs[field] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-            elif attr_type.get('required', True):
+            elif attr_type.get("required", True):
                 # Missing a datetime.
-                raise Exception(f'Missing attribute value for "{field}". Set `use_current` to '
-                                f'True or supply a value.')
+                raise Exception(
+                    f'Missing attribute value for "{field}". Set `use_current` to '
+                    f"True or supply a value."
+                )
         else:
-            if 'default' in attr_type:
+            if "default" in attr_type:
                 # Fill in default for missing field.
-                attrs[field] = attr_type['default']
-            elif attr_type.get('required', True):
+                attrs[field] = attr_type["default"]
+            elif attr_type.get("required", True):
                 # Missing a field and no default.
-                raise Exception(f'Missing attribute value for "{field}". Set a `default` on '
-                                f'the attribute type or supply a value.')
+                raise Exception(
+                    f'Missing attribute value for "{field}". Set a `default` on '
+                    f"the attribute type or supply a value."
+                )
     return attrs
 
+
 def paginate(query_params, queryset):
-    start = query_params.get('start', None)
-    stop = query_params.get('stop', None)
+    start = query_params.get("start", None)
+    stop = query_params.get("stop", None)
     qs = queryset
     if start is None and stop is not None:
         stop = int(stop)
@@ -139,19 +158,22 @@ def bulk_create_from_generator(obj_generator, model, batch_size=1000):
 
     return saved_objects
 
+
 def check_resource_prefix(prefix, obj, force_prefix=False):
-    """ Checks that a prefix corresponding to a resource has the form
-        <organization>/<project>/<object>/<name> and that the IDs line
-        up with what is expected for the object associated with the .
+    """Checks that a prefix corresponding to a resource has the form
+    <organization>/<project>/<object>/<name> and that the IDs line
+    up with what is expected for the object associated with the .
     """
-    # If we aren't a prefix 
+    # If we aren't a prefix
     if urlparse(prefix).scheme != "" and force_prefix is False:
         return
-    parts = prefix.split('/')
+    parts = prefix.split("/")
     if len(parts) != 4:
         logger.error(f"Permission Denied: {prefix} on {obj}")
-        raise PermissionDenied("Incorrect prefix format for file resource! Required format is "
-                               "<organization>/<project>/<object>/<name>.")
+        raise PermissionDenied(
+            "Incorrect prefix format for file resource! Required format is "
+            "<organization>/<project>/<object>/<name>."
+        )
     organization = obj.project.organization.pk
     project = obj.project.pk
     obj_id = obj.pk
@@ -161,16 +183,19 @@ def check_resource_prefix(prefix, obj, force_prefix=False):
         raise PermissionDenied("Prefix does not match expected project!")
     if obj_id != int(parts[2]):
         raise PermissionDenied("Prefix does not match expected object!")
-    
+
+
 def check_file_resource_prefix(prefix, obj):
-    """ Checks that a prefix corresponding to a resource (associated with a File instead of Media)
-        has the form <organization>/<project>/files/<object>/<name> and that the IDs line
-        up with what is expected for the object associated with the .
+    """Checks that a prefix corresponding to a resource (associated with a File instead of Media)
+    has the form <organization>/<project>/files/<object>/<name> and that the IDs line
+    up with what is expected for the object associated with the .
     """
-    parts = prefix.split('/')
+    parts = prefix.split("/")
     if len(parts) != 5:
-        raise PermissionDenied("Incorrect prefix format for file resource! Required format is "
-                               "<organization>/<project>/files/<object>/<name>.")
+        raise PermissionDenied(
+            "Incorrect prefix format for file resource! Required format is "
+            "<organization>/<project>/files/<object>/<name>."
+        )
     organization = obj.project.organization.pk
     project = obj.project.pk
     obj_id = obj.pk
@@ -183,21 +208,22 @@ def check_file_resource_prefix(prefix, obj):
     if obj_id != int(parts[3]):
         raise PermissionDenied("Prefix does not match expected object!")
 
+
 def url_to_key(url, project_obj):
-    """ Checks if URL corresponds to a presigned URL on a Tator upload bucket.
-        If yes, returns an object key, otherwise returns `None`.
+    """Checks if URL corresponds to a presigned URL on a Tator upload bucket.
+    If yes, returns an object key, otherwise returns `None`.
     """
     parsed = urlparse(url)
-    tokens = parsed.path.split('/')
+    tokens = parsed.path.split("/")
     path = None
     bucket = None
     upload = False
     num_tokens = 6
     if len(tokens) >= num_tokens:
-        if tokens[-num_tokens] == '_uploads':
+        if tokens[-num_tokens] == "_uploads":
             bucket = project_obj.get_bucket(upload=True)
             upload = True
-            path = '/'.join(parsed.path.split('/')[-num_tokens:])
+            path = "/".join(parsed.path.split("/")[-num_tokens:])
     return path, bucket, upload
 
 
@@ -345,8 +371,9 @@ def bulk_log_creation(objects, project, user):
     bulk_create_from_generator(objs, ChangeToObject)
     return ids
 
+
 def construct_elemental_id_from_parent(parent, requested_uuid=None):
-    """ Return the parent's elemental id or make a new one """
+    """Return the parent's elemental id or make a new one"""
     if parent is None and requested_uuid is None:
         return uuid.uuid4()
     elif parent.elemental_id:
@@ -354,21 +381,21 @@ def construct_elemental_id_from_parent(parent, requested_uuid=None):
     else:
         return None
 
+
 def _use_internal_host(request, url):
-    """ Checks if this requests comes from an internal compose
-        container, if so replaces localhost hosts with internal
-        host.
+    """Checks if this requests comes from an internal compose
+    container, if so replaces localhost hosts with internal
+    host.
     """
     hostname = urlparse(url).hostname
-    is_localhost = hostname in ['localhost', '127.0.0.1']
+    is_localhost = hostname in ["localhost", "127.0.0.1"]
     is_compose = os.getenv("COMPOSE_DEPLOY")
     if is_compose is not None and is_localhost:
-        is_compose = is_compose.lower() == 'true'
+        is_compose = is_compose.lower() == "true"
         if is_compose:
-            worker_ip = socket.gethostbyname('transcode-worker')
-            if request.META['REMOTE_ADDR'] == worker_ip:
+            worker_ip = socket.gethostbyname("transcode-worker")
+            if request.META["REMOTE_ADDR"] == worker_ip:
                 external_host = os.getenv("DEFAULT_LIVE_EXTERNAL_HOST")
                 minio_host = os.getenv("DEFAULT_LIVE_ENDPOINT_URL")
                 url = url.replace(external_host, minio_host)
     return url
-

@@ -10,12 +10,18 @@ export class EntityCard extends TatorElement {
     super();
 
     // Built ins
-    this.builtIns = ["id", "modified_by", "modified_datetime",  "created_datetime", "type"];
-    
+    this.builtIns = [
+      "id",
+      "modified_by",
+      "modified_datetime",
+      "created_datetime",
+      "type",
+    ];
+
     // #todo These are not supported in card labels yet
     // this.builtIns_MediaOnly = ["created_by"];
     // this.builtIns_LocOnly = ["frame"];
-    
+
     this._type = null;
 
     // List element (card)
@@ -25,7 +31,10 @@ export class EntityCard extends TatorElement {
 
     // Link
     this._link = document.createElement("a");
-    this._link.setAttribute("class", "entity-card__link file__link d-flex flex-items-center text-white");
+    this._link.setAttribute(
+      "class",
+      "entity-card__link file__link d-flex flex-items-center text-white"
+    );
     this._link.setAttribute("href", "#");
     this._li.appendChild(this._link);
 
@@ -38,18 +47,27 @@ export class EntityCard extends TatorElement {
 
     // containing div for li element (styling)
     this._styledDiv = document.createElement("div");
-    this._styledDiv.setAttribute("class", "entity-card__title__container py-2 px-2 lh-default");
+    this._styledDiv.setAttribute(
+      "class",
+      "entity-card__title__container py-2 px-2 lh-default"
+    );
     this._li.appendChild(this._styledDiv);
 
     // Title Div
     this.titleDiv = document.createElement("div");
-    this.titleDiv.setAttribute("class", "entity-card__title py-1 d-flex flex-justify-between");
+    this.titleDiv.setAttribute(
+      "class",
+      "entity-card__title py-1 d-flex flex-justify-between"
+    );
     this._styledDiv.appendChild(this.titleDiv);
     this.titleDiv.hidden = true;
 
     // Section title - h2
     this._title = document.createElement("h2");
-    this._title.setAttribute("class", "section__name text-hover-white text-gray py-1 px-1 css-truncate");
+    this._title.setAttribute(
+      "class",
+      "section__name text-hover-white text-gray py-1 px-1 css-truncate"
+    );
     this._link.appendChild(this._title);
 
     // Text for Title Div
@@ -108,7 +126,10 @@ export class EntityCard extends TatorElement {
 
     // Attachment button & emblem code
     this._attachmentButton = document.createElement("button");
-    this._attachmentButton.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white");
+    this._attachmentButton.setAttribute(
+      "class",
+      "px-1 btn-clear h2 text-gray hover-text-white"
+    );
     this._attachmentButton.style.display = "none";
     this._emblemDiv.appendChild(this._attachmentButton);
 
@@ -124,35 +145,49 @@ export class EntityCard extends TatorElement {
     this._attachmentButton.appendChild(svg);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48");
+    path.setAttribute(
+      "d",
+      "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
+    );
     svg.appendChild(path);
 
     let archiveSvg = `<svg class="no-fill" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`;
     let archiveUpSvg = `<svg class="no-fill" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
     let archiveDownSvg = `<svg class="no-fill" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`;
     this._archiveEmblem = document.createElement("button");
-    this._archiveEmblem.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white d-flex");
+    this._archiveEmblem.setAttribute(
+      "class",
+      "px-1 btn-clear h2 text-gray hover-text-white d-flex"
+    );
     this._archiveEmblem.innerHTML = archiveSvg;
     this._archiveEmblem.style.display = "none";
     this._emblemDiv.appendChild(this._archiveEmblem);
 
     this._archiveUpEmblem = document.createElement("button");
-    this._archiveUpEmblem.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white d-flex");
+    this._archiveUpEmblem.setAttribute(
+      "class",
+      "px-1 btn-clear h2 text-gray hover-text-white d-flex"
+    );
     this._archiveUpEmblem.innerHTML = archiveSvg + archiveUpSvg;
     this._archiveUpEmblem.style.display = "none";
     this._emblemDiv.appendChild(this._archiveUpEmblem);
 
     this._archiveDownEmblem = document.createElement("button");
-    this._archiveDownEmblem.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white d-flex");
+    this._archiveDownEmblem.setAttribute(
+      "class",
+      "px-1 btn-clear h2 text-gray hover-text-white d-flex"
+    );
     this._archiveDownEmblem.innerHTML = archiveSvg + archiveDownSvg;
     this._archiveDownEmblem.style.display = "none";
     this._emblemDiv.appendChild(this._archiveDownEmblem);
 
     this.addEventListener("mouseenter", () => {
       if (this.hasAttribute("media-id")) {
-        this.dispatchEvent(new CustomEvent("cardMouseover", {
-          detail: { media: this.media }
-        }));
+        this.dispatchEvent(
+          new CustomEvent("cardMouseover", {
+            detail: { media: this.media },
+          })
+        );
       }
     });
 
@@ -167,46 +202,47 @@ export class EntityCard extends TatorElement {
     this._id_text.setAttribute("class", "f3 text-gray px-2");
     this._bottom.appendChild(this._id_text);
 
-
     // More menu event listener (if included)
-    this._more.addEventListener("algorithmMenu", evt => {
+    this._more.addEventListener("algorithmMenu", (evt) => {
       this.dispatchEvent(
-        new CustomEvent("runAlgorithm",
-          {
-            composed: true,
-            detail: {
-              algorithmName: evt.detail.algorithmName,
-              mediaIds: [Number(this.getAttribute("media-id"))],
-              projectId: this._more._project.id,
-            }
-          }));
+        new CustomEvent("runAlgorithm", {
+          composed: true,
+          detail: {
+            algorithmName: evt.detail.algorithmName,
+            mediaIds: [Number(this.getAttribute("media-id"))],
+            projectId: this._more._project.id,
+          },
+        })
+      );
     });
 
-    this._more.addEventListener("annotations", evt => {
-      this.dispatchEvent(new CustomEvent("downloadAnnotations", {
-        detail: {
-          mediaIds: this.getAttribute("media-id"),
-          annotations: true
-        },
-        composed: true
-      }));
+    this._more.addEventListener("annotations", (evt) => {
+      this.dispatchEvent(
+        new CustomEvent("downloadAnnotations", {
+          detail: {
+            mediaIds: this.getAttribute("media-id"),
+            annotations: true,
+          },
+          composed: true,
+        })
+      );
     });
 
-    this._more.addEventListener("rename", evt => {
+    this._more.addEventListener("rename", (evt) => {
       const input = document.createElement("input");
       input.setAttribute("class", "form-control input-sm1 f1");
       input.setAttribute("value", this._name.textContent);
       this.titleDiv.replaceChild(input, this._name);
-      input.addEventListener("focus", evt => {
+      input.addEventListener("focus", (evt) => {
         evt.target.select();
       });
-      input.addEventListener("keydown", evt => {
+      input.addEventListener("keydown", (evt) => {
         if (evt.keyCode == 13) {
           evt.preventDefault();
           input.blur();
         }
       });
-      input.addEventListener("blur", evt => {
+      input.addEventListener("blur", (evt) => {
         if (evt.target.value !== "") {
           this._name.textContent = evt.target.value;
           const full = evt.target.value + this._ext.textContent;
@@ -217,47 +253,55 @@ export class EntityCard extends TatorElement {
           body: JSON.stringify({
             name: `${this._name.textContent}.${this._ext.textContent}`,
           }),
-        })
-          .catch(err => console.error("Failed to change name: " + err));
-          this.titleDiv.replaceChild(this._name, evt.target);
+        }).catch((err) => console.error("Failed to change name: " + err));
+        this.titleDiv.replaceChild(this._name, evt.target);
       });
       input.focus();
     });
 
-    this._more.addEventListener("delete", evt => {
+    this._more.addEventListener("delete", (evt) => {
       // console.log(this);
-      this.dispatchEvent(new CustomEvent("deleteFile", {
-        detail: {
-          mediaId: this.getAttribute("media-id"),
-          mediaName: this._name.textContent
-        },
-        composed: true
-      }));
+      this.dispatchEvent(
+        new CustomEvent("deleteFile", {
+          detail: {
+            mediaId: this.getAttribute("media-id"),
+            mediaName: this._name.textContent,
+          },
+          composed: true,
+        })
+      );
     });
 
     this._more.addEventListener("move", this._moveMediaFile.bind(this));
 
-    
-
-
     // Attachment button listener
     this._attachmentButton.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("attachments", {
-        composed: true,
-        detail: this._attachments,
-      }));
+      this.dispatchEvent(
+        new CustomEvent("attachments", {
+          composed: true,
+          detail: this._attachments,
+        })
+      );
     });
-
 
     // Card LINK (both _name and _link)click / List item click listener
     this.addEventListener("click", this.togglePanel.bind(this));
     this._link.addEventListener("click", (e) => {
-      if (this._multiEnabled || (!this._link.hasAttribute("href") || this._link.getAttribute("href") == "#")) {
+      if (
+        this._multiEnabled ||
+        !this._link.hasAttribute("href") ||
+        this._link.getAttribute("href") == "#"
+      ) {
         e.preventDefault();
       }
     });
     this._name.addEventListener("click", (e) => {
-      if (this._multiEnabled || !this._name.hasAttribute("href" || this._link.getAttribute("href") == "#")) {
+      if (
+        this._multiEnabled ||
+        !this._name.hasAttribute(
+          "href" || this._link.getAttribute("href") == "#"
+        )
+      ) {
         e.preventDefault();
       }
     });
@@ -270,10 +314,10 @@ export class EntityCard extends TatorElement {
     this._multiSelectionToggle = false;
 
     /* Holds attributes for the card */
-    this.attributesDiv = document.createElement('div');
+    this.attributesDiv = document.createElement("div");
 
     /* Sends events related to selection clicks */
-    this.addEventListener('contextmenu', this.contextMenuHandler.bind(this));
+    this.addEventListener("contextmenu", this.contextMenuHandler.bind(this));
 
     //
     this._sectionInit = false;
@@ -301,7 +345,9 @@ export class EntityCard extends TatorElement {
       case "thumb":
         if (this._thumb != newValue) {
           this._img.setAttribute("src", newValue);
-          this._img.onload = () => { this.dispatchEvent(new Event("loaded")) };
+          this._img.onload = () => {
+            this.dispatchEvent(new Event("loaded"));
+          };
           this._thumb = newValue;
         }
         break;
@@ -336,7 +382,8 @@ export class EntityCard extends TatorElement {
         }
         break;
       case "duration":
-        if (newValue !== null && newValue !== 'null') { //
+        if (newValue !== null && newValue !== "null") {
+          //
           this._duration.textContent = newValue;
         } else {
           this._duration.textContent = "";
@@ -346,9 +393,15 @@ export class EntityCard extends TatorElement {
     }
   }
 
-
-
-  init({ obj, panelContainer = null, cardLabelsChosen = null, enableMultiselect = false, idx = null, mediaInit = false, memberships = null }) {
+  init({
+    obj,
+    panelContainer = null,
+    cardLabelsChosen = null,
+    enableMultiselect = false,
+    idx = null,
+    mediaInit = false,
+    memberships = null,
+  }) {
     //
     // this.resetAll();
 
@@ -362,7 +415,7 @@ export class EntityCard extends TatorElement {
 
     if (this._idx !== null) {
       // console.log(`Tab index ${this._idx}`);
-      this._li.setAttribute("tabindex", this._idx)
+      this._li.setAttribute("tabindex", this._idx);
     }
 
     if (!mediaInit) {
@@ -375,7 +428,10 @@ export class EntityCard extends TatorElement {
     }
 
     // Graphic
-    if (typeof this.cardObj.image !== "undefined" && this.cardObj.image !== null) {
+    if (
+      typeof this.cardObj.image !== "undefined" &&
+      this.cardObj.image !== null
+    ) {
       //this.setAttribute("thumb", obj.image);
       this.setImageStatic(obj.image);
     } else if (!mediaInit) {
@@ -393,20 +449,19 @@ export class EntityCard extends TatorElement {
     // console.log(memberships);
     if (memberships !== null) {
       for (let member of memberships) {
-        this._membershipMap.set(member.user, member.username)
+        this._membershipMap.set(member.user, member.username);
       }
     }
 
-
     /**
-     * Attributes hidden on card are controlled by outer menu 
-    */
+     * Attributes hidden on card are controlled by outer menu
+     */
     let attrList = [...this.builtIns, ...obj.attributeOrder];
 
     // #todo These are not supported in card labels yet
     // if (this._type == "localization") attrList = [...attrList, ...this.builtIns_LocOnly];
     // if (this._type == "media") attrList = [...attrList, ...this.builtIns_MediaOnly];
-    
+
     if (attrList && attrList.length > 0) {
       // console.log("Setting up labels on card with this data:");
       // console.log(obj);
@@ -424,22 +479,36 @@ export class EntityCard extends TatorElement {
         attrStyleDiv.appendChild(attrLabel);
 
         let key = "";
-        let keyString = ""
-        
+        let keyString = "";
+
         // Assign key and output string based on attr info
         if (typeof attr == "string") {
           key = attr;
 
-          if (typeof obj[this._type][key] !== null && obj[key] !== "" && key !== "type") {
-            if (key.indexOf("_by") > -1 && this._membershipMap.has(Number(obj[this._type][key]))) {
+          if (
+            typeof obj[this._type][key] !== null &&
+            obj[key] !== "" &&
+            key !== "type"
+          ) {
+            if (
+              key.indexOf("_by") > -1 &&
+              this._membershipMap.has(Number(obj[this._type][key]))
+            ) {
               // It is a user ID lookup
-              const username = this._membershipMap.get(Number(obj[this._type][key]));
+              const username = this._membershipMap.get(
+                Number(obj[this._type][key])
+              );
               keyString = `<span class="text-dark-gray">${key}</span>: ${username}`;
             } else {
-              keyString = `<span class="text-dark-gray">${key}</span>: ${obj[this._type][key]}`;
+              keyString = `<span class="text-dark-gray">${key}</span>: ${
+                obj[this._type][key]
+              }`;
             }
-            
-          } else if(key === "type" && typeof obj.entityType["dtype"] !== null && obj.entityType["dtype"] !== "") {
+          } else if (
+            key === "type" &&
+            typeof obj.entityType["dtype"] !== null &&
+            obj.entityType["dtype"] !== ""
+          ) {
             keyString = `<span class="text-dark-gray">${key}</span>: ${obj.entityType["name"]}`;
           } else {
             keyString = `<span class="text-dark-gray"><span class="text-dark-gray">${key}</span>: <<span class="text-italics ">not set</span>></span>`;
@@ -447,7 +516,12 @@ export class EntityCard extends TatorElement {
         } else {
           key = attr.name;
 
-          if (obj.attributes !== null && typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== "") {
+          if (
+            obj.attributes !== null &&
+            typeof obj.attributes[key] !== "undefined" &&
+            obj.attributes[key] !== null &&
+            obj.attributes[key] !== ""
+          ) {
             keyString = `<span class="text-dark-gray">${key}</span>: ${obj.attributes[key]}`;
           } else {
             keyString = `<span class="text-dark-gray"><span class="text-dark-gray">${key}</span>: <<span class="text-italics ">not set</span>></span>`;
@@ -455,7 +529,7 @@ export class EntityCard extends TatorElement {
         }
 
         // Update output based on key and keystring
-        attrLabel.innerHTML = keyString; 
+        attrLabel.innerHTML = keyString;
         attrStyleDiv.setAttribute("title", `${key}`);
 
         // add to the card & keep a list
@@ -463,10 +537,14 @@ export class EntityCard extends TatorElement {
         this.attributeDivs[key].div = attrStyleDiv;
         this.attributeDivs[key].value = attrLabel;
 
-        if (cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0) {
+        if (
+          cardLabelsChosen &&
+          Array.isArray(cardLabelsChosen) &&
+          cardLabelsChosen.length > 0
+        ) {
           // If we have any preferences saved check against it
           if (cardLabelsChosen.indexOf(key) > -1) {
-            // console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));   
+            // console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
           } else {
             attrStyleDiv.classList.add("hidden");
           }
@@ -477,8 +555,6 @@ export class EntityCard extends TatorElement {
         this.attributesDiv.appendChild(attrStyleDiv);
       }
 
- 
-
       if (this.attributeDivs) {
         // Show description div
         this.descDiv.appendChild(this.attributesDiv);
@@ -488,16 +564,20 @@ export class EntityCard extends TatorElement {
   }
 
   /**
-  * Custom label display update
-  */
+   * Custom label display update
+   */
   _updateShownAttributes(evt) {
     // console.log("_updateShownAttributes, evt.detail.value=");
     // console.log(evt.detail.value);
     let labelValues = evt.detail.value;
 
     // We want to treat builtIn like the attribute's on the type
-    // 
-    if (this.attributeDivs && (evt.detail.typeId === this.cardObj.entityType.id || evt.detail.typeId === -1)) {
+    //
+    if (
+      this.attributeDivs &&
+      (evt.detail.typeId === this.cardObj.entityType.id ||
+        evt.detail.typeId === -1)
+    ) {
       // show selected
       for (let [key, value] of Object.entries(this.attributeDivs)) {
         if (labelValues.includes(key)) {
@@ -505,8 +585,10 @@ export class EntityCard extends TatorElement {
         } else {
           // typeData know about built ins, but not the other way around
           // only HIDE a non-built in if we have an entity type
-          const nonBuiltWithType = !this.builtIns.includes(key) && evt.detail.typeId !== -1;
-          const isBuiltType = this.builtIns.includes(key) && evt.detail.typeId == -1
+          const nonBuiltWithType =
+            !this.builtIns.includes(key) && evt.detail.typeId !== -1;
+          const isBuiltType =
+            this.builtIns.includes(key) && evt.detail.typeId == -1;
           if (nonBuiltWithType || isBuiltType) {
             value.div.classList.add("hidden");
           }
@@ -524,9 +606,13 @@ export class EntityCard extends TatorElement {
       for (let [attr, value] of Object.entries(data.attributes)) {
         if (typeof this.attributeDivs[attr] !== "undefined") {
           if (this.attributeDivs[attr] != null) {
-            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray">${attr}</span>: ${value}`;
+            this.attributeDivs[
+              attr
+            ].value.innerHTML = `<span class="text-dark-gray">${attr}</span>: ${value}`;
           } else {
-            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray"><span class="text-dark-gray">${attr}</span>: <<span class="text-italics ">not set</span>></span>`;
+            this.attributeDivs[
+              attr
+            ].value.innerHTML = `<span class="text-dark-gray"><span class="text-dark-gray">${attr}</span>: <<span class="text-italics ">not set</span>></span>`;
           }
         }
       }
@@ -570,7 +656,7 @@ export class EntityCard extends TatorElement {
     this._more.media = val;
     let valid = false;
     let project = this._media.project;
-    if (typeof (this._media.project) == "undefined") {
+    if (typeof this._media.project == "undefined") {
       project = this._media.project_id;
     }
 
@@ -589,9 +675,11 @@ export class EntityCard extends TatorElement {
     }
     this.removeAttribute("thumb-gif"); // why is this always done? instead of below on else
 
-
     if (this._media.media_files && this._media.media_files.thumbnail_gif) {
-      this.setAttribute("thumb-gif", this._media.media_files.thumbnail_gif[0].path);
+      this.setAttribute(
+        "thumb-gif",
+        this._media.media_files.thumbnail_gif[0].path
+      );
     }
 
     if (this._media.media_files) {
@@ -601,43 +689,48 @@ export class EntityCard extends TatorElement {
         this.attachments = [];
       }
     }
-    
+
     // Check if file is valid and set LiveThumb
     if (this._media.media_files !== null) {
-      if ('streaming' in this._media.media_files ||
-        'layout' in this._media.media_files ||
-        'concat' in this._media.media_files ||
-        'image' in this._media.media_files) {
+      if (
+        "streaming" in this._media.media_files ||
+        "layout" in this._media.media_files ||
+        "concat" in this._media.media_files ||
+        "image" in this._media.media_files
+      ) {
         valid = true;
       }
-      
-      if (!('thumbnail' in this._media.media_files) && 'live' in this._media.media_files) {
+
+      if (
+        !("thumbnail" in this._media.media_files) &&
+        "live" in this._media.media_files
+      ) {
         // Default to tator thumbnail
         // TODO: Have some visual indication if stream is active.
         this._img.setAttribute("src", LiveThumb);
       }
     }
 
-
     // console.log(`File "${val.name}" is valid? >>> ${valid}`)
     // If valid setup up the values
     if (valid) {
-
-    //   this._name.style.opacity = 0.35;
-    //   this._link.style.opacity = 0.35;
-    //   this._name.style.cursor = "not-allowed";
-    //   this._link.style.cursor = "not-allowed";
-    // } else {
+      //   this._name.style.opacity = 0.35;
+      //   this._link.style.opacity = 0.35;
+      //   this._name.style.cursor = "not-allowed";
+      //   this._link.style.cursor = "not-allowed";
+      // } else {
 
       // Setup name & link
-      var uri = `/${project}/annotation/${val.id}?${this._mediaParams.toString()}`;
+      var uri = `/${project}/annotation/${
+        val.id
+      }?${this._mediaParams.toString()}`;
       this._name.setAttribute("href", uri);
       this._link.setAttribute("href", uri);
       this._name.style.opacity = 1;
       this._link.style.opacity = 1;
       this._name.style.cursor = "pointer";
       this._link.style.cursor = "pointer";
-    
+
       // Setup media emblem
       if (this._media.archive_state == "to_archive") {
         this._archiveDownEmblem.style.display = "flex";
@@ -655,7 +748,12 @@ export class EntityCard extends TatorElement {
       }
 
       // Add duration to card
-      if (typeof this._media.num_frames !== "undefined" && this._media.num_frames !== null && typeof this._media.fps !== "undefined" && this._media.fps !== null) {
+      if (
+        typeof this._media.num_frames !== "undefined" &&
+        this._media.num_frames !== null &&
+        typeof this._media.fps !== "undefined" &&
+        this._media.fps !== null
+      ) {
         // Add duration to card
         let seconds = Number(this._media.num_frames) / Number(this._media.fps);
         let duration = new Date(seconds * 1000).toISOString().substr(11, 8);
@@ -686,26 +784,32 @@ export class EntityCard extends TatorElement {
    * @param {image} image
    */
   setImage(image) {
-   const url = URL.createObjectURL(image);
-   this._img.src = url;
-   this._img.onload = () => URL.revokeObjectURL(url);
+    const url = URL.createObjectURL(image);
+    this._img.src = url;
+    this._img.onload = () => URL.revokeObjectURL(url);
   }
 
   setImageStatic(image) {
     //this.setAttribute("thumb", image);
     this._img.setAttribute("src", image);
     this.cardObj.image = image;
-    this._img.onload = () => { this.dispatchEvent(new Event("loaded")) };
+    this._img.onload = () => {
+      this.dispatchEvent(new Event("loaded"));
+    };
   }
 
   togglePanel(e) {
     // console.log("Toggle panel");
-    if (this._link.hasAttribute("href") && this._link.getAttribute("href") !== "#" && !this._multiEnabled) {
+    if (
+      this._link.hasAttribute("href") &&
+      this._link.getAttribute("href") !== "#" &&
+      !this._multiEnabled
+    ) {
       // follow the link...
       // console.log("SKIP");
       return false;
     } else {
-      // otherwise do some panel, or multi stuff don't go # 
+      // otherwise do some panel, or multi stuff don't go #
       e.preventDefault();
       // console.log("ELSE: Panel stuff.......");
 
@@ -725,22 +829,53 @@ export class EntityCard extends TatorElement {
             //
           }
           // this._multiSelectionToggle = true;
-          this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
-        } else if ((e.ctrlKey && !this._mediaInit) || (e.code == "Control" && !this._mediaInit)) {
+          this.dispatchEvent(
+            new CustomEvent("shift-select", {
+              detail: {
+                element: this,
+                id: this.cardObj.id,
+                isSelected: this._li.classList.contains("is-selected"),
+              },
+            })
+          ); //user is clicking specific cards
+        } else if (
+          (e.ctrlKey && !this._mediaInit) ||
+          (e.code == "Control" && !this._mediaInit)
+        ) {
           // usually context menu is hit, and not this keeping in case....
           // this._multiSelectionToggle = true;
-          this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+          this.dispatchEvent(
+            new CustomEvent("ctrl-select", {
+              detail: {
+                element: this,
+                id: this.cardObj.id,
+                isSelected: this._li.classList.contains("is-selected"),
+              },
+            })
+          ); //user is clicking specific cards
         } else if (this._mediaInit) {
           // console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
-          this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+          this.dispatchEvent(
+            new CustomEvent("ctrl-select", {
+              detail: {
+                element: this,
+                id: this.cardObj.id,
+                isSelected: this._li.classList.contains("is-selected"),
+              },
+            })
+          ); //user is clicking specific cards
         }
       }
 
-
       // In multi, we select the card, but don't ALWAYs pop it
-      if (this._li.classList.contains("is-selected") && !this._mediaInit && !this._sectionInit) {
+      if (
+        this._li.classList.contains("is-selected") &&
+        !this._mediaInit &&
+        !this._sectionInit
+      ) {
         this._deselectedCardAndPanel();
-      } else if (!this._mediaInit && !this._sectionInit) { //&&  !this._multiSelectionToggle
+      } else if (!this._mediaInit && !this._sectionInit) {
+        //&&  !this._multiSelectionToggle
         this._selectedCardAndPanel();
       } else {
         this.cardClickEvent(false); // this sends event with open flag false, but no selection happens
@@ -749,7 +884,8 @@ export class EntityCard extends TatorElement {
   }
 
   _unselectOpen() {
-    const cardId = this.panelContainer._panelTop._panel.getAttribute("selected-id");
+    const cardId =
+      this.panelContainer._panelTop._panel.getAttribute("selected-id");
 
     // if it exists, close it!
     if (!this._multiSelectionToggle) {
@@ -777,13 +913,17 @@ export class EntityCard extends TatorElement {
 
   cardClickEvent(openFlag = true) {
     // Send event to panel to hide the localization canvas & title
-    let cardClickEvent = new CustomEvent("card-click", { detail: { openFlag, cardObj: this.cardObj } });
+    let cardClickEvent = new CustomEvent("card-click", {
+      detail: { openFlag, cardObj: this.cardObj },
+    });
     this.dispatchEvent(cardClickEvent);
   }
 
   annotationEvent(evtName) {
     // Send event to panel to hide the localization
-    let annotationEvent = new CustomEvent(evtName, { detail: { cardObj: this.cardObj } });
+    let annotationEvent = new CustomEvent(evtName, {
+      detail: { cardObj: this.cardObj },
+    });
     this.panelContainer.dispatchEvent(annotationEvent);
   }
 
@@ -793,7 +933,15 @@ export class EntityCard extends TatorElement {
       this._multiSelectionToggle = true;
       e.preventDefault(); // stop contextmenu
       // this.togglePanel(e);
-      this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+      this.dispatchEvent(
+        new CustomEvent("ctrl-select", {
+          detail: {
+            element: this,
+            id: this.cardObj.id,
+            isSelected: this._li.classList.contains("is-selected"),
+          },
+        })
+      ); //user is clicking specific cards
       // this._li.classList.add("is-selected");
     }
   }
@@ -843,16 +991,24 @@ export class EntityCard extends TatorElement {
     }
     if (sectionType == "folder") {
       const path = document.createElementNS(svgNamespace, "path");
-      path.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+      path.setAttribute(
+        "d",
+        "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+      );
       svg.appendChild(path);
 
       const context = document.createElement("div");
-      context.setAttribute("class", "more d-flex flex-column f2 px-3 py-2 lh-condensed");
+      context.setAttribute(
+        "class",
+        "more d-flex flex-column f2 px-3 py-2 lh-condensed"
+      );
       context.style.display = "none";
       this._shadow.appendChild(context);
 
       const archiveToggle = document.createElement("toggle-button");
-      archiveToggle.before(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-archive"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`);
+      archiveToggle.before(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-archive"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`
+      );
       if (this._section.visible) {
         archiveToggle.setAttribute("text", "Archive folder");
       } else {
@@ -863,49 +1019,58 @@ export class EntityCard extends TatorElement {
       const rename = document.createElement("rename-button");
       rename.setAttribute("text", "Rename folder");
       context.appendChild(rename);
-  
+
       const deleteSection = document.createElement("delete-button");
       deleteSection.init("Delete folder");
       context.appendChild(deleteSection);
 
-      rename.addEventListener("click", evt => {
+      rename.addEventListener("click", (evt) => {
         evt.stopPropagation();
-        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "folder", section: this._section} }));
+        this.dispatchEvent(
+          new CustomEvent("renameSection", {
+            detail: { type: "folder", section: this._section },
+          })
+        );
         context.style.display = "none";
       });
-      deleteSection.addEventListener("click", evt => {
+      deleteSection.addEventListener("click", (evt) => {
         evt.stopPropagation();
-        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "folder", section: this._section } }));
+        this.dispatchEvent(
+          new CustomEvent("deleteSection", {
+            detail: { type: "folder", section: this._section },
+          })
+        );
         context.style.display = "none";
       });
 
-      archiveToggle.addEventListener("click", evt => {
+      archiveToggle.addEventListener("click", (evt) => {
         this._section.visible = !this._section.visible;
         const sectionId = Number();
         fetchCredentials(`/rest/Section/${this._section.id}`, {
           method: "PATCH",
           body: JSON.stringify({
-            "visible": this._section.visible,
-          })
-        })
-          .then(response => {
-            if (this._section.visible) {
-              archiveToggle.setAttribute("text", "Archive folder");
-            } else {
-              archiveToggle.setAttribute("text", "Restore folder");
-            }
-            this.dispatchEvent(new CustomEvent("visibilityChange", {
-              detail: { section: this._section }
-            }));
-          });
+            visible: this._section.visible,
+          }),
+        }).then((response) => {
+          if (this._section.visible) {
+            archiveToggle.setAttribute("text", "Archive folder");
+          } else {
+            archiveToggle.setAttribute("text", "Restore folder");
+          }
+          this.dispatchEvent(
+            new CustomEvent("visibilityChange", {
+              detail: { section: this._section },
+            })
+          );
+        });
       });
 
-      this.addEventListener("contextmenu", evt => {
+      this.addEventListener("contextmenu", (evt) => {
         evt.preventDefault();
         context.style.display = "block";
       });
 
-      window.addEventListener("click", evt => {
+      window.addEventListener("click", (evt) => {
         context.style.display = "none";
       });
     } else if (sectionType == "savedSearch") {
@@ -923,41 +1088,54 @@ export class EntityCard extends TatorElement {
       svg.appendChild(line);
 
       const context = document.createElement("div");
-      context.setAttribute("class", "more d-flex flex-column f2 px-3 py-2 lh-condensed");
+      context.setAttribute(
+        "class",
+        "more d-flex flex-column f2 px-3 py-2 lh-condensed"
+      );
       context.style.display = "none";
       this._shadow.appendChild(context);
 
       const rename = document.createElement("rename-button");
       rename.setAttribute("text", "Rename saved search");
       context.appendChild(rename);
-  
+
       const deleteSection = document.createElement("delete-button");
       deleteSection.init("Delete saved search");
       context.appendChild(deleteSection);
 
-      rename.addEventListener("click", evt => {
+      rename.addEventListener("click", (evt) => {
         evt.stopPropagation();
-        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "saved search", section: this._section} }));
+        this.dispatchEvent(
+          new CustomEvent("renameSection", {
+            detail: { type: "saved search", section: this._section },
+          })
+        );
         context.style.display = "none";
       });
-      deleteSection.addEventListener("click", evt => {
+      deleteSection.addEventListener("click", (evt) => {
         evt.stopPropagation();
-        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "saved search", section: this._section } }));
+        this.dispatchEvent(
+          new CustomEvent("deleteSection", {
+            detail: { type: "saved search", section: this._section },
+          })
+        );
         context.style.display = "none";
       });
 
-      this.addEventListener("contextmenu", evt => {
+      this.addEventListener("contextmenu", (evt) => {
         evt.preventDefault();
         context.style.display = "block";
       });
 
-      window.addEventListener("click", evt => {
+      window.addEventListener("click", (evt) => {
         context.style.display = "none";
       });
-
     } else if (sectionType == "bookmark") {
       const path = document.createElementNS(svgNamespace, "path");
-      path.setAttribute("d", "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z");
+      path.setAttribute(
+        "d",
+        "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+      );
       svg.appendChild(path);
       this._link.setAttribute("href", section.uri);
 
@@ -968,7 +1146,10 @@ export class EntityCard extends TatorElement {
       this._link.appendChild(input);
 
       const context = document.createElement("div");
-      context.setAttribute("class", "more d-flex flex-column f2 px-3 py-2 lh-condensed");
+      context.setAttribute(
+        "class",
+        "more d-flex flex-column f2 px-3 py-2 lh-condensed"
+      );
       context.style.display = "none";
       this._shadow.appendChild(context);
 
@@ -980,7 +1161,7 @@ export class EntityCard extends TatorElement {
       remove.init("Delete");
       context.appendChild(remove);
 
-      this._link.addEventListener("contextmenu", evt => {
+      this._link.addEventListener("contextmenu", (evt) => {
         evt.preventDefault();
         context.style.display = "block";
       });
@@ -994,26 +1175,30 @@ export class EntityCard extends TatorElement {
         input.focus();
       });
 
-      input.addEventListener("focus", evt => {
+      input.addEventListener("focus", (evt) => {
         evt.target.select();
       });
 
-      input.addEventListener("keydown", evt => {
+      input.addEventListener("keydown", (evt) => {
         if (evt.keyCode == 13) {
           evt.preventDefault();
           input.blur();
         }
       });
 
-      input.addEventListener("blur", evt => {
+      input.addEventListener("blur", (evt) => {
         if (evt.target.value !== "") {
           this._title.textContent = evt.target.value;
           this._link.style.pointerEvents = "";
           this._section.name = evt.target.value;
-          fetchCredentials("/rest/Bookmark/" + this._section.id, {
-            method: "PATCH",
-            body: JSON.stringify({ "name": evt.target.value }),
-          }, true);
+          fetchCredentials(
+            "/rest/Bookmark/" + this._section.id,
+            {
+              method: "PATCH",
+              body: JSON.stringify({ name: evt.target.value }),
+            },
+            true
+          );
         }
         input.style.display = "none";
         this._title.style.display = "block";
@@ -1021,12 +1206,16 @@ export class EntityCard extends TatorElement {
 
       remove.addEventListener("click", () => {
         this.parentNode.removeChild(this);
-        fetchCredentials("/rest/Bookmark/" + this._section.id, {
-          method: "DELETE",
-        }, true);
+        fetchCredentials(
+          "/rest/Bookmark/" + this._section.id,
+          {
+            method: "DELETE",
+          },
+          true
+        );
       });
 
-      window.addEventListener("click", evt => {
+      window.addEventListener("click", (evt) => {
         context.style.display = "none";
       });
     }
@@ -1035,13 +1224,15 @@ export class EntityCard extends TatorElement {
   _moveMediaFile(evt) {
     // console.log("Entity card _moveMediaFile");
     evt.preventDefault();
-    this.dispatchEvent(new CustomEvent("moveFile", {
-      detail: {
-        mediaId: this.getAttribute("media-id"),
-        mediaName: this._name.textContent
-      },
-      composed: true
-    }));
+    this.dispatchEvent(
+      new CustomEvent("moveFile", {
+        detail: {
+          mediaId: this.getAttribute("media-id"),
+          mediaName: this._name.textContent,
+        },
+        composed: true,
+      })
+    );
   }
 
   resetValues() {
@@ -1073,11 +1264,9 @@ export class EntityCard extends TatorElement {
     //
     // console.log(this.cardObj);
     const data = this.cardObj;
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", JSON.stringify(data));
-
   }
-
 }
 
-customElements.define("entity-card", EntityCard);  
+customElements.define("entity-card", EntityCard);

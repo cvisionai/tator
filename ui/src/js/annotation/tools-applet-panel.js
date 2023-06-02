@@ -2,20 +2,22 @@ import { ModalDialog } from "../components/modal-dialog.js";
 import { Utilities } from "../util/utilities.js";
 import { TatorElement } from "../components/tator-element.js";
 
-
 export class ToolsAppletPanel extends TatorElement {
   constructor() {
     super();
 
     this._panel = document.createElement("div");
-    this._panel.setAttribute("style", "position: fixed; width: 500px; height: 80vh; z-index: 1000;")
+    this._panel.setAttribute(
+      "style",
+      "position: fixed; width: 500px; height: 80vh; z-index: 1000;"
+    );
     this._panel.setAttribute("class", "py-2 px-2");
     this._panel.hidden = true;
     this._shadow.appendChild(this._panel);
 
     this._appletView = document.createElement("iframe");
     this._appletView.setAttribute("style", "width: 100%; height: 100%;"); //d-flex col-12
-    this._panel.appendChild(this._appletView);  
+    this._panel.appendChild(this._appletView);
 
     // Stores the Tator Applet objects this dialog will utilize
     // Each object property/key will be the applet name
@@ -30,7 +32,6 @@ export class ToolsAppletPanel extends TatorElement {
 
     this._appletView.addEventListener("load", this.initApplet.bind(this));
   }
-
 
   /**
    * Expected to be done at initialization
@@ -48,12 +49,12 @@ export class ToolsAppletPanel extends TatorElement {
     this._page = annotatorPage;
     this._canvas = canvas;
     this._canvasElement = canvasElement;
-    
+
     // Setup
     this._applets[applet.name] = applet;
     // this.setDataInterface(data);
     // this._appletData = data; // ##?
-    
+
     //
     this._appletTrigger = document.createElement("tools-applet-button");
     this._appletTrigger._title = applet.name;
@@ -72,7 +73,6 @@ export class ToolsAppletPanel extends TatorElement {
     if (this._panel.hidden && this._page?._sidebar?._edit) {
       this._page._sidebar._edit.click();
     }
-
   }
 
   /**
@@ -93,27 +93,38 @@ export class ToolsAppletPanel extends TatorElement {
   initApplet() {
     // if (this._appletData == null) { return; }
 
-    this._appletElement = this._appletView.contentWindow.document.getElementById("toolsApplet");
-    if(this._appletElement == null) { return; }
+    this._appletElement =
+      this._appletView.contentWindow.document.getElementById("toolsApplet");
+    if (this._appletElement == null) {
+      return;
+    }
 
-    this._appletElement.addEventListener("closeApplet", this.togglePanel.bind(this));
+    this._appletElement.addEventListener(
+      "closeApplet",
+      this.togglePanel.bind(this)
+    );
 
     // Listen for html registration, and page event with svg as detail
     this._appletElement.addEventListener("icon-ready", (evt) => {
       if (this._appletTrigger !== null && evt.detail.icon !== null) {
         this._appletTrigger.setIcon(evt.detail.icon);
       } else {
-        console.warn("Event icon ready heard, but not enough data to set icon.")
+        console.warn(
+          "Event icon ready heard, but not enough data to set icon."
+        );
       }
     });
 
     // RUN THIS LAST! listeners need to be in place above first
-    this._appletElement.init({ canvas: this._canvas, canvasElement: this._canvasElement, data: this._page._data });
-    
+    this._appletElement.init({
+      canvas: this._canvas,
+      canvasElement: this._canvasElement,
+      data: this._page._data,
+    });
+
     //
     this.dispatchEvent(new Event("appletReady"));
   }
-
 }
 
 customElements.define("tools-applet-panel", ToolsAppletPanel);

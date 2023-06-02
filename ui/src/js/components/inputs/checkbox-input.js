@@ -39,7 +39,6 @@ export class CheckboxInput extends TatorElement {
     this._input.addEventListener("blur", () => {
       document.body.classList.remove("shortcuts-disabled");
     });
-
   }
 
   static get observedAttributes() {
@@ -80,17 +79,17 @@ export class CheckboxInput extends TatorElement {
 
   set default(val) {
     if (val.checked) {
-      return this._default = val.id;
+      return (this._default = val.id);
     } else {
-      return this._default = null;
+      return (this._default = null);
     }
   }
 
   set _checked(val) {
-    return this._input.checked = val;
+    return (this._input.checked = val);
   }
 
-  changed(){
+  changed() {
     return this.getValue() !== this._default;
   }
 
@@ -99,7 +98,6 @@ export class CheckboxInput extends TatorElement {
     if (typeof this._checked !== "undefined") {
       this._input.checked = this._checked;
     } else {
-      
     }
   }
 
@@ -108,7 +106,7 @@ export class CheckboxInput extends TatorElement {
     this._checked = val.checked;
     if (val.data) {
       this.setData(val.data);
-    } 
+    }
   }
 
   getValue() {
@@ -132,7 +130,7 @@ export class CheckboxInput extends TatorElement {
   }
 
   setData(val) {
-    return this._data = val;
+    return (this._data = val);
   }
 
   getData() {
@@ -142,7 +140,6 @@ export class CheckboxInput extends TatorElement {
       return null;
     }
   }
-
 }
 
 customElements.define("checkbox-input", CheckboxInput);

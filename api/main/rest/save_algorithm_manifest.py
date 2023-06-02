@@ -13,20 +13,21 @@ from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
-class SaveAlgorithmManifestAPI(BaseListView):
-    """ Saves an algorithm workflow manifest .yaml file
 
-        File is uploaded via tus, a separate mechanism from the REST API. Once the file
-        upload is complete, the manifest file must be saved to the database using this endpoint.
+class SaveAlgorithmManifestAPI(BaseListView):
+    """Saves an algorithm workflow manifest .yaml file
+
+    File is uploaded via tus, a separate mechanism from the REST API. Once the file
+    upload is complete, the manifest file must be saved to the database using this endpoint.
 
     """
 
     schema = SaveAlgorithmManifestSchema()
     permission_clases = [ProjectTransferPermission]
-    http_method_names = ['post']
+    http_method_names = ["post"]
 
     def _post(self, params: dict) -> dict:
-        """ Saves the manifest file into the corresponding project file
+        """Saves the manifest file into the corresponding project file
 
         It's expected that the file provided is in the upload directory, and then is
         moved into the project media folder. After this is done, this final URL can
@@ -53,7 +54,7 @@ class SaveAlgorithmManifestAPI(BaseListView):
         file_index = -1
         while os.path.exists(final_path):
             file_index += 1
-            new_filename = f'{filename}_{file_index}{extension}'
+            new_filename = f"{filename}_{file_index}{extension}"
             final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
 
         project_folder = os.path.dirname(final_path)

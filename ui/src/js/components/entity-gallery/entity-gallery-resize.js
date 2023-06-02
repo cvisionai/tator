@@ -5,7 +5,7 @@ export class EntityCardResize extends TatorElement {
     super();
 
     // SVGS
-    let shrink = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`; 
+    let shrink = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`;
     let grow = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`;
 
     // Slide Range container for resize range
@@ -26,12 +26,12 @@ export class EntityCardResize extends TatorElement {
     //this._slideInputLabel.appendChild(this._resizeLabel);
 
     // Minus span
-     this._minusTextSpan = document.createElement("span");
-     this._minusTextSpan.setAttribute("class", "text-top text-gray ");
-     this._minusTextSpan.innerHTML = shrink;
+    this._minusTextSpan = document.createElement("span");
+    this._minusTextSpan.setAttribute("class", "text-top text-gray ");
+    this._minusTextSpan.innerHTML = shrink;
     // this._minusText = document.createTextNode("-");
     // this._minusTextSpan.appendChild(this._minusText);
-     this._slideInputLabel.appendChild(this._minusTextSpan);
+    this._slideInputLabel.appendChild(this._minusTextSpan);
 
     // Range element min: 50, max: 250
     this._slideInput = document.createElement("input");
@@ -44,34 +44,39 @@ export class EntityCardResize extends TatorElement {
     this._slideInputLabel.appendChild(this._slideInput);
 
     // Plus span
-     this._plusTextSpan = document.createElement("span");
-     this._plusTextSpan.setAttribute("class", "text-top text-gray");
-     this._plusTextSpan.innerHTML = grow;
+    this._plusTextSpan = document.createElement("span");
+    this._plusTextSpan.setAttribute("class", "text-top text-gray");
+    this._plusTextSpan.innerHTML = grow;
     // this._plusText = document.createTextNode("+");
     // this._plusTextSpan.appendChild(this._plusText);
-     this._slideInputLabel.appendChild(this._plusTextSpan);
+    this._slideInputLabel.appendChild(this._plusTextSpan);
 
     // Init THIS var for gallery UL
     this._gallery = document.createElement("ul");
 
     // Allow label clicks to +/-
-    this._minusTextSpan.addEventListener("click", this.handlerMinusClick.bind(this));
-    this._plusTextSpan.addEventListener("click", this.handlerPlusClick.bind(this));
-  
+    this._minusTextSpan.addEventListener(
+      "click",
+      this.handlerMinusClick.bind(this)
+    );
+    this._plusTextSpan.addEventListener(
+      "click",
+      this.handlerPlusClick.bind(this)
+    );
+
     // This can be overriden, default column width for start
     this.defaultMinMax = 300;
     this.newMinMax = this.defaultMinMax;
-
   }
 
   _initGallery(galleryUL, colWidth = 272) {
     // Setup this gallery from parent for use in handler
-    this._gallery = galleryUL
+    this._gallery = galleryUL;
     this.defaultMinMax = colWidth;
 
     // Listen to slide changes on init
-    if(this._gallery != null) {
-      this._slideInput.addEventListener("change", (e) => {        
+    if (this._gallery != null) {
+      this._slideInput.addEventListener("change", (e) => {
         this._rangeHandler(e.target.value);
       });
     }
@@ -91,15 +96,15 @@ export class EntityCardResize extends TatorElement {
     return this.setGalleryTo(this.newMinMax, gallery);
   }
 
-  setGalleryTo(size, gallery = this._gallery){
+  setGalleryTo(size, gallery = this._gallery) {
     //console.log("Gallery resized");
-    return gallery.style.gridTemplateColumns = `repeat(auto-fill,minmax(${size}px,1fr))`;
+    return (gallery.style.gridTemplateColumns = `repeat(auto-fill,minmax(${size}px,1fr))`);
   }
 
   handlerMinusClick() {
     let smaller = Number(this._slideInput.value) - 10;
-    if(smaller >= this._slideInput.min) {
-      this._slideInput.value = smaller ;
+    if (smaller >= this._slideInput.min) {
+      this._slideInput.value = smaller;
     } else {
       this._slideInput.value = this._slideInput.min;
     }
@@ -109,8 +114,8 @@ export class EntityCardResize extends TatorElement {
 
   handlerPlusClick() {
     let bigger = Number(this._slideInput.value) + 10;
-    if(bigger <= this._slideInput.max) {
-      this._slideInput.value = bigger ;
+    if (bigger <= this._slideInput.max) {
+      this._slideInput.value = bigger;
     } else {
       this._slideInput.value = this._slideInput.max;
     }
@@ -118,7 +123,6 @@ export class EntityCardResize extends TatorElement {
     let evt = new Event("change");
     return this._slideInput.dispatchEvent(evt);
   }
-
 }
 
-customElements.define("entity-card-resize", EntityCardResize);  
+customElements.define("entity-card-resize", EntityCardResize);

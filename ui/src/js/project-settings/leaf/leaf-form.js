@@ -19,7 +19,7 @@ export class LeafForm extends TatorElement {
 
   set changed(val) {
     this.dispatchEvent(new Event("change"));
-    return this._changed = val;
+    return (this._changed = val);
   }
 
   isChanged() {
@@ -27,10 +27,8 @@ export class LeafForm extends TatorElement {
   }
 
   changeReset() {
-    return this._changed = false;
+    return (this._changed = false);
   }
-
-
 
   _initEmptyForm(leaves, name, attributeTypes, deleteIcon) {
     const form = document.createElement("form");
@@ -63,15 +61,15 @@ export class LeafForm extends TatorElement {
     if (typeof leaves == "string" && leaves !== "") {
       leaves = [];
     } else if (Array.isArray(leaves)) {
-      const leafChoices = leaves.map(leaf => {
+      const leafChoices = leaves.map((leaf) => {
         let space = "";
-        for (let i = 0; i < leaf.indent; i++){
-          space += "-"
+        for (let i = 0; i < leaf.indent; i++) {
+          space += "-";
         }
         return {
           value: leaf.id,
-          label: space+leaf.name
-        }
+          label: space + leaf.name,
+        };
       });
       choices = [...choices, ...leafChoices];
     }
@@ -92,7 +90,7 @@ export class LeafForm extends TatorElement {
       this.widgets.push(widget);
       this.form.appendChild(widget);
     }
-    
+
     this._shadow.appendChild(this.form);
 
     return this.form;
@@ -111,7 +109,7 @@ export class LeafForm extends TatorElement {
       widget.setAttribute("name", column.name);
       let choices = [];
       for (let idx = 0; idx < column.choices.length; idx++) {
-        let choice = { 'value': column.choices[idx] };
+        let choice = { value: column.choices[idx] };
         if (column.labels) {
           choice.label = column.labels[idx];
         }
@@ -126,7 +124,10 @@ export class LeafForm extends TatorElement {
         console.error(e.description);
       }
 
-      if ((widget && widget._input && widget._input.type == "text") || !widget._input) {
+      if (
+        (widget && widget._input && widget._input.type == "text") ||
+        !widget._input
+      ) {
         widget = document.createElement("text-input");
         widget.setAttribute("name", column.name);
         widget.setAttribute("type", column.dtype);
@@ -134,16 +135,15 @@ export class LeafForm extends TatorElement {
       }
       //widget.autocomplete = column.autocomplete; #TODO can this use autocomplete?
       if (column.style) {
-        const style_options = column.style.split(' ');
+        const style_options = column.style.split(" ");
         if (style_options.includes("disabled")) {
           widget.permission = "View Only";
           widget.disabled = true;
           ignorePermission = true;
         }
       }
-
     } else if (column.style) {
-      const style_options = column.style.split(' ');
+      const style_options = column.style.split(" ");
       if (column.dtype == "string" && style_options.includes("long_string")) {
         widget = document.createElement("text-area");
         widget.setAttribute("name", column.name);
@@ -160,8 +160,7 @@ export class LeafForm extends TatorElement {
         widget.disabled = true;
         ignorePermission = true;
       }
-    }
-    else {
+    } else {
       // TODO: Implement a better geopos widget
       widget = document.createElement("text-input");
       widget.setAttribute("name", column.name);
@@ -177,7 +176,10 @@ export class LeafForm extends TatorElement {
     }
 
     // Show description hover text (if existing)
-    if (typeof column.description !== "undefined" && column.description !== "") {
+    if (
+      typeof column.description !== "undefined" &&
+      column.description !== ""
+    ) {
       widget.setAttribute("title", column.description);
     } //else {
     //widget.setAttribute("title", `Accepts "${column.dtype}" data input`);
@@ -197,9 +199,9 @@ export class LeafForm extends TatorElement {
         this.dispatchEvent(new Event("change"));
       }
     });
-  
-  return widget;
-}
+
+    return widget;
+  }
 
   _formChanged() {
     this.changed = true;
@@ -213,7 +215,7 @@ export class LeafForm extends TatorElement {
       path = null,
       parent = null,
       attributes = {},
-      projectName = ""
+      projectName = "",
     } = leaf;
 
     this._data = leaf;
@@ -223,7 +225,12 @@ export class LeafForm extends TatorElement {
 
     // gets leaf object as param destructured over these values
     //sets value on THIS form
-    this.form = this._initEmptyForm(leaves, projectName, attributeTypes, deleteIcon);
+    this.form = this._initEmptyForm(
+      leaves,
+      projectName,
+      attributeTypes,
+      deleteIcon
+    );
 
     /* fields that are always available */
     // Set Name
@@ -237,7 +244,7 @@ export class LeafForm extends TatorElement {
     // Set parent
     const parentValue = parent == null ? "null" : Number(parent);
     this._parentLeaf.default = parentValue;
-    this._parentLeaf.setValue(parentValue);  
+    this._parentLeaf.setValue(parentValue);
 
     //
     for (const widget of this.widgets) {
@@ -252,14 +259,13 @@ export class LeafForm extends TatorElement {
     return this.form;
   }
 
-  
   /**
-  * This will check for changed inputs, but some are required for patch call
-  * POST - Only required and if changed; UNLESS it is a clone, then pass all values
-  * PATCH - Only required and if changed
-  * 
-  * @returns {formData} as JSON object
-  */
+   * This will check for changed inputs, but some are required for patch call
+   * POST - Only required and if changed; UNLESS it is a clone, then pass all values
+   * PATCH - Only required and if changed
+   *
+   * @returns {formData} as JSON object
+   */
   _getLeafFormData() {
     const formData = {};
 
@@ -287,7 +293,7 @@ export class LeafForm extends TatorElement {
     let values = {};
     for (const widget of this.widgets) {
       const val = widget.getValue();
-      if ((val === null) && (widget.required)) {
+      if (val === null && widget.required) {
         // values = null;
         // break;
         console.warn("User left a required field null.");
@@ -309,7 +315,6 @@ export class LeafForm extends TatorElement {
 
     return data;
   }
-
 }
 
 customElements.define("leaf-form", LeafForm);

@@ -10,7 +10,10 @@ export class FileInput extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-2 position-relative");
+    div.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-2 position-relative"
+    );
     this._shadow.appendChild(div);
 
     this._name = document.createTextNode("");
@@ -26,7 +29,10 @@ export class FileInput extends TatorElement {
     // This input is URL to send to an endpoint
     this._hiddenInput = document.createElement("text-input");
     this._hiddenInput.setAttribute("class", "col-12");
-    this._hiddenInput._input.setAttribute("class", "form-control input-sm col-12 ");
+    this._hiddenInput._input.setAttribute(
+      "class",
+      "form-control input-sm col-12 "
+    );
     this._hiddenInput.setAttribute("type", "text");
     this._hiddenInput.permission = null;
     this.styleSpan.appendChild(this._hiddenInput);
@@ -34,7 +40,10 @@ export class FileInput extends TatorElement {
     this._viewFile = document.createElement("a");
     this._viewFile.textContent = "View File";
     this._viewFile.setAttribute("target", "_blank");
-    this._viewFile.setAttribute("class", "offset-col-4 text-gray f3 clickable hover-white hidden pb-3 d-block");
+    this._viewFile.setAttribute(
+      "class",
+      "offset-col-4 text-gray f3 clickable hover-white hidden pb-3 d-block"
+    );
     this._viewFile.style.marginTop = "-5px";
     this._shadow.appendChild(this._viewFile);
 
@@ -42,7 +51,10 @@ export class FileInput extends TatorElement {
     this.editButton = document.createElement("label");
     this.editButton.append(document.createTextNode("Choose File"));
     this.editButton.style.width = "200px";
-    this.editButton.setAttribute("class", `btn btn-clear btn-charcoal btn-small mx-3`);
+    this.editButton.setAttribute(
+      "class",
+      `btn btn-clear btn-charcoal btn-small mx-3`
+    );
     this.styleSpan.append(this.editButton);
 
     // Input is tied to the Edit button with "for" attribute
@@ -50,7 +62,7 @@ export class FileInput extends TatorElement {
     this._editInput = document.createElement("input");
     this._editInput.setAttribute("class", "form-control input-sm col-1");
     this._editInput.setAttribute("type", "file");
-    this._editInput.style.position = "absolute"
+    this._editInput.style.position = "absolute";
     this._editInput.style.left = "-99999rem";
     this.styleSpan.appendChild(this._editInput);
 
@@ -155,7 +167,6 @@ export class FileInput extends TatorElement {
       this._viewFile.setAttribute("href", ``);
       this._viewFile.classList.add("hidden");
     }
-
   }
 
   set projectId(val) {
@@ -166,7 +177,6 @@ export class FileInput extends TatorElement {
   set organizationId(val) {
     this._organizationId = val;
   }
-  
 
   //
   _editListeners(e) {
@@ -182,19 +192,17 @@ export class FileInput extends TatorElement {
       section: "",
       mediaTypeId: null,
       username: "",
-      isImage: this._isImage
+      isImage: this._isImage,
     };
 
     // upload file and set input
     let uploader = new SingleUpload(uploadData);
     uploader.start().then((key) => {
-
       let hasError = this._validate(blob);
 
       if (hasError) {
         let errorEvent = new CustomEvent("input-invalid", {
-          "detail":
-            { "errorMsg": hasError }
+          detail: { errorMsg: hasError },
         });
         this.setValue("");
         this._editInput.dispatchEvent(errorEvent);
@@ -203,27 +211,27 @@ export class FileInput extends TatorElement {
         this._editInput.dispatchEvent(successEvent);
         // console.log("Fetch download info")
         let bodyData = {
-          keys: [
-            key
-          ]
-        }
+          keys: [key],
+        };
 
         fetchCredentials(`/rest/DownloadInfo/${this._projectId}`, {
           method: "POST",
           body: JSON.stringify(bodyData),
-        }).then((resp) => {
-          return resp.json();
-        }).then((data) => {
-          // Check the related state types
-          const bodyData = {
-            name: fileName,
-            upload_url: data[0].url
-          }
-          
-          // _fetchCall is defined in the instantiating page or parent element
-          this._fetchCall(bodyData);
-          this._editInput.value = "";
-        });
+        })
+          .then((resp) => {
+            return resp.json();
+          })
+          .then((data) => {
+            // Check the related state types
+            const bodyData = {
+              name: fileName,
+              upload_url: data[0].url,
+            };
+
+            // _fetchCall is defined in the instantiating page or parent element
+            this._fetchCall(bodyData);
+            this._editInput.value = "";
+          });
       }
     });
   }
@@ -241,7 +249,7 @@ export class FileInput extends TatorElement {
     // console.log(extension);
 
     if (!(extension === "html")) {
-      return "HTML file format required."
+      return "HTML file format required.";
     } else {
       return false;
     }
@@ -252,7 +260,7 @@ export class FileInput extends TatorElement {
     // console.log(extension);
 
     if (!(extension === "yaml" || extension === ".yml")) {
-      return "YAML file format required."
+      return "YAML file format required.";
     } else {
       return false;
     }
