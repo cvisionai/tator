@@ -170,7 +170,7 @@ jobs:
           ssh lightsail 'pip3 install pytest pytest-xdist pandas playwright==1.27.1 pytest-playwright==0.3.0 pytesseract==0.3.9 opencv-python pytest-rerunfailures==10.2';
           ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && playwright install';
           ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
-          ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
+          ssh lightsail 'unzip -o Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
           ssh lightsail 'sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
           ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
           ssh lightsail 'wget https://github.com/mikefarah/yq/releases/download/v4.31.1/yq_linux_amd64 -O /home/ubuntu/.local/bin/yq';
