@@ -31,7 +31,6 @@ export class CollectionsData extends HTMLElement {
     this.getCollectionsFilter();
     this._totalStateCount = 0;
     this.filterConditions = null;
-    this.afterMap = new Map();
   }
 
   /**
@@ -46,7 +45,6 @@ export class CollectionsData extends HTMLElement {
       "count",
       this.filterConditions
     );
-    this.afterMap = new Map();
   }
 
   /**
