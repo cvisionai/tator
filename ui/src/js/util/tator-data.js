@@ -356,76 +356,6 @@ export class TatorData {
   }
 
   /**
-   * Note: Much of this code has been copied from media-section.js
-   *       The constants chosen are based on the Tator endpoint restrictions
-   *
-   * The "list" the pagination is operating on is based on the url
-   *
-   * @param {integer} start Desired start index in list
-   * @param {integer} stop Desired stop index in list
-   * @param {Map} afterMap Specific to the endpoint and search criteria combination. Modified here.
-   * @param {string} url Tator REST endpoint list call with query but no pagination
-   * @returns {integer} Undefined if after parameter is not needed.
-   */
-  async _getAfterParameter(start, stop, afterMap, url) {
-    let afterPromise = Promise.resolve(null);
-    var pageParameters;
-    if (start + stop >= 10000) {
-      const afterIndex = 5000 * Math.floor(start / 5000);
-      const newStart = start % afterIndex;
-      let newStop = stop % afterIndex;
-      if (newStop < newStart) {
-        newStop += 5000;
-      }
-      afterPromise = this._getAfter(afterIndex, afterMap, url);
-      var afterParameter = await afterPromise;
-      pageParameters = {
-        after: afterParameter,
-        start: newStart,
-        stop: newStop,
-      };
-    } else {
-      pageParameters = { after: null, start: start, stop: stop };
-    }
-    return pageParameters;
-  }
-
-  /**
-   * Note: Much of this code has been copied from media-section.js
-   *       The constants chosen are based on the Tator endpoint restrictions
-   *       Constants match up with _getAfterParameter()
-   *
-   * @param {integer} index
-   * @param {string} endpointQuery URL safe query string
-   * @param {Map} afterMap . Modified here.
-   * @param {string} url Tator REST endpoint list call with query but no pagination
-   */
-  _getAfter(index, afterMap, url) {
-    const recursiveFetch = (current) => {
-      let after = "";
-      if (afterMap.has(current - 5000)) {
-        after = `&after=${afterMap.get(current - 5000)}`;
-      }
-      return fetchCredentials(
-        `${url}&start=4999&stop=5000${after}&presigned=28800`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          afterMap.set(current, data[0].id);
-          if (current < index) {
-            return recursiveFetch(current + 5000);
-          }
-          return Promise.resolve(data[0].id);
-        });
-    };
-    if (afterMap.has(index)) {
-      return Promise.resolve(afterMap.get(index));
-    } else {
-      return recursiveFetch(5000);
-    }
-  }
-
-  /**
    * Converts the given attribute name to a Tator search compliant string
    * @param {*} attrName - Name of attribute to convert
    * @returns {string} - Tator search compliant attribute name
@@ -538,7 +468,6 @@ export class TatorData {
    * @param {array of FilterConditionData} mediaFilterData
    * @param {integer} listStart
    * @param {integer} listStop
-   * @param {Map} afterMap
    * @param {array} mediaIds
    */
   async _getAnnotationData(
@@ -548,7 +477,6 @@ export class TatorData {
     mediaFilterData,
     listStart,
     listStop,
-    afterMap,
     mediaIds,
     ignorePresign
   ) {
@@ -620,18 +548,8 @@ export class TatorData {
     }
 
     url += `${this._project}?${paramString}`;
-    if (!isNaN(listStart) && !isNaN(listStop) && afterMap != null) {
-      // Note: & into paramString is taken care of by paramString itself
-      var pageValues = await this._getAfterParameter(
-        listStart,
-        listStop,
-        afterMap,
-        url
-      );
-      url += `&start=${pageValues.start}&stop=${pageValues.stop}`;
-      if (pageValues.after != undefined) {
-        url += `&after=${pageValues.after}`;
-      }
+    if (!isNaN(listStart) && !isNaN(listStop)) {
+      url += `&start=${listStart}&stop=${listStop}`;
     }
 
     if (annotationType == "Medias" && !ignorePresign) {
@@ -684,10 +602,6 @@ export class TatorData {
    *   Used in conjunction with listStart and pagination of data.
    *   If null, pagination is ignored.
    *
-   * @param {Map} afterMap -
-   *   Used in conjunction with the other pagination. Modified here.
-   *   If null, pagination is ignored.
-   *
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
@@ -695,8 +609,7 @@ export class TatorData {
     outputType,
     filters,
     listStart,
-    listStop,
-    afterMap
+    listStop
   ) {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
@@ -747,7 +660,6 @@ export class TatorData {
       mediaFilters,
       listStart,
       listStop,
-      afterMap,
       mediaIds,
       null
     );
@@ -775,14 +687,10 @@ export class TatorData {
    *   Used in conjunction with listStart and pagination of data.
    *   If null, pagination is ignored.
    *
-   * @param {Map} afterMap -
-   *   Used in conjunction with the other pagination. Modified here.
-   *   If null, pagination is ignored.
-   *
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredStates(outputType, filters, listStart, listStop, afterMap) {
+  async getFilteredStates(outputType, filters, listStart, listStop) {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var stateFilters = [];
@@ -834,7 +742,6 @@ export class TatorData {
       mediaFilters,
       listStart,
       listStop,
-      afterMap,
       mediaIds,
       null
     );
@@ -860,10 +767,6 @@ export class TatorData {
    *   Used in conjunction with listStart and pagination of data.
    *   If null, pagination is ignored.
    *
-   * @param {Map} afterMap -
-   *   Used in conjunction with the other pagination. Modified here.
-   *   If null, pagination is ignored.
-   *
    * @param {bool} ignorePresign
    *   Used to ignored presigning media files
    *
@@ -875,7 +778,6 @@ export class TatorData {
     filters,
     listStart,
     listStop,
-    afterMap,
     ignorePresign
   ) {
     // Loop through the filters, if there are any media specific ones
@@ -930,7 +832,6 @@ export class TatorData {
       mediaFilters,
       listStart,
       listStop,
-      afterMap,
       mediaIds,
       ignorePresign
     );

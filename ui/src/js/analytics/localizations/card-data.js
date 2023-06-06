@@ -48,7 +48,6 @@ export class AnnotationCardData extends HTMLElement {
       "count",
       filterConditions
     );
-    this.afterMap = new Map();
 
     return true;
   }
@@ -165,8 +164,7 @@ export class AnnotationCardData extends HTMLElement {
       "objects",
       filterConditions,
       paginationState.start,
-      paginationState.stop,
-      this.afterMap
+      paginationState.stop
     );
 
     // Query the media data associated with each localization
@@ -238,7 +236,6 @@ export class AnnotationCardData extends HTMLElement {
         "count",
         filterConditions
       );
-      this.afterMap = new Map();
 
       let stop =
         this.cardList.total > this._stopChunk
@@ -249,8 +246,7 @@ export class AnnotationCardData extends HTMLElement {
         "objects",
         filterConditions,
         0,
-        stop,
-        this.afterMap
+        stop
       );
 
       console.log("This is the prefetch results:");
@@ -312,12 +308,6 @@ export class AnnotationCardData extends HTMLElement {
         localizations.push(loc);
       }
     }
-    // var localizations = await this._modelData.getFilteredLocalizations(
-    //   "objects",
-    //   filterConditions,
-    //   paginationState.start,
-    //   paginationState.stop,
-    //   this.afterMap);
 
     // Query the media data associated with each localization
     if (localizations.length > 0) {
