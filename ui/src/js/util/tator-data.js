@@ -605,12 +605,7 @@ export class TatorData {
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredLocalizations(
-    outputType,
-    filters,
-    listStart,
-    listStop
-  ) {
+  async getFilteredLocalizations(outputType, filters, listStart, listStop) {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];

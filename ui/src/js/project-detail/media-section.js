@@ -279,15 +279,20 @@ export class MediaSection extends TatorElement {
     sectionQuery.append("stop", this._stop);
 
     console.log(`Load media... sectionQuery: ${sectionQuery}`);
-    var response = await fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
+    var response = await fetch(
+      `/rest/Medias/${
+        this._project
+      }?${sectionQuery.toString()}&presigned=28800`,
+      {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       }
-    });
+    );
     var mediaList = await response.json();
 
     this._files.numMedia = this._paginator_top._numFiles;

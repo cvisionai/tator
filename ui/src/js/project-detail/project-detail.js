@@ -1229,7 +1229,9 @@ export class ProjectDetail extends TatorPage {
         algorithm_name: evt.detail.algorithmName,
         media_ids: jobMediaIds,
       });
-      console.log(`${jobMediaIds.length} | ${evt.detail.algorithmName} (Unique IDs: ${jobMediaIdSet.size})`);
+      console.log(
+        `${jobMediaIds.length} | ${evt.detail.algorithmName} (Unique IDs: ${jobMediaIdSet.size})`
+      );
 
       var response = await fetchCredentials(
         "/rest/Jobs/" + evt.detail.projectId,
