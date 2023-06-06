@@ -45,7 +45,6 @@ export class AnnotationCardData extends HTMLElement {
     this.cardList = {};
     this.cardList.cards = [];
     this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
-    this.afterMap = new Map();
 
     return true;
   }
@@ -151,8 +150,7 @@ export class AnnotationCardData extends HTMLElement {
       "objects",
       filterConditions,
       paginationState.start,
-      paginationState.stop,
-      this.afterMap);
+      paginationState.stop);
 
     // Query the media data associated with each localization
     var mediaPromises = [];
@@ -217,7 +215,6 @@ export class AnnotationCardData extends HTMLElement {
       this.filterConditions = filterConditions;
       this.cardList = { cards : [], total : null };
       this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
-      this.afterMap = new Map();
 
       let stop = this.cardList.total > this._stopChunk ? this._stopChunk : this.cardList.total;
 
@@ -225,8 +222,7 @@ export class AnnotationCardData extends HTMLElement {
         "objects",
         filterConditions,
         0,
-        stop,
-        this.afterMap);
+        stop);
       
       console.log("This is the prefetch results:");
       console.log(this._bulkCache);        
@@ -289,12 +285,6 @@ export class AnnotationCardData extends HTMLElement {
       }
 
     }
-    // var localizations = await this._modelData.getFilteredLocalizations(
-    //   "objects",
-    //   filterConditions,
-    //   paginationState.start,
-    //   paginationState.stop,
-    //   this.afterMap);
 
     // Query the media data associated with each localization
     if (localizations.length > 0) {

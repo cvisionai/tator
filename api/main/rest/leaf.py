@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.db.models import Q
 from django.http import Http404
 
 from ..models import Leaf
@@ -49,7 +50,7 @@ class LeafSuggestionAPI(BaseDetailView):
     def _get(self, params):
         project = params.get('project')
         min_level=int(params.get('min_level', 1))
-        startsWith=params.get('query', None)
+        query=params.get('query', None)
         ancestor=params['ancestor']
 
         # Try to find root node for type
@@ -57,12 +58,30 @@ class LeafSuggestionAPI(BaseDetailView):
         if root_node.count() == 0:
             return []
         
+        if query.find('*') < 0:
+            q_object = Q(name__istartswith=query)
+        else:
+            comps = query.split('*')
+            queries = []
+            for idx,c in enumerate(comps):
+                if c:
+                    if idx == 0:
+                        queries.append(Q(name__istartswith=c))
+                    elif idx == len(comps)-1:
+                        queries.append(Q(name__iendswith=c))
+                    else:
+                        queries.append(Q(name__icontains=c))
+
+            q_object = queries[0]
+            queries.pop(0)
+            for q in queries:
+                q_object = q_object & q
+
         type_id = root_node[0].type
         queryset = Leaf.objects.filter(project=project, 
-                                       type=type_id, 
-                                       name__istartswith=startsWith, 
+                                       type=type_id,
                                        path__istartswith=ancestor,
-                                       path__depth__gte=min_level)
+                                       path__depth__gte=min_level).filter(q_object)
 
         suggestions=[]
         for idx,match in enumerate(queryset):

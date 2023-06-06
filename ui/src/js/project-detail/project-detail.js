@@ -1033,7 +1033,6 @@ export class ProjectDetail extends TatorPage {
 
       if (!samePageSize || !samePage) {
         this._mediaSection._paginator_top._emit();
-        this._mediaSection._paginator_bottom._emit();
       }
     }
 
@@ -1073,6 +1072,7 @@ export class ProjectDetail extends TatorPage {
 
     var that = this;
     var jobMediaIds = [];
+    var jobMediaIdSet = new Set();
     if (evt.detail.confirm) {
 
       // Retrieve media IDs first (if needed)
@@ -1089,7 +1089,6 @@ export class ProjectDetail extends TatorPage {
 
         var totalCounts = await this._modelData.getFilteredMedias("count", filterConditions);
         console.log(`mediaCounts: ${totalCounts}`);
-        var afterMap = new Map();
         var pageSize = 5000;
         var pageStart = 0;
         var pageEnd = pageStart + pageSize;
@@ -1102,9 +1101,8 @@ export class ProjectDetail extends TatorPage {
           var pageMedia = await this._modelData.getFilteredMedias(
             "objects",
             filterConditions,
-            0,
-            Math.min(totalCounts - allMedia.length, 5000),
-            afterMap,
+            allMedia.length,
+            allMedia.length + pageSize,
             true);
           allMedia.push(...pageMedia);
           pageStart = pageEnd;
@@ -1114,6 +1112,7 @@ export class ProjectDetail extends TatorPage {
 
         for (const media of allMedia) {
           jobMediaIds.push(media.id);
+          jobMediaIdSet.add(media.id);
         }
 
         this.loading.hideSpinner();
@@ -1127,7 +1126,7 @@ export class ProjectDetail extends TatorPage {
         "algorithm_name": evt.detail.algorithmName,
         "media_ids": jobMediaIds
       });
-      console.log(`${jobMediaIds.length} | ${evt.detail.algorithmName}`);
+      console.log(`${jobMediaIds.length} | ${evt.detail.algorithmName} (Unique IDs: ${jobMediaIdSet.size})`);
 
       var response = await fetchRetry("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",

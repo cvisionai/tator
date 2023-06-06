@@ -31,7 +31,6 @@ export class CollectionsData extends HTMLElement {
     this.getCollectionsFilter()
     this._totalStateCount = 0;
     this.filterConditions = null;
-    this.afterMap = new Map();
   }
 
   /**
@@ -40,7 +39,6 @@ export class CollectionsData extends HTMLElement {
   async _reload(filterConditions) {
     this.filterConditions = filterConditions !== null && Array.isArray(filterConditions) ? filterConditions.concat(this.collectionsFilter) : this.collectionsFilter;
     this._totalStateCount = await this._modelData.getFilteredStates("count", this.filterConditions);
-    this.afterMap = new Map();
   }
 
   /**
@@ -70,7 +68,6 @@ export class CollectionsData extends HTMLElement {
         this.filterConditions,
         this._paginationState.start,
         this._paginationState.stop,
-        this.afterMap
       );
 
       this._states = this._states.map(state => {

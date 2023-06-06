@@ -294,7 +294,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     attributeCast['tator_user_sections'] = str
     for key in ['$x', '$y', '$u', '$v', '$width', '$height', '$fps']:
         attributeCast[key] = float
-    for key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
+    for key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section', '$id']:
         attributeCast[key] = int
     for key in ['$created_datetime', '$modified_datetime', '$name', '$archive_state']:
         attributeCast[key] = str
