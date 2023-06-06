@@ -103,7 +103,7 @@ def _get_info_for_attribute(project, entity_type, key):
     if key.startswith('$'):
         if key in ['$x', '$y', '$u', '$v', '$width', '$height', '$fps']:
             return {'name': key[1:], 'dtype': 'float'}
-        elif key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
+        elif key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section', '$id']:
             return {'name': key[1:], 'dtype': 'int'}
         elif key in ['$created_datetime', '$modified_datetime']:
             return {'name': key[1:], 'dtype': 'datetime'}
