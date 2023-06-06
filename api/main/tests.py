@@ -424,9 +424,9 @@ class ElementalIDChangeMixin:
         endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
         # Remove attribute values.
         if isinstance(self.create_json, dict):
-            create_json = {**self.create_json}
-            if "attributes" in create_json:
-                del create_json["attributes"]
+            create_json = [{**self.create_json}]
+            if "attributes" in create_json[0]:
+                del create_json[0]["attributes"]
         else:
             temp_create_json = [{**obj} for obj in self.create_json]
             create_json = []
@@ -436,24 +436,25 @@ class ElementalIDChangeMixin:
                 create_json.append(t)
 
         # Post the json with a specified elemental_id value
-        elemental_id = str(uuid4())
-        create_json["elemental_id"] = elemental_id
+        elemental_id = uuid4()
+        create_json[0]["elemental_id"] = elemental_id
         response = self.client.post(endpoint, create_json, format="json")
         assertResponse(self, response, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["object"][0].elemental_id, elemental_id)
+        response = self.client.get(f"/rest/{self.detail_uri}/{response.data['id'][0]}")
+        self.assertEqual(response.data["elemental_id"], elemental_id)
 
     def test_elemental_id_update(self):
         endpoint = f"/rest/{self.detail_uri}/{self.entities[0].id}"
-        elemental_id = str(uuid4())
+        elemental_id = uuid4()
         response = self.client.patch(endpoint, {"elemental_id": elemental_id}, format="json")
-        assertResponse(self, response, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(endpoint)
-        assertResponse(self, response, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data["elemental_id"], elemental_id)
 
     def test_elemental_id_updates(self):
         list_endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
-        elemental_id = str(uuid4())
+        elemental_id = uuid4()
 
         for entity in self.entities:
             response = self.client.patch(
@@ -467,14 +468,14 @@ class ElementalIDChangeMixin:
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(self.entities))
 
-        new_elemental_id = str(uuid4())
+        new_elemental_id = uuid4()
         response = self.client.patch(
             list_endpoint, {"elemental_id": new_elemental_id}, format="json"
         )
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(list_endpoint, {"elemental_id": new_elemental_id}, format="json")
-        assertResponse(self, response, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(self.entities))
 
         for obj in response.data:
@@ -2539,6 +2540,7 @@ class StateTestCase(
     PermissionDetailMembershipTestMixin,
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
+    ElementalIDChangeMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)

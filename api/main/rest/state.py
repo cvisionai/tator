@@ -363,9 +363,11 @@ class StateListAPI(BaseListView):
                 )
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
+            if params.get("elemental_id", None) is not None:
+                update_kwargs["elemental_id"] = params["elemental_id"]
             if params.get("user_elemental_id", None):
                 computed_author = compute_user(
-                    params["project"], self.request.user, params.get("user_elemental_id", None)
+                    params["project"], self.request.user, params["user_elemental_id"]
                 )
                 update_kwargs["created_by"] = computed_author
             if patched_version is not None:
@@ -480,7 +482,7 @@ class StateDetailAPI(BaseDetailView):
         # Update modified_by to be the last user
         obj.modified_by = self.request.user
 
-        if "elemental_id" in params:
+        if params.get("elemental_id", None) is not None:
             obj.elemental_id = params["elemental_id"]
 
         obj.save()

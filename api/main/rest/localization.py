@@ -243,9 +243,11 @@ class LocalizationListAPI(BaseListView):
             # Get the current representation of the object for comparison
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
-            if params.get("user_elemental_id", None):
+            if params.get("elemental_id", None) is not None:
+                update_kwargs["elemental_id"] = params["elemental_id"]
+            if params.get("user_elemental_id", None) is not None:
                 computed_author = compute_user(
-                    params["project"], self.request.user, params.get("user_elemental_id", None)
+                    params["project"], self.request.user, params["user_elemental_id"]
                 )
                 update_kwargs["created_by"] = computed_author
             if patched_version is not None:
@@ -363,14 +365,11 @@ class LocalizationDetailAPI(BaseDetailView):
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
 
-        if params.get("elemental_id", None):
-            obj.elemental_id = params.get("elemental_id", None)
+        if params.get("elemental_id", None) is not None:
+            obj.elemental_id = params["elemental_id"]
 
         # Update modified_by to be the last user
         obj.modified_by = self.request.user
-
-        if "elemental_id" in params:
-            obj.elemental_id = params["elemental_id"]
 
         # Patch the thumbnail attributes
         if obj.thumbnail_image:
