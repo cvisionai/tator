@@ -38,7 +38,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    construct_elemental_id_from_parent,
+    construct_elemental_id_from_spec,
+    construct_parent_from_spec,
     compute_user,
 )
 from ._permissions import ProjectEditPermission
@@ -273,15 +274,8 @@ class StateListAPI(BaseListView):
                 ),
                 version=versions[state_spec.get("version", None)],
                 frame=state_spec.get("frame", None),
-                parent=State.objects.get(pk=state_spec.get("parent"))
-                if state_spec.get("parent")
-                else None,
-                elemental_id=construct_elemental_id_from_parent(
-                    State.objects.get(pk=state_spec.get("parent"))
-                    if state_spec.get("parent")
-                    else None,
-                    state_spec.get("elemental_id", None),
-                ),
+                parent=construct_parent_from_spec(state_spec, State),
+                elemental_id=construct_elemental_id_from_spec(state_spec, State),
             )
             for state_spec, attrs in zip(state_specs, attr_specs)
         )
