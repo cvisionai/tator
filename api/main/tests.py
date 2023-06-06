@@ -419,6 +419,68 @@ affiliation_levels = [
 ]
 
 
+class ElementalIDChangeMixin:
+    def test_elemental_id_create(self):
+        endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+        # Remove attribute values.
+        if isinstance(self.create_json, dict):
+            create_json = {**self.create_json}
+            if "attributes" in create_json:
+                del create_json["attributes"]
+        else:
+            temp_create_json = [{**obj} for obj in self.create_json]
+            create_json = []
+            for t in temp_create_json:
+                if "attributes" in t:
+                    del t["attributes"]
+                create_json.append(t)
+
+        # Post the json with a specified elemental_id value
+        elemental_id = str(uuid4())
+        create_json["elemental_id"] = elemental_id
+        response = self.client.post(endpoint, create_json, format="json")
+        assertResponse(self, response, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["object"][0].elemental_id, elemental_id)
+
+    def test_elemental_id_update(self):
+        endpoint = f"/rest/{self.detail_uri}/{self.entities[0].id}"
+        elemental_id = str(uuid4())
+        response = self.client.patch(endpoint, {"elemental_id": elemental_id}, format="json")
+        assertResponse(self, response, status.HTTP_201_CREATED)
+        response = self.client.get(endpoint)
+        assertResponse(self, response, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["elemental_id"], elemental_id)
+
+    def test_elemental_id_updates(self):
+        list_endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+        elemental_id = str(uuid4())
+
+        for entity in self.entities:
+            response = self.client.patch(
+                f"/rest/{self.detail_uri}/{entity.id}",
+                {"elemental_id": elemental_id},
+                format="json",
+            )
+            assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get(list_endpoint, {"elemental_id": elemental_id}, format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), len(self.entities))
+
+        new_elemental_id = str(uuid4())
+        response = self.client.patch(
+            list_endpoint, {"elemental_id": new_elemental_id}, format="json"
+        )
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get(list_endpoint, {"elemental_id": new_elemental_id}, format="json")
+        assertResponse(self, response, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data), len(self.entities))
+
+        for obj in response.data:
+            self.assertEqual(obj["elemental_id"], new_elemental_id)
+
+
 class EntityAuthorChangeMixin:
     def test_author_change(self):
         test_entity = self.entities[0]
@@ -485,7 +547,7 @@ class DefaultCreateTestMixin:
         endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
         # Remove attribute values.
         if isinstance(self.create_json, dict):
-            create_json = {**self._create_json}
+            create_json = {**self.create_json}
             if "attributes" in create_json:
                 del create_json["attributes"]
         else:
@@ -2182,6 +2244,7 @@ class LocalizationBoxTestCase(
     PermissionDetailMembershipTestMixin,
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
+    ElementalIDChangeMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2256,6 +2319,7 @@ class LocalizationLineTestCase(
     PermissionDetailMembershipTestMixin,
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
+    ElementalIDChangeMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2330,6 +2394,7 @@ class LocalizationDotTestCase(
     PermissionDetailMembershipTestMixin,
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
+    ElementalIDChangeMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2402,6 +2467,7 @@ class LocalizationPolyTestCase(
     PermissionDetailMembershipTestMixin,
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
+    ElementalIDChangeMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
