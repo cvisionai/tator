@@ -115,6 +115,7 @@ def _get_info_for_attribute(project, entity_type, key):
             "$frame",
             "$num_frames",
             "$section",
+            "$id",
         ]:
             return {"name": key[1:], "dtype": "int"}
         elif key in ["$created_datetime", "$modified_datetime"]:
@@ -333,6 +334,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         "$frame",
         "$num_frames",
         "$section",
+        "$id",
     ]:
         attributeCast[key] = int
     for key in ["$created_datetime", "$modified_datetime", "$name", "$archive_state"]:
