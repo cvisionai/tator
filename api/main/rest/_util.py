@@ -114,7 +114,7 @@ def check_required_fields(datafields, attr_types, body):
                 attrs[field] = datetime.datetime.now(datetime.timezone.utc).isoformat()
             elif attr_type.get("required", True):
                 # Missing a datetime.
-                raise Exception(
+                raise ValueError(
                     f'Missing attribute value for "{field}". Set `use_current` to '
                     f"True or supply a value."
                 )
@@ -124,7 +124,7 @@ def check_required_fields(datafields, attr_types, body):
                 attrs[field] = attr_type["default"]
             elif attr_type.get("required", True):
                 # Missing a field and no default.
-                raise Exception(
+                raise ValueError(
                     f'Missing attribute value for "{field}". Set a `default` on '
                     f"the attribute type or supply a value."
                 )
@@ -169,7 +169,7 @@ def check_resource_prefix(prefix, obj, force_prefix=False):
         return
     parts = prefix.split("/")
     if len(parts) != 4:
-        logger.error(f"Permission Denied: {prefix} on {obj}")
+        logger.error("Permission Denied: %s on %s", prefix, obj)
         raise PermissionDenied(
             "Incorrect prefix format for file resource! Required format is "
             "<organization>/<project>/<object>/<name>."
@@ -396,14 +396,15 @@ def construct_elemental_id_from_parent(parent, requested_uuid=None):
         return parent.elemental_id
     if requested_uuid:
         # Check to see if it is a UUID or string and treat accordingly
-        if type(requested_uuid) == uuid.UUID:
+        if isinstance(requested_uuid, uuid.UUID):
             return requested_uuid
-        if type(requested_uuid) == str:
+        if isinstance(requested_uuid, str):
             try:
                 return uuid.UUID(requested_uuid)
-            except Exception:
-                logger.error(f"Could not convert '%s' into a UUID", str(requested_uuid))
-                raise
+            except (ValueError, TypeError) as exc:
+                msg = f"Could not convert '{requested_uuid}' into a UUID"
+                logger.error(msg)
+                raise RuntimeError(msg) from exc
     return uuid.uuid4()
 
 
