@@ -372,14 +372,39 @@ def bulk_log_creation(objects, project, user):
     return ids
 
 
+def construct_parent_from_spec(state_or_loc_spec, parent_type):
+    """
+    Gets the parent object from a state or localization specification, if specified, otherwise
+    returns None
+    """
+    parent = state_or_loc_spec.get("parent", None)
+    return parent_type.objects.get(pk=parent) if parent else None
+
+
+def construct_elemental_id_from_spec(state_or_loc_spec, parent_type):
+    """
+    Calls `construct_elemental_id_from_parent` with inputs scraped from a state or localization
+    specification
+    """
+    parent = construct_elemental_id_from_parent(state_or_loc_spec, parent_type)
+    return construct_elemental_id_from_parent(parent, state_or_loc_spec.get("elemental_id", None))
+
+
 def construct_elemental_id_from_parent(parent, requested_uuid=None):
     """Return the parent's elemental id or make a new one"""
-    if parent is None and requested_uuid is None:
-        return uuid.uuid4()
-    elif parent.elemental_id:
+    if parent and hasattr(parent, "elemental_id") and parent.elemental_id:
         return parent.elemental_id
-    else:
-        return None
+    if requested_uuid:
+        # Check to see if it is a UUID or string and treat accordingly
+        if type(requested_uuid) == uuid.UUID:
+            return requested_uuid
+        if type(requested_uuid) == str:
+            try:
+                return uuid.UUID(requested_uuid)
+            except Exception:
+                logger.error(f"Could not convert '%s' into a UUID", str(requested_uuid))
+                raise
+    return uuid.uuid4()
 
 
 def _use_internal_host(request, url):

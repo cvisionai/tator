@@ -34,7 +34,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    construct_elemental_id_from_parent,
+    construct_elemental_id_from_spec,
+    construct_parent_from_spec,
     compute_user,
 )
 from ._permissions import ProjectEditPermission
@@ -201,9 +202,7 @@ class LocalizationListAPI(BaseListView):
                     project, self.request.user, loc_spec.get("user_elemental_id", None)
                 ),
                 version=versions[loc_spec.get("version", None)],
-                parent=Localization.objects.get(pk=loc_spec.get("parent"))
-                if loc_spec.get("parent")
-                else None,
+                parent=construct_parent_from_spec(loc_spec, Localization),
                 x=loc_spec.get("x", None),
                 y=loc_spec.get("y", None),
                 u=loc_spec.get("u", None),
@@ -212,12 +211,7 @@ class LocalizationListAPI(BaseListView):
                 height=loc_spec.get("height", None),
                 points=loc_spec.get("points", None),
                 frame=loc_spec.get("frame", None),
-                elemental_id=construct_elemental_id_from_parent(
-                    Localization.objects.get(pk=loc_spec.get("parent"))
-                    if loc_spec.get("parent")
-                    else None,
-                    loc_spec.get("elemental_id", None),
-                ),
+                elemental_id=construct_elemental_id_from_spec(loc_spec, Localization),
             )
             for loc_spec, attrs in zip(loc_specs, attr_specs)
         )
