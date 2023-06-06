@@ -1,29 +1,22 @@
 import logging
-import datetime
-from django.db.models import Subquery
 from django.db import transaction
-from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
 
 from ..models import Localization
 from ..models import LocalizationType
 from ..models import Media
-from ..models import MediaType
 from ..models import Membership
-from ..models import State
 from ..models import User
 from ..models import Project
 from ..models import Version
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
-from ..schema import parse
 from ..schema.components import localization as localization_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
 from ._attributes import patch_attributes
-from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
 from ._util import (
     bulk_create_from_generator,
@@ -62,7 +55,7 @@ class LocalizationListAPI(BaseListView):
     entity_type = LocalizationType  # Needed by attribute filter mixin
 
     def _get(self, params):
-        logger.info(f"PARAMS={params}")
+        logger.info("PARAMS=%s", params)
         qs = get_annotation_queryset(self.kwargs["project"], params, "localization")
         response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
 
@@ -97,12 +90,12 @@ class LocalizationListAPI(BaseListView):
 
     def _post(self, params):
         # Check that we are getting a localization list.
-        if "body" in params:
+        try:
             loc_specs = params["body"]
-            if not isinstance(loc_specs, list):
-                loc_specs = [loc_specs]
-        else:
-            raise Exception("Localization creation requires list of localizations!")
+        except KeyError as exc:
+            raise RuntimeError("Localization creation requires list of localizations!") from exc
+        if not isinstance(loc_specs, list):
+            loc_specs = [loc_specs]
 
         project = params["project"]
 
@@ -148,32 +141,30 @@ class LocalizationListAPI(BaseListView):
         media_projects = list(media_qs.values_list("project", flat=True).distinct())
         version_projects = list(version_qs.values_list("project", flat=True).distinct())
         if len(meta_projects) != 1:
-            raise Exception(
+            raise RuntimeError(
                 f"Localization types must be part of project {project.id}, got "
                 f"projects {meta_projects}!"
             )
-        elif meta_projects[0] != project.id:
-            raise Exception(
+        if meta_projects[0] != project.id:
+            raise RuntimeError(
                 f"Localization types must be part of project {project.id}, got "
                 f"project {meta_projects[0]}!"
             )
         if len(media_projects) != 1:
-            raise Exception(
+            raise RuntimeError(
                 f"Media must be part of project {project.id}, got projects " f"{media_projects}!"
             )
-        elif media_projects[0] != project.id:
-            raise Exception(
+        if media_projects[0] != project.id:
+            raise RuntimeError(
                 f"Media must be part of project {project.id}, got project " f"{media_projects[0]}!"
             )
         if len(version_projects) != 1:
-            raise Exception(
-                f"Versions must be part of project {project.id}, got projects "
-                f"{version_projects}!"
+            raise RuntimeError(
+                f"Versions must be part of project {project.id}, got projects {version_projects}!"
             )
-        elif version_projects[0] != project.id:
-            raise Exception(
-                f"Versions must be part of project {project.id}, got project "
-                f"{version_projects[0]}!"
+        if version_projects[0] != project.id:
+            raise RuntimeError(
+                f"Versions must be part of project {project.id}, got project {version_projects[0]}!"
             )
 
         # Get required fields for attributes.
@@ -230,8 +221,6 @@ class LocalizationListAPI(BaseListView):
                 # Delete the localizations.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
-                obj = qs.first()
-                entity_type = obj.type
                 bulk_update_and_log_changes(
                     qs,
                     params["project"],
@@ -252,9 +241,6 @@ class LocalizationListAPI(BaseListView):
                     "When doing a bulk patch the type id of all objects must be the same."
                 )
             # Get the current representation of the object for comparison
-            obj = qs.first()
-            first_id = obj.id
-            entity_type = obj.type
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
             if params.get("user_elemental_id", None):
@@ -342,9 +328,10 @@ class LocalizationDetailAPI(BaseDetailView):
             if thumbnail_image:
                 try:
                     thumbnail_obj = Media.objects.get(pk=thumbnail_image)
-                    obj.thumbnail_image = thumbnail_obj
-                except:
+                except Media.DoesNotExist:
                     logger.error("Bad thumbnail reference given")
+                else:
+                    obj.thumbnail_image = thumbnail_obj
         elif obj.type.dtype == "line":
             x = params.get("x", None)
             y = params.get("y", None)
