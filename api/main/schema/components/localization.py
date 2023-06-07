@@ -291,8 +291,8 @@ localization_bulk_update = {
             "type": "integer",
             "description": "Unique integer identifying a new version for these objects",
         },
-        "elemental_id": {
-            "description": "The elemental ID of the object.",
+        "new_elemental_id": {
+            "description": "The new elemental ID for these objects",
             "type": "string",
         },
         "user_elemental_id": {
