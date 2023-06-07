@@ -248,7 +248,7 @@ def bulk_update_and_log_changes(queryset, project, user, update_kwargs=None, new
             "Must specify at least one of the following arguments: update_kwargs, new_attributes"
         )
 
-    if type(project) != Project:
+    if not isinstance(project, Project):
         project = Project.objects.get(pk=project)
 
     # Get prior state data for ChangeLog creation

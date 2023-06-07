@@ -291,6 +291,10 @@ localization_bulk_update = {
             "type": "integer",
             "description": "Unique integer identifying a new version for these objects",
         },
+        "elemental_id": {
+            "description": "The elemental ID of the object.",
+            "type": "string",
+        },
         "user_elemental_id": {
             "description": "Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id",
             "type": "string",
