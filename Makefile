@@ -422,3 +422,7 @@ format:
 check-format:
 	black --check .
 	cd ui && npx prettier --check src
+
+.PHONE: lint-python
+lint-python:
+	bash -c "source .pylint-venv/bin/activate && cd api && DJANGO_SETTINGS_MODULE=tator_online.settings pylint --errors-only --load-plugins pylint_django main"
