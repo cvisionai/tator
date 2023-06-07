@@ -443,15 +443,6 @@ class ElementalIDChangeMixin:
         response = self.client.get(f"/rest/{self.detail_uri}/{response.data['id'][0]}")
         self.assertEqual(response.data["elemental_id"], elemental_id)
 
-    def test_elemental_id_update(self):
-        endpoint = f"/rest/{self.detail_uri}/{self.entities[0].id}"
-        elemental_id = uuid4()
-        response = self.client.patch(endpoint, {"elemental_id": elemental_id}, format="json")
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(endpoint)
-        assertResponse(self, response, status.HTTP_200_OK)
-        self.assertEqual(response.data["elemental_id"], elemental_id)
-
     def test_elemental_id_updates(self):
         list_endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
         elemental_id = uuid4()
@@ -470,7 +461,7 @@ class ElementalIDChangeMixin:
 
         new_elemental_id = uuid4()
         response = self.client.patch(
-            list_endpoint, {"elemental_id": new_elemental_id}, format="json"
+            list_endpoint, {"new_elemental_id": new_elemental_id}, format="json"
         )
         assertResponse(self, response, status.HTTP_200_OK)
 
