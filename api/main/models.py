@@ -600,6 +600,7 @@ class Bucket(Model):
             ]
         )
 
+    @staticmethod
     def validate_storage_classes(store_type, params):
         """
         Checks for the existence of `live_sc` and `archive_sc` and validates them if they exist. If
@@ -926,6 +927,7 @@ class TemporaryFile(Model):
         self.eol_datetime = past
         self.save()
 
+    @staticmethod
     def from_local(path, name, project, user, lookup, hours, is_upload=False):
         """Given a local file create a temporary file storage object
         :returns A saved TemporaryFile:
@@ -1539,10 +1541,12 @@ class Resource(Model):
     )
     backed_up = BooleanField(default=False)
 
+    @staticmethod
     def get_project_from_path(path):
         project_id = path.split("/")[1]
         return Project.objects.get(pk=project_id)
 
+    @staticmethod
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):
         if urlparse(path_or_link).scheme != "":
@@ -1563,6 +1567,7 @@ class Resource(Model):
                 obj.save()
             obj.media.add(media)
 
+    @staticmethod
     @transaction.atomic
     def delete_resource(path_or_link, project_id):
         path = path_or_link
@@ -1597,6 +1602,7 @@ class Resource(Model):
         if backup_store.check_key(path):
             backup_store.delete_object(path)
 
+    @staticmethod
     @transaction.atomic
     def archive_resource(path):
         """
@@ -1611,6 +1617,7 @@ class Resource(Model):
         logger.info(f"Archiving object {path}")
         return get_tator_store(obj.bucket).archive_object(path)
 
+    @staticmethod
     @transaction.atomic
     def request_restoration(path, min_exp_days):
         """
@@ -1625,6 +1632,7 @@ class Resource(Model):
         logger.info(f"Requesting restoration of object {path}")
         return TatorBackupManager().request_restore_resource(path, project, min_exp_days)
 
+    @staticmethod
     @transaction.atomic
     def restore_resource(path, domain):
         """
@@ -1835,6 +1843,7 @@ class State(Model, ModelDiffMixin):
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
 
+    @staticmethod
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
