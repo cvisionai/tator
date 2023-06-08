@@ -423,6 +423,10 @@ check-format:
 	black --check .
 	cd ui && npx prettier --check src
 
-.PHONE: lint-python
+.PHONY: setup-pylint-venv
+setup-pylint-venv:
+	scripts/setup_pylint_venv.sh
+
+.PHONY: lint-python
 lint-python:
-	bash -c "source .pylint-venv/bin/activate && cd api && DJANGO_SETTINGS_MODULE=tator_online.settings pylint --errors-only --load-plugins pylint_django main"
+	bash -c "source .pylint-venv/bin/activate && cd api && DJANGO_SECRET_KEY=DUMMY PYLINT_RUNNING=TRUE pylint --disable=logging --errors-only --load-plugins pylint_django --django-settings-module=tator_online.settings main"

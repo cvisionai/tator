@@ -209,7 +209,7 @@ LOGGING = {
     "handlers": {
         "file": {
             "class": "logging.FileHandler",
-            "filename": "/debug.log",
+            "filename": "/debug.log" if os.getenv("PYLINT_RUNNING") is None else "debug.log",
             "formatter": "verbose",
         },
         "console": {
