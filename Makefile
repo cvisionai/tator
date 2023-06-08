@@ -427,6 +427,7 @@ check-format:
 setup-pylint-venv:
 	scripts/setup_pylint_venv.sh
 
+pylint_target ?= main
 .PHONY: lint-python
 lint-python:
-	bash -c "source .pylint-venv/bin/activate && cd api && DJANGO_SECRET_KEY=DUMMY PYLINT_RUNNING=TRUE pylint --disable=logging --errors-only --load-plugins pylint_django --django-settings-module=tator_online.settings main"
+	bash -c "source .pylint-venv/bin/activate && cd api && DJANGO_SECRET_KEY=DUMMY PYLINT_RUNNING=TRUE pylint --disable=logging --errors-only --load-plugins pylint_django --django-settings-module=tator_online.settings $(pylint_target)"
