@@ -280,9 +280,7 @@ export class MediaSection extends TatorElement {
 
     console.log(`Load media... sectionQuery: ${sectionQuery}`);
     var response = await fetchCredentials(
-      `/rest/Medias/${
-        this._project
-      }?${sectionQuery.toString()}&presigned=28800`
+      `/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`
     );
     var mediaList = await response.json();
 
