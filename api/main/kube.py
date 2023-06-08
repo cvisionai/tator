@@ -1,7 +1,6 @@
 import math
 import os
 import logging
-import tempfile
 import copy
 import tarfile
 import json
@@ -9,6 +8,7 @@ import datetime
 import random
 import time
 import socket
+import ssl
 import re
 
 from kubernetes.client import Configuration
@@ -132,14 +132,12 @@ def _get_api(cluster):
         host = cluster_obj.host
         port = cluster_obj.port
         token = cluster_obj.token
-        fd, cert = tempfile.mkstemp(text=True)
-        with open(fd, "w") as f:
-            f.write(cluster_obj.cert)
+        ssl_context = ssl.create_default_context(cadata=cluster_obj.cert)
         conf = Configuration()
         conf.api_key["authorization"] = token
         conf.host = f"https://{host}:{port}"
         conf.verify_ssl = True
-        conf.ssl_ca_cert = cert
+        conf.ssl_ca_cert = ssl_context
         api_client = ApiClient(conf)
         api = CustomObjectsApi(api_client)
     return api
@@ -274,14 +272,12 @@ class TatorAlgorithm(JobManagerMixin):
             host = alg.cluster.host
             port = alg.cluster.port
             token = alg.cluster.token
-            fd, cert = tempfile.mkstemp(text=True)
-            with open(fd, "w") as f:
-                f.write(alg.cluster.cert)
+            ssl_context = ssl.create_default_context(cadata=alg.cluster.cert)
             conf = Configuration()
             conf.api_key["authorization"] = token
             conf.host = f"{PROTO}{host}:{port}"
             conf.verify_ssl = True
-            conf.ssl_ca_cert = cert
+            conf.ssl_ca_cert = ssl_context
             api_client = ApiClient(conf)
             self.corev1 = CoreV1Api(api_client)
             self.custom = CustomObjectsApi(api_client)
