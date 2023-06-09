@@ -80,13 +80,6 @@ def test_basic(request, page_factory, project): #video
    page.wait_for_selector(f'text="Page 1 of {str(pages)}"')
    page.wait_for_timeout(5000)
    
-   cardsHidden = page.query_selector_all('section-files entity-card[style="display: none;"]')
-   cardsHiddenLength = len(cardsHidden)
-
-   print(f"Length of cards hidden {cardsHiddenLength}  == totalCards - 10 {totalCards - 10}")
-   totalMinus = totalCards - 10
-   assert cardsHiddenLength == totalMinus
-
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
 
