@@ -2,12 +2,11 @@ import math
 import os
 import logging
 import copy
-import tarfile
 import json
 import datetime
 import random
+from tempfile import NamedTemporaryFile
 import time
-import socket
 import ssl
 import re
 
@@ -17,7 +16,6 @@ from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
 from kubernetes.client.rest import ApiException
 from kubernetes.config import load_incluster_config
-from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .cache import TatorCache
@@ -45,7 +43,9 @@ def _rfc1123_name_converter(workflow_name, min_length):
         out = out[:-1]
 
     if len(out) < min_length:
-        raise RuntimeError(f"Over-stripped workflow name '{full_out}' trying to comply to RFC 1123")
+        raise RuntimeError(
+            f"Over-stripped workflow name '{workflow_name}' trying to comply to RFC 1123"
+        )
 
     out = out + "-"
     return out
@@ -71,7 +71,7 @@ def _algo_name(algorithm_id, project, user, name):
 
 def _select_storage_class():
     """Randomly selects a workflow storage class."""
-    storage_classes = os.getenv("WORKFLOW_STORAGE_CLASSES").split(",")
+    storage_classes = os.getenv("WORKFLOW_STORAGE_CLASSES", "").split(",")
     return random.choice(storage_classes)
 
 
@@ -110,7 +110,7 @@ def get_client_image_name():
     return f"{registry}/tator_client:{Git.sha}"
 
 
-def _get_api(cluster):
+def _get_api(cluster, cert_tempfile):
     """Get custom objects api associated with a cluster specifier."""
     if cluster is None:
         load_incluster_config()
@@ -132,12 +132,12 @@ def _get_api(cluster):
         host = cluster_obj.host
         port = cluster_obj.port
         token = cluster_obj.token
-        ssl_context = ssl.create_default_context(cadata=cluster_obj.cert)
+        cert_tempfile.write(cluster_obj.cert)
         conf = Configuration()
         conf.api_key["authorization"] = token
         conf.host = f"https://{host}:{port}"
         conf.verify_ssl = True
-        conf.ssl_ca_cert = ssl_context
+        conf.ssl_ca_cert = cert_tempfile.name
         api_client = ApiClient(conf)
         api = CustomObjectsApi(api_client)
     return api
@@ -173,18 +173,19 @@ def get_jobs(selector, cache):
     clusters = _get_clusters(cache)
     jobs = []
     for cluster in clusters:
-        api = _get_api(cluster)
-        try:
-            response = api.list_namespaced_custom_object(
-                group="argoproj.io",
-                version="v1alpha1",
-                namespace="default",
-                plural="workflows",
-                label_selector=f"{selector}",
-            )
-            jobs += response["items"]
-        except:
-            pass
+        with NamedTemporaryFile(encoding="utf-8") as cert_tempfile:
+            api = _get_api(cluster, cert_tempfile)
+            try:
+                response = api.list_namespaced_custom_object(
+                    group="argoproj.io",
+                    version="v1alpha1",
+                    namespace="default",
+                    plural="workflows",
+                    label_selector=f"{selector}",
+                )
+                jobs += response["items"]
+            except Exception:
+                pass
     return jobs
 
 
@@ -194,32 +195,33 @@ def cancel_jobs(selector, cache):
     cache_uids = [item["uid"] for item in cache]
     cancelled = 0
     for cluster in clusters:
-        api = _get_api(cluster)
-        # Get the object by selecting on uid label.
-        response = api.list_namespaced_custom_object(
-            group="argoproj.io",
-            version="v1alpha1",
-            namespace="default",
-            plural="workflows",
-            label_selector=f"{selector}",
-        )
+        with NamedTemporaryFile(encoding="utf-8") as cert_tempfile:
+            api = _get_api(cluster, cert_tempfile)
+            # Get the object by selecting on uid label.
+            response = api.list_namespaced_custom_object(
+                group="argoproj.io",
+                version="v1alpha1",
+                namespace="default",
+                plural="workflows",
+                label_selector=f"{selector}",
+            )
 
-        # Patch the workflow with shutdown=Stop.
-        if len(response["items"]) > 0:
-            for job in response["items"]:
-                uid = job["metadata"]["labels"]["uid"]
-                if uid in cache_uids:
-                    name = job["metadata"]["name"]
-                    response = api.delete_namespaced_custom_object(
-                        group="argoproj.io",
-                        version="v1alpha1",
-                        namespace="default",
-                        plural="workflows",
-                        name=name,
-                        body={},
-                    )
-                    if response["status"] == "Success":
-                        cancelled += 1
+            # Patch the workflow with shutdown=Stop.
+            if len(response["items"]) > 0:
+                for job in response["items"]:
+                    uid = job["metadata"]["labels"]["uid"]
+                    if uid in cache_uids:
+                        name = job["metadata"]["name"]
+                        response = api.delete_namespaced_custom_object(
+                            group="argoproj.io",
+                            version="v1alpha1",
+                            namespace="default",
+                            plural="workflows",
+                            name=name,
+                            body={},
+                        )
+                        if response["status"] == "Success":
+                            cancelled += 1
     return cancelled
 
 
