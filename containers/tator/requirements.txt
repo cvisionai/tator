@@ -38,7 +38,7 @@ pytest-django==4.5.2
 pytest-xdist==3.1.0
 python-dateutil==2.8.2
 rawpy==0.17.2
-redis==4.3.3
+redis==4.4.4
 requests==2.27.0
 rq==1.11.1
 slackclient==2.9.3
