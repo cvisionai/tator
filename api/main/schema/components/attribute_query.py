@@ -13,6 +13,7 @@ table_of_builtins = """
     | archive_state     | The current archive state of the media |               |        |   X    |        |       |
     | x, y, u, or v     | Geometric coordinates                  |               |        |        |        |       |
     | width or height   | Geometric sizes                        |               |        |        |        |       |
+    | incident          | Available when doing a related search  |               |        |   X    |        |       |   
 """
 
 attribute_filter_schema = {
