@@ -241,7 +241,7 @@ def create_test_image(user, name, entity_type, project):
     )
 
 
-def create_test_box(user, entity_type, project, media, frame):
+def create_test_box(user, entity_type, project, media, frame, attributes={}):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
     w = random.uniform(0.0, float(media.width) - x)
@@ -259,6 +259,7 @@ def create_test_box(user, entity_type, project, media, frame):
         y=y,
         width=w,
         height=h,
+        attributes=attributes,
     )
 
 
@@ -866,6 +867,54 @@ class AttributeTestMixin:
         self.assertEqual(len(response1.data), max(0, min(sum(test_vals) - 1, 3)))
         if len(response.data) >= 2 and len(response1.data) >= 1:
             self.assertEqual(response.data[1], response1.data[0])
+
+    def test_sorting(self):
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+        )
+        last_id = response.data[0]["id"]
+        for r in response.data[1:]:
+            assert r["id"] > last_id
+            last_id = r["id"]
+
+        # sort by descending id
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+            f"&sort_by=-$id"
+        )
+        last_id = response.data[0]["id"]
+        for r in response.data[1:]:
+            assert r["id"] < last_id
+            last_id = r["id"]
+
+        # sort by an attribute
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+            f"&sort_by=Float Test"
+        )
+
+        last_val = response.data[0]["attributes"]["Float Test"]
+        for r in response.data[1:]:
+            assert r["attributes"]["Float Test"] >= last_val
+            last_val = r["attributes"]["Float Test"]
+
+        # sort by an attribute descending
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+            f"&sort_by=-Float Test"
+        )
+        last_val = response.data[0]["attributes"]["Float Test"]
+        for r in response.data[1:]:
+            assert r["attributes"]["Float Test"] <= last_val
+            last_val = r["attributes"]["Float Test"]
 
     def test_list_patch(self):
         test_val = random.random() > 0.5
@@ -2266,7 +2315,12 @@ class LocalizationBoxTestCase(
         ]
         self.entities = [
             create_test_box(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
