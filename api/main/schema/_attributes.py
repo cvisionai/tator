@@ -1,3 +1,5 @@
+from .components.attribute_query import table_of_builtins
+
 attribute_filter_parameter_schema = [
     {
         "name": "attribute",
@@ -94,6 +96,22 @@ attribute_filter_parameter_schema = [
         "required": False,
         "description": "Base64 encoded string representing an `Object_Search` defined in /components/AttributeOperationSpec",
         "schema": {"type": "string"},
+    },
+    {
+        "name": "sort_by",
+        "in": "query",
+        "required": False,
+        "description": """Field names to sort results by. Built-in names should be prefixed with '$', attributes must not be. A table of built-ins available for a given type:
+                    """
+        + table_of_builtins,
+        "schema": {"type": "array", "items": {"type": "string"}},
+    },
+    {
+        "name": "sort_descending",
+        "in": "query",
+        "required": False,
+        "description": "If set to >0, will inverse the sort operation.",
+        "schema": {"type": "integer"},
     },
 ]
 
