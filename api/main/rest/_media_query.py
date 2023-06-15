@@ -19,6 +19,7 @@ from ..models import State
 
 from ..schema._attributes import related_keys
 
+from ._attribute_query import supplied_name_to_field
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attribute_query import get_attribute_psql_queryset_from_query_obj
@@ -222,7 +223,11 @@ def _get_media_psql_queryset(project, filter_ops, params):
         search_obj = json.loads(base64.b64decode(params.get("encoded_search")).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
-    qs = qs.order_by("name", "id")
+    if params.get('sort_by', None):
+        sortables = [supplied_name_to_field(x) for x in params.get('sort_by')]
+        qs = qs.order_by(*sortables)
+    else:
+        qs = qs.order_by("name", "id")
 
     if start is not None and stop is not None:
         qs = qs[start:stop]

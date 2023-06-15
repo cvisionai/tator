@@ -18,6 +18,8 @@ from ..schema._attributes import related_keys
 
 from ._media_query import query_string_to_media_ids
 from ._media_query import _related_search
+
+from ._attribute_query import supplied_name_to_field
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attribute_query import get_attribute_psql_queryset_from_query_obj
@@ -226,7 +228,11 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs.filter(variant_deleted=False)
 
     if params.get("float_array", None) == None:
-        qs = qs.order_by("id")
+        if params.get('sort_by', None):
+            sortables = [supplied_name_to_field(x) for x in params.get('sort_by')]
+            qs = qs.order_by(*sortables)
+        else:
+            qs = qs.order_by("id")
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
