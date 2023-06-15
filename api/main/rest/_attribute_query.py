@@ -9,7 +9,7 @@ import pytz
 import re
 
 from django.db.models.functions import Cast
-from django.db.models import Func, F, Q
+from django.db.models import Func, F, Q, Count, Subquery,OuterRef
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import BigIntegerField
@@ -97,10 +97,11 @@ def _related_search(
             related_matches.append(local_qs)
     if related_matches:
         related_match = related_matches.pop()
-        query = Q(pk__in=related_match.values("media"))
+        matches = related_match
         for r in related_matches:
-            query = query | Q(pk__in=r.values("media"))
-        qs = qs.filter(query).distinct()
+            matches = matches.union(matches)
+        matches = matches.values('media').annotate(count=Count('media'))
+        qs = qs.filter(pk__in=matches.values('media')).annotate(incident=Subquery(matches.filter(media=OuterRef('id')).values('count'))).distinct()
     else:
         qs = qs.filter(pk=-1)
     return qs

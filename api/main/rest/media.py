@@ -386,7 +386,10 @@ class MediaListAPI(BaseListView):
         meaning they can be described by user defined attributes.
         """
         qs = get_media_queryset(self.kwargs["project"], params)
-        response_data = list(qs.values(*MEDIA_PROPERTIES))
+        fields = [*MEDIA_PROPERTIES]
+        if params.get('encoded_related_search'):
+            fields.append('incident')
+        response_data = list(qs.values(*fields))
         presigned = params.get("presigned")
         if presigned is not None:
             no_cache = params.get("no_cache", False)
