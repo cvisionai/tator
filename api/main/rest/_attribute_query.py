@@ -274,11 +274,13 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                     "spheroid",
                 )
 
-            castFunc = castLookup[attr_name]
+            castFunc = castLookup.get(attr_name, None)
             if operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
                 value = castFunc(value)
+            else:
+                return Q(pk=-1)
             if operation in ["date_eq", "eq"]:
                 query = Q(**{f"{db_lookup}": value})
             else:
