@@ -387,8 +387,9 @@ class MediaListAPI(BaseListView):
         """
         qs = get_media_queryset(self.kwargs["project"], params)
         fields = [*MEDIA_PROPERTIES]
-        if params.get('encoded_related_search'):
-            fields.append('incident')
+        logger.info(f"encoded_related={params.get('encoded_related_search')}")
+        if params.get("encoded_related_search") == None:
+            fields.remove("incident")
         response_data = list(qs.values(*fields))
         presigned = params.get("presigned")
         if presigned is not None:

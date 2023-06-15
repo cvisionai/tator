@@ -2057,6 +2057,74 @@ class VideoTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "video1", "last_edit_start": "2017-07-21T17:32:28Z"}
 
+    def test_search(self):
+        box_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype="box",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        box_type.media.add(self.entity_type)
+        box_type.save()
+        wait_for_indices(box_type)
+
+        response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
+        assert response.data[0].get("incident", None) == None
+
+        create_test_box(
+            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
+        )
+
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Foo"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Bar"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Baz"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Zoo"}
+        )
+
+        response = self.client.get(
+            f"/rest/Localizations/{self.project.pk}?attribute=String Test::Foo", format=json
+        )
+        self.assertEqual(len(response.data), 4)
+        encoded_search = base64.b64encode(
+            json.dumps({"attribute": "String Test", "operation": "eq", "value": "Foo"}).encode()
+        )
+        response = self.client.get(
+            f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
+            format="json",
+        )
+
+        first_hit = response.data[0]
+        second_hit = response.data[1]
+        self.assertEqual(first_hit.get("incident", None), 3)
+        self.assertEqual(first_hit["id"], self.entities[0].pk)
+        self.assertEqual(second_hit.get("incident", None), 1)
+        self.assertEqual(second_hit["id"], self.entities[1].pk)
+
+        # reverse it
+        response = self.client.get(
+            f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=$incident",
+            format="json",
+        )
+        first_hit = response.data[0]
+        second_hit = response.data[1]
+        self.assertEqual(second_hit.get("incident", None), 3)
+        self.assertEqual(second_hit["id"], self.entities[0].pk)
+        self.assertEqual(first_hit.get("incident", None), 1)
+        self.assertEqual(first_hit["id"], self.entities[1].pk)
+
     def test_author_change(self):
         test_video = create_test_video(self.user, f"asdf_0", self.entity_type, self.project)
         response = self.client.get(f"/rest/Media/{test_video.pk}")
