@@ -55,11 +55,12 @@ OPERATOR_SUFFIXES = {
     "attribute_distance": "__distance_lte",
 }
 
+
 def supplied_name_to_field(supplied_name):
     logger.info(f"SNAME={supplied_name}")
     if supplied_name.startswith("-"):
         desc = True
-        supplied_name = supplied_name[1:] 
+        supplied_name = supplied_name[1:]
     else:
         desc = False
     if supplied_name.startswith("$"):
@@ -68,8 +69,9 @@ def supplied_name_to_field(supplied_name):
         db_lookup = f"attributes__{supplied_name}"
 
     if desc:
-        db_lookup = '-'+db_lookup
+        db_lookup = "-" + db_lookup
     return db_lookup
+
 
 def _related_search(
     qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj

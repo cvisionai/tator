@@ -89,8 +89,8 @@ def _get_file_psql_queryset(project, filter_ops, params):
         logger.info(f"Applying encoded search={search_obj}")
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
-    if params.get('sort_by', None):
-        sortables = [supplied_name_to_field(x) for x in params.get('sort_by')]
+    if params.get("sort_by", None):
+        sortables = [supplied_name_to_field(x) for x in params.get("sort_by")]
         qs = qs.order_by(*sortables)
     else:
         qs = qs.order_by("id")

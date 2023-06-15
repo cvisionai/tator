@@ -115,7 +115,7 @@ attribute_filter_parameter_schema = [
                     """
         + table_of_builtins,
         "schema": {"type": "array", "items": {"type": "string"}},
-    }
+    },
 ]
 
 related_attribute_filter_parameter_schema = [

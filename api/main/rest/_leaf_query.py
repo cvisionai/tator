@@ -83,8 +83,8 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
         search_obj = json.loads(base64.b64decode(params.get("encoded_search")).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
-    if params.get('sort_by', None):
-        sortables = [supplied_name_to_field(x) for x in params.get('sort_by')]
+    if params.get("sort_by", None):
+        sortables = [supplied_name_to_field(x) for x in params.get("sort_by")]
         qs = qs.order_by(*sortables)
     else:
         qs = qs.order_by("id")
