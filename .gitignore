@@ -39,6 +39,7 @@ containers/tator_client_braw/Blackmagic_RAW_Linux_2.2.1.tar
 helm/tator/configs/*
 **/debug.log
 **/.pylint-venv
+.env
 
 # Hidden mac files
 ._.
