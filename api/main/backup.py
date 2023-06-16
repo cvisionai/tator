@@ -37,7 +37,7 @@ class TatorBackupManager:
         return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
 
     @classmethod
-    def _multipart_upload(cls, path, file_size, upload_urls, upload_id, stream):
+    def _multipart_upload(cls, file_size, upload_urls, upload_id, stream):
         num_chunks = len(upload_urls)
         parts = []
         last_progress = 0
@@ -111,7 +111,7 @@ class TatorBackupManager:
             return False
 
         if num_chunks > 1:
-            parts = cls._multipart_upload(path, size, urls, upload_id, stream)
+            parts = cls._multipart_upload(size, urls, upload_id, stream)
             return store.complete_multipart_upload(path, parts, upload_id)
         return cls._single_upload(path, urls[0], stream)
 
