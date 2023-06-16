@@ -214,7 +214,7 @@ def create_test_bookmark(name, project, user):
     return Bookmark.objects.create(name=name, project=project, user=user, uri="/projects")
 
 
-def create_test_video(user, name, entity_type, project):
+def create_test_video(user, name, entity_type, project, attributes={}):
     return Media.objects.create(
         name=name,
         type=entity_type,
@@ -227,10 +227,11 @@ def create_test_video(user, name, entity_type, project):
         height="480",
         created_by=user,
         elemental_id=str(uuid4()),
+        attributes=attributes
     )
 
 
-def create_test_image(user, name, entity_type, project):
+def create_test_image(user, name, entity_type, project, attributes={}):
     return Media.objects.create(
         name=name,
         type=entity_type,
@@ -238,6 +239,7 @@ def create_test_image(user, name, entity_type, project):
         md5="",
         width="640",
         height="480",
+        attributes=attributes
     )
 
 
@@ -270,7 +272,7 @@ def create_test_box_with_attributes(user, entity_type, project, media, frame, at
     return test_box
 
 
-def create_test_line(user, entity_type, project, media, frame):
+def create_test_line(user, entity_type, project, media, frame, attributes={}):
     x0 = random.uniform(0.0, float(media.width))
     y0 = random.uniform(0.0, float(media.height))
     x1 = random.uniform(0.0, float(media.width) - x0)
@@ -287,10 +289,11 @@ def create_test_line(user, entity_type, project, media, frame):
         y=y0,
         u=(x1 - x0),
         v=(y1 - y0),
+        attributes=attributes,
     )
 
 
-def create_test_dot(user, entity_type, project, media, frame):
+def create_test_dot(user, entity_type, project, media, frame, attributes={}):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
     return Localization.objects.create(
@@ -303,15 +306,17 @@ def create_test_dot(user, entity_type, project, media, frame):
         frame=frame,
         x=x,
         y=y,
+        attributes=attributes,
     )
 
 
-def create_test_leaf(name, entity_type, project):
+def create_test_leaf(name, entity_type, project, attributes={}):
     return Leaf.objects.create(
         name=name,
         type=entity_type,
         project=project,
         path="".join(random.choices(string.ascii_lowercase, k=10)),
+        attributes=attributes
     )
 
 
@@ -2045,7 +2050,7 @@ class VideoTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_video(self.user, f"asdf{idx}", self.entity_type, self.project)
+            create_test_video(self.user, f"asdf{idx}", self.entity_type, self.project, attributes={"Float Test": random.random() * 1000})
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
@@ -2329,7 +2334,7 @@ class ImageTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_image(self.user, f"asdf{idx}", self.entity_type, self.project)
+            create_test_image(self.user, f"asdf{idx}", self.entity_type, self.project, attributes={"Float Test": random.random() * 1000})
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
@@ -2463,7 +2468,8 @@ class LocalizationLineTestCase(
         ]
         self.entities = [
             create_test_line(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2538,7 +2544,7 @@ class LocalizationDotTestCase(
         ]
         self.entities = [
             create_test_dot(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0, attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2611,7 +2617,7 @@ class LocalizationPolyTestCase(
         ]
         self.entities = [
             create_test_box(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0, attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2690,6 +2696,7 @@ class StateTestCase(
                 type=self.entity_type,
                 project=self.project,
                 version=self.version,
+                attributes={"Float Test": random.random() * 1000},
             )
             for media in random.choices(self.media_entities):
                 state.media.add(media)
@@ -3271,7 +3278,7 @@ class LeafTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_leaf(f"leaf{idx}", self.entity_type, self.project)
+            create_test_leaf(f"leaf{idx}", self.entity_type, self.project, attributes={"Float Test": random.random() * 1000},)
             for idx in range(random.randint(6, 10))
         ]
         self.list_uri = "Leaves"
