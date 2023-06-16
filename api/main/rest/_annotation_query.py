@@ -190,9 +190,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 query = query | Q(media__in=r)
             qs = qs.filter(query).distinct()
 
-    if params.get("object_search"):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
-
     if params.get("encoded_related_search"):
         search_obj = json.loads(
             base64.b64decode(params.get("encoded_related_search").encode()).decode()
@@ -212,6 +209,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             qs = qs.filter(query).distinct()
         else:
             qs = qs.filter(pk=-1)
+
+    if params.get("object_search"):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
 
     # Used by GET queries
     if params.get("encoded_search"):
