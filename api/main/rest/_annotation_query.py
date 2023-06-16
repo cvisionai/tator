@@ -217,6 +217,12 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if params.get("encoded_search"):
         search_obj = json.loads(base64.b64decode(params.get("encoded_search").encode()).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+    if params.get("related_id"):
+        if annotation_type == "localization":
+            state_qs = State.objects.filter(pk__in=params.get("related_id"))
+            qs = qs.filter(pk__in=state_qs.values('localizations'))
+        elif annotation_type == "state":
+            qs = qs.filter(localizations__in=params.get("related_id"))
 
     if apply_merge:
         # parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
