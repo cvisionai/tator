@@ -227,7 +227,7 @@ def create_test_video(user, name, entity_type, project, attributes={}):
         height="480",
         created_by=user,
         elemental_id=str(uuid4()),
-        attributes=attributes
+        attributes=attributes,
     )
 
 
@@ -239,7 +239,7 @@ def create_test_image(user, name, entity_type, project, attributes={}):
         md5="",
         width="640",
         height="480",
-        attributes=attributes
+        attributes=attributes,
     )
 
 
@@ -316,7 +316,7 @@ def create_test_leaf(name, entity_type, project, attributes={}):
         type=entity_type,
         project=project,
         path="".join(random.choices(string.ascii_lowercase, k=10)),
-        attributes=attributes
+        attributes=attributes,
     )
 
 
@@ -2050,7 +2050,13 @@ class VideoTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_video(self.user, f"asdf{idx}", self.entity_type, self.project, attributes={"Float Test": random.random() * 1000})
+            create_test_video(
+                self.user,
+                f"asdf{idx}",
+                self.entity_type,
+                self.project,
+                attributes={"Float Test": random.random() * 1000},
+            )
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
@@ -2334,7 +2340,13 @@ class ImageTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_image(self.user, f"asdf{idx}", self.entity_type, self.project, attributes={"Float Test": random.random() * 1000})
+            create_test_image(
+                self.user,
+                f"asdf{idx}",
+                self.entity_type,
+                self.project,
+                attributes={"Float Test": random.random() * 1000},
+            )
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
@@ -2468,7 +2480,11 @@ class LocalizationLineTestCase(
         ]
         self.entities = [
             create_test_line(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0,
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
                 attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
@@ -2544,7 +2560,12 @@ class LocalizationDotTestCase(
         ]
         self.entities = [
             create_test_dot(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0, attributes={"Float Test": random.random() * 1000},
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2617,7 +2638,12 @@ class LocalizationPolyTestCase(
         ]
         self.entities = [
             create_test_box(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0, attributes={"Float Test": random.random() * 1000},
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -3278,7 +3304,12 @@ class LeafTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_leaf(f"leaf{idx}", self.entity_type, self.project, attributes={"Float Test": random.random() * 1000},)
+            create_test_leaf(
+                f"leaf{idx}",
+                self.entity_type,
+                self.project,
+                attributes={"Float Test": random.random() * 1000},
+            )
             for idx in range(random.randint(6, 10))
         ]
         self.list_uri = "Leaves"

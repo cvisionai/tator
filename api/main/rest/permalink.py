@@ -104,7 +104,9 @@ class PermalinkAPI(APIView):
         qs = Media.objects.filter(pk=params["id"], deleted=False)
         if not qs.exists():
             raise Http404
-        response_data = list(qs.values(*MEDIA_PROPERTIES))
+        fields = [*MEDIA_PROPERTIES]
+        fields.remove("incident")
+        response_data = list(qs.values(*fields))
         # Use 24-hour URLS
         _presign(24 * 3600, response_data)
 
