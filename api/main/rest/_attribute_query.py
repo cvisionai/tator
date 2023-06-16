@@ -8,7 +8,7 @@ from dateutil.parser import parse as dateutil_parse
 import pytz
 import re
 
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, Coalesce
 from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import BooleanField
@@ -96,14 +96,46 @@ def _related_search(
         if local_qs.count():
             related_matches.append(local_qs)
     if related_matches:
+        # Convert result matches to use Media model because related_matches might be States or Localizations
+        # Note: 'media' becomes 'id' when this happens. The two columns are 'id','count' in this result.
+        # Iterate over each related match and merge it into the previous Media result set. Add 'count' so it is an accurate hit count
+        # for any matching metadata.
+        # Finally reselect all media in this concatenated set by id. Annotate the incident with the count from the previous record set, which is
+        # now the sum of any hit across any metadata type.
         related_match = related_matches.pop()
-        matches = related_match
+        media_vals = related_match.values("media").annotate(count=Count("media"))
+        media_matches = (
+            qs.filter(pk__in=media_vals.values("media"))
+            .annotate(count=Subquery(media_vals.filter(media=OuterRef("id")).values("count")))
+            .values("id", "count")
+        )
+        logger.info(
+            f"related matches interim count = {related_match[0]._meta.db_table} this={media_vals} total={media_matches}"
+        )
         for r in related_matches:
-            matches = matches.union(matches)
-        matches = matches.values("media").annotate(count=Count("media"))
+            this_vals = r.values("media").annotate(count=Count("media"))
+            this_run = (
+                qs.filter(
+                    Q(pk__in=this_vals.values("media")) | Q(pk__in=media_matches.values("id"))
+                )
+                .annotate(
+                    this_count=Coalesce(
+                        Subquery(this_vals.filter(media=OuterRef("id")).values("count")), 0
+                    ),
+                    last_count=Coalesce(
+                        media_vals.filter(media=OuterRef("id")).values("count"), Value(0)
+                    ),
+                    count=F("this_count") + F("last_count"),
+                )
+                .values("id", "count")
+            )
+            media_matches = this_run
+            logger.info(
+                f"related matches interim count = {r[0]._meta.db_table} this={this_run} , total={media_matches}"
+            )
         qs = (
-            qs.filter(pk__in=matches.values("media"))
-            .annotate(incident=Subquery(matches.filter(media=OuterRef("id")).values("count")))
+            qs.filter(pk__in=media_matches.values("id"))
+            .annotate(incident=Subquery(media_matches.filter(media=OuterRef("id")).values("count")))
             .distinct()
         )
     else:

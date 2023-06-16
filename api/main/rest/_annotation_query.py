@@ -220,7 +220,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if params.get("related_id"):
         if annotation_type == "localization":
             state_qs = State.objects.filter(pk__in=params.get("related_id"))
-            qs = qs.filter(pk__in=state_qs.values('localizations'))
+            qs = qs.filter(pk__in=state_qs.values("localizations"))
         elif annotation_type == "state":
             qs = qs.filter(localizations__in=params.get("related_id"))
 
