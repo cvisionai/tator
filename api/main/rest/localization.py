@@ -232,6 +232,8 @@ class LocalizationListAPI(BaseListView):
             entity_type = obj.type
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
+            if params.get("new_elemental_id", None) is not None:
+                update_kwargs["elemental_id"] = params["new_elemental_id"]
             if params.get('user_elemental_id', None):
                 computed_author = compute_user(params['project'], self.request.user, params.get('user_elemental_id', None))
                 update_kwargs['created_by'] = computed_author
