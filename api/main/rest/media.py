@@ -387,7 +387,6 @@ class MediaListAPI(BaseListView):
         """
         qs = get_media_queryset(self.kwargs["project"], params)
         fields = [*MEDIA_PROPERTIES]
-        logger.info(f"encoded_related={params.get('encoded_related_search')}")
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
         response_data = list(qs.values(*fields))
@@ -400,6 +399,9 @@ class MediaListAPI(BaseListView):
     def _post(self, params):
         project = params["project"]
         media_spec_list = params["body"]
+        fields = [*MEDIA_PROPERTIES]
+        if params.get("encoded_related_search") == None:
+            fields.remove("incident")
 
         if not isinstance(media_spec_list, list):
             media_spec_list = [media_spec_list]
@@ -407,7 +409,7 @@ class MediaListAPI(BaseListView):
             # Creates a single media object synchronously, works with video and images
             obj, msg = _create_media(project, media_spec_list[0], self.request.user)
             qs = Media.objects.filter(id=obj.id)
-            response_data = list(qs.values(*MEDIA_PROPERTIES))
+            response_data = list(qs.values(*fields))
             response = {"message": msg, "id": [obj.id], "object": response_data}
         elif media_spec_list:
             # Creates multiple media objects asynchronously, works with images only
@@ -421,7 +423,7 @@ class MediaListAPI(BaseListView):
                 ids.append(obj.id)
 
             qs = Media.objects.filter(id__in=ids)
-            response_data = list(qs.values(*MEDIA_PROPERTIES))
+            response_data = list(qs.values(*fields))
             response = {
                 "message": f"Started import of {len(ids)} images!",
                 "id": ids,
@@ -601,7 +603,9 @@ class MediaDetailAPI(BaseDetailView):
         qs = Media.objects.filter(pk=params["id"], deleted=False)
         if not qs.exists():
             raise Http404
-        response_data = list(qs.values(*MEDIA_PROPERTIES))
+        fields = [*MEDIA_PROPERTIES]
+        fields.remove("incident")
+        response_data = list(qs.values(*fields))
         presigned = params.get("presigned")
         if presigned is not None:
             no_cache = params.get("no_cache", False)
