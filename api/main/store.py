@@ -12,7 +12,6 @@ from urllib.parse import urlsplit, urlunsplit
 
 import boto3
 from botocore.client import Config
-from botocore.errorfactory import ClientError
 from google.cloud import storage
 from google.oauth2.service_account import Credentials
 
@@ -121,8 +120,7 @@ class TatorStorage(ABC):
         self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
         self.external_host = external_host and external_host.strip("/")
-        self._server = None
-
+        self._server = ObjectStore.MINIO
         self._proto = "https" if os.getenv("REQUIRE_HTTPS") == "TRUE" else "http"
 
     @property
@@ -284,7 +282,7 @@ class TatorStorage(ABC):
         """Moves the object into the desired storage class"""
 
     @abstractmethod
-    def object_tagged_for_archive(self, path):
+    def object_tagged_for_archive(self, path) -> bool:
         """Returns True if an object is tagged in storage for archive"""
 
     @abstractmethod
@@ -292,7 +290,7 @@ class TatorStorage(ABC):
         """Adds tag to object marking it for archival."""
 
     @abstractmethod
-    def put_media_id_tag(self, path):
+    def put_media_id_tag(self, path, media_id):
         """Adds tag to object indicating its associated media ID."""
 
     def archive_object(self, path: str) -> bool:
@@ -337,7 +335,7 @@ class TatorStorage(ABC):
         if not media_ids:
             return []
 
-        media_qs = Media.objects.filter(pk__in=media_ids)
+        media_qs = type(multi).objects.filter(pk__in=media_ids)
         return [ele for obj in media_qs.iterator() for ele in self._paths_from_single(obj)]
 
     def _paths_from_single(self, media):
@@ -586,7 +584,7 @@ class GCPStorage(TatorStorage):
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(
-            blob=self._get_blob(path),
+            blob=self._get_blob(source_path),
             destination_bucket=self.gcs_bucket,
             new_name=self.path_to_key(dest_path),
         )
