@@ -135,7 +135,7 @@ def _related_search(
             )
         qs = (
             qs.filter(pk__in=media_matches.values("id"))
-            .annotate(incident=Subquery(media_matches.filter(media=OuterRef("id")).values("count")))
+            .annotate(incident=Subquery(media_matches.filter(id=OuterRef("id")).values("count")))
             .distinct()
         )
     else:
