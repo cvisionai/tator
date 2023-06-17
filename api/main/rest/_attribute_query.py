@@ -120,10 +120,14 @@ def _related_search(
                 )
                 .annotate(
                     this_count=Coalesce(
-                        Subquery(this_vals.filter(media=OuterRef("id")).values("count")), 0
+                        Subquery(this_vals.filter(media=OuterRef("id")).distinct().values("count")),
+                        0,
                     ),
                     last_count=Coalesce(
-                        media_vals.filter(media=OuterRef("id")).values("count"), Value(0)
+                        Subquery(
+                            media_vals.filter(media=OuterRef("id")).distinct().values("count")
+                        ),
+                        Value(0),
                     ),
                     count=F("this_count") + F("last_count"),
                 )
