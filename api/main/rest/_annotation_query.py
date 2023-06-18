@@ -18,6 +18,8 @@ from ..schema._attributes import related_keys
 
 from ._media_query import query_string_to_media_ids
 from ._media_query import _related_search
+
+from ._attribute_query import supplied_name_to_field
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attribute_query import get_attribute_psql_queryset_from_query_obj
@@ -188,9 +190,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 query = query | Q(media__in=r)
             qs = qs.filter(query).distinct()
 
-    if params.get("object_search"):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
-
     if params.get("encoded_related_search"):
         search_obj = json.loads(
             base64.b64decode(params.get("encoded_related_search").encode()).decode()
@@ -211,10 +210,19 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         else:
             qs = qs.filter(pk=-1)
 
+    if params.get("object_search"):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
+
     # Used by GET queries
     if params.get("encoded_search"):
         search_obj = json.loads(base64.b64decode(params.get("encoded_search").encode()).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+    if params.get("related_id"):
+        if annotation_type == "localization":
+            state_qs = State.objects.filter(pk__in=params.get("related_id"))
+            qs = qs.filter(pk__in=state_qs.values("localizations"))
+        elif annotation_type == "state":
+            qs = qs.filter(localizations__in=params.get("related_id"))
 
     if apply_merge:
         # parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
@@ -226,7 +234,11 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs.filter(variant_deleted=False)
 
     if params.get("float_array", None) == None:
-        qs = qs.order_by("id")
+        if params.get("sort_by", None):
+            sortables = [supplied_name_to_field(x) for x in params.get("sort_by")]
+            qs = qs.order_by(*sortables)
+        else:
+            qs = qs.order_by("id")
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]

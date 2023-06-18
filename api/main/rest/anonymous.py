@@ -22,7 +22,7 @@ class AnonymousGatewayAPI(APIView):
             last_name="Account",
             email="info@cvisionai.com",
         )
-        
+
         # Check redirect url is relative
         url = request.query_params.get("redirect", None)
         if not (url and url.startswith("/")):

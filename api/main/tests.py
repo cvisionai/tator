@@ -214,7 +214,7 @@ def create_test_bookmark(name, project, user):
     return Bookmark.objects.create(name=name, project=project, user=user, uri="/projects")
 
 
-def create_test_video(user, name, entity_type, project):
+def create_test_video(user, name, entity_type, project, attributes={}):
     return Media.objects.create(
         name=name,
         type=entity_type,
@@ -227,10 +227,11 @@ def create_test_video(user, name, entity_type, project):
         height="480",
         created_by=user,
         elemental_id=str(uuid4()),
+        attributes=attributes,
     )
 
 
-def create_test_image(user, name, entity_type, project):
+def create_test_image(user, name, entity_type, project, attributes={}):
     return Media.objects.create(
         name=name,
         type=entity_type,
@@ -238,10 +239,11 @@ def create_test_image(user, name, entity_type, project):
         md5="",
         width="640",
         height="480",
+        attributes=attributes,
     )
 
 
-def create_test_box(user, entity_type, project, media, frame):
+def create_test_box(user, entity_type, project, media, frame, attributes={}):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
     w = random.uniform(0.0, float(media.width) - x)
@@ -259,6 +261,7 @@ def create_test_box(user, entity_type, project, media, frame):
         y=y,
         width=w,
         height=h,
+        attributes=attributes,
     )
 
 
@@ -269,7 +272,7 @@ def create_test_box_with_attributes(user, entity_type, project, media, frame, at
     return test_box
 
 
-def create_test_line(user, entity_type, project, media, frame):
+def create_test_line(user, entity_type, project, media, frame, attributes={}):
     x0 = random.uniform(0.0, float(media.width))
     y0 = random.uniform(0.0, float(media.height))
     x1 = random.uniform(0.0, float(media.width) - x0)
@@ -286,10 +289,11 @@ def create_test_line(user, entity_type, project, media, frame):
         y=y0,
         u=(x1 - x0),
         v=(y1 - y0),
+        attributes=attributes,
     )
 
 
-def create_test_dot(user, entity_type, project, media, frame):
+def create_test_dot(user, entity_type, project, media, frame, attributes={}):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
     return Localization.objects.create(
@@ -302,15 +306,17 @@ def create_test_dot(user, entity_type, project, media, frame):
         frame=frame,
         x=x,
         y=y,
+        attributes=attributes,
     )
 
 
-def create_test_leaf(name, entity_type, project):
+def create_test_leaf(name, entity_type, project, attributes={}):
     return Leaf.objects.create(
         name=name,
         type=entity_type,
         project=project,
         path="".join(random.choices(string.ascii_lowercase, k=10)),
+        attributes=attributes,
     )
 
 
@@ -866,6 +872,54 @@ class AttributeTestMixin:
         self.assertEqual(len(response1.data), max(0, min(sum(test_vals) - 1, 3)))
         if len(response.data) >= 2 and len(response1.data) >= 1:
             self.assertEqual(response.data[1], response1.data[0])
+
+    def test_sorting(self):
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+        )
+        last_id = response.data[0]["id"]
+        for r in response.data[1:]:
+            assert r["id"] > last_id
+            last_id = r["id"]
+
+        # sort by descending id
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+            f"&sort_by=-$id"
+        )
+        last_id = response.data[0]["id"]
+        for r in response.data[1:]:
+            assert r["id"] < last_id
+            last_id = r["id"]
+
+        # sort by an attribute
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+            f"&sort_by=Float Test"
+        )
+
+        last_val = response.data[0]["attributes"]["Float Test"]
+        for r in response.data[1:]:
+            assert r["attributes"]["Float Test"] >= last_val
+            last_val = r["attributes"]["Float Test"]
+
+        # sort by an attribute descending
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&type={self.entity_type.pk}"
+            f"&sort_by=-Float Test"
+        )
+        last_val = response.data[0]["attributes"]["Float Test"]
+        for r in response.data[1:]:
+            assert r["attributes"]["Float Test"] <= last_val
+            last_val = r["attributes"]["Float Test"]
 
     def test_list_patch(self):
         test_val = random.random() > 0.5
@@ -1996,7 +2050,13 @@ class VideoTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_video(self.user, f"asdf{idx}", self.entity_type, self.project)
+            create_test_video(
+                self.user,
+                f"asdf{idx}",
+                self.entity_type,
+                self.project,
+                attributes={"Float Test": random.random() * 1000},
+            )
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
@@ -2007,6 +2067,74 @@ class VideoTestCase(
         )
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "video1", "last_edit_start": "2017-07-21T17:32:28Z"}
+
+    def test_search(self):
+        box_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype="box",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        box_type.media.add(self.entity_type)
+        box_type.save()
+        wait_for_indices(box_type)
+
+        response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
+        assert response.data[0].get("incident", None) == None
+
+        create_test_box(
+            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
+        )
+
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Foo"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Bar"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Baz"}
+        )
+        create_test_box(
+            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Zoo"}
+        )
+
+        response = self.client.get(
+            f"/rest/Localizations/{self.project.pk}?attribute=String Test::Foo", format=json
+        )
+        self.assertEqual(len(response.data), 4)
+        encoded_search = base64.b64encode(
+            json.dumps({"attribute": "String Test", "operation": "eq", "value": "Foo"}).encode()
+        )
+        response = self.client.get(
+            f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
+            format="json",
+        )
+
+        first_hit = response.data[0]
+        second_hit = response.data[1]
+        self.assertEqual(first_hit.get("incident", None), 3)
+        self.assertEqual(first_hit["id"], self.entities[0].pk)
+        self.assertEqual(second_hit.get("incident", None), 1)
+        self.assertEqual(second_hit["id"], self.entities[1].pk)
+
+        # reverse it
+        response = self.client.get(
+            f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=$incident",
+            format="json",
+        )
+        first_hit = response.data[0]
+        second_hit = response.data[1]
+        self.assertEqual(second_hit.get("incident", None), 3)
+        self.assertEqual(second_hit["id"], self.entities[0].pk)
+        self.assertEqual(first_hit.get("incident", None), 1)
+        self.assertEqual(first_hit["id"], self.entities[1].pk)
 
     def test_author_change(self):
         test_video = create_test_video(self.user, f"asdf_0", self.entity_type, self.project)
@@ -2212,7 +2340,13 @@ class ImageTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_image(self.user, f"asdf{idx}", self.entity_type, self.project)
+            create_test_image(
+                self.user,
+                f"asdf{idx}",
+                self.entity_type,
+                self.project,
+                attributes={"Float Test": random.random() * 1000},
+            )
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
@@ -2266,7 +2400,12 @@ class LocalizationBoxTestCase(
         ]
         self.entities = [
             create_test_box(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2341,7 +2480,12 @@ class LocalizationLineTestCase(
         ]
         self.entities = [
             create_test_line(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2416,7 +2560,12 @@ class LocalizationDotTestCase(
         ]
         self.entities = [
             create_test_dot(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2489,7 +2638,12 @@ class LocalizationPolyTestCase(
         ]
         self.entities = [
             create_test_box(
-                self.user, self.entity_type, self.project, random.choice(self.media_entities), 0
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                attributes={"Float Test": random.random() * 1000},
             )
             for idx in range(random.randint(6, 10))
         ]
@@ -2568,6 +2722,7 @@ class StateTestCase(
                 type=self.entity_type,
                 project=self.project,
                 version=self.version,
+                attributes={"Float Test": random.random() * 1000},
             )
             for media in random.choices(self.media_entities):
                 state.media.add(media)
@@ -3149,7 +3304,12 @@ class LeafTestCase(
         )
         wait_for_indices(self.entity_type)
         self.entities = [
-            create_test_leaf(f"leaf{idx}", self.entity_type, self.project)
+            create_test_leaf(
+                f"leaf{idx}",
+                self.entity_type,
+                self.project,
+                attributes={"Float Test": random.random() * 1000},
+            )
             for idx in range(random.randint(6, 10))
         ]
         self.list_uri = "Leaves"
