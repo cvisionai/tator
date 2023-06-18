@@ -106,7 +106,11 @@ def _related_search(
         media_vals = related_match.values("media").annotate(count=Count("media"))
         media_matches = (
             qs.filter(pk__in=media_vals.values("media"))
-            .annotate(count=Subquery(media_vals.filter(media=OuterRef("id")).values("count")))
+            .annotate(
+                count=Subquery(
+                    media_vals.filter(media=OuterRef("id")).order_by("-count")[:1].values("count")
+                )
+            )
             .values("id", "count")
         )
         logger.info(
@@ -120,12 +124,18 @@ def _related_search(
                 )
                 .annotate(
                     this_count=Coalesce(
-                        Subquery(this_vals.filter(media=OuterRef("id")).distinct().values("count")),
+                        Subquery(
+                            this_vals.filter(media=OuterRef("id"))
+                            .order_by("-count")[:1]
+                            .values("count")
+                        ),
                         0,
                     ),
                     last_count=Coalesce(
                         Subquery(
-                            media_vals.filter(media=OuterRef("id")).distinct().values("count")
+                            media_vals.filter(media=OuterRef("id"))
+                            .order_by("-count")[:1]
+                            .values("count")
                         ),
                         Value(0),
                     ),
