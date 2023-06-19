@@ -74,6 +74,13 @@ export class AttributesForm extends TatorElement {
     this._order.addEventListener("change", this._formChanged.bind(this));
     this.form.appendChild(this._order);
 
+    // style
+    this._style = document.createElement("text-input");
+    this._style.setAttribute("name", "Style");
+    this._style.setAttribute("type", "string");
+    this._style.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._style);
+
     // required
     this._required = document.createElement("bool-input");
     this._required.setAttribute("name", "Required");
@@ -133,24 +140,6 @@ export class AttributesForm extends TatorElement {
       "col-3 col-modal-5 float-left"
     );
     this.placeholderEnum.appendChild(this.placeholderChoices);
-
-    // style
-    // disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check
-    const styleOptions = [
-      { value: "disabled" },
-      { value: "long_string" },
-      { value: "start_frame" },
-      { value: "end_frame" },
-      { value: "start_frame_check" },
-      { value: "end_frame_check" },
-    ];
-    this._style = document.createElement("enum-input");
-    this._style.multiple = true;
-    this._style.setAttribute("name", "Style");
-    this._style.choices = styleOptions;
-    this._style.addEventListener("change", this._formChanged.bind(this));
-    // #TODO
-    // this.form.appendChild(this._style);
 
     // autocomplete
     this._autocompleteSection = document.createElement("div");
@@ -247,6 +236,10 @@ export class AttributesForm extends TatorElement {
     this._order.default = order;
     this._order.setValue(order);
 
+    // Set style
+    this._style.default = style;
+    this._style.setValue(style);
+
     // required
     this._required.default = required;
     this._required.setValue(required);
@@ -288,21 +281,6 @@ export class AttributesForm extends TatorElement {
         : null;
     this._autocomplete_match_any.default = matchAny;
     this._autocomplete_match_any.setValue(matchAny);
-
-    // style
-    // Note: Assumes if multiple they are  always separated with white space
-    if (style) {
-      const styleOptions = style.indexOf(" ") > -1 ? style.split(" ") : [style];
-      // Changes to an array of objects usable by enum-input
-      styleOptions.map((val) => {
-        return { value: val, label: val };
-      });
-      this._style.default = styleOptions;
-      this._style.setValue(styleOptions);
-    } else {
-      this._style.default = null;
-      this._style.setValue(null);
-    }
 
     // minimum
     this._getMinInput({ value: minimum });
@@ -877,6 +855,15 @@ export class AttributesForm extends TatorElement {
         formData.order = this._order.getValue();
       }
 
+      // Style: Only when changed, or when it is a Clone pass the value along
+      // Don't send if the value is null => invalid
+      if (
+        (this._style.changed() || this.isClone) &&
+        this._style.getValue() !== null
+      ) {
+        formData.style = this._style.getValue();
+      }
+
       // Required: Only when changed, or when it is a Clone pass the value along
       if (this._required.changed() || this.isClone) {
         formData.required = this._required.getValue();
@@ -916,25 +903,6 @@ export class AttributesForm extends TatorElement {
           this._autocomplete_service_url.getValue() == ""
         ) {
           delete formData["autocomplete"];
-        }
-      }
-
-      // Style: Only when changed, or when it is a Clone pass the value along
-      // Don't send if the value is null => invalid
-      if (
-        (this._style.changed() || this.isClone) &&
-        this._style.getValue() !== null
-      ) {
-        const rawStyleValue = this._style.getValue();
-        if (Array.isArray(rawStyleValue)) {
-          formData.style = rawStyleValue.join(" "); // join string values with string if multiple chosen
-        } else if (rawStyleValue !== "") {
-          formData.style = rawStyleValue;
-        }
-
-        // //If the value has changed to empty string "" we want to remove it
-        if (this._style.changed() && this._style.getValue() == "") {
-          delete formData["style"];
         }
       }
 
