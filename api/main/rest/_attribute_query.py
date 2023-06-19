@@ -103,7 +103,7 @@ def _get_info_for_attribute(project, entity_type, key):
     if key.startswith('$'):
         if key in ['$x', '$y', '$u', '$v', '$width', '$height', '$fps']:
             return {'name': key[1:], 'dtype': 'float'}
-        elif key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section']:
+        elif key in ['$version', '$user', '$type', '$created_by', '$modified_by', '$frame', '$num_frames', '$section', '$id']:
             return {'name': key[1:], 'dtype': 'int'}
         elif key in ['$created_datetime', '$modified_datetime']:
             return {'name': key[1:], 'dtype': 'datetime'}
@@ -244,11 +244,13 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                 distance, lat, lon = value
                 value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
 
-            castFunc = castLookup[attr_name]
+            castFunc = castLookup.get(attr_name,None)
             if operation in ['isnull']:
                 value = _convert_boolean(value)
             elif castFunc:
                 value = castFunc(value)
+            else:
+                return Q(pk=-1)
             if operation in ['date_eq','eq']:
                 query = Q(**{f"{db_lookup}": value})
             else:
