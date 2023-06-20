@@ -50,9 +50,9 @@ def _get_unique_index_name(entity_type, attribute):
         # Native fields are only scoped to project, native-string types are project/type bound
         # Both need to incorporate type name in the name for uniqueness.
         if attribute["dtype"] == "native":
-            index_name = f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_internal_{attribute_name_sanitized}"
+            index_name = f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_internalv2_{attribute_name_sanitized}"
         else:
-            index_name = f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_internal_{entity_name_sanitized}_{attribute_name_sanitized}"
+            index_name = f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_internalv2_{entity_name_sanitized}_{attribute_name_sanitized}"
     else:
         index_name = f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_{entity_name_sanitized}_{attribute_name_sanitized}"
     return index_name
