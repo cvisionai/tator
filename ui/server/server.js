@@ -194,7 +194,7 @@ app.post('/exchange', async (req, res) => {
         sameSite: "strict",
         secure: true,
         httpOnly: true,
-        path: "/admin",
+        //path: "/admin", // This is needed for /media also
       });
       res.setHeader("Access-Control-Allow-Credentials", 'true');
       res.status(200).json({
@@ -243,7 +243,7 @@ app.get('/refresh', async (req, res) => {
           sameSite: "strict",
           secure: true,
           httpOnly: true,
-          path: "/admin",
+          //path: "/admin",
         });
         res.status(200).json({
           access_token: data.access_token,
