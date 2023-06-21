@@ -31,7 +31,7 @@ affiliation = {
             "type": "integer",
             "description": "Unique integer identifying a affiliation.",
         },
-        "user": affiliation_properties["user"],
+        "user_id": affiliation_properties["user"],
         "username": {
             "description": "Username for the membership.",
             "type": "string",
@@ -49,7 +49,7 @@ affiliation = {
             "description": "Email address of user.",
         },
         "permission": affiliation_properties["permission"],
-        "organization": {
+        "organization_id": {
             "description": "Unique integer identifying an organization.",
             "type": "integer",
             "minimum": 1,
