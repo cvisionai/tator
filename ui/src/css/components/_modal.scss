@@ -6,9 +6,9 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  position: absolute;
+  position: fixed;
   right: 0;
-  top: 0;
+  top: 50px;
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
