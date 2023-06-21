@@ -420,7 +420,8 @@ class MediaListAPI(BaseListView):
                     obj, _ = _create_media(project, media_spec, self.request.user, use_rq=True)
                 except Exception:
                     logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
-                ids.append(obj.id)
+                else:
+                    ids.append(obj.id)
 
             qs = Media.objects.filter(id__in=ids)
             response_data = list(qs.values(*fields))
