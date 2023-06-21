@@ -182,20 +182,18 @@ app.post('/exchange', async (req, res) => {
       return response.json();
     })
     .then((data) => {
-      res.cookie("refresh_token", data.refresh_token, {
+      const options = {
         maxAge: data.refresh_expires_in * 1000, 
         sameSite: "strict",
         secure: true,
         httpOnly: true,
         path: "/refresh",
-      });
-      res.cookie("access_token", data.access_token, {
-        maxAge: data.expires_in * 1000, 
-        sameSite: "strict",
-        secure: true,
-        httpOnly: true,
-        //path: "/admin", // This is needed for /media also
-      });
+      }
+      res.cookie("refresh_token", data.refresh_token, options);
+      options.path = "/media";
+      res.cookie("access_token", data.access_token, options);
+      options.path = "/admin";
+      res.cookie("access_token", data.access_token, options);
       res.setHeader("Access-Control-Allow-Credentials", 'true');
       res.status(200).json({
         access_token: data.access_token,
@@ -205,6 +203,7 @@ app.post('/exchange', async (req, res) => {
       });
     })
     .catch((error) => {
+      console.error(`Error in exchange endpoint: ${error}`);
       return Promise.reject(error);
     });
   } catch (error) {
@@ -238,13 +237,16 @@ app.get('/refresh', async (req, res) => {
         return response.json();
       })
       .then((data) => {
-        res.cookie("access_token", data.access_token, {
-          maxAge: data.expires_in * 1000, 
+        const options = {
+          maxAge: data.refresh_expires_in * 1000, 
           sameSite: "strict",
           secure: true,
           httpOnly: true,
-          //path: "/admin",
-        });
+          path: "/media",
+        }
+        res.cookie("access_token", data.access_token, options);
+        options.path = "/admin";
+        res.cookie("access_token", data.access_token, options);
         res.status(200).json({
           access_token: data.access_token,
           expires_in: data.expires_in,
@@ -253,6 +255,7 @@ app.get('/refresh', async (req, res) => {
         });
       })
       .catch((error) => {
+        console.error(`Error in refresh endpoint: ${error}`);
         return Promise.reject(error);
       });
     } catch (error) {
