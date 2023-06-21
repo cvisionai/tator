@@ -540,6 +540,12 @@ export class AnnotationPage extends TatorPage {
   _setupInitHandlers(canvas) {
     this._canvas = canvas;
 
+    this._canvas.addEventListener("styleChange", (evt) => {
+      if ("cursor" in evt.detail) {
+        this._canvas.style.cursor = evt.detail.cursor;
+      }
+    });
+
     const _handleQueryParams = () => {
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
