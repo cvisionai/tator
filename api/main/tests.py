@@ -365,10 +365,10 @@ def create_test_attribute_types():
             default=[-179.0, -89.0],
         ),
         dict(
-            name="Special Characters are ",
+            name="Special Characters are %&<>:;,()@",
             dtype="string",
             default="fun",
-        )
+        ),
     ]
 
 
@@ -530,6 +530,7 @@ class DefaultCreateTestMixin:
         obj = type(self.entities[0]).objects.get(pk=id_)
         for attr_type in self.entity_type.attribute_types:
             field = attr_type["name"]
+            print(f"Testing {field} for {is_default}")
             if is_default:
                 if not attr_type["dtype"] == "datetime":
                     default = attr_type["default"]
@@ -2437,6 +2438,7 @@ class LocalizationBoxTestCase(
                     "String Test": "asdf",
                     "Datetime Test": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "Geoposition Test": [179.0, -89.0],
+                    "Special Characters are %&<>:;,()@": "Shenanigan",
                 },
             }
         ]
@@ -2517,6 +2519,7 @@ class LocalizationLineTestCase(
                     "String Test": "asdf",
                     "Datetime Test": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "Geoposition Test": [0.0, 0.0],
+                    "Special Characters are %&<>:;,()@": "Shenanigan",
                 },
             }
         ]
@@ -2595,6 +2598,7 @@ class LocalizationDotTestCase(
                     "String Test": "asdf",
                     "Datetime Test": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "Geoposition Test": [0.0, 0.0],
+                    "Special Characters are %&<>:;,()@": "Shenanigan",
                 },
             }
         ]
@@ -2672,6 +2676,7 @@ class LocalizationPolyTestCase(
                     "String Test": "asdf",
                     "Datetime Test": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "Geoposition Test": [179.0, -89.0],
+                    "Special Characters are %&<>:;,()@": "Shenanigan",
                 },
             }
         ]
@@ -2750,6 +2755,7 @@ class StateTestCase(
                     "String Test": "asdf",
                     "Datetime Test": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "Geoposition Test": [0.0, 0.0],
+                    "Special Characters are %&<>:;,()@": "Shenanigan",
                 },
             }
         ]
@@ -3335,6 +3341,7 @@ class LeafTestCase(
                     "String Test": "asdf",
                     "Datetime Test": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "Geoposition Test": [0.0, 0.0],
+                    "Special Characters are %&<>:;,()@": "Shenanigan",
                 },
             }
         ]
