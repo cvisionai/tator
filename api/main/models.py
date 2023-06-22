@@ -36,10 +36,7 @@ from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
 from django.db.models import JSONField
 from django.db.models import FloatField, Transform,UUIDField
-from django.db.models.signals import post_save
-from django.db.models.signals import pre_delete
-from django.db.models.signals import post_delete
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, pre_delete, pre_save, post_delete, post_save
 from django.dispatch import receiver
 from django.conf import settings
 from django.forms.models import model_to_dict
@@ -373,7 +370,6 @@ def user_save(sender, instance, created, **kwargs):
     attr_prefix = "_saving_"
     random_attr = f"{attr_prefix}{''.join(random.sample(string.ascii_lowercase, 16))}"
 
-    user_desc = instance.get_description()
     if os.getenv('COGNITO_ENABLED') == 'TRUE':
         if created:
             # Adds random attribute to suppress email from save during creation, then removes it
@@ -403,20 +399,46 @@ def user_save(sender, instance, created, **kwargs):
             Affiliation.objects.create(organization=organization,
                                        user=instance,
                                        permission='Admin')
+
+@receiver(pre_save, sender=User)
+def user_pre_save(sender, instance, **kwargs):
+    # Prefix for random attribute name to determine if this is the root trigger of this signal
+    attr_prefix = "_saving_"
+    user_desc = instance.get_description()
+    is_root = all(not attr.startswith(attr_prefix) for attr in dir(instance))
+    created = not instance.pk
+
+    if created:
         msg = (
             f"You are being notified that a new user {instance} (username {instance.username}, "
             f"email {instance.email}) has been added to the Tator deployment with the following "
             f"attributes:\n\n{user_desc}"
         )
+        is_monitored = True
     else:
         msg = (
             f"You are being notified that an existing user {instance} been modified with the "
             f"following values:\n\n{user_desc}"
         )
 
-    # Only send an email if this is the root `post_save` trigger, i.e. does not have a random
-    # attribute added to it
-    if all(not attr.startswith(attr_prefix) for attr in dir(instance)):
+        # Only send an email if this is the root `post_save` trigger, i.e. does not have a random
+        # attribute added to it, and is a modification of a monitored field.
+        original_instance = type(instance).objects.get(pk=instance.id)
+        monitored_fields = [
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "is_staff",
+            "profile",
+            "password",
+        ]
+        is_monitored = any(
+            getattr(instance, fieldname, None) != getattr(original_instance, fieldname, None)
+            for fieldname in monitored_fields
+        )
+
+    if is_root and is_monitored:
         logger.info(msg)
         email_service = get_email_service()
         if email_service:
