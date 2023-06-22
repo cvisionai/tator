@@ -168,6 +168,7 @@ export class AnnotationPlayer extends TatorElement {
       "Zoom Timeline Controls",
       "zoom-timeline-controls-btn"
     );
+    btn._button.setAttribute("title", "Zoom Timeline Controls");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._videoTimelineControlsBtn = btn;
@@ -392,6 +393,7 @@ export class AnnotationPlayer extends TatorElement {
       "Player Settings",
       "player-settings-btn"
     );
+    btn._button.setAttribute("title","Player Settings");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._playerSettingsBtn = btn;
