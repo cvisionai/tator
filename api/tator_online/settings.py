@@ -61,9 +61,9 @@ GRAPH_MODELS = {
     'group_models': True,
 }
 
-LOGIN_URL = "/redirect/login/"
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = '/projects'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 AUTH_USER_MODEL = 'main.User'
 
 MESSAGE_TAGS = {
@@ -78,8 +78,12 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+] + ([
+    'tator_online.KeycloakMiddleware',
+] if KEYCLOAK_ENABLED else [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+]) + [
     'tator_online.StatsdMiddleware',
     'tator_online.AuditMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -276,6 +280,12 @@ if TATOR_EMAIL_ENABLED:
         TATOR_EMAIL_AWS_ACCESS_KEY_ID = os.getenv("TATOR_EMAIL_AWS_ACCESS_KEY_ID")
         TATOR_EMAIL_AWS_SECRET_ACCESS_KEY = os.getenv("TATOR_EMAIL_AWS_SECRET_ACCESS_KEY")
     # TODO Add `elif TATOR_EMAIL_SERVICE == "OCI":` case when OCI integration is complete
+
+    TATOR_EMAIL_NOTIFY_STAFF = os.getenv("TATOR_EMAIL_NOTIFY_STAFF")
+    if TATOR_EMAIL_NOTIFY_STAFF:
+        TATOR_EMAIL_NOTIFY_STAFF = TATOR_EMAIL_NOTIFY_STAFF.lower() == "true"
+    else:
+        TATOR_EMAIL_NOTIFY_STAFF = False
 
 ANONYMOUS_REGISTRATION_ENABLED = os.getenv('ANONYMOUS_REGISTRATION_ENABLED')
 if ANONYMOUS_REGISTRATION_ENABLED is not None:

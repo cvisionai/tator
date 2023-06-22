@@ -51,10 +51,6 @@ export class AlgorithmButton extends TatorElement {
   set algorithms(val) {
     this._algorithmMenu.algorithms = val;
   }
-
-  hideNewAlgorithm() {
-    this._algorithmMenu.hideNewAlgorithm();
-  }
 }
 
 if (!customElements.get("algorithm-button")) {

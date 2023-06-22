@@ -85,7 +85,7 @@ def _single_ids_from_multi_qs(multi_qs):
     return set(ele for id_lst in multi_qs.values_list("media_files__ids", flat=True) for ele in id_lst)
 
 
-def _presign(user_id, expiration, medias, fields=None):
+def _presign(user_id, expiration, medias, fields=None, no_cache=False):
     """ Replaces specified media fields with presigned urls.
     """
     # First get resources referenced by the given media.
@@ -111,22 +111,22 @@ def _presign(user_id, expiration, medias, fields=None):
                 if urlparse(media_def["path"]).scheme != "":
                     continue
                 url = cache.get_presigned(user_id, media_def["path"])
-                if url is None:
+                if no_cache or (url is None):
                     tator_store = store_lookup[media_def["path"]]
                     url = tator_store.get_download_url(media_def["path"], expiration)
-                    if ttl > 0:
+                    if ttl > 0 and not no_cache:
                         cache.set_presigned(user_id, media_def["path"], url, ttl)
                 media_def["path"] = url
                 # Get segment url
                 if field == "streaming":
                     if "segment_info" in media_def:
                         url = cache.get_presigned(user_id, media_def["segment_info"])
-                        if url is None:
+                        if no_cache or (url is None):
                             tator_store = store_lookup[media_def["segment_info"]]
                             url = tator_store.get_download_url(
                                 media_def["segment_info"], expiration
                             )
-                            if ttl > 0:
+                            if ttl > 0 and not no_cache:
                                 cache.set_presigned(user_id, media_def["segment_info"], url, ttl)
                         media_def["segment_info"] = url
                     else:
@@ -373,7 +373,8 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            _presign(self.request.user.pk, presigned, response_data)
+            no_cache = params.get("no_cache", False)
+            _presign(self.request.user.pk, presigned, response_data, no_cache=no_cache)
         return response_data
 
     def _post(self, params):
@@ -566,7 +567,8 @@ class MediaDetailAPI(BaseDetailView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            _presign(self.request.user.pk, presigned, response_data)
+            no_cache = params.get("no_cache", False)
+            _presign(self.request.user.pk, presigned, response_data, no_cache=no_cache)
         return response_data[0]
 
     def _patch(self, params):

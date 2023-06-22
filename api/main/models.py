@@ -1,6 +1,8 @@
 import json
 import os
 import psycopg2
+import random
+import string
 from typing import List, Generator, Tuple
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -361,35 +363,40 @@ class User(AbstractUser):
     def get_description(self):
         return "\n".join(
             f"{field}={getattr(self, field)}"
-            for field in ["id", "username", "first_name", "last_name", "email", "is_active"]
+            for field in ["id", "username", "first_name", "last_name", "email", "is_active", "profile"]
         )
 
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):
+    # Create random attribute name with static prefix for determining if this is the root trigger of
+    # this signal
+    attr_prefix = "_saving_"
+    random_attr = f"{attr_prefix}{''.join(random.sample(string.ascii_lowercase, 16))}"
+
     user_desc = instance.get_description()
     if os.getenv('COGNITO_ENABLED') == 'TRUE':
         if created:
-            # Adds attribute to suppress email from save during creation, then removes it
-            instance.saving = True
+            # Adds random attribute to suppress email from save during creation, then removes it
+            setattr(instance, random_attr, True)
             instance.move_to_cognito()
-            del instance.saving
+            delattr(instance, random_attr)
         else:
             TatorCognito().update_attributes(instance)
     if created:
         if instance.username:
             instance.username = instance.username.strip()
 
-            # Adds attribute to suppress email from save during creation, then removes it
-            instance.saving = True
+            # Adds random attribute to suppress email from save during creation, then removes it
+            setattr(instance, random_attr, True)
             instance.save()
-            del instance.saving
+            delattr(instance, random_attr)
         if settings.SAML_ENABLED and not instance.email:
             instance.email = instance.username
 
-            # Adds attribute to suppress email from save during creation, then removes it
-            instance.saving = True
+            # Adds random attribute to suppress email from save during creation, then removes it
+            setattr(instance, random_attr, True)
             instance.save()
-            del instance.saving
+            delattr(instance, random_attr)
         invites = Invitation.objects.filter(email=instance.email, status='Pending')
         if (invites.count() == 0) and (os.getenv('AUTOCREATE_ORGANIZATIONS')):
             organization = Organization.objects.create(name=f"{instance}'s Team")
@@ -407,7 +414,9 @@ def user_save(sender, instance, created, **kwargs):
             f"following values:\n\n{user_desc}"
         )
 
-    if not hasattr(instance, "saving"):
+    # Only send an email if this is the root `post_save` trigger, i.e. does not have a random
+    # attribute added to it
+    if all(not attr.startswith(attr_prefix) for attr in dir(instance)):
         logger.info(msg)
         email_service = get_email_service()
         if email_service:
@@ -489,12 +498,15 @@ def affiliation_save(sender, instance, created, **kwargs):
             title = f"{user} added to {organization}"
             text = (
                 f"You are being notified that a new user {user} (username {user.username}, email "
-                f"{user.email}) has been added to the Tator organization {organization}. This "
-                f"message has been sent to all organization admins. No action is required."
+                f"{user.email}) has been added to the Tator organization {organization}."
             )
+            footer = " This message has been sent to all organization admins. No action is required."
 
             email_service.email(
-                sender=settings.TATOR_EMAIL_SENDER, recipients=recipients, title=title, text=text
+                sender=settings.TATOR_EMAIL_SENDER,
+                recipients=recipients,
+                title=title,
+                text=text + footer,
             )
             logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
     else:
@@ -594,9 +606,6 @@ class Project(Model):
     enable_downloads = BooleanField(default=True)
     thumb = CharField(max_length=1024, null=True, blank=True)
     usernames = ArrayField(CharField(max_length=256), default=list)
-    """ Mapping between attribute type names and UUIDs. Used internally for
-        maintaining elasticsearch field aliases.
-    """
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
                         related_name='+', db_column='bucket')
     """ If set, media will use this bucket by default.
@@ -1382,13 +1391,16 @@ class Resource(Model):
             path = os.readlink(path_or_link)
         else:
             path = path_or_link
-        if media is None and generic_file is None:
-            obj, created = Resource.objects.get_or_create(path=path, bucket=None)
-        elif media is None:
-            obj, created = Resource.objects.get_or_create(path=path, bucket=generic_file.project.bucket)
+        obj, created = Resource.objects.get_or_create(path=path)
+        if media is None and generic_file is not None:
+            if created:
+                obj.bucket = generic_file.project.bucket
+                obj.save()
             obj.generic_files.add(generic_file)
-        else:
-            obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
+        elif media is not None:
+            if created:
+                obj.bucket = media.project.bucket
+                obj.save()
             obj.media.add(media)
 
     @transaction.atomic
@@ -1734,8 +1746,6 @@ class Leaf(Model, ModelDiffMixin):
         return pathStr
 
 class Section(Model):
-    """ Stores either a lucene search or raw elasticsearch query.
-    """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     name = CharField(max_length=128)
     """ Name of the section.
@@ -1973,6 +1983,7 @@ class RowProtection(Model):
 # e.g. Not relaying solely on `db_index=True` in django.
 BUILT_IN_INDICES = {
     MediaType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$name', 'dtype': 'native_string'},
         {'name': '$created_datetime', 'dtype': 'native'},
         {'name': '$modified_datetime', 'dtype': 'native'},
@@ -1982,14 +1993,17 @@ BUILT_IN_INDICES = {
         {'name': '$archive_state', 'dtype': 'native_string'}
     ],
     LocalizationType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$created_datetime', 'dtype': 'native'},
         {'name': '$modified_datetime', 'dtype': 'native'}
     ],
     StateType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$created_datetime', 'dtype': 'native'},
         {'name': '$modified_datetime', 'dtype': 'native'},
     ],
     LeafType: [
+        {'name': '$id', 'dtype': 'native'},
         {'name': '$name', 'dtype': 'string'},
         {'name': '$path', 'dtype': 'string'},
         {'name': '$name', 'dtype': 'upper_string'},

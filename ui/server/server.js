@@ -42,7 +42,7 @@ const params = {
   email_enabled: argv.email_enabled,
   okta_enabled: argv.okta_enabled,
   keycloak_enabled: argv.keycloak_enabled,
-  prelogin_message: argv.prelogin_message.split("\\n"),
+  prelogin_message: argv.prelogin_message.replaceAll("COLON", ":").split("\\n"),
   prelogin_redirect: argv.prelogin_redirect,
 };
 
@@ -68,7 +68,7 @@ if (params.backend) {
 }
 
 app.get('/', (req, res) => {
-  res.redirect('/projects');
+  res.redirect(301, '/projects');
 });
 
 app.get('/:projectId/analytics', (req, res) => {
@@ -187,6 +187,14 @@ app.post('/exchange', async (req, res) => {
         sameSite: "strict",
         secure: true,
         httpOnly: true,
+        path: "/refresh",
+      });
+      res.cookie("access_token", data.access_token, {
+        maxAge: data.expires_in * 1000, 
+        sameSite: "strict",
+        secure: true,
+        httpOnly: true,
+        path: "/admin",
       });
       res.setHeader("Access-Control-Allow-Credentials", 'true');
       res.status(200).json({
@@ -230,6 +238,13 @@ app.get('/refresh', async (req, res) => {
         return response.json();
       })
       .then((data) => {
+        res.cookie("access_token", data.access_token, {
+          maxAge: data.expires_in * 1000, 
+          sameSite: "strict",
+          secure: true,
+          httpOnly: true,
+          path: "/admin",
+        });
         res.status(200).json({
           access_token: data.access_token,
           expires_in: data.expires_in,

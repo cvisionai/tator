@@ -122,7 +122,7 @@ export class AnnotationFilterDialog extends ModalDialog {
     let excludeCategories = ['Medias'];
     if (this._dataType)
     {
-      if (this._isLocalization)
+      if (data.isLocalization)
       {
         excludeCategories.push(...['MediaStates', 'LocalizationStates','FrameStates']);
         for (let t of this._td.getStoredLocalizationTypes())

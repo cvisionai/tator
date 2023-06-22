@@ -7,7 +7,10 @@ from jwt.algorithms import RSAAlgorithm
 import requests
 import json
 
-class KeycloakAuthentication(BaseAuthentication):
+import logging
+logger = logging.getLogger(__name__)
+
+class KeycloakAuthenticationMixin:
     def _get_pub_key(self):
         from main.cache import TatorCache
         cache = TatorCache()
@@ -31,12 +34,15 @@ class KeycloakAuthentication(BaseAuthentication):
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if auth_header.startswith('Bearer '):
             token = auth_header[7:]
+        if token is None:
+            token = request.COOKIES.get('access_token')
         return token
 
     def authenticate(self, request):
         from main.models import User
+        from django.contrib.auth.models import AnonymousUser
 
-        out = None
+        out = (AnonymousUser(), None)
         pub_key = self._get_pub_key()
         token = self._get_token(request)
         if token is not None:
@@ -57,3 +63,6 @@ class KeycloakAuthentication(BaseAuthentication):
             except Exception as e:
                 raise AuthenticationFailed(f"Access token decode failed: {e}")
         return out
+
+class KeycloakAuthentication(KeycloakAuthenticationMixin, BaseAuthentication):
+    pass

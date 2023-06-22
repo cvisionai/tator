@@ -100,7 +100,7 @@ attribute_filter_parameter_schema = [
         'name': 'encoded_search',
         'in': 'query',
         'required': False,
-        'description': 'Binary64 encoded string representing an `Object_Search` defined in /components/AttributeOperationFilter',
+        'description': 'Base64 encoded string representing an `Object_Search` defined in /components/AttributeOperationSpec',
         'schema': {'type': 'string'},
     }
 ]
@@ -215,7 +215,7 @@ related_attribute_filter_parameter_schema = [
         'name': 'encoded_related_search',
         'in': 'query',
         'required': False,
-        'description': 'Binary64 encoded string representing an `Object_Search` defined in /components/AttributeOperationFilter applied against related objects',
+        'description': 'Base64 encoded string representing an `Object_Search` defined in /components/AttributeOperationSpec applied against related objects',
         'schema': {'type': 'string'},
     }
 ]

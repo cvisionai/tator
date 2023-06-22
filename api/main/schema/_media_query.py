@@ -72,22 +72,21 @@ media_filter_parameter_schema = [
         'schema': {'type': 'integer'},
     },
     {
+        'name': 'after_name',
+        'in': 'query',
+        'required': False,
+        'description': 'If given, all results returned will be after the '
+                       'media with this name. The `start` and `stop` '
+                       'parameters are relative to this modified range.',
+        'schema': {'type': 'string'},
+    },
+    {
         "name": "archive_lifecycle",
         "in": "query",
         "required": False,
         "description": ("Archive lifecycle of the files, one of live (live only), archived "
                         "(to_archive, archived, or to_live), or all. Defaults to 'live'"),
         "schema": {"type": "string", "enum": ["live", "archived", "all"]},
-    },
-    {
-        'name': 'annotation_search',
-        'in': 'query',
-        'required': False,
-        'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See [reference](https://www.elastic.co/guide/en/elasticsearch/'
-                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax). '
-                       'This search is applied to child annotations of media only.',
-        'schema': {'type': 'string'},
     },
     {
         'name': 'elemental_id',

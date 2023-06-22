@@ -88,6 +88,21 @@ user_update = {
             'type': 'integer',
             'description': 'Set to >0 to clear the current avatar of the user',
             'default': 0
+        },
+        'set_profile_keys':
+        {
+            'type': 'object',
+            'description': 'Key/Value Pairs to set atomically',
+        },
+        'clear_profile_keys':
+        {
+            'description': 'Clear the given keys from the profile dictionary',
+            'type': 'array',
+            'items':
+            {
+                'type': 'string',
+                'description': 'Name of key to remove'
+            }
         }
     },
 }

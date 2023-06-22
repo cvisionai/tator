@@ -110,8 +110,8 @@ class LeafListSchema(AutoSchema):
         elif method == 'POST':
             short_desc = 'Create leaf list.'
             long_desc = dedent("""\
-            This method does a bulk create on a list of `LeafSpec` objects. A 
-            maximum of 500 leaves may be created in one request.
+            This method does a bulk create on a list of :class:`tator.models.LeafSpec` objects; it
+            also accepts a single instance. A maximum of 500 leaves may be created in one request.
             """)
         elif method == 'PATCH':
             short_desc = 'Update leaf list.'

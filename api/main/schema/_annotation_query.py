@@ -62,9 +62,7 @@ annotation_filter_parameter_schema = [
                        '\n'
                        'If Version B over A is selected and merge is turned on:'
                        ' + The "foo" present on Version B is returned '
-                       ' + If the "foo" on version B is deleted, no "foo" is returned.'
-                       'An exception occurs if an Elasticsearch query is triggered and pagination parameters '
-                       '(start or stop) are included.',
+                       ' + If the "foo" on version B is deleted, no "foo" is returned.',
         'schema': {'type': 'integer',
                    'minimum': 0,
                    'maximum': 1,

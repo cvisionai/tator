@@ -53,23 +53,24 @@ class TatorMail(ABC):
         Sends an email to all deployment staff members, see :meth:`main.mail.TatorMail.email`
         for details
         """
-        if add_footer and text:
-            footer = "\n\nThis message has been sent to all deployment staff. No action is required."
-            text += footer
+        if settings.TATOR_EMAIL_NOTIFY_STAFF:
+            if add_footer and text:
+                footer = " This message has been sent to all deployment staff. No action is required."
+                text += footer
 
-        # Get all non-empty staff emails
-        staff_qs = main.models.User.objects.filter(is_staff=True)
-        staff_emails = [email for email in staff_qs.values_list("email", flat=True) if email]
-        if staff_emails:
-            return self.email(
-                sender=sender,
-                recipients=staff_emails,
-                title=title,
-                text=text,
-                html=html,
-                attachments=attachments,
-                raise_on_failure=raise_on_failure,
-            )
+            # Get all non-empty staff emails
+            staff_qs = main.models.User.objects.filter(is_staff=True)
+            staff_emails = [email for email in staff_qs.values_list("email", flat=True) if email]
+            if staff_emails:
+                return self.email(
+                    sender=sender,
+                    recipients=staff_emails,
+                    title=title,
+                    text=text,
+                    html=html,
+                    attachments=attachments,
+                    raise_on_failure=raise_on_failure,
+                )
         return True
 
     def email(
@@ -225,13 +226,7 @@ def get_email_service():
     """Instantiates the correct subclass of :class:`main.mail.TatorMail`"""
 
     if settings.TATOR_EMAIL_ENABLED:
-        try:
-            return EmailService[settings.TATOR_EMAIL_SERVICE].value()
-        except ValueError:
-            valid = ", ".join(service.name for service in EmailService)
-            logger.error(
-                f"Invalid email service '{settings.TATOR_EMAIL_SERVICE}', must be one of [{valid}]",
-                exc_info=True,
-            )
+        # TODO Hard-code AWS SES until OCI integration is complete
+        return TatorSES()
 
     return None

@@ -43,17 +43,18 @@ export class EntityBrowser extends TatorElement {
     svg.appendChild(path);
 
     const searchDiv = document.createElement("div");
-    searchDiv.setAttribute("class", "annotation__panel-group py-3");
+    searchDiv.setAttribute("class", "annotation__panel-group py-3 d-flex");
     searchDiv.style.width = 'fit-content';
     spacer.appendChild(searchDiv);
 
     this._search = document.createElement("filter-data-button");
+    this._search.setAttribute("class", "d-flex");
     this._filterModal = document.createElement("annotation-filter-dialog");
     searchDiv.appendChild(this._search);
     searchDiv.appendChild(this._filterModal);
 
     const filterNotificationSpan = document.createElement("span");
-    filterNotificationSpan.setAttribute("class", "f3");
+    filterNotificationSpan.setAttribute("class", "f3 text-green text-center d-flex flex-items-center px-3");
     searchDiv.appendChild(filterNotificationSpan);
     this._filterNotificationSpan = filterNotificationSpan;
     const groupDiv = document.createElement("div");

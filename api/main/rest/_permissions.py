@@ -199,7 +199,7 @@ class UserPermission(BasePermission):
             return True
 
         user = request.user
-        finger_user = view.kwargs['id']
+        finger_user = view.kwargs.get('id')
         if user.is_staff:
             return True
         if user.id == finger_user:
