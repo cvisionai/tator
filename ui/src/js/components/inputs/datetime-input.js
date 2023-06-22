@@ -14,24 +14,24 @@ export class DateTimeInput extends TatorElement {
     this._shadow.appendChild(this.label);
 
     const labelInner = document.createElement("span");
-    labelInner.setAttribute("class", "col-3");
+    labelInner.setAttribute("class", "col-4");
     this._innerLabel = labelInner;
     this.label.appendChild(labelInner);
 
-    this._name = document.createTextNode("");
+    this._name = document.createElement("span");
     labelInner.appendChild(this._name);
 
     this._input = document.createElement("input");
-    this._input.setAttribute("class", "form-control input-sm col-12");
+    this._input.setAttribute("class", "form-control input-sm d-flex flex-grow");
     this._input.setAttribute("type", "datetime-local");
     this._input.setAttribute("step", ".1");
-    this._input.hidden = false;
+    this._input.style.display = "flex";
     this.label.appendChild(this._input);
 
     this._textInput = document.createElement("input");
-    this._textInput.setAttribute("class", "form-control input-sm col-8");
+    this._textInput.setAttribute("class", "form-control input-sm d-flex flex-grow");
     this._textInput.setAttribute("type", "text");
-    this._textInput.hidden = true;
+    this._textInput.style.display = "none";
     this.label.appendChild(this._textInput);
 
     this._toggle = document.createElement("text-calendar-button");
@@ -39,11 +39,11 @@ export class DateTimeInput extends TatorElement {
 
     this._toggle.addEventListener("click", () => {
       if (this._toggle.current_state == "text") {
-        this._input.hidden = true;
-        this._textInput.hidden = false;
+        this._input.style.display = "none";
+        this._textInput.style.display = "flex";
       } else {
-        this._input.hidden = false;
-        this._textInput.hidden = true;
+        this._input.style.display = "flex";
+        this._textInput.style.display = "none";
       }
     });
 
@@ -95,7 +95,7 @@ export class DateTimeInput extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "name":
-        this._name.nodeValue = newValue;
+        this._name.textContent = newValue;
         break;
     }
   }
@@ -118,6 +118,47 @@ export class DateTimeInput extends TatorElement {
   set default(val) {
     // Value should be the deafult ISO string
     this._default = val;
+  }
+
+  /**
+   * @param {string} val - Style string associated with the attribute type
+   */
+  setStyle(val) {
+
+    if (typeof val != "string") {
+      console.warn(`Provided style is not a string`);
+      return;
+    }
+
+    var styleTokens = val.split(" ");
+    for (const token of styleTokens) {
+      if (token.includes("label-css-add-")) {
+        var classAdd = token.split("label-css-add-")[1];
+        this._name.classList.add(classAdd);
+      }
+      else if (token.includes("label-css-rem")) {
+        var classRem = token.split("label-css-rem-")[1];
+        this._name.classList.remove(classRem);
+      }
+      else if (token.includes("field-css-add")) {
+        var classAdd = token.split("field-css-add-")[1];
+        this._input.classList.add(classAdd);
+        this._textInput.classList.remove(classRem);
+      }
+      else if (token.includes("field-css-rem")) {
+        var classRem = token.split("field-css-rem-")[1];
+        this._input.classList.remove(classRem);
+        this._textInput.classList.remove(classRem);
+      }
+      else if (token.includes("css-add-")) {
+        var classAdd = token.split("css-add-")[1];
+        this.label.classList.add(classAdd);
+      }
+      else if (token.includes("css-rem-")) {
+        var classRem = token.split("css-rem-")[1];
+        this.label.classList.add(classRem);
+      }
+    }
   }
 
   changed() {
