@@ -13,22 +13,20 @@ export class TimelineCanvas extends TatorElement {
 
     this._clickHandlers = {};
 
-    this._canvas.addEventListener("click", evt => {
+    this._canvas.addEventListener("click", (evt) => {
       if (this._currentTypeId in this._clickHandlers) {
         this._clickHandlers[this._currentTypeId](evt);
       }
     });
-    this._canvas.style.width="100%";
-    this._canvas.style.height="3px";
+    this._canvas.style.width = "100%";
+    this._canvas.style.height = "3px";
     this._canvasWidth = 2000;
 
     this.stateInterpolationType = "latest"; // "latest" or "attr_style_range"
 
-    this._grayColor = "#262e3d"
+    this._grayColor = "#262e3d";
 
-    this._highlightColors = [
-      {highlight: "#FFDF6C", background: "#696147"},
-    ]
+    this._highlightColors = [{ highlight: "#FFDF6C", background: "#696147" }];
   }
 
   /**
@@ -56,8 +54,8 @@ export class TimelineCanvas extends TatorElement {
     endFrameAttr,
     startFrameCheckAttr,
     endFrameCheckAttr,
-    inVideoCheckAttr) {
-
+    inVideoCheckAttr
+  ) {
     const text = document.createElement("span");
     text.setAttribute("class", "f3 text-gray px-1 py-1");
     text.textContent = name + "(s)";
@@ -67,8 +65,8 @@ export class TimelineCanvas extends TatorElement {
 
     const canvas = document.createElement("canvas");
     canvas.setAttribute("class", "py-1");
-    canvas.style.width="100%";
-    canvas.style.height="3px";
+    canvas.style.width = "100%";
+    canvas.style.height = "3px";
     this._multiCanvasDiv.append(canvas);
 
     const context = canvas.getContext("2d");
@@ -90,12 +88,11 @@ export class TimelineCanvas extends TatorElement {
 
   set annotationData(val) {
     this._data = val;
-    this._data.addEventListener("freshData", evt => {
+    this._data.addEventListener("freshData", (evt) => {
       if (this._currentTypeId) {
         // Update the state interpolation latest timeline
         this._updateCanvas(this._currentTypeId);
-      }
-      else if (this._interpolation === "attr_style_range") {
+      } else if (this._interpolation === "attr_style_range") {
         // Update the state attr_style_range timeline
 
         for (const canvasData of this._multiCanvas) {
@@ -109,7 +106,6 @@ export class TimelineCanvas extends TatorElement {
           const dataType = this._data._dataTypes[typeId];
 
           if (dataType.interpolation === "attr_style_range") {
-
             // To support attr_style_range, there must at least be one set of
             // start_frame|end_frame style attributes. Grab the start_frame/end_frame info.
             //
@@ -128,37 +124,38 @@ export class TimelineCanvas extends TatorElement {
             var rangeList = [];
 
             for (const attr of dataType.attribute_types) {
-              const style = attr['style'];
+              const style = attr["style"];
 
               if (style) {
-
-                const styleOptions = style.split(' ');
-                const name = attr['name'];
+                const styleOptions = style.split(" ");
+                const name = attr["name"];
 
                 if (styleOptions.includes("start_frame")) {
                   startFrameAttrList.push(name);
-                }
-                else if (styleOptions.includes("end_frame")) {
+                } else if (styleOptions.includes("end_frame")) {
                   endFrameAttrList.push(name);
-                }
-                else if (styleOptions.includes("start_frame_check")) {
+                } else if (styleOptions.includes("start_frame_check")) {
                   startFrameCheckAttr = name;
-                }
-                else if (styleOptions.includes("end_frame_check")) {
+                } else if (styleOptions.includes("end_frame_check")) {
                   endFrameCheckAttr = name;
-                }
-                else if (styleOptions.includes("in_video_check")) {
+                } else if (styleOptions.includes("in_video_check")) {
                   inVideoCheckAttrList.push(name);
-                }
-                else if (styleOptions.includes("range_set")) {
-                  rangeList.push({name: name, data: attr["default"], order: attr["order"]});
+                } else if (styleOptions.includes("range_set")) {
+                  rangeList.push({
+                    name: name,
+                    data: attr["default"],
+                    order: attr["order"],
+                  });
                 }
               }
             }
 
-            if (startFrameAttrList.length == 1 && endFrameAttrList.length == 1) {
+            if (
+              startFrameAttrList.length == 1 &&
+              endFrameAttrList.length == 1
+            ) {
               startFrameAttr = startFrameAttrList[0];
-              endFrameAttr = endFrameAttrList[0]
+              endFrameAttr = endFrameAttrList[0];
               inVideoCheckAttr = null;
 
               this._addToMultiCanvasData(
@@ -168,29 +165,31 @@ export class TimelineCanvas extends TatorElement {
                 endFrameAttr,
                 startFrameCheckAttr,
                 endFrameCheckAttr,
-                inVideoCheckAttr);
-            }
-            else if (startFrameAttrList.length > 1 &&
+                inVideoCheckAttr
+              );
+            } else if (
+              startFrameAttrList.length > 1 &&
               endFrameAttrList.length > 1 &&
               startFrameAttrList.length == endFrameAttrList.length &&
-              startFrameAttrList.length == rangeList.length) {
-
-              rangeList.sort(function(a, b) {
-                  if (a.order < b.order) {
-                    return 1;
-                  }
-                  if (a.order > b.order) {
-                    return -1;
-                  }
-                  return 0;
+              startFrameAttrList.length == rangeList.length
+            ) {
+              rangeList.sort(function (a, b) {
+                if (a.order < b.order) {
+                  return 1;
                 }
-              );
+                if (a.order > b.order) {
+                  return -1;
+                }
+                return 0;
+              });
 
               for (const rangeInfo of rangeList) {
-                const rangeTokens = rangeInfo.data.split('|');
+                const rangeTokens = rangeInfo.data.split("|");
 
                 if (rangeTokens.length < 2 && rangeTokens.length > 3) {
-                  console.error("Incorrect datatype setup with attr_style_range interpolation.")
+                  console.error(
+                    "Incorrect datatype setup with attr_style_range interpolation."
+                  );
                   break;
                 }
 
@@ -205,12 +204,16 @@ export class TimelineCanvas extends TatorElement {
                 }
 
                 if (!startFrameAttrList.includes(startFrameAttr)) {
-                  console.error("Incorrect datatype setup with attr_style_range interpolation.")
+                  console.error(
+                    "Incorrect datatype setup with attr_style_range interpolation."
+                  );
                   break;
                 }
 
                 if (!endFrameAttrList.includes(endFrameAttr)) {
-                  console.error("Incorrect datatype setup with attr_style_range interpolation.")
+                  console.error(
+                    "Incorrect datatype setup with attr_style_range interpolation."
+                  );
                   break;
                 }
 
@@ -221,11 +224,13 @@ export class TimelineCanvas extends TatorElement {
                   endFrameAttr,
                   null,
                   null,
-                  inVideoCheckAttr);
+                  inVideoCheckAttr
+                );
               }
-            }
-            else {
-              console.error("Incorrect datatype setup with attr_style_range interpolation.")
+            } else {
+              console.error(
+                "Incorrect datatype setup with attr_style_range interpolation."
+              );
               continue;
             }
           }
@@ -234,11 +239,13 @@ export class TimelineCanvas extends TatorElement {
         this.showLabels = this._showLabels;
 
         // Let parent know that the multi-canvas is being used.
-        this.dispatchEvent(new CustomEvent("multiCanvas", {
-          detail: {
-            active: this._multiCanvas.length > 0
-          }
-        }));
+        this.dispatchEvent(
+          new CustomEvent("multiCanvas", {
+            detail: {
+              active: this._multiCanvas.length > 0,
+            },
+          })
+        );
 
         // Next, reset the canvas before drawing.
         this._resetMultiCanvas();
@@ -249,7 +256,7 @@ export class TimelineCanvas extends TatorElement {
         }
       }
     });
-    this._data.addEventListener("initialized", evt => {
+    this._data.addEventListener("initialized", (evt) => {
       this._initialized = true;
       for (const typeId in this._data._dataTypes) {
         this._updateCanvas(typeId);
@@ -265,18 +272,16 @@ export class TimelineCanvas extends TatorElement {
    */
   set showLabels(val) {
     for (const canvasData of this._multiCanvas) {
-
       const allData = this._data._dataByType.get(canvasData.typeId);
 
       if (val && allData.length > 0) {
         canvasData.text.style.display = "block";
-      }
-      else {
+      } else {
         canvasData.text.style.display = "none";
       }
     }
 
-    this._showLabels = val
+    this._showLabels = val;
   }
 
   /**
@@ -293,7 +298,6 @@ export class TimelineCanvas extends TatorElement {
       }
     }
   }
-
 
   clear() {
     const context = this._canvas.getContext("2d");
@@ -313,31 +317,31 @@ export class TimelineCanvas extends TatorElement {
       data.context.clearRect(0, 0, data.canvas.width, data.canvas.height);
       data.canvas.setAttribute("width", this._canvasWidth);
       data.canvas.setAttribute("height", 1);
-      data.canvas.style.height=`${3*1}px`;
-      data.canvasFactor = this._canvasWidth/numFrames;
+      data.canvas.style.height = `${3 * 1}px`;
+      data.canvasFactor = this._canvasWidth / numFrames;
     }
   }
 
   _resetCanvas(numColumns) {
     this.clear();
     const numFrames = parseFloat(this._range.getAttribute("max"));
-    this._canvasFactor=this._canvasWidth/numFrames;
+    this._canvasFactor = this._canvasWidth / numFrames;
     this._canvas.setAttribute("width", this._canvasWidth);
     this._canvas.setAttribute("height", numColumns);
-    this._canvas.style.height=`${3*numColumns}px`;
+    this._canvas.style.height = `${3 * numColumns}px`;
     this._context = this._canvas.getContext("2d");
   }
 
   _updateCanvas(typeId) {
-
     if (typeId in this._data._dataTypes) {
       const dataType = this._data._dataTypes[typeId];
       if (dataType.isTLState && this._interpolation === "latest") {
         var sorted_columns = dataType.attribute_types;
-        sorted_columns.sort((a,b) => {return a.order < b.order});
-        var col_count=0;
-        for (const column of sorted_columns)
-        {
+        sorted_columns.sort((a, b) => {
+          return a.order < b.order;
+        });
+        var col_count = 0;
+        for (const column of sorted_columns) {
           if (column.dtype == "bool") {
             col_count += 1;
           }
@@ -352,24 +356,21 @@ export class TimelineCanvas extends TatorElement {
             col_idx += 1;
           }
         }
-      }
-      else if (dataType.interpolation === "attr_style_range" && this._interpolation === dataType.interpolation) {
+      } else if (
+        dataType.interpolation === "attr_style_range" &&
+        this._interpolation === dataType.interpolation
+      ) {
         const allData = this._data._dataByType.get(typeId);
 
         for (const canvasData of this._multiCanvas) {
           if (canvasData.typeId == typeId) {
-
-            this._plotAllAttributeRanges(
-              allData,
-              canvasData);
+            this._plotAllAttributeRanges(allData, canvasData);
 
             if (this._selectedData) {
               const allData = this._data._dataByType.get(typeId);
               for (const elem of allData) {
                 if (elem.id == this._selectedData.id) {
-                  this._plotHighlightedRange(
-                    elem,
-                    canvasData);
+                  this._plotHighlightedRange(elem, canvasData);
                 }
               }
             }
@@ -396,8 +397,7 @@ export class TimelineCanvas extends TatorElement {
       if (data.attributes[canvasData.endFrameCheckAttr] === false) {
         endFrame = maxFrame;
       }
-    }
-    else {
+    } else {
       // Start/end frame check attributes don't exist.
       // Just assume if there's a -1, it's going to stretch
       if (startFrame == -1) {
@@ -417,14 +417,15 @@ export class TimelineCanvas extends TatorElement {
     }
 
     if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
-
-      var width = endFrame * canvasData.canvasFactor - startFrame * canvasData.canvasFactor;
+      var width =
+        endFrame * canvasData.canvasFactor -
+        startFrame * canvasData.canvasFactor;
       if (width < minRangeWidth) {
         width = minRangeWidth;
       }
 
       var startPoint = startFrame * canvasData.canvasFactor;
-      if ((startPoint + width) > maxWidth) {
+      if (startPoint + width > maxWidth) {
         startPoint = maxWidth - width;
       }
 
@@ -434,7 +435,6 @@ export class TimelineCanvas extends TatorElement {
   }
 
   _plotAllAttributeRanges(allData, canvasData) {
-
     // Draw the background time range if there's data and the type is set up appropriately
     var invalidData = true;
     if (canvasData.startFrameAttr && canvasData.endFrameAttr) {
@@ -456,27 +456,19 @@ export class TimelineCanvas extends TatorElement {
 
     // Draw the colored time ranges
     for (const data of allData) {
-        this._drawRange(
-            data,
-            canvasData,
-            this._highlightColors[0].background);
+      this._drawRange(data, canvasData, this._highlightColors[0].background);
     }
   }
 
   _plotHighlightedRange(data, canvasData) {
-
     if (canvasData.startFrameAttr && canvasData.endFrameAttr) {
-      this._drawRange(
-        data,
-        canvasData,
-        this._highlightColors[0].highlight);
+      this._drawRange(data, canvasData, this._highlightColors[0].highlight);
     }
   }
 
   _plotBoolState(attributeName, data, col_idx, col_count) {
-    if (col_count < 1 || col_idx >= col_count)
-    {
-      console.warning("Can't plot data with no columns")
+    if (col_count < 1 || col_idx >= col_count) {
+      console.warning("Can't plot data with no columns");
       return;
     }
     const numFrames = parseFloat(this._range.getAttribute("max"));
@@ -490,20 +482,22 @@ export class TimelineCanvas extends TatorElement {
         //Alternate based on col number
         if (col_idx % 2 == 0) {
           this._context.fillStyle = "#696cff";
-        }
-        else
-        {
+        } else {
           this._context.fillStyle = "#1b9ffb";
         }
-
       } else {
         this._context.fillStyle = this._grayColor; // Not highlighted color
       }
-      this._context.fillRect(frame*this._canvasFactor, 0+col_idx, this._canvasWidth, 1+col_idx);
+      this._context.fillRect(
+        frame * this._canvasFactor,
+        0 + col_idx,
+        this._canvasWidth,
+        1 + col_idx
+      );
       values.push(value);
       frames.push(frame);
     }
-    this._clickHandlers[this._currentTypeId] = evt => {
+    this._clickHandlers[this._currentTypeId] = (evt) => {
       const scale = numFrames / this._canvas.offsetWidth;
       const x = scale * (evt.clientX - this._canvas.offsetLeft);
       let index;
@@ -515,12 +509,14 @@ export class TimelineCanvas extends TatorElement {
         }
       }
       if (typeof index !== "undefined") {
-        this.dispatchEvent(new CustomEvent("select", {
-          detail: data[index],
-          composed: true,
-        }));
+        this.dispatchEvent(
+          new CustomEvent("select", {
+            detail: data[index],
+            composed: true,
+          })
+        );
       }
-    }
+    };
   }
 }
 

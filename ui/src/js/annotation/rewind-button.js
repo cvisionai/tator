@@ -22,11 +22,17 @@ export class RewindButton extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M30 2.222v27.556c0 1.736-1.986 2.799-3.529 1.889l-23.369-13.778c-1.469-0.866-1.469-2.913 0-3.779l23.369-13.778c1.543-0.91 3.529 0.154 3.529 1.889z");
+    path.setAttribute(
+      "d",
+      "M30 2.222v27.556c0 1.736-1.986 2.799-3.529 1.889l-23.369-13.778c-1.469-0.866-1.469-2.913 0-3.779l23.369-13.778c1.543-0.91 3.529 0.154 3.529 1.889z"
+    );
     svg.appendChild(path);
 
     const path1 = document.createElementNS(svgNamespace, "path");
-    path1.setAttribute("d", "M55.6 2.222v27.556c0 1.736-1.986 2.799-3.529 1.889l-23.369-13.778c-1.469-0.866-1.469-2.913 0-3.779l23.369-13.778c1.543-0.91 3.529 0.154 3.529 1.889z");
+    path1.setAttribute(
+      "d",
+      "M55.6 2.222v27.556c0 1.736-1.986 2.799-3.529 1.889l-23.369-13.778c-1.469-0.866-1.469-2.913 0-3.779l23.369-13.778c1.543-0.91 3.529 0.154 3.529 1.889z"
+    );
     svg.appendChild(path1);
   }
 

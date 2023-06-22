@@ -6,28 +6,39 @@ export class BucketEdit extends OrgTypeFormTemplate {
     this.typeName = "Bucket";
     this.readableTypeName = "Bucket";
     this._hideAttributes = true;
-  
 
-    // 
+    //
     var templateInner = document.getElementById("bucket-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("bucket-edit--form");
     this._editName = this._shadow.getElementById("bucket-edit--name");
-    this._editStoreType = this._shadow.getElementById("bucket-edit--store-type");
-    this._editExternalHost = this._shadow.getElementById("bucket-edit--external-host");
-    this._editArchiveScDefault = this._shadow.getElementById("bucket-edit--archive-storage-class-default");
-    this._editArchiveScAws = this._shadow.getElementById("bucket-edit--archive-storage-class-aws");
-    this._editArchiveScGcs = this._shadow.getElementById("bucket-edit--archive-storage-class-gcs");
-    this._editLiveSc = this._shadow.getElementById("bucket-edit--live-storage-class");
+    this._editStoreType = this._shadow.getElementById(
+      "bucket-edit--store-type"
+    );
+    this._editExternalHost = this._shadow.getElementById(
+      "bucket-edit--external-host"
+    );
+    this._editArchiveScDefault = this._shadow.getElementById(
+      "bucket-edit--archive-storage-class-default"
+    );
+    this._editArchiveScAws = this._shadow.getElementById(
+      "bucket-edit--archive-storage-class-aws"
+    );
+    this._editArchiveScGcs = this._shadow.getElementById(
+      "bucket-edit--archive-storage-class-gcs"
+    );
+    this._editLiveSc = this._shadow.getElementById(
+      "bucket-edit--live-storage-class"
+    );
     this._editConfig = this._shadow.getElementById("bucket-edit--config");
 
     this._editStoreType.choices = [
       { name: "AWS S3", value: "AWS", checked: false },
       { name: "Google Cloud Storage", value: "GCP", checked: false },
       { name: "Minio", value: "MINIO", checked: false },
-      { name: "Oracle Cloud Storage", value: "OCI", checked: false }
+      { name: "Oracle Cloud Storage", value: "OCI", checked: false },
     ];
 
     // archive storage class
@@ -40,13 +51,12 @@ export class BucketEdit extends OrgTypeFormTemplate {
     ];
     this._editArchiveScGcs.choices = [
       { name: "Standard", value: "STANDARD", checked: true },
-      { name: "Coldline", value: "COLDLINE", checked: false }
+      { name: "Coldline", value: "COLDLINE", checked: false },
     ];
 
     this._editLiveSc.choices = [
-      { name: "Standard", value: "STANDARD", checked: true }
+      { name: "Standard", value: "STANDARD", checked: true },
     ];
-
   }
 
   _showArchiveScField() {
@@ -79,16 +89,16 @@ export class BucketEdit extends OrgTypeFormTemplate {
     // name
     if (this._data.id === "New") {
       this._editName.setValue("");
-      this._editName.default = ""; 
+      this._editName.default = "";
     } else {
       this._editName.setValue(this._data.name);
-      this._editName.default = this._data.name; 
+      this._editName.default = this._data.name;
     }
 
     // type
     if (this._data.id == "New") {
       this._editStoreType.setValue("MINIO");
-      this._editStoreType.default ="MINIO";
+      this._editStoreType.default = "MINIO";
       this._editStoreType.hidden = false;
     } else {
       // type cannot be changed after bucket creation, so hide this field
@@ -96,22 +106,25 @@ export class BucketEdit extends OrgTypeFormTemplate {
       this._editStoreType.default = this._data.store_type;
       this._editStoreType.hidden = true;
     }
-    this._editStoreType.addEventListener("change", this._showArchiveScField.bind(this));
+    this._editStoreType.addEventListener(
+      "change",
+      this._showArchiveScField.bind(this)
+    );
 
     // external host
     if (this._data.id == "New") {
       this._editExternalHost.setValue("");
-      this._editExternalHost.default ="";
+      this._editExternalHost.default = "";
     } else {
       this._editExternalHost.setValue(this._data.external_host);
       this._editExternalHost.default = this._data.external_host;
     }
-    
+
     // archive storage class
     this._showArchiveScField();
     if (this._data.id == "New") {
       this._editArchiveSc.setValue("STANDARD");
-      this._editArchiveSc.default ="STANDARD";
+      this._editArchiveSc.default = "STANDARD";
     } else {
       this._editArchiveSc.setValue(this._data.archive_sc);
       this._editArchiveSc.default = this._data.archive_sc;
@@ -120,15 +133,15 @@ export class BucketEdit extends OrgTypeFormTemplate {
     // live storage class
     if (this._data.id == "New") {
       this._editLiveSc.setValue("STANDARD");
-      this._editLiveSc.default ="STANDARD";
+      this._editLiveSc.default = "STANDARD";
     } else {
       this._editLiveSc.setValue(this._data.live_sc);
       this._editLiveSc.default = this._data.live_sc;
     }
-   
+
     // config
     this._editConfig.setValue("");
-    this._editConfig.default ="";
+    this._editConfig.default = "";
   }
 
   _getFormData() {

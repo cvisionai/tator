@@ -16,7 +16,10 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     //
     const header = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
-    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-6 f3");
+    header.setAttribute(
+      "class",
+      "annotation__header d-flex flex-items-center flex-justify-between px-6 f3"
+    );
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
@@ -32,8 +35,6 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._settings.style.marginLeft = "50px";
     div.appendChild(this._settings);
 
-
-
     this._settings._localizationsView.hidden = false;
 
     // entity-gallery-bulk-edit
@@ -43,7 +44,10 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
-    this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-12 d-flex");
+    this.mainWrapper.setAttribute(
+      "class",
+      "analysis--main--wrapper col-12 d-flex"
+    );
     this._shadow.appendChild(this.mainWrapper);
     this.mainWrapper.style.paddingBottom = "200px";
 
@@ -57,10 +61,10 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     //
     /* Card Gallery */
     // Gallery of cards showing filter results
-    this._filterResults = document.createElement("annotations-corrections-gallery");
+    this._filterResults = document.createElement(
+      "annotations-corrections-gallery"
+    );
     this.main.appendChild(this._filterResults);
-
-
 
     // Localizations Filter
     /* Filter interface part of gallery */
@@ -73,7 +77,10 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container slide-close col-3")
+    this.aside.setAttribute(
+      "class",
+      "entity-panel--container slide-close col-3"
+    );
     this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 
@@ -85,9 +92,12 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._panelContainer._panelTop._navigation.init();
 
     // Create store subscriptions
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
-    store.subscribe(state => state.project, this._init.bind(this));
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
+    store.subscribe((state) => state.project, this._init.bind(this));
 
     //
     /* Other */
@@ -117,11 +127,14 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this.cardData.addEventListener("setCardImage", (evt) => {
       this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
     });
-    
+
     await this._modelData.init();
 
     // Init after modal is defined & modelData
-    this._bulkEdit.init({ page: this, permission: this._modelData._project.permission });
+    this._bulkEdit.init({
+      page: this,
+      permission: this._modelData._project.permission,
+    });
 
     // Pass panel and localization types to gallery
     this._filterResults._initPanel({
@@ -129,7 +142,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       pageModal: this.modal,
       modelData: this._modelData,
       cardData: this.cardData,
-      bulkEdit: this._bulkEdit
+      bulkEdit: this._bulkEdit,
     });
 
     // Initialize the settings with the URL. The settings will be used later on.
@@ -161,19 +174,21 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       page: page,
       start: pageStart,
       stop: pageStop,
-      init: true
+      init: true,
     };
 
     // Init Card Gallery and Right Panel
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
-      cache: false
+      cache: false,
     });
 
     // Filter interface
     this._filterDataView = new FilterData(
-      this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates", "FrameStates"]
+      this._modelData,
+      ["annotation-analytics-view"],
+      ["MediaStates", "LocalizationStates", "FrameStates"]
     );
 
     // Init panel side behavior
@@ -183,7 +198,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       pageModal: this.modal,
       modelData: this._modelData,
       gallery: this._filterResults,
-      bulkEdit: this._bulkEdit
+      bulkEdit: this._bulkEdit,
     });
 
     this._filterDataView.init(); // requires model data to be init
@@ -191,14 +206,23 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._filterView.setFilterConditions(this._filterConditions);
 
     // Listen for pagination events
-    this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-    this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
+    this._filterResults._paginator.addEventListener(
+      "selectPage",
+      this._paginateFilterResults.bind(this)
+    );
+    this._filterResults._paginator_top.addEventListener(
+      "selectPage",
+      this._paginateFilterResults.bind(this)
+    );
 
     this._filterResults._paginator.setValues(this._paginationState);
     this._filterResults._paginator_top.setValues(this._paginationState);
 
     // Listen for filter events
-    this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
+    this._filterView.addEventListener(
+      "filterParameters",
+      this._updateFilterResults.bind(this)
+    );
   }
 
   connectedCallback() {
@@ -208,7 +232,12 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    TatorPage.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 
   static get observedAttributes() {
@@ -224,7 +253,8 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
      */
     if (cache) {
       // Initial view-modal "Cardlist" from fetched localizations
-      return this.cardData.makeCardListFromBulk(conditions, pagination)
+      return this.cardData
+        .makeCardListFromBulk(conditions, pagination)
         .then((cardList) => {
           // CardList inits Gallery component with cards & pagination on page
           this._filterResults.show(cardList);
@@ -233,15 +263,13 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
         });
     } else {
       // Initial view-modal "Cardlist" from fetched localizations
-      this.cardData.makeCardList(conditions, pagination)
-        .then((cardList) => {
-          // CardList inits Gallery component with cards & pagination on page
-          this._filterResults.show(cardList);
-          this.loading.hideSpinner();
-          this.hideDimmer();
-        });
+      this.cardData.makeCardList(conditions, pagination).then((cardList) => {
+        // CardList inits Gallery component with cards & pagination on page
+        this._filterResults.show(cardList);
+        this.loading.hideSpinner();
+        this.hideDimmer();
+      });
     }
-
   }
 
   // Reset the pagination back to page 0
@@ -250,11 +278,14 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     // console.log("UPDATE FILTER RESULTS");
     this._bulkEdit.checkForFilters(this._filterConditions);
 
-    var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
+    var filterURIString = encodeURIComponent(
+      JSON.stringify(this._filterConditions)
+    );
     this._paginationState.init = true;
 
     // @TODO reset to default page size? or keep if something was chosen?
-    this._paginationState.pageSize = this._filterResults._paginator.getPageSize();
+    this._paginationState.pageSize =
+      this._filterResults._paginator.getPageSize();
     this._paginationState.start = 0;
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
@@ -263,7 +294,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
-      cache: false
+      cache: false,
     });
 
     this._settings.setAttribute("filterConditions", filterURIString);
@@ -285,7 +316,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
-      cache: true
+      cache: true,
     });
 
     // make sure view lined up top and bottom
@@ -307,4 +338,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
   }
 }
 
-customElements.define("analytics-localizations-corrections", AnalyticsLocalizationsCorrections);
+customElements.define(
+  "analytics-localizations-corrections",
+  AnalyticsLocalizationsCorrections
+);

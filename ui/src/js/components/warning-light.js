@@ -26,7 +26,10 @@ export class WarningLight extends TatorElement {
     svg.appendChild(this._title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z");
+    path.setAttribute(
+      "d",
+      "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+    );
     svg.appendChild(path);
 
     const line_0 = document.createElementNS(svgNamespace, "line");
@@ -54,7 +57,7 @@ export class WarningLight extends TatorElement {
     const button = document.createElement("button");
     button.setAttribute("class", "btn-clear mx-2 my-2 d-flex text-gray");
     this._message_div.appendChild(button);
-    button.style.height="fit-content"; // else button blows up
+    button.style.height = "fit-content"; // else button blows up
 
     const svg2 = document.createElementNS(svgNamespace, "svg");
     svg2.setAttribute("id", "icon-x");
@@ -66,7 +69,10 @@ export class WarningLight extends TatorElement {
     title.textContent = "Close";
     button.appendChild(title);
     const path2 = document.createElementNS(svgNamespace, "path");
-    path2.setAttribute("d", "M5.293 6.707l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l5.293-5.293 5.293 5.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5.293-5.293 5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
+    path2.setAttribute(
+      "d",
+      "M5.293 6.707l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l5.293-5.293 5.293 5.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5.293-5.293 5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z"
+    );
     svg2.appendChild(path2);
 
     this._message_div.appendChild(button);
@@ -74,22 +80,19 @@ export class WarningLight extends TatorElement {
       this.hide();
     });
 
-
     this.hide();
     this.fade_stage = 0; // 0, 1, 2 or 3
 
     window.tator_warning_light = this;
   }
 
-  fade () {
+  fade() {
     if (this.fade_stage == 0) {
       this.fade_stage = 1;
       this.fade();
-    }
-    else if (this.fade_stage == 1) {
-
-      this.style.opacity = '0';
-      this.style.transition = '0.25s';
+    } else if (this.fade_stage == 1) {
+      this.style.opacity = "0";
+      this.style.transition = "0.25s";
 
       var that = this;
       setTimeout(() => {
@@ -98,13 +101,11 @@ export class WarningLight extends TatorElement {
         }
         that.fade();
       }, 250);
-    }
-    else if (this.fade_stage == 2){
-
+    } else if (this.fade_stage == 2) {
       this._message_div.style.display = null;
       this._svg.style.display = null;
-      this.style.opacity = '100';
-      this.style.transition = '0.25s';
+      this.style.opacity = "100";
+      this.style.transition = "0.25s";
       this.message(this.new_message, this.new_color);
 
       var that = this;
@@ -114,10 +115,9 @@ export class WarningLight extends TatorElement {
         }
         that.fade();
       }, 10000);
-    }
-    else if (this.fade_stage == 3){
-      this.style.opacity = '0';
-      this.style.transition = '2.0s';
+    } else if (this.fade_stage == 3) {
+      this.style.opacity = "0";
+      this.style.transition = "2.0s";
 
       var that = this;
       setTimeout(() => {
@@ -128,32 +128,26 @@ export class WarningLight extends TatorElement {
     }
   }
 
-  fade_message(message, color){
+  fade_message(message, color) {
     this.new_message = message;
     this.new_color = color;
     this.fade_stage = 0;
     this.fade();
   }
 
-  message(message, color)
-  {
-    if (color)
-    {
+  message(message, color) {
+    if (color) {
       this._svg.setAttribute("stroke", color);
-    }
-    else
-    {
+    } else {
       this._svg.setAttribute("stroke", "#d8cd1d"); // yellow from _variables.scss
     }
     this._message_span.textContent = message;
     this._message_div.style.display = null;
     this._title.textContent = message;
     this._svg.style.display = null;
-
   }
 
-  hide()
-  {
+  hide() {
     this._svg.style.display = "none";
     this._message_div.style.display = "none";
   }

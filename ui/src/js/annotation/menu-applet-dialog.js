@@ -45,18 +45,15 @@ export class MenuAppletDialog extends ModalDialog {
       this._div.classList.remove("modal-wide");
       this._div.classList.remove("modal-extra-wide");
       this._div.classList.remove("modal-super-wide");
-    }
-    else if (width == "wide") {
+    } else if (width == "wide") {
       this._div.classList.add("modal-wide");
       this._div.classList.remove("modal-extra-wide");
       this._div.classList.remove("modal-super-wide");
-    }
-    else if (width == "extra-wide") {
+    } else if (width == "extra-wide") {
       this._div.classList.remove("modal-wide");
       this._div.classList.remove("modal-super-wide");
       this._div.classList.add("modal-extra-wide");
-    }
-    else if (width == "super-wide") {
+    } else if (width == "super-wide") {
       this._div.classList.remove("modal-wide");
       this._div.classList.remove("modal-extra-wide");
       this._div.classList.add("modal-super-wide");
@@ -103,7 +100,6 @@ export class MenuAppletDialog extends ModalDialog {
    * @param {Tator.Applet} applet
    */
   saveApplet(applet) {
-
     var appletView = document.createElement("iframe");
     appletView.setAttribute("class", "d-flex col-12");
     appletView.style.display = "none";
@@ -136,9 +132,14 @@ export class MenuAppletDialog extends ModalDialog {
   }
 
   initApplet() {
-    if (this._appletData == null) { return; }
+    if (this._appletData == null) {
+      return;
+    }
 
-    this._appletElement = this._appletViews[this._appletName].contentWindow.document.getElementById("mainApplet");
+    this._appletElement =
+      this._appletViews[this._appletName].contentWindow.document.getElementById(
+        "mainApplet"
+      );
 
     var height = this._appletElement.getModalHeight();
     if (height.includes("px")) {
@@ -214,7 +215,6 @@ export class MenuAppletDialog extends ModalDialog {
 
     this.dispatchEvent(new Event("appletReady"));
   }
-
 }
 
 customElements.define("menu-applet-dialog", MenuAppletDialog);

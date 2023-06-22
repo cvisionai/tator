@@ -6,12 +6,14 @@ import { AlgorithmButton } from "../project-detail/algorithm-button.js";
  * Filter/search widget
  */
 export class FilterInterface extends TatorElement {
-
   constructor() {
     super();
 
     var outerDiv = document.createElement("div");
-    outerDiv.setAttribute("class", "analysis__filter_interface px-1 py-1 rounded-2");
+    outerDiv.setAttribute(
+      "class",
+      "analysis__filter_interface px-1 py-1 rounded-2"
+    );
     this._shadow.appendChild(outerDiv);
 
     /**
@@ -34,12 +36,18 @@ export class FilterInterface extends TatorElement {
      */
 
     this._filterListDiv = document.createElement("div");
-    this._filterListDiv.setAttribute("class", "analysis__filter_conditions_interface px-3 py-3");
+    this._filterListDiv.setAttribute(
+      "class",
+      "analysis__filter_conditions_interface px-3 py-3"
+    );
     this._filterListDiv.hidden = true;
     outerDiv.appendChild(this._filterListDiv);
 
     this._conditionsDiv = document.createElement("div");
-    this._conditionsDiv.setAttribute("class", "analysis__filter_conditions_list");
+    this._conditionsDiv.setAttribute(
+      "class",
+      "analysis__filter_conditions_list"
+    );
     this._filterListDiv.appendChild(this._conditionsDiv);
 
     var footerDiv = document.createElement("div");
@@ -62,16 +70,19 @@ export class FilterInterface extends TatorElement {
      * Filter condition pill boxes
      */
     this._filterStringDiv = document.createElement("div");
-    this._filterStringDiv.setAttribute("class", "analysis__filter_string col-10");
+    this._filterStringDiv.setAttribute(
+      "class",
+      "analysis__filter_string col-10"
+    );
     this._filterStringDiv.style.paddingLeft = "16px";
     this._topNav.appendChild(this._filterStringDiv);
 
     /**
-      * Other:
-      * - optional more menu
-      * - confirm run algo
-      * - modal notify
-    */
+     * Other:
+     * - optional more menu
+     * - confirm run algo
+     * - modal notify
+     */
     this._moreNavDiv = document.createElement("div");
     this._moreNavDiv.setAttribute("class", "analysis__more_nav px-1");
     this._topNav.appendChild(this._moreNavDiv);
@@ -80,8 +91,8 @@ export class FilterInterface extends TatorElement {
     this._shadow.appendChild(this._modalNotify);
 
     /**
-      * Event listeners
-    */
+     * Event listeners
+     */
     filterButton.addEventListener("click", () => {
       this._filterListDiv.style.display = "block";
       this._filterNavDiv.style.display = "none";
@@ -116,17 +127,18 @@ export class FilterInterface extends TatorElement {
    * dispatches the filterParameters event
    */
   applyFilterData() {
-
     // Create the filter parmaeters to display in the filter bar
     this.setFilterBar();
 
     // Send out an event to anyone listening that there's a new filter applied
-    this.dispatchEvent(new CustomEvent("filterParameters", {
-      composed: true,
-      detail: {
-        conditions: this._filterConditionGroup.getConditions()
-      }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("filterParameters", {
+        composed: true,
+        detail: {
+          conditions: this._filterConditionGroup.getConditions(),
+        },
+      })
+    );
   }
 
   /**
@@ -141,7 +153,9 @@ export class FilterInterface extends TatorElement {
     // on the available types
 
     // Set the GUI elements
-    this._filterConditionGroup = document.createElement("filter-condition-group");
+    this._filterConditionGroup = document.createElement(
+      "filter-condition-group"
+    );
     this._filterConditionGroup.data = this._dataView.getAllTypes();
     this._filterConditionGroup._div.style.marginTop = "10px";
     this._conditionsDiv.appendChild(this._filterConditionGroup);
@@ -156,8 +170,7 @@ export class FilterInterface extends TatorElement {
       this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
     }
 
-    if (this._section)
-    {
+    if (this._section) {
       this._addBreadcrumbsForSearches(this._section);
       if (sectionBasedOnly) {
         return;
@@ -174,7 +187,7 @@ export class FilterInterface extends TatorElement {
       pill.setAttribute("class", "py-1 d-flex");
       pill.style.marginRight = "5px";
       pill.init(condition.getString(), 0);
-      pill.addEventListener("removeId", evt => {
+      pill.addEventListener("removeId", (evt) => {
         conditions.splice(index, 1);
         this._filterConditionGroup.setConditions(conditions);
         this.applyFilterData();
@@ -182,29 +195,27 @@ export class FilterInterface extends TatorElement {
     }
   }
 
-  _operationToString(filter)
-  {
+  _operationToString(filter) {
     const operator_convert = {
-      'eq': '==',
-      'gt' : '>',
-      'gte' : '>=',
-      'lt' : '<',
-      'lte': '<=',
-      'date_eq': '==',
-      'date_gte': 'After (Inclusive)',
-      'date_gt' : 'After',
-      'date_lt' : 'Before',
-      'date_lte' : 'Before (Inclusive)',
-      'date_range' : 'Within',
-      'distance_lte' : 'Within'
-    }
+      eq: "==",
+      gt: ">",
+      gte: ">=",
+      lt: "<",
+      lte: "<=",
+      date_eq: "==",
+      date_gte: "After (Inclusive)",
+      date_gt: "After",
+      date_lt: "Before",
+      date_lte: "Before (Inclusive)",
+      date_range: "Within",
+      distance_lte: "Within",
+    };
     const humanReadable = operator_convert[filter.operation];
-    const display = (humanReadable ? humanReadable : filter.operation);
+    const display = humanReadable ? humanReadable : filter.operation;
     return `${filter.attribute} ${display} ${filter.value}`;
   }
 
-  _addConstantPill(section, description)
-  {
+  _addConstantPill(section, description) {
     const pill = document.createElement("removable-pill");
     this._filterStringDiv.appendChild(pill);
     pill.setAttribute("class", "py-1 d-flex");
@@ -214,60 +225,54 @@ export class FilterInterface extends TatorElement {
     pill.setAttribute("tooltip", `Defined search in section '${section.name}'`);
   }
 
-  set sections(sections)
-  {
+  set sections(sections) {
     this._sections = sections;
   }
 
-  set section(section)
-  {
+  set section(section) {
     this._section = section;
     this.setFilterBar(true);
   }
 
   _addBreadcrumbsForSearches(section) {
-    if (section.object_search)
-    {
+    if (section.object_search) {
       let ops = [];
-      if (section.tator_user_sections)
-      {
-        for (const s of this._sections)
-        {
+      if (section.tator_user_sections) {
+        for (const s of this._sections) {
           // The UUID is the same for the saved search and original section, so only display
           // the name of the matching UUID for the original section name.
-          if (s.tator_user_sections == section.tator_user_sections && s.id != section.id)
-          {
-            ops.push({"attribute": "Section", "operation": "eq","value": s.name});
+          if (
+            s.tator_user_sections == section.tator_user_sections &&
+            s.id != section.id
+          ) {
+            ops.push({ attribute: "Section", operation: "eq", value: s.name });
           }
         }
       }
-      if (Object.hasOwn(section.object_search, 'attribute'))
-      {
+      if (Object.hasOwn(section.object_search, "attribute")) {
         ops.push(section.object_search);
-      }
-      else
-      {
+      } else {
         ops.push(...section.object_search.operations);
       }
-      for (const filter of ops)
-      {
-        this._addConstantPill(section, "Media:"+this._operationToString(filter));
+      for (const filter of ops) {
+        this._addConstantPill(
+          section,
+          "Media:" + this._operationToString(filter)
+        );
       }
     }
-    if (section.related_object_search)
-    {
+    if (section.related_object_search) {
       let ops = [];
-      if (Object.hasOwn(section.related_object_search, 'attribute'))
-      {
+      if (Object.hasOwn(section.related_object_search, "attribute")) {
         ops.push(section.related_object_search);
-      }
-      else
-      {
+      } else {
         ops.push(...section.related_object_search.operations);
       }
-      for (const filter of ops)
-      {
-        this._addConstantPill(section, "Metadata:"+this._operationToString(filter));
+      for (const filter of ops) {
+        this._addConstantPill(
+          section,
+          "Metadata:" + this._operationToString(filter)
+        );
       }
     }
   }

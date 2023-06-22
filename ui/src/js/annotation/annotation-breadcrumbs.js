@@ -6,7 +6,10 @@ export class AnnotationBreadcrumbs extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray");
+    div.setAttribute(
+      "class",
+      "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray"
+    );
     this._shadow.appendChild(div);
 
     this._projectText = document.createElement("a");
@@ -80,8 +83,10 @@ export class AnnotationBreadcrumbs extends TatorElement {
     const params = new URLSearchParams(document.location.search.substring(1));
     if (params.has("section")) {
       fetchCredentials(`/rest/Section/${params.get("section")}`, {}, true)
-      .then(response => response.json())
-      .then(section => {this._sectionText.textContent = section.name});
+        .then((response) => response.json())
+        .then((section) => {
+          this._sectionText.textContent = section.name;
+        });
     } else {
       this._sectionText.textContent = "All Media";
     }

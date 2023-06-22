@@ -6,7 +6,10 @@ export class TextArea extends TatorElement {
     super();
 
     const label = document.createElement("label");
-    label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._shadow.appendChild(label);
 
     this._name = document.createTextNode("");
@@ -37,7 +40,6 @@ export class TextArea extends TatorElement {
     this._input.addEventListener("blur", () => {
       document.body.classList.remove("shortcuts-disabled");
     });
-
   }
 
   static get observedAttributes() {
@@ -94,14 +96,14 @@ export class TextArea extends TatorElement {
 
   _validateJSON() {
     let val = this._input.value;
-    try{
-        JSON.parse(val);
-    }catch (e){
-        //Error
-        //JSON is not okay
-        return null;
+    try {
+      JSON.parse(val);
+    } catch (e) {
+      //Error
+      //JSON is not okay
+      return null;
     }
-  
+
     return val;
   }
 
@@ -112,7 +114,7 @@ export class TextArea extends TatorElement {
   changed() {
     return this.getValue() !== this._default;
   }
-  
+
   _prettyPrint(val) {
     var obj = JSON.parse(val);
     return JSON.stringify(obj, undefined, 4);

@@ -15,7 +15,10 @@ export class MediaSection extends TatorElement {
     this._shadow.appendChild(section);
 
     const header = document.createElement("div");
-    header.setAttribute("class", "project__header d-flex flex-items-center flex-justify-between col-12 row-actions-hover");
+    header.setAttribute(
+      "class",
+      "project__header d-flex flex-items-center flex-justify-between col-12 row-actions-hover"
+    );
     section.appendChild(header);
 
     this._name = document.createElement("h2");
@@ -57,7 +60,6 @@ export class MediaSection extends TatorElement {
     this._more = document.createElement("section-more");
     this._more.setAttribute("class", "px-2");
     actions.appendChild(this._more);
-
 
     this._hiddenMediaLabel = document.createElement("div");
     section.appendChild(this._hiddenMediaLabel);
@@ -118,7 +120,6 @@ export class MediaSection extends TatorElement {
     this._stop = this._paginator_top._pageSize;
     this._after = new Map();
 
-
     return this.reload();
   }
 
@@ -131,11 +132,19 @@ export class MediaSection extends TatorElement {
     this._files.project = val;
     if (!hasPermission(val.permission, "Can Edit")) {
       this._upload.style.display = "none";
-      this._more.setAttribute("editPermission", "Editing menu disable due to permissions.")
+      this._more.setAttribute(
+        "editPermission",
+        "Editing menu disable due to permissions."
+      );
     }
-    if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
+    if (
+      !(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)
+    ) {
       this._upload.style.display = "none";
-      this._more.setAttribute("uploadPermission", "Upload hidden due to permissions.")
+      this._more.setAttribute(
+        "uploadPermission",
+        "Upload hidden due to permissions."
+      );
     }
     this._more.project = val;
     this._project = val;
@@ -199,16 +208,19 @@ export class MediaSection extends TatorElement {
   removeMedia(mediaId) {
     const single = !(mediaId.indexOf(",") > -1);
     if (!single) mediaId = mediaId.split(",");
-    console.log("MEDIA ID (list or single? ... "+single);
+    console.log("MEDIA ID (list or single? ... " + single);
     console.log(mediaId);
 
     for (const mediaCard of this._files._ul.children) {
       console.log(mediaCard);
       const currentCardId = mediaCard.getAttribute("media-id");
 
-      if (currentCardId == mediaId || (Array.isArray(mediaId) && mediaId.includes(Number(currentCardId)))) {
+      if (
+        currentCardId == mediaId ||
+        (Array.isArray(mediaId) && mediaId.includes(Number(currentCardId)))
+      ) {
         mediaCard.parentNode.removeChild(mediaCard);
-        const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
+        const numFiles = Number(this._numFiles.textContent.split(" ")[0]) - 1;
         this._updateNumFiles(numFiles); // do this at the end
       }
     }
@@ -216,7 +228,6 @@ export class MediaSection extends TatorElement {
     // clear any selected cards & reload
     this.reload();
     this._bulkEdit.clearAllCheckboxes();
-
   }
 
   _updateNumFiles(numFiles) {
@@ -235,11 +246,15 @@ export class MediaSection extends TatorElement {
         start: this._start,
         stop: this._stop,
         page: 1,
-        pageSize: this._paginator_top._pageSize
-      }
+        pageSize: this._paginator_top._pageSize,
+      };
       this._paginator_top.init(numFiles, this._paginationState);
       this._paginator_bottom.init(numFiles, this._paginationState);
-      this._pagePosition.nodeValue = `Page ${typeof this._paginationState.page == "undefined" ? 1 : (this._paginationState.page)} of ${this._paginator_top._numPages}`;
+      this._pagePosition.nodeValue = `Page ${
+        typeof this._paginationState.page == "undefined"
+          ? 1
+          : this._paginationState.page
+      } of ${this._paginator_top._numPages}`;
     }
   }
 
@@ -248,8 +263,7 @@ export class MediaSection extends TatorElement {
     if (this._section !== null) {
       sectionParams.append("section", this._section.id);
     }
-    if (this._filterSection != null)
-    {
+    if (this._filterSection != null) {
       sectionParams.append("section", this._filterSection);
     }
     const filterAndSearchParams = this._getFilterQueryParams();
@@ -264,16 +278,18 @@ export class MediaSection extends TatorElement {
       if (this._after.has(current - 5000)) {
         after = `&after=${this._after.get(current - 5000)}`;
       }
-      return fetchCredentials(`${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`)
-        .then(response => response.json())
-        .then(data => {
+      return fetchCredentials(
+        `${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`
+      )
+        .then((response) => response.json())
+        .then((data) => {
           this._after.set(current, data[0].id);
           if (current < index) {
             return recursiveFetch(url, params, current + 5000);
           }
-          return Promise.resolve(data[0]['id']);
+          return Promise.resolve(data[0]["id"]);
         });
-    }
+    };
     if (this._after.has(index)) {
       return Promise.resolve(this._after.get(index));
     } else {
@@ -303,13 +319,17 @@ export class MediaSection extends TatorElement {
       sectionQuery.append("stop", stop);
       afterPromise = this._getAfter(afterIndex);
     }
-    return afterPromise.then(afterId => {
+    return afterPromise.then((afterId) => {
       if (afterId) {
         sectionQuery.append("after", afterId);
       }
-      return fetchCredentials(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`)
-        .then(response => response.json())
-        .then(media => {
+      return fetchCredentials(
+        `/rest/Medias/${
+          this._project
+        }?${sectionQuery.toString()}&presigned=28800`
+      )
+        .then((response) => response.json())
+        .then((media) => {
           this._files.numMedia = this._paginator_top._numFiles;
           this._files.startMediaIndex = this._start;
           this._files.cardInfo = media;
@@ -323,7 +343,9 @@ export class MediaSection extends TatorElement {
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
-    const response = await fetchCredentials(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`);
+    const response = await fetchCredentials(
+      `/rest/MediaCount/${this._project}?${sectionQuery.toString()}`
+    );
     const count = await response.json();
     this.numMedia = count;
 
@@ -332,15 +354,15 @@ export class MediaSection extends TatorElement {
 
   _launchAlgorithm(evt) {
     this.dispatchEvent(
-      new CustomEvent("runAlgorithm",
-        {
-          composed: true,
-          detail: {
-            algorithmName: evt.detail.algorithmName,
-            section: this._section,
-            projectId: this._project,
-          }
-        }));
+      new CustomEvent("runAlgorithm", {
+        composed: true,
+        detail: {
+          algorithmName: evt.detail.algorithmName,
+          section: this._section,
+          projectId: this._project,
+        },
+      })
+    );
   }
 
   _downloadFiles(evt) {
@@ -350,31 +372,31 @@ export class MediaSection extends TatorElement {
         mediaParams.append("media_id", evt.detail.mediaIds);
       }
     }
-    const getUrl = endpoint => {
+    const getUrl = (endpoint) => {
       const params = joinParams(this._sectionParams(), mediaParams);
       return `/rest/${endpoint}/${this._project}?${params.toString()}`;
     };
     fetchCredentials(getUrl("MediaStats"), {}, true)
-      .then(response => response.json())
-      .then(async mediaStats => {
+      .then((response) => response.json())
+      .then(async (mediaStats) => {
         let lastId = null;
         let numImages = 0;
         let numVideos = 0;
         let size = 0;
         console.log("Download size: " + mediaStats.download_size);
         console.log("Download num files: " + mediaStats.count);
-        if ((mediaStats.downloadSize > 60000000000) || (mediaStats.count > 5000)) {
+        if (mediaStats.downloadSize > 60000000000 || mediaStats.count > 5000) {
           const bigDownload = document.createElement("big-download-form");
           const page = document.getElementsByTagName("project-detail")[0];
           page._projects.appendChild(bigDownload);
           bigDownload.setAttribute("is-open", "");
           page.setAttribute("has-open-modal", "");
-          bigDownload.addEventListener("close", evt => {
+          bigDownload.addEventListener("close", (evt) => {
             page.removeAttribute("has-open-modal", "");
             page._projects.removeChild(bigDownload);
           });
           while (bigDownload.hasAttribute("is-open")) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 100));
           }
           if (!bigDownload._confirm) {
             page._leaveConfirmOk = false;
@@ -385,7 +407,9 @@ export class MediaSection extends TatorElement {
         const batchSize = numImages > numVideos ? 20 : 2;
         const filenames = new Set();
         const re = /(?:\.([^.]+))?$/;
-        const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
+        const fileStream = streamSaver.createWriteStream(
+          this._sectionName + ".zip"
+        );
         const readableZipStream = new ZIP({
           async pull(ctrl) {
             let url = `${getUrl("Medias")}&stop=${batchSize}&presigned=28800`;
@@ -393,8 +417,8 @@ export class MediaSection extends TatorElement {
               url += "&after=" + encodeURIComponent(lastId);
             }
             await fetchCredentials(url, {}, true)
-              .then(response => response.json())
-              .then(async medias => {
+              .then((response) => response.json())
+              .then(async (medias) => {
                 if (medias.length == 0) {
                   ctrl.close();
                 }
@@ -411,28 +435,40 @@ export class MediaSection extends TatorElement {
                   filenames.add(basename);
 
                   const request = Utilities.getDownloadInfo(media)["request"];
-                  if (request !== null) { // Media objects with no downloadable files will return null.
+                  if (request !== null) {
+                    // Media objects with no downloadable files will return null.
                     // Download media file.
-                    console.log("Downloading " + media.name + " from " + request.url + "...");
-                    await fetchRetry(request)
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + ext;
-                        ctrl.enqueue({ name, stream });
-                      });
+                    console.log(
+                      "Downloading " +
+                        media.name +
+                        " from " +
+                        request.url +
+                        "..."
+                    );
+                    await fetchRetry(request).then((response) => {
+                      const stream = () => response.body;
+                      const name = basename + ext;
+                      ctrl.enqueue({ name, stream });
+                    });
                   }
                 }
               });
-          }
+          },
         });
         if (window.WritableStream && readableZipStream.pipeTo) {
-          readableZipStream.pipeTo(fileStream).then(() => console.log('done writing'));
+          readableZipStream
+            .pipeTo(fileStream)
+            .then(() => console.log("done writing"));
         } else {
           const writer = fileStream.getWriter();
           const reader = readableZipStream.getReader();
-          const pump = () => reader.read()
-            .then(res => res.done ? writer.close() : writer.write(res.value).then(pump))
-            .then(() => console.log('done writing'));
+          const pump = () =>
+            reader
+              .read()
+              .then((res) =>
+                res.done ? writer.close() : writer.write(res.value).then(pump)
+              )
+              .then(() => console.log("done writing"));
           pump();
         }
       });
@@ -446,11 +482,13 @@ export class MediaSection extends TatorElement {
       }
     }
     const params = joinParams(mediaParams, this._sectionParams());
-    const getUrl = endpoint => {
+    const getUrl = (endpoint) => {
       return `/rest/${endpoint}/${this._project}?`;
     };
     const mediaUrl = `/rest/Medias/${this._project}?${params.toString()}`;
-    const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
+    const fileStream = streamSaver.createWriteStream(
+      this._sectionName + ".zip"
+    );
     let mediaTypes = null;
     let mediaFetcher = null;
     let mediaDone = false;
@@ -462,28 +500,37 @@ export class MediaSection extends TatorElement {
     let statesDone = false;
     Number.prototype.pad = function (size) {
       var s = String(this);
-      while (s.length < (size || 2)) { s = "0" + s; }
+      while (s.length < (size || 2)) {
+        s = "0" + s;
+      }
       return s;
-    }
+    };
     const project = this._project;
     const readableZipStream = new ZIP({
       async pull(ctrl) {
-
         // Function for dumping types to file.
         const getTypes = (endpoint, fname) => {
-          return fetchCredentials(`/rest/${endpoint}/${project}`)
-            .then(response => {
+          return fetchCredentials(`/rest/${endpoint}/${project}`).then(
+            (response) => {
               const clone = response.clone();
               const stream = () => response.body;
               const name = fname;
               ctrl.enqueue({ name, stream });
               return clone.json();
-            });
+            }
+          );
         };
 
         // Function for dumping single batch of metadata to file.
-        const getMetadataBatch = async (baseUrl, type, batchSize, batchNum,
-          baseFilename, lastId, idQuery) => {
+        const getMetadataBatch = async (
+          baseUrl,
+          type,
+          batchSize,
+          batchNum,
+          baseFilename,
+          lastId,
+          idQuery
+        ) => {
           let url = baseUrl + "&type=" + type.id + "&stop=" + batchSize;
           if (lastId != null) {
             let param = "after";
@@ -503,24 +550,24 @@ export class MediaSection extends TatorElement {
           }
 
           // Fetch csv data first.
-          await fetchCredentials(url + "&format=csv", request, true)
-            .then(response => {
+          await fetchCredentials(url + "&format=csv", request, true).then(
+            (response) => {
               const stream = () => response.body;
               const batch_str = "__batch_" + Number(batchNum).pad(5);
               const name = baseFilename + type.name + batch_str + ".csv";
               ctrl.enqueue({ name, stream });
-            });
+            }
+          );
 
           // Fetch and return json data.
-          return fetchCredentials(url, request, true)
-            .then(response => {
-              const clone = response.clone();
-              const stream = () => response.body;
-              const batch_str = "__batch_" + Number(batchNum).pad(5);
-              const name = baseFilename + type.name + batch_str + ".json";
-              ctrl.enqueue({ name, stream });
-              return clone.json();
-            });
+          return fetchCredentials(url, request, true).then((response) => {
+            const clone = response.clone();
+            const stream = () => response.body;
+            const batch_str = "__batch_" + Number(batchNum).pad(5);
+            const name = baseFilename + type.name + batch_str + ".json";
+            ctrl.enqueue({ name, stream });
+            return clone.json();
+          });
         };
 
         // Class for fetching batches of metadata.
@@ -551,8 +598,8 @@ export class MediaSection extends TatorElement {
                 this._batchNum,
                 this._baseFilename,
                 this._lastId,
-                idQuery,
-              )
+                idQuery
+              );
               this._batchNum++;
               if (entities.length == 0) {
                 this._typeIndex++;
@@ -564,7 +611,10 @@ export class MediaSection extends TatorElement {
                 }
               } else {
                 this._lastId = entities[entities.length - 1][this._lastField];
-                this.ids.push.apply(this.ids, entities.map(entity => entity.id));
+                this.ids.push.apply(
+                  this.ids,
+                  entities.map((entity) => entity.id)
+                );
               }
             }
             return done;
@@ -574,46 +624,63 @@ export class MediaSection extends TatorElement {
         if (mediaTypes == null) {
           // Get media types.
           mediaTypes = await getTypes("MediaTypes", "media_types.json");
-          mediaFetcher = new MetadataFetcher(mediaTypes, mediaUrl, "medias__", "id");
-        }
-        else if (localizationTypes == null) {
+          mediaFetcher = new MetadataFetcher(
+            mediaTypes,
+            mediaUrl,
+            "medias__",
+            "id"
+          );
+        } else if (localizationTypes == null) {
           // Get localization types.
           const localizationsUrl = getUrl("Localizations");
-          localizationTypes = await getTypes("LocalizationTypes", "localization_types.json");
-          localizationFetcher = new MetadataFetcher(localizationTypes, localizationsUrl,
-            "localizations__", "id");
-        }
-        else if (stateTypes == null) {
+          localizationTypes = await getTypes(
+            "LocalizationTypes",
+            "localization_types.json"
+          );
+          localizationFetcher = new MetadataFetcher(
+            localizationTypes,
+            localizationsUrl,
+            "localizations__",
+            "id"
+          );
+        } else if (stateTypes == null) {
           // Get state types.
           const statesUrl = getUrl("States");
           stateTypes = await getTypes("StateTypes", "state_types.json");
-          stateFetcher = new MetadataFetcher(stateTypes, statesUrl, "states__", "id");
-        }
-        else if (mediaDone == false) {
+          stateFetcher = new MetadataFetcher(
+            stateTypes,
+            statesUrl,
+            "states__",
+            "id"
+          );
+        } else if (mediaDone == false) {
           // Get next batch of media metadata.
           mediaDone = await mediaFetcher.next();
-        }
-        else if (localizationsDone == false) {
+        } else if (localizationsDone == false) {
           // Get next batch of localization metadata.
-          localizationsDone = await localizationFetcher.next({ media_ids: mediaFetcher.ids });
-        }
-        else if (statesDone == false) {
+          localizationsDone = await localizationFetcher.next({
+            media_ids: mediaFetcher.ids,
+          });
+        } else if (statesDone == false) {
           // Get next batch of state metadata.
           statesDone = await stateFetcher.next({ media_ids: mediaFetcher.ids });
-        }
-        else {
+        } else {
           // Close the zip file.
           ctrl.close();
         }
-      }
+      },
     });
     if (window.WritableStream && readableZipStream.pipeTo) {
       readableZipStream.pipeTo(fileStream);
     } else {
       const writer = fileStream.getWriter();
       const reader = readableZipStream.getReader();
-      const pump = () => reader.read()
-        .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+      const pump = () =>
+        reader
+          .read()
+          .then((res) =>
+            res.done ? writer.close() : writer.write(res.value).then(pump)
+          );
       pump();
     }
   }
@@ -623,19 +690,22 @@ export class MediaSection extends TatorElement {
     if (this._name.contains(this._nameText)) {
       const input = document.createElement("input");
       input.style.borderWidth = "3px";
-      input.setAttribute("class", "form-control input-sm f1 text-white text-bold");
+      input.setAttribute(
+        "class",
+        "form-control input-sm f1 text-white text-bold"
+      );
       input.setAttribute("value", this._section.name);
       this._name.replaceChild(input, this._nameText);
-      input.addEventListener("focus", evt => {
+      input.addEventListener("focus", (evt) => {
         evt.target.select();
       });
-      input.addEventListener("keydown", evt => {
+      input.addEventListener("keydown", (evt) => {
         if (evt.keyCode == 13) {
           evt.preventDefault();
           input.blur();
         }
       });
-      input.addEventListener("blur", evt => {
+      input.addEventListener("blur", (evt) => {
         if (evt.target.value !== "") {
           //this._worker.postMessage({
           //  command: "renameSection",
@@ -648,7 +718,7 @@ export class MediaSection extends TatorElement {
         fetchCredentials("/rest/Section/" + this._section.id, {
           method: "PATCH",
           body: JSON.stringify({
-            "name": this._sectionName
+            name: this._sectionName,
           }),
         });
         this._nameText.textContent = this._sectionName;
@@ -658,20 +728,20 @@ export class MediaSection extends TatorElement {
         this._name.classList.add("text-green");
         setTimeout(() => {
           this._name.classList.remove("text-green");
-        }, 800)
+        }, 800);
 
-        this.dispatchEvent(new CustomEvent("newName", {
-          detail: {
-            id: this._section.id,
-            sectionName: this._sectionName,
-          },
-        }));
+        this.dispatchEvent(
+          new CustomEvent("newName", {
+            detail: {
+              id: this._section.id,
+              sectionName: this._sectionName,
+            },
+          })
+        );
       });
       input.focus();
     }
   }
-
-
 
   _findAfters() {
     // Find the media for each batch of 10000 medias.
@@ -683,12 +753,21 @@ export class MediaSection extends TatorElement {
     });
 
     // launch algorithm on all the media in this section
-    this._more.addEventListener("algorithmMenu", this._launchAlgorithm.bind(this));
+    this._more.addEventListener(
+      "algorithmMenu",
+      this._launchAlgorithm.bind(this)
+    );
 
     this._more.addEventListener("download", this._downloadFiles.bind(this));
 
-    this._more.addEventListener("downloadAnnotations", this._downloadAnnotations.bind(this));
-    this._files.addEventListener("downloadAnnotations", this._downloadAnnotations.bind(this));
+    this._more.addEventListener(
+      "downloadAnnotations",
+      this._downloadAnnotations.bind(this)
+    );
+    this._files.addEventListener(
+      "downloadAnnotations",
+      this._downloadAnnotations.bind(this)
+    );
 
     this._more.addEventListener("rename", this._rename.bind(this));
 
@@ -696,36 +775,42 @@ export class MediaSection extends TatorElement {
     this.addEventListener("renameSection", this._reloadAndRename.bind(this));
     this.addEventListener("deleteSection", (evt) => {
       // console.log(evt);
-      this.dispatchEvent(new CustomEvent("remove", {
-        detail: {
-          sectionParams: this._sectionParams(),
-          section: this._section,
-          projectId: this._project,
-          deleteMedia: false,
-        }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("remove", {
+          detail: {
+            sectionParams: this._sectionParams(),
+            section: this._section,
+            projectId: this._project,
+            deleteMedia: false,
+          },
+        })
+      );
     });
 
-    this._more.addEventListener("deleteSection", evt => {
-      this.dispatchEvent(new CustomEvent("remove", {
-        detail: {
-          sectionParams: this._sectionParams(),
-          section: this._section,
-          projectId: this._project,
-          deleteMedia: false,
-        }
-      }));
+    this._more.addEventListener("deleteSection", (evt) => {
+      this.dispatchEvent(
+        new CustomEvent("remove", {
+          detail: {
+            sectionParams: this._sectionParams(),
+            section: this._section,
+            projectId: this._project,
+            deleteMedia: false,
+          },
+        })
+      );
     });
 
-    this._more.addEventListener("deleteMedia", evt => {
-      this.dispatchEvent(new CustomEvent("remove", {
-        detail: {
-          sectionParams: this._sectionParams(),
-          section: this._section,
-          projectId: this._project,
-          deleteMedia: true,
-        }
-      }));
+    this._more.addEventListener("deleteMedia", (evt) => {
+      this.dispatchEvent(
+        new CustomEvent("remove", {
+          detail: {
+            sectionParams: this._sectionParams(),
+            section: this._section,
+            projectId: this._project,
+            deleteMedia: true,
+          },
+        })
+      );
     });
 
     this._paginator_top.addEventListener("selectPage", (evt) => {
@@ -760,8 +845,8 @@ export class MediaSection extends TatorElement {
     let firstParm = true;
 
     if (searchArgs.toString !== "") {
-      searchArgs.delete('page');
-      searchArgs.delete('pagesize');
+      searchArgs.delete("page");
+      searchArgs.delete("pagesize");
 
       for (const [key, value] of searchArgs) {
         if (!firstParm) {
@@ -772,69 +857,78 @@ export class MediaSection extends TatorElement {
         newUrl += `${key}=${value}`;
         firstParm = false;
       }
-
     }
 
     // Only add back params if we're not on default page 1, and pageSize 10
-    if (this._start !== 0 || this._paginator_top._pageSize !== this._defaultPageSize) {
+    if (
+      this._start !== 0 ||
+      this._paginator_top._pageSize !== this._defaultPageSize
+    ) {
       if (!firstParm) {
         newUrl += "&";
       } else {
         newUrl += "?";
       }
-      newUrl += `page=${Number(this._paginator_top._page) + 1}&pagesize=${this._paginator_top._pageSize}`
+      newUrl += `page=${Number(this._paginator_top._page) + 1}&pagesize=${
+        this._paginator_top._pageSize
+      }`;
     }
 
     window.history.pushState({}, "", newUrl);
-    this._pagePosition.nodeValue = `Page ${typeof this._paginator_top._page == "undefined" ? 1 : (this._paginator_top._page + 1)} of ${this._paginator_top._numPages}`;
+    this._pagePosition.nodeValue = `Page ${
+      typeof this._paginator_top._page == "undefined"
+        ? 1
+        : this._paginator_top._page + 1
+    } of ${this._paginator_top._numPages}`;
   }
 
   async updateFilterResults(conditions) {
     this._filterConditions = conditions;
-    this._filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
+    this._filterURIString = encodeURIComponent(
+      JSON.stringify(this._filterConditions)
+    );
 
     if (conditions !== []) {
       // Media Filters
       var finalMediaFilters = [];
       var finalMetadataFilters = [];
       for (var filter of this._filterConditions) {
-        if (filter.categoryGroup == "Media")
-        {
-          finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
+        if (filter.categoryGroup == "Media") {
+          finalMediaFilters.push(
+            this._modelData._convertFilterForTator(filter)
+          );
+        } else {
+          finalMetadataFilters.push(
+            this._modelData._convertFilterForTator(filter)
+          );
         }
-        else
-        {
-          finalMetadataFilters.push(this._modelData._convertFilterForTator(filter));
-        }
-
       }
 
-      if (finalMediaFilters.length > 0)
-      {
-        var searchObject = {'method': 'and', 'operations': [...finalMediaFilters]};
+      if (finalMediaFilters.length > 0) {
+        var searchObject = {
+          method: "and",
+          operations: [...finalMediaFilters],
+        };
         console.info(`Search Object = ${JSON.stringify(searchObject)}`);
         var searchBlob = btoa(JSON.stringify(searchObject));
         this.searchString = searchBlob;
-      }
-      else
-      {
+      } else {
         this.searchString = "";
       }
 
-      if (finalMetadataFilters.length > 0)
-      {
-        var searchObject = {'method': 'and', 'operations': [...finalMetadataFilters]};
+      if (finalMetadataFilters.length > 0) {
+        var searchObject = {
+          method: "and",
+          operations: [...finalMetadataFilters],
+        };
         console.info(`Search Object = ${JSON.stringify(searchObject)}`);
         var searchBlob = btoa(JSON.stringify(searchObject));
         this.relatedSearchString = searchBlob;
-      }
-      else
-      {
+      } else {
         this.relatedSearchString = "";
       }
 
       await this.reload();
-
     } else {
       this.searchString = "";
       this.relatedSearchString = "";
@@ -862,22 +956,36 @@ export class MediaSection extends TatorElement {
     params.delete("page");
     params.delete("pagesize");
 
-    if (typeof this._filterURIString !== "undefined" && this._filterURIString != null && this._filterURIString != encodeURIComponent("[]")) {
+    if (
+      typeof this._filterURIString !== "undefined" &&
+      this._filterURIString != null &&
+      this._filterURIString != encodeURIComponent("[]")
+    ) {
       params.set("filterConditions", this._filterURIString);
     } else {
       params.delete("filterConditions");
     }
 
     const searchString = this._searchParams.get("encoded_search");
-    if (typeof searchString !== "undefined" && searchString != null && searchString !== "undefined") {
+    if (
+      typeof searchString !== "undefined" &&
+      searchString != null &&
+      searchString !== "undefined"
+    ) {
       // let params = this._sectionParams();
       params.set("encoded_search", searchString);
     } else {
       params.delete("encoded_search");
     }
 
-    const relatedSearchString = this._searchParams.get("encoded_related_search");
-    if (typeof relatedSearchString !== "undefined" && relatedSearchString != null && relatedSearchString !== "undefined") {
+    const relatedSearchString = this._searchParams.get(
+      "encoded_related_search"
+    );
+    if (
+      typeof relatedSearchString !== "undefined" &&
+      relatedSearchString != null &&
+      relatedSearchString !== "undefined"
+    ) {
       // let params = this._sectionParams();
       params.set("encoded_related_search", relatedSearchString);
     } else {
@@ -893,10 +1001,15 @@ export class MediaSection extends TatorElement {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has("filterConditions")) {
       this._filterURIString = searchParams.get("filterConditions");
-      this._filterConditions = JSON.parse(decodeURIComponent(this._filterURIString));
+      this._filterConditions = JSON.parse(
+        decodeURIComponent(this._filterURIString)
+      );
     }
-    if (typeof this._filterConditions !== "undefined" && this._filterConditions != "") {
-      return this._filterConditions
+    if (
+      typeof this._filterConditions !== "undefined" &&
+      this._filterConditions != ""
+    ) {
+      return this._filterConditions;
     } else {
       return [];
     }

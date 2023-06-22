@@ -10,7 +10,8 @@ export class BigUploadForm extends ModalDialog {
 
     const warning = document.createElement("p");
     warning.setAttribute("class", "text-semibold py-3");
-    warning.textContent = "Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try tator-py.";
+    warning.textContent =
+      "Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try tator-py.";
     this._main.appendChild(warning);
 
     this._accept = document.createElement("button");
@@ -20,7 +21,7 @@ export class BigUploadForm extends ModalDialog {
 
     // Indicates whether big upload was accepted.
     this._confirm = false;
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -28,7 +29,7 @@ export class BigUploadForm extends ModalDialog {
 
     cancel.addEventListener("click", this._closeCallback);
 
-    this._accept.addEventListener("click", evt => {
+    this._accept.addEventListener("click", (evt) => {
       this._confirm = true;
       this._closeCallback();
     });
@@ -39,7 +40,12 @@ export class BigUploadForm extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "is-open":
         break;

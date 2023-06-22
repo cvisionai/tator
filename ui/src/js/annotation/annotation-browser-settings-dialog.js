@@ -16,7 +16,10 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     this._title.nodeValue = "Annotation Browser Settings";
 
     this._tabsDiv = document.createElement("div");
-    this._tabsDiv.setAttribute("class", "d-flex flex-grow flex-justify-center mb-3 f3");
+    this._tabsDiv.setAttribute(
+      "class",
+      "d-flex flex-grow flex-justify-center mb-3 f3"
+    );
     //this._main.appendChild(this._tabsDiv);
 
     this._viewSettingsButton = document.createElement("button");
@@ -87,16 +90,19 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     chevron.setAttribute("width", "1em");
 
     const chevronPath = document.createElementNS(svgNamespace, "path");
-    chevronPath.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+    chevronPath.setAttribute(
+      "d",
+      "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z"
+    );
 
     chevron.appendChild(chevronPath);
     return chevron;
   }
 
   /**
-  * Create attribute name checkbox element
-  * @return <checkbox-input>
-  */
+   * Create attribute name checkbox element
+   * @return <checkbox-input>
+   */
   _makeCheckbox(name) {
     let checkbox = document.createElement("checkbox-input");
     checkbox.setAttribute("name", name);
@@ -113,13 +119,12 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
    * Used in conjunction with _makeAttributeSections()
    */
   _makeAttributePage(pageParentDiv, dataType) {
-
     var parentDiv = document.createElement("div");
     parentDiv.setAttribute("class", "d-flex flex-grow flex-column col-12");
     pageParentDiv.appendChild(parentDiv);
 
     var headerDiv = document.createElement("div");
-    headerDiv.setAttribute("class", "d-flex col-12")
+    headerDiv.setAttribute("class", "d-flex col-12");
     parentDiv.appendChild(headerDiv);
 
     var visibilityTab = document.createElement("button");
@@ -134,16 +139,20 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     headerDiv.appendChild(visibilityTab);
 
     var infoDiv = document.createElement("div");
-    infoDiv.setAttribute("class", "d-flex flex-grow flex-column col-12 purple-box-border py-3 annotation_browser_settings_wrapper")
+    infoDiv.setAttribute(
+      "class",
+      "d-flex flex-grow flex-column col-12 purple-box-border py-3 annotation_browser_settings_wrapper"
+    );
     parentDiv.appendChild(infoDiv);
 
     var description = document.createElement("div");
-    description.setAttribute("class", "f2 text-dark-gray px-3 py-3")
-    description.textContent = "Select the attributes that should always be displayed when toggling the More/Less option in the annotation browser."
+    description.setAttribute("class", "f2 text-dark-gray px-3 py-3");
+    description.textContent =
+      "Select the attributes that should always be displayed when toggling the More/Less option in the annotation browser.";
     infoDiv.appendChild(description);
 
     var innerInfoDiv = document.createElement("div");
-    innerInfoDiv.setAttribute("class", "d-flex flex-grow col-12")
+    innerInfoDiv.setAttribute("class", "d-flex flex-grow col-12");
     infoDiv.appendChild(innerInfoDiv);
 
     //
@@ -152,10 +161,13 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     var visibleAttributes = [];
     var hiddenAttributes = [];
 
-    if (dataType.dtype == "video" || dataType.dtype == "image" || dataType.dtype == "multi") {
+    if (
+      dataType.dtype == "video" ||
+      dataType.dtype == "image" ||
+      dataType.dtype == "multi"
+    ) {
       var builtInAttributes = [];
-    }
-    else {
+    } else {
       var builtInAttributes = ["ID", "Version", "Frame"];
     }
 
@@ -163,16 +175,13 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
       return a.order - b.order || a.name - b.name;
     });
 
-
     // Next organize the attribute names
     for (const attrType of allSortedAttrTypes) {
       if (attrType.order < 0) {
         hiddenAttributes.push(attrType.name);
-      }
-      else if(attrType.visible == false) {
+      } else if (attrType.visible == false) {
         hiddenAttributes.push(attrType.name);
-      }
-      else {
+      } else {
         visibleAttributes.push(attrType.name);
       }
     }
@@ -185,28 +194,41 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     innerInfoDiv.appendChild(wrapperDiv);
 
     var labelDiv = document.createElement("div");
-    labelDiv.setAttribute("class", "f2 text-gray text-semibold clickable py-2 chevron-trigger-90");
+    labelDiv.setAttribute(
+      "class",
+      "f2 text-gray text-semibold clickable py-2 chevron-trigger-90"
+    );
     labelDiv.textContent = "Built-in Attributes";
     wrapperDiv.appendChild(labelDiv);
     var chevron = this._makeChevron();
     labelDiv.appendChild(chevron);
 
     var builtinInfoDiv = document.createElement("div");
-    builtinInfoDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-3 px-2 text-gray f2 mb-2");
+    builtinInfoDiv.setAttribute(
+      "class",
+      "annotation__panel-group annotation__panel-border py-3 px-2 text-gray f2 mb-2"
+    );
     wrapperDiv.appendChild(builtinInfoDiv);
 
-    labelDiv.addEventListener("click", evt => {
+    labelDiv.addEventListener("click", (evt) => {
       builtinInfoDiv.hidden = !builtinInfoDiv.hidden;
       evt.target.classList.toggle("chevron-trigger-90");
     });
 
     for (const attrName of builtInAttributes) {
       let checkbox = this._makeCheckbox(attrName);
-      checkbox._checked = this._browserSettings.isAlwaysVisible(dataType, attrName);
+      checkbox._checked = this._browserSettings.isAlwaysVisible(
+        dataType,
+        attrName
+      );
       builtinInfoDiv.appendChild(checkbox);
 
       checkbox.addEventListener("change", () => {
-        this._browserSettings.setAlwaysVisible(dataType, attrName, checkbox.getChecked());
+        this._browserSettings.setAlwaysVisible(
+          dataType,
+          attrName,
+          checkbox.getChecked()
+        );
       });
     }
 
@@ -222,27 +244,40 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     innerInfoDiv.appendChild(wrapperDiv);
 
     var labelDiv = document.createElement("div");
-    labelDiv.setAttribute("class", "f2 text-gray text-semibold clickable py-2 chevron-trigger-90");
+    labelDiv.setAttribute(
+      "class",
+      "f2 text-gray text-semibold clickable py-2 chevron-trigger-90"
+    );
     labelDiv.textContent = "User Attributes";
     wrapperDiv.appendChild(labelDiv);
     var chevron = this._makeChevron();
     labelDiv.appendChild(chevron);
 
     var visibleInfoDiv = document.createElement("div");
-    visibleInfoDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-3 px-2 text-gray f2 mb-2");
+    visibleInfoDiv.setAttribute(
+      "class",
+      "annotation__panel-group annotation__panel-border py-3 px-2 text-gray f2 mb-2"
+    );
     wrapperDiv.appendChild(visibleInfoDiv);
 
     for (const attrName of visibleAttributes) {
       let checkbox = this._makeCheckbox(attrName);
-      checkbox._checked = this._browserSettings.isAlwaysVisible(dataType, attrName);
+      checkbox._checked = this._browserSettings.isAlwaysVisible(
+        dataType,
+        attrName
+      );
       visibleInfoDiv.appendChild(checkbox);
 
       checkbox.addEventListener("change", () => {
-        this._browserSettings.setAlwaysVisible(dataType, attrName, checkbox.getChecked());
+        this._browserSettings.setAlwaysVisible(
+          dataType,
+          attrName,
+          checkbox.getChecked()
+        );
       });
     }
 
-    labelDiv.addEventListener("click", evt => {
+    labelDiv.addEventListener("click", (evt) => {
       visibleInfoDiv.hidden = !visibleInfoDiv.hidden;
       evt.target.classList.toggle("chevron-trigger-90");
     });
@@ -254,14 +289,14 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
    *
    */
   _makeAttributeSections() {
-
     // Create the button tabs based on the available localization types.
     var parentDiv = this._typePageSelectDiv;
     var header = document.createElement("div");
-    header.setAttribute("class", "py-3 f2 d-flex flex-items-center")
+    header.setAttribute("class", "py-3 f2 d-flex flex-items-center");
     header.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill mr-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
-    </svg> Annotation Types`;    parentDiv.appendChild(header);
+    </svg> Annotation Types`;
+    parentDiv.appendChild(header);
 
     this._typePageButtons = {};
     var firstPageId = null;
@@ -280,8 +315,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
 
       if (["box", "poly", "line", "dot"].includes(dataType.dtype)) {
         text.textContent = `${dataType.name} (${dataType.dtype})`;
-      }
-      else {
+      } else {
         text.textContent = `${dataType.name}`;
       }
 
@@ -293,7 +327,10 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
       btn.appendChild(svg);
 
       const path = document.createElementNS(svgNamespace, "path");
-      path.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+      path.setAttribute(
+        "d",
+        "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z"
+      );
       svg.appendChild(path);
 
       parentDiv.appendChild(btn);
@@ -308,7 +345,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     // By default hide them, and use another function to display them.
     var parentDiv = this._typeAttributesDiv;
 
-    this._typePages = {}
+    this._typePages = {};
     for (const [id, dataType] of Object.entries(this._dataTypeIdMap)) {
       var pageDiv = this._makeAttributePage(parentDiv, dataType);
       this._typePages[id] = pageDiv;
@@ -322,8 +359,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
           if (id2 == id) {
             pageDiv.style.display = "flex";
             this._typePageButtons[id2].classList.add("active");
-          }
-          else {
+          } else {
             pageDiv.style.display = "none";
             this._typePageButtons[id2].classList.remove("active");
           }
@@ -338,7 +374,6 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
    *
    */
   _createViewSettingsPage() {
-
     const parentWrapper = document.createElement("div");
     this._viewSettingsDiv.appendChild(parentWrapper);
 
@@ -353,7 +388,8 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
 
     var span = document.createElement("span");
     span.setAttribute("class", "text-gray f2 py-1 d-flex");
-    span.textContent = "Set the attributes' apperance settings of the registered media, localization, and state types in the annotator browser."
+    span.textContent =
+      "Set the attributes' apperance settings of the registered media, localization, and state types in the annotator browser.";
     headerDiv.appendChild(span);
 
     var attrWrapper = document.createElement("div");
@@ -361,11 +397,17 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     parentWrapper.appendChild(attrWrapper);
 
     this._typePageSelectDiv = document.createElement("div");
-    this._typePageSelectDiv.setAttribute("class", "d-flex flex-justify-center flex-column analysis__filter_main ");
+    this._typePageSelectDiv.setAttribute(
+      "class",
+      "d-flex flex-justify-center flex-column analysis__filter_main "
+    );
     attrWrapper.appendChild(this._typePageSelectDiv);
 
     this._typeAttributesDiv = document.createElement("div");
-    this._typeAttributesDiv.setAttribute("class", "d-flex flex-wrap flex-column col-12 mr-3");
+    this._typeAttributesDiv.setAttribute(
+      "class",
+      "d-flex flex-wrap flex-column col-12 mr-3"
+    );
     attrWrapper.appendChild(this._typeAttributesDiv);
 
     this._makeAttributeSections();
@@ -381,4 +423,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
   }
 }
 
-customElements.define("annotation-browser-settings-dialog", AnnotationBrowserSettingsDialog);
+customElements.define(
+  "annotation-browser-settings-dialog",
+  AnnotationBrowserSettingsDialog
+);

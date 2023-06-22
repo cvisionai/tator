@@ -12,7 +12,7 @@ export class UndoBuffer extends HTMLElement {
     this._editsMade = false;
     this._sessionStart = new Date();
 
-    document.addEventListener("keydown", evt => {
+    document.addEventListener("keydown", (evt) => {
       if (evt.isComposing || evt.keyCode === 229) {
         return;
       }
@@ -24,39 +24,48 @@ export class UndoBuffer extends HTMLElement {
         evt.preventDefault();
         this.redo();
       }
-    })
+    });
 
     window.addEventListener("beforeunload", () => {
       if (this._editsMade) {
         const sessionEnd = new Date();
-        fetchCredentials("/rest/Media/" + this._media.id, {
-          method: "PATCH",
-          body: JSON.stringify({
-            last_edit_start: this._sessionStart.toISOString(),
-            last_edit_end: sessionEnd.toISOString(),
-          }),
-        }, true)
-        .then(response => {
+        fetchCredentials(
+          "/rest/Media/" + this._media.id,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              last_edit_start: this._sessionStart.toISOString(),
+              last_edit_end: sessionEnd.toISOString(),
+            }),
+          },
+          true
+        ).then((response) => {
           if (response.ok) {
             return response;
           } else {
-            response.json()
-            .then(data => console.error("Error during fetch: " + JSON.stringify(data)));
+            response
+              .json()
+              .then((data) =>
+                console.error("Error during fetch: " + JSON.stringify(data))
+              );
           }
         });
 
         // Launch any edit trigger algorithms
-        var edit_triggers=this._mediaType.editTriggers;
-        if (edit_triggers)
-        {
-          edit_triggers.forEach(algo_name=>{
-            fetchCredentials("/rest/Jobs/" + this._media['project'], {
-              method: "POST",
-              body: JSON.stringify({
-                "algorithm_name": algo_name,
-                "media_ids": [this._media['id']],
-              }),
-            }, true)
+        var edit_triggers = this._mediaType.editTriggers;
+        if (edit_triggers) {
+          edit_triggers.forEach((algo_name) => {
+            fetchCredentials(
+              "/rest/Jobs/" + this._media["project"],
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  algorithm_name: algo_name,
+                  media_ids: [this._media["id"]],
+                }),
+              },
+              true
+            );
           });
         }
       }
@@ -65,15 +74,15 @@ export class UndoBuffer extends HTMLElement {
 
   static get detailToList() {
     return {
-      "Localization": "Localizations",
-      "State": "States",
+      Localization: "Localizations",
+      State: "States",
     };
   }
 
   static get listToDetail() {
     return {
-      "Localizations": "Localization",
-      "States": "State",
+      Localizations: "Localization",
+      States: "State",
     };
   }
 
@@ -99,44 +108,46 @@ export class UndoBuffer extends HTMLElement {
     const projectId = this.getAttribute("project-id");
     const promise = this._get(detailUri, id);
     if (promise) {
-      return promise.then(data => {
-        let other;
-        if (detailUri == "Localization") {
-          other = {
-            media_id: data.media,
-            frame: data.frame,
-            type: data.type,
-          };
-        } else if (detailUri == "State") {
-          other = {
-            media_ids: data.media,
-            frame: data.frame,
-            type: data.type,
-            localization_ids: data.localizations,
-          };
-        }
-        const original = {};
-        for (const key in body) {
-          if (key in data) {
-            original[key] = data[key];
+      return promise
+        .then((data) => {
+          let other;
+          if (detailUri == "Localization") {
+            other = {
+              media_id: data.media,
+              frame: data.frame,
+              type: data.type,
+            };
+          } else if (detailUri == "State") {
+            other = {
+              media_ids: data.media,
+              frame: data.frame,
+              type: data.type,
+              localization_ids: data.localizations,
+            };
           }
-        }
-        if ("attributes" in data) {
-          original.attributes = {};
-          for (const key in data.attributes) {
-            original.attributes[key] = data.attributes[key];
+          const original = {};
+          for (const key in body) {
+            if (key in data) {
+              original[key] = data[key];
+            }
           }
-        }
-        this._resetFromNow();
-        this._forwardOps.push([["PATCH", detailUri, id, body]]);
-        this._backwardOps.push([["PATCH", detailUri, id, original]]);
-        this._dataTypes.push(dataType);
-        return this.redo();
-      }).catch(() => {
-        const msg = dataType.name + " was not updated";
-        Utilities.warningAlert(msg, "#ff3e1d", false);
-        console.error("Error during patch!");
-      })
+          if ("attributes" in data) {
+            original.attributes = {};
+            for (const key in data.attributes) {
+              original.attributes[key] = data.attributes[key];
+            }
+          }
+          this._resetFromNow();
+          this._forwardOps.push([["PATCH", detailUri, id, body]]);
+          this._backwardOps.push([["PATCH", detailUri, id, original]]);
+          this._dataTypes.push(dataType);
+          return this.redo();
+        })
+        .catch(() => {
+          const msg = dataType.name + " was not updated";
+          Utilities.warningAlert(msg, "#ff3e1d", false);
+          console.error("Error during patch!");
+        });
     } else {
       return null;
     }
@@ -145,54 +156,56 @@ export class UndoBuffer extends HTMLElement {
   del(detailUri, id, dataType) {
     const promise = this._get(detailUri, id);
     if (promise) {
-      return promise.then(data => {
-        let body;
-        if (['box', 'line', 'dot'].includes(dataType.dtype)) {
-          body = {
-            media_id: data.media,
-            frame: data.frame,
-            type: Number(dataType.id.split("_")[1]),
-            version: data.version,
-            x: data.x,
-            y: data.y,
-            ...data.attributes,
-          };
-          if (dataType.dtype == 'box') {
+      return promise
+        .then((data) => {
+          let body;
+          if (["box", "line", "dot"].includes(dataType.dtype)) {
             body = {
-              ...body,
-              width: data.width,
-              height: data.height,
+              media_id: data.media,
+              frame: data.frame,
+              type: Number(dataType.id.split("_")[1]),
+              version: data.version,
+              x: data.x,
+              y: data.y,
+              ...data.attributes,
             };
-          } else if (dataType.dtype == 'line') {
+            if (dataType.dtype == "box") {
+              body = {
+                ...body,
+                width: data.width,
+                height: data.height,
+              };
+            } else if (dataType.dtype == "line") {
+              body = {
+                ...body,
+                u: data.u,
+                v: data.v,
+              };
+            }
+          } else if (dataType.dtype == "state") {
             body = {
-              ...body,
-              u: data.u,
-              v: data.v,
+              media_ids: data.media,
+              localization_ids: data.localizations,
+              frame: data.frame,
+              type: Number(dataType.id.split("_")[1]),
+              version: data.version,
+              ...data.attributes,
             };
           }
-        } else if (dataType.dtype == 'state') {
-          body = {
-            media_ids: data.media,
-            localization_ids: data.localizations,
-            frame: data.frame,
-            type: Number(dataType.id.split("_")[1]),
-            version: data.version,
-            ...data.attributes,
-          };
-        }
 
-        const projectId = this.getAttribute("project-id");
-        const listUri = UndoBuffer.detailToList[detailUri];
-        this._resetFromNow();
-        this._forwardOps.push([["DELETE", detailUri, id, null]]);
-        this._backwardOps.push([["POST", listUri, projectId, body]]);
-        this._dataTypes.push(dataType);
-        return this.redo();
-      }).catch(() => {
-        const msg = dataType.name + " was not deleted";
-        Utilities.warningAlert(msg, "#ff3e1d", false);
-        console.error("Error during delete!");
-      })
+          const projectId = this.getAttribute("project-id");
+          const listUri = UndoBuffer.detailToList[detailUri];
+          this._resetFromNow();
+          this._forwardOps.push([["DELETE", detailUri, id, null]]);
+          this._backwardOps.push([["POST", listUri, projectId, body]]);
+          this._dataTypes.push(dataType);
+          return this.redo();
+        })
+        .catch(() => {
+          const msg = dataType.name + " was not deleted";
+          Utilities.warningAlert(msg, "#ff3e1d", false);
+          console.error("Error during delete!");
+        });
     } else {
       return null;
     }
@@ -204,24 +217,24 @@ export class UndoBuffer extends HTMLElement {
       for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
         const [method, uri, id, body] = op;
         const dataType = this._dataTypes[this._index];
-        const promise = this._fetch(op, dataType)
+        const promise = this._fetch(op, dataType);
         if (method == "POST") {
           promise
-          .then(response => response.json())
-          .then(data => {
-            this._emitUpdate(method, data.id[0], body, dataType);
-            const delId = this._forwardOps[this._index][opIndex][2];
-            const newId = data.id[0];
-            const replace = ops => {
-              for (const [opIndex, op] of ops.entries()) {
-                if (op[2] == delId || op[2] == null) {
-                  ops[opIndex][2] = newId;
+            .then((response) => response.json())
+            .then((data) => {
+              this._emitUpdate(method, data.id[0], body, dataType);
+              const delId = this._forwardOps[this._index][opIndex][2];
+              const newId = data.id[0];
+              const replace = (ops) => {
+                for (const [opIndex, op] of ops.entries()) {
+                  if (op[2] == delId || op[2] == null) {
+                    ops[opIndex][2] = newId;
+                  }
                 }
-              }
-            };
-            this._forwardOps.forEach(replace);
-            this._backwardOps.forEach(replace);
-          });
+              };
+              this._forwardOps.forEach(replace);
+              this._backwardOps.forEach(replace);
+            });
         } else {
           this._emitUpdate(method, id, body, dataType);
         }
@@ -230,7 +243,6 @@ export class UndoBuffer extends HTMLElement {
   }
 
   redo() {
-
     var promises = [];
 
     let p = new Promise((resolve) => {
@@ -241,12 +253,12 @@ export class UndoBuffer extends HTMLElement {
           let promise = this._fetch(op, dataType);
           if (method == "POST") {
             promise = promise
-              .then(response => response.json())
-              .then(data => {
+              .then((response) => response.json())
+              .then((data) => {
                 this._emitUpdate(method, data.id[0], body, dataType);
                 const delId = this._backwardOps[this._index - 1][opIndex][2];
                 const newId = data.id[0];
-                const replace = ops => {
+                const replace = (ops) => {
                   for (const [opIndex, op] of ops.entries()) {
                     if (op[2] == delId || op[2] == null) {
                       ops[opIndex][2] = newId;
@@ -260,13 +272,15 @@ export class UndoBuffer extends HTMLElement {
           } else {
             this._emitUpdate(method, id, body, dataType);
           }
-          promises.push(promise)
+          promises.push(promise);
         }
         this._index++;
       }
 
       // Resolve only after all the fetches have been completed
-      Promise.all(promises).then(data => { resolve(data); });
+      Promise.all(promises).then((data) => {
+        resolve(data);
+      });
     });
 
     return p;
@@ -274,8 +288,7 @@ export class UndoBuffer extends HTMLElement {
 
   _get(detailUri, id) {
     const url = "/rest/" + detailUri + "/" + id;
-    return fetchCredentials(url, {}, true)
-    .then(response => {
+    return fetchCredentials(url, {}, true).then((response) => {
       if (response.ok) {
         return response.json();
       } else {
@@ -300,19 +313,20 @@ export class UndoBuffer extends HTMLElement {
         obj.body = JSON.stringify(body);
       }
     }
-    this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
-                                       {composed: true,
-                                        detail: {enabled: true}}));
+    this.dispatchEvent(
+      new CustomEvent("temporarilyMaskEdits", {
+        composed: true,
+        detail: { enabled: true },
+      })
+    );
 
     function errorMsg() {
-      var msg = ""
+      var msg = "";
       if (method == "PATCH") {
         msg = " was not updated";
-      }
-      else if (method == "POST") {
+      } else if (method == "POST") {
         msg = " was not created";
-      }
-      else if (method == "DELETE") {
+      } else if (method == "DELETE") {
         msg = " was not deleted";
       }
       msg = dataType.name + msg;
@@ -321,45 +335,52 @@ export class UndoBuffer extends HTMLElement {
     }
 
     return fetchCredentials(url, obj, true)
-    .then(response => {
-      if (response.ok) {
-        console.log("Fetch successful!");
-        return response;
-      } else {
+      .then((response) => {
+        if (response.ok) {
+          console.log("Fetch successful!");
+          return response;
+        } else {
+          errorMsg();
+          response
+            .json()
+            .then((data) =>
+              console.error("Error during fetch: " + JSON.stringify(data))
+            );
+        }
+      })
+      .catch(() => {
         errorMsg();
-        response.json().then(data => console.error("Error during fetch: " + JSON.stringify(data)));
-      }
-    }).catch(() => {
-      errorMsg();
-    });
+      });
   }
 
   _emitUpdate(method, id, body, dataType) {
-
-    var msg = ""
+    var msg = "";
     if (method == "PATCH") {
-      msg = " updated!"
-    }
-    else if (method == "POST") {
-      msg = " created!"
-    }
-    else if (method == "DELETE") {
-      msg = " deleted!"
+      msg = " updated!";
+    } else if (method == "POST") {
+      msg = " created!";
+    } else if (method == "DELETE") {
+      msg = " deleted!";
     }
     msg = dataType.name + msg;
     Utilities.showSuccessIcon(msg);
 
-    this.dispatchEvent(new CustomEvent("update", {
-      detail: {
-        method: method,
-        id: id,
-        body: body,
-        dataType: dataType,
-      }
-    }));
-    this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
-                                       {composed: true,
-                                        detail: {enabled: false}}));
+    this.dispatchEvent(
+      new CustomEvent("update", {
+        detail: {
+          method: method,
+          id: id,
+          body: body,
+          dataType: dataType,
+        },
+      })
+    );
+    this.dispatchEvent(
+      new CustomEvent("temporarilyMaskEdits", {
+        composed: true,
+        detail: { enabled: false },
+      })
+    );
   }
 
   _resetFromNow() {

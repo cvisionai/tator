@@ -4,7 +4,7 @@ import { TatorData } from "../../util/tator-data.js";
 /**
  * Class that contains the data about the collections analytics gallery.
  * This provides an interface between the UI elements to the underlying data calls.
- * 
+ *
  * This will retrieve media-associated states
  */
 export class CollectionsData extends HTMLElement {
@@ -28,7 +28,7 @@ export class CollectionsData extends HTMLElement {
       this._stateTypesMap.set(stateType.id, stateType);
     }
 
-    this.getCollectionsFilter()
+    this.getCollectionsFilter();
     this._totalStateCount = 0;
     this.filterConditions = null;
     this.afterMap = new Map();
@@ -38,8 +38,14 @@ export class CollectionsData extends HTMLElement {
    * @param {array} filterConditions array of FilterConditionData objects
    */
   async _reload(filterConditions) {
-    this.filterConditions = filterConditions !== null && Array.isArray(filterConditions) ? filterConditions.concat(this.collectionsFilter) : this.collectionsFilter;
-    this._totalStateCount = await this._modelData.getFilteredStates("count", this.filterConditions);
+    this.filterConditions =
+      filterConditions !== null && Array.isArray(filterConditions)
+        ? filterConditions.concat(this.collectionsFilter)
+        : this.collectionsFilter;
+    this._totalStateCount = await this._modelData.getFilteredStates(
+      "count",
+      this.filterConditions
+    );
     this.afterMap = new Map();
   }
 
@@ -49,8 +55,13 @@ export class CollectionsData extends HTMLElement {
    * @returns True if reload() needs to be called
    */
   _needReload(filterConditions) {
-    let compareConditions = filterConditions !== null && Array.isArray(filterConditions) ? filterConditions.concat(this.collectionsFilter) : this.collectionsFilter;
-    return JSON.stringify(this.filterConditions) != JSON.stringify(compareConditions);
+    let compareConditions =
+      filterConditions !== null && Array.isArray(filterConditions)
+        ? filterConditions.concat(this.collectionsFilter)
+        : this.collectionsFilter;
+    return (
+      JSON.stringify(this.filterConditions) != JSON.stringify(compareConditions)
+    );
   }
 
   /**
@@ -73,8 +84,8 @@ export class CollectionsData extends HTMLElement {
         this.afterMap
       );
 
-      this._states = this._states.map(state => {
-        return { ...state, typeData: this._stateTypesMap.get(state.type) }
+      this._states = this._states.map((state) => {
+        return { ...state, typeData: this._stateTypesMap.get(state.type) };
       });
     } else {
       this._states = [];
@@ -94,7 +105,7 @@ export class CollectionsData extends HTMLElement {
       } else {
         string += ` OR ${key}`;
       }
-      count++
+      count++;
     }
     string += ` )`;
 
@@ -102,7 +113,7 @@ export class CollectionsData extends HTMLElement {
       category: "State",
       field: "_meta",
       modifier: "OR",
-      value: string
+      value: string,
     });
     // console.log(this.collectionsFilter)
 
@@ -120,7 +131,7 @@ export class CollectionsData extends HTMLElement {
   getNumberOfResults() {
     return this._totalStateCount;
   }
-  
+
   getPage() {
     return this._paginationState.page;
   }
@@ -134,7 +145,7 @@ export class CollectionsData extends HTMLElement {
   }
 
   /**
-   * @param {object} paginationState 
+   * @param {object} paginationState
    *   Must have the following fields:
    *     start
    *     stop

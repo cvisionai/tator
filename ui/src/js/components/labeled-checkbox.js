@@ -4,7 +4,7 @@ import { svgNamespace } from "./tator-element.js";
 export class LabeledCheckbox extends TatorElement {
   constructor() {
     super();
-  
+
     const label = document.createElement("label");
     label.setAttribute("class", "d-flex flex-items-center py-3 f2");
     this._shadow.appendChild(label);
@@ -22,7 +22,10 @@ export class LabeledCheckbox extends TatorElement {
     label.appendChild(svg);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M19.293 5.293l-10.293 10.293-4.293-4.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5 5c0.391 0.391 1.024 0.391 1.414 0l11-11c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0z");
+    path.setAttribute(
+      "d",
+      "M19.293 5.293l-10.293 10.293-4.293-4.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5 5c0.391 0.391 1.024 0.391 1.414 0l11-11c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0z"
+    );
     svg.appendChild(path);
 
     const span = document.createElement("span");
@@ -32,7 +35,7 @@ export class LabeledCheckbox extends TatorElement {
     this._text = document.createTextNode("");
     span.appendChild(this._text);
 
-    this._input.addEventListener("change", evt => {
+    this._input.addEventListener("change", (evt) => {
       const change = new Event("change");
       this.dispatchEvent(change);
     });

@@ -4,7 +4,7 @@ export class EntityGalleryPanel extends TatorElement {
   constructor() {
     super();
 
-    // Panel 
+    // Panel
     this._main = document.createElement("div");
     this._main.setAttribute("class", "entity-panel px-3");
     // this._main.style.marginTop = "-20px"
@@ -42,13 +42,13 @@ export class EntityGalleryPanel extends TatorElement {
     this._mediaHeading = document.createElement("h3");
     this._mediaHeading.setAttribute("class", "py-3 text-semibold");
     this._mediaHeading.style.margintop = "10px";
-    this._main.appendChild(this._mediaHeading)
+    this._main.appendChild(this._mediaHeading);
 
     const mediaSubHeading = document.createElement("h2");
     mediaSubHeading.setAttribute("class", "f2 text-gray py-2");
     mediaSubHeading.appendChild(document.createTextNode("View In Annotator"));
     mediaSubHeading.appendChild(this.goToFrameButton);
-    this._main.appendChild(mediaSubHeading)
+    this._main.appendChild(mediaSubHeading);
 
     this.mediaData = document.createElement("entity-panel-form");
     this.mediaData._attributes._frameWidget.style.display = "none";
@@ -67,7 +67,7 @@ export class EntityGalleryPanel extends TatorElement {
    * @param {Object} cardObj
    */
   async init({ cardObj }) {
-    this.setAttribute("selected-id", cardObj.id)
+    this.setAttribute("selected-id", cardObj.id);
     this.cardObj = cardObj;
     //console.log(this.cardObj);
     // Setup linkout and the entity data for panel here
@@ -76,7 +76,13 @@ export class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton.button.setAttribute("href", this._mediaLink);
 
     // Init the forms with data
-    if (!(this.cardObj.stateInfo && this.cardObj.stateType && this.cardObj.stateType == "Media")) {
+    if (
+      !(
+        this.cardObj.stateInfo &&
+        this.cardObj.stateType &&
+        this.cardObj.stateType == "Media"
+      )
+    ) {
       /* Panel heading with type name */
       this._entityHeading.innerHTML = this.cardObj.entityType.name;
 
@@ -87,7 +93,7 @@ export class EntityGalleryPanel extends TatorElement {
         attributePanelData: this.cardObj.localization,
         associatedMedia: this.cardObj.mediaInfo.media,
         associatedMediaType: this.cardObj.mediaInfo.entityType,
-        allowDelete: true
+        allowDelete: true,
       });
     }
 
@@ -107,12 +113,12 @@ export class EntityGalleryPanel extends TatorElement {
     // Any card with media information
     if (this.cardObj.mediaInfo) {
       /* Panel heading with type name */
-      this._mediaHeading.innerHTML = this.cardObj.mediaInfo.entityType.name;;
+      this._mediaHeading.innerHTML = this.cardObj.mediaInfo.entityType.name;
 
       /* Init panel form */
       this.mediaData._init({
         data: this.cardObj.mediaInfo,
-        attributePanelData: this.cardObj.mediaInfo.media
+        attributePanelData: this.cardObj.mediaInfo.media,
       });
     }
   }

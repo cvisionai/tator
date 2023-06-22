@@ -5,7 +5,10 @@ export class OrgSettingsBreadcrumbs extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray");
+    div.setAttribute(
+      "class",
+      "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray"
+    );
     this._shadow.appendChild(div);
 
     this._projectText = document.createElement("a");
@@ -22,8 +25,6 @@ export class OrgSettingsBreadcrumbs extends TatorElement {
     this._settingsText.setAttribute("class", "text-white text-semibold");
     this._settingsText.textContent = "Organization settings";
     div.appendChild(this._settingsText);
-
-    
   }
 
   static get observedAttributes() {
@@ -37,7 +38,6 @@ export class OrgSettingsBreadcrumbs extends TatorElement {
         break;
     }
   }
-
 }
 
 customElements.define("org-settings-breadcrumbs", OrgSettingsBreadcrumbs);

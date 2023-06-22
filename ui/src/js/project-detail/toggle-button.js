@@ -5,7 +5,10 @@ export class ToggleButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center");
+    button.setAttribute(
+      "class",
+      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+    );
     this._shadow.appendChild(button);
     this._span = document.createElement("span");
     this._span.setAttribute("class", "px-2");

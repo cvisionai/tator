@@ -20,18 +20,19 @@ from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
+
 class AppletListAPI(BaseListView):
     schema = AppletListSchema()
     permission_classes = [ProjectExecutePermission]
-    http_method_names = ['get', 'post']
+    http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
-        qs = Dashboard.objects.filter(project=params['project']).order_by('id')
+        qs = Dashboard.objects.filter(project=params["project"]).order_by("id")
         return database_qs(qs)
 
     def get_queryset(self) -> dict:
         params = parse(self.request)
-        qs = Dashboard.objects.filter(project__id=params['project'])
+        qs = Dashboard.objects.filter(project__id=params["project"])
         return qs
 
     def _post(self, params: dict) -> dict:
@@ -40,7 +41,7 @@ class AppletListAPI(BaseListView):
         try:
             project = Project.objects.get(pk=project_id)
         except Exception as exc:
-            log_msg = f'Provided project ID ({project_id}) does not exist'
+            log_msg = f"Provided project ID ({project_id}) does not exist"
             logger.error(log_msg)
             raise exc
 
@@ -49,7 +50,7 @@ class AppletListAPI(BaseListView):
         applet_url = os.path.join(str(project_id), applet_file)
         applet_path = os.path.join(settings.MEDIA_ROOT, applet_url)
         if not os.path.exists(applet_path):
-            log_msg = f'Provided applet ({applet_file}) does not exist in {settings.MEDIA_ROOT}'
+            log_msg = f"Provided applet ({applet_file}) does not exist in {settings.MEDIA_ROOT}"
             logging.error(log_msg)
             raise ValueError(log_msg)
 
@@ -62,14 +63,16 @@ class AppletListAPI(BaseListView):
             description=description,
             html_file=applet_path,
             name=params[fields.name],
-            project=project)
+            project=project,
+        )
 
         return {"message": f"Successfully created applet {new_applet.id}!", "id": new_applet.id}
+
 
 class AppletDetailAPI(BaseDetailView):
     schema = AppletDetailSchema()
     permission_classes = [ProjectExecutePermission]
-    http_method_names = ['get', 'patch', 'delete']
+    http_method_names = ["get", "patch", "delete"]
 
     def safe_delete(self, path: str) -> None:
         try:
@@ -80,7 +83,7 @@ class AppletDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         # Grab the applet object and delete it from the database
-        applet = Dashboard.objects.get(pk=params['id'])
+        applet = Dashboard.objects.get(pk=params["id"])
         html_file = applet.html_file
         applet.delete()
 
@@ -88,11 +91,11 @@ class AppletDetailAPI(BaseDetailView):
         path = os.path.join(settings.MEDIA_ROOT, html_file.name)
         self.safe_delete(path=path)
 
-        msg = 'Registered applet deleted successfully!'
-        return {'message': msg}
+        msg = "Registered applet deleted successfully!"
+        return {"message": msg}
 
     def _get(self, params):
-        return database_qs(Dashboard.objects.filter(pk=params['id']))[0]
+        return database_qs(Dashboard.objects.filter(pk=params["id"]))[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:
@@ -117,7 +120,7 @@ class AppletDetailAPI(BaseDetailView):
             applet_url = os.path.join(str(obj.project.id), applet_file)
             applet_path = os.path.join(settings.MEDIA_ROOT, applet_url)
             if not os.path.exists(applet_path):
-                log_msg = f'Provided applet ({applet_path}) does not exist'
+                log_msg = f"Provided applet ({applet_path}) does not exist"
                 logging.error(log_msg)
                 raise ValueError("Applet file does not exist in expected location.")
 
@@ -127,9 +130,8 @@ class AppletDetailAPI(BaseDetailView):
 
         obj.save()
 
-        return {'message': f'Applet {applet_id} successfully updated!'}
+        return {"message": f"Applet {applet_id} successfully updated!"}
 
     def get_queryset(self):
-        """ Returns a queryset of all registered applet files
-        """
+        """Returns a queryset of all registered applet files"""
         return Dashboard.objects.all()

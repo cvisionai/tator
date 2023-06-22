@@ -6,7 +6,10 @@ export class EntityAddRemoveButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button"
+    );
     this._shadow.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -25,7 +28,10 @@ export class EntityAddRemoveButton extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M 6 5 L 6 0 L 6 10 M 6 5 L 1 5 L 11 5 M 21 1 L 3 21 M 14 17 L 22 17")
+    path.setAttribute(
+      "d",
+      "M 6 5 L 6 0 L 6 10 M 6 5 L 1 5 L 11 5 M 21 1 L 3 21 M 14 17 L 22 17"
+    );
     svg.appendChild(path);
   }
 }

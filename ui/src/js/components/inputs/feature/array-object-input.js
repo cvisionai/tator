@@ -7,10 +7,13 @@ export class ArrayObjectInput extends TatorElement {
     super();
 
     this._div = document.createElement("div");
-    this._shadow.appendChild(this._div)
+    this._shadow.appendChild(this._div);
 
     this.label = document.createElement("label");
-    this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this.label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._div.appendChild(this.label);
 
     this._name = document.createTextNode("");
@@ -22,8 +25,8 @@ export class ArrayObjectInput extends TatorElement {
 
     // Add new
     this.addNewButton = this.addNewRow({
-      "labelText": "+ New",
-      "callback": ""
+      labelText: "+ New",
+      callback: "",
     });
     this._div.appendChild(this.addNewButton);
 
@@ -33,7 +36,9 @@ export class ArrayObjectInput extends TatorElement {
     this.addNewButton.addEventListener("click", (e) => {
       e.preventDefault();
       this._newEmptyRow();
-      this.dispatchEvent(new CustomEvent("new-input", { detail: { name: this._name } }));
+      this.dispatchEvent(
+        new CustomEvent("new-input", { detail: { name: this._name } })
+      );
     });
   }
 
@@ -80,22 +85,20 @@ export class ArrayObjectInput extends TatorElement {
       // Value is an array of objects
       if (Array.isArray(val)) {
         for (let [i, obj] of val.entries()) {
-            // console.log(obj)
-            let row = this._newInputRow(obj, i);
-            this._rows.push(row);
-            this.addNewButton.before(row);
+          // console.log(obj)
+          let row = this._newInputRow(obj, i);
+          this._rows.push(row);
+          this.addNewButton.before(row);
         }
-
       } else if (typeof val == "object") {
         // for (let [i, obj] of val.entries()) {
-          let rowIndex = this._rows.length;
-          let row = this._newInputRow(val, rowIndex);
-          this._rows.push(row);
-          return this.addNewButton.before(row);
+        let rowIndex = this._rows.length;
+        let row = this._newInputRow(val, rowIndex);
+        this._rows.push(row);
+        return this.addNewButton.before(row);
         // }
       }
     }
-
   }
 
   _newInputRow(val, rowIndex) {
@@ -107,7 +110,7 @@ export class ArrayObjectInput extends TatorElement {
     let row = document.createElement("div");
     row.setAttribute("class", "d-flex flex-row text-gray");
     // row.appendChild(styleDiv);
-    
+
     let props = this._properties;
     this._inputs[rowIndex] = [];
 
@@ -122,7 +125,12 @@ export class ArrayObjectInput extends TatorElement {
           let input = this._getInput(inputType, propName, inputValue, rowIndex);
           row.appendChild(input);
         } else {
-          let objectRow = this.drillIntoObj(inputValue, inputType, propName, rowIndex);
+          let objectRow = this.drillIntoObj(
+            inputValue,
+            inputType,
+            propName,
+            rowIndex
+          );
           row.appendChild(objectRow);
         }
       }
@@ -138,7 +146,7 @@ export class ArrayObjectInput extends TatorElement {
     styleDiv.innerHTML = `<span class="px-6">&nbsp;</span><span class="px-6">&nbsp;</span>`;
     label.appendChild(styleDiv);
 
-    let name = document.createTextNode(`${propName}`)
+    let name = document.createTextNode(`${propName}`);
     label.appendChild(name);
 
     for (let i in propObj) {
@@ -151,7 +159,12 @@ export class ArrayObjectInput extends TatorElement {
         let input = this._getInput(inputType, propName, inputValue, rowIndex);
         label.appendChild(input);
       } else {
-        let objectRow = this.drillIntoObj(inputValue, inputType, propName, rowIndex);
+        let objectRow = this.drillIntoObj(
+          inputValue,
+          inputType,
+          propName,
+          rowIndex
+        );
         label.appendChild(objectRow);
       }
     }
@@ -179,12 +192,12 @@ export class ArrayObjectInput extends TatorElement {
     return input;
   }
 
-  addNewRow({
-    labelText = '',
-    callback = null
-  } = {}) {
+  addNewRow({ labelText = "", callback = null } = {}) {
     const labelWrap = document.createElement("label");
-    labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
+    labelWrap.setAttribute(
+      "class",
+      "d-flex flex-items-center py-1 position-relative f1"
+    );
 
     const spanTextNode = document.createElement("span");
     const spanText = document.createTextNode("");
@@ -204,17 +217,17 @@ export class ArrayObjectInput extends TatorElement {
 
   getValue() {
     const val = [];
-    let rowVal = {}
-    
+    let rowVal = {};
+
     // Loop through the inputs
     // # TODO this could be generalized
     // # currently this is the only thing specific to algorith-edit.js
     if (this._inputs.length > 0) {
       for (let inputData of this._inputs) {
-        rowVal = {...this._emptyRow};
+        rowVal = { ...this._emptyRow };
         rowVal.name = inputData[0].name.getValue();
         rowVal.value = inputData[1].value.getValue();
-        
+
         // for (let [key, input] of Object.entries(inputData)) {
         //   console.log(rowVal.hasOwnProperty(key));
         //     //if (rowVal.hasOwnProperty(key) && typeof rowVal[key] !== "object") {
@@ -228,18 +241,14 @@ export class ArrayObjectInput extends TatorElement {
         //     }
         //   }
 
-
         // }
         // console.log(rowVal);
-        let emptyRow = (rowVal.name === "" && rowVal.value === "")
+        let emptyRow = rowVal.name === "" && rowVal.value === "";
         if (!emptyRow) {
           val.push(rowVal);
         }
-        
       }
     }
-
-
 
     return val;
   }

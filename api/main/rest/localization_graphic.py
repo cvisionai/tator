@@ -24,37 +24,34 @@ logger = logging.getLogger(__name__)
 
 
 class LocalizationGraphicAPI(BaseDetailView):
-    """ Endpoint that retrieves an image of the requested localization
-    """
+    """Endpoint that retrieves an image of the requested localization"""
 
     schema = LocalizationGraphicSchema()
     renderer_classes = (PngRenderer, JpegRenderer, GifRenderer, Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
-    http_method_names = ['get']
-    lookup_field = 'id'
+    http_method_names = ["get"]
+    lookup_field = "id"
 
     def get_queryset(self):
-        """ Overridden method. Please refer to parent's documentation.
-        """
+        """Overridden method. Please refer to parent's documentation."""
 
         return Localization.objects.all()
 
-    def handle_exception(self,exc):
-        """ Overridden method. Please refer to parent's documentation.
-        """
+    def handle_exception(self, exc):
+        """Overridden method. Please refer to parent's documentation."""
         logger.error(f"Exception in request: {traceback.format_exc()}")
         status_obj = status.HTTP_400_BAD_REQUEST
         if type(exc) is response.Http404:
             status_obj = status.HTTP_404_NOT_FOUND
         return Response(
             MediaUtil.generate_error_image(
-                status_obj,
-                str(exc),
-                self.request.accepted_renderer.format),
-            status=status_obj)
+                status_obj, str(exc), self.request.accepted_renderer.format
+            ),
+            status=status_obj,
+        )
 
     def _getMargins(self, localization_type: str, params: dict):
-        """ Returns x/y margins to use based on the provided parameters and localization object
+        """Returns x/y margins to use based on the provided parameters and localization object
 
         Private helper method used by _get()
 
@@ -69,24 +66,22 @@ class LocalizationGraphicAPI(BaseDetailView):
         margins = None
 
         if params.get(self.schema.PARAMS_USE_DEFAULT_MARGINS, None):
-
-            if localization_type == 'dot':
+            if localization_type == "dot":
                 margins = self.schema.DEFAULT_MARGIN_DOT
 
-            elif localization_type == 'line':
+            elif localization_type == "line":
                 margins = self.schema.DEFAULT_MARGIN_LINE
 
-            elif localization_type == 'box':
+            elif localization_type == "box":
                 margins = self.schema.DEFAULT_MARGIN_BOX
 
-            elif localization_type == 'poly':
+            elif localization_type == "poly":
                 margins = self.schema.DEFAULT_MARGIN_BOX
 
             else:
-                raise Exception(f'Error: Invalid meta.dtype detected {localization_type}')
+                raise Exception(f"Error: Invalid meta.dtype detected {localization_type}")
 
         else:
-
             margin_x = params.get(self.schema.PARAMS_MARGIN_X, None)
             margin_y = params.get(self.schema.PARAMS_MARGIN_Y, None)
             margins = SimpleNamespace(x=margin_x, y=margin_y)
@@ -96,12 +91,9 @@ class LocalizationGraphicAPI(BaseDetailView):
         return margins
 
     def _getRoi(
-            self,
-            obj: str,
-            params: dict,
-            media_width: int,
-            media_height: int) -> Tuple[float, float, float, float]:
-        """ Returns the ROI to extract from the media for the given parameters
+        self, obj: str, params: dict, media_width: int, media_height: int
+    ) -> Tuple[float, float, float, float]:
+        """Returns the ROI to extract from the media for the given parameters
 
         Args:
             obj: Localization object
@@ -131,7 +123,9 @@ class LocalizationGraphicAPI(BaseDetailView):
 
         # The roi input is done with normalized arguments. But the margins provided
         # are in pixels. So we've got to convert.
-        margins_rel = SimpleNamespace(x=margins_pixels.x / media_width, y=margins_pixels.y / media_height)
+        margins_rel = SimpleNamespace(
+            x=margins_pixels.x / media_width, y=margins_pixels.y / media_height
+        )
 
         # Take the position information available and apply the margin.
         # The stored position information is normalized, so we will set it to the
@@ -145,25 +139,25 @@ class LocalizationGraphicAPI(BaseDetailView):
         #   Box: x, y, width, height
         #
         # Region of interest format: width, height, x, y
-        if localization_type == 'dot':
-
+        if localization_type == "dot":
             roi_x = obj.x * media_width
             roi_y = obj.y * media_height
 
-            roi = [2*margins_pixels.x + 1,
-                   2*margins_pixels.y + 1,
-                   roi_x - margins_pixels.x,
-                   roi_y - margins_pixels.y]
+            roi = [
+                2 * margins_pixels.x + 1,
+                2 * margins_pixels.y + 1,
+                roi_x - margins_pixels.x,
+                roi_y - margins_pixels.y,
+            ]
 
-        elif localization_type == 'line':
-
+        elif localization_type == "line":
             x = obj.x * media_width
             y = obj.y * media_height
             u = obj.u * media_width
             v = obj.v * media_height
 
             point_a = SimpleNamespace(x=x, y=y)
-            point_b = SimpleNamespace(x=x+u, y=y+v)
+            point_b = SimpleNamespace(x=x + u, y=y + v)
 
             width = abs(point_b.x - point_a.x)
             height = abs(point_b.y - point_a.y)
@@ -171,23 +165,26 @@ class LocalizationGraphicAPI(BaseDetailView):
             roi_x = min(point_a.x, point_b.x)
             roi_y = min(point_a.y, point_b.y)
 
-            roi = [width + 2*margins_pixels.x,
-                   height + 2*margins_pixels.y,
-                   roi_x - margins_pixels.x,
-                   roi_y - margins_pixels.y]
+            roi = [
+                width + 2 * margins_pixels.x,
+                height + 2 * margins_pixels.y,
+                roi_x - margins_pixels.x,
+                roi_y - margins_pixels.y,
+            ]
 
-        elif localization_type == 'box':
-
+        elif localization_type == "box":
             roi_x = obj.x * media_width
             roi_y = obj.y * media_height
             roi_width = obj.width * media_width
             roi_height = obj.height * media_height
 
-            roi = [roi_width + 2*margins_pixels.x,
-                   roi_height + 2*margins_pixels.y,
-                   roi_x - margins_pixels.x,
-                   roi_y - margins_pixels.y]
-        elif localization_type == 'poly':
+            roi = [
+                roi_width + 2 * margins_pixels.x,
+                roi_height + 2 * margins_pixels.y,
+                roi_x - margins_pixels.x,
+                roi_y - margins_pixels.y,
+            ]
+        elif localization_type == "poly":
             minX = 1.0
             minY = 1.0
             maxX = 0.0
@@ -203,12 +200,14 @@ class LocalizationGraphicAPI(BaseDetailView):
                     minY = point[1]
             roi_x = minX * media_width
             roi_y = minY * media_height
-            roi_width = (maxX-minX) * media_width
-            roi_height = (maxY-minY) * media_height
-            roi = [roi_width + 2*margins_pixels.x,
-                   roi_height + 2*margins_pixels.y,
-                   roi_x - margins_pixels.x,
-                   roi_y - margins_pixels.y]
+            roi_width = (maxX - minX) * media_width
+            roi_height = (maxY - minY) * media_height
+            roi = [
+                roi_width + 2 * margins_pixels.x,
+                roi_height + 2 * margins_pixels.y,
+                roi_x - margins_pixels.x,
+                roi_y - margins_pixels.y,
+            ]
 
         else:
             raise Exception(f"Invalid meta.dtype detected {localization_type}")
@@ -235,11 +234,10 @@ class LocalizationGraphicAPI(BaseDetailView):
         return tuple(roi)
 
     def _get(self, params: dict):
-        """ Overridden method. Please refer to parent's documentation.
-        """
+        """Overridden method. Please refer to parent's documentation."""
 
         # Get the localization associated with the given ID
-        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        qs = Localization.objects.filter(pk=params["id"], deleted=False)
         if not qs.exists():
             raise Http404
         obj = qs.first()
@@ -247,7 +245,7 @@ class LocalizationGraphicAPI(BaseDetailView):
         # Extract the force image size argument and assert if there's a problem with the provided inputs
         force_image_size = params.get(self.schema.PARAMS_IMAGE_SIZE, None)
         if force_image_size is not None:
-            img_width_height = force_image_size.split('x')
+            img_width_height = force_image_size.split("x")
             assert len(img_width_height) == 2
             requested_width = int(img_width_height[0])
             requested_height = int(img_width_height[1])
@@ -258,14 +256,14 @@ class LocalizationGraphicAPI(BaseDetailView):
         # By reaching here, it's expected that the graphics mode is to create a new
         # thumbnail using the provided parameters. That new thumbnail is returned
         with tempfile.TemporaryDirectory() as temp_dir:
-
             media_util = MediaUtil(video=obj.media, temp_dir=temp_dir)
 
             roi = self._getRoi(
                 obj=obj,
                 params=params,
                 media_width=media_util.getWidth(),
-                media_height=media_util.getHeight())
+                media_height=media_util.getHeight(),
+            )
 
             if media_util.isVideo():
                 # We will only pass a single frame and corresponding roi into this
@@ -275,9 +273,10 @@ class LocalizationGraphicAPI(BaseDetailView):
                     rois=[roi],
                     tile_size=None,
                     render_format=self.request.accepted_renderer.format,
-                    force_scale=force_image_size)
+                    force_scale=force_image_size,
+                )
 
-                with open(image_path, 'rb') as data_file:
+                with open(image_path, "rb") as data_file:
                     response_data = data_file.read()
 
             else:
@@ -285,6 +284,7 @@ class LocalizationGraphicAPI(BaseDetailView):
                 response_data = media_util.get_cropped_image(
                     roi=roi,
                     render_format=self.request.accepted_renderer.format,
-                    force_scale=force_image_size)
+                    force_scale=force_image_size,
+                )
 
         return response_data

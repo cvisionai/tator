@@ -35,59 +35,58 @@ from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
 
-LEAF_PROPERTIES = list(leaf_schema['properties'].keys())
+LEAF_PROPERTIES = list(leaf_schema["properties"].keys())
+
 
 class LeafSuggestionAPI(BaseDetailView):
-    """ Rest Endpoint compatible with devbridge suggestion format.
+    """Rest Endpoint compatible with devbridge suggestion format.
 
     <https://github.com/kraaden/autocomplete>
     """
+
     schema = LeafSuggestionSchema()
     permission_classes = [ProjectViewOnlyPermission]
-    http_method_names = ['get']
+    http_method_names = ["get"]
 
     def _get(self, params):
-        project = params.get('project')
-        min_level=int(params.get('min_level', 1))
-        startsWith=params.get('query', None)
-        ancestor=params['ancestor']
+        project = params.get("project")
+        min_level = int(params.get("min_level", 1))
+        startsWith = params.get("query", None)
+        ancestor = params["ancestor"]
 
         # Try to find root node for type
         root_node = Leaf.objects.filter(project=project, path=ancestor)
         if root_node.count() == 0:
             return []
-        
-        type_id = root_node[0].type
-        queryset = Leaf.objects.filter(project=project, 
-                                       type=type_id, 
-                                       name__istartswith=startsWith, 
-                                       path__istartswith=ancestor,
-                                       path__depth__gte=min_level)
 
-        suggestions=[]
-        for idx,match in enumerate(queryset):
-            group = params['ancestor']
+        type_id = root_node[0].type
+        queryset = Leaf.objects.filter(
+            project=project,
+            type=type_id,
+            name__istartswith=startsWith,
+            path__istartswith=ancestor,
+            path__depth__gte=min_level,
+        )
+
+        suggestions = []
+        for idx, match in enumerate(queryset):
+            group = params["ancestor"]
             if match.parent:
                 group = match.parent.name
 
-            suggestion={
-                "value": match.name,
-                "group": group,
-                "data": {}
-            }
+            suggestion = {"value": match.name, "group": group, "data": {}}
 
-            if 'alias' in match.attributes:
-                suggestion["data"]["alias"] = match.attributes['alias']
+            if "alias" in match.attributes:
+                suggestion["data"]["alias"] = match.attributes["alias"]
 
-            catAlias=None
+            catAlias = None
             if match.parent:
                 if match.parent.attributes:
-                    catAlias=match.parent.attributes.get("alias",None)
+                    catAlias = match.parent.attributes.get("alias", None)
                 if catAlias != None:
                     suggestion["group"] = f'{suggestion["group"]} ({catAlias})'
 
-
-            suggestions.append(suggestion);
+            suggestions.append(suggestion)
 
         def functor(elem):
             return elem["group"]
@@ -96,19 +95,21 @@ class LeafSuggestionAPI(BaseDetailView):
         logger.info(queryset.explain())
         return suggestions
 
-class LeafListAPI(BaseListView):
-    """ Interact with a list of leaves.
 
-        Tree leaves are used to define label hierarchies that can be used for autocompletion
-        of string attribute types.
+class LeafListAPI(BaseListView):
+    """Interact with a list of leaves.
+
+    Tree leaves are used to define label hierarchies that can be used for autocompletion
+    of string attribute types.
     """
+
     schema = LeafListSchema()
     permission_classes = [ProjectFullControlPermission]
-    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
-    entity_type = LeafType # Needed by attribute filter mixin
+    http_method_names = ["get", "post", "patch", "delete", "put"]
+    entity_type = LeafType  # Needed by attribute filter mixin
 
     def _get(self, params):
-        qs = get_leaf_queryset(params['project'], params)
+        qs = get_leaf_queryset(params["project"], params)
         response_data = list(qs.values(*LEAF_PROPERTIES))
         return response_data
 
@@ -135,31 +136,33 @@ class LeafListAPI(BaseListView):
 
     def _post(self, params):
         # Check that we are getting a leaf list.
-        if 'body' in params:
-            leaf_specs = params['body']
+        if "body" in params:
+            leaf_specs = params["body"]
             if not isinstance(leaf_specs, list):
                 leaf_specs = [leaf_specs]
         else:
-            raise Exception('Leaf creation requires list of leaves!')
+            raise Exception("Leaf creation requires list of leaves!")
 
         # Find unique foreign keys.
-        meta_ids = set([leaf['type'] for leaf in leaf_specs])
+        meta_ids = set([leaf["type"] for leaf in leaf_specs])
 
         # Make foreign key querysets.
         meta_qs = LeafType.objects.filter(pk__in=meta_ids)
 
         # Construct foreign key dictionaries.
-        project = Project.objects.get(pk=params['project'])
+        project = Project.objects.get(pk=params["project"])
         metas = {obj.id: obj for obj in meta_qs.iterator()}
 
         # Get required fields for attributes.
-        required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
+        required_fields = {id_: computeRequiredFields(metas[id_]) for id_ in meta_ids}
         for val in required_fields.values():
-            val[0].pop('path', None) # Remove path since it is computed.
-        attr_specs = [check_required_fields(required_fields[leaf['type']][0],
-                                            required_fields[leaf['type']][2],
-                                            leaf)
-                      for leaf in leaf_specs]
+            val[0].pop("path", None)  # Remove path since it is computed.
+        attr_specs = [
+            check_required_fields(
+                required_fields[leaf["type"]][0], required_fields[leaf["type"]][2], leaf
+            )
+            for leaf in leaf_specs
+        ]
 
         # Create the leaf objects.
         objs = self._leaf_obj_generator(project, leaf_specs, attr_specs, metas, self.request.user)
@@ -170,27 +173,29 @@ class LeafListAPI(BaseListView):
 
         # Return created IDs.
         if len(ids) == 1:
-            return {'message': f'Successfully created {len(ids)} leaf!', 'id': ids}
+            return {"message": f"Successfully created {len(ids)} leaf!", "id": ids}
         else:
-            return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
+            return {"message": f"Successfully created {len(ids)} leaves!", "id": ids}
 
     def _delete(self, params):
-        qs = get_leaf_queryset(params['project'], params)
+        qs = get_leaf_queryset(params["project"], params)
         count = qs.count()
         if count > 0:
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            
+
         if count == 1:
-            return {'message': f'Successfully deleted {count} leaf!'}
+            return {"message": f"Successfully deleted {count} leaf!"}
         else:
-            return {'message': f'Successfully deleted {count} leaves!'}
+            return {"message": f"Successfully deleted {count} leaves!"}
 
     def _patch(self, params):
-        qs = get_leaf_queryset(params['project'], params)
+        qs = get_leaf_queryset(params["project"], params)
         count = qs.count()
         if count > 0:
-            if qs.values('type').distinct().count() != 1:
-                raise ValueError('When doing a bulk patch the type id of all objects must be the same.')
+            if qs.values("type").distinct().count() != 1:
+                raise ValueError(
+                    "When doing a bulk patch the type id of all objects must be the same."
+                )
             new_attrs = validate_attributes(params, qs[0])
             bulk_update_and_log_changes(
                 qs, params["project"], self.request.user, new_attributes=new_attrs
@@ -198,89 +203,92 @@ class LeafListAPI(BaseListView):
             bulk_patch_attributes(new_attrs, qs)
 
         if count == 1:
-            return {'message': f'Successfully updated {count} leaf!'}
+            return {"message": f"Successfully updated {count} leaf!"}
         else:
-            return {'message': f'Successfully updated {count} leaves!'}
+            return {"message": f"Successfully updated {count} leaves!"}
 
     def _put(self, params):
-        """ Retrieve list of leaves by ID.
-        """
+        """Retrieve list of leaves by ID."""
         return self._get(params)
 
-class LeafDetailAPI(BaseDetailView):
-    """ Interact with individual leaf.
 
-        Tree leaves are used to define label hierarchies that can be used for autocompletion
-        of string attribute types.
+class LeafDetailAPI(BaseDetailView):
+    """Interact with individual leaf.
+
+    Tree leaves are used to define label hierarchies that can be used for autocompletion
+    of string attribute types.
     """
+
     schema = LeafDetailSchema()
     permission_classes = [ProjectFullControlPermission]
-    lookup_field = 'id'
+    lookup_field = "id"
 
     def _get(self, params):
-        qs = Leaf.objects.filter(pk=params['id'], deleted=False)
+        qs = Leaf.objects.filter(pk=params["id"], deleted=False)
         if not qs.exists():
             raise Http404
         return qs.values(*LEAF_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params):
-        obj = Leaf.objects.get(pk=params['id'], deleted=False)
+        obj = Leaf.objects.get(pk=params["id"], deleted=False)
         model_dict = obj.model_dict
         grandparent = obj.parent
 
         # Patch common attributes.
-        if 'name' in params:
-            obj.name = params['name']
-        
+        if "name" in params:
+            obj.name = params["name"]
+
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
         obj.save()
 
         # Change the parent of a leaf
-        if 'parent' in params:
-            if params['parent'] != params['id']:
+        if "parent" in params:
+            if params["parent"] != params["id"]:
                 children = Leaf.objects.filter(parent=obj.id, deleted=False)
-                if params['parent'] is None or params['parent'] == -1:
+                if params["parent"] is None or params["parent"] == -1:
                     obj.parent = None
                 else:
-                    obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
+                    obj.parent = Leaf.objects.get(pk=params["parent"], deleted=False)
                 obj.path = obj.computePath()
                 obj.save()
 
-                #Update child path, or parent
-                newparent = params['parent']
+                # Update child path, or parent
+                newparent = params["parent"]
                 self._update_children_newparent(children, grandparent, newparent)
-            
 
         obj.save()
         log_changes(obj, model_dict, obj.project, self.request.user)
-        return {'message': f'Leaf {params["id"]} successfully updated!'}
+        return {"message": f'Leaf {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        leaf = Leaf.objects.get(pk=params['id'], deleted=False)
+        leaf = Leaf.objects.get(pk=params["id"], deleted=False)
         project = leaf.project
 
-        ids = self._get_children_id_set(params['id'])
+        ids = self._get_children_id_set(params["id"])
 
         queryset = Leaf.objects.filter(pk__in=ids)
 
         for i in ids:
             inner_leaf = Leaf.objects.get(pk=i, deleted=False)
-                
+
         bulk_delete_and_log_changes(queryset, project, self.request.user)
 
         # todo figure out syntax for this query
         # query = get_leaf_es_query(params)
         # TatorSearch().delete(project, query)
 
-       
-        if len(ids) == 2 :
-            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} child successfully deleted! '}
-        elif len(ids) > 2 :
-            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} children successfully deleted! '}
+        if len(ids) == 2:
+            return {
+                "message": f'Leaf {params["id"]} and {len(ids) - 1} child successfully deleted! '
+            }
+        elif len(ids) > 2:
+            return {
+                "message": f'Leaf {params["id"]} and {len(ids) - 1} children successfully deleted! '
+            }
         else:
-             return {'message': f'Leaf {params["id"]} successfully deleted! '}
+            return {"message": f'Leaf {params["id"]} successfully deleted! '}
 
     def _get_children_id_set(self, leaf_id):
         ch_list = self._recursive_inner_child(leaf_id, [])
@@ -308,10 +316,10 @@ class LeafDetailAPI(BaseDetailView):
                 # if a child is the newParent
                 if child.id == newparent:
                     if grandparent == None:
-                        child.parent = None 
+                        child.parent = None
                     else:
                         child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
-                
+
                 child.path = child.computePath()
                 child.save()
                 log_changes(child, child_model_dict, child.project, self.request.user)
@@ -323,7 +331,7 @@ class LeafDetailAPI(BaseDetailView):
     def _update_path(self, children):
         for child in children:
             child_model_dict = child.model_dict
-            
+
             child.path = child.computePath()
             child.save()
             log_changes(child, child_model_dict, child.project, self.request.user)

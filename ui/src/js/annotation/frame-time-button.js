@@ -9,7 +9,10 @@ export class FrameTimeButton extends TatorElement {
     this._timeIconHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex px-2 f3 text-gray hover-text-white");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex px-2 f3 text-gray hover-text-white"
+    );
     this._shadow.appendChild(button);
 
     this._svgDiv = document.createElement("div");
@@ -29,8 +32,7 @@ export class FrameTimeButton extends TatorElement {
         this._currentMode = "time";
         this._svgDiv.innerHTML = this._timeIconHTML;
         this.dispatchEvent(new Event("time"));
-      }
-      else {
+      } else {
         this._currentMode = "frame";
         this._svgDiv.innerHTML = this._frameIconHTML;
         this.dispatchEvent(new Event("frame"));

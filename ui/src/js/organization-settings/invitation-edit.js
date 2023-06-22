@@ -8,37 +8,43 @@ export class InvitationEdit extends OrgTypeFormTemplate {
     this.readableTypeName = "Invitation";
     this._hideAttributes = true;
 
-    // 
+    //
     var templateInner = document.getElementById("invitation-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("invitation-edit--form");
     this._emailInput = this._shadow.getElementById("invitation-edit--email");
-    this._permissionSelect = this._shadow.getElementById("invitation-edit--permission");
+    this._permissionSelect = this._shadow.getElementById(
+      "invitation-edit--permission"
+    );
     this._statusField = this._shadow.getElementById("invitation-edit--status");
-    this._regLinkDisplay = this._shadow.getElementById("invitation-edit--reg-link");
-    this._affiliationDisplay = this._shadow.getElementById("invitation-edit--aff-link");
+    this._regLinkDisplay = this._shadow.getElementById(
+      "invitation-edit--reg-link"
+    );
+    this._affiliationDisplay = this._shadow.getElementById(
+      "invitation-edit--aff-link"
+    );
 
     //
     this._statusField.permission = "View Only";
     this._regLinkDisplay.permission = "View Only";
   }
-  
+
   async _setupFormUnique() {
     //
     this._emailInput.clear();
-    this._emailInput.hidden = (this._data.id !== "New");
+    this._emailInput.hidden = this._data.id !== "New";
 
     // permission
-    if(!this._permissionSelect._choices) {
+    if (!this._permissionSelect._choices) {
       const permissionOptions = [
-        { "label": "Member", "value": "Member" },
-        { "label": "Admin", "value": "Admin" },
+        { label: "Member", value: "Member" },
+        { label: "Admin", value: "Admin" },
       ];
       this._permissionSelect.choices = permissionOptions;
     }
-    this._permissionSelect._select.required = (this._data.id === "New");
+    this._permissionSelect._select.required = this._data.id === "New";
     this._permissionSelect.setValue(this._data.permission);
     this._permissionSelect.default = this._data.permission;
     this._permissionSelect.permission = "Can Edit";
@@ -59,7 +65,7 @@ export class InvitationEdit extends OrgTypeFormTemplate {
       const registrationLink = `${window.location.origin}/registration?registration_token=${this._data.registration_token}`;
       this._regLinkDisplay.setAttribute("href", registrationLink);
       this._regLinkDisplay.hidden = false;
-      
+
       this._statusField._input.classList.add("text-yellow");
     } else {
       this._regLinkDisplay.hidden = true;
@@ -79,7 +85,6 @@ export class InvitationEdit extends OrgTypeFormTemplate {
     } else {
       this._statusField._input.classList.remove("text-green");
     }
-
   }
 
   _getFormData() {

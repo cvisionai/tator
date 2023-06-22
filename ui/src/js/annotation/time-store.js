@@ -1,4 +1,4 @@
-import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
+import { frameToTime, getMediaStartDatetime } from "./annotation-common.js";
 
 /**
  * This store contains information about the annotator's time domain.
@@ -10,8 +10,7 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
  * - relative time: 0-based time index of stitched media
  * - absolute time: time based on absolute start time of stitched media
  */
- export class TimeStore {
-
+export class TimeStore {
   /**
    * @param {Tator.Media} media - Top level media to base the entire timeline based on
    *    If mediaType is multi, then the provided media is expected to be a multi.
@@ -20,9 +19,8 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
    * @param {Tator.MediaType} mediaType - Media type associated with media param
    */
   constructor(media, mediaType) {
-
     // Check if media has a defined start datetime. If yes, then UTC is enabled.
-    this._startGlobalDate = getMediaStartDatetime(media=media)
+    this._startGlobalDate = getMediaStartDatetime((media = media));
     this._utcEnabled = this._startGlobalDate != null;
 
     this._mediaMap = {};
@@ -33,8 +31,7 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
 
       if (this._utcEnabled) {
         this._minSecondsFromEpoch = this._startGlobalDate.getTime() / 1000;
-      }
-      else {
+      } else {
         this._minSecondsFromEpoch = 0;
       }
 
@@ -43,14 +40,12 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
         media: media,
         channelIndex: 0,
         globalStartFrame: 0,
-        globalEndFrame: media.num_frames - 1
+        globalEndFrame: media.num_frames - 1,
       };
       this._mediaMap[media.id] = mediaInfo;
-    }
-    else if (mediaType.dtype == "multi") {
+    } else if (mediaType.dtype == "multi") {
       this._multiMedia = media;
     }
-
   }
 
   /**
@@ -63,8 +58,7 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
 
     if (this._utcEnabled) {
       this._minSecondsFromEpoch = this._startGlobalDate.getTime() / 1000;
-    }
-    else {
+    } else {
       this._minSecondsFromEpoch = 0;
     }
   }
@@ -74,11 +68,9 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
    * @param {integer} channelIndex - Associated channel index
    */
   addChannelMedia(media, channelIndex) {
-
     if (this._utcEnabled) {
       var startSecondsFromEpoch = this._startGlobalDate.getTime() / 1000;
-    }
-    else {
+    } else {
       var startSecondsFromEpoch = 0;
     }
 
@@ -87,10 +79,9 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
       media: media,
       channelIndex: channelIndex,
       globalStartFrame: 0,
-      globalEndFrame: media.num_frames - 1
+      globalEndFrame: media.num_frames - 1,
     };
     this._mediaMap[media.id] = mediaInfo;
-
   }
 
   /**
@@ -121,21 +112,18 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
 
     if (mode == "mediaStart") {
       globalFrame = this._mediaMap[mediaId].globalStartFrame;
-    }
-    else if (mode == "mediaEnd") {
+    } else if (mode == "mediaEnd") {
       globalFrame = this._mediaMap[mediaId].globalEndFrame;
-    }
-    else if (mode == "matchFrame") {
+    } else if (mode == "matchFrame") {
       globalFrame = this._mediaMap[mediaId].globalStartFrame + time;
-    }
-    else if (mode == "utc") {
-
+    } else if (mode == "utc") {
       if (!this.utcEnabled()) {
         throw "getGlobalFrame(): UTC is not enabled.";
       }
 
       let secondsSinceEpoch = Date.parse(time) / 1000.0;
-      globalFrame = (secondsSinceEpoch - this._minSecondsFromEpoch) * this._globalFPS;
+      globalFrame =
+        (secondsSinceEpoch - this._minSecondsFromEpoch) * this._globalFPS;
     }
     return Math.floor(globalFrame);
   }
@@ -147,7 +135,10 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
   getMediaFromFrame(globalFrame) {
     var out = [];
     for (const [mediaId, mediaInfo] of Object.entries(this._mediaMap)) {
-      if (globalFrame >= mediaInfo.globalStartFrame && globalFrame <= mediaInfo.globalEndFrame) {
+      if (
+        globalFrame >= mediaInfo.globalStartFrame &&
+        globalFrame <= mediaInfo.globalEndFrame
+      ) {
         out.push(mediaInfo.media);
       }
     }
@@ -168,7 +159,6 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
    * @return {string} Provided frame represented as an isostring in absolute time
    */
   getAbsoluteTimeFromFrame(globalFrame) {
-
     if (!this.utcEnabled()) {
       console.error("getAbsoluteTimeFromFrame(): UTC is not enabled.");
       return;

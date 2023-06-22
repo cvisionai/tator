@@ -13,17 +13,16 @@ from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
+
 class SaveGenericFileAPI(BaseListView):
-    """ Saves a generic non-media file used for reports and applets
-    """
+    """Saves a generic non-media file used for reports and applets"""
 
     schema = SaveGenericFileSchema()
     permission_clases = [ProjectExecutePermission]
-    http_method_names = ['post']
+    http_method_names = ["post"]
 
     def _post(self, params: dict) -> dict:
-        """ Saves the uploaded report file into the project's permanent storage
-        """
+        """Saves the uploaded report file into the project's permanent storage"""
 
         # Verify the provided file has been uploaded
         upload_url = params[fields.upload_url]
@@ -39,7 +38,7 @@ class SaveGenericFileAPI(BaseListView):
         file_index = -1
         while os.path.exists(final_path):
             file_index += 1
-            new_filename = f'{filename}_{file_index}{extension}'
+            new_filename = f"{filename}_{file_index}{extension}"
             final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
 
         project_folder = os.path.dirname(final_path)
@@ -54,5 +53,6 @@ class SaveGenericFileAPI(BaseListView):
             fields.name: params[fields.name],
             fields.project: project_id,
             fields.upload_url: upload_url,
-            fields.url: new_url}
+            fields.url: new_url,
+        }
         return response

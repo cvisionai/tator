@@ -10,7 +10,10 @@ export class VideoSettingsDialog extends ModalDialog {
     this._title.nodeValue = "Advanced Video Settings";
 
     this._tabsDiv = document.createElement("div");
-    this._tabsDiv.setAttribute("class", "d-flex flex-grow flex-justify-center mb-3");
+    this._tabsDiv.setAttribute(
+      "class",
+      "d-flex flex-grow flex-justify-center mb-3"
+    );
     this._main.appendChild(this._tabsDiv);
 
     this._controlsButton = document.createElement("button");
@@ -37,20 +40,26 @@ export class VideoSettingsDialog extends ModalDialog {
       this._controlsButton.classList.add("active");
       this._infoButton.classList.remove("active");
       this._displayPage("controls");
-    })
+    });
     this._infoButton.addEventListener("click", () => {
       this._infoButton.blur();
       this._controlsButton.classList.remove("active");
       this._infoButton.classList.add("active");
       this._displayPage("info");
-    })
+    });
 
     this._mediaInfoDiv = document.createElement("div");
-    this._mediaInfoDiv.setAttribute("class", "analysis__filter_conditions d-flex py-2 px-2 flex-column");
+    this._mediaInfoDiv.setAttribute(
+      "class",
+      "analysis__filter_conditions d-flex py-2 px-2 flex-column"
+    );
     this._main.appendChild(this._mediaInfoDiv);
 
     this._controlsDiv = document.createElement("div");
-    this._controlsDiv.setAttribute("class", "analysis__filter_conditions d-flex py-2 px-2 flex-column");
+    this._controlsDiv.setAttribute(
+      "class",
+      "analysis__filter_conditions d-flex py-2 px-2 flex-column"
+    );
     this._main.appendChild(this._controlsDiv);
 
     this._gridDiv = document.createElement("div");
@@ -58,14 +67,20 @@ export class VideoSettingsDialog extends ModalDialog {
     this._controlsDiv.appendChild(this._gridDiv);
 
     const gridLabel = document.createElement("div");
-    gridLabel.setAttribute("class", "h3 d-flex flex-items-center text-uppercase")
+    gridLabel.setAttribute(
+      "class",
+      "h3 d-flex flex-items-center text-uppercase"
+    );
     gridLabel.textContent = "Video Buffer Sources";
     gridLabel.style.gridColumn = 1;
     gridLabel.style.gridRow = 1;
     this._gridDiv.appendChild(gridLabel);
 
     const defaultButton = document.createElement("button");
-    defaultButton.setAttribute("class", "btn btn-clear btn-charcoal col-12 btn-small");
+    defaultButton.setAttribute(
+      "class",
+      "btn btn-clear btn-charcoal col-12 btn-small"
+    );
     defaultButton.textContent = "Restore Defaults";
     defaultButton.style.gridColumn = 2;
     defaultButton.style.gridRow = 1;
@@ -82,11 +97,15 @@ export class VideoSettingsDialog extends ModalDialog {
 
     const overlayHeader = document.createElement("div");
     overlayHeader.textContent = "Diagnostics Overlay";
-    overlayHeader.setAttribute("class", "h3 d-flex flex-items-center text-uppercase")
+    overlayHeader.setAttribute(
+      "class",
+      "h3 d-flex flex-items-center text-uppercase"
+    );
     overlayHeaderDiv.appendChild(overlayHeader);
 
     const overlaySubHeader = document.createElement("div");
-    overlaySubHeader.textContent = "Toggle displaying video's ID, current frame, FPS, and source qualities";
+    overlaySubHeader.textContent =
+      "Toggle displaying video's ID, current frame, FPS, and source qualities";
     overlaySubHeader.setAttribute("class", "text-gray f2");
     overlayHeaderDiv.appendChild(overlaySubHeader);
 
@@ -109,14 +128,16 @@ export class VideoSettingsDialog extends ModalDialog {
     apply.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this.dispatchEvent(new Event("close"));
-      this.dispatchEvent(new CustomEvent("applyVideoSources", {
-        composed: true,
-        detail: {
-          playback: this.getSourceObject("play"),
-          seek: this.getSourceObject("seek"),
-          scrub: this.getSourceObject("scrub")
-        }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("applyVideoSources", {
+          composed: true,
+          detail: {
+            playback: this.getSourceObject("play"),
+            seek: this.getSourceObject("seek"),
+            scrub: this.getSourceObject("scrub"),
+          },
+        })
+      );
 
       // Set the video quality search parameters
       var searchParams = new URLSearchParams(window.location.search);
@@ -134,18 +155,30 @@ export class VideoSettingsDialog extends ModalDialog {
 
     // Display video diagnostics
     overlayOption.addEventListener("change", () => {
-      this.dispatchEvent(new CustomEvent("displayOverlays", {
-        composed: true,
-        detail: {
-          displayDiagnostic: overlayOption.getValue()
-        }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("displayOverlays", {
+          composed: true,
+          detail: {
+            displayDiagnostic: overlayOption.getValue(),
+          },
+        })
+      );
     });
 
     this._divOptions = {};
-    this._createBuffer(2, "scrub", "Scrub Buffer", "Timeline scrubbing, downloaded playback, greater than 4x playback");
+    this._createBuffer(
+      2,
+      "scrub",
+      "Scrub Buffer",
+      "Timeline scrubbing, downloaded playback, greater than 4x playback"
+    );
     this._createBuffer(3, "seek", "Seek Quality", "Pause quality");
-    this._createBuffer(4, "play", "On-Demand 1x-4x Playback", "1x-4x playback for single vidoes and grid videos");
+    this._createBuffer(
+      4,
+      "play",
+      "On-Demand 1x-4x Playback",
+      "1x-4x playback for single vidoes and grid videos"
+    );
 
     this._controlsButton.click();
   }
@@ -158,8 +191,7 @@ export class VideoSettingsDialog extends ModalDialog {
       this._mediaInfoDiv.style.display = "flex";
       this._controlsDiv.style.display = "none";
       this._footer.style.display = "none";
-    }
-    else if (page == "controls") {
+    } else if (page == "controls") {
       this._mediaInfoDiv.style.display = "none";
       this._controlsDiv.style.display = "flex";
       this._footer.style.display = "flex";
@@ -173,7 +205,6 @@ export class VideoSettingsDialog extends ModalDialog {
    * @param {Tator.Media} media
    */
   _createMediaTable(parentDiv, title, media) {
-
     var wrapper = document.createElement("div");
     wrapper.setAttribute("class", "py-3");
     parentDiv.appendChild(wrapper);
@@ -198,7 +229,16 @@ export class VideoSettingsDialog extends ModalDialog {
     var tbody = document.createElement("tbody");
     table.appendChild(tbody);
 
-    var attrs = ["archive_state", "codec", "fps", "height", "id", "name", "num_frames", "width"];
+    var attrs = [
+      "archive_state",
+      "codec",
+      "fps",
+      "height",
+      "id",
+      "name",
+      "num_frames",
+      "width",
+    ];
     for (const attr of attrs) {
       var trData = document.createElement("tr");
       tbody.appendChild(trData);
@@ -245,9 +285,21 @@ export class VideoSettingsDialog extends ModalDialog {
       var tbody = document.createElement("tbody");
       table.appendChild(tbody);
 
-      for (let idx = 0; idx < media.media_files[media_file_type].length; idx++) {
+      for (
+        let idx = 0;
+        idx < media.media_files[media_file_type].length;
+        idx++
+      ) {
         const file = media.media_files[media_file_type][idx];
-        for (const attr of ["bit_rate", "codec", "codec_description", "codec_mime", "mime", "resolution", "size"]) {
+        for (const attr of [
+          "bit_rate",
+          "codec",
+          "codec_description",
+          "codec_mime",
+          "mime",
+          "resolution",
+          "size",
+        ]) {
           if (!file.hasOwnProperty(attr)) {
             continue;
           }
@@ -258,8 +310,7 @@ export class VideoSettingsDialog extends ModalDialog {
           td.setAttribute("class", "py-2 no-vertical-border col-1");
           if (attr == "bit_rate") {
             td.textContent = `[${idx}]`;
-          }
-          else {
+          } else {
             td.textContent = "";
           }
           trData.appendChild(td);
@@ -272,8 +323,7 @@ export class VideoSettingsDialog extends ModalDialog {
           var val = file[attr];
           if (attr == "bit_rate") {
             val = `${(file[attr] / 1024).toFixed(6)} kbps`;
-          }
-          else if (attr == "size") {
+          } else if (attr == "size") {
             val = `${(file[attr] / 1024 / 1024).toFixed(6)} MB`;
           }
 
@@ -284,7 +334,6 @@ export class VideoSettingsDialog extends ModalDialog {
         }
       }
     }
-
   }
 
   /**
@@ -295,24 +344,25 @@ export class VideoSettingsDialog extends ModalDialog {
    * @precondition this._parentMedia must have been set
    */
   async _setInfoPage() {
-
     var parentDiv = document.createElement("div");
     parentDiv.setAttribute("class", "px-3 py-3");
     this._mediaInfoDiv.appendChild(parentDiv);
 
     if (this._mode == "single") {
       this._createMediaTable(parentDiv, "Video Media", this._parentMedia);
-    }
-    else if (this._mode == "multi") {
+    } else if (this._mode == "multi") {
       this._createMediaTable(parentDiv, "Multiview Media", this._parentMedia);
       for (let idx = 0; idx < this._multiMedias.length; idx++) {
-        this._createMediaTable(parentDiv, `Video Media ${idx}`, this._multiMedias[idx]);
+        this._createMediaTable(
+          parentDiv,
+          `Video Media ${idx}`,
+          this._multiMedias[idx]
+        );
       }
     }
   }
 
   _createBuffer(gridRow, id, title, description) {
-
     this._divOptions[id] = {};
 
     var textDiv = document.createElement("div");
@@ -346,13 +396,22 @@ export class VideoSettingsDialog extends ModalDialog {
   applySettings(settings) {
     let settingsStr = "";
 
-    settingsStr = this.createSourceString(settings.scrubQuality, settings.scrubFPS);
+    settingsStr = this.createSourceString(
+      settings.scrubQuality,
+      settings.scrubFPS
+    );
     this._divOptions["scrub"].choice.setValue(settingsStr);
 
-    settingsStr = this.createSourceString(settings.seekQuality, settings.seekFPS);
+    settingsStr = this.createSourceString(
+      settings.seekQuality,
+      settings.seekFPS
+    );
     this._divOptions["seek"].choice.setValue(settingsStr);
 
-    settingsStr = this.createSourceString(settings.playQuality, settings.playFPS);
+    settingsStr = this.createSourceString(
+      settings.playQuality,
+      settings.playFPS
+    );
     this._divOptions["play"].choice.setValue(settingsStr);
   }
 
@@ -380,7 +439,6 @@ export class VideoSettingsDialog extends ModalDialog {
    * @returns {object} Has .fps {Number} and .quality {Number} and .name {string} properties
    */
   getSourceObject(sourceName) {
-
     var str = this._divOptions[sourceName].choice.getValue();
     const quality = parseInt(str.split("p")[0]);
     const fps = parseFloat(str.split(",")[1].split("FPS")[0]);
@@ -388,25 +446,26 @@ export class VideoSettingsDialog extends ModalDialog {
     return {
       quality: quality,
       fps: fps,
-      name: sourceName
+      name: sourceName,
     };
   }
-
 
   /**
    * @precondition this._parentMedia is set with the multi Tator.Media object
    * @postcondition this._multiMedias is set as an array of Tator.Media objects
    */
   async _queryMultiMedia() {
-
     this._multiMedias = [];
 
     for (const singleId of this._parentMedia.media_files.ids) {
-      var response = await fetchCredentials(`/rest/Media/${singleId}?presigned=28800`, {}, true);
+      var response = await fetchCredentials(
+        `/rest/Media/${singleId}?presigned=28800`,
+        {},
+        true
+      );
       var media = await response.json();
       this._multiMedias.push(media);
     }
-
   }
 
   /**
@@ -414,30 +473,27 @@ export class VideoSettingsDialog extends ModalDialog {
    * @precondition this._multiMedias must have been set
    */
   _checkMultiMediaValidity() {
-
     for (const mediaA of this._multiMedias) {
-
       var resA = new Set();
       for (const media_file of mediaA.media_files.streaming) {
         resA.add(`${media_file.resolution[0]},${media_file.resolution[1]}`);
       }
 
       for (const mediaB of this._multiMedias) {
-
         var resB = new Set();
         for (const media_file of mediaB.media_files.streaming) {
           resB.add(`${media_file.resolution[0]},${media_file.resolution[1]}`);
         }
-        
-        var sameResolutions = (resA.size === resB.size || [...resA].every(value => resB.has(value)));
+
+        var sameResolutions =
+          resA.size === resB.size ||
+          [...resA].every((value) => resB.has(value));
         if (!sameResolutions) {
           Utilities.warningAlert("Videos do not have the same resolutions!");
           break;
         }
-
       }
     }
-
   }
 
   /**
@@ -447,30 +503,32 @@ export class VideoSettingsDialog extends ModalDialog {
   async mode(mode, media) {
     this._mode = mode;
     this._parentMedia = media;
-    if (this._mode == "live")
-    {
+    if (this._mode == "live") {
       //TODO implement this
       return;
-    }
-    else if (this._mode == "multi") {
+    } else if (this._mode == "multi") {
       await this._queryMultiMedia();
       var mainVideo = this._multiMedias[0];
       this._checkMultiMediaValidity();
-    }
-    else {
+    } else {
       var mainVideo = this._parentMedia;
     }
     this._setInfoPage();
 
     let sourceList = [];
-    if (!("streaming" in mainVideo.media_files) || mainVideo.media_files["streaming"].length == 0) {
+    if (
+      !("streaming" in mainVideo.media_files) ||
+      mainVideo.media_files["streaming"].length == 0
+    ) {
       console.warn("Expected a streaming file to exist for video, found none.");
       return;
     }
-    for (let mediaFile of mainVideo.media_files["streaming"])
-    {
-      let sourceStr = this.createSourceString(mediaFile.resolution[0], mainVideo.fps);
-      sourceList.push({"value": sourceStr});
+    for (let mediaFile of mainVideo.media_files["streaming"]) {
+      let sourceStr = this.createSourceString(
+        mediaFile.resolution[0],
+        mainVideo.fps
+      );
+      sourceList.push({ value: sourceStr });
     }
 
     this._divOptions["scrub"].choice.choices = sourceList;
@@ -490,8 +548,7 @@ export class VideoSettingsDialog extends ModalDialog {
    *     playFPS
    *     allowSafeMode
    */
-  set defaultSources(val)
-  {
+  set defaultSources(val) {
     this._defaultSources = val;
     this.applyDefaults();
   }
@@ -501,7 +558,7 @@ export class VideoSettingsDialog extends ModalDialog {
    * @param {integer} quality - Resolution/quality of the play buffer. Doesn't take FPS into account
    *                            and will just pick the first matching quality.
    */
-   setPlayQuality(quality) {
+  setPlayQuality(quality) {
     var choices = this._divOptions["play"].choice.getChoices();
     for (let idx = 0; idx < choices.length; idx++) {
       const currentQuality = parseInt(choices[idx].split("p")[0]);
@@ -519,7 +576,7 @@ export class VideoSettingsDialog extends ModalDialog {
    */
   queryParams(params) {
     if (params == undefined) {
-      params = new URLSearchParams(window.location.search)
+      params = new URLSearchParams(window.location.search);
     }
 
     params.delete("scrubQuality");
@@ -527,9 +584,18 @@ export class VideoSettingsDialog extends ModalDialog {
     params.delete("playQuality");
 
     if (this._mode == "single" || this._mode == "multiview") {
-      params.set("scrubQuality", parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0]));
-      params.set("seekQuality", parseInt(this._divOptions["seek"].choice.getValue().split("p")[0]));
-      params.set("playQuality", parseInt(this._divOptions["play"].choice.getValue().split("p")[0]));
+      params.set(
+        "scrubQuality",
+        parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0])
+      );
+      params.set(
+        "seekQuality",
+        parseInt(this._divOptions["seek"].choice.getValue().split("p")[0])
+      );
+      params.set(
+        "playQuality",
+        parseInt(this._divOptions["play"].choice.getValue().split("p")[0])
+      );
     }
     return params;
   }

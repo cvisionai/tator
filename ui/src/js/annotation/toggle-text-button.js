@@ -6,7 +6,10 @@ export class ToggleTextButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
+    );
     this._shadow.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -44,9 +47,9 @@ export class ToggleTextButton extends TatorElement {
     shape3.setAttribute("x2", "23");
     shape3.setAttribute("y2", "23");
     svg.appendChild(shape3);
-    
+
     const shape4 = document.createElementNS(svgNamespace, "rect");
-    shape4.setAttribute("x", "1"); 
+    shape4.setAttribute("x", "1");
     shape4.setAttribute("y", "1");
     shape4.setAttribute("width", "22");
     shape4.setAttribute("height", "22");
@@ -55,7 +58,7 @@ export class ToggleTextButton extends TatorElement {
     shape4.setAttribute("stroke-width", "2");
     svg.appendChild(shape4);
 
-    this.off_shapes = []
+    this.off_shapes = [];
     this.off_shapes.push(shape3);
 
     this.toggle = true;
@@ -71,13 +74,13 @@ export class ToggleTextButton extends TatorElement {
 
   set toggle(val) {
     if (val === true) {
-      this.current_state = "on"
+      this.current_state = "on";
       this._title.textContent = "Turn off text overlays";
       for (let shape of this.off_shapes) {
         shape.style.display = "none";
       }
     } else {
-      this.current_state = "off"
+      this.current_state = "off";
       this._title.textContent = "Turn on text overlays";
       for (let shape of this.off_shapes) {
         shape.style.display = "block";

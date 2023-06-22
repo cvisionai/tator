@@ -7,7 +7,7 @@ export class JobClusterEdit extends OrgTypeFormTemplate {
     this.readableTypeName = "Job Cluster";
     this._hideAttributes = true;
 
-    // 
+    //
     var templateInner = document.getElementById("job-cluster-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
@@ -22,7 +22,7 @@ export class JobClusterEdit extends OrgTypeFormTemplate {
 
   async _setupFormUnique() {
     // name
-    let name = (this._data.id === "New") ? "" : this._data.name;
+    let name = this._data.id === "New" ? "" : this._data.name;
     this._editName.setValue(name);
     this._editName.default = name;
 

@@ -22,11 +22,17 @@ export class FastForwardButton extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M27.6 29.778v-27.556c0-1.736 1.986-2.799 3.529-1.889l23.369 13.778c1.469 0.866 1.469 2.913 0 3.779l-23.369 13.778c-1.543 0.91-3.529-0.154-3.529-1.889z");
+    path.setAttribute(
+      "d",
+      "M27.6 29.778v-27.556c0-1.736 1.986-2.799 3.529-1.889l23.369 13.778c1.469 0.866 1.469 2.913 0 3.779l-23.369 13.778c-1.543 0.91-3.529-0.154-3.529-1.889z"
+    );
     svg.appendChild(path);
 
     const path1 = document.createElementNS(svgNamespace, "path");
-    path1.setAttribute("d", "M2 29.778v-27.556c0-1.736 1.986-2.799 3.529-1.889l23.369 13.778c1.469 0.866 1.469 2.913 0 3.779l-23.369 13.778c-1.543 0.91-3.529-0.154-3.529-1.889z");
+    path1.setAttribute(
+      "d",
+      "M2 29.778v-27.556c0-1.736 1.986-2.799 3.529-1.889l23.369 13.778c1.469 0.866 1.469 2.913 0 3.779l-23.369 13.778c-1.543 0.91-3.529-0.154-3.529-1.889z"
+    );
     svg.appendChild(path1);
   }
 

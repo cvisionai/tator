@@ -1,7 +1,7 @@
 import { TatorPage } from "../components/tator-page.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
 import { store } from "./store.js";
-import { hasPermission} from '../util/has-permission.js';
+import { hasPermission } from "../util/has-permission.js";
 
 export class ProjectSettings extends TatorPage {
   constructor() {
@@ -13,11 +13,15 @@ export class ProjectSettings extends TatorPage {
 
     // Header: This is adds the breadcrumb and successLight-spacer to the header
     const user = this._header._shadow.querySelector("header-user");
-    const headerTemplate = document.getElementById("project-settings--header").content;
+    const headerTemplate = document.getElementById(
+      "project-settings--header"
+    ).content;
     user.parentNode.insertBefore(headerTemplate.cloneNode(true), user);
 
     // Header: pieces
-    this._breadcrumbs = this._header._shadow.getElementById("project-settings--breadcrumbs");
+    this._breadcrumbs = this._header._shadow.getElementById(
+      "project-settings--breadcrumbs"
+    );
 
     // Page: main element
     const template = document.getElementById("project-settings").content;
@@ -26,7 +30,9 @@ export class ProjectSettings extends TatorPage {
     // Page: pieces
     this.main = this._shadow.getElementById("project-settings--main");
     this.settingsNav = this._shadow.getElementById("settings-nav--nav");
-    this.itemsContainer = this._shadow.getElementById("settings-nav--item-container");
+    this.itemsContainer = this._shadow.getElementById(
+      "settings-nav--item-container"
+    );
     this.modal = this._shadow.getElementById("project-settings--modal");
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
@@ -34,11 +40,16 @@ export class ProjectSettings extends TatorPage {
 
   connectedCallback() {
     /* Update display for any change in data (#todo Project is different) */
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
-    store.subscribe(state => state.Project, this.updateProject.bind(this));
-    store.subscribe(state => state.status, this.handleStatusChange.bind(this));
-    
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
+    store.subscribe((state) => state.Project, this.updateProject.bind(this));
+    store.subscribe(
+      (state) => state.status,
+      this.handleStatusChange.bind(this)
+    );
 
     // Init
     this._init();
@@ -49,7 +60,12 @@ export class ProjectSettings extends TatorPage {
     return ["is-staff"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    TatorPage.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "is-staff":
         const value = newValue == "True" ? true : false;
@@ -58,45 +74,43 @@ export class ProjectSettings extends TatorPage {
     }
   }
 
-
   /**
    * The status of our store will trigger the spinner when "pending"
    * Potentially this could global catch error handling as well...
-   * @param {} status 
+   * @param {} status
    */
   handleStatusChange(status) {
     // Debug output, potentially useful as lightbox or all modal handles
     // console.log(`DEBUG: Status updated to "${status.name}" ${(status.msg !== "") ? " with message: "+status.msg : ""}`);
-    if(status.name == "pending"){
+    if (status.name == "pending") {
       this.showDimmer();
       this.loading.showSpinner();
     } else {
-      if (this.hasAttribute("has-open-modal")){
+      if (this.hasAttribute("has-open-modal")) {
         this.hideDimmer();
-        this.loading.hideSpinner();         
+        this.loading.hideSpinner();
       }
     }
   }
 
-  /* 
+  /*
    * Run when project-id is set to run fetch the page content.
-  */
+   */
   async _init() {
     store.getState().initHeader();
 
     // Project id
     this.projectId = store.getState().projectId;
-  
+
     // This just happens once and unlike getType, it also sets project info
     await store.getState().setProjectData(this.projectId);
-    
+
     // Figure out if something else needs to be shown
     this.moveToCurrentHash();
 
     // this handles back button, and some pushes to this to trigger selection change
     window.addEventListener("hashchange", this.moveToCurrentHash.bind(this));
   }
-
 
   /**
    * @param {string} val
@@ -105,7 +119,7 @@ export class ProjectSettings extends TatorPage {
     if (val.split("-").length > 1) {
       this._selectedHash = val;
       const split = val.split("-");
-      this._selectedType = split[0].replace("#","");
+      this._selectedType = split[0].replace("#", "");
       this._selectedObjectId = split[1];
       this._innerSelection = typeof split[2] !== "undefined";
     } else if (val === "") {
@@ -114,7 +128,7 @@ export class ProjectSettings extends TatorPage {
       this._selectedType = "Project";
       this._selectedObjectId = this.projectId;
       this._innerSelection = false;
-    } else { 
+    } else {
       // Error handle
       this._selectedHash = null;
       this._selectedType = null;
@@ -126,7 +140,7 @@ export class ProjectSettings extends TatorPage {
     store.getState().setSelection({
       typeName: this._selectedType,
       typeId: this._selectedObjectId,
-      inner: this._innerSelection
+      inner: this._innerSelection,
     });
   }
 
@@ -144,13 +158,12 @@ export class ProjectSettings extends TatorPage {
   /**
    * Callback for permission to be set from Project Data
    * Child components listen for this state update
-   * @param {String} permission 
+   * @param {String} permission
    */
-  setProjectPermission(permission) {;
+  setProjectPermission(permission) {
     const value = hasPermission(permission);
     store.setState({ deletePermission: value });
   }
-
 
   /**
    * Modal for this page, and handler
@@ -163,10 +176,6 @@ export class ProjectSettings extends TatorPage {
   hideDimmer() {
     return this.removeAttribute("has-open-modal");
   }
-
-
-
-
 }
 
 customElements.define("project-settings", ProjectSettings);

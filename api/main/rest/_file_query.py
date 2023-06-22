@@ -22,18 +22,18 @@ from ._float_array_query import get_float_array_query
 
 logger = logging.getLogger(__name__)
 
+
 def _get_file_psql_queryset(project, filter_ops, params):
-    """ Constructs a psql queryset.
-    """
+    """Constructs a psql queryset."""
     # Get query parameters.
-    file_id = params.get('file_id')
-    file_id_put = params.get('ids', None) # PUT request only
-    project = params['project']
-    filter_type = params.get('type')
-    name = params.get('name')
-    start = params.get('start')
-    stop = params.get('stop')
-    elemental_id = params.get('elemental_id', None)
+    file_id = params.get("file_id")
+    file_id_put = params.get("ids", None)  # PUT request only
+    project = params["project"]
+    filter_type = params.get("type")
+    name = params.get("name")
+    start = params.get("start")
+    stop = params.get("stop")
+    elemental_id = params.get("elemental_id", None)
 
     qs = File.objects.filter(project=project, deleted=False)
 
@@ -49,7 +49,9 @@ def _get_file_psql_queryset(project, filter_ops, params):
         qs = qs.filter(name=name)
 
     if filter_type is not None:
-        qs = get_attribute_psql_queryset(project, FileType.objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = get_attribute_psql_queryset(
+            project, FileType.objects.get(pk=filter_type), qs, params, filter_ops
+        )
         qs = qs.filter(type=filter_type)
     else:
         queries = []
@@ -58,7 +60,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
             if sub_qs:
                 queries.append(sub_qs.filter(type=entity_type))
             else:
-                queries.append(qs.filter(pk=-1)) # no matches
+                queries.append(qs.filter(pk=-1))  # no matches
         logger.info(f"Joining {len(queries)} queries together.")
         sub_qs = queries.pop()
         if queries:
@@ -77,16 +79,16 @@ def _get_file_psql_queryset(project, filter_ops, params):
         qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
 
     # Used by PUT queries
-    if params.get('object_search'):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+    if params.get("object_search"):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
 
     # Used by GET queries
-    if params.get('encoded_search'):
-        search_obj = json.loads(base64.b64decode(params.get('encoded_search')).decode())
+    if params.get("encoded_search"):
+        search_obj = json.loads(base64.b64decode(params.get("encoded_search")).decode())
         logger.info(f"Applying encoded search={search_obj}")
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
-    qs = qs.order_by('id')
+    qs = qs.order_by("id")
 
     if start is not None and stop is not None:
         qs = qs[start:stop]
@@ -100,11 +102,12 @@ def _get_file_psql_queryset(project, filter_ops, params):
 
     return qs
 
+
 def get_file_queryset(project, params):
     # Determine whether to use ES or not.
-    project = params.get('project')
-    filter_type = params.get('type')
-    filter_ops=[]
+    project = params.get("project")
+    filter_type = params.get("type")
+    filter_ops = []
     if filter_type:
         types = FileType.objects.filter(pk=filter_type)
     else:
@@ -114,5 +117,6 @@ def get_file_queryset(project, params):
     qs = _get_file_psql_queryset(project, filter_ops, params)
     return qs
 
+
 def get_file_count(project, params):
-    return get_file_queryset(project,params).count()
+    return get_file_queryset(project, params).count()

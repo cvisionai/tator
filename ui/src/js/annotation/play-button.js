@@ -6,7 +6,10 @@ export class PlayButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "video__play-wrap d-flex flex-justify-center btn-clear circle text-white flex-items-center");
+    button.setAttribute(
+      "class",
+      "video__play-wrap d-flex flex-justify-center btn-clear circle text-white flex-items-center"
+    );
     this._shadow.appendChild(button);
     this._button = button;
 
@@ -23,7 +26,10 @@ export class PlayButton extends TatorElement {
     this._play.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M2 29.778v-27.556c0-1.736 1.986-2.799 3.529-1.889l23.369 13.778c1.469 0.866 1.469 2.913 0 3.779l-23.369 13.778c-1.543 0.91-3.529-0.154-3.529-1.889z");
+    path.setAttribute(
+      "d",
+      "M2 29.778v-27.556c0-1.736 1.986-2.799 3.529-1.889l23.369 13.778c1.469 0.866 1.469 2.913 0 3.779l-23.369 13.778c-1.543 0.91-3.529-0.154-3.529-1.889z"
+    );
     this._play.appendChild(path);
 
     this._pause = document.createElementNS(svgNamespace, "svg");

@@ -7,12 +7,14 @@ import { Utilities } from "../util/utilities.js";
  * Element used to encapsulate a filtering condition
  */
 export class FilterCondition extends TatorElement {
-
   constructor() {
     super();
 
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "analysis__filter_field_border d-flex flex-items-center flex-grow text-gray f2");
+    this._div.setAttribute(
+      "class",
+      "analysis__filter_field_border d-flex flex-items-center flex-grow text-gray f2"
+    );
     this._shadow.appendChild(this._div);
 
     this._category = document.createElement("enum-input");
@@ -47,7 +49,7 @@ export class FilterCondition extends TatorElement {
     this._valueBool.style.marginLeft = "15px";
     this._valueBool.setAttribute("name", "Value");
     this._valueBool.permission = "View Only";
-    this._valueBool.choices = [{"value": "true"}, {"value": "false"}];
+    this._valueBool.choices = [{ value: "true" }, { value: "false" }];
     this._valueBool.style.display = "none";
     this._div.appendChild(this._valueBool);
 
@@ -76,8 +78,8 @@ export class FilterCondition extends TatorElement {
     this._currentTypes = [];
 
     /*
-    * Event handlers
-    */
+     * Event handlers
+     */
 
     // Dispatch remove event if the remove button was pressed
     removeButton.addEventListener("click", () => {
@@ -85,13 +87,22 @@ export class FilterCondition extends TatorElement {
     });
 
     // Adjust the field name based on the selected field
-    this._category.addEventListener("change", this._userSelectedCategory.bind(this));
+    this._category.addEventListener(
+      "change",
+      this._userSelectedCategory.bind(this)
+    );
 
     // Adjust the modifier based on the selected field
-    this._fieldName.addEventListener("change", this._userSelectedField.bind(this));
+    this._fieldName.addEventListener(
+      "change",
+      this._userSelectedField.bind(this)
+    );
 
     // Set the value field based on the modifier
-    this._modifier.addEventListener("change", this._userSelectedModifier.bind(this));
+    this._modifier.addEventListener(
+      "change",
+      this._userSelectedModifier.bind(this)
+    );
   }
 
   _userSelectedCategory() {
@@ -107,27 +118,29 @@ export class FilterCondition extends TatorElement {
     var uniqueFieldChoices = [];
     this._currentTypes = [];
 
-    for (const attributeType of this._data)
-    {
-      if (attributeType.typeGroupName == this._category.getValue())
-      {
-        for (const attribute of attributeType.attribute_types)
-        {
+    for (const attributeType of this._data) {
+      if (attributeType.typeGroupName == this._category.getValue()) {
+        for (const attribute of attributeType.attribute_types) {
           if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
-            if (attribute.label)
-            {
-              if (['_x', '_y', '_width', '_height'].indexOf(attribute.name) >= 0)
-              {
-                geoChoices.push({"value": attribute.name, "label": attribute.label});
+            if (attribute.label) {
+              if (
+                ["_x", "_y", "_width", "_height"].indexOf(attribute.name) >= 0
+              ) {
+                geoChoices.push({
+                  value: attribute.name,
+                  label: attribute.label,
+                });
+              } else {
+                fieldChoices.push({
+                  value: attribute.name,
+                  label: attribute.label,
+                });
               }
-              else
-              {
-                fieldChoices.push({"value": attribute.name, "label": attribute.label});
-              }
-            }
-            else
-            {
-              attributeChoices.push({"value": attribute.name, "label": attribute.name});
+            } else {
+              attributeChoices.push({
+                value: attribute.name,
+                label: attribute.name,
+              });
             }
             uniqueFieldChoices.push(attribute.name);
           }
@@ -136,10 +149,18 @@ export class FilterCondition extends TatorElement {
       }
     }
 
-    fieldChoices.sort((a,b) => {return a.label.localeCompare(b.label);});
-    attributeChoices.sort((a,b) => {return a.label.localeCompare(b.label);});
+    fieldChoices.sort((a, b) => {
+      return a.label.localeCompare(b.label);
+    });
+    attributeChoices.sort((a, b) => {
+      return a.label.localeCompare(b.label);
+    });
 
-    this._fieldName.choices = {'Built-in Fields': fieldChoices, 'Geometry': geoChoices, 'Attributes': attributeChoices};
+    this._fieldName.choices = {
+      "Built-in Fields": fieldChoices,
+      Geometry: geoChoices,
+      Attributes: attributeChoices,
+    };
     this._fieldName.permission = "Can Edit";
     this._fieldName.selectedIndex = -1;
     this._modifier.permission = "View Only";
@@ -173,17 +194,23 @@ export class FilterCondition extends TatorElement {
               const choiceValue = attribute.choices[i];
               let choice;
               let label;
-              
-              if (typeof choiceValue == 'object' && typeof choiceValue.value !== "undefined") {
+
+              if (
+                typeof choiceValue == "object" &&
+                typeof choiceValue.value !== "undefined"
+              ) {
                 choice = choiceValue.value;
-                label = typeof choiceValue.label !== "undefined"? choiceValue.label : choice;
+                label =
+                  typeof choiceValue.label !== "undefined"
+                    ? choiceValue.label
+                    : choice;
               } else {
                 choice = choiceValue;
                 label = choice;
               }
 
               if (uniqueFieldChoices.indexOf(choice) < 0) {
-                enumChoices.push({ "value": choice, "label": label});
+                enumChoices.push({ value: choice, label: label });
                 uniqueFieldChoices.push(choice);
               }
             }
@@ -195,7 +222,9 @@ export class FilterCondition extends TatorElement {
     }
 
     this._currentDtype = dtype;
-    this._modifier.choices = FilterUtilities.getModifierChoices(selectedAttributeType);
+    this._modifier.choices = FilterUtilities.getModifierChoices(
+      selectedAttributeType
+    );
     this._modifier.permission = "Can Edit";
     this._modifier.selectedIndex = -1;
     this._userSelectedModifier();
@@ -209,19 +238,20 @@ export class FilterCondition extends TatorElement {
     this._valueEnum.style.display = "none";
     this._valueDate.style.display = "none";
 
-    if (this._currentDtype == "enum" && (modifier == "==" || modifier == "NOT ==")) {
+    if (
+      this._currentDtype == "enum" &&
+      (modifier == "==" || modifier == "NOT ==")
+    ) {
       this._value.style.display = "none";
       this._valueBool.style.display = "none";
       this._valueEnum.style.display = "block";
       this._valueDate.style.display = "none";
-    }
-    else if (this._currentDtype == "bool") {
+    } else if (this._currentDtype == "bool") {
       this._value.style.display = "none";
       this._valueBool.style.display = "block";
       this._valueEnum.style.display = "none";
       this._valueDate.style.display = "none";
-    }
-    else if (this._currentDtype == "datetime") {
+    } else if (this._currentDtype == "datetime") {
       this._value.style.display = "none";
       this._valueBool.style.display = "none";
       this._valueEnum.style.display = "none";
@@ -253,10 +283,9 @@ export class FilterCondition extends TatorElement {
     var choices = [];
     var uniqueCategories = [];
     this._categoryMap = {};
-    for (const attributeType of this._data)
-    {
+    for (const attributeType of this._data) {
       if (uniqueCategories.indexOf(attributeType.typeGroupName) < 0) {
-        choices.push({"value": attributeType.typeGroupName});
+        choices.push({ value: attributeType.typeGroupName });
         uniqueCategories.push(attributeType.typeGroupName);
       }
       this._categoryMap[attributeType.name] = attributeType.typeGroupName;
@@ -272,7 +301,6 @@ export class FilterCondition extends TatorElement {
    *                                null if there's an error (e.g. missing information)
    */
   getCondition() {
-
     // #TODO remove try/catch and change getValue to return null if enum selection didn't occur
     try {
       const category = this._category.getValue();
@@ -281,21 +309,15 @@ export class FilterCondition extends TatorElement {
       var value = this._value.getValue();
       var condition = null;
 
-      if (this._valueBool.style.display == "block")
-      {
+      if (this._valueBool.style.display == "block") {
         value = this._valueBool.getValue();
-      }
-      else if (this._valueEnum.style.display == "block")
-      {
+      } else if (this._valueEnum.style.display == "block") {
         value = this._valueEnum.getValue();
-      }
-      else if (this._valueDate.style.display == "block")
-      {
+      } else if (this._valueDate.style.display == "block") {
         value = this._valueDate.getValue();
       }
 
-      if (category && field && modifier && value)
-      {
+      if (category && field && modifier && value) {
         // #TODO We will need to revisit this. For now, just pick a type that matches
         //       the group. It should still work because of how tator-data.js works.
         var entityTypeName;
@@ -306,12 +328,17 @@ export class FilterCondition extends TatorElement {
           }
         }
 
-        condition = new FilterConditionData(entityTypeName, field, modifier, value, category);
+        condition = new FilterConditionData(
+          entityTypeName,
+          field,
+          modifier,
+          value,
+          category
+        );
       }
 
       return condition;
-    }
-    catch (error) {
+    } catch (error) {
       return null;
     }
   }
@@ -322,7 +349,6 @@ export class FilterCondition extends TatorElement {
    *                                    to the dataTypes.
    */
   setCondition(val) {
-
     // #TODO Add error handling
     this._category.setValue(val.categoryGroup);
     this._userSelectedCategory();

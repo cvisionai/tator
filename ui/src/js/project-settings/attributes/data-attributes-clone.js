@@ -19,7 +19,7 @@ export class AttributesData {
         method: "POST",
         mode: "cors",
         credentials: "include",
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
     } else {
       console.error("Problem with new attribute form data.");
@@ -40,17 +40,20 @@ export class AttributesData {
       this.attributeForm._getFormWithValues({ clone: true, ...cloneValue });
       let dataFromForm = this.attributeForm._getAttributeFormData();
       let formJSON = {
-        "entity_type": this.typeName,
-        "addition": dataFromForm.formData
+        entity_type: this.typeName,
+        addition: dataFromForm.formData,
       };
 
-      promise = promise.then(() => {
-        return this._fetchPostPromise({
-          "formData": formJSON
-        });
-      })
-        .then(response => response.json().then(data => ({ response: response, data: data })))
-        .then(obj => {
+      promise = promise
+        .then(() => {
+          return this._fetchPostPromise({
+            formData: formJSON,
+          });
+        })
+        .then((response) =>
+          response.json().then((data) => ({ response: response, data: data }))
+        )
+        .then((obj) => {
           let currentMessage = obj.data.message;
           let succussIcon = document.createElement("modal-success");
           let warningIcon = document.createElement("modal-warning");
@@ -66,12 +69,10 @@ export class AttributesData {
     }
     promise = promise.then(() => {
       return {
-        ok: (this.successMessages != "" && this.failedMessages == ""),
-        message: `${this.successMessages}${this.failedMessages}`
-      }
+        ok: this.successMessages != "" && this.failedMessages == "",
+        message: `${this.successMessages}${this.failedMessages}`,
+      };
     });
     return promise;
   }
-
 }
-

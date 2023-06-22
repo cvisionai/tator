@@ -1,55 +1,63 @@
 import { TatorElement } from "../../tator-element.js";
 
 export class CheckboxSet extends TatorElement {
-   constructor() {
-      super();
+  constructor() {
+    super();
 
-      const div = document.createElement("div");
-      div.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
-      this._shadow.appendChild(div);
+    const div = document.createElement("div");
+    div.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
+    this._shadow.appendChild(div);
 
-      this._name = document.createTextNode("");
-      div.appendChild(this._name);
+    this._name = document.createTextNode("");
+    div.appendChild(this._name);
 
-      //
-      this._inputs = []
+    //
+    this._inputs = [];
 
-      this._inputDiv = document.createElement("div");
-      this._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap flex-justify-between col-8");
-     div.appendChild(this._inputDiv);
+    this._inputDiv = document.createElement("div");
+    this._inputDiv.setAttribute(
+      "class",
+      "d-flex flex-row flex-wrap flex-justify-between col-8"
+    );
+    div.appendChild(this._inputDiv);
 
-     // default 2 columns
-     this._colSize = "col-6";
+    // default 2 columns
+    this._colSize = "col-6";
+  }
+
+  static get observedAttributes() {
+    return ["name", "type"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "name":
+        this._name.nodeValue = newValue;
+        break;
+      case "type":
+        switch (newValue) {
+          case "number":
+            this.getValue = this.getValueAsNumber;
+            this.type = newValue;
+            break;
+          case "radio":
+            this.getValue = this.getValueAsRadio;
+            this.type = newValue;
+            break;
+        }
     }
-
-    static get observedAttributes() {
-      return ["name", "type"];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-      switch (name) {
-        case "name":
-          this._name.nodeValue = newValue;
-          break;
-        case "type":
-          switch (newValue) {
-            case "number":
-              this.getValue = this.getValueAsNumber;
-              this.type = newValue;
-              break;
-            case "radio":
-              this.getValue = this.getValueAsRadio;
-              this.type = newValue;
-              break;
-          }
-      }
-    }
+  }
 
   set default(val) {
     this.defaultData = val; // full data needed to reset FE
 
     // default is apples to apples with getValue to check for Array of ids
-    this._default = val.filter(data => data.checked).map(checked => checked.id);
+    this._default = val
+      .filter((data) => data.checked)
+      .map((checked) => checked.id);
   }
 
   reset() {
@@ -64,21 +72,19 @@ export class CheckboxSet extends TatorElement {
   setValue(val) {
     this._inputDiv.innerHTML = "";
     this._inputs = [];
-    
-    if( val && val.length ){
+
+    if (val && val.length) {
       for (let item of val) {
         this._newInput(item);
       }
     }
   }
 
-
-
-  _newInput(item){
+  _newInput(item) {
     let checkbox = document.createElement("checkbox-input");
     checkbox.setAttribute("name", `${item.name}`);
     if (this.type != undefined) {
-      checkbox.setAttribute("type", this.type)
+      checkbox.setAttribute("type", this.type);
     }
     checkbox.setValue(item);
     checkbox.default = item;
@@ -103,11 +109,15 @@ export class CheckboxSet extends TatorElement {
 
   // Array of the checked inputs values
   getValue() {
-    return this._inputs.filter(input => input.getChecked()).map(checked => checked.getValue());
+    return this._inputs
+      .filter((input) => input.getChecked())
+      .map((checked) => checked.getValue());
   }
 
   getValueAsNumber() {
-    return this._inputs.filter(input => input.getChecked()).map(checked => Number(checked.getValue()));
+    return this._inputs
+      .filter((input) => input.getChecked())
+      .map((checked) => Number(checked.getValue()));
   }
 
   getValueAsRadio() {
@@ -119,12 +129,14 @@ export class CheckboxSet extends TatorElement {
   // @TODO this follows current pattern for some checkboxes to store hidden data
   // should look into setting the data as value instead? or type to data and getValue = this?
   getData() {
-    return this._inputs.filter(input => input.getChecked()).map(checked => checked.getData());
+    return this._inputs
+      .filter((input) => input.getChecked())
+      .map((checked) => checked.getData());
   }
 
   changed() {
     const currentValue = this.getValue();
-    const originalValue = this._default
+    const originalValue = this._default;
 
     if (currentValue && originalValue) {
       if (originalValue.length !== currentValue.length) {
@@ -132,7 +144,7 @@ export class CheckboxSet extends TatorElement {
       } else {
         // if they are the same lenght they should have the same values
         for (let val of originalValue) {
-          if(!currentValue.includes(val)) return true
+          if (!currentValue.includes(val)) return true;
         }
       }
     }
@@ -142,13 +154,14 @@ export class CheckboxSet extends TatorElement {
 
   relabelInput({ value, newLabel }) {
     for (let checkbox of this._inputs) {
-      if(Number(checkbox._input.value) === Number(value)) return checkbox.setAttribute("name", newLabel);
+      if (Number(checkbox._input.value) === Number(value))
+        return checkbox.setAttribute("name", newLabel);
     }
     return console.log("No matching input found");
   }
 
   /**
-   * 
+   *
    * @param {list} val
    * Map(name: [name: "Atribute 1", checked: true ])
    * @returns updates the checkbox elements related to val.name to checked or unchecked
@@ -156,7 +169,11 @@ export class CheckboxSet extends TatorElement {
   updateValue(checkedList) {
     for (let checkbox of this._inputs) {
       const currentVal = decodeURI(checkbox._input.value);
-      console.log(`checkedList.includes(currentVal)  => ${checkedList.includes(currentVal)}`)
+      console.log(
+        `checkedList.includes(currentVal)  => ${checkedList.includes(
+          currentVal
+        )}`
+      );
       checkbox._checked = checkedList.includes(currentVal);
     }
   }
@@ -168,7 +185,7 @@ export class CheckboxSet extends TatorElement {
 
         let idx = this._inputs.indexOf(checkbox);
         this._inputs.splice(idx, 1);
-        checkbox.remove()
+        checkbox.remove();
         const inputWrapper = this._inputDiv.children[idx];
         // console.log(inputWrapper);
         this._inputDiv.removeChild(inputWrapper);
@@ -178,7 +195,6 @@ export class CheckboxSet extends TatorElement {
     }
     return console.log("No matching input found");
   }
-
 }
 
 customElements.define("checkbox-set", CheckboxSet);

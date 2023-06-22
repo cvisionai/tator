@@ -6,7 +6,10 @@ export class TextCalendarButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
+    );
     this._shadow.appendChild(button);
 
     this.current_state = "calendar";
@@ -78,7 +81,7 @@ export class TextCalendarButton extends TatorElement {
     this._textSvg.appendChild(textLine2);
 
     const textLine3 = document.createElementNS(svgNamespace, "rect");
-    textLine3.setAttribute("x", "1"); 
+    textLine3.setAttribute("x", "1");
     textLine3.setAttribute("y", "1");
     textLine3.setAttribute("width", "22");
     textLine3.setAttribute("height", "22");
@@ -87,14 +90,13 @@ export class TextCalendarButton extends TatorElement {
     textLine3.setAttribute("stroke-width", "2");
     this._textSvg.appendChild(textLine3);
     this._textSvg.style.display = "none";
-    
+
     button.addEventListener("click", () => {
       if (this.current_state == "text") {
         this.current_state = "calendar";
         this._calendarSvg.style.display = "block";
         this._textSvg.style.display = "none";
-      }
-      else {
+      } else {
         this.current_state = "text";
         this._calendarSvg.style.display = "none";
         this._textSvg.style.display = "block";

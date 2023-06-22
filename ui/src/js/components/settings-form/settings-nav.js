@@ -19,10 +19,9 @@ export class SettingsNav extends TatorElement {
   setupMap() {
     this.navByName = new Map();
     for (let child of this.navLinkContainer.children) {
-      this.navByName.set(child.getAttribute("type"), child)
+      this.navByName.set(child.getAttribute("type"), child);
     }
   }
-
 }
 
 customElements.define("settings-nav", SettingsNav);

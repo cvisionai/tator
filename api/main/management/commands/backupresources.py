@@ -37,7 +37,7 @@ class Command(BaseCommand):
             logger.info("No project specific backup buckets found!")
             return
 
-        project_ids = projects_needing_backup.values_list('pk', flat=True)
+        project_ids = projects_needing_backup.values_list("pk", flat=True)
 
         resource_qs = resource_qs.filter(media__project__in=project_ids)
 
@@ -50,7 +50,9 @@ class Command(BaseCommand):
         failed_backups = defaultdict(set)
         successful_backups = set()
         domain = os.getenv("MAIN_HOST", "MAIN_HOST")
-        for idx, (success, resource) in enumerate(tbm.backup_resources(projects_needing_backup, resource_qs, domain)):
+        for idx, (success, resource) in enumerate(
+            tbm.backup_resources(projects_needing_backup, resource_qs, domain)
+        ):
             if success:
                 successful_backups.add(resource.id)
             else:
@@ -83,9 +85,9 @@ class Command(BaseCommand):
                             f"Could not find project with id '{project_id}', alerting deployment staff",
                             exc_info=True,
                         )
-                        recipient_ids = User.objects.filter(
-                            is_staff=True
-                        ).values_list("id", flat=True)
+                        recipient_ids = User.objects.filter(is_staff=True).values_list(
+                            "id", flat=True
+                        )
                         project_name = project_id
                     else:
                         # Get project administrators

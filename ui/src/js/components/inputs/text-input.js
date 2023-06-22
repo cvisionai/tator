@@ -7,7 +7,10 @@ export class TextInput extends TatorElement {
     super();
 
     this.label = document.createElement("label");
-    this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this.label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._shadow.appendChild(this.label);
 
     this._name = document.createTextNode("");
@@ -38,7 +41,6 @@ export class TextInput extends TatorElement {
     this._input.addEventListener("blur", () => {
       document.body.classList.remove("shortcuts-disabled");
     });
-
   }
 
   static get observedAttributes() {
@@ -81,7 +83,7 @@ export class TextInput extends TatorElement {
             break;
           default:
             this._input.setAttribute("type", newValue);
-            break
+            break;
         }
         break;
     }
@@ -163,8 +165,8 @@ export class TextInput extends TatorElement {
       const lat = parseFloat(val[0]);
       const lon = parseFloat(val[1]);
       if (!isNaN(lat) && !isNaN(lon)) {
-        const latOk = (lat < 90.0) && (lat > -90.0);
-        const lonOk = (lon < 180.0) && (lon > -180.0);
+        const latOk = lat < 90.0 && lat > -90.0;
+        const lonOk = lon < 180.0 && lon > -180.0;
         if (latOk && lonOk) {
           ret = [lat, lon];
         }
@@ -185,8 +187,7 @@ export class TextInput extends TatorElement {
     this._input.value = val;
   }
 
-  set autocomplete(config)
-  {
+  set autocomplete(config) {
     TatorAutoComplete.enable(this._input, config);
   }
 }

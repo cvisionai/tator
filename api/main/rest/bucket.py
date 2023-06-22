@@ -43,26 +43,27 @@ def serialize_bucket(bucket):
 
 
 class BucketListAPI(BaseListView):
-    """ List endpoint for Buckets.
-    """
+    """List endpoint for Buckets."""
+
     schema = BucketListSchema()
     permission_classes = [OrganizationAdminPermission]
-    http_method_names = ['get', 'post']
+    http_method_names = ["get", "post"]
 
     def _get(self, params):
         # Make sure user has access to this organization.
-        affiliation = Affiliation.objects.filter(organization=params['organization'],
-                                                 user=self.request.user)
+        affiliation = Affiliation.objects.filter(
+            organization=params["organization"], user=self.request.user
+        )
         if affiliation.count() == 0:
             raise PermissionDenied
-        if affiliation[0].permission != 'Admin':
+        if affiliation[0].permission != "Admin":
             raise PermissionDenied
-        buckets = Bucket.objects.filter(organization=params['organization'])
+        buckets = Bucket.objects.filter(organization=params["organization"])
         return [serialize_bucket(bucket) for bucket in buckets]
 
     def _post(self, params):
-        params['organization'] = get_object_or_404(Organization, pk=params['organization'])
-        del params['body']
+        params["organization"] = get_object_or_404(Organization, pk=params["organization"])
+        del params["body"]
         store_type = params["store_type"]
 
         # Validate configuration parameters
@@ -72,28 +73,30 @@ class BucketListAPI(BaseListView):
 
         # Create the bucket
         bucket = Bucket.objects.create(**params)
-        return {'message': f"Bucket {bucket.name} created!", 'id': bucket.id}
+        return {"message": f"Bucket {bucket.name} created!", "id": bucket.id}
+
 
 class BucketDetailAPI(BaseDetailView):
-    """ Detail endpoint for Buckets.
-    """
+    """Detail endpoint for Buckets."""
+
     schema = BucketDetailSchema()
     permission_classes = [OrganizationAdminPermission]
-    lookup_field = 'id'
-    http_method_names = ['get', 'patch', 'delete']
+    lookup_field = "id"
+    http_method_names = ["get", "patch", "delete"]
 
     def _get(self, params):
         # Make sure bucket exists.
-        buckets = Bucket.objects.filter(pk=params['id'])
+        buckets = Bucket.objects.filter(pk=params["id"])
         if buckets.count() == 0:
             raise Http404
 
         # Make sure user has access to this organization.
-        affiliation = Affiliation.objects.filter(organization=buckets[0].organization,
-                                                 user=self.request.user)
+        affiliation = Affiliation.objects.filter(
+            organization=buckets[0].organization, user=self.request.user
+        )
         if affiliation.count() == 0:
             raise PermissionDenied
-        if affiliation[0].permission != 'Admin':
+        if affiliation[0].permission != "Admin":
             raise PermissionDenied
 
         return serialize_bucket(buckets[0])
@@ -101,7 +104,7 @@ class BucketDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         mutated = False
-        bucket = Bucket.objects.select_for_update().get(pk=params['id'])
+        bucket = Bucket.objects.select_for_update().get(pk=params["id"])
         store_type = params.get("store_type") or bucket.store_type
         Bucket.validate_storage_classes(ObjectStore(store_type), params)
         if "name" in params:
@@ -129,9 +132,9 @@ class BucketDetailAPI(BaseDetailView):
         return {"message": f"Bucket {params['id']} updated successfully!"}
 
     def _delete(self, params):
-        bucket = Bucket.objects.get(pk=params['id'])
+        bucket = Bucket.objects.get(pk=params["id"])
         bucket.delete()
-        return {'message': f'Bucket {params["id"]} deleted successfully!'}
+        return {"message": f'Bucket {params["id"]} deleted successfully!'}
 
     def get_queryset(self):
         return Bucket.objects.all()
