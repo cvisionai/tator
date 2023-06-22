@@ -43,9 +43,29 @@ def get_connection(db_name):
 
 def _get_unique_index_name(entity_type, attribute):
     """Get a unique index name based on an entity type and supplied attribute"""
+
+    # While we still use regex to ensure a safe string, to support some special
+    # characters in the attribute name, we have a replacement strategy to convert
+    # to alphanumeric strings.
+    replacement_map = {
+        ">": "gt",
+        "<": "lt",
+        "%": "percent",
+        ":": "colon",
+        "&": "ampersand",
+        "#": "pound",
+        ";": "semicolon",
+        "(": "openpara",
+        ")": "closepara",
+        ",": "comma",
+        "@": "atsign",
+    }
+    attribute_name = attribute["name"]
+    for key, value in replacement_map.items():
+        attribute_name = attribute_name.replace(key, value)
     type_name_sanitized = entity_type.__class__.__name__.lower()
     entity_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", entity_type.name).lower()
-    attribute_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", attribute["name"]).lower()
+    attribute_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", attribute_name).lower()
     if attribute["name"].startswith("$"):
         # Native fields are only scoped to project, native-string types are project/type bound
         # Both need to incorporate type name in the name for uniqueness.
@@ -59,7 +79,8 @@ def _get_unique_index_name(entity_type, attribute):
 
 
 def _get_column_name(attribute):
-    name = re.sub(r"[^a-zA-Z0-9] ", "_", attribute["name"])
+    name = attribute["name"].replace("%", "%%")
+    logger.info(f"{attribute['name']} is now {name}")
     if name.startswith("$"):
         return name[1:]  # internal field
     else:
@@ -219,8 +240,8 @@ def make_string_index(
             table_name=sql.Identifier(table_name),
             col_name=sql.SQL(col_name),
         )
+        logger.info(sql_str.as_string(cursor))
         cursor.execute(sql_str, (project_id, entity_type_id))
-        print(sql_str.as_string(cursor))
 
 
 def make_upper_string_index(
@@ -380,7 +401,7 @@ def make_geopos_index(
     concurrent_str = ""
     if concurrent:
         concurrent_str = "CONCURRENTLY"
-    attr_name = re.sub(r"[^a-zA-Z0-9] ", "_", attribute["name"])
+    attr_name = attribute["name"].replace("%", "%%")
     sql_str = sql.SQL(
         """CREATE INDEX {concurrent} {index_name} ON {table_name} 
                          using gist(ST_MakePoint((attributes -> '{attr_name}' -> 1)::float, 
@@ -425,7 +446,7 @@ def make_vector_index(
                     )
                 )
         # Create an index method for each access type
-        attr_name = re.sub(r"[^a-zA-Z0-9] ", "_", attribute["name"])
+        attr_name = attribute["name"].replace("%", "%%")
         attr_size = int(attribute["size"])
         for method in ["l2", "ip", "cosine"]:
             unique_vector_name = f"{index_name}_{method}"
@@ -604,10 +625,10 @@ class TatorSearch:
 
     @staticmethod
     def validate_name(name):
-        if not re.match("^[A-Za-z0-9_\s\->]+$", name):
+        if not re.match(r"^[A-Za-z0-9_\s\-><%:&#;(),@]+$", name):
             raise ValueError(
                 f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
-                f"or alphanumeric characters"
+                f"alphanumeric characters, or the special characters ,,>,<,%,:,&,;,@,(, or )"
             )
 
     def check_rename(self, entity_type, old_name, new_name):

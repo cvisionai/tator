@@ -125,8 +125,11 @@ status:
 check-migration:
 	scripts/check-migration.sh $(pwd)
 
+.env:
+	cp example-env .env
+
 .PHONY: tator
-tator: api/main/version.py clean_schema
+tator: .env api/main/version.py clean_schema
 	docker network inspect public >/dev/null 2>&1 || \
     docker network create public
 	GIT_VERSION=$(GIT_VERSION) docker compose up -d postgis --wait
