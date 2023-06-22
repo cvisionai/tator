@@ -364,6 +364,11 @@ def create_test_attribute_types():
             dtype="geopos",
             default=[-179.0, -89.0],
         ),
+        dict(
+            name="Special Characters are ",
+            dtype="string",
+            default="fun",
+        )
     ]
 
 
