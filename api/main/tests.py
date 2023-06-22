@@ -463,19 +463,22 @@ class ElementalIDChangeMixin:
             )
             assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(list_endpoint, {"elemental_id": elemental_id}, format="json")
+        response = self.client.get(list_endpoint, {"elemental_id": elemental_id, "show_all_marks": 1}, format="json")
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(self.entities))
 
+        response = self.client.get(list_endpoint, format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        existing_count = len(response.data)
         new_elemental_id = uuid4()
         response = self.client.patch(
             list_endpoint, {"new_elemental_id": new_elemental_id}, format="json"
         )
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(list_endpoint, {"elemental_id": new_elemental_id}, format="json")
+        response = self.client.get(list_endpoint, {"elemental_id": new_elemental_id, "show_all_marks": 1}, format="json")
         assertResponse(self, response, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), len(self.entities))
+        self.assertEqual(len(response.data), existing_count)
 
         for obj in response.data:
             self.assertEqual(obj["elemental_id"], new_elemental_id)
