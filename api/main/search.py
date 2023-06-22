@@ -623,7 +623,7 @@ class TatorSearch:
         if not re.match(r"^[A-Za-z0-9_\s\-><%:&#;]+$", name):
             raise ValueError(
                 f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
-                f"alphanumeric characters, or the special characters >,<,%,:,&"
+                f"alphanumeric characters, or the special characters >,<,%,:,&;"
             )
 
     def check_rename(self, entity_type, old_name, new_name):
