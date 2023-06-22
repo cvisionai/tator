@@ -90,8 +90,39 @@
 .bottom-border {
   border-bottom: 1px solid $color-charcoal--light;
 }
+.bottom-border-2 {
+  border-bottom: 2px solid $color-charcoal--light;
+}
+.bottom-border-3 {
+  border-bottom: 4px solid $color-charcoal--light;
+}
 .top-border {
   border-top: 1px solid $color-charcoal--light;
+}
+.top-border-2 {
+  border-top: 2px solid $color-charcoal--light;
+}
+.top-border-3 {
+  border-top: 4px solid $color-charcoal--light;
+}
+
+.bottom-border-dark {
+  border-bottom: 1px solid $color-charcoal--medium;
+}
+.bottom-border-dark-2 {
+  border-bottom: 2px solid $color-charcoal--medium;
+}
+.bottom-border-dark-3 {
+  border-bottom: 4px solid $color-charcoal--medium;
+}
+.top-border-dark {
+  border-top: 1px solid $color-charcoal--medium;
+}
+.top-border-dark-2 {
+  border-top: 2px solid $color-charcoal--medium;
+}
+.top-border-dark-3 {
+  border-top: 4px solid $color-charcoal--medium;
 }
 
 /*
@@ -149,6 +180,14 @@
   padding-top: $spacing-4;
 }
 
+.pt-5 {
+  padding-top: $spacing-5;
+}
+
+.pt-6 {
+  padding-top: $spacing-6;
+}
+
 .pb-1 {
   padding-bottom: $spacing-1;
 }
@@ -161,8 +200,64 @@
   padding-bottom: $spacing-3;
 }
 
+.pb-4 {
+  padding-bottom: $spacing-4;
+}
+
+.pb-5 {
+  padding-bottom: $spacing-5;
+}
+
+.pb-6 {
+  padding-bottom: $spacing-6;
+}
+
+.pr-1 {
+  padding-right: $spacing-1;
+}
+
 .pr-2 {
   padding-right: $spacing-2;
+}
+
+.pr-3 {
+  padding-right: $spacing-3;
+}
+
+.pr-4 {
+  padding-right: $spacing-4;
+}
+
+.pr-5 {
+  padding-right: $spacing-5;
+}
+
+.pr-6 {
+  padding-right: $spacing-6;
+}
+
+.pl-1 {
+  padding-left: $spacing-1;
+}
+
+.pl-2 {
+  padding-left: $spacing-2;
+}
+
+.pl-3 {
+  padding-left: $spacing-3;
+}
+
+.pl-4 {
+  padding-left: $spacing-4;
+}
+
+.pl-5 {
+  padding-left: $spacing-5;
+}
+
+.pl-6 {
+  padding-left: $spacing-6;
 }
 
 .px-0 {
@@ -213,6 +308,14 @@
   margin-right: $spacing-3;
 }
 
+.mr-4 {
+  margin-right: $spacing-4;
+}
+
+.mr-5 {
+  margin-right: $spacing-5;
+}
+
 .mr-6 {
   margin-right: $spacing-6;
 }
@@ -222,15 +325,33 @@
 }
 
 .ml-2 {
-  margin-right: $spacing-2;
+  margin-left: $spacing-2;
 }
 
 .ml-3 {
   margin-left: $spacing-3;
 }
 
+.ml-4 {
+  margin-left: $spacing-4;
+}
+
+.ml-5 {
+  margin-left: $spacing-5;
+}
+
 .ml-6 {
   margin-left: $spacing-6;
+}
+
+.mx-1 {
+  margin-left: $spacing-1;
+  margin-right: $spacing-1;
+}
+
+.mx-2 {
+  margin-left: $spacing-2;
+  margin-right: $spacing-2;
 }
 
 .mx-3 {
@@ -238,9 +359,24 @@
   margin-right: $spacing-3;
 }
 
+.mx-4 {
+  margin-left: $spacing-4;
+  margin-right: $spacing-4;
+}
+
+.mx-5 {
+  margin-left: $spacing-5;
+  margin-right: $spacing-5;
+}
+
 .mx-6 {
   margin-left: $spacing-6;
   margin-right: $spacing-6;
+}
+
+.my-1 {
+  margin-top: $spacing-1;
+  margin-bottom: $spacing-1;
 }
 
 .my-2 {
@@ -253,9 +389,27 @@
   margin-bottom: $spacing-3;
 }
 
+.my-4 {
+  margin-top: $spacing-4;
+  margin-bottom: $spacing-4;
+}
+
+.my-5 {
+  margin-top: $spacing-5;
+  margin-bottom: $spacing-5;
+}
+
 .my-6 {
   margin-top: $spacing-6;
   margin-bottom: $spacing-6;
+}
+
+.mt-1 {
+  margin-top: $spacing-1;
+}
+
+.mt-2 {
+  margin-top: $spacing-2;
 }
 
 .mt-3 {
@@ -274,6 +428,10 @@
   margin-top: $spacing-6;
 }
 
+.mb-1 {
+  margin-bottom: $spacing-1;
+}
+
 .mb-2 {
   margin-bottom: $spacing-2;
 }
@@ -284,6 +442,10 @@
 
 .mb-4 {
   margin-bottom: $spacing-4;
+}
+
+.mb-5 {
+  margin-bottom: $spacing-5;
 }
 
 .mb-6 {
