@@ -530,7 +530,6 @@ class DefaultCreateTestMixin:
         obj = type(self.entities[0]).objects.get(pk=id_)
         for attr_type in self.entity_type.attribute_types:
             field = attr_type["name"]
-            print(f"Testing {field} for {is_default}")
             if is_default:
                 if not attr_type["dtype"] == "datetime":
                     default = attr_type["default"]
