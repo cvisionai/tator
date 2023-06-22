@@ -5,9 +5,8 @@ import copy
 import json
 import datetime
 import random
-from tempfile import NamedTemporaryFile
+from tempfile import mkstemp, NamedTemporaryFile
 import time
-import ssl
 import re
 
 from kubernetes.client import Configuration
@@ -264,22 +263,29 @@ class JobManagerMixin:
 
 
 class TatorAlgorithm(JobManagerMixin):
-    """Interface to kubernetes REST API for starting algorithms."""
+    """Interface to kubernetes REST API for starting algorithms. Remember to call `.close()` to
+    clean up any leftover file descriptors.
+    """
 
     def __init__(self, alg):
         """Intializes the connection. If algorithm object includes
         a remote cluster, use that. Otherwise, use this cluster.
         """
+        self._fd = None
+        self._cert = None
+        self._closed = False
         if alg.cluster:
             host = alg.cluster.host
             port = alg.cluster.port
             token = alg.cluster.token
-            ssl_context = ssl.create_default_context(cadata=alg.cluster.cert)
+            self._fd, self._cert = mkstemp(text=True)
+            with open(self._fd, "w") as f:
+                f.write(alg.cluster.cert)
             conf = Configuration()
             conf.api_key["authorization"] = token
             conf.host = f"{PROTO}{host}:{port}"
             conf.verify_ssl = True
-            conf.ssl_ca_cert = ssl_context
+            conf.ssl_ca_cert = self._cert
             api_client = ApiClient(conf)
             self.corev1 = CoreV1Api(api_client)
             self.custom = CustomObjectsApi(api_client)
@@ -294,6 +300,15 @@ class TatorAlgorithm(JobManagerMixin):
 
         # Save off the algorithm.
         self.alg = alg
+
+    def close(self):
+        if self._fd:
+            os.close(self._fd)
+            self._fd = None
+        if self._cert:
+            os.remove(self._cert)
+            self._cert = None
+        self._closed = True
 
     def start_algorithm(
         self,
@@ -311,6 +326,8 @@ class TatorAlgorithm(JobManagerMixin):
         """Starts an algorithm job, substituting in parameters in the
         workflow spec.
         """
+        if self._closed:
+            raise RuntimeError("Cannot start an algorithm after closing!")
         # Make a copy of the manifest from the database.
         manifest = copy.deepcopy(self.manifest)
 

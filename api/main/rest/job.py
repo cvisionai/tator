@@ -91,6 +91,9 @@ class JobListAPI(BaseListView):
                 extra_params=extra_params,
             )
 
+        # Close the job submitter
+        submitter.close()
+
         # Retrieve the jobs so we have a list
         selector = f"project={project_id},gid={gid}"
         cache = TatorCache().get_jobs_by_gid(gid, first_only=False)
