@@ -8,8 +8,8 @@ from dateutil.parser import parse as dateutil_parse
 import pytz
 import re
 
-from django.db.models.functions import Cast
-from django.db.models import Func, F, Q
+from django.db.models.functions import Cast, Coalesce
+from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import BigIntegerField
@@ -56,6 +56,23 @@ OPERATOR_SUFFIXES = {
 }
 
 
+def supplied_name_to_field(supplied_name):
+    logger.info(f"SNAME={supplied_name}")
+    if supplied_name.startswith("-"):
+        desc = True
+        supplied_name = supplied_name[1:]
+    else:
+        desc = False
+    if supplied_name.startswith("$"):
+        db_lookup = supplied_name[1:]
+    else:
+        db_lookup = f"attributes__{supplied_name}"
+
+    if desc:
+        db_lookup = "-" + db_lookup
+    return db_lookup
+
+
 def _related_search(
     qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj
 ):
@@ -79,13 +96,64 @@ def _related_search(
         if local_qs.count():
             related_matches.append(local_qs)
     if related_matches:
+        # Convert result matches to use Media model because related_matches might be States or Localizations
+        # Note: 'media' becomes 'id' when this happens. The two columns are 'id','count' in this result.
+        # Iterate over each related match and merge it into the previous Media result set. Add 'count' so it is an accurate hit count
+        # for any matching metadata.
+        # Finally reselect all media in this concatenated set by id. Annotate the incident with the count from the previous record set, which is
+        # now the sum of any hit across any metadata type.
         related_match = related_matches.pop()
-        query = Q(pk__in=related_match.values("media"))
+        media_vals = related_match.values("media").annotate(count=Count("media"))
+        media_matches = (
+            qs.filter(pk__in=media_vals.values("media"))
+            .annotate(
+                count=Subquery(
+                    media_vals.filter(media=OuterRef("id")).order_by("-count")[:1].values("count")
+                )
+            )
+            .values("id", "count")
+        )
+        logger.info(
+            f"related matches interim count = {related_match[0]._meta.db_table} this={media_vals} total={media_matches}"
+        )
         for r in related_matches:
-            query = query | Q(pk__in=r.values("media"))
-        qs = qs.filter(query).distinct()
+            this_vals = r.values("media").annotate(count=Count("media"))
+            this_run = (
+                qs.filter(
+                    Q(pk__in=this_vals.values("media")) | Q(pk__in=media_matches.values("id"))
+                )
+                .annotate(
+                    this_count=Coalesce(
+                        Subquery(
+                            this_vals.filter(media=OuterRef("id"))
+                            .order_by("-count")[:1]
+                            .values("count")
+                        ),
+                        0,
+                    ),
+                    last_count=Coalesce(
+                        Subquery(
+                            media_vals.filter(media=OuterRef("id"))
+                            .order_by("-count")[:1]
+                            .values("count")
+                        ),
+                        Value(0),
+                    ),
+                    count=F("this_count") + F("last_count"),
+                )
+                .values("id", "count")
+            )
+            media_matches = this_run
+            logger.info(
+                f"related matches interim count = {r[0]._meta.db_table} this={this_run} , total={media_matches}"
+            )
+        qs = (
+            qs.filter(pk__in=media_matches.values("id"))
+            .annotate(incident=Subquery(media_matches.filter(id=OuterRef("id")).values("count")))
+            .distinct()
+        )
     else:
-        qs = qs.filter(pk=-1)
+        qs = qs.filter(pk=-1).annotate(incident=Value(0))
     return qs
 
 
@@ -115,6 +183,7 @@ def _get_info_for_attribute(project, entity_type, key):
             "$frame",
             "$num_frames",
             "$section",
+            "$id",
         ]:
             return {"name": key[1:], "dtype": "int"}
         elif key in ["$created_datetime", "$modified_datetime"]:
@@ -273,11 +342,13 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                     "spheroid",
                 )
 
-            castFunc = castLookup[attr_name]
+            castFunc = castLookup.get(attr_name, None)
             if operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
                 value = castFunc(value)
+            else:
+                return Q(pk=-1)
             if operation in ["date_eq", "eq"]:
                 query = Q(**{f"{db_lookup}": value})
             else:
@@ -333,6 +404,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         "$frame",
         "$num_frames",
         "$section",
+        "$id",
     ]:
         attributeCast[key] = int
     for key in ["$created_datetime", "$modified_datetime", "$name", "$archive_state"]:

@@ -24,7 +24,6 @@ class OrganizationUploadInfoAPI(BaseDetailView):
         expiration = params["expiration"]
         num_parts = params["num_parts"]
         organization = params["organization"]
-        filename = params.get("filename")
         if os.getenv("REQUIRE_HTTPS") == "TRUE":
             PROTO = "https"
         else:

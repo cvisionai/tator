@@ -347,5 +347,10 @@ media = {
             "type": "string",
             "format": "date-time",
         },
+        "incident": {
+            "description": "If doing a related search, will contain the number of matching metadata hits in this media.",
+            "type": "integer",
+            "nullable": True,
+        },
     },
 }

@@ -32,6 +32,7 @@ schema_view = get_schema_view(
     version="DEVELOPMENT_VERSION",
     generator_class=CustomGenerator,
     renderer_classes=[NoAliasRenderer],
+    public=True,
 )
 
 urlpatterns = [

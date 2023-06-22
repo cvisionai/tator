@@ -3,7 +3,7 @@ clone_media_spec = {
     "required": ["dest_project", "dest_type"],
     "properties": {
         "dest_project": {
-            "description": "Unique integer identyifying destination project.",
+            "description": "Unique integer identifying destination project.",
             "type": "integer",
         },
         "dest_type": {

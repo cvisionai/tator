@@ -1,3 +1,5 @@
+from .components.attribute_query import table_of_builtins
+
 attribute_filter_parameter_schema = [
     {
         "name": "attribute",
@@ -94,6 +96,25 @@ attribute_filter_parameter_schema = [
         "required": False,
         "description": "Base64 encoded string representing an `Object_Search` defined in /components/AttributeOperationSpec",
         "schema": {"type": "string"},
+    },
+    {
+        "name": "sort_by",
+        "in": "query",
+        "required": False,
+        "description": """Field names to sort results by. Built-in names should be prefixed with '$', attributes must not be. 
+        
+        Because the schema supports sorting by a list of attributes (effectively grouping), we have to utilize a special character to inform direction.
+        Uses the common convention of '-'; thus `["$name", "-$id"]` would sort by name ascending and break tie-breakers(grouping) by descending by id.
+
+        An example REST query will sort all localizations in project 1, by label descending and sort any ties by ascending x.
+
+        `rest/Localizations/1?sort_by=-Label&sort_by=$x`
+
+
+        A table of built-ins available for a given type:
+                    """
+        + table_of_builtins,
+        "schema": {"type": "array", "items": {"type": "string"}},
     },
 ]
 

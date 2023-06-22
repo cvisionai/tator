@@ -114,7 +114,7 @@ def check_required_fields(datafields, attr_types, body):
                 attrs[field] = datetime.datetime.now(datetime.timezone.utc).isoformat()
             elif attr_type.get("required", True):
                 # Missing a datetime.
-                raise Exception(
+                raise ValueError(
                     f'Missing attribute value for "{field}". Set `use_current` to '
                     f"True or supply a value."
                 )
@@ -124,7 +124,7 @@ def check_required_fields(datafields, attr_types, body):
                 attrs[field] = attr_type["default"]
             elif attr_type.get("required", True):
                 # Missing a field and no default.
-                raise Exception(
+                raise ValueError(
                     f'Missing attribute value for "{field}". Set a `default` on '
                     f"the attribute type or supply a value."
                 )
@@ -169,7 +169,7 @@ def check_resource_prefix(prefix, obj, force_prefix=False):
         return
     parts = prefix.split("/")
     if len(parts) != 4:
-        logger.error(f"Permission Denied: {prefix} on {obj}")
+        logger.error("Permission Denied: %s on %s", prefix, obj)
         raise PermissionDenied(
             "Incorrect prefix format for file resource! Required format is "
             "<organization>/<project>/<object>/<name>."
@@ -248,7 +248,7 @@ def bulk_update_and_log_changes(queryset, project, user, update_kwargs=None, new
             "Must specify at least one of the following arguments: update_kwargs, new_attributes"
         )
 
-    if type(project) != Project:
+    if not isinstance(project, Project):
         project = Project.objects.get(pk=project)
 
     # Get prior state data for ChangeLog creation
@@ -372,14 +372,40 @@ def bulk_log_creation(objects, project, user):
     return ids
 
 
+def construct_parent_from_spec(state_or_loc_spec, parent_type):
+    """
+    Gets the parent object from a state or localization specification, if specified, otherwise
+    returns None
+    """
+    parent = state_or_loc_spec.get("parent", None)
+    return parent_type.objects.get(pk=parent) if parent else None
+
+
+def construct_elemental_id_from_spec(state_or_loc_spec, parent_type):
+    """
+    Calls `construct_elemental_id_from_parent` with inputs scraped from a state or localization
+    specification
+    """
+    parent = construct_elemental_id_from_parent(state_or_loc_spec, parent_type)
+    return construct_elemental_id_from_parent(parent, state_or_loc_spec.get("elemental_id", None))
+
+
 def construct_elemental_id_from_parent(parent, requested_uuid=None):
     """Return the parent's elemental id or make a new one"""
-    if parent is None and requested_uuid is None:
-        return uuid.uuid4()
-    elif parent.elemental_id:
+    if parent and hasattr(parent, "elemental_id") and parent.elemental_id:
         return parent.elemental_id
-    else:
-        return None
+    if requested_uuid:
+        # Check to see if it is a UUID or string and treat accordingly
+        if isinstance(requested_uuid, uuid.UUID):
+            return requested_uuid
+        if isinstance(requested_uuid, str):
+            try:
+                return uuid.UUID(requested_uuid)
+            except (ValueError, TypeError) as exc:
+                msg = f"Could not convert '{requested_uuid}' into a UUID"
+                logger.error(msg)
+                raise RuntimeError(msg) from exc
+    return uuid.uuid4()
 
 
 def _use_internal_host(request, url):

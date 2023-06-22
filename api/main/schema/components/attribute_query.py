@@ -1,3 +1,21 @@
+table_of_builtins = """
+    | Name              | Description                            | Localizations | States | Medias | Leaves | Files | 
+    |-------------------|----------------------------------------|---------------|--------|--------|--------|-------|
+    | section           | Media section                          |       X       |   X    |   X    |        |       |
+    | created_datetime  | The time of creation for this datum    |       X       |   X    |   X    |    X   |   X   |
+    | created_by        | The user id who created this datum     |       X       |   X    |   X    |    X   |   X   |
+    | modified_datetime | The last modification time             |       X       |   X    |   X    |    X   |   X   |
+    | modified_by       | The last modification user             |       X       |   X    |   X    |    X   |   X   |
+    | name              | The name of the element                |               |        |   X    |    X   |   X   |
+    | fps               | The frames per second                  |               |        |   X    |        |       |
+    | deleted           | Whether the media is marked deleted    |               |        |   X    |    X   |   X   |
+    | variant_deleted   | Whether the metadata is marked deleted |       X       |   X    |        |        |       |
+    | archive_state     | The current archive state of the media |               |        |   X    |        |       |
+    | x, y, u, or v     | Geometric coordinates                  |               |        |        |        |       |
+    | width or height   | Geometric sizes                        |               |        |        |        |       |
+    | incident          | Available when doing a related search  |               |        |   X    |        |       |   
+"""
+
 attribute_filter_schema = {
     "type": "object",
     "description": "Object to query on attribute",
@@ -18,24 +36,8 @@ attribute_filter_schema = {
               of the model may be searched in this manner.
               
               '$' must precede these names in search attempts. E.g. `created_by` is supplied as `$created_by`.
-    
-              | Name              | Description                            | Localizations | States | Medias | Leaves | Files | 
-              |-------------------|----------------------------------------|---------------|--------|--------|--------|-------|
-              | section           | Media section                          |       X       |   X    |   X    |        |       |
-              | created_datetime  | The time of creation for this datum    |       X       |   X    |   X    |    X   |   X   |
-              | created_by        | The user id who created this datum     |       X       |   X    |   X    |    X   |   X   |
-              | modified_datetime | The last modification time             |       X       |   X    |   X    |    X   |   X   |
-              | modified_by       | The last modification user             |       X       |   X    |   X    |    X   |   X   |
-              | name              | The name of the element                |               |        |   X    |    X   |   X   |
-              | fps               | The frames per second                  |               |        |   X    |        |       |
-              | deleted           | Whether the media is marked deleted    |               |        |   X    |    X   |   X   |
-              | variant_deleted   | Whether the metadata is marked deleted |       X       |   X    |        |        |       |
-              | archive_state     | The current archive state of the media |               |        |   X    |        |       |
-              | x, y, u, or v     | Geometric coordinates                  |               |        |        |        |       |
-              | width or height   | Geometric sizes                        |               |        |        |        |       |
-
-              
-              """,
+              """
+            + table_of_builtins,
         },
         "operation": {
             "type": "string",

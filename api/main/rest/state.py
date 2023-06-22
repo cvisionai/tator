@@ -39,7 +39,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    construct_elemental_id_from_parent,
+    construct_elemental_id_from_spec,
+    construct_parent_from_spec,
     compute_user,
 )
 from ._permissions import ProjectEditPermission
@@ -274,15 +275,8 @@ class StateListAPI(BaseListView):
                 ),
                 version=versions[state_spec.get("version", None)],
                 frame=state_spec.get("frame", None),
-                parent=State.objects.get(pk=state_spec.get("parent"))
-                if state_spec.get("parent")
-                else None,
-                elemental_id=construct_elemental_id_from_parent(
-                    State.objects.get(pk=state_spec.get("parent"))
-                    if state_spec.get("parent")
-                    else None,
-                    state_spec.get("elemental_id", None),
-                ),
+                parent=construct_parent_from_spec(state_spec, State),
+                elemental_id=construct_elemental_id_from_spec(state_spec, State),
             )
             for state_spec, attrs in zip(state_specs, attr_specs)
         )
@@ -373,9 +367,11 @@ class StateListAPI(BaseListView):
                 )
             new_attrs = validate_attributes(params, qs[0])
             update_kwargs = {"modified_by": self.request.user}
+            if params.get("new_elemental_id", None) is not None:
+                update_kwargs["elemental_id"] = params["new_elemental_id"]
             if params.get("user_elemental_id", None):
                 computed_author = compute_user(
-                    params["project"], self.request.user, params.get("user_elemental_id", None)
+                    params["project"], self.request.user, params["user_elemental_id"]
                 )
                 update_kwargs["created_by"] = computed_author
             if patched_version is not None:
@@ -504,7 +500,7 @@ class StateDetailBaseAPI(BaseDetailView):
         # Update modified_by to be the last user
         obj.modified_by = self.request.user
 
-        if "elemental_id" in params:
+        if params.get("elemental_id", None) is not None:
             obj.elemental_id = params["elemental_id"]
 
         if params.get("in_place", 0):

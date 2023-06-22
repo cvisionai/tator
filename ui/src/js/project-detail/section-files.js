@@ -79,6 +79,7 @@ export class SectionFiles extends TatorElement {
     const hasProject = this.hasAttribute("project-id");
 
     if (hasAlgorithms && hasProject) {
+      this._ul.innerHTML = "";
       const children = this._ul.children;
       // const cardList = [];
       this._cardElements = [];

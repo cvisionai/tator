@@ -84,6 +84,9 @@ class LocalizationListSchema(AutoSchema):
             )
         elif method == "PUT":
             short_desc = "Get localization list by ID."
+        else:
+            raise ValueError(f"HTTP method {method} not supported")
+
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def get_path_parameters(self, path, method):

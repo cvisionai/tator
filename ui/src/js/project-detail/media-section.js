@@ -96,7 +96,7 @@ export class MediaSection extends TatorElement {
     this._setCallbacks();
   }
 
-  init(project, section) {
+  async init(project, section) {
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
@@ -120,7 +120,7 @@ export class MediaSection extends TatorElement {
     this._stop = this._paginator_top._pageSize;
     this._after = new Map();
 
-    return this.reload();
+    await this.reload();
   }
 
   set mediaTypesMap(val) {
@@ -241,7 +241,6 @@ export class MediaSection extends TatorElement {
     if (numFiles != this._paginator_top._numFiles) {
       this._start = 0;
       this._stop = this._paginator_top._pageSize;
-      this._after = new Map();
       this._paginationState = {
         start: this._start,
         stop: this._stop,
@@ -270,72 +269,25 @@ export class MediaSection extends TatorElement {
     return joinParams(sectionParams, filterAndSearchParams);
   }
 
-  _getAfter(index) {
-    const url = `/rest/Medias/${this._project}`;
-    let params = this._sectionParams();
-    const recursiveFetch = (url, params, current) => {
-      let after = "";
-      if (this._after.has(current - 5000)) {
-        after = `&after=${this._after.get(current - 5000)}`;
-      }
-      return fetchCredentials(
-        `${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          this._after.set(current, data[0].id);
-          if (current < index) {
-            return recursiveFetch(url, params, current + 5000);
-          }
-          return Promise.resolve(data[0]["id"]);
-        });
-    };
-    if (this._after.has(index)) {
-      return Promise.resolve(this._after.get(index));
-    } else {
-      return recursiveFetch(url, params, 5000);
-    }
-  }
-
   async _loadMedia() {
-    console.log("Load media...");
-    const sectionQuery = this._sectionParams();
-    // Find an interval for use with "after". Super page size of
-    // 5000 guarantees that any start/stop fully falls within a
-    // super page interval.
-    let afterPromise = Promise.resolve("");
-
-    if (this._stop < 10000) {
-      sectionQuery.append("start", this._start);
-      sectionQuery.append("stop", this._stop);
-    } else {
-      const afterIndex = 5000 * Math.floor(this._start / 5000);
-      const start = this._start % afterIndex;
-      let stop = this._stop % afterIndex;
-      if (stop < start) {
-        stop += 5000;
-      }
-      sectionQuery.append("start", start);
-      sectionQuery.append("stop", stop);
-      afterPromise = this._getAfter(afterIndex);
+    var sectionQuery = this._sectionParams();
+    if (Number.isNaN(this._start) || Number.isNaN(this._stop)) {
+      console.log(`Load media... ignoring due to NaN start/stop`);
+      return; // This may happen if it's called too soon and the pagination has not been set.
     }
-    return afterPromise.then((afterId) => {
-      if (afterId) {
-        sectionQuery.append("after", afterId);
-      }
-      return fetchCredentials(
-        `/rest/Medias/${
-          this._project
-        }?${sectionQuery.toString()}&presigned=28800`
-      )
-        .then((response) => response.json())
-        .then((media) => {
-          this._files.numMedia = this._paginator_top._numFiles;
-          this._files.startMediaIndex = this._start;
-          this._files.cardInfo = media;
-          this._reload.ready();
-        });
-    });
+    sectionQuery.append("start", this._start);
+    sectionQuery.append("stop", this._stop);
+
+    console.log(`Load media... sectionQuery: ${sectionQuery}`);
+    var response = await fetchCredentials(
+      `/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`
+    );
+    var mediaList = await response.json();
+
+    this._files.numMedia = this._paginator_top._numFiles;
+    this._files.startMediaIndex = this._start;
+    this._files.cardInfo = mediaList;
+    this._reload.ready();
   }
 
   async reload() {
@@ -349,7 +301,7 @@ export class MediaSection extends TatorElement {
     const count = await response.json();
     this.numMedia = count;
 
-    return await this._loadMedia();
+    await this._loadMedia();
   }
 
   _launchAlgorithm(evt) {

@@ -14,7 +14,7 @@ export class EnumInput extends TatorElement {
     this.label.style.position = "relative";
     this._shadow.appendChild(this.label);
 
-    this._name = document.createTextNode("");
+    this._name = document.createElement("span");
     this.label.appendChild(this._name);
 
     const span = document.createElement("span");
@@ -72,7 +72,7 @@ export class EnumInput extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "name":
-        this._name.nodeValue = newValue;
+        this._name.textContent = newValue;
         break;
     }
   }
@@ -152,6 +152,39 @@ export class EnumInput extends TatorElement {
 
   set default(val) {
     this._default = val;
+  }
+
+  /**
+   * @param {string} val - Style string associated with the attribute type
+   */
+  setStyle(val) {
+    if (typeof val != "string") {
+      console.warn(`Provided style is not a string`);
+      return;
+    }
+
+    var styleTokens = val.split(" ");
+    for (const token of styleTokens) {
+      if (token.includes("label-css-add-")) {
+        var classAdd = token.split("label-css-add-")[1];
+        this._name.classList.add(classAdd);
+      } else if (token.includes("label-css-rem")) {
+        var classRem = token.split("label-css-rem-")[1];
+        this._name.classList.remove(classRem);
+      } else if (token.includes("field-css-add")) {
+        var classAdd = token.split("field-css-add-")[1];
+        this._select.classList.add(classAdd);
+      } else if (token.includes("field-css-rem")) {
+        var classRem = token.split("field-css-rem-")[1];
+        this._select.classList.remove(classRem);
+      } else if (token.includes("css-add-")) {
+        var classAdd = token.split("css-add-")[1];
+        this.label.classList.add(classAdd);
+      } else if (token.includes("css-rem-")) {
+        var classRem = token.split("css-rem-")[1];
+        this.label.classList.add(classRem);
+      }
+    }
   }
 
   // checks if the current value equals the default

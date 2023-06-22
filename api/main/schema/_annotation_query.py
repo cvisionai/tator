@@ -11,6 +11,18 @@ annotation_filter_parameter_schema = [
         },
     },
     {
+        "name": "related_id",
+        "in": "query",
+        "required": False,
+        "description": "Comma-separated list of related IDs. If querying States, one can supply a list of related localization ids to filter on."
+        "If querying Localizations, one can supply a list of related state ids to filter on.",
+        "explode": False,
+        "schema": {
+            "type": "array",
+            "items": {"type": "integer"},
+        },
+    },
+    {
         "name": "section",
         "in": "query",
         "required": False,

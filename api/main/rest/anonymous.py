@@ -22,7 +22,11 @@ class AnonymousGatewayAPI(APIView):
             last_name="Account",
             email="info@cvisionai.com",
         )
-        url = request.query_params.get("redirect", "/projects")
+
+        # Check redirect url is relative
+        url = request.query_params.get("redirect", None)
+        if not (url and url.startswith("/")):
+            url = "/projects"
         response = redirect(url)
 
         # Upgrade the connection to a session
