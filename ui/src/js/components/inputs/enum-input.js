@@ -158,7 +158,6 @@ export class EnumInput extends TatorElement {
    * @param {string} val - Style string associated with the attribute type
    */
   setStyle(val) {
-
     if (typeof val != "string") {
       console.warn(`Provided style is not a string`);
       return;
@@ -169,24 +168,19 @@ export class EnumInput extends TatorElement {
       if (token.includes("label-css-add-")) {
         var classAdd = token.split("label-css-add-")[1];
         this._name.classList.add(classAdd);
-      }
-      else if (token.includes("label-css-rem")) {
+      } else if (token.includes("label-css-rem")) {
         var classRem = token.split("label-css-rem-")[1];
         this._name.classList.remove(classRem);
-      }
-      else if (token.includes("field-css-add")) {
+      } else if (token.includes("field-css-add")) {
         var classAdd = token.split("field-css-add-")[1];
         this._select.classList.add(classAdd);
-      }
-      else if (token.includes("field-css-rem")) {
+      } else if (token.includes("field-css-rem")) {
         var classRem = token.split("field-css-rem-")[1];
         this._select.classList.remove(classRem);
-      }
-      else if (token.includes("css-add-")) {
+      } else if (token.includes("css-add-")) {
         var classAdd = token.split("css-add-")[1];
         this.label.classList.add(classAdd);
-      }
-      else if (token.includes("css-rem-")) {
+      } else if (token.includes("css-rem-")) {
         var classRem = token.split("css-rem-")[1];
         this.label.classList.add(classRem);
       }

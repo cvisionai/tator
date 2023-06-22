@@ -829,7 +829,6 @@ export class AttributePanel extends TatorElement {
         }
 
         widget.setStyle(column.style);
-
       } else {
         // TODO: Implement a better geopos widget
         widget = document.createElement("text-input");
