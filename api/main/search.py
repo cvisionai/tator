@@ -43,9 +43,25 @@ def get_connection(db_name):
 
 def _get_unique_index_name(entity_type, attribute):
     """Get a unique index name based on an entity type and supplied attribute"""
+
+    # While we still use regex to ensure a safe string, to support some special
+    # characters in the attribute name, we have a replacement strategy to convert
+    # to alphanumeric strings.
+    replacement_map = {
+        ">": "gt",
+        "<": "lt",
+        "%": "percent",
+        ":": "colon",
+        "&": "ampersand",
+        "#": "pound",
+        ";": "semicolon",
+    }
+    attribute_name = attribute["name"]
+    for key, value in replacement_map.items():
+        attribute_name = attribute_name.replace(key, value)
     type_name_sanitized = entity_type.__class__.__name__.lower()
     entity_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", entity_type.name).lower()
-    attribute_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", attribute["name"]).lower()
+    attribute_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", attribute_name).lower()
     if attribute["name"].startswith("$"):
         # Native fields are only scoped to project, native-string types are project/type bound
         # Both need to incorporate type name in the name for uniqueness.
@@ -604,10 +620,10 @@ class TatorSearch:
 
     @staticmethod
     def validate_name(name):
-        if not re.match("^[A-Za-z0-9_\s\->]+$", name):
+        if not re.match(r"^[A-Za-z0-9_\s\-><%:&#;]+$", name):
             raise ValueError(
                 f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
-                f"or alphanumeric characters"
+                f"alphanumeric characters, or the special characters >,<,%,:,&"
             )
 
     def check_rename(self, entity_type, old_name, new_name):
