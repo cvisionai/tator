@@ -756,6 +756,7 @@ export class AttributePanel extends TatorElement {
             widget.disabled = true;
             ignorePermission = true;
           }
+          widget.setStyle(column.style);
         }
       } else if (column.dtype == "enum") {
         widget = document.createElement("enum-input");
@@ -776,6 +777,7 @@ export class AttributePanel extends TatorElement {
             widget.disabled = true;
             ignorePermission = true;
           }
+          widget.setStyle(column.style);
         }
       } else if (column.dtype == "datetime") {
         try {
@@ -805,6 +807,7 @@ export class AttributePanel extends TatorElement {
             widget.disabled = true;
             ignorePermission = true;
           }
+          widget.setStyle(column.style);
         }
       } else if (column.style) {
         const style_options = column.style.split(" ");
@@ -824,6 +827,9 @@ export class AttributePanel extends TatorElement {
           widget.disabled = true;
           ignorePermission = true;
         }
+
+        widget.setStyle(column.style);
+
       } else {
         // TODO: Implement a better geopos widget
         widget = document.createElement("text-input");
