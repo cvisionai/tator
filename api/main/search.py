@@ -58,6 +58,7 @@ def _get_unique_index_name(entity_type, attribute):
         "(": "openpara",
         ")": "closepara",
         ",": "comma",
+        "@": "atsign",
     }
     attribute_name = attribute["name"]
     for key, value in replacement_map.items():
@@ -624,10 +625,10 @@ class TatorSearch:
 
     @staticmethod
     def validate_name(name):
-        if not re.match(r"^[A-Za-z0-9_\s\-><%:&#;(),]+$", name):
+        if not re.match(r"^[A-Za-z0-9_\s\-><%:&#;(),@]+$", name):
             raise ValueError(
                 f"Name '{name}' is not valid; it must only contain spaces, hyphens, underscores, "
-                f"alphanumeric characters, or the special characters ,,>,<,%,:,&,;,(, or )"
+                f"alphanumeric characters, or the special characters ,,>,<,%,:,&,;,@,(, or )"
             )
 
     def check_rename(self, entity_type, old_name, new_name):
