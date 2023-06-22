@@ -275,7 +275,7 @@ def bulk_patch_attributes(new_attrs, q_s):
         q_s.update(
             attributes=ReplaceValue(
                 "attributes",
-                keyname=key,
+                keyname=key.replace("%", "%%"),
                 new_value=_process_for_bulk_op(raw_val),
                 create_missing=True,
             )
