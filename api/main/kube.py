@@ -109,37 +109,71 @@ def get_client_image_name():
     return f"{registry}/tator_client:{Git.sha}"
 
 
-def _get_api(cluster, cert_tempfile):
-    """Get custom objects api associated with a cluster specifier."""
-    if cluster is None:
-        load_incluster_config()
-        api = CustomObjectsApi()
-    elif cluster == "remote_transcode":
-        host = os.getenv("REMOTE_TRANSCODE_HOST")
-        port = os.getenv("REMOTE_TRANSCODE_PORT")
-        token = os.getenv("REMOTE_TRANSCODE_TOKEN")
-        cert = os.getenv("REMOTE_TRANSCODE_CERT")
-        conf = Configuration()
-        conf.api_key["authorization"] = token
-        conf.host = f"https://{host}:{port}"
-        conf.verify_ssl = True
-        conf.ssl_ca_cert = cert
-        api_client = ApiClient(conf)
-        api = CustomObjectsApi(api_client)
-    else:
-        cluster_obj = JobCluster.objects.get(pk=cluster)
-        host = cluster_obj.host
-        port = cluster_obj.port
-        token = cluster_obj.token
-        cert_tempfile.write(cluster_obj.cert)
-        conf = Configuration()
-        conf.api_key["authorization"] = token
-        conf.host = f"https://{host}:{port}"
-        conf.verify_ssl = True
-        conf.ssl_ca_cert = cert_tempfile.name
-        api_client = ApiClient(conf)
-        api = CustomObjectsApi(api_client)
-    return api
+class ApiContextManager:
+    """Interface to kubernetes REST API. This is a ContextManager and should be used as follows
+
+    ```python
+    with ApiContextManager(cluster) as api_cm:
+        response = api_cm.api.list_namespaced_custom_object(
+            group="argoproj.io",
+            version="v1alpha1",
+            namespace="default",
+            plural="workflows",
+            label_selector=f"{selector}",
+        )
+    ```
+    """
+
+    def __init__(self, cluster):
+        self._cluster = cluster
+        self._cert_fd = None
+        self._cert_name = None
+        self.api = None
+
+    def __enter__(self):
+        """Get custom objects api associated with a cluster specifier."""
+        if self._cluster is None:
+            load_incluster_config()
+            self.api = CustomObjectsApi()
+        elif self._cluster == "remote_transcode":
+            host = os.getenv("REMOTE_TRANSCODE_HOST")
+            port = os.getenv("REMOTE_TRANSCODE_PORT")
+            token = os.getenv("REMOTE_TRANSCODE_TOKEN")
+            cert = os.getenv("REMOTE_TRANSCODE_CERT")
+            conf = Configuration()
+            conf.api_key["authorization"] = token
+            conf.host = f"https://{host}:{port}"
+            conf.verify_ssl = True
+            conf.ssl_ca_cert = cert
+            api_client = ApiClient(conf)
+            self.api = CustomObjectsApi(api_client)
+        else:
+            cluster_obj = JobCluster.objects.get(pk=self._cluster)
+            host = cluster_obj.host
+            port = cluster_obj.port
+            token = cluster_obj.token
+            self._cert_fd, self._cert_name = mkstemp(text=True)
+            with open(self._cert_fd, "w") as fp:
+                fp.write(cluster_obj.cert)
+            conf = Configuration()
+            conf.api_key["authorization"] = token
+            conf.host = f"https://{host}:{port}"
+            conf.verify_ssl = True
+            conf.ssl_ca_cert = self._cert_name
+            api_client = ApiClient(conf)
+            self.api = CustomObjectsApi(api_client)
+        return self
+
+    def __exit__(self):
+        if self.api:
+            del self.api
+            self.api = None
+        if self._cert_fd:
+            os.close(self._cert_fd)
+            self._cert_fd = None
+        if self._cert_name:
+            os.remove(self._cert_name)
+            self._cert_name = None
 
 
 def _get_clusters(cache):
@@ -172,10 +206,9 @@ def get_jobs(selector, cache):
     clusters = _get_clusters(cache)
     jobs = []
     for cluster in clusters:
-        with NamedTemporaryFile(encoding="utf-8") as cert_tempfile:
-            api = _get_api(cluster, cert_tempfile)
+        with ApiContextManager(cluster) as api_cm:
             try:
-                response = api.list_namespaced_custom_object(
+                response = api_cm.api.list_namespaced_custom_object(
                     group="argoproj.io",
                     version="v1alpha1",
                     namespace="default",
@@ -194,10 +227,9 @@ def cancel_jobs(selector, cache):
     cache_uids = [item["uid"] for item in cache]
     cancelled = 0
     for cluster in clusters:
-        with NamedTemporaryFile(encoding="utf-8") as cert_tempfile:
-            api = _get_api(cluster, cert_tempfile)
+        with ApiContextManager(cluster) as api_cm:
             # Get the object by selecting on uid label.
-            response = api.list_namespaced_custom_object(
+            response = api_cm.api.list_namespaced_custom_object(
                 group="argoproj.io",
                 version="v1alpha1",
                 namespace="default",
@@ -211,7 +243,7 @@ def cancel_jobs(selector, cache):
                     uid = job["metadata"]["labels"]["uid"]
                     if uid in cache_uids:
                         name = job["metadata"]["name"]
-                        response = api.delete_namespaced_custom_object(
+                        response = api_cm.api.delete_namespaced_custom_object(
                             group="argoproj.io",
                             version="v1alpha1",
                             namespace="default",
@@ -243,49 +275,56 @@ class JobManagerMixin:
 
     def create_workflow(self, manifest):
         # Create the workflow
-        for num_retries in range(MAX_SUBMIT_RETRIES):
+        for _ in range(MAX_SUBMIT_RETRIES):
             try:
-                response = self.custom.create_namespaced_custom_object(
+                return self.custom.create_namespaced_custom_object(
                     group="argoproj.io",
                     version="v1alpha1",
                     namespace="default",
                     plural="workflows",
                     body=manifest,
                 )
-                break
             except ApiException:
                 logger.info(f"Failed to submit workflow:", exc_info=True)
                 logger.info(f"{manifest}")
                 time.sleep(SUBMIT_RETRY_BACKOFF)
-        if num_retries == (MAX_SUBMIT_RETRIES - 1):
-            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
-        return response
+        raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
 
 
 class TatorAlgorithm(JobManagerMixin):
-    """Interface to kubernetes REST API for starting algorithms. Remember to call `.close()` to
-    clean up any leftover file descriptors.
+    """Interface to kubernetes REST API for starting algorithms. This is a ContextManager and should be used as follows
+
+    ```python
+    with TatorAlgorithm(alg_obj) as submitter:
+        submitter.start_algorithm(media_ids, sections, gid, uid, token, project_id, user)
+    ```
     """
 
     def __init__(self, alg):
         """Intializes the connection. If algorithm object includes
         a remote cluster, use that. Otherwise, use this cluster.
         """
-        self._fd = None
-        self._cert = None
+        self.alg = alg
+        self._cert_fd = None
+        self._cert_name = None
         self._closed = False
-        if alg.cluster:
-            host = alg.cluster.host
-            port = alg.cluster.port
-            token = alg.cluster.token
-            self._fd, self._cert = mkstemp(text=True)
-            with open(self._fd, "w") as f:
-                f.write(alg.cluster.cert)
+        self.corev1 = None
+        self.custom = None
+        self.manifest = None
+
+    def __enter__(self):
+        if self.alg.cluster:
+            host = self.alg.cluster.host
+            port = self.alg.cluster.port
+            token = self.alg.cluster.token
+            self._cert_fd, self._cert_name = mkstemp(text=True)
+            with open(self._cert_fd, "w") as f:
+                f.write(self.alg.cluster.cert)
             conf = Configuration()
             conf.api_key["authorization"] = token
             conf.host = f"{PROTO}{host}:{port}"
             conf.verify_ssl = True
-            conf.ssl_ca_cert = self._cert
+            conf.ssl_ca_cert = self._cert_name
             api_client = ApiClient(conf)
             self.corev1 = CoreV1Api(api_client)
             self.custom = CustomObjectsApi(api_client)
@@ -295,19 +334,16 @@ class TatorAlgorithm(JobManagerMixin):
             self.custom = CustomObjectsApi()
 
         # Read in the manifest.
-        if alg.manifest:
-            self.manifest = yaml.safe_load(alg.manifest.open(mode="r"))
+        if self.alg.manifest:
+            self.manifest = yaml.safe_load(self.alg.manifest.open(mode="r"))
 
-        # Save off the algorithm.
-        self.alg = alg
-
-    def close(self):
-        if self._fd:
-            os.close(self._fd)
-            self._fd = None
-        if self._cert:
-            os.remove(self._cert)
-            self._cert = None
+    def __exit__(self):
+        if self._cert_fd:
+            os.close(self._cert_fd)
+            self._cert_fd = None
+        if self._cert_name:
+            os.remove(self._cert_name)
+            self._cert_name = None
         self._closed = True
 
     def start_algorithm(

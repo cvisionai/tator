@@ -67,32 +67,29 @@ class JobListAPI(BaseListView):
         # Create algorithm jobs
         gid = str(uuid1())
         uids = []
-        submitter = TatorAlgorithm(alg_obj)
         token, _ = Token.objects.get_or_create(user=self.request.user)
-        for batch in media_batches(media_ids, files_per_job):
-            uid = str(uuid1())
-            uids.append(uid)
-            batch_str = ",".join(batch)
-            batch_int = [int(pk) for pk in batch]
-            batch_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(batch_int)])
-            qs = Media.objects.filter(pk__in=batch_int).order_by(batch_order)
-            sections = qs.values_list("attributes__tator_user_sections", flat=True)
-            sections = ",".join(list(sections))
-            alg_response = submitter.start_algorithm(
-                media_ids=batch_str,
-                sections=sections,
-                gid=gid,
-                uid=uid,
-                token=token,
-                project=project_id,
-                user=self.request.user.pk,
-                success_email_spec=params.get("success_email_spec"),
-                failure_email_spec=params.get("failure_email_spec"),
-                extra_params=extra_params,
-            )
-
-        # Close the job submitter
-        submitter.close()
+        with TatorAlgorithm(alg_obj) as submitter:
+            for batch in media_batches(media_ids, files_per_job):
+                uid = str(uuid1())
+                uids.append(uid)
+                batch_str = ",".join(batch)
+                batch_int = [int(pk) for pk in batch]
+                batch_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(batch_int)])
+                qs = Media.objects.filter(pk__in=batch_int).order_by(batch_order)
+                sections = qs.values_list("attributes__tator_user_sections", flat=True)
+                sections = ",".join(list(sections))
+                submitter.start_algorithm(
+                    media_ids=batch_str,
+                    sections=sections,
+                    gid=gid,
+                    uid=uid,
+                    token=token,
+                    project=project_id,
+                    user=self.request.user.pk,
+                    success_email_spec=params.get("success_email_spec"),
+                    failure_email_spec=params.get("failure_email_spec"),
+                    extra_params=extra_params,
+                )
 
         # Retrieve the jobs so we have a list
         selector = f"project={project_id},gid={gid}"
