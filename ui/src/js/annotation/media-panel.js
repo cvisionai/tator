@@ -137,6 +137,13 @@ export class MediaPanel extends TatorElement {
   set browserSettings(val) {
     this._browserSettings = val;
     this._attrs.browserSettings = this._browserSettings;
+
+    let moreLessToggle = this._browserSettings.getMoreLess(this._mediaType);
+    if (moreLessToggle == "more") {
+      this._moreLessButton.textContent = "Less -";
+    } else if (moreLessToggle == "less") {
+      this._moreLessButton.textContent = "More +";
+    }
   }
 
   showEntities() {

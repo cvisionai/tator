@@ -143,10 +143,8 @@ export class AttributePanel extends TatorElement {
       this._moreLessButton.blur();
       if (this._moreLessButton.textContent.includes("More")) {
         this.showMore();
-        this._moreLessButton.textContent = "Less -";
       } else {
         this.showLess();
-        this._moreLessButton.textContent = "More +";
       }
     });
 
@@ -209,6 +207,17 @@ export class AttributePanel extends TatorElement {
    */
   set browserSettings(val) {
     this._browserSettings = val;
+
+    // It's possible that this wasn't done when the dataType was loaded.
+    // So this is perform redundantly.
+    if (this._dataType) {
+      let moreLessToggle = this._browserSettings.getMoreLess(this._dataType);
+      if (moreLessToggle == "more") {
+        this.showMore();
+      } else if (moreLessToggle == "less") {
+        this.showLess();
+      }
+    }
   }
 
   /**
@@ -918,6 +927,15 @@ export class AttributePanel extends TatorElement {
       this._hiddenAttrLabel.hidden = true;
       this._hiddenAttrsDiv.hidden = true;
     }
+
+    if (this._browserSettings) {
+      let moreLessToggle = this._browserSettings.getMoreLess(this._dataType);
+      if (moreLessToggle == "more") {
+        this.showMore();
+      } else if (moreLessToggle == "less") {
+        this.showLess();
+      }
+    }
   }
 
   getValues() {
@@ -1100,6 +1118,9 @@ export class AttributePanel extends TatorElement {
     if (!this._disableWidgets.has("Version")) {
       this._versionWidget.style.display = "block";
     }
+
+    this._moreLessButton.textContent = "Less -";
+    this._browserSettings.setMoreLess(this._dataType, "more");
   }
 
   showLess() {
@@ -1129,6 +1150,9 @@ export class AttributePanel extends TatorElement {
         }
       }
     }
+
+    this._moreLessButton.textContent = "More +";
+    this._browserSettings.setMoreLess(this._dataType, "less");
   }
 
   /**
