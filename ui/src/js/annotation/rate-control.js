@@ -14,6 +14,7 @@ export class RateControl extends TatorElement {
     summary.appendChild(div);
 
     const select = document.createElement("select");
+    select.setAttribute("title", "Rate Controls");
     select.setAttribute("class", "form-select has-border select-sm1");
     div.appendChild(select);
     this._select = select;
