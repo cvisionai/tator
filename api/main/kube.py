@@ -1,30 +1,24 @@
-import math
-import os
-import logging
+from tempfile import mkstemp
 import copy
-import json
 import datetime
+import json
+import logging
+import os
 import random
-from tempfile import mkstemp, NamedTemporaryFile
-import time
 import re
+import time
 
-from kubernetes.client import Configuration
-from kubernetes.client import ApiClient
-from kubernetes.client import CoreV1Api
-from kubernetes.client import CustomObjectsApi
+from kubernetes.client import ApiClient, Configuration, CustomObjectsApi
 from kubernetes.client.rest import ApiException
 from kubernetes.config import load_incluster_config
 import yaml
 
 from .cache import TatorCache
-from .models import Algorithm, JobCluster, MediaType
-from .version import Git
+from .models import Algorithm, JobCluster
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-NUM_WORK_PACKETS = 20
 MAX_SUBMIT_RETRIES = 10  # Max number of retries for argo workflow create.
 SUBMIT_RETRY_BACKOFF = 1  # Number of seconds to back off if workflow create fails.
 
@@ -50,17 +44,6 @@ def _rfc1123_name_converter(workflow_name, min_length):
     return out
 
 
-def _transcode_name(project, user, media_name, media_id=None):
-    """Generates name of transcode workflow."""
-    slug_name = re.sub("[^0-9a-zA-Z.]+", "-", media_name).lower()
-    if media_id:
-        out = f"transcode-proj-{project}-usr-{user}-media-{media_id}-name-{slug_name}-"
-    else:
-        out = f"transcode-proj-{project}-usr-{user}-name-{slug_name}-"
-
-    return _rfc1123_name_converter(out, 29)
-
-
 def _algo_name(algorithm_id, project, user, name):
     """Reformats an algorithm name to ensure it conforms to kube's rigid requirements."""
     slug_name = re.sub("[^0-9a-zA-Z.]+", "-", name).lower()
@@ -74,54 +57,19 @@ def _select_storage_class():
     return random.choice(storage_classes)
 
 
-def _get_codec_node_selectors(type_id):
-    """Returns node selectors for codecs if enabled"""
-    selectors = {}
-    if os.getenv("TRANSCODER_CODEC_NODE_SELECTORS") == "TRUE":
-        codecs = []
-        media_type = MediaType.objects.get(pk=type_id)
-        if isinstance(media_type.streaming_config, list):
-            for config in media_type.streaming_config:
-                codecs.append(config["vcodec"])
-        elif media_type.streaming_config is None:
-            # H264 is the default streaming codec
-            codecs.append("h264")
-        if isinstance(media_type.archive_config, list):
-            for config in media_type.archive_config:
-                codecs.append(config["encode"]["vcodec"])
-        selectors = {codec: "yes" for codec in codecs}
-    return selectors
-
-
-def bytes_to_mi_str(num_bytes):
-    num_megabytes = int(math.ceil(float(num_bytes) / 1024 / 1024))
-    return f"{num_megabytes}Mi"
-
-
-def spell_out_params(params):
-    yaml_params = [{"name": x} for x in params]
-    return yaml_params
-
-
-def get_client_image_name():
-    """Returns the location and version of the client image to use"""
-    registry = os.getenv("SYSTEM_IMAGES_REGISTRY")
-    return f"{registry}/tator_client:{Git.sha}"
-
-
 class ApiContextManager:
     """Interface to kubernetes REST API. This is a ContextManager and should be used as follows
 
-    ```python
-    with ApiContextManager(cluster) as api_cm:
-        response = api_cm.api.list_namespaced_custom_object(
-            group="argoproj.io",
-            version="v1alpha1",
-            namespace="default",
-            plural="workflows",
-            label_selector=f"{selector}",
-        )
-    ```
+        ```python
+        with ApiContextManager(cluster) as api_cm:
+            response = api_cm.api.list_namespaced_custom_object(
+                group="argoproj.io",
+                version="v1alpha1",
+                namespace="default",
+                plural="workflows",
+                label_selector=f"{selector}",
+            )
+        ```
     """
 
     def __init__(self, cluster):
@@ -261,6 +209,8 @@ class JobManagerMixin:
 
     def find_project(self, selector):
         """Finds the project associated with a given selector."""
+        if not self.custom:
+            raise RuntimeError("Must call `find_project` inside the context")
         project = None
         response = self.custom.list_namespaced_custom_object(
             group="argoproj.io",
@@ -274,6 +224,8 @@ class JobManagerMixin:
         return project
 
     def create_workflow(self, manifest):
+        if not self.custom:
+            raise RuntimeError("Must call `create_workflow` inside the context")
         # Create the workflow
         for _ in range(MAX_SUBMIT_RETRIES):
             try:
@@ -292,12 +244,13 @@ class JobManagerMixin:
 
 
 class TatorAlgorithm(JobManagerMixin):
-    """Interface to kubernetes REST API for starting algorithms. This is a ContextManager and should be used as follows
+    """Interface to kubernetes REST API for starting algorithms. This is a ContextManager and should
+    be used as follows
 
-    ```python
-    with TatorAlgorithm(alg_obj) as submitter:
-        submitter.start_algorithm(media_ids, sections, gid, uid, token, project_id, user)
-    ```
+        ```python
+        with TatorAlgorithm(alg_obj) as submitter:
+            submitter.start_algorithm(media_ids, sections, gid, uid, token, project_id, user)
+        ```
     """
 
     def __init__(self, alg):
@@ -307,10 +260,13 @@ class TatorAlgorithm(JobManagerMixin):
         self.alg = alg
         self._cert_fd = None
         self._cert_name = None
-        self._closed = False
-        self.corev1 = None
         self.custom = None
-        self.manifest = None
+
+        # Read in the manifest.
+        if self.alg.manifest:
+            self.manifest = yaml.safe_load(self.alg.manifest.open(mode="r"))
+        else:
+            self.manifest = {}
 
     def __enter__(self):
         if self.alg.cluster:
@@ -326,25 +282,21 @@ class TatorAlgorithm(JobManagerMixin):
             conf.verify_ssl = True
             conf.ssl_ca_cert = self._cert_name
             api_client = ApiClient(conf)
-            self.corev1 = CoreV1Api(api_client)
             self.custom = CustomObjectsApi(api_client)
         else:
             load_incluster_config()
-            self.corev1 = CoreV1Api()
             self.custom = CustomObjectsApi()
 
-        # Read in the manifest.
-        if self.alg.manifest:
-            self.manifest = yaml.safe_load(self.alg.manifest.open(mode="r"))
-
     def __exit__(self):
+        if self.custom:
+            del self.custom
+            self.custom = None
         if self._cert_fd:
             os.close(self._cert_fd)
             self._cert_fd = None
         if self._cert_name:
             os.remove(self._cert_name)
             self._cert_name = None
-        self._closed = True
 
     def start_algorithm(
         self,
@@ -362,7 +314,7 @@ class TatorAlgorithm(JobManagerMixin):
         """Starts an algorithm job, substituting in parameters in the
         workflow spec.
         """
-        if self._closed:
+        if not self.custom:
             raise RuntimeError("Cannot start an algorithm after closing!")
         # Make a copy of the manifest from the database.
         manifest = copy.deepcopy(self.manifest)
