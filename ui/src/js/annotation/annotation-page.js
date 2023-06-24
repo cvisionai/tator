@@ -1670,7 +1670,10 @@ export class AnnotationPage extends TatorPage {
             );
             this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
             Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
-            var track = this.getDataElement(evt.detail.trackId, evt.detail.trackType);
+            var track = this.getDataElement(
+              evt.detail.trackId,
+              evt.detail.trackType
+            );
             this._browser.selectEntity(track);
             canvas.selectTrackUsingId(
               evt.detail.trackId,
@@ -1759,7 +1762,10 @@ export class AnnotationPage extends TatorPage {
           );
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
           Utilities.showSuccessIcon(`Trimmed track ${evt.detail.trackId}`);
-          var track = this.getDataElement(evt.detail.trackId, evt.detail.trackType);
+          var track = this.getDataElement(
+            evt.detail.trackId,
+            evt.detail.trackType
+          );
           this._browser.selectEntity(track);
           canvas.selectTrackUsingId(
             evt.detail.trackId,
@@ -1789,7 +1795,10 @@ export class AnnotationPage extends TatorPage {
           Utilities.showSuccessIcon(
             `Added detection to track ${evt.detail.mainTrackId}`
           );
-          var track = this.getDataElement(evt.detail.mainTrackId, evt.detail.trackType);
+          var track = this.getDataElement(
+            evt.detail.mainTrackId,
+            evt.detail.trackType
+          );
           this._browser.selectEntity(track);
           canvas.selectTrackUsingId(
             evt.detail.mainTrackId,
@@ -1826,7 +1835,10 @@ export class AnnotationPage extends TatorPage {
           Utilities.showSuccessIcon(
             `Merged track into ${evt.detail.mainTrackId}`
           );
-          var track = this.getDataElement(evt.detail.mainTrackId, evt.detail.trackType);
+          var track = this.getDataElement(
+            evt.detail.mainTrackId,
+            evt.detail.trackType
+          );
           this._browser.selectEntity(track);
           canvas.selectTrackUsingId(
             evt.detail.mainTrackId,
