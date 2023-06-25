@@ -1157,6 +1157,8 @@ export class AnnotationPage extends TatorPage {
               // when the data is retrieved (ie freshData event)
               if (evt.detail.method == "POST") {
                 this._newEntityId = evt.detail.id;
+              } else {
+                this._newEntityId = null;
               }
 
               this._data.updateTypeLocal(
@@ -1580,7 +1582,6 @@ export class AnnotationPage extends TatorPage {
                 Utilities.showSuccessIcon(
                   `Filled gaps in track ${evt.detail.trackId}`
                 );
-                //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
               } else {
                 Utilities.warningAlert(
                   `Error filling gaps in track ${evt.detail.trackId}`,
@@ -1669,6 +1670,11 @@ export class AnnotationPage extends TatorPage {
             );
             this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
             Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
+            var track = this.getDataElement(
+              evt.detail.trackId,
+              evt.detail.trackType
+            );
+            this._browser.selectEntity(track);
             canvas.selectTrackUsingId(
               evt.detail.trackId,
               evt.detail.trackType,
@@ -1720,7 +1726,6 @@ export class AnnotationPage extends TatorPage {
                   Utilities.showSuccessIcon(
                     `Extended track ${evt.detail.trackId}`
                   );
-                  //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
                 } else {
                   Utilities.warningAlert(
                     `Error extending track ${evt.detail.trackId}`,
@@ -1757,6 +1762,11 @@ export class AnnotationPage extends TatorPage {
           );
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
           Utilities.showSuccessIcon(`Trimmed track ${evt.detail.trackId}`);
+          var track = this.getDataElement(
+            evt.detail.trackId,
+            evt.detail.trackType
+          );
+          this._browser.selectEntity(track);
           canvas.selectTrackUsingId(
             evt.detail.trackId,
             evt.detail.trackType,
@@ -1785,13 +1795,16 @@ export class AnnotationPage extends TatorPage {
           Utilities.showSuccessIcon(
             `Added detection to track ${evt.detail.mainTrackId}`
           );
-          if (evt.detail.selectTrack) {
-            canvas.selectTrackUsingId(
-              evt.detail.mainTrackId,
-              evt.detail.trackType,
-              evt.detail.frame
-            );
-          }
+          var track = this.getDataElement(
+            evt.detail.mainTrackId,
+            evt.detail.trackType
+          );
+          this._browser.selectEntity(track);
+          canvas.selectTrackUsingId(
+            evt.detail.mainTrackId,
+            evt.detail.trackType,
+            evt.detail.frame
+          );
         });
     };
 
@@ -1822,6 +1835,11 @@ export class AnnotationPage extends TatorPage {
           Utilities.showSuccessIcon(
             `Merged track into ${evt.detail.mainTrackId}`
           );
+          var track = this.getDataElement(
+            evt.detail.mainTrackId,
+            evt.detail.trackType
+          );
+          this._browser.selectEntity(track);
           canvas.selectTrackUsingId(
             evt.detail.mainTrackId,
             evt.detail.trackType,
@@ -2096,6 +2114,16 @@ export class AnnotationPage extends TatorPage {
           );
         }
       });
+  }
+
+  getDataElement(elemId, elemTypeId) {
+    var elemList = this._data._dataByType.get(elemTypeId);
+    for (const elem of elemList) {
+      if (elem.id == elemId) {
+        return elem;
+      }
+    }
+    return;
   }
 }
 

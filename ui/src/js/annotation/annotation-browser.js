@@ -200,7 +200,6 @@ export class AnnotationBrowser extends TatorElement {
     for (const typeId in this._entityPanels) {
       if (typeId == entityTypeId) {
         this._entityPanels[typeId].selectEntityOnUpdate(entityId);
-        this._expandBrowser();
       }
     }
   }
@@ -301,8 +300,6 @@ export class AnnotationBrowser extends TatorElement {
    * @param {bool} forceLocalization - only valid if forceOpen is true
    */
   selectEntity(obj, forceOpen = false, forceLocalization = false) {
-    this._expandBrowser();
-
     var typeId = obj.type;
     var objDataType = this._data._dataTypes[typeId];
     var selectObj = obj;

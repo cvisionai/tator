@@ -6,9 +6,9 @@ export class TrackIcon extends TatorElement {
     super();
     const svg = document.createElementNS(svgNamespace, "svg");
     svg.setAttribute("id", "icon-track");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("height", "1em");
-    svg.setAttribute("width", "1em");
+    svg.setAttribute("viewBox", "0 -2 26 26");
+    svg.setAttribute("height", "18px");
+    svg.setAttribute("width", "22px");
     svg.setAttribute("stroke", "currentColor");
     svg.setAttribute("stroke-width", "2");
     svg.setAttribute("stroke-linecap", "round");
