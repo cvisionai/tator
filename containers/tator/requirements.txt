@@ -25,6 +25,7 @@ okta-jwt-verifier==0.2.3
 pgvector==0.1.6
 pillow==9.5.0
 pillow-avif-plugin==1.2.2
+pillow-heif==0.11.1
 progressbar2==4.0.0
 psycopg2-binary==2.9.3
 pydot==1.4.2
