@@ -35,7 +35,7 @@ export class UploadElement extends TatorElement {
     let comps = file.name.split(".").slice(-1);
     let ext = comps.join("."); // rejoin extension
 
-    const isImage = ext.match(/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif)$/i);
+    const isImage = ext.match(/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i);
     const isVideo = ext.match(
       /(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd)$/i
     );
