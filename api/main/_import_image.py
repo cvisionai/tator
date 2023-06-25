@@ -11,8 +11,11 @@ try:
 except Exception:
     pass
 
-from PIL import Image
+from PIL import Image, ImageOps
 import pillow_avif  # add AVIF support to pillow
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 import tempfile
 from urllib.parse import urlparse
 
@@ -34,7 +37,9 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         tator_store = get_tator_store(project_obj.bucket)
     except Exception:
         return
-    alt_image = None
+    alt_images = []
+    alt_formats = []
+
     if url:
         # Download the image file and load it.
         # This is required even in reference cases because we need to get the
@@ -56,19 +61,33 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         media_obj.width, media_obj.height = image.size
         image_format = image.format
 
-        # Add a png for compatibility purposes
+        image = ImageOps.exif_transpose(image)
+
+        # Add a png for compatibility purposes in case of HEIF or AVIF import.
+        # always make AVIF, but keep HEIF originals.
         if reference_only is False:
-            if image_format == "AVIF":
+            if image_format == "HEIF":
                 alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                 image.save(alt_image, format="png")
-                alt_name = "image.png"
-                alt_format = "png"
+                alt_images.append(alt_image)
+                alt_formats.append("png")
+
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
+                image.save(alt_image, format="avif")
+                alt_images.append(alt_image)
+                alt_formats.append("avif")
+
+            elif image_format == "AVIF":
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                image.save(alt_image, format="png")
+                alt_images.append(alt_image)
+                alt_formats.append("png")
             else:
                 # convert image upload to AVIF
                 alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
                 image.save(alt_image, format="avif")
-                alt_name = "image.avif"
-                alt_format = "avif"
+                alt_images.append(alt_image)
+                alt_formats.append("avif")
 
         # Download or create the thumbnail.
         if thumbnail_url is None:
@@ -121,7 +140,8 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         os.remove(temp_image.name)
         Resource.add_resource(image_key, media_obj)
 
-    if alt_image:
+    for alt_image, alt_format in zip(alt_images, alt_formats):
+        alt_name = f"image.{alt_format}"
         if media_obj.media_files is None:
             media_obj.media_files = {}
         # Upload image.
