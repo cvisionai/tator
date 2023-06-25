@@ -11,7 +11,7 @@ try:
 except Exception:
     pass
 
-from PIL import Image
+from PIL import Image, ImageOps
 import pillow_avif  # add AVIF support to pillow
 from pillow_heif import register_heif_opener
 
@@ -60,6 +60,8 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         image = Image.open(temp_image.name)
         media_obj.width, media_obj.height = image.size
         image_format = image.format
+
+        image = ImageOps.exif_transpose(image)
 
         # Add a png for compatibility purposes in case of HEIF or AVIF import.
         # always make AVIF, but keep HEIF originals.
