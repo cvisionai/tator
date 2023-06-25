@@ -126,7 +126,7 @@ check-migration:
 	scripts/check-migration.sh $(pwd)
 
 .env:
-	cp example-env .env
+	cp -u example-env .env
 
 .PHONY: tator
 tator: .env api/main/version.py clean_schema
