@@ -22,6 +22,7 @@ Install [Docker](https://www.docker.com/), then:
 ```bash
 git clone --recurse-submodules https://github.com/cvisionai/tator
 cd tator
+cp example-env .env
 make tator
 make superuser
 ```
