@@ -321,7 +321,9 @@ export class EntityTimeline extends BaseTimeline {
             // #TODO Use min/max values defined by the attribute type if available
             if (graphData.length > 0) {
               for (let idx = 0; idx < graphData.length; idx++) {
-                graphData[idx].value = (graphData[idx].actualValue - minValue) / (maxValue - minValue);
+                graphData[idx].value =
+                  (graphData[idx].actualValue - minValue) /
+                  (maxValue - minValue);
               }
 
               // Add a point at the last frame to draw the state all the way to the end
@@ -568,14 +570,14 @@ export class EntityTimeline extends BaseTimeline {
         entry.graphData[idx].mainFrame = entry.graphData[idx].frame;
         if (idx == 0 || idx == entry.graphData.length - 1) {
           continue;
-        }
-        else {
+        } else {
           let currPoint = entry.graphData[idx];
           let nextPoint = entry.graphData[idx + 1];
           if (currPoint.actualValue == true && nextPoint.actualValue == false) {
-            let frameDelta = nextPoint.frame - currPoint.frame
-            if (frameDelta <  minFrameDeltaForPixels) {
-              entry.graphData[idx].mainFrame = nextPoint.frame - minFrameDeltaForPixels;
+            let frameDelta = nextPoint.frame - currPoint.frame;
+            if (frameDelta < minFrameDeltaForPixels) {
+              entry.graphData[idx].mainFrame =
+                nextPoint.frame - minFrameDeltaForPixels;
             }
           }
         }
@@ -730,7 +732,6 @@ export class EntityTimeline extends BaseTimeline {
       .attr("opacity", "0.0");
 
     if (this._selectedStateGraphData) {
-
       // We want to apply a minimum pixel width so that it's always displayed.
       // Loop through the dataset. And if the distance between a true duration is
       // not sufficient, artifically increase the size of it so it's visible.
@@ -739,14 +740,17 @@ export class EntityTimeline extends BaseTimeline {
           entry.graphData[idx].mainFrame = entry.graphData[idx].frame;
           if (idx == 0 || idx == entry.graphData.length - 1) {
             continue;
-          }
-          else {
+          } else {
             let currPoint = entry.graphData[idx];
             let nextPoint = entry.graphData[idx + 1];
-            if (currPoint.actualValue == true && nextPoint.actualValue == false) {
-              let frameDelta = nextPoint.frame - currPoint.frame
-              if (frameDelta <  minFrameDeltaForPixels) {
-                entry.graphData[idx].mainFrame = nextPoint.frame - minFrameDeltaForPixels;
+            if (
+              currPoint.actualValue == true &&
+              nextPoint.actualValue == false
+            ) {
+              let frameDelta = nextPoint.frame - currPoint.frame;
+              if (frameDelta < minFrameDeltaForPixels) {
+                entry.graphData[idx].mainFrame =
+                  nextPoint.frame - minFrameDeltaForPixels;
               }
             }
           }
@@ -1129,13 +1133,12 @@ export class EntityTimeline extends BaseTimeline {
         currPoint.focusActualValue = currPoint.actualValue;
         if (idx == 0 || idx == entry.graphData.length - 1) {
           continue;
-        }
-        else {
+        } else {
           let nextPoint = entry.graphData[idx + 1];
           currPoint.focusActualValue = `${currPoint.actualValue} (${currPoint.frame} - ${nextPoint.frame})`;
           if (currPoint.actualValue == true && nextPoint.actualValue == false) {
-            let frameDelta = nextPoint.frame - currPoint.frame
-            if (frameDelta <  minFrameDeltaForPixels) {
+            let frameDelta = nextPoint.frame - currPoint.frame;
+            if (frameDelta < minFrameDeltaForPixels) {
               currPoint.focusFrame = nextPoint.frame - minFrameDeltaForPixels;
             }
           }
@@ -1200,7 +1203,6 @@ export class EntityTimeline extends BaseTimeline {
       .attr("xlink:href", (d) => d.pathId.href);
 
     if (this._selectedStateGraphData) {
-
       // We want to apply a minimum pixel width so that it's always displayed.
       // Loop through the dataset. And if the distance between a true duration is
       // not sufficient, artifically increase the size of it so it's visible.
@@ -1211,13 +1213,15 @@ export class EntityTimeline extends BaseTimeline {
           currPoint.focusActualValue = currPoint.actualValue;
           if (idx == 0 || idx == entry.graphData.length - 1) {
             continue;
-          }
-          else {
+          } else {
             let nextPoint = entry.graphData[idx + 1];
-            if (currPoint.actualValue == true && nextPoint.actualValue == false) {
+            if (
+              currPoint.actualValue == true &&
+              nextPoint.actualValue == false
+            ) {
               currPoint.focusActualValue = `${currPoint.actualValue} (${currPoint.frame} - ${nextPoint.frame})`;
-              let frameDelta = nextPoint.frame - currPoint.frame
-              if (frameDelta <  minFrameDeltaForPixels) {
+              let frameDelta = nextPoint.frame - currPoint.frame;
+              if (frameDelta < minFrameDeltaForPixels) {
                 currPoint.mainFrame = nextPoint.frame - minFrameDeltaForPixels;
               }
             }
