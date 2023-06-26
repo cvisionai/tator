@@ -1028,7 +1028,12 @@ export class AttributePanel extends TatorElement {
         }
       }
       this._slider.max = this._frames.length - 1;
-      this._frame_max = Math.max(...this._frames);
+      this._frame_max = 0;
+      for (const frame of this._frames) {
+        if (frame > this._frame_max) {
+          this._frame_max = frame;
+        }
+      }
     }
 
     // Set the current value of the slider based on the provided frame
