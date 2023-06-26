@@ -126,7 +126,7 @@ export class EntityTimeline extends BaseTimeline {
           }
 
           this._selectedStateGraphData.push({
-            meta: stateData.type,
+            type: stateData.type,
             name: stateData.name,
             color: this._timelineSettings.getSelectedColor(),
             graphData: graphData,
@@ -263,7 +263,7 @@ export class EntityTimeline extends BaseTimeline {
               }
 
               this._stateData.push({
-                meta: dataType.id,
+                type: dataType.id,
                 name: attrType.name,
                 graphData: graphData,
                 color: color,
@@ -294,11 +294,15 @@ export class EntityTimeline extends BaseTimeline {
             // Normalize the data because the graph domain is from 0 to 1.
             let graphData = [];
             let maxValue = 0.0;
+            let minValue = Number.MAX_SAFE_INTEGER;
             for (let data of allData) {
               let value = data.attributes[attrType.name];
               if (!isNaN(value)) {
                 if (value > maxValue) {
                   maxValue = value;
+                }
+                if (value < minValue) {
+                  minValue = value;
                 }
                 graphData.push({
                   frame: this._timeStore.getGlobalFrame(
@@ -317,7 +321,7 @@ export class EntityTimeline extends BaseTimeline {
             // #TODO Use min/max values defined by the attribute type if available
             if (graphData.length > 0) {
               for (let idx = 0; idx < graphData.length; idx++) {
-                graphData[idx].value = graphData[idx].actualValue / maxValue;
+                graphData[idx].value = (graphData[idx].actualValue - minValue) / (maxValue - minValue);
               }
 
               // Add a point at the last frame to draw the state all the way to the end
@@ -330,7 +334,7 @@ export class EntityTimeline extends BaseTimeline {
 
               this._numericalData.push({
                 color: color,
-                meta: dataType.id,
+                type: dataType.id,
                 name: `${attrType.name}`,
                 graphData: graphData,
               });
@@ -441,7 +445,7 @@ export class EntityTimeline extends BaseTimeline {
         }
 
         this._stateData.push({
-          meta: attrTypeInfo.dataType.id,
+          type: attrTypeInfo.dataType.id,
           name: attrTypeInfo.name,
           graphData: graphData,
           color: attrTypeInfo.color,
@@ -467,11 +471,11 @@ export class EntityTimeline extends BaseTimeline {
    * Used in making unique identifiers for the various d3 graphing elements
    * @returns {object} id, href properties
    */
-  _d3UID(meta, name, category) {
-    if (meta == null) {
+  _d3UID(type, name, category) {
+    if (type == null) {
       var id = uuidv1();
     } else {
-      var id = `tator_entityTimeline_${meta}_${name.replace(
+      var id = `tator_entityTimeline_${type}_${name.replace(
         " ",
         "-"
       )}_${category}`;
@@ -519,6 +523,10 @@ export class EntityTimeline extends BaseTimeline {
       .domain([this._minFrame, this._maxFrame])
       .range([0, this._mainWidth]);
 
+    const minPixels = 6;
+    const pixelsPerFrame = this._mainWidth / (this._maxFrame - this._minFrame);
+    const minFrameDeltaForPixels = Math.round(minPixels / pixelsPerFrame);
+
     var mainY = d3.scaleLinear().domain([0, 1.0]).range([0, -this._mainStep]);
 
     // #TODO This is clunky and has no smooth transition, but it works for our application
@@ -526,7 +534,9 @@ export class EntityTimeline extends BaseTimeline {
     //       using the traditional d3 enter/update/exit paradigm.
     this._mainSvg.selectAll("*").remove();
 
+    //
     // Localizations are represented as triangles along the graph
+    //
     const gLocalizations = this._mainSvg
       .append("g")
       .selectAll("g")
@@ -546,11 +556,36 @@ export class EntityTimeline extends BaseTimeline {
       .attr("fill", (d) => d.color)
       .attr("d", (d) => triangle(d.species));
 
+    //
     // States are represented as area graphs
+    //
+
+    // We want to apply a minimum pixel width so that it's always displayed.
+    // Loop through the dataset. And if the distance between a true duration is
+    // not sufficient, artifically increase the size of it so it's visible.
+    for (var entry of this._stateData) {
+      for (let idx = 0; idx < entry.graphData.length; idx++) {
+        entry.graphData[idx].mainFrame = entry.graphData[idx].frame;
+        if (idx == 0 || idx == entry.graphData.length - 1) {
+          continue;
+        }
+        else {
+          let currPoint = entry.graphData[idx];
+          let nextPoint = entry.graphData[idx + 1];
+          if (currPoint.actualValue == true && nextPoint.actualValue == false) {
+            let frameDelta = nextPoint.frame - currPoint.frame
+            if (frameDelta <  minFrameDeltaForPixels) {
+              entry.graphData[idx].mainFrame = nextPoint.frame - minFrameDeltaForPixels;
+            }
+          }
+        }
+      }
+    }
+
     var area = d3
       .area()
       .curve(d3.curveStepAfter)
-      .x((d) => this._mainX(d.frame))
+      .x((d) => this._mainX(d.mainFrame))
       .y0(0)
       .y1((d) => mainY(d.value));
 
@@ -695,6 +730,29 @@ export class EntityTimeline extends BaseTimeline {
       .attr("opacity", "0.0");
 
     if (this._selectedStateGraphData) {
+
+      // We want to apply a minimum pixel width so that it's always displayed.
+      // Loop through the dataset. And if the distance between a true duration is
+      // not sufficient, artifically increase the size of it so it's visible.
+      for (var entry of this._selectedStateGraphData) {
+        for (let idx = 0; idx < entry.graphData.length; idx++) {
+          entry.graphData[idx].mainFrame = entry.graphData[idx].frame;
+          if (idx == 0 || idx == entry.graphData.length - 1) {
+            continue;
+          }
+          else {
+            let currPoint = entry.graphData[idx];
+            let nextPoint = entry.graphData[idx + 1];
+            if (currPoint.actualValue == true && nextPoint.actualValue == false) {
+              let frameDelta = nextPoint.frame - currPoint.frame
+              if (frameDelta <  minFrameDeltaForPixels) {
+                entry.graphData[idx].mainFrame = nextPoint.frame - minFrameDeltaForPixels;
+              }
+            }
+          }
+        }
+      }
+
       var selectedStateDataset = this._selectedStateGraphData.map((d) =>
         Object.assign(
           {
@@ -908,20 +966,25 @@ export class EntityTimeline extends BaseTimeline {
     this._focusSvg.attr("viewBox", `0 0 ${focusWidth} ${focusHeight}`);
 
     // Define the axes
-    var minFrame = this._mainX.invert(selection[0]);
+    var minFrame = Math.round(this._mainX.invert(selection[0]));
+    var maxFrame = Math.round(this._mainX.invert(selection[1]));
     var focusX = d3
       .scaleLinear()
-      .domain([minFrame, this._mainX.invert(selection[1])])
+      .domain([minFrame, maxFrame])
       .range([0, focusWidth]);
 
     var focusY = d3.scaleLinear().domain([0, 1.0]).range([0, -focusStep]);
+
+    const minPixels = 6;
+    const pixelsPerFrame = focusWidth / (maxFrame - minFrame);
+    const minFrameDeltaForPixels = Math.round(minPixels / pixelsPerFrame);
 
     this.dispatchEvent(
       new CustomEvent("zoomedTimeline", {
         composed: true,
         detail: {
-          minFrame: Math.round(minFrame),
-          maxFrame: Math.round(this._mainX.invert(selection[1])),
+          minFrame: minFrame,
+          maxFrame: maxFrame,
         },
       })
     );
@@ -1008,7 +1071,7 @@ export class EntityTimeline extends BaseTimeline {
     var focusArea = d3
       .area()
       .curve(d3.curveStepAfter)
-      .x((d) => focusX(d.frame))
+      .x((d) => focusX(d.focusFrame))
       .y0(0)
       .y1((d) => focusY(d.value));
 
@@ -1055,6 +1118,30 @@ export class EntityTimeline extends BaseTimeline {
       .attr("fill", "#fafafa")
       .style("font-size", "12px")
       .text((d) => d.name);
+
+    // We want to apply a minimum pixel width so that it's always displayed.
+    // Loop through the dataset. And if the distance between a true duration is
+    // not sufficient, artifically increase the size of it so it's visible.
+    for (var entry of this._stateData) {
+      for (let idx = 0; idx < entry.graphData.length; idx++) {
+        let currPoint = entry.graphData[idx];
+        currPoint.focusFrame = currPoint.frame;
+        currPoint.focusActualValue = currPoint.actualValue;
+        if (idx == 0 || idx == entry.graphData.length - 1) {
+          continue;
+        }
+        else {
+          let nextPoint = entry.graphData[idx + 1];
+          currPoint.focusActualValue = `${currPoint.actualValue} (${currPoint.frame} - ${nextPoint.frame})`;
+          if (currPoint.actualValue == true && nextPoint.actualValue == false) {
+            let frameDelta = nextPoint.frame - currPoint.frame
+            if (frameDelta <  minFrameDeltaForPixels) {
+              currPoint.focusFrame = nextPoint.frame - minFrameDeltaForPixels;
+            }
+          }
+        }
+      }
+    }
 
     var focusStateDataset = this._stateData.map((d) =>
       Object.assign(
@@ -1113,6 +1200,31 @@ export class EntityTimeline extends BaseTimeline {
       .attr("xlink:href", (d) => d.pathId.href);
 
     if (this._selectedStateGraphData) {
+
+      // We want to apply a minimum pixel width so that it's always displayed.
+      // Loop through the dataset. And if the distance between a true duration is
+      // not sufficient, artifically increase the size of it so it's visible.
+      for (var entry of this._selectedStateGraphData) {
+        for (let idx = 0; idx < entry.graphData.length; idx++) {
+          let currPoint = entry.graphData[idx];
+          currPoint.focusFrame = currPoint.frame;
+          currPoint.focusActualValue = currPoint.actualValue;
+          if (idx == 0 || idx == entry.graphData.length - 1) {
+            continue;
+          }
+          else {
+            let nextPoint = entry.graphData[idx + 1];
+            if (currPoint.actualValue == true && nextPoint.actualValue == false) {
+              currPoint.focusActualValue = `${currPoint.actualValue} (${currPoint.frame} - ${nextPoint.frame})`;
+              let frameDelta = nextPoint.frame - currPoint.frame
+              if (frameDelta <  minFrameDeltaForPixels) {
+                currPoint.mainFrame = nextPoint.frame - minFrameDeltaForPixels;
+              }
+            }
+          }
+        }
+      }
+
       var selectedStateDataset = this._selectedStateGraphData.map((d) =>
         Object.assign(
           {
@@ -1404,9 +1516,9 @@ export class EntityTimeline extends BaseTimeline {
       focusStateValues.attr("opacity", "1.0");
       focusStateValues.text(function (d) {
         for (idx = 0; idx < d.graphData.length; idx++) {
-          if (d.graphData[idx].frame > currentFrame) {
+          if (d.graphData[idx].focusFrame > currentFrame) {
             if (idx > 0) {
-              return String(d.graphData[idx - 1].actualValue);
+              return String(d.graphData[idx - 1].focusActualValue);
             }
           }
         }
