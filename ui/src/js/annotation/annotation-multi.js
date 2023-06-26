@@ -198,7 +198,7 @@ export class AnnotationMulti extends TatorElement {
       "Entity Timeline Info",
       "entity-timeline-expand-btn"
     );
-    btn._button.setAttribute("title", "Entity Timeline")
+    btn._button.setAttribute("title", "Entity Timeline");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._timelineMore = btn;

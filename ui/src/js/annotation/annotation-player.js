@@ -104,7 +104,7 @@ export class AnnotationPlayer extends TatorElement {
       "Pan Timeline Right",
       "pan-timeline-right-btn"
     );
-    
+
     btn._button.setAttribute("title", "Pan Right");
     this._timelineZoomMenu.appendChild(btn);
     this._timelineZoomButtons.panRight = btn;
@@ -201,7 +201,7 @@ export class AnnotationPlayer extends TatorElement {
       "Entity Timeline Info",
       "entity-timeline-expand-btn"
     );
-    btn._button.setAttribute("title", "Entity Timeline")
+    btn._button.setAttribute("title", "Entity Timeline");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._timelineMore = btn;
