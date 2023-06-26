@@ -164,7 +164,7 @@ export class FilterInterface extends TatorElement {
   /**
    * Sets the information displayed in the filter bar based on the
    */
-  setFilterBar(sectionBasedOnly) {
+  setFilterBar() {
     // Remove all the children (if there are any)
     while (this._filterStringDiv.firstChild) {
       this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
@@ -172,9 +172,6 @@ export class FilterInterface extends TatorElement {
 
     if (this._section) {
       this._addBreadcrumbsForSearches(this._section);
-      if (sectionBasedOnly) {
-        return;
-      }
     }
 
     // Loop through all the conditions and create the string
@@ -231,7 +228,7 @@ export class FilterInterface extends TatorElement {
 
   set section(section) {
     this._section = section;
-    this.setFilterBar(true);
+    this.setFilterBar();
   }
 
   _addBreadcrumbsForSearches(section) {
