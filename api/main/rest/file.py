@@ -79,9 +79,6 @@ class FileListAPI(BaseListView):
             logging.error(log_msg)
             raise ValueError(log_msg)
 
-        # Get the optional fields and to null if need be
-        description = params.get(fields.description, None)
-
         # Find unique foreign keys.
         meta_ids = [entity_type]
 
@@ -92,9 +89,7 @@ class FileListAPI(BaseListView):
         metas = {obj.id: obj for obj in meta_qs.iterator()}
 
         # Get required fields for attributes.
-        attributes = params[fields.attributes]
-        if attributes is None:
-            attributes = []
+        attributes = params.get(fields.attributes, {})
         required_fields = {id_: computeRequiredFields(metas[id_]) for id_ in meta_ids}
         attrs = check_required_fields(
             required_fields[params[fields.type]][0],
