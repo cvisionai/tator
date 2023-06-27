@@ -422,7 +422,7 @@ format:
 	cd ui && npx prettier --write src
 
 .PHONY: check-format
-check-format:
+check-format: api/main/version.py
 	black --check .
 	cd ui && npx prettier --check src
 

@@ -115,7 +115,7 @@ jobs:
           npm install prettier@"2.8.8"
     - run:
         name: Check code formatting
-        command: make api/main/version.py && make check-format
+        command: make check-format
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
