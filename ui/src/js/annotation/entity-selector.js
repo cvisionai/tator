@@ -128,6 +128,8 @@ export class EntitySelector extends TatorElement {
     redraw.style.marginLeft = "8px";
     redraw.style.display = "none";
     controls.appendChild(redraw);
+    this._redraw = redraw;
+    this._redrawEnabled = true;
 
     const more = document.createElement("entity-more");
     controls.appendChild(more);
@@ -212,7 +214,9 @@ export class EntitySelector extends TatorElement {
       if (capture.style.display == "none") {
         if (hasPermission(this._permission, "Can Edit")) {
           this._del.style.display = "block";
-          redraw.style.display = "block";
+          if (this._redrawEnabled) {
+            redraw.style.display = "block";
+          }
         } else {
           this._del.style.display = "none";
           redraw.style.display = "none";
@@ -294,6 +298,10 @@ export class EntitySelector extends TatorElement {
 
   set globalDataBuffer(val) {
     this._globalData = val;
+  }
+
+  set redrawEnabled(val) {
+    this._redrawEnabled = val;
   }
 
   update(data) {

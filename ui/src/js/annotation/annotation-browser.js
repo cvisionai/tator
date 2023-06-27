@@ -80,6 +80,24 @@ export class AnnotationBrowser extends TatorElement {
       );
     });
 
+    document.addEventListener("keydown", (evt) => {
+      if (this._shortcutsDisabled) {
+        return;
+      }
+
+      if (document.body.classList.contains("shortcuts-disabled")) {
+        return;
+      }
+
+      if (evt.key == "e") {
+        for (const typeName in this._entityPanels) {
+          if (this._entityPanels[typeName].style.display == "block") {
+            this._entityPanels[typeName].redraw();
+          }
+        }
+      }
+    });
+
     this._expandBrowser();
   }
 
@@ -101,7 +119,7 @@ export class AnnotationBrowser extends TatorElement {
 
   _collapseBrowser() {
     this._panels.style.display = "none";
-    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="20" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  
+    this._minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="20" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="15 18 9 12 15 6"></polyline>
       </svg><div class="text-dark-gray">Show Panel</div>`;
     this._headerLabel.style.display = "none";
