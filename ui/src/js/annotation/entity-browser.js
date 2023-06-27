@@ -141,6 +141,11 @@ export class EntityBrowser extends TatorElement {
     } else {
       this._group.setValue("Off");
     }
+
+    this._redrawEnabled = false;
+    if (this._dataType.isLocalization) {
+      this._redrawEnabled = true;
+    }
   }
 
   set undoBuffer(val) {
@@ -292,6 +297,10 @@ export class EntityBrowser extends TatorElement {
         li.appendChild(selector);
         this._selectors[group] = selector;
 
+        if (!this._redrawEnabled) {
+          selector.redrawEnabled = false;
+        }
+
         if (!this._dataType.isTLState) {
           const attributes = document.createElement("attribute-panel");
           attributes.showHeader();
@@ -428,6 +437,16 @@ export class EntityBrowser extends TatorElement {
     if (this._dataType.isTrack) {
       for (let groupId in this._attributes) {
         this._attributes[groupId].setFrame(frame);
+      }
+    }
+  }
+
+  redraw() {
+    if (this._redrawEnabled) {
+      for (const typeName in this._selectors) {
+        if (this._selectors[typeName]._div.classList.contains("is-open")) {
+          this._selectors[typeName]._redraw.click();
+        }
       }
     }
   }
