@@ -10,6 +10,7 @@ export class SaveDialog extends TatorElement {
       "annotation__panel--popup annotation__panel rounded-2 px-2"
     );
     this._outerDiv.style.zIndex = 3;
+    this._outerDiv.style.marginBottom = "0px";
     this._shadow.appendChild(this._outerDiv);
 
     this._div = document.createElement("div");
@@ -330,19 +331,10 @@ export class SaveDialog extends TatorElement {
     const dragDefined = typeof this._dragInfo !== "undefined";
     const canvasDefined = typeof this._canvasPosition !== "undefined";
     if (dragDefined && canvasDefined) {
-      const boxTop = Math.min(this._dragInfo.start.y, this._dragInfo.end.y) - 2;
       const boxRight = Math.max(this._dragInfo.start.x, this._dragInfo.end.x);
-      let thisTop = boxTop + this._canvasPosition.top;
+      let thisTop = this._canvasPosition.top;
       let thisLeft = boxRight + 20 + this._canvasPosition.left;
-      if (thisLeft + this.clientWidth > window.innerWidth) {
-        const boxLeft = Math.min(this._dragInfo.start.x, this._dragInfo.end.x);
-        thisLeft = boxLeft - 20 - this.clientWidth + this._canvasPosition.left;
-      }
-      if (thisTop + this.clientHeight > window.innerHeight) {
-        const boxBottom =
-          Math.max(this._dragInfo.start.y, this._dragInfo.end.y) + 2;
-        thisTop = boxBottom - this.clientHeight + this._canvasPosition.top + 16;
-      }
+
       // Prevent being drawn off screen
       thisTop = Math.max(thisTop, 50);
       thisLeft = Math.max(thisLeft, 50);
