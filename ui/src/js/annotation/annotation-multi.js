@@ -8,7 +8,7 @@ import {
   frameToTime,
   PlayInteraction,
 } from "./annotation-common.js";
-import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { TimeStore } from "./time-store.js";
 
 import { VideoCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
@@ -1395,7 +1395,7 @@ export class AnnotationMulti extends TatorElement {
       }
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
-      video_resp.push(fetchRetry(`/rest/Media/${vid_id}?presigned=28800`));
+      video_resp.push(fetchCredentials(`/rest/Media/${vid_id}?presigned=28800`, {}, true));
       this._handleNotReadyTimeout.push(null);
       this._timeoutIndex.push(0);
 
