@@ -372,6 +372,14 @@ export class AnnotationBrowser extends TatorElement {
       console.warn("No entity browser for object.");
     }
   }
+
+  deleteSelectedEntity() {
+    for (const typeName in this._entityPanels) {
+      if (this._entityPanels[typeName].style.display == "block") {
+        this._entityPanels[typeName].deleteEntity();
+      }
+    }
+  }
 }
 
 customElements.define("annotation-browser", AnnotationBrowser);

@@ -1152,6 +1152,10 @@ export class AnnotationPage extends TatorPage {
               this._updateURL();
             });
 
+            canvas.addEventListener("delete", () => {
+              this._browser.deleteSelectedEntity();
+            });
+
             this._undo.addEventListener("update", (evt) => {
               // Force selecting this new entity in the browser if a new object was created
               // when the data is retrieved (ie freshData event)
