@@ -1,4 +1,4 @@
-import { TatorElement, svgNamespace } from "../components/tator-element.js";
+import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { MultiRenderer } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
@@ -198,7 +198,7 @@ export class AnnotationMulti extends TatorElement {
       "Entity Timeline Info",
       "entity-timeline-expand-btn"
     );
-    btn._button.setAttribute("title", "Entity Timeline");
+    btn._button.setAttribute("title", "Toggle Entity Timeline Controls");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._timelineMore = btn;
