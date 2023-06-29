@@ -1395,7 +1395,9 @@ export class AnnotationMulti extends TatorElement {
       }
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
-      video_resp.push(fetchCredentials(`/rest/Media/${vid_id}?presigned=28800`, {}, true));
+      video_resp.push(
+        fetchCredentials(`/rest/Media/${vid_id}?presigned=28800`, {}, true)
+      );
       this._handleNotReadyTimeout.push(null);
       this._timeoutIndex.push(0);
 
