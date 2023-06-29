@@ -10,6 +10,7 @@ export class VolumeControl extends TatorElement {
       "class",
       "d-flex btn-clear px-2 h2 text-gray hover-text-white"
     );
+    button.setAttribute("title", "Volume Controls");
     button.style.position = "relative";
     button.style.cursor = "pointer";
     this._shadow.appendChild(button);
