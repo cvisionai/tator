@@ -1,6 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class EntitySelector extends TatorElement {
   constructor() {
@@ -180,7 +181,12 @@ export class EntitySelector extends TatorElement {
       const index = parseInt(this._current.textContent) - 1;
       if (this._dataType.isLocalization) {
         endpoint = "Localization";
-        this._canvas.deleteLocalization(this._data[index]);
+
+        // First verify if the localization is part of any states. We will need to remove
+        // the localization.
+        this.removeLocFromRelatedStates(this._data[index]).then(() => {
+          this._canvas.deleteLocalization(this._data[index]);
+        });
       } else {
         endpoint = "State";
         let had_parent = this._data[index].parent != null;
@@ -243,6 +249,41 @@ export class EntitySelector extends TatorElement {
       this._current.textContent = String(Number(this._slider.value) + 1);
       this._emitSelection(true, true, this._autoGoToEntityFrame);
     });
+  }
+
+  async removeLocFromRelatedStates(loc) {
+    // Find if there are any related states/tracks associated with this localization
+    var response = await fetchCredentials(
+      `/rest/States/${loc.project}?related_id=${loc.id}`
+    );
+    var relatedList = await response.json();
+    var relatedStates = [];
+    for (const entry of relatedList) {
+      if (entry.hasOwnProperty("localizations")) {
+        for (const trackLocId of entry.localizations) {
+          if (loc.id == trackLocId) {
+            relatedStates.push(entry);
+            break;
+          }
+        }
+      }
+    }
+
+    // Remove the id from the states
+    for (const state of relatedStates) {
+      var response = await fetchCredentials(`/rest/State/${state.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          localization_ids_remove: [loc.id],
+        }),
+      });
+      var msg = await response.json();
+      console.log(`removeLocFromRelatedStates: ${msg}`);
+    }
+
+    if (len(relatedStates) > 0) {
+      this._canvas._data();
+    }
   }
 
   static get observedAttributes() {
