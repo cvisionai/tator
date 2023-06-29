@@ -35,6 +35,7 @@ export class KeyboardShortcuts extends TatorElement {
       ["Line Annotation", "L", null],
       ["Point Annotation", "P", null],
       ["Redraw/Edit Annotation", "E", null],
+      ["Delete Annotation", "DEL", null],
       ["Undo", "Z", "\u{2318}"],
       ["Redo", "Y", "\u{2318}"],
       ["Large Video Player", "M", "\u{2318}"],
