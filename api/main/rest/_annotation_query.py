@@ -30,7 +30,16 @@ ANNOTATION_LOOKUP = {"localization": Localization, "state": State}
 
 ANNOTATION_TYPE_LOOKUP = {"localization": LocalizationType, "state": StateType}
 
+def _do_object_search(qs, params):
+    if params.get("object_search"):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
 
+    # Used by GET queries
+    if params.get("encoded_search"):
+        search_obj = json.loads(base64.b64decode(params.get("encoded_search").encode()).decode())
+        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+
+    return qs
 def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     """Constructs a psql queryset."""
 
@@ -190,6 +199,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 query = query | Q(media__in=r)
             qs = qs.filter(query).distinct()
 
+    qs = _do_object_search(qs, params)
     if params.get("encoded_related_search"):
         search_obj = json.loads(
             base64.b64decode(params.get("encoded_related_search").encode()).decode()
@@ -210,13 +220,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         else:
             qs = qs.filter(pk=-1)
 
-    if params.get("object_search"):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
-
-    # Used by GET queries
-    if params.get("encoded_search"):
-        search_obj = json.loads(base64.b64decode(params.get("encoded_search").encode()).decode())
-        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+    qs = _do_object_search(qs, params)
     if params.get("related_id"):
         if annotation_type == "localization":
             state_qs = State.objects.filter(pk__in=params.get("related_id"))
