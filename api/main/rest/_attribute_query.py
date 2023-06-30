@@ -382,7 +382,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         "enum": str,
         "string": str,
         "datetime": str,
-        "geopos": None,
+        "geopos": lambda x: x,
         "float_array": None,
     }
     attributeCast = {}
