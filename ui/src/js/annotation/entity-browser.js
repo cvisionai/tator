@@ -446,7 +446,17 @@ export class EntityBrowser extends TatorElement {
       for (const typeName in this._selectors) {
         if (this._selectors[typeName]._div.classList.contains("is-open")) {
           this._selectors[typeName]._redraw.click();
+          break;
         }
+      }
+    }
+  }
+
+  deleteEntity() {
+    for (const typeName in this._selectors) {
+      if (this._selectors[typeName]._div.classList.contains("is-open")) {
+        this._selectors[typeName]._del.click();
+        break;
       }
     }
   }
