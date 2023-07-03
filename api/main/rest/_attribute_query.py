@@ -225,7 +225,7 @@ def _convert_attribute_filter_value(pair, annotation_type, operation):
     kv = pair.split(KV_SEPARATOR, 1)
     key, value = kv
     info = _get_info_for_attribute(annotation_type, key)
-    if info is None:
+    if "dtype" not in info:
         return None, None, None
     dtype = info["dtype"]
 
