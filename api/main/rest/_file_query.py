@@ -1,4 +1,3 @@
-from collections import defaultdict
 import logging
 
 import json
@@ -9,17 +8,14 @@ import uuid
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 
-from ..search import TatorSearch
-from ..models import File
-from ..models import FileType
+from ..models import File, FileType
 
-from ._attribute_query import supplied_name_to_field
-from ._attribute_query import get_attribute_filter_ops
-from ._attribute_query import get_attribute_psql_queryset
-from ._attribute_query import get_attribute_psql_queryset_from_query_obj
-
-from ._attributes import KV_SEPARATOR
-from ._float_array_query import get_float_array_query
+from ._attribute_query import (
+    get_attribute_filter_ops,
+    get_attribute_psql_queryset,
+    get_attribute_psql_queryset_from_query_obj,
+    supplied_name_to_field,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +25,6 @@ def _get_file_psql_queryset(project, filter_ops, params):
     # Get query parameters.
     file_id = params.get("file_id")
     file_id_put = params.get("ids", None)  # PUT request only
-    project = params["project"]
     filter_type = params.get("type")
     name = params.get("name")
     start = params.get("start")
@@ -51,13 +46,13 @@ def _get_file_psql_queryset(project, filter_ops, params):
 
     if filter_type is not None:
         qs = get_attribute_psql_queryset(
-            project, FileType.objects.get(pk=filter_type), qs, params, filter_ops
+            FileType.objects.get(pk=filter_type), qs, params, filter_ops
         )
         qs = qs.filter(type=filter_type)
     else:
         queries = []
         for entity_type in FileType.objects.filter(project=project):
-            sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
+            sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if sub_qs:
                 queries.append(sub_qs.filter(type=entity_type))
             else:
@@ -110,7 +105,6 @@ def _get_file_psql_queryset(project, filter_ops, params):
 
 def get_file_queryset(project, params):
     # Determine whether to use ES or not.
-    project = params.get("project")
     filter_type = params.get("type")
     filter_ops = []
     if filter_type:
@@ -118,7 +112,7 @@ def get_file_queryset(project, params):
     else:
         types = FileType.objects.filter(project=project)
     for entity_type in types:
-        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
+        filter_ops.extend(get_attribute_filter_ops(params, entity_type))
     qs = _get_file_psql_queryset(project, filter_ops, params)
     return qs
 
