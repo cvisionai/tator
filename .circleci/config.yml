@@ -115,7 +115,7 @@ jobs:
           nvm install stable && npm install prettier@"2.8.8"
     - run:
         name: Check code formatting
-        command: make check-format
+        command: nvm use stable && make check-format
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
