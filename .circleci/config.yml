@@ -112,7 +112,7 @@ jobs:
     - run:
         name: Install npm packages
         command: |
-          npm install n && n stable && npm install prettier@"2.8.8"
+          nvm install stable && npm install prettier@"2.8.8"
     - run:
         name: Check code formatting
         command: make check-format
