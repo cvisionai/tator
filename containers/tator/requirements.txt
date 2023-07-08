@@ -22,7 +22,7 @@ markdown==3.3.6
 minio==7.1.5
 oci==2.89.0
 okta-jwt-verifier==0.2.3
-pgvector==0.1.6
+pgvector==0.1.8
 pillow==9.5.0
 pillow-avif-plugin==1.2.2
 pillow-heif==0.11.1
