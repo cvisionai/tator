@@ -73,6 +73,7 @@ attribute_type_properties = {
         "description": "Number of elements for `float_array` dtype.",
         "type": "integer",
         "minimum": 1,
+        "maximum": 2000,
     },
     "style": {
         "description": "Available options: disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check   "
