@@ -286,6 +286,7 @@ export class EntityBrowser extends TatorElement {
         this._ul.appendChild(li);
 
         const selector = document.createElement("entity-selector");
+        selector.project = this._data._projectId;
         selector.noFrames = this._noFrames;
         selector.canvas = this._canvas;
         selector.permission = this._permission;
