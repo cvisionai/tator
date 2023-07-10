@@ -254,7 +254,7 @@ export class EntitySelector extends TatorElement {
   async removeLocFromRelatedStates(loc) {
     // Find if there are any related states/tracks associated with this localization
     var response = await fetchCredentials(
-      `/rest/States/${loc.project}?related_id=${loc.id}`
+      `/rest/States/${this._project}?related_id=${loc.id}`
     );
     var relatedList = await response.json();
     var relatedStates = [];
@@ -281,8 +281,11 @@ export class EntitySelector extends TatorElement {
       console.log(`removeLocFromRelatedStates: ${msg}`);
     }
 
-    if (len(relatedStates) > 0) {
-      this._canvas._data();
+    if (relatedStates.length > 0) {
+      this._canvas._data.updateAllTypes(
+        this._canvas.refresh.bind(this._canvas),
+        null
+      );
     }
   }
 
@@ -301,8 +304,13 @@ export class EntitySelector extends TatorElement {
   set canvas(val) {
     this._canvas = val;
   }
+
   set permission(val) {
     this._permission = val;
+  }
+
+  set project(val) {
+    this._project = val;
   }
 
   /**
