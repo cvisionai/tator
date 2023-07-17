@@ -5,7 +5,7 @@ import {
   getApi,
 } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 
-const api = getApi(BACKEND);
+const api = getApi();
 const organizationId = Number(window.location.pathname.split("/")[1]);
 
 async function configureImageClassification(project) {
