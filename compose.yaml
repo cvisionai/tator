@@ -1,0 +1,275 @@
+version: "3.8"
+
+services:
+
+  ###################################################################
+  # Dependencies
+  ###################################################################
+
+  nginx:
+    image: nginx:1.23.3
+    container_name: nginx
+    depends_on:
+      - gunicorn
+    env_file:
+      - ./.env
+    ports:
+      - ${PORT}:${PORT}
+    networks:
+      - private
+      - public
+    volumes:
+      - ./compose/nginx.conf.template:/etc/nginx/templates/default.conf.template
+      - ${DATA_DIR}/media:/media
+
+  minio:
+    image: minio/minio:RELEASE.2020-12-03T05-49-24Z
+    container_name: minio
+    entrypoint: ["/bin/sh", "-ce", "/usr/bin/docker-entrypoint.sh minio server /data"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - ./.env
+    networks:
+      - private
+    volumes:
+      - ${DATA_DIR}/objects:/data
+
+  redis:
+    image: redis:6
+    container_name: redis
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - private
+    entrypoint: redis-server --maxmemory 2048mb --maxmemory-policy allkeys-lru
+
+  postgis:
+    image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
+    container_name: postgis
+    healthcheck: 
+      test: ["CMD", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - ./.env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/db-files
+      - POSTGRES_DB=tator_online
+    networks:
+      - private
+    volumes:
+      - ${DATA_DIR}/postgis:/var/lib/postgresql/data
+      - ${DATA_DIR}/backup:/backup
+    shm_size: '2gb'
+
+  ###################################################################
+  # Tator services
+  ###################################################################
+
+  gunicorn:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: gunicorn
+    entrypoint: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :80 tator_online.wsgi
+    depends_on:
+      - postgis
+      - redis
+      - minio
+    restart: always
+    environment:
+      - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
+    env_file:
+      - ./.env
+    networks:
+      - private
+    volumes:
+      - ${DATA_DIR}/static:/static
+      - ${DATA_DIR}/migrations:/tator_online/main/migrations
+      - ${DATA_DIR}/media:/media
+      - ${DATA_DIR}/backup:/backup
+
+  transcode:
+    image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
+    container_name: transcode
+    entrypoint: uvicorn main:app --host 0.0.0.0 --port 80 --reload
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - private
+
+  transcode-worker:
+    image: ${REGISTRY}/tator_client:${GIT_VERSION}
+    container_name: transcode-worker
+    entrypoint: rq worker --url redis://redis transcodes
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - private
+
+  ui:
+    image: ${REGISTRY}/tator_ui:${GIT_VERSION}
+    container_name: ui
+    entrypoint: npm run serve -- --backend='' --host=0.0.0.0
+    restart: always
+    networks:
+      - private
+
+  db-worker:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: db-worker
+    entrypoint: python3 /tator_online/main/worker.py db_jobs
+    depends_on:
+      - redis
+    restart: always
+    env_file:
+      - ./.env
+    networks:
+      - private
+
+  image-worker:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: image-worker
+    entrypoint: python3 /tator_online/main/worker.py image_jobs
+    depends_on:
+      - redis
+    restart: always
+    environment:
+      - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
+    env_file:
+      - ./.env
+    networks:
+      - private
+
+  ###################################################################
+  # Pre-install configuration
+  ###################################################################
+
+  create-bucket:
+    image: minio/mc:RELEASE.2022-07-15T09-20-55Z
+    container_name: create-bucket
+    depends_on:
+      - minio
+    env_file:
+      - ./.env
+    networks:
+      - private
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set tator http://minio:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+      mc mb --ignore-existing tator/${DEFAULT_LIVE_BUCKET_NAME};
+      mc admin user add tator ${DEFAULT_LIVE_ACCESS_KEY} ${DEFAULT_LIVE_SECRET_KEY};
+      mc admin policy list tator;
+      mc admin policy set tator readwrite user=${DEFAULT_LIVE_ACCESS_KEY};
+      exit 0;
+      "
+
+  create-extensions:
+    image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
+    container_name: create-extensions
+    depends_on:
+      - postgis
+    env_file:
+      - ./.env
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - private
+    entrypoint: >
+      /bin/sh -c "
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS ltree';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS postgis';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+      exit 0;
+      "
+
+  migrate:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: migrate
+    depends_on:
+      - gunicorn
+    env_file:
+      - ./.env
+    networks:
+      - private
+    volumes:
+      - ${DATA_DIR}/migrations:/tator_online/main/migrations
+    entrypoint: >
+      /bin/sh -c "
+      python3 manage.py makemigrations main;
+      python3 manage.py makemigrations;
+      python3 manage.py migrate;
+      exit 0;
+      "
+
+  ###################################################################
+  # Cron jobs
+  ###################################################################
+
+  gunicorn-cron:
+    image: ${REGISTRY}/tator_online:${GIT_VERSION}
+    container_name: gunicorn-cron
+    depends_on:
+      - gunicorn
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      - "DEFAULT_LIVE_CONFIG={\"aws_access_key_id\": \"${DEFAULT_LIVE_ACCESS_KEY}\", \"aws_secret_access_key\": \"${DEFAULT_LIVE_SECRET_KEY}\", \"endpoint_url\": \"${DEFAULT_LIVE_ENDPOINT_URL}\", \"region_name\": \"${DEFAULT_LIVE_REGION_NAME}\"}"
+    networks:
+      - private
+    volumes:
+      - ./compose/gunicorn.cron:/etc/cron.d/crontab
+      - ${DATA_DIR}/static:/static
+      - ${DATA_DIR}/migrations:/tator_online/main/migrations
+      - ${DATA_DIR}/media:/media
+      - ${DATA_DIR}/backup:/backup
+    entrypoint: >
+      /bin/sh -c "
+      env >> /etc/environment;
+      crontab /etc/cron.d/crontab;
+      cron -f;
+      "
+ 
+  postgis-cron:
+    image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
+    container_name: postgis-cron
+    depends_on:
+      - postgis
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - private
+    volumes:
+      - ./compose/postgis.cron:/etc/cron.d/crontab
+    entrypoint: >
+      /bin/sh -c "
+      env >> /etc/environment;
+      crontab /etc/cron.d/crontab;
+      cron -f;
+      "
+
+networks:
+  public:
+    external: true
+  private:
+    external: false
+
+

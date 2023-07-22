@@ -1,4 +1,4 @@
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class AnnotationData extends HTMLElement {
   constructor() {
@@ -13,25 +13,31 @@ export class AnnotationData extends HTMLElement {
     this._localizationMediaIds = new Array();
   }
 
-  init(dataTypes, version, projectId, mediaId, update, allowNonTrackStateData, versions, memberships) {
+  init(
+    dataTypes,
+    version,
+    projectId,
+    mediaId,
+    update,
+    allowNonTrackStateData,
+    versions,
+    memberships
+  ) {
     this._versions = versions;
     this._memberships = memberships;
     // Update defaults to true
-    if (update == undefined)
-    {
+    if (update == undefined) {
       update = true;
     }
 
-    for (const dataType of dataTypes){
-      if (dataType.dtype == "state"){
+    for (const dataType of dataTypes) {
+      if (dataType.dtype == "state") {
         if (allowNonTrackStateData == undefined || dataType.isTrack == true) {
           this._stateMediaIds.push(mediaId);
-        }
-        else if (allowNonTrackStateData) {
+        } else if (allowNonTrackStateData) {
           this._stateMediaIds.push(mediaId);
         }
-      }
-      else {
+      } else {
         this._localizationMediaIds.push(mediaId);
       }
     }
@@ -39,13 +45,11 @@ export class AnnotationData extends HTMLElement {
     this._version = version;
     this._projectId = projectId;
 
-    if (update)
-    {
+    if (update) {
       for (const dataType of dataTypes) {
         this._dataTypesRaw.push(dataType);
       }
-      this.updateAll(dataTypes, version)
-      .then(() => {
+      this.updateAll(dataTypes, version).then(() => {
         this.dispatchEvent(new Event("initialized"));
       });
     }
@@ -62,8 +66,7 @@ export class AnnotationData extends HTMLElement {
   }
 
   initialUpdate() {
-    this.updateAll(this._dataTypesRaw, this._version)
-    .then(() => {
+    this.updateAll(this._dataTypesRaw, this._version).then(() => {
       this.dispatchEvent(new Event("initialized"));
     });
   }
@@ -75,20 +78,18 @@ export class AnnotationData extends HTMLElement {
     return this.updateAll(this._dataTypesRaw, version, viewables);
   }
 
-  getVersion()
-  {
+  getVersion() {
     return this._version;
   }
 
   // Returns a promise when done
   updateAll(dataTypes, version, viewables) {
-    const trackTypeIds=[];
-    const localTypeIds=[];
+    const trackTypeIds = [];
+    const localTypeIds = [];
 
     // Clear the track database
     this._trackDb = new Map();
     for (const [idx, dataType] of dataTypes.entries()) {
-
       if (dataType.isTrack) {
         trackTypeIds.push(idx);
       } else {
@@ -98,45 +99,58 @@ export class AnnotationData extends HTMLElement {
 
     // Define function for getting data url.
     const getDataUrl = (dataType) => {
-      const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
-      const mediaIds = dataType.dtype == "state" ? this._stateMediaIds : this._localizationMediaIds;
-      let dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" +
-        mediaIds.join(',') + "&type=" + dataType.id.split("_")[1];
+      const dataEndpoint =
+        dataType.dtype == "state" ? "States" : "Localizations";
+      const mediaIds =
+        dataType.dtype == "state"
+          ? this._stateMediaIds
+          : this._localizationMediaIds;
+      let dataUrl =
+        "/rest/" +
+        dataEndpoint +
+        "/" +
+        this._projectId +
+        "?media_id=" +
+        mediaIds.join(",") +
+        "&type=" +
+        dataType.id.split("_")[1];
       // The UI desires the merge result not the raw result from the server
-      if (dataEndpoint == "Localizations" || dataEndpoint == "States")
-      {
+      if (dataEndpoint == "Localizations" || dataEndpoint == "States") {
         dataUrl += "&merge=1";
       }
       return dataUrl;
     };
 
     // Update tracks first
-    const tracksDone = new Promise(resolve => {
+    const tracksDone = new Promise((resolve) => {
       if (trackTypeIds.length == 0) {
         resolve();
       }
 
       // Only trigger the promise after all tracks are processed
       let count = trackTypeIds.length;
-      const semaphore = function() {
+      const semaphore = function () {
         count = count - 1;
         if (count == 0) {
           resolve();
         }
       };
 
-      trackTypeIds.forEach(typeIdx => {
-        this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
+      trackTypeIds.forEach((typeIdx) => {
+        this._updateUrls.set(
+          dataTypes[typeIdx].id,
+          getDataUrl(dataTypes[typeIdx])
+        );
         this.updateType(dataTypes[typeIdx], semaphore);
       });
     });
 
-    const initDone = new Promise(resolve => {
+    const initDone = new Promise((resolve) => {
       let count = localTypeIds.length;
       if (count == 0) {
         resolve();
       }
-      const semaphore = function() {
+      const semaphore = function () {
         count = count - 1;
         if (count == 0) {
           resolve();
@@ -145,8 +159,11 @@ export class AnnotationData extends HTMLElement {
 
       //Update localizations after
       tracksDone.then(() => {
-        localTypeIds.forEach(typeIdx => {
-          this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
+        localTypeIds.forEach((typeIdx) => {
+          this._updateUrls.set(
+            dataTypes[typeIdx].id,
+            getDataUrl(dataTypes[typeIdx])
+          );
           this.updateType(dataTypes[typeIdx], semaphore);
         });
       });
@@ -156,25 +173,23 @@ export class AnnotationData extends HTMLElement {
   }
 
   updateLocalizations(callback, search) {
-    for (const key in this._dataTypes)
-    {
+    for (const key in this._dataTypes) {
       let dataType = this._dataTypes[key];
-      let isLocalization=false;
-      if ("dtype" in dataType)
-      {
-        isLocalization = ["box", "line", "dot", "poly"].includes(dataType.dtype);
+      let isLocalization = false;
+      if ("dtype" in dataType) {
+        isLocalization = ["box", "line", "dot", "poly"].includes(
+          dataType.dtype
+        );
       }
 
-      if (isLocalization)
-      {
+      if (isLocalization) {
         this.updateType(dataType, callback, search);
       }
     }
   }
 
   updateAllTypes(callback, search) {
-    for (const key in this._dataTypes)
-    {
+    for (const key in this._dataTypes) {
       let dataType = this._dataTypes[key];
       this.updateType(dataType, callback, search);
     }
@@ -188,18 +203,19 @@ export class AnnotationData extends HTMLElement {
 
     if (this._dataByType.has(typeId)) {
       this._dataByType.get(typeId).push(data);
-    }
-    else {
+    } else {
       this._dataByType.set(typeId, []);
       this._dataByType.get(typeId).push(data);
     }
 
-    this.dispatchEvent(new CustomEvent("freshData", {
-      detail: {
-        typeObj: typeObj,
-        data: this._dataByType.get(typeId),
-      }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("freshData", {
+        detail: {
+          typeObj: typeObj,
+          data: this._dataByType.get(typeId),
+        },
+      })
+    );
   }
 
   updateTypeLocal(method, id, body, typeObj) {
@@ -209,8 +225,8 @@ export class AnnotationData extends HTMLElement {
       return;
     }
 
-    const attributeNames = typeObj.attribute_types.map(column => column.name);
-    const setupObject = obj => {
+    const attributeNames = typeObj.attribute_types.map((column) => column.name);
+    const setupObject = (obj) => {
       obj.id = id;
       obj.type = typeId;
       if (typeObj.isTLState) {
@@ -229,12 +245,11 @@ export class AnnotationData extends HTMLElement {
         // Force retrieving the data from the REST API
         this.updateType(typeObj, null, null);
         return;
-      }
-      else {
+      } else {
         this._dataByType.get(typeId).push(setupObject(body));
       }
     } else if (method == "PATCH") {
-      const ids = this._dataByType.get(typeId).map(elem => elem.id);
+      const ids = this._dataByType.get(typeId).map((elem) => elem.id);
       const index = ids.indexOf(id);
       const elem = this._dataByType.get(typeId)[index];
       for (const key in body) {
@@ -244,7 +259,7 @@ export class AnnotationData extends HTMLElement {
       }
       this._dataByType.get(typeId)[index] = elem;
     } else if (method == "DELETE") {
-      const ids = this._dataByType.get(typeId).map(elem => elem.id);
+      const ids = this._dataByType.get(typeId).map((elem) => elem.id);
       const index = ids.indexOf(id);
       // It is possible for the ID to not exist if it is part of a different version/layer.
       if (index == -1) {
@@ -252,12 +267,14 @@ export class AnnotationData extends HTMLElement {
       }
       this._dataByType.get(typeId).splice(index, 1);
     }
-    this.dispatchEvent(new CustomEvent("freshData", {
-      detail: {
-        typeObj: typeObj,
-        data: this._dataByType.get(typeId),
-      }
-    }));
+    this.dispatchEvent(
+      new CustomEvent("freshData", {
+        detail: {
+          typeObj: typeObj,
+          data: this._dataByType.get(typeId),
+        },
+      })
+    );
   }
 
   updateType(typeObj, callback, query) {
@@ -267,48 +284,54 @@ export class AnnotationData extends HTMLElement {
       return;
     }
 
-    let url = new URL(this._updateUrls.get(typeId), location.protocol + '//' + location.host);
+    let url = new URL(
+      this._updateUrls.get(typeId),
+      location.protocol + "//" + location.host
+    );
     let searchParams = new URLSearchParams(url.search.slice(1));
     if (query) {
-        searchParams.set('encoded_search',query);
+      searchParams.set("encoded_search", query);
     }
 
-    let requested_versions=[...this._version.bases,this._version.id];
-    if (this._viewables)
-    {
-      requested_versions=[...new Set(requested_versions.concat(this._viewables))];
+    let requested_versions = [...this._version.bases, this._version.id];
+    if (this._viewables) {
+      requested_versions = [
+        ...new Set(requested_versions.concat(this._viewables)),
+      ];
     }
-    searchParams.set('version',requested_versions);
+    searchParams.set("version", requested_versions);
     url.search = searchParams;
 
     // Fetch new ones from server
-    fetchRetry(url)
-    .then(response => {
-      if (response.ok) {
-        return response.json();
-      } else {
-        console.error("Error fetching updated data for type ID " + typeId);
-        response.json()
-        .then(json => console.log(JSON.stringify(json)));
-      }
-    })
-    .then(json => {
-      json.forEach(obj => {obj.type = typeId});
-      this._dataByType.set(typeId, json);
-      this.dispatchEvent(new CustomEvent("freshData", {
-        detail: {
-          typeObj: typeObj,
-          data: json,
+    fetchCredentials(url, {}, true)
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          console.error("Error fetching updated data for type ID " + typeId);
+          response.json().then((json) => console.log(JSON.stringify(json)));
         }
-      }));
-      if (callback) {
-        callback();
-      }
-    });
+      })
+      .then((json) => {
+        json.forEach((obj) => {
+          obj.type = typeId;
+        });
+        this._dataByType.set(typeId, json);
+        this.dispatchEvent(
+          new CustomEvent("freshData", {
+            detail: {
+              typeObj: typeObj,
+              data: json,
+            },
+          })
+        );
+        if (callback) {
+          callback();
+        }
+      });
   }
 
-  get project()
-  {
+  get project() {
     return this._projectId;
   }
 }

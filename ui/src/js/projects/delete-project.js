@@ -1,5 +1,4 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { getCookie } from "../util/get-cookie.js";
 import { store } from "./store.js";
 
 export class DeleteProject extends ModalDialog {
@@ -31,7 +30,7 @@ export class DeleteProject extends ModalDialog {
     this._accept.setAttribute("disabled", "");
     this._accept.textContent = "Delete Project";
     this._footer.appendChild(this._accept);
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -40,7 +39,7 @@ export class DeleteProject extends ModalDialog {
     cancel.addEventListener("click", this._closeCallback);
 
     this._checks.forEach((item, index, array) => {
-      item.addEventListener("change", evt => {
+      item.addEventListener("change", (evt) => {
         let allChecked = true;
         this._checks.forEach((item, index, array) => {
           if (!item.checked) {
@@ -55,12 +54,14 @@ export class DeleteProject extends ModalDialog {
       });
     });
 
-    this._accept.addEventListener("click", evt => {
+    this._accept.addEventListener("click", (evt) => {
       const projectId = this.getAttribute("project-id");
       store.getState().removeProject(projectId);
-      this.dispatchEvent(new CustomEvent("confirmDeleteProject", {
-        detail: {projectId: projectId}
-      }));
+      this.dispatchEvent(
+        new CustomEvent("confirmDeleteProject", {
+          detail: { projectId: projectId },
+        })
+      );
     });
   }
 
@@ -69,17 +70,22 @@ export class DeleteProject extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "project-name":
-        this._title.nodeValue = "Delete \"" + newValue + "\"";
+        this._title.nodeValue = 'Delete "' + newValue + '"';
         break;
       case "is-open":
         if (newValue === null) {
           this._checks.forEach((item, index, array) => {
             item.checked = false;
           });
-          this._accept.setAttribute('disabled', '');
+          this._accept.setAttribute("disabled", "");
         }
     }
   }

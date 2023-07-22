@@ -6,7 +6,7 @@ export class MediaCaptureButton extends TatorElement {
     super();
 
     const details = document.createElement("details");
-    details.setAttribute("class","position-relative");
+    details.setAttribute("class", "position-relative");
     this._shadow.appendChild(details);
 
     const summary = document.createElement("summary");
@@ -15,7 +15,10 @@ export class MediaCaptureButton extends TatorElement {
     details.appendChild(summary);
 
     const button = document.createElement("div");
-    button.setAttribute("class", "d-flex px-2 rounded-1 f2 text-gray hover-text-white annotation__setting");
+    button.setAttribute(
+      "class",
+      "d-flex px-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
+    );
     summary.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -37,7 +40,10 @@ export class MediaCaptureButton extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z");
+    path.setAttribute(
+      "d",
+      "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+    );
     svg.appendChild(path);
 
     const circle = document.createElementNS(svgNamespace, "circle");
@@ -48,8 +54,8 @@ export class MediaCaptureButton extends TatorElement {
 
     const div = document.createElement("div");
     div.setAttribute("class", "more py-2 px-2");
-    div.style.width="300px"; //todo: figure out how to make this smaller
-    div.style.align="center";
+    div.style.width = "300px"; //todo: figure out how to make this smaller
+    div.style.align = "center";
     details.appendChild(div);
 
     const localizations = document.createElement("bool-input");
@@ -60,26 +66,28 @@ export class MediaCaptureButton extends TatorElement {
     div.appendChild(localizations);
 
     const centerDiv = document.createElement("div");
-    centerDiv.setAttribute("class", "dflex flex-items-center flex-justify-center");
+    centerDiv.setAttribute(
+      "class",
+      "dflex flex-items-center flex-justify-center"
+    );
     div.appendChild(centerDiv);
     const submit = document.createElement("button");
-    submit.setAttribute("class", "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting");
-    submit.style="margin-left: 135px;";
+    submit.setAttribute(
+      "class",
+      "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
+    );
+    submit.style = "margin-left: 135px;";
     const svg2 = svg.cloneNode(true);
     svg2.style.marginTop = null;
     submit.appendChild(svg2);
     centerDiv.appendChild(submit);
-    submit.addEventListener(
-      "click",
-      () =>
-        {
-          const detail = {localizations: localizations.getValue()};
-          this.dispatchEvent(new CustomEvent(
-            "captureFrame",
-            {composed: true,
-             detail: detail}));
-          submit.blur();
-        });
+    submit.addEventListener("click", () => {
+      const detail = { localizations: localizations.getValue() };
+      this.dispatchEvent(
+        new CustomEvent("captureFrame", { composed: true, detail: detail })
+      );
+      submit.blur();
+    });
   }
 }
 

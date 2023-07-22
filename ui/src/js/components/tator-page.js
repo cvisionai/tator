@@ -1,5 +1,4 @@
 import { TatorElement } from "./tator-element.js";
-import { sameOriginCredentials } from "../util/same-origin-credentials.js";
 
 export class TatorPage extends TatorElement {
   constructor() {
@@ -14,18 +13,18 @@ export class TatorPage extends TatorElement {
     const shortcuts = document.createElement("keyboard-shortcuts");
     this._shadow.appendChild(shortcuts);
 
-    this._header.addEventListener("openNav", evt => {
+    this._header.addEventListener("openNav", (evt) => {
       this._nav.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
 
-    this._nav.addEventListener("closed", evt => {
+    this._nav.addEventListener("closed", (evt) => {
       this._nav.removeAttribute("is-open");
       shortcuts.removeAttribute("is-open");
       this.removeAttribute("has-open-modal");
     });
 
-    this._nav.addEventListener("show-shortcuts", evt => {
+    this._nav.addEventListener("show-shortcuts", (evt) => {
       shortcuts.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
@@ -38,9 +37,8 @@ export class TatorPage extends TatorElement {
     this._shadow.appendChild(this._announcements);
 
     this._browserCheck = document.createElement("browser-recommendation");
-   
 
-    this._announcements.addEventListener("close", evt => {
+    this._announcements.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal");
     });
   }
@@ -66,8 +64,11 @@ export class TatorPage extends TatorElement {
   }
 
   _setUser(user) {
-    this._header.setAttribute("username", `${user.first_name} ${user.last_name}`);
-    if (user.name == 'Guest Account') {
+    this._header.setAttribute(
+      "username",
+      `${user.first_name} ${user.last_name}`
+    );
+    if (user.name == "Guest Account") {
       this._nav.disableAccountSettings();
     }
     this._header.setAttribute("email", user.email);
@@ -85,4 +86,3 @@ export class TatorPage extends TatorElement {
 if (!customElements.get("tator-page")) {
   customElements.define("tator-page", TatorPage);
 }
-

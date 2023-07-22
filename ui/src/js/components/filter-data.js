@@ -8,7 +8,6 @@ import { TatorData } from "../util/tator-data.js";
  * #TODO Convert this to a TatorElement so that events can be dispatched
  */
 export class FilterData {
-
   /**
    * @param {TatorData} modelData
    *    Class that will be initialized as the interface to the Tator compliant interface
@@ -25,8 +24,13 @@ export class FilterData {
    * @param {boolean} squashMetadata
    *    If true, will collapse Localizations, MediaStates, LocalizationStates, and FrameStates (whichever aren't excluded) into a single 'Metadata' Category
    */
-  constructor(modelData, algorithmCategories, excludeTypesList, skipTypeIds, squashMetadata) {
-
+  constructor(
+    modelData,
+    algorithmCategories,
+    excludeTypesList,
+    skipTypeIds,
+    squashMetadata
+  ) {
     this._modelData = modelData;
 
     if (algorithmCategories != null) {
@@ -43,7 +47,7 @@ export class FilterData {
       this.skipTypeIds = skipTypeIds;
     }
 
-    this._squashMetadata = (squashMetadata == true);
+    this._squashMetadata = squashMetadata == true;
   }
   /**
    * @precondition The provided modelData must have been initialized
@@ -51,7 +55,8 @@ export class FilterData {
   init() {
     this.frameStateTypes = this._modelData.getStoredFrameStateTypes();
     this.mediaStateTypes = this._modelData.getStoredMediaStateTypes();
-    this.localizationStateTypes = this._modelData.getStoredLocalizationStateTypes();
+    this.localizationStateTypes =
+      this._modelData.getStoredLocalizationStateTypes();
     this.localizationTypes = this._modelData.getStoredLocalizationTypes();
     this.mediaTypes = this._modelData.getStoredMediaTypes();
     this.versions = this._modelData.getStoredVersions();
@@ -71,8 +76,7 @@ export class FilterData {
           }
         }
       }
-    }
-    else {
+    } else {
       this.algorithms = algorithms;
     }
 
@@ -80,23 +84,35 @@ export class FilterData {
     var stateTypeOptions = [];
     for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
       let stateType = this.mediaStateTypes[idx];
-      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: `${stateType.name} (ID:${stateType.id})`});
+      stateTypeOptions.push({
+        label: `${stateType.name} (ID:${stateType.id})`,
+        value: `${stateType.name} (ID:${stateType.id})`,
+      });
     }
     for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
       let stateType = this.localizationStateTypes[idx];
-      stateTypeOptions.push({label: `${stateType.name} (ID:${stateType.id})`, value: `${stateType.name} (ID:${stateType.id})`});
+      stateTypeOptions.push({
+        label: `${stateType.name} (ID:${stateType.id})`,
+        value: `${stateType.name} (ID:${stateType.id})`,
+      });
     }
 
     var localizationTypeOptions = [];
     for (let idx = 0; idx < this.localizationTypes.length; idx++) {
       let locType = this.localizationTypes[idx];
-      localizationTypeOptions.push({label: `${locType.dtype}/${locType.name} (ID:${locType.id})`, value: `${locType.dtype}/${locType.name} (ID:${locType.id})`});
+      localizationTypeOptions.push({
+        label: `${locType.dtype}/${locType.name} (ID:${locType.id})`,
+        value: `${locType.dtype}/${locType.name} (ID:${locType.id})`,
+      });
     }
 
     var mediaTypeOptions = [];
     for (let idx = 0; idx < this.mediaTypes.length; idx++) {
       let mediaType = this.mediaTypes[idx];
-      mediaTypeOptions.push({label: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`, value: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`});
+      mediaTypeOptions.push({
+        label: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`,
+        value: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`,
+      });
     }
 
     // Allow options to filter by users
@@ -107,7 +123,7 @@ export class FilterData {
       userNames.push(`${user.username} (ID:${user.user})`);
       userFirstLastNames.push({
         label: `${user.username} (ID: ${user.user})`,
-        value: `${user.username} (ID: ${user.user})`
+        value: `${user.username} (ID: ${user.user})`,
       });
     }
     userNames.sort();
@@ -119,7 +135,10 @@ export class FilterData {
     var versionNames = [];
     for (let idx = 0; idx < this.versions.length; idx++) {
       let version = this.versions[idx];
-      versionNames.push({label: `${version.name} (ID:${version.id})`, value: `${version.name} (ID:${version.id})`});
+      versionNames.push({
+        label: `${version.name} (ID:${version.id})`,
+        value: `${version.name} (ID:${version.id})`,
+      });
     }
 
     // Media sections aren't typically part of the media type's user attribute list.
@@ -128,19 +147,23 @@ export class FilterData {
     var sectionNames = [];
     for (let idx = 0; idx < this.sections.length; idx++) {
       let section = this.sections[idx];
-      sectionNames.push({label: `${section.name} (ID:${section.id})`, value: `${section.name} (ID:${section.id})`});
+      sectionNames.push({
+        label: `${section.name} (ID:${section.id})`,
+        value: `${section.name} (ID:${section.id})`,
+      });
     }
 
     // Create the filter options
     this._allTypes = [];
 
     let category_lookup = {};
-    if (this._squashMetadata)
-    {
-      category_lookup = {'Localizations': 'Metadata',
-                         'MediaStates': 'Metadata',
-                         'FrameStates': 'Metadata',
-                         'LocalizationStates': 'Metadata'};
+    if (this._squashMetadata) {
+      category_lookup = {
+        Localizations: "Metadata",
+        MediaStates: "Metadata",
+        FrameStates: "Metadata",
+        LocalizationStates: "Metadata",
+      };
     }
 
     if (this.excludeTypesList.indexOf("Medias") < 0) {
@@ -152,14 +175,14 @@ export class FilterData {
           var nameAttribute = {
             name: "$name",
             label: "Filename",
-            dtype: "string"
+            dtype: "string",
           };
           entityType.attribute_types.push(nameAttribute);
 
           var mediaIdAttribute = {
             name: "$id",
             label: "ID",
-            dtype: "int"
+            dtype: "int",
           };
           entityType.attribute_types.push(mediaIdAttribute);
 
@@ -167,14 +190,14 @@ export class FilterData {
             choices: sectionNames,
             name: "$section",
             label: "Section",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(sectionAttribute);
 
           var createdDatetimeAttribute = {
             name: "$created_datetime",
             label: "Created Datetime",
-            dtype: "datetime"
+            dtype: "datetime",
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
@@ -182,22 +205,22 @@ export class FilterData {
             choices: userFirstLastNames,
             name: "$created_by",
             label: "Created By",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(createdByAttribute);
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
             name: "$modified_by",
             label: "Modified By",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
             name: "$modified_datetime",
             label: "Modified Datetime",
-            dtype: "datetime"
+            dtype: "datetime",
           };
           entityType.attribute_types.push(modifiedDatetimeAttribute);
 
@@ -205,7 +228,7 @@ export class FilterData {
             choices: mediaTypeOptions,
             name: "$type",
             label: "Data type",
-            dtype: "enum"
+            dtype: "enum",
           };
           entityType.attribute_types.push(dtypeAttribute);
 
@@ -213,8 +236,8 @@ export class FilterData {
             choices: ["live", "to_archive", "archived", "to_live"],
             name: "$archive_state",
             label: "Archive State",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(archiveStateAttribute);
 
           this._allTypes.push(entityType);
@@ -224,38 +247,42 @@ export class FilterData {
 
     if (this.excludeTypesList.indexOf("Localizations") < 0) {
       for (let idx = 0; idx < this.localizationTypes.length; idx++) {
-        let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
-        entityType.typeGroupName = (category_lookup.Localizations ? category_lookup.Localizations : "Localization");
+        let entityType = JSON.parse(
+          JSON.stringify(this.localizationTypes[idx])
+        );
+        entityType.typeGroupName = category_lookup.Localizations
+          ? category_lookup.Localizations
+          : "Localization";
 
         if (this.skipTypeIds.indexOf(this.localizationTypes[idx].id) < 0) {
-
-          if (['box','line','dot'].indexOf(this.localizationTypes[idx].dtype) >= 0)
-          {
+          if (
+            ["box", "line", "dot"].indexOf(this.localizationTypes[idx].dtype) >=
+            0
+          ) {
             var geo_x = {
               name: "$x",
               label: "X coordinate",
-              dtype: "float"
+              dtype: "float",
             };
             entityType.attribute_types.push(geo_x);
             var geo_y = {
               name: "$y",
               label: "Y coordinate",
-              dtype: "float"
+              dtype: "float",
             };
             entityType.attribute_types.push(geo_y);
           }
-          if (['box'].indexOf(this.localizationTypes[idx].dtype) >= 0)
-          {
+          if (["box"].indexOf(this.localizationTypes[idx].dtype) >= 0) {
             var geo_width = {
               name: "$width",
               label: "Box Width",
-              dtype: "float"
+              dtype: "float",
             };
             entityType.attribute_types.push(geo_width);
             var geo_height = {
               name: "$height",
               label: "Box Height",
-              dtype: "float"
+              dtype: "float",
             };
             entityType.attribute_types.push(geo_height);
           }
@@ -263,7 +290,7 @@ export class FilterData {
           var frameAttribute = {
             name: "$frame",
             label: "Frame",
-            dtype: "int"
+            dtype: "int",
           };
           entityType.attribute_types.push(frameAttribute);
 
@@ -271,7 +298,7 @@ export class FilterData {
             choices: versionNames,
             name: "$version",
             label: "Version",
-            dtype: "enum"
+            dtype: "enum",
           };
           entityType.attribute_types.push(versionAttribute);
 
@@ -279,7 +306,7 @@ export class FilterData {
             choices: localizationTypeOptions,
             name: "$type",
             label: "Data type",
-            dtype: "enum"
+            dtype: "enum",
           };
           entityType.attribute_types.push(dtypeAttribute);
 
@@ -287,14 +314,14 @@ export class FilterData {
             choices: userNames,
             name: "$user",
             label: "User",
-            dtype: "enum"
+            dtype: "enum",
           };
           entityType.attribute_types.push(userAttribute);
 
           var createdDatetimeAttribute = {
             name: "$created_datetime",
             label: "Created datetime",
-            dtype: "datetime"
+            dtype: "datetime",
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
@@ -302,14 +329,14 @@ export class FilterData {
             choices: userFirstLastNames,
             name: "$modified_by",
             label: "Modified By",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
             name: "$modified_datetime",
             label: "Modified Datetime",
-            dtype: "datetime"
+            dtype: "datetime",
           };
           entityType.attribute_types.push(modifiedDatetimeAttribute);
 
@@ -321,14 +348,16 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("MediaStates") < 0) {
       for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.mediaStateTypes[idx]));
-        entityType.typeGroupName = (category_lookup.MediaStates ? category_lookup.MediaStates : "State");
+        entityType.typeGroupName = category_lookup.MediaStates
+          ? category_lookup.MediaStates
+          : "State";
 
         if (this.skipTypeIds.indexOf(this.mediaStateTypes[idx].id) < 0) {
           var versionAttribute = {
             choices: versionNames,
             name: "$version",
             label: "Version",
-            dtype: "enum"
+            dtype: "enum",
           };
           entityType.attribute_types.push(versionAttribute);
 
@@ -336,8 +365,8 @@ export class FilterData {
             choices: stateTypeOptions,
             name: "$type",
             label: "Data type",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(typeAttribute);
 
           this._allTypes.push(entityType);
@@ -347,15 +376,19 @@ export class FilterData {
 
     if (this.excludeTypesList.indexOf("LocalizationStates") < 0) {
       for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
-        let entityType = JSON.parse(JSON.stringify(this.localizationStateTypes[idx]));
-        entityType.typeGroupName = (category_lookup.LocalizationStates ? category_lookup.LocalizationStates : "State");
+        let entityType = JSON.parse(
+          JSON.stringify(this.localizationStateTypes[idx])
+        );
+        entityType.typeGroupName = category_lookup.LocalizationStates
+          ? category_lookup.LocalizationStates
+          : "State";
 
         if (this.skipTypeIds.indexOf(this.localizationStateTypes[idx].id) < 0) {
           var versionAttribute = {
             choices: versionNames,
             name: "$version",
             label: "Version",
-            dtype: "enum"
+            dtype: "enum",
           };
           entityType.attribute_types.push(versionAttribute);
 
@@ -363,16 +396,16 @@ export class FilterData {
             choices: stateTypeOptions,
             name: "$type",
             label: "Data Type",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(typeAttribute);
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
             name: "$modified_by",
             label: "Modified By",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(modifiedByAttribute);
 
           this._allTypes.push(entityType);
@@ -383,14 +416,15 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("FrameStates") < 0) {
       for (let idx = 0; idx < this.frameStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.frameStateTypes[idx]));
-        entityType.typeGroupName = (category_lookup.FrameStates ? category_lookup.FrameStates : "State");
+        entityType.typeGroupName = category_lookup.FrameStates
+          ? category_lookup.FrameStates
+          : "State";
 
         if (this.skipTypeIds.indexOf(this.frameStateTypes[idx].id) < 0) {
-
           var frameAttribute = {
             name: "$frame",
             label: "Frame",
-            dtype: "int"
+            dtype: "int",
           };
           entityType.attribute_types.push(frameAttribute);
 
@@ -398,7 +432,7 @@ export class FilterData {
             choices: versionNames,
             name: "$version",
             label: "Version",
-            dtype: "enum"
+            dtype: "enum",
           };
           entityType.attribute_types.push(versionAttribute);
 
@@ -406,16 +440,16 @@ export class FilterData {
             choices: stateTypeOptions,
             name: "$type",
             label: "Data Type",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(typeAttribute);
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
             name: "$modified_by",
             label: "Modified By",
-            dtype: "enum"
-          }
+            dtype: "enum",
+          };
           entityType.attribute_types.push(modifiedByAttribute);
 
           this._allTypes.push(entityType);

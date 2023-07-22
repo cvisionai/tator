@@ -22,7 +22,10 @@ export class EntityGalleryPanelTop extends TatorElement {
     this._topBarArrow.appendChild(svg);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z");
+    path.setAttribute(
+      "d",
+      "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z"
+    );
     svg.appendChild(path);
     this._topBar.appendChild(this._topBarArrow);
 
@@ -33,7 +36,10 @@ export class EntityGalleryPanelTop extends TatorElement {
 
     // Panel name
     this._topBarH3 = document.createElement("h3");
-    this._topBarH3.setAttribute("class", "entity-panel--container--top-bar--h3 text-semibold h3 ");
+    this._topBarH3.setAttribute(
+      "class",
+      "entity-panel--container--top-bar--h3 text-semibold h3 "
+    );
     this._headingText = document.createElement("span");
     this._headingText.appendChild(document.createTextNode("No Selection."));
     this._topBarH3.appendChild(this._headingText);
@@ -41,7 +47,10 @@ export class EntityGalleryPanelTop extends TatorElement {
 
     // Panel ID
     this._topBarID = document.createElement("span");
-    this._topBarID.setAttribute("class", "entity-panel--container--top-bar--id text-normal text-gray h3 ");
+    this._topBarID.setAttribute(
+      "class",
+      "entity-panel--container--top-bar--id text-normal text-gray h3 "
+    );
     this._topBarH3.appendChild(this._topBarID);
 
     // Optional static image
@@ -54,14 +63,14 @@ export class EntityGalleryPanelTop extends TatorElement {
     // Hidden until initialized
     this._navigation = document.createElement("entity-panel-navigation");
     this._navigation.classList.add("hidden");
-    this._navigation.controls.marginTop = "-20px"
+    this._navigation.controls.marginTop = "-20px";
     this._box.appendChild(this._navigation);
 
     // If the panel is showing a localization default is true
     this.localizationType = true;
 
-    /* 
-     * Create 1 panel, and init it / reuse it from card sending it cardObj data (currently done on card creation) 
+    /*
+     * Create 1 panel, and init it / reuse it from card sending it cardObj data (currently done on card creation)
      */
     this._panel = document.createElement("entity-gallery-panel");
     this._panel.hidden = true;
@@ -81,7 +90,14 @@ export class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  init({ pageModal, modelData, panelContainer, customContentHandler = false, isMediaSection = false, contents }) {
+  init({
+    pageModal,
+    modelData,
+    panelContainer,
+    customContentHandler = false,
+    isMediaSection = false,
+    contents,
+  }) {
     if (isMediaSection) {
       // no heading and no data handling within panel top
       this._headingText.innerHTML = "";
@@ -118,10 +134,10 @@ export class EntityGalleryPanelTop extends TatorElement {
     if (this._navigation.getInit() && evtDetail.openFlag) {
       this._navigation.classList.remove("hidden");
       this._navigation.handle({
-          cardElements, 
-          cardIndexes, 
-          cardObj: evtDetail.cardObj
-        });
+        cardElements,
+        cardIndexes,
+        cardObj: evtDetail.cardObj,
+      });
     } else {
       this._navigation.classList.add("hidden");
     }
@@ -150,11 +166,11 @@ export class EntityGalleryPanelTop extends TatorElement {
     // console.log("Heading handler");
     if (evtDetail.openFlag) {
       // We're opening the panel with new card click
-      let cardObj = evtDetail.cardObj
+      let cardObj = evtDetail.cardObj;
       /* Get panel name */
       let panelName = "";
       // Localization or Media Type name
-      if(cardObj.stateInfo){
+      if (cardObj.stateInfo) {
         panelName = cardObj.stateInfo.entityType.name;
       } else {
         panelName = evtDetail.cardObj.entityType.name;
@@ -166,7 +182,6 @@ export class EntityGalleryPanelTop extends TatorElement {
       this._topBarID.innerHTML = ``;
     }
   }
-
 }
 
 customElements.define("entity-gallery-panel-top", EntityGalleryPanelTop);

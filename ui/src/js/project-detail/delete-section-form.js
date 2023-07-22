@@ -1,5 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class DeleteSectionForm extends ModalDialog {
   constructor() {
@@ -26,7 +26,7 @@ export class DeleteSectionForm extends ModalDialog {
     this._accept.setAttribute("disabled", "");
     this._accept.textContent = "Delete Section";
     this._footer.appendChild(this._accept);
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -35,7 +35,7 @@ export class DeleteSectionForm extends ModalDialog {
     cancel.addEventListener("click", this._closeCallback);
 
     this._checks.forEach((item, index, array) => {
-      item.addEventListener("change", evt => {
+      item.addEventListener("change", (evt) => {
         let allChecked = true;
         this._checks.forEach((item, index, array) => {
           if (!item.checked) {
@@ -50,35 +50,31 @@ export class DeleteSectionForm extends ModalDialog {
       });
     });
 
-    this._accept.addEventListener("click", async evt => {
+    this._accept.addEventListener("click", async (evt) => {
       const projectId = this._project;
       const params = this._sectionParams;
       let promise = Promise.resolve();
       if (this._deleteMedia) {
-        promise = promise.then(fetch(`/rest/Medias/${projectId}?${params.toString()}`, {
-          method: "DELETE",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-        }))
-        .catch(err => console.log(err));
+        promise = promise
+          .then(
+            fetchCredentials(`/rest/Medias/${projectId}?${params.toString()}`, {
+              method: "DELETE",
+            })
+          )
+          .catch((err) => console.log(err));
       }
-      promise.then(fetch(`/rest/Section/${this._section.id}`, {
-        method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      }))
-      .catch(err => console.log(err));
-      this.dispatchEvent(new CustomEvent("confirmDelete", {
-        detail: {id: this._section.id}
-      }));
+      promise
+        .then(
+          fetchCredentials(`/rest/Section/${this._section.id}`, {
+            method: "DELETE",
+          })
+        )
+        .catch((err) => console.log(err));
+      this.dispatchEvent(
+        new CustomEvent("confirmDelete", {
+          detail: { id: this._section.id },
+        })
+      );
     });
   }
 
@@ -89,12 +85,21 @@ export class DeleteSectionForm extends ModalDialog {
     this._deleteMedia = deleteMedia;
     if (deleteMedia) {
       this._title.nodeValue = `Delete "${section.name}" Media`;
-      this._checks[0].setAttribute("text", "Section files and annotations will be deleted");
-      this._checks[1].setAttribute("text", "Section shared links will be inaccessible");
+      this._checks[0].setAttribute(
+        "text",
+        "Section files and annotations will be deleted"
+      );
+      this._checks[1].setAttribute(
+        "text",
+        "Section shared links will be inaccessible"
+      );
     } else {
       this._title.nodeValue = `Delete "${section.name}"`;
       this._checks[0].setAttribute("text", "Section only will be deleted");
-      this._checks[1].setAttribute("text", "Media will still be accessible from \"All Media\"");
+      this._checks[1].setAttribute(
+        "text",
+        'Media will still be accessible from "All Media"'
+      );
     }
     this._checks.forEach((item, index, array) => {
       item.checked = false;

@@ -6,7 +6,6 @@ export class MediaMore extends TatorElement {
   constructor() {
     super();
 
-
     const summary = document.createElement("div");
     summary.setAttribute("class", "btn-clear h2 text-gray hover-text-white");
     summary.style.lineHeight = 0;
@@ -14,7 +13,7 @@ export class MediaMore extends TatorElement {
 
     this._moreIcon = document.createElement("more-icon");
     this._moreIcon.style.margin = "3px";
-    this._moreIcon.style.opacity = .5; // More visible on hover, but show all the time
+    this._moreIcon.style.opacity = 0.5; // More visible on hover, but show all the time
     summary.appendChild(this._moreIcon);
 
     this._details = document.createElement("div");
@@ -37,10 +36,11 @@ export class MediaMore extends TatorElement {
     this._algorithmMenu = document.createElement("algorithm-menu");
     this._div.appendChild(this._algorithmMenu);
 
-
-
     const otherButtons = document.createElement("div");
-    otherButtons.setAttribute("class", "d-flex flex-column px-4 py-3 lh-condensed");
+    otherButtons.setAttribute(
+      "class",
+      "d-flex flex-column px-4 py-3 lh-condensed"
+    );
     this._div.appendChild(otherButtons);
 
     this._textSpan = document.createElement("div");
@@ -72,18 +72,33 @@ export class MediaMore extends TatorElement {
     });
 
     this._moreIcon.addEventListener("mouseleave", () => {
-      this._moreIcon.style.opacity = .5;
+      this._moreIcon.style.opacity = 0.5;
     });
 
     this._moreIcon.addEventListener("click", this.toggleDetails.bind(this));
     window.addEventListener("click", (evt) => {
       const path = evt.composedPath();
-      if (path[0].id !== "icon-more-horizontal" && (path[0].parentElement && path[0].parentElement.id !== "icon-more-horizontal")) {
+      if (
+        path[0].id !== "icon-more-horizontal" &&
+        path[0].parentElement &&
+        path[0].parentElement.id !== "icon-more-horizontal"
+      ) {
         this.hideDetails();
-      } else if (this._media && path[0].attributes.getNamedItem('mediaId') && path[0].attributes.getNamedItem('mediaId').value !== String(this._media.id)) {
+      } else if (
+        this._media &&
+        path[0].attributes.getNamedItem("mediaId") &&
+        path[0].attributes.getNamedItem("mediaId").value !==
+          String(this._media.id)
+      ) {
         this.hideDetails();
-      } else if (this._media && path[0].parentElement && path[0].parentElement.attributes.getNamedItem('mediaId') && path[0].parentElement.attributes.getNamedItem('mediaId').value !== String(this._media.id)) {
-          this.hideDetails();
+      } else if (
+        this._media &&
+        path[0].parentElement &&
+        path[0].parentElement.attributes.getNamedItem("mediaId") &&
+        path[0].parentElement.attributes.getNamedItem("mediaId").value !==
+          String(this._media.id)
+      ) {
+        this.hideDetails();
       } else {
         // console.log("Conditions not met....");
       }
@@ -125,7 +140,10 @@ export class MediaMore extends TatorElement {
 
     if (downloadInfo["request"] == null) {
       this._download.style.display = "none";
-      this.setAttribute("downloadPermission", "Download in menu disabled due to permissions.")
+      this.setAttribute(
+        "downloadPermission",
+        "Download in menu disabled due to permissions."
+      );
     } else {
       this._download.request = downloadInfo["request"];
       this._download.setAttribute("size", downloadInfo["size"]);
@@ -133,19 +151,23 @@ export class MediaMore extends TatorElement {
 
     let hide = true;
     if (this._media.media_files !== null) {
-      if ('streaming' in this._media.media_files ||
-        'layout' in this._media.media_files ||
-        'concat' in this._media.media_files ||
-        'image' in this._media.media_files) {
+      if (
+        "streaming" in this._media.media_files ||
+        "layout" in this._media.media_files ||
+        "concat" in this._media.media_files ||
+        "image" in this._media.media_files
+      ) {
         // File is OK!
         hide = false;
       }
     } else {
-      this.setAttribute("filesOK", "MediaFiles definition is missing, could be in error state.")
+      this.setAttribute(
+        "filesOK",
+        "MediaFiles definition is missing, could be in error state."
+      );
     }
 
-
-    this.toggleAllButDelete(hide)
+    this.toggleAllButDelete(hide);
   }
 
   /**
@@ -198,7 +220,7 @@ export class MediaMore extends TatorElement {
   }
 
   toggleAll(hideBool) {
-    this.toggleAllButDelete(hideBool)
+    this.toggleAllButDelete(hideBool);
     this._del.hidden = hideBool;
   }
 
@@ -215,7 +237,9 @@ export class MediaMore extends TatorElement {
       if (!hasPermission(val.permission, "Can Execute")) {
         this._algorithmMenu.classList.add("hidden");
       }
-      if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
+      if (
+        !(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)
+      ) {
         this._download.classList.add("hidden");
         this._annotations.classList.add("hidden");
         this._del.classList.add("hidden");

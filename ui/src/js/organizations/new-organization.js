@@ -5,12 +5,18 @@ export class NewOrganization extends TatorElement {
     super();
 
     const link = document.createElement("a");
-    link.setAttribute("class", "add-new d-flex flex-items-center px-4 text-gray rounded-2");
+    link.setAttribute(
+      "class",
+      "add-new d-flex flex-items-center px-4 text-gray rounded-2"
+    );
     link.style.cursor = "pointer";
     this._shadow.appendChild(link);
 
     const span = document.createElement("span");
-    span.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
+    span.setAttribute(
+      "class",
+      "add-new__icon d-flex flex-items-center flex-justify-center text-white circle"
+    );
     span.textContent = "+";
     link.appendChild(span);
 

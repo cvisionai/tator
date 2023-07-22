@@ -1,5 +1,5 @@
 import { ModalDialog } from "./modal-dialog.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class CancelConfirm extends ModalDialog {
   constructor() {
@@ -17,7 +17,7 @@ export class CancelConfirm extends ModalDialog {
     this._accept.setAttribute("class", "btn btn-clear btn-red");
     this._accept.textContent = "Stop Jobs";
     this._footer.appendChild(this._accept);
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -27,18 +27,11 @@ export class CancelConfirm extends ModalDialog {
 
     this._title.nodeValue = "Stop Jobs";
 
-    this._accept.addEventListener("click", async evt => {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      fetch(this._url, {
+    this._accept.addEventListener("click", async (evt) => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      fetchCredentials(this._url, {
         method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .catch(err => console.log(err));
+      }).catch((err) => console.log(err));
       this.dispatchEvent(new Event("confirmGroupCancel"));
     });
   }
@@ -56,7 +49,12 @@ export class CancelConfirm extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 }
 

@@ -24,7 +24,8 @@ export class OrganizationSummary extends TatorElement {
       this._img.setAttribute("style", "object-fit:contain");
     }
     if (val.permission == "Admin") {
-      const url = window.location.origin + "/" + val.id + "/organization-settings";
+      const url =
+        window.location.origin + "/" + val.id + "/organization-settings";
       this._link.setAttribute("href", url);
     }
     let first = true;

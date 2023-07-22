@@ -11,21 +11,30 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
     this.sideCol.classList.remove("hidden");
 
     // Sidebar
-    this.projectMembershipSidebar = document.createElement("project-membership-sidebar");
+    this.projectMembershipSidebar = document.createElement(
+      "project-membership-sidebar"
+    );
     this.sideCol.appendChild(this.projectMembershipSidebar);
 
     //
     this._customButtonPrimary.innerHTML = `View/Edit Project`;
-    this._customButtonPrimary.addEventListener("click", this._linkToProject.bind(this));
-
-    
+    this._customButtonPrimary.addEventListener(
+      "click",
+      this._linkToProject.bind(this)
+    );
   }
 
   connectedCallback() {
     // Subscribe to selection and projectId
-    store.subscribe((state) => state.selection, this._updateFormSelection.bind(this));
-    store.subscribe(state => state.projectId, this.setProjectId.bind(this));
-    store.subscribe(state => state.status, this.handleButtonsActive.bind(this));
+    store.subscribe(
+      (state) => state.selection,
+      this._updateFormSelection.bind(this)
+    );
+    store.subscribe((state) => state.projectId, this.setProjectId.bind(this));
+    store.subscribe(
+      (state) => state.status,
+      this.handleButtonsActive.bind(this)
+    );
 
     // Create in the inner form handles
     const formName = this.getAttribute("form");
@@ -34,16 +43,24 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
 
     // Once we know what type, listen to changes
     const typeName = this._form.typeName;
-    store.subscribe(state => state[typeName], this._newData.bind(this));
+    store.subscribe((state) => state[typeName], this._newData.bind(this));
     this.typeName = typeName;
 
     // Event listeners for container actions
     this.save.addEventListener("click", this._form._saveData.bind(this._form));
-    this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
-    this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
+    this.resetLink.addEventListener(
+      "click",
+      this._form._resetForm.bind(this._form)
+    );
+    this.delete.addEventListener(
+      "click",
+      this._form._deleteType.bind(this._form)
+    );
 
-    store.subscribe(state => state["Membership"], this.updatedMembershipData.bind(this));
-    
+    store.subscribe(
+      (state) => state["Membership"],
+      this.updatedMembershipData.bind(this)
+    );
   }
 
   setUpData(data) {
@@ -57,15 +74,16 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
     this.sideCol.hidden = false;
 
     this.updateProjectSidebar();
-
   }
 
   /**
    * Subscription callback for [selection] updates
-   * @param {*} newData 
+   * @param {*} newData
    */
   async _updateFormSelection(newSelection, oldSelection) {
-    const affectsMe = (this._typeName == newSelection.typeName || this._typeName == oldSelection.typeName);
+    const affectsMe =
+      this._typeName == newSelection.typeName ||
+      this._typeName == oldSelection.typeName;
 
     if (affectsMe) {
       const newType = newSelection.typeName;
@@ -83,7 +101,9 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
       this.typeId = newId;
 
       if (newId !== "New") {
-        const data = await store.getState().getData(this._typeName, this._typeId);
+        const data = await store
+          .getState()
+          .getData(this._typeName, this._typeId);
         // console.log(`DEBUG: selection found newData for  ${this._typeName}, id: ${this._typeId}`, data);
 
         if (data) {
@@ -91,7 +111,6 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
           this.setUpData(data);
           return;
         }
-        
       }
 
       /* Clear container in any other case */
@@ -104,7 +123,11 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
   }
 
   updatedMembershipData(newMembershipData) {
-    console.log("State updated for MEMBERSHIP while we are selected for ProjectId" + this._typeId, newMembershipData);
+    console.log(
+      "State updated for MEMBERSHIP while we are selected for ProjectId" +
+        this._typeId,
+      newMembershipData
+    );
 
     // Setting data, should be a list of memberships projects
     const projectId = Number(this._typeId);
@@ -120,27 +143,27 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
       if (data == null) {
         data = await store.getState().getProjMembershipData(projectId);
       }
-  
+
       this.projectMembershipSidebar.projectId = projectId;
       console.log("Setting sidebar data to....", { projectId, data });
       this.projectMembershipSidebar.data = { projectId, data };
-      
+
       // Projects
-      const canEditProject = store.getState().currentUser.membershipsByProject.has(projectId) ? true : false;      
+      const canEditProject = store
+        .getState()
+        .currentUser.membershipsByProject.has(projectId)
+        ? true
+        : false;
       // There are either no affiliations for the project, or there is but user isn't one with control
       this._customButtonSectionPrimary.hidden = !canEditProject;
       this.delete.hidden = !canEditProject;
     }
-
   }
 
   _linkToProject() {
     window.location.href = `${window.location.origin}/${this._data.id}/project-settings`;
   }
-  
 }
-
-
 
 if (!customElements.get("org-type-project-container")) {
   customElements.define("org-type-project-container", OrgTypeProjectContainer);

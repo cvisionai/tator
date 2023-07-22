@@ -1,0 +1,68 @@
+
+# Hostname for Tator
+MAIN_HOST=localhost
+
+# External port for Tator
+PORT=8080
+
+# Docker registry for Tator images
+REGISTRY=cvisionai
+
+# Path to local Tator data directory
+DATA_DIR=${HOME}/tator_data
+
+# Django secret key
+DJANGO_SECRET_KEY="9q@$1)+x+zh-3csau(zqhheos2e+ncygac#ol2)1@x2w#kkaer"
+
+# Postgres settings
+POSTGRES_HOST=postgis
+POSTGRES_USER=django
+POSTGRES_PASSWORD=django123
+
+# Internal Gunicorn host
+GUNICORN_HOST=http://gunicorn
+
+# Redis host
+REDIS_HOST=redis
+
+# Transcode service host
+TRANSCODE_HOST=http://transcode
+
+# Bucket config
+DEFAULT_LIVE_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+DEFAULT_LIVE_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+DEFAULT_LIVE_ENDPOINT_URL=http://minio:9000
+DEFAULT_LIVE_REGION_NAME=us-east-2
+DEFAULT_LIVE_BUCKET_NAME=tator
+DEFAULT_LIVE_STORE_TYPE=MINIO
+DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+
+# How many days to wait before actually deleting deleted files
+EXPIRATION_AGE_DAYS=0
+
+# How many days to wait before archiving media where this has been requested
+ARCHIVE_AGE_DAYS=7
+
+# Whether any user can sign up at /registration without needing an invitation
+ANONYMOUS_REGISTRATION_ENABLED=true
+
+# Whether to automatically create organizations for new users
+AUTOCREATE_ORGANIZATIONS=true
+
+# Whether to allow organization creation by non-staff users
+ALLOW_ORGANIZATION_POST=true
+
+# Whether to enable anonymous gateway (public projects)
+ANONYMOUS_GATEWAY_ENABLED=true
+
+##########################################################################
+# Developer settings
+##########################################################################
+
+# Whether to minify javascript
+USE_MIN_JS=true
+
+# Whether this is a compose deployment (always true for OSS)
+COMPOSE_DEPLOY=true

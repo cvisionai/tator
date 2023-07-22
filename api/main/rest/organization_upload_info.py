@@ -11,24 +11,23 @@ from ._permissions import OrganizationAdminPermission
 
 logger = logging.getLogger(__name__)
 
+
 class OrganizationUploadInfoAPI(BaseDetailView):
-    """ Retrieve info needed to upload a file to organization prefix.
-    """
+    """Retrieve info needed to upload a file to organization prefix."""
+
     schema = OrganizationUploadInfoSchema()
     permission_classes = [OrganizationAdminPermission]
-    http_method_names = ['get']
+    http_method_names = ["get"]
 
     def _get(self, params):
-
         # Parse parameters.
-        expiration = params['expiration']
-        num_parts = params['num_parts']
-        organization = params['organization']
-        filename = params.get('filename')
-        if os.getenv('REQUIRE_HTTPS') == 'TRUE':
-            PROTO = 'https'
+        expiration = params["expiration"]
+        num_parts = params["num_parts"]
+        organization = params["organization"]
+        if os.getenv("REQUIRE_HTTPS") == "TRUE":
+            PROTO = "https"
         else:
-            PROTO = 'http'
+            PROTO = "http"
 
         # Generate an object name
         name = str(uuid1())
@@ -44,12 +43,12 @@ class OrganizationUploadInfoAPI(BaseDetailView):
         if tator_store.external_host:
             external = urlsplit(tator_store.external_host, scheme=PROTO)
             urls = [
-                urlunsplit(urlsplit(url)._replace(
-                    netloc=external.netloc + external.path,
-                    scheme=external.scheme
-                ))
+                urlunsplit(
+                    urlsplit(url)._replace(
+                        netloc=external.netloc + external.path, scheme=external.scheme
+                    )
+                )
                 for url in urls
             ]
 
-        return {'urls': urls, 'key': key, 'upload_id': upload_id}
-
+        return {"urls": urls, "key": key, "upload_id": upload_id}

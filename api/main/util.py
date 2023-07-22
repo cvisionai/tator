@@ -29,33 +29,46 @@ logger = logging.getLogger(__name__)
 
 """ Utility scripts for data management in django-shell """
 
+
 def updateProjectTotals(force=False):
-    projects=Project.objects.all()
+    projects = Project.objects.all()
     for project in projects:
         temp_files = TemporaryFile.objects.filter(project=project)
         files = Media.objects.filter(project=project, deleted=False)
         num_files = temp_files.count() + files.count()
         if force or num_files != project.num_files:
             project.num_files = num_files
-            duration_info = files.values('num_frames', 'fps')
-            project.duration = sum([info['num_frames'] / info['fps'] for info in duration_info
-                                    if info['num_frames'] and info['fps']])
-            logger.info(f"Updating {project.name}: Num files = {project.num_files}, "
-                        f"Duration = {project.duration}")
+            duration_info = files.values("num_frames", "fps")
+            project.duration = sum(
+                [
+                    info["num_frames"] / info["fps"]
+                    for info in duration_info
+                    if info["num_frames"] and info["fps"]
+                ]
+            )
+            logger.info(
+                f"Updating {project.name}: Num files = {project.num_files}, "
+                f"Duration = {project.duration}"
+            )
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if media:
-                tator_store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
+                tator_store = get_tator_store(
+                    project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1
+                )
                 if "thumbnail" in media.media_files and media.media_files["thumbnail"]:
-                    src_path = media.media_files['thumbnail'][0]['path']
-                    dest_path = f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"
+                    src_path = media.media_files["thumbnail"][0]["path"]
+                    dest_path = (
+                        f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"
+                    )
                     exists = tator_store.check_key(src_path)
                     needs_copy = not tator_store.check_key(dest_path)
                     if exists and needs_copy:
                         tator_store.copy(src_path, dest_path)
                         project.thumb = dest_path
-        users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
-                            .values_list('user')).order_by('last_name')
+        users = User.objects.filter(
+            pk__in=Membership.objects.filter(project=project).values_list("user")
+        ).order_by("last_name")
         usernames = [str(user) for user in users]
         creator = str(project.creator)
         if creator in usernames:
@@ -64,9 +77,9 @@ def updateProjectTotals(force=False):
         project.usernames = usernames
         project.save()
 
+
 def waitForMigrations():
-    """Sleeps until database objects can be accessed.
-    """
+    """Sleeps until database objects can be accessed."""
     while True:
         try:
             list(Project.objects.all())
@@ -74,16 +87,19 @@ def waitForMigrations():
         except:
             sleep(10)
 
+
 INDEX_CHUNK_SIZE = 50000
-CLASS_MAPPING = {'media': Media,
-                 'localizations': Localization,
-                 'states': State,
-                 'treeleaves': Leaf,
-                 'files': File}
+CLASS_MAPPING = {
+    "media": Media,
+    "localizations": Localization,
+    "states": State,
+    "treeleaves": Leaf,
+    "files": File,
+}
+
 
 def get_num_index_chunks(project_number, section, max_age_days=None):
-    """ Returns number of chunks for parallel indexing operation.
-    """
+    """Returns number of chunks for parallel indexing operation."""
     count = 1
     if section in CLASS_MAPPING:
         qs = CLASS_MAPPING[section].objects.filter(project=project_number, type__isnull=False)
@@ -95,26 +111,26 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
 
 
 def buildSearchIndices(project_ids=None, flush=False, concurrent=True):
-    """ Builds search index for a project.
-        project_number - if supplied will limit to just these project(s)
-        flush - whether to clear existing indices
-        concurrent - Whether to build the indices concurrently with other access.
+    """Builds search index for a project.
+    project_number - if supplied will limit to just these project(s)
+    flush - whether to clear existing indices
+    concurrent - Whether to build the indices concurrently with other access.
 
-        Examples:
-        buildSearchIndices(1,True, True) # Rebuilds project 1 indices concurrently
-        
-        buildSearchIndices(None, False, False) # Rebuilds all indices not present, using an exclusive lock (faster)
+    Examples:
+    buildSearchIndices(1,True, True) # Rebuilds project 1 indices concurrently
 
-        Warning:
-        Non-concurrent index building is not recommended in production systems. It will prevent database writes
-        during index creation.
+    buildSearchIndices(None, False, False) # Rebuilds all indices not present, using an exclusive lock (faster)
+
+    Warning:
+    Non-concurrent index building is not recommended in production systems. It will prevent database writes
+    during index creation.
     """
     projects = Project.objects.all()
     if type(project_ids) == list:
         projects = projects.filter(pk__in=project_ids)
     elif type(project_ids) == int:
         projects = projects.filter(pk=project_ids)
-    
+
     logger.info(f"Building search indices for projects: {projects.values('name')}")
 
     # Create mappings
@@ -134,12 +150,15 @@ def buildSearchIndices(project_ids=None, flush=False, concurrent=True):
     for type_ in list(FileType.objects.filter(project__in=projects)):
         TatorSearch().create_mapping(type_, flush, concurrent)
     logger.info("Dispatch complete!")
-    logger.info("To watch status, use `rq info` at the gunicorn shell OR the top-level rq-info make target")
+    logger.info(
+        "To watch status, use `rq info` at the gunicorn shell OR the top-level rq-info make target"
+    )
+
 
 def makeDefaultVersion(project_number):
-    """ Creates a default version for a project and sets all localizations
-        and states to that version. Meant for usage on projects that were
-        not previously using versions.
+    """Creates a default version for a project and sets all localizations
+    and states to that version. Meant for usage on projects that were
+    not previously using versions.
     """
     project = Project.objects.get(pk=project_number)
     version = Version.objects.filter(project=project, number=0)
@@ -154,44 +173,48 @@ def makeDefaultVersion(project_number):
     qs = State.objects.filter(project=project)
     qs.update(version=version)
 
-def make_video_definition(disk_file, url_path):
-        cmd = [
-        "ffprobe",
-        "-v","error",
-        "-show_entries", "stream",
-        "-print_format", "json",
-        disk_file,
-        ]
-        output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
-        video_info = json.loads(output)
-        stream_idx=0
-        for idx, stream in enumerate(video_info["streams"]):
-            if stream["codec_type"] == "video":
-                stream_idx=idx
-                break
-        stream = video_info["streams"][stream_idx]
-        video_def = getVideoDefinition(
-            url_path,
-            stream["codec_name"],
-            (stream["height"], stream["width"]),
-            codec_description=stream["codec_long_name"])
 
-        return video_def
+def make_video_definition(disk_file, url_path):
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "stream",
+        "-print_format",
+        "json",
+        disk_file,
+    ]
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
+    video_info = json.loads(output)
+    stream_idx = 0
+    for idx, stream in enumerate(video_info["streams"]):
+        if stream["codec_type"] == "video":
+            stream_idx = idx
+            break
+    stream = video_info["streams"][stream_idx]
+    video_def = getVideoDefinition(
+        url_path,
+        stream["codec_name"],
+        (stream["height"], stream["width"]),
+        codec_description=stream["codec_long_name"],
+    )
+
+    return video_def
+
 
 def migrateVideosToNewSchema(project):
-    videos = Media.objects.filter(project=project, type__dtype='video')
+    videos = Media.objects.filter(project=project, type__dtype="video")
     for video in progressbar(videos):
         streaming_definition = make_video_definition(
-            os.path.join(settings.MEDIA_ROOT,
-                         video.file.name),
-            os.path.join(settings.MEDIA_URL,
-                         video.file.name))
+            os.path.join(settings.MEDIA_ROOT, video.file.name),
+            os.path.join(settings.MEDIA_URL, video.file.name),
+        )
         if video.segment_info:
-            streaming_definition['segment_info'] = video.segment_info
+            streaming_definition["segment_info"] = video.segment_info
         if video.original:
-            archival_definition = make_video_definition(video.original,
-                                                        video.original)
-        media_files = {"streaming" : [streaming_definition]}
+            archival_definition = make_video_definition(video.original, video.original)
+        media_files = {"streaming": [streaming_definition]}
 
         if archival_definition:
             media_files.update({"archival": [archival_definition]})
@@ -199,23 +222,24 @@ def migrateVideosToNewSchema(project):
         pprint(media_files)
         video.save()
 
+
 def fixVideoDims(project):
-    videos = Media.objects.filter(project=project, type__dtype='video')
+    videos = Media.objects.filter(project=project, type__dtype="video")
     for video in progressbar(videos):
         try:
             if video.original:
-                archival_definition = make_video_definition(video.original,
-                                                            video.original)
+                archival_definition = make_video_definition(video.original, video.original)
                 video.height = archival_definition["resolution"][0]
                 video.width = archival_definition["resolution"][1]
                 video.save()
         except:
             print(f"Error on {video.pk}")
 
+
 def clearOldFilebeatIndices():
-    es = Elasticsearch([os.getenv('ELASTICSEARCH_HOST')])
-    for index in es.indices.get('filebeat-*'):
-        tokens = str(index).split('-')
+    es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST")])
+    for index in es.indices.get("filebeat-*"):
+        tokens = str(index).split("-")
         if len(tokens) < 3:
             continue
         dt = parse(tokens[2])
@@ -224,26 +248,30 @@ def clearOldFilebeatIndices():
             logger.info(f"Deleting old filebeat index {index}")
             es.indices.delete(str(index))
 
+
 def make_sections():
     for project in Project.objects.all().iterator():
-        es = Elasticsearch([os.getenv('ELASTICSEARCH_HOST')])
-        result = es.search(index=f'project_{project.pk}',
-                           body={'size': 0,
-                                 'aggs': {'sections': {'terms': {'field': 'tator_user_sections',
-                                                                 'size': 1000}}}},
-                           stored_fields=[])
-        for section in result['aggregations']['sections']['buckets']:
-            Section.objects.create(project=project,
-                                   name=section['key'],
-                                   tator_user_sections=section['key'])
+        es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST")])
+        result = es.search(
+            index=f"project_{project.pk}",
+            body={
+                "size": 0,
+                "aggs": {"sections": {"terms": {"field": "tator_user_sections", "size": 1000}}},
+            },
+            stored_fields=[],
+        )
+        for section in result["aggregations"]["sections"]["buckets"]:
+            Section.objects.create(
+                project=project, name=section["key"], tator_user_sections=section["key"]
+            )
             logger.info(f"Created section {section['key']} in project {project.pk}!")
 
-def make_resources():
 
+def make_resources():
     # Function to build resource objects from paths.
     def _resources_from_paths(paths):
         paths = [os.readlink(path) if os.path.islink(path) else path for path in paths]
-        exists = list(Resource.objects.filter(path__in=paths).values_list('path', flat=True))
+        exists = list(Resource.objects.filter(path__in=paths).values_list("path", flat=True))
         needs_create = list(set(paths).difference(exists))
         paths = []
         return [Resource(path=p) for p in needs_create]
@@ -254,12 +282,20 @@ def make_resources():
         if media.file:
             paths.append(media.file.path)
         if media.media_files:
-            for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif', 'attachment']:
+            for key in [
+                "streaming",
+                "archival",
+                "audio",
+                "image",
+                "thumbnail",
+                "thumbnail_gif",
+                "attachment",
+            ]:
                 if key in media.media_files:
-                    paths += [f['path'] for f in media.media_files[key]]
-                    if key == 'streaming':
+                    paths += [f["path"] for f in media.media_files[key]]
+                    if key == "streaming":
                         try:
-                            paths += [f['segment_info'] for f in media.media_files[key]]
+                            paths += [f["segment_info"] for f in media.media_files[key]]
                         except:
                             logger.info(f"Media {media.id} does not have a segment file!")
         if media.original:
@@ -315,20 +351,26 @@ def make_resources():
         logger.info(f"Created {num_relations} media relations...")
     logger.info("Media relation creation complete!")
 
+
 def set_default_versions():
     memberships = Membership.objects.all()
     for membership in list(memberships):
-        versions = Version.objects.filter(project=membership.project, number__gte=0).order_by('number')
+        versions = Version.objects.filter(project=membership.project, number__gte=0).order_by(
+            "number"
+        )
         if versions.exists():
             versions_by_name = {version.name: version for version in versions}
             if str(membership.user) in versions_by_name:
                 membership.default_version = versions_by_name[str(membership.user)]
             else:
                 membership.default_version = versions[0]
-            logger.info(f"Set default version for user {membership.user}, project "
-                        f"{membership.project} to {membership.default_version.name}...")
+            logger.info(
+                f"Set default version for user {membership.user}, project "
+                f"{membership.project} to {membership.default_version.name}..."
+            )
             membership.save()
     logger.info(f"Set all default versions!")
+
 
 def move_backups_to_s3():
     # Try to use the default backup bucket
@@ -341,10 +383,10 @@ def move_backups_to_s3():
         bucket_name = os.getenv("BACKUP_STORAGE_BUCKET_NAME")
 
     num_moved = 0
-    for backup in os.listdir('/backup'):
+    for backup in os.listdir("/backup"):
         logger.info(f"Moving {backup} to S3...")
-        key = f'backup/{backup}'
-        path = os.path.join('/backup', backup)
+        key = f"backup/{backup}"
+        path = os.path.join("/backup", backup)
         size = os.stat(path).st_size
         success = TatorBackupManager._upload_from_file(store, key, path, size, "DOMAIN")
         if not success:
@@ -355,6 +397,8 @@ def move_backups_to_s3():
 
 
 ARCHIVE_MEDIA_KEYS = ["streaming", "archival", "audio", "image", "attachment"]
+
+
 def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False):
     media_to_update = set()
     path_filename = "manifest_spec.txt"
@@ -506,9 +550,7 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
             fp.writelines(media_to_update)
 
 
-def fix_bad_restores(
-        *, media_id_list, live_run=False, force_update=False, restored_by_date=None
-):
+def fix_bad_restores(*, media_id_list, live_run=False, force_update=False, restored_by_date=None):
     update_sc = set()
     update_tag = set()
     archived_resources = set()
@@ -603,13 +645,13 @@ def fix_bad_restores(
                         tag_needs_updating = tag_needs_updating or bools[2]
 
             if sc_needs_updating:
-              try:
-                  success = _update_sc(single, store) and success
-              except:
-                  logger.warning(
-                      f"Storage class operation on {path} from {single.id} failed", exc_info=True
-                  )
-                  success = False
+                try:
+                    success = _update_sc(single, store) and success
+                except:
+                    logger.warning(
+                        f"Storage class operation on {path} from {single.id} failed", exc_info=True
+                    )
+                    success = False
         else:
             logger.warning(f"Media {single.id} has no media files")
 
@@ -902,7 +944,7 @@ def update_queryset_archive_state(media_qs, target_state):
     return not_ready
 
 
-def notify_admins(not_ready, ses=None):
+def notify_admins(not_ready, email_service=None):
     """
     Using the dict returned by `update_queryset_archive_state`, this logs all blocked operations
     and, if enabled, emails all project admins with the same information.
@@ -949,52 +991,62 @@ def notify_admins(not_ready, ses=None):
                 User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
             )
 
-            ses.email(
+            email_service.email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=f"Nightly archive for {project.name} ({project.id}) failed",
                 text="\n\n".join(email_text_list),
             )
 
+
 def add_elemental_id(project, metadata_type):
-    assert metadata_type in ['localization', 'state']
-    if metadata_type == 'localization':
+    assert metadata_type in ["localization", "state"]
+    if metadata_type == "localization":
         type_obj = LocalizationType
         obj_obj = Localization
-    elif metadata_type == 'state':
+    elif metadata_type == "state":
         type_obj = StateType
         obj_obj = State
 
     types = type_obj.objects.filter(project=project)
-    parents_to_change = obj_obj.objects.filter(project=project, type__in=types, parent__isnull=True, elemental_id__isnull=True)
+    parents_to_change = obj_obj.objects.filter(
+        project=project, type__in=types, parent__isnull=True, elemental_id__isnull=True
+    )
     print(f"Updating {parents_to_change.count()} parents ")
     for parent in progressbar.progressbar(parents_to_change):
         parent.elemental_id = uuid.uuid4()
         parent.save()
 
-    children_to_change = obj_obj.objects.filter(project=project, type__in=types, parent__isnull=False)
+    children_to_change = obj_obj.objects.filter(
+        project=project, type__in=types, parent__isnull=False
+    )
     for child in progressbar.progressbar(children_to_change):
         child.elemental_id = child.parent.elemental_id
         child.save()
 
+
 def find_legacy_sections():
-    sections = Section.objects.filter(lucene_search__isnull=False).filter(object_search__isnull=True)
+    sections = Section.objects.filter(lucene_search__isnull=False).filter(
+        object_search__isnull=True
+    )
     for s in sections:
         print(f"{s.pk}\t{s.name}\t{s.lucene_search}")
 
+
 def convert_legacy_sections(filename):
-    """ PIPE format
+    """PIPE format
     pk | name | lucene | object search
     """
     import json
+
     with open(filename) as fp:
         lines = fp.readlines()
-        for l in [x for x in lines if x != '\n']:
-            comps = l.split('|')
+        for l in [x for x in lines if x != "\n"]:
+            comps = l.split("|")
             assert len(comps) == 4
-            pk=comps[0]
-            object_search=comps[3]
-            s=Section.objects.get(pk=pk)
+            pk = comps[0]
+            object_search = comps[3]
+            s = Section.objects.get(pk=pk)
             s.object_search = json.loads(object_search)
             s.save()
             print(f"Updated {s.pk}")

@@ -1,0 +1,141 @@
+server_names_hash_bucket_size 128;
+proxy_ignore_client_abort on;
+client_max_body_size 0;
+
+server {
+  listen ${PORT};
+
+  server_name ${MAIN_HOST} localhost 127.0.0.1;
+
+  access_log /var/log/nginx/access.log;
+  error_log /var/log/nginx/error.log;
+
+  location ~*phpinfo.php {
+    return 404;
+  }
+  location ~*index.php {
+    return 404;
+  }
+  location ~*elrekt.php {
+    return 404;
+  }
+  location ~*config.php {
+    return 404;
+  }
+  location ~*wp-login.php {
+    return 404;
+  }
+  location ~*phpmyadmin {
+    return 404;
+  }
+  location ~*recordings/theme/main.css {
+    return 404;
+  }
+  location ~*HNAP1 {
+    return 404;
+  }
+  location /favicon.ico {
+    alias /static/images/favicon.ico;
+    add_header Cache-Control "max-age=3600, must-revalidate";
+  }
+  location /static {
+    alias /static/;
+    autoindex off;
+    add_header Cache-Control "max-age=0, must-revalidate";
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy credentialless;
+  }
+  location /docs {
+    return 301 https://tator.io/docs;
+  }
+  location /media {
+    alias /media/;
+    autoindex off;
+    add_header Cache-Control "max-age=3600, must-revalidate";
+    add_header 'Access-Control-Allow-Headers' 'Authorization,X-CSRFToken' always;
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy credentialless;
+    auth_request /auth-project;
+  }
+  location /media/working
+  {
+    return 403;
+  }
+  location /auth-project {
+    internal;
+    # Allow for long responses.
+    proxy_connect_timeout 1200;
+    proxy_send_timeout 1200;
+    proxy_read_timeout 1200;
+    send_timeout 1200;
+
+    proxy_pass http://gunicorn/auth-project;
+    proxy_pass_request_body off;
+    proxy_set_header Host $http_host;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_pass_header Authorization;
+
+    proxy_http_version 1.1;
+  }
+  location /objects/ {
+    proxy_pass http://minio:9000/;
+  }
+  location /auth-admin {
+    internal;
+    proxy_pass http://gunicorn/auth-admin;
+    proxy_pass_request_body off;
+    proxy_set_header Host $http_host;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_pass_header Authorization;
+  }
+  location ~ ^/$|^/rest$|^/rest/$|^/static|^/(callback|exchange|refresh|projects|token|organizations|registration|accept|account-profile|password-reset-request|password-reset)|^/\d+/ {
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy credentialless;
+    proxy_pass http://ui:3000;
+
+    proxy_redirect off;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host $server_name;
+    add_header Cache-Control "max-age=0, must-revalidate";
+
+    gzip on;
+    gzip_types application/json;
+    gzip_min_length 1024;
+  }
+
+  location / {
+    # Allow for big REST responses.
+    proxy_connect_timeout 1200;
+    proxy_send_timeout 1200;
+    proxy_read_timeout 1200;
+    send_timeout 1200;
+
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy credentialless;
+    proxy_pass http://gunicorn;
+
+    proxy_redirect off;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host $server_name;
+    add_header Cache-Control "max-age=0, must-revalidate";
+
+    gzip on;
+    gzip_types application/json;
+    gzip_min_length 1024;
+  }
+
+  error_page 503 /static/maintenance.html;
+  # Allow POST on static pages
+  error_page 405 =200 $uri;
+}
+

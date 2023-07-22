@@ -2,8 +2,7 @@ import { ModalDialog } from "../components/modal-dialog.js";
 
 export class NewProjectDialog extends ModalDialog {
   constructor() {
-    super(); 
-    console.log("Test");
+    super();
 
     this._title.nodeValue = "Create new project";
     this._main.style.marginBottom = "0";
@@ -25,26 +24,35 @@ export class NewProjectDialog extends ModalDialog {
 
     this._preset = document.createElement("enum-input");
     this._preset.setAttribute("name", "Preset");
-    this._preset.choices = [{
-      value: "imageClassification",
-      label: "Image classification",
-    }, {
-      value: "objectDetection",
-      label: "Object detection",
-    }, {
-      value: "multiObjectTracking",
-      label: "Multi-object tracking",
-    }, {
-      value: "activityRecognition",
-      label: "Activity recognition",
-    }, {
-      value: "none",
-      label: "None (no preset)",
-    }];
+    this._preset.choices = [
+      {
+        value: "imageClassification",
+        label: "Image classification",
+      },
+      {
+        value: "objectDetection",
+        label: "Object detection",
+      },
+      {
+        value: "multiObjectTracking",
+        label: "Multi-object tracking",
+      },
+      {
+        value: "activityRecognition",
+        label: "Activity recognition",
+      },
+      {
+        value: "none",
+        label: "None (no preset)",
+      },
+    ];
     this._main.appendChild(this._preset);
 
     const messages = document.createElement("div");
-    messages.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center");
+    messages.setAttribute(
+      "class",
+      "main__header d-flex flex-items-center flex-justify-center"
+    );
     this._main.appendChild(messages);
 
     this._messageList = document.createElement("ul");
@@ -69,7 +77,7 @@ export class NewProjectDialog extends ModalDialog {
 
     // Indicates whether project was created.
     this._confirm = false;
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -77,7 +85,7 @@ export class NewProjectDialog extends ModalDialog {
 
     cancel.addEventListener("click", this._closeCallback);
 
-    this._accept.addEventListener("click", evt => {
+    this._accept.addEventListener("click", (evt) => {
       this._confirm = true;
       this._closeCallback();
     });
@@ -97,7 +105,7 @@ export class NewProjectDialog extends ModalDialog {
   }
 
   set projects(projects) {
-    this._existingNames = projects.map(project => project.name.toLowerCase());
+    this._existingNames = projects.map((project) => project.name.toLowerCase());
   }
 
   static get observedAttributes() {
@@ -105,7 +113,12 @@ export class NewProjectDialog extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "is-open":
         break;

@@ -10,34 +10,37 @@ export class AffiliationEdit extends OrgTypeFormTemplate {
     // To show who algo is registered to
     this._userData = document.createElement("user-data");
 
-    // 
+    //
     var templateInner = document.getElementById("affiliation-edit");
     var innerClone = document.importNode(templateInner.content, true);
     this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("affiliation-edit--form");
-    this._userInput = this._shadow.getElementById("affiliation-edit--search-users");
-    this._permissionSelect = this._shadow.getElementById("affiliation-edit--permission");
-  
+    this._userInput = this._shadow.getElementById(
+      "affiliation-edit--search-users"
+    );
+    this._permissionSelect = this._shadow.getElementById(
+      "affiliation-edit--permission"
+    );
+
     //
     this._userInput.init(this._userData);
   }
 
-
   async _setupFormUnique() {
     //
-    this._userInput.hidden = (this._data.id !== "New");
-  
+    this._userInput.hidden = this._data.id !== "New";
+
     // permission
     if (!this._permissionSelect._choices) {
       const permissionOptions = [
-        { "label": "Member", "value": "Member" },
-        { "label": "Admin", "value": "Admin" },
+        { label: "Member", value: "Member" },
+        { label: "Admin", value: "Admin" },
       ];
-      this._permissionSelect.choices = permissionOptions;     
+      this._permissionSelect.choices = permissionOptions;
     }
-  
-    this._permissionSelect._select.required = (this._data.id === "New");
+
+    this._permissionSelect._select.required = this._data.id === "New";
     this._permissionSelect.setValue(this._data.permission);
     this._permissionSelect.default = this._data.permission;
   }

@@ -1,4 +1,4 @@
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../../util/utilities.js";
 import { EntityCardGallery } from "../../components/entity-gallery/entity-gallery_grid.js";
 
@@ -6,10 +6,13 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
   constructor() {
     super();
     /*
-    * Add tools, headings and pagination for gallery here
-    *
-    */
-    this._main.setAttribute("class", "enitity-gallery--main ml-1 mt-6 px-5 rounded-1");
+     * Add tools, headings and pagination for gallery here
+     *
+     */
+    this._main.setAttribute(
+      "class",
+      "enitity-gallery--main ml-1 mt-6 px-5 rounded-1"
+    );
 
     this._customContent = true;
 
@@ -32,7 +35,10 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     //this._h3.appendChild( this._h3Text );
 
     const header = document.createElement("div");
-    header.setAttribute("class", "project__header d-flex flex-items-center px-2");
+    header.setAttribute(
+      "class",
+      "project__header d-flex flex-items-center px-2"
+    );
     this._p.appendChild(header);
 
     this._name = document.createElement("h2");
@@ -46,18 +52,18 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
 
     // Tools: Resize Slider to resize images
     this.resizeContainer = document.createElement("div");
-    this.resizeContainer.setAttribute("class", "col-4")
-    this._resizeCards = document.createElement('entity-card-resize');
+    this.resizeContainer.setAttribute("class", "col-4");
+    this._resizeCards = document.createElement("entity-card-resize");
     this._resizeCards._initGallery(this._ul, this.colSize);
-    this.resizeContainer.appendChild( this._resizeCards );
-    this._tools.appendChild( this.resizeContainer );
+    this.resizeContainer.appendChild(this._resizeCards);
+    this._tools.appendChild(this.resizeContainer);
 
     // Tools: Show @aspect ratio
     this.aspectToolContainer = document.createElement("div");
-    this.aspectToolContainer.setAttribute("class", "col-2")
-    this._aspectToggle = document.createElement('entity-gallery-aspect-ratio');
-    this.aspectToolContainer.appendChild( this._aspectToggle );
-    this._tools.appendChild( this.aspectToolContainer );
+    this.aspectToolContainer.setAttribute("class", "col-2");
+    this._aspectToggle = document.createElement("entity-gallery-aspect-ratio");
+    this.aspectToolContainer.appendChild(this._aspectToggle);
+    this._tools.appendChild(this.aspectToolContainer);
 
     // Display options in more menu
     // Note: this is appended to filter nav in collections.js
@@ -65,13 +71,16 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
 
     /**
-      * CARD Label display options link for menu, and checkbox div
-      */
+     * CARD Label display options link for menu, and checkbox div
+     */
     this._cardAttributeLabels = document.createElement("entity-gallery-labels");
     this._cardAttributeLabels.titleEntityTypeName = "localization";
-    this._cardAttributeLabels._titleText = document.createTextNode("Select localization labels to display.");
+    this._cardAttributeLabels._titleText = document.createTextNode(
+      "Select localization labels to display."
+    );
     this._mainTop.appendChild(this._cardAttributeLabels);
-    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML =
+      "Localization Labels";
     this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
     // Init aspect toggle
@@ -90,43 +99,41 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
   }
 
   // Provide access to side panel for events
-  _initPanel({
-    panelContainer,
-    pageModal,
-    cardData,
-    modelData,
-    bulkEdit
-  }){
+  _initPanel({ panelContainer, pageModal, cardData, modelData, bulkEdit }) {
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
-    
 
     // this.panelControls._headingText.innerHTML = `Select Attributes`;
 
     this._bulkEdit = bulkEdit;
 
     // Listen for attribute changes
-    this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
-    this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
+    this.panelContainer._panelTop._panel.entityData.addEventListener(
+      "save",
+      this.entityFormChange.bind(this)
+    );
+    this.panelContainer._panelTop._panel.mediaData.addEventListener(
+      "save",
+      this.mediaFormChange.bind(this)
+    );
 
     this._cardAttributeLabels.init(this.modelData._project);
 
     // Initialize
     for (let locTypeData of this.modelData._localizationTypes) {
-
       //init card labels with localization entity type definitions
-      this._cardAttributeLabels.add({ 
-         typeData: locTypeData,
-         checkedFirst: true
+      this._cardAttributeLabels.add({
+        typeData: locTypeData,
+        checkedFirst: true,
       });
 
       //init panel with localization entity type definitions
       this._bulkEdit._editPanel.addLocType(locTypeData);
     }
-    
+
     // this.panelControls._box.appendChild(this._bulkEdit._editPanel);
     this._mainTop.appendChild(this._bulkEdit._selectionPanel);
     this._bulkEdit._showEditPanel();
@@ -135,18 +142,23 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
 
   /* Init function to show and populate gallery w/ pagination */
   show(cardList) {
-
-   //if (cardList.total >= this.modelData.getMaxFetchCount()) {
-   //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
-   //}
-   //else {
+    //if (cardList.total >= this.modelData.getMaxFetchCount()) {
+    //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
+    //}
+    //else {
     if (cardList.total == 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
-      this._numFiles.textContent = `Viewing ${cardList.paginationState.start + 1} to ${cardList.paginationState.stop > cardList.total ? cardList.total : cardList.paginationState.stop} of ${cardList.total} Results`;
+      this._numFiles.textContent = `Viewing ${
+        cardList.paginationState.start + 1
+      } to ${
+        cardList.paginationState.stop > cardList.total
+          ? cardList.total
+          : cardList.paginationState.stop
+      } of ${cardList.total} Results`;
     }
-   
-   //}
+
+    //}
 
     // Only populate the pagination when the dataset has changed (and therefore the pagination
     // needs to be reinitialized)
@@ -165,7 +177,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     }
 
     // Append the cardList
-    this.makeCards(cardList.cards)
+    this.makeCards(cardList.cards);
   }
 
   cardNotSelected(id) {
@@ -204,20 +216,27 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       const newCard = index >= this._cardElements.length;
 
       /**
-      * entity info for card
-      */
+       * entity info for card
+       */
       let entityType = cardObj.entityType;
       let entityTypeId = entityType.id;
       let card;
 
       /**
-      * Card labels / attributes of localization or media type
-      */
+       * Card labels / attributes of localization or media type
+       */
       const builtInChosen = this._cardAttributeLabels._getValue(-1);
-      this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
-      const cardLabelsChosen = [...this.cardLabelsChosenByType[entityTypeId], ...builtInChosen];
+      this.cardLabelsChosenByType[entityTypeId] =
+        this._cardAttributeLabels._getValue(entityTypeId);
+      const cardLabelsChosen = [
+        ...this.cardLabelsChosenByType[entityTypeId],
+        ...builtInChosen,
+      ];
 
-      this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId] });
+      this._bulkEdit._updateShownAttributes({
+        typeId: entityTypeId,
+        values: this.cardLabelsChosenByType[entityTypeId],
+      });
 
       if (newCard) {
         card = document.createElement("entity-card");
@@ -227,27 +246,36 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
         this._resizeCards._slideInput.addEventListener("change", (evt) => {
           let resizeValue = evt.target.value;
           let resizeValuePerc = parseFloat(resizeValue / 100);
-          return card._img.style.height = `${130 * resizeValuePerc}px`;
+          return (card._img.style.height = `${130 * resizeValuePerc}px`);
         });
 
         this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
-          this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
+          this._bulkEdit._updateShownAttributes({
+            typeId: evt.detail.typeId,
+            values: evt.detail.value,
+          });
 
-          this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;     
- 
+          this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;
+
           let msg = `Entry labels updated`;
           Utilities.showSuccessIcon(msg);
         });
 
         // Open panel if a card is clicked
         card.addEventListener("card-click", (e) => {
-          console.log("Heard card click....")
+          console.log("Heard card click....");
           // if (!this._bulkEdit._editMode) {
-            this.openClosedPanel(e);
+          this.openClosedPanel(e);
           // } else {
-            // For regular clicks while edit mode is true
-            this._bulkEdit._openEditMode({ detail: { element : card, id: card.cardObj.id, isSelected:  card._li.classList.contains("is-selected") } });
+          // For regular clicks while edit mode is true
+          this._bulkEdit._openEditMode({
+            detail: {
+              element: card,
+              id: card.cardObj.id,
+              isSelected: card._li.classList.contains("is-selected"),
+            },
+          });
           // }
         }); // open if panel is closed
 
@@ -278,7 +306,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
         });
 
         cardInfo = {
-          card: card
+          card: card,
         };
         this._cardElements.push(cardInfo);
 
@@ -293,8 +321,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       for (let attr of entityType.attribute_types) {
         if (attr.order >= 0) {
           nonHiddenAttrs.push(attr);
-        }
-        else {
+        } else {
           hiddenAttrs.push(attr);
         }
       }
@@ -313,14 +340,23 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       card.init({
         idx: index,
         obj: cardObj,
-        panelContainer : this.panelContainer,
+        panelContainer: this.panelContainer,
         cardLabelsChosen: cardLabelsChosen,
-        memberships: this.modelData._memberships
+        memberships: this.modelData._memberships,
       });
 
-      const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
-      if (typeof selectedArray !== "undefined" && selectedArray.has(cardObj.id)) {
-        this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
+      const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(
+        entityType.id
+      );
+      if (
+        typeof selectedArray !== "undefined" &&
+        selectedArray.has(cardObj.id)
+      ) {
+        this._bulkEdit._addSelected({
+          element: card,
+          id: cardObj.id,
+          isSelected: true,
+        });
       }
 
       this._currentCardIndexes[cardObj.id] = index;
@@ -349,7 +385,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       const card = this._cardElements[index].card;
       this.cardData.updateLocalizationAttributes(card.cardObj).then(() => {
         //card.displayAttributes();
-        card._updateAttributeValues(card.cardObj)
+        card._updateAttributeValues(card.cardObj);
       });
     }
   }
@@ -358,12 +394,14 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
-      type: "Localization"
-    }).then((data) => {
-      this.updateCardData(data);   
-    }).then(() => {
-      this._bulkEdit.updateCardData(this._cardElements);
+      type: "Localization",
     })
+      .then((data) => {
+        this.updateCardData(data);
+      })
+      .then(() => {
+        this._bulkEdit.updateCardData(this._cardElements);
+      });
   }
 
   mediaFormChange(e) {
@@ -371,74 +409,68 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
-      type: "Media"
+      type: "Media",
     }).then(() => {
-      this.cardData.updateMediaAttributes(mediaId).then(() => {
-        for (let idx = 0; idx < this._cardElements.length; idx++) {
-          const card = this._cardElements[idx].card.cardObj;
-          if (card.mediaId == mediaId) {
-            this._cardElements[idx].annotationPanel.setMediaData(card);
+      this.cardData
+        .updateMediaAttributes(mediaId)
+        .then(() => {
+          for (let idx = 0; idx < this._cardElements.length; idx++) {
+            const card = this._cardElements[idx].card.cardObj;
+            if (card.mediaId == mediaId) {
+              this._cardElements[idx].annotationPanel.setMediaData(card);
+            }
           }
-        }
-      }).then(() => {
-        this._bulkEdit.updateCardData(this._cardElements);
-      });
+        })
+        .then(() => {
+          this._bulkEdit.updateCardData(this._cardElements);
+        });
     });
   }
 
   async formChange({ type, id, values } = {}) {
-    var result = await fetch(`/rest/${type}/${id}`, {
+    var result = await fetchCredentials(`/rest/${type}/${id}`, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(values)
+      body: JSON.stringify(values),
     });
 
     var data = await result.json();
     let msg = "";
     if (result.ok) {
       if (data.details && data.details.contains("Exception")) {
-        msg = `Error: ${data.message}`
+        msg = `Error: ${data.message}`;
         Utilities.warningAlert(msg);
       } else {
-        msg = `${data.message}`
+        msg = `${data.message}`;
         Utilities.showSuccessIcon(msg);
       }
-
     } else {
       if (data.message) {
-        msg = `Error: ${data.message}`
+        msg = `Error: ${data.message}`;
       } else {
-        msg = `Error saving ${type}.`
+        msg = `Error saving ${type}.`;
       }
       Utilities.warningAlert(msg, "#ff3e1d", false);
     }
 
-    result = await fetch(`/rest/${type}/${id}`, {
-      method: "GET",
+    result = await fetchCredentials(`/rest/${type}/${id}`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
     });
     data = await result.json();
     return data;
   }
 
-  openClosedPanel(e){
-      // For all regular clicks while edit mode is false
-      // if (!this.panelContainer.open) this.panelContainer._toggleOpen();
+  openClosedPanel(e) {
+    // For all regular clicks while edit mode is false
+    // if (!this.panelContainer.open) this.panelContainer._toggleOpen();
     e.detail.openFlag = true;
-      this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
-
+    this.panelControls.openHandler(
+      e.detail,
+      this._cardElements,
+      this._currentCardIndexes
+    );
   }
 
   // cardInMultiSelect(id) {
@@ -447,7 +479,9 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
   //     info.card._multiSelectionToggle = true;
   //   }
   // }
-
 }
 
-customElements.define("annotations-corrections-gallery", AnnotationsCorrectionsGallery);
+customElements.define(
+  "annotations-corrections-gallery",
+  AnnotationsCorrectionsGallery
+);

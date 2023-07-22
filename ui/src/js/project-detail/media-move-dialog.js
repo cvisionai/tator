@@ -1,13 +1,12 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { fetchRetry } from "../util/fetch-retry.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { v1 as uuidv1 } from "uuid";
 
 export class MediaMoveDialog extends ModalDialog {
   constructor() {
     super();
 
-    this._title.textContent = "Move media file(s)"
+    this._title.textContent = "Move media file(s)";
 
     this._message = document.createElement("p");
     this._main.appendChild(this._message);
@@ -20,18 +19,27 @@ export class MediaMoveDialog extends ModalDialog {
 
     this._newNameInput = document.createElement("input");
     this._newNameInput.setAttribute("placeholder", "Give it a name...");
-    this._newNameInput.setAttribute("class", "form-control f1 px-4 select-sm col-12");
+    this._newNameInput.setAttribute(
+      "class",
+      "form-control f1 px-4 select-sm col-12"
+    );
     this._newNameInput.hidden = true;
     this._main.appendChild(this._newNameInput);
 
-    let buttonSave = document.createElement("button")
-    buttonSave.setAttribute("class", "btn btn-clear btn-primary f1 text-semibold");
+    let buttonSave = document.createElement("button");
+    buttonSave.setAttribute(
+      "class",
+      "btn btn-clear btn-primary f1 text-semibold"
+    );
     buttonSave.innerHTML = "Confirm";
 
     buttonSave.addEventListener("click", this._moveConfirmed.bind(this));
 
-    let buttonClose = document.createElement("button")
-    buttonClose.setAttribute("class", "btn btn-clear btn-charcoal f1 text-semibold");
+    let buttonClose = document.createElement("button");
+    buttonClose.setAttribute(
+      "class",
+      "btn btn-clear btn-charcoal f1 text-semibold"
+    );
     buttonClose.innerHTML = "Cancel";
 
     buttonClose.addEventListener("click", () => {
@@ -66,7 +74,9 @@ export class MediaMoveDialog extends ModalDialog {
     if (single) {
       this._message.innerHTML = `Move "${this._mediaName}" <span class="text-gray">(ID: ${this._mediaId})</span> to:`;
     } else {
-      this._message.innerHTML = `Move media files <span class="text-gray">(IDs: ${String(this._mediaId).replaceAll(",",", ")})</span> to:`;
+      this._message.innerHTML = `Move media files <span class="text-gray">(IDs: ${String(
+        this._mediaId
+      ).replaceAll(",", ", ")})</span> to:`;
     }
 
     this._moveEnum.hidden = false;
@@ -75,15 +85,11 @@ export class MediaMoveDialog extends ModalDialog {
 
     // get sections
     try {
-      const sectionResp = await fetchRetry(`/rest/Sections/${this._projectId}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      });
+      const sectionResp = await fetchCredentials(
+        `/rest/Sections/${this._projectId}`,
+        {},
+        true
+      );
 
       if (sectionResp.status !== 200) {
         const respObj = await sectionResp.json();
@@ -91,10 +97,9 @@ export class MediaMoveDialog extends ModalDialog {
       } else {
         this._moveEnum.sections = await sectionResp.json();
       }
-
     } catch (err) {
       this._message.textContent = `Error getting section list.`;
-      console.error('Error getting section list.', err)
+      console.error("Error getting section list.", err);
     }
 
     this.setAttribute("is-open", "true");
@@ -103,7 +108,7 @@ export class MediaMoveDialog extends ModalDialog {
   confirmChange(evt) {
     const sectionTo = JSON.parse(evt.detail.to);
     const messageInfo = evt.detail.message;
-    this._single = (this._mediaId.indexOf(",") > -1);
+    this._single = this._mediaId.indexOf(",") > -1;
 
     // Update text
     this.removeAttribute("is-open");
@@ -113,12 +118,24 @@ export class MediaMoveDialog extends ModalDialog {
     this._newNameInput.hidden = true;
     this._footer.classList.remove("hidden");
 
-    if (typeof sectionTo.id !== "undefined" && sectionTo.id !== null && this._single) {
+    if (
+      typeof sectionTo.id !== "undefined" &&
+      sectionTo.id !== null &&
+      this._single
+    ) {
       this._sectionTo = sectionTo;
       this._message.innerHTML = `Move "${this._mediaName}" <span class="text-gray">(ID: ${this._mediaId})</span> to <span class="text-bold">${this._sectionTo.name}</span> folder?`;
-    } else if (typeof sectionTo.id !== "undefined" && sectionTo.id !== null && !this._single) {
+    } else if (
+      typeof sectionTo.id !== "undefined" &&
+      sectionTo.id !== null &&
+      !this._single
+    ) {
       this._sectionTo = sectionTo;
-      this._message.innerHTML = `Move media file(s) <span class="text-gray">(ID: ${String(this._mediaId).replaceAll(",", ", ")})</span> to <span class="text-bold">${this._sectionTo.name}</span> folder?`;
+      this._message.innerHTML = `Move media file(s) <span class="text-gray">(ID: ${String(
+        this._mediaId
+      ).replaceAll(",", ", ")})</span> to <span class="text-bold">${
+        this._sectionTo.name
+      }</span> folder?`;
     } else if (messageInfo) {
       this._message.textContent = `Could not move media: ${messageInfo}`;
       this._sectionTo = null;
@@ -146,7 +163,11 @@ export class MediaMoveDialog extends ModalDialog {
   }
 
   async _moveConfirmed() {
-    if (this._sectionTo !== null && this._sectionTo.name !== null && this._mediaId !== null) {
+    if (
+      this._sectionTo !== null &&
+      this._sectionTo.name !== null &&
+      this._mediaId !== null
+    ) {
       if (this._sectionTo.name !== "NEW") {
         // hide all
         this._moveEnum.hidden = true;
@@ -154,34 +175,36 @@ export class MediaMoveDialog extends ModalDialog {
         this._footer.classList.add("hidden");
         this._message.textContent = `Moving file(s)...`;
 
-
         //fetch call
         try {
           let resp;
           if (this._single) {
-            resp = await fetchRetry(`/rest/Media/${this._mediaId}`, {
-              method: "PATCH",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ "attributes": { "tator_user_sections": this._sectionTo.tator_user_sections } })
-            });
-          } else {
-              resp = await fetchRetry(`/rest/Medias/${this._projectId}?media_id=${this._mediaId}`, {
+            resp = await fetchCredentials(
+              `/rest/Media/${this._mediaId}`,
+              {
                 method: "PATCH",
-                credentials: "same-origin",
-                headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ "attributes": { "tator_user_sections": this._sectionTo.tator_user_sections } })
-              });
+                body: JSON.stringify({
+                  attributes: {
+                    tator_user_sections: this._sectionTo.tator_user_sections,
+                  },
+                }),
+              },
+              true
+            );
+          } else {
+            resp = await fetchCredentials(
+              `/rest/Medias/${this._projectId}?media_id=${this._mediaId}`,
+              {
+                method: "PATCH",
+                body: JSON.stringify({
+                  attributes: {
+                    tator_user_sections: this._sectionTo.tator_user_sections,
+                  },
+                }),
+              },
+              true
+            );
           }
-
 
           const respJSON = await resp.json();
 
@@ -193,15 +216,13 @@ export class MediaMoveDialog extends ModalDialog {
           // Reset values
           this._moveEnum._select.value = "Select a folder";
           this._newNameInput.value = ""; // reset form
-          
+
           // Values
           this._projectId = null;
           this._mediaId = null;
           this._mediaName = null;
           this._sectionTo = null;
           this._single = true;
-
-          
 
           if (resp.status !== 200) {
             this._message.textContent = `Error: ${respJSON.message}`;
@@ -210,18 +231,14 @@ export class MediaMoveDialog extends ModalDialog {
             this.setAttribute("is-open", "true");
             this.fadeOut();
           }
-
         } catch (err) {
           this._message.textContent = `Error updating media.`;
-          console.error("Error updating media.", err)
+          console.error("Error updating media.", err);
         }
 
-
-        
         setTimeout(() => {
-          this._message.textContent = ""
+          this._message.textContent = "";
         }, 3000);
-
       } else if (this._sectionTo.name == "NEW") {
         // CREATE A NEW SECTION AND RETURN THE CONFIRMED DIALOG contents WITH THE NEW SECTION!
         // console.log("Create new section, and then show them modal again......");
@@ -233,22 +250,18 @@ export class MediaMoveDialog extends ModalDialog {
 
         try {
           //fetch call
-          const sectionResp = await fetchRetry(`/rest/Sections/${this._projectId}`, {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
+          const sectionResp = await fetchCredentials(
+            `/rest/Sections/${this._projectId}`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                name: this._newNameInput.value,
+                tator_user_sections: uuidv1(),
+                visible: true,
+              }),
             },
-            body: JSON.stringify({
-              name: this._newNameInput.value,
-              tator_user_sections: uuidv1(),
-              visible: true
-            })
-
-          });
-
+            true
+          );
 
           const respJSON = await sectionResp.json();
 
@@ -267,46 +280,40 @@ export class MediaMoveDialog extends ModalDialog {
             // Reset values
             this._moveEnum._select.value = "Select a folder";
             this._newNameInput.value = ""; // reset form
-            
+
             // get the new section fetch call
-            const getSection = await fetchRetry(`/rest/Section/${respJSON.id}`, {
-              method: "GET",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              }
-            });
+            const getSection = await fetchCredentials(
+              `/rest/Section/${respJSON.id}`
+            );
 
             // to do if sectionResp.status !== 200
             const data = await getSection.json();
 
             if (getSection.status !== 200) {
-              console.error(
-                "Was not able to get the new section data."
-              )
+              console.error("Was not able to get the new section data.");
             } else {
               // refreshes section sidebar
-              this.dispatchEvent(new CustomEvent("new-section", { detail: { section: data }}));
+              this.dispatchEvent(
+                new CustomEvent("new-section", { detail: { section: data } })
+              );
               //then
-              this._moveEnum.dispatchEvent(new CustomEvent("move", {
-                detail: { to: JSON.stringify(data), message: respJSON.message },
-                composed: true
-              }));
+              this._moveEnum.dispatchEvent(
+                new CustomEvent("move", {
+                  detail: {
+                    to: JSON.stringify(data),
+                    message: respJSON.message,
+                  },
+                  composed: true,
+                })
+              );
             }
           }
         } catch (err) {
-          console.error(
-            "Was not able to get the new section data.", err
-          )
+          console.error("Was not able to get the new section data.", err);
         }
       }
-
     }
   }
-
-  
 }
 
 customElements.define("media-move-dialog", MediaMoveDialog);

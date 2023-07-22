@@ -1,24 +1,24 @@
 import { TatorElement } from "./tator-element.js";
 
 export class InlineWarning extends TatorElement {
-    constructor() {
-      super();
-    }
+  constructor() {
+    super();
+  }
 
-    div(){
-      return this._inlineWarningDiv();
-    }
+  div() {
+    return this._inlineWarningDiv();
+  }
 
-    _inlineWarningDiv(){
-      // Div
-      this.inlineWarning = document.createElement("div");
-      this.inlineWarning.setAttribute("class", "text-red d-flex inline-warning");
-      this.inlineWarning.hidden = true;
-  
-      return this.inlineWarning;
-    }
+  _inlineWarningDiv() {
+    // Div
+    this.inlineWarning = document.createElement("div");
+    this.inlineWarning.setAttribute("class", "text-red d-flex inline-warning");
+    this.inlineWarning.hidden = true;
 
-  showCaution(msg){
+    return this.inlineWarning;
+  }
+
+  showCaution(msg) {
     // Clear whatever was there
     this.clear();
 
@@ -27,10 +27,10 @@ export class InlineWarning extends TatorElement {
     this.inlineWarning.append(msg);
 
     // Show
-    return this.inlineWarning.hidden = false;
+    return (this.inlineWarning.hidden = false);
   }
 
-  show(msg){
+  show(msg) {
     // Clear whatever was there
     this.clear();
 
@@ -38,20 +38,18 @@ export class InlineWarning extends TatorElement {
     this.inlineWarning.append(msg);
 
     // Show
-    return this.inlineWarning.hidden = false;
+    return (this.inlineWarning.hidden = false);
   }
 
-  hide(){
+  hide() {
     this.clear();
-    return this.inlineWarning.hidden = true;
+    return (this.inlineWarning.hidden = true);
   }
 
-  clear(){
+  clear() {
     this.inlineWarning.classList.remove("caution");
     this.inlineWarning.innerHTML = "";
   }
-
-
 }
 
 customElements.define("inline-warning", InlineWarning);

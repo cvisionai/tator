@@ -28,7 +28,10 @@ export class SectionMore extends TatorElement {
     this._div.appendChild(this._algorithmMenu);
 
     this._otherButtons = document.createElement("div");
-    this._otherButtons.setAttribute("class", "d-flex flex-column px-4 py-3 lh-condensed");
+    this._otherButtons.setAttribute(
+      "class",
+      "d-flex flex-column px-4 py-3 lh-condensed"
+    );
     this._div.appendChild(this._otherButtons);
 
     this._cardLink = document.createElement("div");
@@ -65,7 +68,7 @@ export class SectionMore extends TatorElement {
 
     window.addEventListener("click", (e) => {
       if (e.composedPath()[0].id != "icon-more-horizontal") {
-        details.removeAttribute("open");   
+        details.removeAttribute("open");
       }
     });
 
@@ -94,19 +97,19 @@ export class SectionMore extends TatorElement {
       this.dispatchEvent(new Event("downloadAnnotations"));
     });
 
-    this._rename.addEventListener("click", evt => {
+    this._rename.addEventListener("click", (evt) => {
       details.removeAttribute("open");
-      this.dispatchEvent(new Event("rename", {composed: true}));
+      this.dispatchEvent(new Event("rename", { composed: true }));
     });
 
-    this._deleteSection.addEventListener("click", evt => {
+    this._deleteSection.addEventListener("click", (evt) => {
       details.removeAttribute("open");
-      this.dispatchEvent(new Event("deleteSection", {composed: true}));
+      this.dispatchEvent(new Event("deleteSection", { composed: true }));
     });
 
-    this._deleteMedia.addEventListener("click", evt => {
+    this._deleteMedia.addEventListener("click", (evt) => {
       details.removeAttribute("open");
-      this.dispatchEvent(new Event("deleteMedia", {composed: true}));
+      this.dispatchEvent(new Event("deleteMedia", { composed: true }));
     });
   }
 
@@ -127,7 +130,7 @@ export class SectionMore extends TatorElement {
         this._rename.setAttribute("text", "Rename saved search");
         this._deleteSection.init("Delete saved search");
       }
-      
+
       this._rename.style.display = "block";
       this._deleteSection.style.display = "block";
       this._deleteMedia.style.display = "block";
@@ -138,7 +141,7 @@ export class SectionMore extends TatorElement {
 
   set project(val) {
     this._project = val;
-    this.showHideWithPermission();    
+    this.showHideWithPermission();
   }
 
   showHideWithPermission() {
@@ -148,7 +151,7 @@ export class SectionMore extends TatorElement {
     if (!hasPermission(permission, "Can Execute")) {
       this._algorithmMenu.style.display = "none";
     }
-    
+
     if (!(hasPermission(permission, "Can Transfer") && enableDownloads)) {
       this._download.style.display = "none";
       this._annotations.style.display = "none";
@@ -169,7 +172,6 @@ export class SectionMore extends TatorElement {
   set algorithms(val) {
     this._algorithmMenu.algorithms = val;
   }
-
 }
 
 customElements.define("section-more", SectionMore);

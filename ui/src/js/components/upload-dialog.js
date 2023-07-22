@@ -72,7 +72,12 @@ export class UploadDialog extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "is-open":
         break;
@@ -81,11 +86,23 @@ export class UploadDialog extends ModalDialog {
 
   init(store) {
     // Create store subscriptions
-    store.subscribe(state => state.uploadChunkProgress, this._setChunkProgress.bind(this));
-    store.subscribe(state => state.uploadTotalFiles, this._setTotalFiles.bind(this));
-    store.subscribe(state => state.uploadFilesComplete, this._setFilesCompleted.bind(this));
-    store.subscribe(state => state.uploadCurrentFile, this._setFilename.bind(this));
-    store.subscribe(state => state.uploadError, this._addError.bind(this));
+    store.subscribe(
+      (state) => state.uploadChunkProgress,
+      this._setChunkProgress.bind(this)
+    );
+    store.subscribe(
+      (state) => state.uploadTotalFiles,
+      this._setTotalFiles.bind(this)
+    );
+    store.subscribe(
+      (state) => state.uploadFilesComplete,
+      this._setFilesCompleted.bind(this)
+    );
+    store.subscribe(
+      (state) => state.uploadCurrentFile,
+      this._setFilename.bind(this)
+    );
+    store.subscribe((state) => state.uploadError, this._addError.bind(this));
   }
 
   _setTotalFiles(numFiles) {
@@ -131,7 +148,7 @@ export class UploadDialog extends ModalDialog {
     this._fileProgress.setAttribute("value", this._doneFiles + this._failFiles);
     this._fileText.textContent = `Uploaded ${this._doneFiles}/${this._totalFiles} Files`;
     if (this._failFiles > 0) {
-      this._fileText.textContent += ` (${this._failFiles} Failed)`
+      this._fileText.textContent += ` (${this._failFiles} Failed)`;
     }
     if (this._doneFiles + this._failFiles == this._totalFiles) {
       this._finish();
@@ -143,7 +160,8 @@ export class UploadDialog extends ModalDialog {
       this._cancelButton.style.display = "none";
       this._close.style.display = "flex";
       if (this._failFiles == 0) {
-        this._uploadText.textContent = "Upload complete! Monitor video transcodes with the \"Activity\" button.";
+        this._uploadText.textContent =
+          'Upload complete! Monitor video transcodes with the "Activity" button.';
         this._title.nodeValue = "Upload Complete!";
       } else {
         this._uploadText.textContent = "Upload failure! See errors below.";
@@ -162,7 +180,7 @@ export class UploadDialog extends ModalDialog {
     this._uploadProgress.setAttribute("value", 0);
     this._doneFiles = 0;
     this._failFiles = 0;
-    
+
     while (this._errors.firstChild) {
       this._errors.removeChild(this._errors.firstChild);
     }

@@ -11,15 +11,23 @@ export class OrgTypeAffiliateContainer extends OrgTypeFormContainer {
     this.sideCol.classList.remove("hidden");
 
     // Sidebar items
-    this.membershipSidebar = document.createElement("affiliation-membership-sidebar");
+    this.membershipSidebar = document.createElement(
+      "affiliation-membership-sidebar"
+    );
     this.sideCol.appendChild(this.membershipSidebar);
   }
 
   connectedCallback() {
     // Subscribe to selection and projectId
-    store.subscribe((state) => state.selection, this._updateFormSelection.bind(this));
-    store.subscribe(state => state.projectId, this.setProjectId.bind(this));
-    store.subscribe(state => state.status, this.handleButtonsActive.bind(this));
+    store.subscribe(
+      (state) => state.selection,
+      this._updateFormSelection.bind(this)
+    );
+    store.subscribe((state) => state.projectId, this.setProjectId.bind(this));
+    store.subscribe(
+      (state) => state.status,
+      this.handleButtonsActive.bind(this)
+    );
 
     // Create in the inner form handles
     const formName = this.getAttribute("form");
@@ -28,16 +36,25 @@ export class OrgTypeAffiliateContainer extends OrgTypeFormContainer {
 
     // Once we know what type, listen to changes
     const typeName = this._form.typeName;
-    store.subscribe(state => state[typeName], this._newData.bind(this));
+    store.subscribe((state) => state[typeName], this._newData.bind(this));
     this.typeName = typeName;
 
     // Event listeners for container actions
     this.save.addEventListener("click", this._form._saveData.bind(this._form));
-    this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
-    this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
+    this.resetLink.addEventListener(
+      "click",
+      this._form._resetForm.bind(this._form)
+    );
+    this.delete.addEventListener(
+      "click",
+      this._form._deleteType.bind(this._form)
+    );
 
     // Custom buttons for certain types (#Todo should these be child elements instead?)
-    store.subscribe(state => state.Project, this.updatedProjectData.bind(this));
+    store.subscribe(
+      (state) => state.Project,
+      this.updatedProjectData.bind(this)
+    );
   }
 
   setUpData(data) {
@@ -64,13 +81,13 @@ export class OrgTypeAffiliateContainer extends OrgTypeFormContainer {
     // Should return a list of projects memberships
     const data = await store.getState().getMembershipData(affUsername);
     this.membershipSidebar.data = data;
-    this.membershipSidebar.username = affUsername;    
+    this.membershipSidebar.username = affUsername;
   }
-  
 }
 
-
-
 if (!customElements.get("org-type-affiliate-container")) {
-  customElements.define("org-type-affiliate-container", OrgTypeAffiliateContainer);
+  customElements.define(
+    "org-type-affiliate-container",
+    OrgTypeAffiliateContainer
+  );
 }

@@ -1,0 +1,1 @@
+40 6 * * * pg_dump -Fc -h $POSTGRES_HOST -U $POSTGRES_USER -d tator_online -f /backup/tator_online_$(date +%Y_%m_%d__%H_%M_%S)_$(GIT_VERSION).sql; > /proc/1/fd/1 2>/proc/1/fd/2

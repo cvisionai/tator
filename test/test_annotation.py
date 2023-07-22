@@ -1,6 +1,7 @@
 import os
 import inspect
 import pytest
+import time
 
 from ._common import print_page_error
 
@@ -15,7 +16,9 @@ def common_annotation(page, canvas, bias=0):
                 ((-50, -50), 'Test Choice 2'),
                 ((100, -50), 'Test Choice 3')]
     for idx, (start, enum_value) in enumerate(box_info):
+        print("trying to click box-button")
         page.click('box-button:not(.disabled)')
+        print("clicked box-button")
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
@@ -112,6 +115,29 @@ def test_image_annotation(page_factory, project, image):
     page.on("pageerror", print_page_error)
     page.wait_for_selector('image-canvas')
     canvas = page.query_selector('image-canvas')
+    common_annotation(page, canvas)
+    page.close()
+
+def test_referenced_image_annotation(page_factory, project, referenced_image):
+    print("[Image] Going to annotation view...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
+    page.goto(f"/{project}/annotation/{referenced_image}", wait_until='networkidle')
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector('image-canvas')
+    canvas = page.query_selector('image-canvas')
+    common_annotation(page, canvas)
+    page.close()
+
+def test_referenced_video_annotation(page_factory, project, referenced_video):
+    print("[Video] Going to annotation view...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
+    page.goto(f"/{project}/annotation/{referenced_video}", wait_until='networkidle')
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector('video-canvas')
+    canvas = page.query_selector('video-canvas')
+    page.wait_for_selector('play-button:not(.disabled)')
     common_annotation(page, canvas)
     page.close()
 

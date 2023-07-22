@@ -14,29 +14,30 @@ from ..store import get_tator_store
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+from ._util import _use_internal_host
 
 logger = logging.getLogger(__name__)
 
+
 class UploadInfoAPI(BaseDetailView):
-    """ Retrieve info needed to upload a file.
-    """
+    """Retrieve info needed to upload a file."""
+
     schema = UploadInfoSchema()
     permission_classes = [ProjectTransferPermission]
-    http_method_names = ['get']
+    http_method_names = ["get"]
 
     def _get(self, params):
-
         # Parse parameters.
-        expiration = params['expiration']
-        num_parts = params['num_parts']
-        project = params['project']
-        media_id = params.get('media_id')
-        file_id = params.get('file_id')
-        filename = params.get('filename')
-        if os.getenv('REQUIRE_HTTPS') == 'TRUE':
-            PROTO = 'https'
+        expiration = params["expiration"]
+        num_parts = params["num_parts"]
+        project = params["project"]
+        media_id = params.get("media_id")
+        file_id = params.get("file_id")
+        filename = params.get("filename")
+        if os.getenv("REQUIRE_HTTPS") == "TRUE":
+            PROTO = "https"
         else:
-            PROTO = 'http'
+            PROTO = "http"
 
         if media_id is not None and file_id is not None:
             raise ValueError(f"Both a file_id and media_id was provided!")
@@ -50,13 +51,15 @@ class UploadInfoAPI(BaseDetailView):
             name = filename
             # If name was specified append a random string to it, to prevent eventual
             # collisions
-            rand_str = ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(10))
+            rand_str = "".join(
+                random.SystemRandom().choice(string.ascii_letters) for _ in range(10)
+            )
             components = os.path.splitext(name)
             name = f"{components[0]}_{rand_str}{components[1]}"
 
         if media_id is None and file_id is None:
             # Generate an object name
-            today = datetime.datetime.now().strftime('%Y-%m-%d')
+            today = datetime.datetime.now().strftime("%Y-%m-%d")
             user = self.request.user.pk
             key = f"_uploads/{today}/{organization}/{project}/{user}/{name}"
             upload_bucket = project_obj.get_bucket(upload=True)
@@ -89,12 +92,16 @@ class UploadInfoAPI(BaseDetailView):
         if tator_store.external_host:
             external = urlsplit(tator_store.external_host, scheme=PROTO)
             urls = [
-                urlunsplit(urlsplit(url)._replace(
-                    netloc=external.netloc + external.path,
-                    scheme=external.scheme
-                ))
+                urlunsplit(
+                    urlsplit(url)._replace(
+                        netloc=external.netloc + external.path, scheme=external.scheme
+                    )
+                )
                 for url in urls
             ]
 
-        return {'urls': urls, 'key': key, 'upload_id': upload_id}
+        # For compose deploys, use internal url.
+        for idx, url in enumerate(urls):
+            urls[idx] = _use_internal_host(self.request, url)
 
+        return {"urls": urls, "key": key, "upload_id": upload_id}

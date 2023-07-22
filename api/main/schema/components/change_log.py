@@ -17,9 +17,9 @@ change_log = {
             "description": "Unique integer identifying project of this change log.",
         },
         "modified_datetime": {
-            'type': 'string',
-            'format': 'date-time',
-            'description': 'Datetime this change occurred.',
+            "type": "string",
+            "format": "date-time",
+            "description": "Datetime this change occurred.",
         },
         "description_of_change": {
             "type": "object",

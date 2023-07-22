@@ -3,8 +3,8 @@ import { ModalDialog } from "../components/modal-dialog.js";
 export class AttachmentDialog extends ModalDialog {
   constructor() {
     super();
-   
-    // Rework the styles 
+
+    // Rework the styles
     this._div.setAttribute("class", "modal-wrap modal-wide d-flex");
     this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
     this._header.setAttribute("class", "px-3 py-3");
@@ -22,7 +22,10 @@ export class AttachmentDialog extends ModalDialog {
     tableDiv.appendChild(this._table);
 
     const thead = document.createElement("thead");
-    thead.setAttribute("class", "f3 text-left text-gray text-uppercase text-semibold");
+    thead.setAttribute(
+      "class",
+      "f3 text-left text-gray text-uppercase text-semibold"
+    );
     this._table.appendChild(thead);
 
     const tr = document.createElement("tr");

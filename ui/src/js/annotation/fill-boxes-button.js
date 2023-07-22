@@ -6,7 +6,10 @@ export class FillBoxesButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting");
+    button.setAttribute(
+      "class",
+      "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
+    );
     this._shadow.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -24,13 +27,13 @@ export class FillBoxesButton extends TatorElement {
     this._title.textContent = "Unfill boxes";
     svg.appendChild(this._title);
 
-    this._filled_elements = []
+    this._filled_elements = [];
     let path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M 1 1 L 1 17 L 17 17 L 17 1 Z");
     path.setAttribute("fill", "currentColor");
     path.setAttribute("fill-opacity", "0.4");
     svg.appendChild(path);
-    this._filled_elements.push(path)
+    this._filled_elements.push(path);
     path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M 7 7 L 7 23 L 23 23 L 23 7 Z");
     path.setAttribute("fill", "currentColor");
@@ -38,13 +41,13 @@ export class FillBoxesButton extends TatorElement {
     svg.appendChild(path);
     this._filled_elements.push(path);
 
-    this._unfilled_elements = []
+    this._unfilled_elements = [];
     path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M 1 1 L 1 17 L 17 17 L 17 1 Z");
     path.setAttribute("fill", "none");
     path.style.display = "none";
     svg.appendChild(path);
-    this._unfilled_elements.push(path)
+    this._unfilled_elements.push(path);
     path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M 7 7 L 7 23 L 23 23 L 23 7 Z");
     path.setAttribute("fill", "none");
@@ -52,7 +55,7 @@ export class FillBoxesButton extends TatorElement {
     svg.appendChild(path);
     this._unfilled_elements.push(path);
 
-    this.current_state = "fill"
+    this.current_state = "fill";
 
     button.addEventListener("click", () => {
       if (this.current_state == "fill") {
@@ -64,7 +67,7 @@ export class FillBoxesButton extends TatorElement {
   }
 
   unfill() {
-    this.current_state = "unfill"
+    this.current_state = "unfill";
     for (let path of this._unfilled_elements) {
       path.style.display = "block";
     }
@@ -75,7 +78,7 @@ export class FillBoxesButton extends TatorElement {
   }
 
   fill() {
-    this.current_state = "fill"
+    this.current_state = "fill";
     for (let path of this._unfilled_elements) {
       path.style.display = "none";
     }

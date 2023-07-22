@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import TatorLogo from "../../images/tator-logo.png";
 
 export class PasswordResetRequestPage extends TatorElement {
@@ -11,7 +11,10 @@ export class PasswordResetRequestPage extends TatorElement {
     this._shadow.appendChild(main);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    div.setAttribute(
+      "class",
+      "main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(div);
 
     const img = document.createElement("img");
@@ -49,7 +52,10 @@ export class PasswordResetRequestPage extends TatorElement {
     footer.appendChild(this._submit);
 
     const errors = document.createElement("div");
-    errors.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    errors.setAttribute(
+      "class",
+      "main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(errors);
 
     this._errorList = document.createElement("ul");
@@ -63,54 +69,52 @@ export class PasswordResetRequestPage extends TatorElement {
     // Whether the form is valid or not
     this._valid = false;
 
-    this._email.addEventListener("input", evt => this._validateForm(evt));
+    this._email.addEventListener("input", (evt) => this._validateForm(evt));
 
     this._modalNotify = document.createElement("modal-notify");
     div.appendChild(this._modalNotify);
-    this._modalNotify.addEventListener("close", evt => {
+    this._modalNotify.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    form.addEventListener("submit", evt => {
+    form.addEventListener("submit", (evt) => {
       evt.preventDefault();
       const body = {
         email: this._email.getValue(),
       };
-      fetch("/rest/PasswordReset", {
+      fetchCredentials("/rest/PasswordReset", {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
-      .then(response => {
-        if (response.status == 400) {
-          return response.json();
-        } else {
-          return Promise.resolve("success");
-        }
-      })
-      .then(data => {
-        if (data == "success") {
-          this._modalNotify.init("Password reset request succeeded!",
-                                 "Check your email for instructions to change password.",
-                                 "ok",
-                                 "Close");
-          this._modalNotify.addEventListener("close", evt => {
-            window.location.replace("/accounts/login");
-          });
-        } else {
-          this._modalNotify.init("Password reset request failed!",
-                                 data.message,
-                                 "error",
-                                 "Close");
-        }
-        this._modalNotify.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-      })
+        .then((response) => {
+          if (response.status == 400) {
+            return response.json();
+          } else {
+            return Promise.resolve("success");
+          }
+        })
+        .then((data) => {
+          if (data == "success") {
+            this._modalNotify.init(
+              "Password reset request succeeded!",
+              "Check your email for instructions to change password.",
+              "ok",
+              "Close"
+            );
+            this._modalNotify.addEventListener("close", (evt) => {
+              window.location.href = "/accounts/login";
+            });
+          } else {
+            this._modalNotify.init(
+              "Password reset request failed!",
+              data.message,
+              "error",
+              "Close"
+            );
+          }
+          this._modalNotify.setAttribute("is-open", "");
+          this.setAttribute("has-open-modal", "");
+        });
     });
   }
 
@@ -143,7 +147,8 @@ export class PasswordResetRequestPage extends TatorElement {
 
   _validateEmail() {
     const email = this._email.getValue();
-    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const re =
+      /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     if (re.test(email)) {
       this._valid = true;
     } else {
@@ -161,8 +166,7 @@ export class PasswordResetRequestPage extends TatorElement {
     }
 
     // Check each field
-    this._validateEmail()
-    .then(() => {
+    this._validateEmail().then(() => {
       // Enable/disable reset button
       if (this._valid) {
         this._submit.removeAttribute("disabled");

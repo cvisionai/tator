@@ -5,7 +5,10 @@ export class NavMain extends TatorElement {
     super();
 
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "nav d-flex flex-justify-between flex-column px-6 text-semibold");
+    this._div.setAttribute(
+      "class",
+      "nav d-flex flex-justify-between flex-column px-6 text-semibold"
+    );
     this._shadow.appendChild(this._div);
 
     this._primary = document.createElement("div");
@@ -29,13 +32,13 @@ export class NavMain extends TatorElement {
 
     this._changePassword = document.createElement("a");
     this._changePassword.setAttribute("class", "nav__link");
-    this._changePassword.setAttribute("href", "/accounts/password_change");
+    this._changePassword.setAttribute("href", "/password-reset-request");
     this._changePassword.textContent = "Change Password";
     this._primary.appendChild(this._changePassword);
 
     this._accountProfile = document.createElement("a");
     this._accountProfile.setAttribute("class", "nav__link");
-    this._accountProfile.setAttribute("href", "/accounts/account-profile");
+    this._accountProfile.setAttribute("href", "/account-profile");
     this._accountProfile.textContent = "Account Profile";
     this._primary.appendChild(this._accountProfile);
 
@@ -53,12 +56,29 @@ export class NavMain extends TatorElement {
 
     const logout = document.createElement("a");
     logout.setAttribute("class", "nav__link");
-    logout.setAttribute("href", "/accounts/logout/");
+    if (KEYCLOAK_ENABLED) {
+      const idToken = localStorage.getItem("id_token");
+      logout.setAttribute(
+        "href",
+        `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=${window.location.origin}/accounts/login`
+      );
+      logout.addEventListener("click", (evt) => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("id_token");
+        localStorage.removeItem("token_type");
+        localStorage.removeItem("issue_time");
+      });
+    } else {
+      logout.setAttribute("href", "/accounts/logout/");
+    }
     logout.textContent = "Logout";
     this._primary.appendChild(logout);
 
     const secondary = document.createElement("div");
-    secondary.setAttribute("class", "nav__secondary d-flex flex-column py-6 text-gray");
+    secondary.setAttribute(
+      "class",
+      "nav__secondary d-flex flex-column py-6 text-gray"
+    );
     this._div.appendChild(secondary);
 
     const heading = document.createElement("span");
@@ -90,11 +110,11 @@ export class NavMain extends TatorElement {
     shortcuts.textContent = "Keyboard Shortcuts";
     headingDiv.appendChild(shortcuts);
 
-    shortcuts.addEventListener("click", evt => {
+    shortcuts.addEventListener("click", (evt) => {
       this.dispatchEvent(new Event("show-shortcuts"));
     });
 
-    close.addEventListener("navClose", evt => {
+    close.addEventListener("navClose", (evt) => {
       this.removeAttribute("is-open");
     });
   }

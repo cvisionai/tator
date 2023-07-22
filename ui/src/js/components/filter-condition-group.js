@@ -6,7 +6,6 @@ import { svgNamespace } from "./tator-element.js";
  * Element that encaspulates a group of filter conditions
  */
 export class FilterConditionGroup extends TatorElement {
-
   constructor() {
     super();
 
@@ -15,14 +14,20 @@ export class FilterConditionGroup extends TatorElement {
 
     var headerDiv = document.createElement("div");
     headerDiv.textContent = "Add Condition";
-    headerDiv.setAttribute("class", "d-flex flex-items-center text-semibold text-gray f2");
+    headerDiv.setAttribute(
+      "class",
+      "d-flex flex-items-center text-semibold text-gray f2"
+    );
     this._div.appendChild(headerDiv);
 
     const addConditionButton = document.createElement("button");
-    addConditionButton.setAttribute("class", "btn btn-outline btn-small f2 px-1");
-    addConditionButton.style.marginLeft = "6px"
-    addConditionButton.style.width = "24px"
-    addConditionButton.style.height = "24px"
+    addConditionButton.setAttribute(
+      "class",
+      "btn btn-outline btn-small f2 px-1"
+    );
+    addConditionButton.style.marginLeft = "6px";
+    addConditionButton.style.width = "24px";
+    addConditionButton.style.height = "24px";
     headerDiv.appendChild(addConditionButton);
 
     const addSvg = document.createElementNS(svgNamespace, "svg");
@@ -51,15 +56,18 @@ export class FilterConditionGroup extends TatorElement {
     addSvg.appendChild(line2);
 
     var spacerDiv = document.createElement("div");
-    spacerDiv.setAttribute("class", "d-flex flex-justify-between flex-items-center py-2");
+    spacerDiv.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-2"
+    );
     this._div.appendChild(spacerDiv);
 
     var innerDiv = document.createElement("div");
     innerDiv.setAttribute("class", "analysis__filter_conditions d-flex py-2");
-    this._div.appendChild(innerDiv)
+    this._div.appendChild(innerDiv);
 
     this._conditionDiv = document.createElement("div");
-    this._conditionDiv.setAttribute("class", "px-2 py-2")
+    this._conditionDiv.setAttribute("class", "px-2 py-2");
     this._conditionDiv.style.width = "100%";
     innerDiv.appendChild(this._conditionDiv);
 
@@ -92,11 +100,9 @@ export class FilterConditionGroup extends TatorElement {
    */
   getConditions() {
     var conditions = [];
-    for (const conditionElem of this._conditionDiv.children)
-    {
+    for (const conditionElem of this._conditionDiv.children) {
       var validCondition = conditionElem.getCondition();
-      if (validCondition != null)
-      {
+      if (validCondition != null) {
         conditions.push(validCondition);
       }
     }
@@ -108,7 +114,6 @@ export class FilterConditionGroup extends TatorElement {
    * @param {array} val - Array of FilterConditionData objects to set the
    */
   setConditions(val) {
-
     // Remove all the children in the conditions div.
     while (this._conditionDiv.firstChild) {
       this._conditionDiv.removeChild(this._conditionDiv.firstChild);

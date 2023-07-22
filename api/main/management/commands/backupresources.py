@@ -9,7 +9,7 @@ from django.db import transaction
 
 from main.backup import TatorBackupManager
 from main.models import Affiliation, Project, Resource, User
-from main.ses import TatorSES
+from main.mail import get_email_service
 from main.store import get_tator_store
 
 
@@ -37,7 +37,7 @@ class Command(BaseCommand):
             logger.info("No project specific backup buckets found!")
             return
 
-        project_ids = projects_needing_backup.values_list('pk', flat=True)
+        project_ids = projects_needing_backup.values_list("pk", flat=True)
 
         resource_qs = resource_qs.filter(media__project__in=project_ids)
 
@@ -50,7 +50,9 @@ class Command(BaseCommand):
         failed_backups = defaultdict(set)
         successful_backups = set()
         domain = os.getenv("MAIN_HOST", "MAIN_HOST")
-        for idx, (success, resource) in enumerate(tbm.backup_resources(projects_needing_backup, resource_qs, domain)):
+        for idx, (success, resource) in enumerate(
+            tbm.backup_resources(projects_needing_backup, resource_qs, domain)
+        ):
             if success:
                 successful_backups.add(resource.id)
             else:
@@ -66,10 +68,7 @@ class Command(BaseCommand):
 
         if failed_backups:
             # Notify owners of failed backup attempt
-            if settings.TATOR_EMAIL_ENABLED:
-                ses = TatorSES()
-            else:
-                ses = None
+            email_service = get_email_service()
 
             for project_id, failed_media_ids in failed_backups.items():
                 msg = (
@@ -78,7 +77,7 @@ class Command(BaseCommand):
                 )
                 logger.warning(msg)
 
-                if ses:
+                if email_service:
                     try:
                         project = Project.objects.get(pk=project_id)
                     except Exception:
@@ -86,9 +85,9 @@ class Command(BaseCommand):
                             f"Could not find project with id '{project_id}', alerting deployment staff",
                             exc_info=True,
                         )
-                        recipient_ids = User.objects.filter(
-                            is_staff=True
-                        ).values_list("id", flat=True)
+                        recipient_ids = User.objects.filter(is_staff=True).values_list(
+                            "id", flat=True
+                        )
                         project_name = project_id
                     else:
                         # Get project administrators
@@ -101,7 +100,7 @@ class Command(BaseCommand):
                         User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
                     )
 
-                    ses.email(
+                    email_service.email(
                         sender=settings.TATOR_EMAIL_SENDER,
                         recipients=recipients,
                         title=f"Nightly backup for {project_name} ({project_id}) failed",

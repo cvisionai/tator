@@ -2,9 +2,7 @@
  * Dependency: localStorage is used
  */
 export class AnnotationBrowserSettings {
-
   constructor(projectId, dataTypes, mediaType) {
-
     this._projectId = projectId;
     this._localStorageKey = `tator_annotation_browser_settings_proj_${projectId}`;
 
@@ -16,6 +14,7 @@ export class AnnotationBrowserSettings {
     this._dataTypeIdMap[mediaTypeId] = mediaType;
 
     this._alwaysVisibleInfoMap = {};
+    this._moreLessToggle = {};
 
     for (const dataType of dataTypes) {
       this._dataTypeIdMap[this.makeId(dataType)] = dataType;
@@ -29,6 +28,8 @@ export class AnnotationBrowserSettings {
         alwaysVisibleInfo[attr.name] = false;
       }
       this._alwaysVisibleInfoMap[this.makeId(dataType)] = alwaysVisibleInfo;
+
+      this._moreLessToggle[this.makeId(dataType)] = "more";
     }
 
     var alwaysVisibleInfo = {};
@@ -40,13 +41,16 @@ export class AnnotationBrowserSettings {
       alwaysVisibleInfo[attr.name] = false;
     }
     this._alwaysVisibleInfoMap[mediaTypeId] = alwaysVisibleInfo;
+    this._moreLessToggle[mediaTypeId] = "more";
 
     try {
       const storedDataJSON = localStorage.getItem(this._localStorageKey);
       if (storedDataJSON) {
         const storageObject = JSON.parse(storedDataJSON);
         if (storageObject.alwaysVisibleInfoMap) {
-          for (const [dataTypeId, info] of Object.entries(storageObject.alwaysVisibleInfoMap)) {
+          for (const [dataTypeId, info] of Object.entries(
+            storageObject.alwaysVisibleInfoMap
+          )) {
             if (dataTypeId in this._alwaysVisibleInfoMap) {
               for (const [attrName, visible] of Object.entries(info)) {
                 this._alwaysVisibleInfoMap[dataTypeId][attrName] = visible;
@@ -54,9 +58,17 @@ export class AnnotationBrowserSettings {
             }
           }
         }
+        if (storageObject.moreLessToggle) {
+          for (const [dataTypeId, toggle] of Object.entries(
+            storageObject.moreLessToggle
+          )) {
+            if (dataTypeId in this._moreLessToggle) {
+              this._moreLessToggle[dataTypeId] = toggle;
+            }
+          }
+        }
       }
-    }
-    catch (exc) {
+    } catch (exc) {
       console.warn(exc);
     }
   }
@@ -70,16 +82,55 @@ export class AnnotationBrowserSettings {
 
     var storageObject = {
       projectId: this._projectId,
-      alwaysVisibleInfoMap: this._alwaysVisibleInfoMap
+      alwaysVisibleInfoMap: this._alwaysVisibleInfoMap,
+      moreLessToggle: this._moreLessToggle,
+    };
+    window.localStorage.setItem(
+      this._localStorageKey,
+      JSON.stringify(storageObject)
+    );
+  }
+
+  /**
+   * @param {Tator.EntityType} dataType MediaType|LocalizationType|StateType
+   * @param {string} toggle "more"|"less"
+   */
+  setMoreLess(dataType, toggle) {
+    if (toggle != "more" && toggle != "less") {
+      console.warn(`Invalid use of setMoreLess - toggle: ${toggle}`);
+      return;
     }
-    window.localStorage.setItem(this._localStorageKey, JSON.stringify(storageObject));
+
+    this._moreLessToggle[this.makeId(dataType)] = toggle;
+
+    var storageObject = {
+      projectId: this._projectId,
+      alwaysVisibleInfoMap: this._alwaysVisibleInfoMap,
+      moreLessToggle: this._moreLessToggle,
+    };
+    window.localStorage.setItem(
+      this._localStorageKey,
+      JSON.stringify(storageObject)
+    );
   }
 
   isAlwaysVisible(dataType, attrName) {
     return this._alwaysVisibleInfoMap[this.makeId(dataType)][attrName];
   }
 
+  /**
+   * @param {Tator.EntityType} dataType MediaType|LocalizationType|StateType
+   * @returns "more"|"less"|undefined
+   */
+  getMoreLess(dataType) {
+    return this._moreLessToggle?.[this.makeId(dataType)];
+  }
+
   makeId(dataType) {
-    return `${dataType.dtype}/${dataType.id}`;
+    if (dataType == undefined) {
+      return;
+    } else {
+      return `${dataType.dtype}/${dataType.id}`;
+    }
   }
 }

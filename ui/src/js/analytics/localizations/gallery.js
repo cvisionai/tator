@@ -1,4 +1,4 @@
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../../util/utilities.js";
 import { EntityCardGallery } from "../../components/entity-gallery/entity-gallery_grid.js";
 
@@ -6,10 +6,9 @@ export class AnnotationsGallery extends EntityCardGallery {
   constructor() {
     super();
     /*
-    * Add tools, headings and pagination for gallery here
-    *
-    */
-
+     * Add tools, headings and pagination for gallery here
+     *
+     */
 
     // * hook to add filter interface
     this._filterDiv = document.createElement("div");
@@ -26,7 +25,10 @@ export class AnnotationsGallery extends EntityCardGallery {
     //this._h3.appendChild( this._h3Text );
 
     const header = document.createElement("div");
-    header.setAttribute("class", "project__header d-flex flex-items-center px-2");
+    header.setAttribute(
+      "class",
+      "project__header d-flex flex-items-center px-2"
+    );
     this._p.appendChild(header);
 
     this._name = document.createElement("h2");
@@ -40,18 +42,18 @@ export class AnnotationsGallery extends EntityCardGallery {
 
     // Tools: Resize Slider to resize images
     this.resizeContainer = document.createElement("div");
-    this.resizeContainer.setAttribute("class", "col-4")
-    this._resizeCards = document.createElement('entity-card-resize');
+    this.resizeContainer.setAttribute("class", "col-4");
+    this._resizeCards = document.createElement("entity-card-resize");
     this._resizeCards._initGallery(this._ul, this.colSize);
-    this.resizeContainer.appendChild( this._resizeCards );
-    this._tools.appendChild( this.resizeContainer );
+    this.resizeContainer.appendChild(this._resizeCards);
+    this._tools.appendChild(this.resizeContainer);
 
     // Tools: Show @aspect ratio
     this.aspectToolContainer = document.createElement("div");
-    this.aspectToolContainer.setAttribute("class", "col-2")
-    this._aspectToggle = document.createElement('entity-gallery-aspect-ratio');
-    this.aspectToolContainer.appendChild( this._aspectToggle );
-    this._tools.appendChild( this.aspectToolContainer );
+    this.aspectToolContainer.setAttribute("class", "col-2");
+    this._aspectToggle = document.createElement("entity-gallery-aspect-ratio");
+    this.aspectToolContainer.appendChild(this._aspectToggle);
+    this._tools.appendChild(this.aspectToolContainer);
 
     // Display options in more menu
     // Note: this is appended to filter nav in collections.js
@@ -59,13 +61,16 @@ export class AnnotationsGallery extends EntityCardGallery {
     this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
 
     /**
-      * CARD Label display options link for menu, and checkbox div
-      */
+     * CARD Label display options link for menu, and checkbox div
+     */
     this._cardAttributeLabels = document.createElement("entity-gallery-labels");
     this._cardAttributeLabels.titleEntityTypeName = "localization";
-    this._cardAttributeLabels._titleText = document.createTextNode("Select localization labels to display.");
+    this._cardAttributeLabels._titleText = document.createTextNode(
+      "Select localization labels to display."
+    );
     this._mainTop.appendChild(this._cardAttributeLabels);
-    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML =
+      "Localization Labels";
     this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
     // Init aspect toggle
@@ -84,13 +89,7 @@ export class AnnotationsGallery extends EntityCardGallery {
   }
 
   // Provide access to side panel for events
-  _initPanel({
-    panelContainer,
-    pageModal,
-    cardData,
-    modelData,
-    modalNotify
-  }){
+  _initPanel({ panelContainer, pageModal, cardData, modelData, modalNotify }) {
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
@@ -99,35 +98,44 @@ export class AnnotationsGallery extends EntityCardGallery {
     this._modalNotify = modalNotify;
 
     // Listen for attribute changes
-    this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
-    this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
-
-    
+    this.panelContainer._panelTop._panel.entityData.addEventListener(
+      "save",
+      this.entityFormChange.bind(this)
+    );
+    this.panelContainer._panelTop._panel.mediaData.addEventListener(
+      "save",
+      this.mediaFormChange.bind(this)
+    );
 
     // Initialize labels selection
     this._cardAttributeLabels.init(this.modelData._project);
-    for (let locTypeData of this.modelData._localizationTypes){
-      this._cardAttributeLabels.add({ 
-         typeData: locTypeData,
-         checkedFirst: true
+    for (let locTypeData of this.modelData._localizationTypes) {
+      this._cardAttributeLabels.add({
+        typeData: locTypeData,
+        checkedFirst: true,
       });
-   }
+    }
   }
 
   /* Init function to show and populate gallery w/ pagination */
   show(cardList) {
-
-   //if (cardList.total >= this.modelData.getMaxFetchCount()) {
-   //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
-   //}
-   //else {
+    //if (cardList.total >= this.modelData.getMaxFetchCount()) {
+    //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
+    //}
+    //else {
     if (cardList.total == 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
-      this._numFiles.textContent = `Viewing ${cardList.paginationState.start + 1} to ${cardList.paginationState.stop > cardList.total ? cardList.total : cardList.paginationState.stop} of ${cardList.total} Results`;
+      this._numFiles.textContent = `Viewing ${
+        cardList.paginationState.start + 1
+      } to ${
+        cardList.paginationState.stop > cardList.total
+          ? cardList.total
+          : cardList.paginationState.stop
+      } of ${cardList.total} Results`;
     }
-   
-   //}
+
+    //}
 
     // Only populate the pagination when the dataset has changed (and therefore the pagination
     // needs to be reinitialized)
@@ -142,7 +150,7 @@ export class AnnotationsGallery extends EntityCardGallery {
     }
 
     // Append the cardList
-    this.makeCards(cardList.cards)
+    this.makeCards(cardList.cards);
   }
 
   cardNotSelected(id) {
@@ -181,18 +189,22 @@ export class AnnotationsGallery extends EntityCardGallery {
       const newCard = index >= this._cardElements.length;
 
       /**
-      * entity info for card
-      */
+       * entity info for card
+       */
       let entityType = cardObj.entityType;
       let entityTypeId = entityType.id;
       let card;
 
       /**
-      * Card labels / attributes of localization or media type
-      */
+       * Card labels / attributes of localization or media type
+       */
       const builtInChosen = this._cardAttributeLabels._getValue(-1);
-      this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
-      const cardLabelsChosen = [...this.cardLabelsChosenByType[entityTypeId], ...builtInChosen];
+      this.cardLabelsChosenByType[entityTypeId] =
+        this._cardAttributeLabels._getValue(entityTypeId);
+      const cardLabelsChosen = [
+        ...this.cardLabelsChosenByType[entityTypeId],
+        ...builtInChosen,
+      ];
 
       if (newCard) {
         card = document.createElement("entity-card");
@@ -202,12 +214,12 @@ export class AnnotationsGallery extends EntityCardGallery {
         this._resizeCards._slideInput.addEventListener("change", (evt) => {
           let resizeValue = evt.target.value;
           let resizeValuePerc = parseFloat(resizeValue / 100);
-          return card._img.style.height = `${130 * resizeValuePerc}px`;
+          return (card._img.style.height = `${130 * resizeValuePerc}px`);
         });
 
         this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
-          this.cardLabelsChosenByType[entityTypeId] =  evt.detail.value;
+          this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;
           let msg = `Entry labels updated`;
           Utilities.showSuccessIcon(msg);
         });
@@ -222,33 +234,42 @@ export class AnnotationsGallery extends EntityCardGallery {
         });
 
         cardInfo = {
-          card: card
+          card: card,
         };
         this._cardElements.push(cardInfo);
 
         // Delete localization / entity
         this.addEventListener("delete-entity", (evt) => {
-          this._modalNotify.init("Confirm remove", `Are you sure you want to delete ${this.cardObj.localization.name}?`, "error", "confirm", false);
+          this._modalNotify.init(
+            "Confirm remove",
+            `Are you sure you want to delete ${this.cardObj.localization.name}?`,
+            "error",
+            "confirm",
+            false
+          );
           this._modalNotify.setAttribute("is-open", "true");
-        
+
           this._modalNotify._accept.addEventListener("click", () => {
             this._modalNotify.closeCallback();
             console.log("OL!");
-            fetch(`/rest/Localization/${this.cardObj.id}`, {
+            fetchCredentials(`/rest/Localization/${this.cardObj.id}`, {
               method: "DELETE",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              }
             })
-              .then(response => { return response.json(); })
-              .then(result => {
-                this._modalNotify.init("Success!", `${result}`, "ok", "ok", false);
+              .then((response) => {
+                return response.json();
+              })
+              .then((result) => {
+                this._modalNotify.init(
+                  "Success!",
+                  `${result}`,
+                  "ok",
+                  "ok",
+                  false
+                );
                 this._modalNotify.setAttribute("is-open", "");
                 this._modalNotify.fadeOut();
-              }).catch(err => {
+              })
+              .catch((err) => {
                 console.error("Error deleting localization entity.", err);
               });
           });
@@ -265,8 +286,7 @@ export class AnnotationsGallery extends EntityCardGallery {
       for (let attr of entityType.attribute_types) {
         if (attr.order >= 0) {
           nonHiddenAttrs.push(attr);
-        }
-        else {
+        } else {
           hiddenAttrs.push(attr);
         }
       }
@@ -284,9 +304,9 @@ export class AnnotationsGallery extends EntityCardGallery {
       console.log(this.modelData._memberships);
       card.init({
         obj: cardObj,
-        panelContainer : this.panelContainer,
+        panelContainer: this.panelContainer,
         cardLabelsChosen: cardLabelsChosen,
-        memberships: this.modelData._memberships
+        memberships: this.modelData._memberships,
       });
 
       this._currentCardIndexes[cardObj.id] = index;
@@ -310,7 +330,7 @@ export class AnnotationsGallery extends EntityCardGallery {
       const card = this._cardElements[index].card;
       this.cardData.updateLocalizationAttributes(card.cardObj).then(() => {
         //card.displayAttributes();
-        card._updateAttributeValues(card.cardObj)
+        card._updateAttributeValues(card.cardObj);
       });
     }
   }
@@ -319,9 +339,9 @@ export class AnnotationsGallery extends EntityCardGallery {
     this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
-      type: "Localization"
+      type: "Localization",
     }).then((data) => {
-        this.updateCardData(data);
+      this.updateCardData(data);
     });
   }
 
@@ -330,7 +350,7 @@ export class AnnotationsGallery extends EntityCardGallery {
     this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
-      type: "Media"
+      type: "Media",
     }).then(() => {
       this.cardData.updateMediaAttributes(mediaId).then(() => {
         for (let idx = 0; idx < this._cardElements.length; idx++) {
@@ -344,56 +364,48 @@ export class AnnotationsGallery extends EntityCardGallery {
   }
 
   async formChange({ type, id, values } = {}) {
-    var result = await fetch(`/rest/${type}/${id}`, {
+    var result = await fetchCredentials(`/rest/${type}/${id}`, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(values)
+      body: JSON.stringify(values),
     });
 
     var data = await result.json();
     let msg = "";
     if (result.ok) {
       if (data.details && data.details.contains("Exception")) {
-        msg = `Error: ${data.message}`
+        msg = `Error: ${data.message}`;
         Utilities.warningAlert(msg);
       } else {
-        msg = `${data.message}`
+        msg = `${data.message}`;
         Utilities.showSuccessIcon(msg);
       }
-
     } else {
       if (data.message) {
-        msg = `Error: ${data.message}`
+        msg = `Error: ${data.message}`;
       } else {
-        msg = `Error saving ${type}.`
+        msg = `Error saving ${type}.`;
       }
       Utilities.warningAlert(msg, "#ff3e1d", false);
     }
 
-    result = await fetch(`/rest/${type}/${id}`, {
-      method: "GET",
+    result = await fetchCredentials(`/rest/${type}/${id}`, {
       mode: "cors",
       credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
     });
     data = await result.json();
     return data;
   }
 
-  openClosedPanel(e){
+  openClosedPanel(e) {
     console.log(e.target);
-    if(!this.panelContainer.open) this.panelContainer._toggleOpen();
-    this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
+    if (!this.panelContainer.open) this.panelContainer._toggleOpen();
+    this.panelControls.openHandler(
+      e.detail,
+      this._cardElements,
+      this._currentCardIndexes
+    );
   }
 }
 

@@ -22,7 +22,10 @@ export class HeaderUser extends TatorElement {
     innerDiv.appendChild(this._email);
 
     this._avatar = document.createElement("span");
-    this._avatar.setAttribute("class", "avatar circle d-flex flex-items-center flex-justify-center");
+    this._avatar.setAttribute(
+      "class",
+      "avatar circle d-flex flex-items-center flex-justify-center"
+    );
     div.appendChild(this._avatar);
   }
 
@@ -35,7 +38,9 @@ export class HeaderUser extends TatorElement {
       case "username":
         this._username.textContent = newValue;
         let initials = newValue.match(/\b\w/g) || [];
-        initials = ((initials.shift() || '') + (initials.pop() || '')).toUpperCase();
+        initials = (
+          (initials.shift() || "") + (initials.pop() || "")
+        ).toUpperCase();
         this._avatar.textContent = initials;
         break;
       case "email":

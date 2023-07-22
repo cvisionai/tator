@@ -17,7 +17,7 @@ export class NameDialog extends ModalDialog {
 
     // Indicates whether name was saved.
     this._confirm = false;
-    
+
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
     cancel.textContent = "Cancel";
@@ -25,7 +25,7 @@ export class NameDialog extends ModalDialog {
 
     cancel.addEventListener("click", this._closeCallback);
 
-    this._accept.addEventListener("click", evt => {
+    this._accept.addEventListener("click", (evt) => {
       this._confirm = true;
       this._closeCallback();
     });
@@ -36,7 +36,12 @@ export class NameDialog extends ModalDialog {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    ModalDialog.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
     switch (name) {
       case "is-open":
         break;

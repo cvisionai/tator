@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import "../../annotation/attribute-panel.js";
 
 export class EntityGalleryPanelForm extends TatorElement {
@@ -20,7 +21,10 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.permission = "View Only"; // start as view only - set to user permission on page
     this._div.appendChild(this._attributes);
 
-    this._attributes.addEventListener("change", this._emitChangedData.bind(this));
+    this._attributes.addEventListener(
+      "change",
+      this._emitChangedData.bind(this)
+    );
 
     this._hooksPanel = document.createElement("div");
     this._hooksPanel.setAttribute("class", "col-12");
@@ -48,7 +52,13 @@ export class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    * @param {Media/Localization} attributePanelData
    */
-  _init({ data, attributePanelData, associatedMedia, associatedMediaType, allowDelete = false }) {
+  _init({
+    data,
+    attributePanelData,
+    associatedMedia,
+    associatedMediaType,
+    allowDelete = false,
+  }) {
     if (associatedMedia && associatedMediaType) {
       this._attributes.setAssociatedMedia(associatedMedia, associatedMediaType);
     }
@@ -61,7 +71,6 @@ export class EntityGalleryPanelForm extends TatorElement {
 
     this._data = data;
 
-
     if (attributePanelData.attributes !== null) {
       this._attributes.setValues(attributePanelData);
       this._attributes.style.display = "block";
@@ -73,20 +82,14 @@ export class EntityGalleryPanelForm extends TatorElement {
   async setupApplets() {
     try {
       const projectId = window.location.pathname.split("/")[1];
-      const response = await fetch("/rest/Applets/" + projectId, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
+      const response = await fetchCredentials("/rest/Applets/" + projectId);
       const applets = await response.json();
 
       for (let applet of applets) {
         if (applet.categories.includes("gallery-panel-tools")) {
-          const appletPanel = document.createElement("tools-applet-gallery-panel");
+          const appletPanel = document.createElement(
+            "tools-applet-gallery-panel"
+          );
           appletPanel.saveApplet(applet, this);
         }
       }
@@ -101,8 +104,8 @@ export class EntityGalleryPanelForm extends TatorElement {
       const detail = {
         detail: {
           id: this._data.id,
-          values: values
-        }
+          values: values,
+        },
       };
       this.dispatchEvent(new CustomEvent("save", detail));
     }

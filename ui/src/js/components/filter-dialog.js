@@ -5,9 +5,7 @@ import { FilterConditionData } from "../util/filter-utilities.js";
  * Element used to encapsulate the filter modal dialog.
  */
 export class FilterDialog extends ModalDialog {
-
-  constructor()
-  {
+  constructor() {
     super();
 
     this._div.setAttribute("class", "modal-wrap modal-extra-wide d-flex");
@@ -19,7 +17,10 @@ export class FilterDialog extends ModalDialog {
     this._main.remove();
 
     this._conditionsDiv = document.createElement("div");
-    this._conditionsDiv.setAttribute("class", "analysis__filter_conditions_list");
+    this._conditionsDiv.setAttribute(
+      "class",
+      "analysis__filter_conditions_list"
+    );
     this._header.appendChild(this._conditionsDiv);
 
     const apply = document.createElement("button");
@@ -49,7 +50,6 @@ export class FilterDialog extends ModalDialog {
     });
   }
 
-
   /**
    * Sets the available dataset that can be selected by the user
    *
@@ -60,17 +60,17 @@ export class FilterDialog extends ModalDialog {
    *     .dtype - str - string|bool|float|int|datetime|geopos|enum
    *     .choices - array - Valid only if enum was provided
    */
-  set data(val)
-  {
-    if (this._data != null)
-    {
+  set data(val) {
+    if (this._data != null) {
       console.warn("filter-dialog already binded with a dataset");
     }
 
     this._data = val;
 
     // Set the GUI elements
-    this._filterConditionGroup = document.createElement("filter-condition-group");
+    this._filterConditionGroup = document.createElement(
+      "filter-condition-group"
+    );
     this._filterConditionGroup.data = this._data;
     this._filterConditionGroup._div.style.marginTop = "10px";
     this._conditionsDiv.appendChild(this._filterConditionGroup);

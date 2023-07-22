@@ -5,7 +5,10 @@ export class LinkInput extends TatorElement {
     super();
 
     this.label = document.createElement("label");
-    this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this.label.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-1"
+    );
     this._shadow.appendChild(this.label);
 
     this._labelText = document.createTextNode("");
@@ -29,7 +32,7 @@ export class LinkInput extends TatorElement {
       case "href":
         this._link.setAttribute("href", newValue);
         this._link.textContent = newValue;
-         break;
+        break;
     }
   }
 }

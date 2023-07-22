@@ -1,17 +1,24 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class EntitySelector extends TatorElement {
   constructor() {
     super();
 
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "d-flex flex-items-center flex-justify-between position-relative entity__selector");
+    this._div.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-between position-relative entity__selector"
+    );
     this._shadow.appendChild(this._div);
 
     this._expand = document.createElement("button");
-    this._expand.setAttribute("class", "annotation__entity btn-clear px-4 col-12 css-truncate text-white");
+    this._expand.setAttribute(
+      "class",
+      "annotation__entity btn-clear px-4 col-12 css-truncate text-white"
+    );
     this._div.appendChild(this._expand);
 
     this._name = document.createElement("span");
@@ -23,7 +30,10 @@ export class EntitySelector extends TatorElement {
     this._expand.appendChild(this._count);
 
     const controls = document.createElement("div");
-    controls.setAttribute("class", "annotation__entity-count d-flex flex-items-center px-4");
+    controls.setAttribute(
+      "class",
+      "annotation__entity-count d-flex flex-items-center px-4"
+    );
     this._div.appendChild(controls);
 
     const prev = document.createElement("entity-prev-button");
@@ -76,9 +86,12 @@ export class EntitySelector extends TatorElement {
     this._shadow.appendChild(this._delConfirm);
 
     const capture = document.createElement("button");
-    capture.setAttribute("class", "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button");
-    capture.style.marginLeft="8px";
-    capture.style.display="none";
+    capture.setAttribute(
+      "class",
+      "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button"
+    );
+    capture.style.marginLeft = "8px";
+    capture.style.display = "none";
     controls.appendChild(capture);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -99,7 +112,10 @@ export class EntitySelector extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z");
+    path.setAttribute(
+      "d",
+      "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+    );
     svg.appendChild(path);
 
     const circle = document.createElementNS(svgNamespace, "circle");
@@ -110,9 +126,11 @@ export class EntitySelector extends TatorElement {
     capture.appendChild(svg);
 
     const redraw = document.createElement("entity-redraw-button");
-    redraw.style.marginLeft="8px";
-    redraw.style.display="none";
+    redraw.style.marginLeft = "8px";
+    redraw.style.display = "none";
     controls.appendChild(redraw);
+    this._redraw = redraw;
+    this._redrawEnabled = true;
 
     const more = document.createElement("entity-more");
     controls.appendChild(more);
@@ -147,7 +165,7 @@ export class EntitySelector extends TatorElement {
 
     this._goToFrameButton.addEventListener("click", () => {
       this._emitSelection(true, true, true);
-    })
+    });
 
     capture.addEventListener("click", () => {
       capture.blur();
@@ -163,32 +181,48 @@ export class EntitySelector extends TatorElement {
       const index = parseInt(this._current.textContent) - 1;
       if (this._dataType.isLocalization) {
         endpoint = "Localization";
-        this._canvas.deleteLocalization(this._data[index]);
+
+        // First verify if the localization is part of any states. We will need to remove
+        // the localization.
+        this.removeLocFromRelatedStates(this._data[index]).then(() => {
+          this._canvas.deleteLocalization(this._data[index]);
+        });
       } else {
         endpoint = "State";
         let had_parent = this._data[index].parent != null;
-        this._undo.del(endpoint, this._data[index].id, this._dataType).then(() => {
-          if (this._dataType.delete_child_localizations || had_parent == true) {
-            this._canvas._data.updateAllTypes(this._canvas.refresh.bind(this._canvas), null);
-          }
-        });
+        this._undo
+          .del(endpoint, this._data[index].id, this._dataType)
+          .then(() => {
+            if (
+              this._dataType.delete_child_localizations ||
+              had_parent == true
+            ) {
+              this._canvas._data.updateAllTypes(
+                this._canvas.refresh.bind(this._canvas),
+                null
+              );
+            }
+          });
       }
     });
 
     redraw.addEventListener("click", () => {
       const index = parseInt(this._current.textContent) - 1;
-      this.dispatchEvent(new CustomEvent("patchMeta", {
-        detail: {typeId: this._dataType.id,
-                 obj: this._data[index]},
-        composed: true,
-      }));
+      this.dispatchEvent(
+        new CustomEvent("patchMeta", {
+          detail: { typeId: this._dataType.id, obj: this._data[index] },
+          composed: true,
+        })
+      );
     });
 
     more.addEventListener("click", () => {
       if (capture.style.display == "none") {
         if (hasPermission(this._permission, "Can Edit")) {
           this._del.style.display = "block";
-          redraw.style.display = "block";
+          if (this._redrawEnabled) {
+            redraw.style.display = "block";
+          }
         } else {
           this._del.style.display = "none";
           redraw.style.display = "none";
@@ -217,6 +251,44 @@ export class EntitySelector extends TatorElement {
     });
   }
 
+  async removeLocFromRelatedStates(loc) {
+    // Find if there are any related states/tracks associated with this localization
+    var response = await fetchCredentials(
+      `/rest/States/${this._project}?related_id=${loc.id}`
+    );
+    var relatedList = await response.json();
+    var relatedStates = [];
+    for (const entry of relatedList) {
+      if (entry.hasOwnProperty("localizations")) {
+        for (const trackLocId of entry.localizations) {
+          if (loc.id == trackLocId) {
+            relatedStates.push(entry);
+            break;
+          }
+        }
+      }
+    }
+
+    // Remove the id from the states
+    for (const state of relatedStates) {
+      var response = await fetchCredentials(`/rest/State/${state.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          localization_ids_remove: [loc.id],
+        }),
+      });
+      var msg = await response.json();
+      console.log(`removeLocFromRelatedStates: ${msg}`);
+    }
+
+    if (relatedStates.length > 0) {
+      this._canvas._data.updateAllTypes(
+        this._canvas.refresh.bind(this._canvas),
+        null
+      );
+    }
+  }
+
   static get observedAttributes() {
     return ["name"];
   }
@@ -229,12 +301,16 @@ export class EntitySelector extends TatorElement {
     }
   }
 
-  set canvas(val)
-  {
+  set canvas(val) {
     this._canvas = val;
   }
+
   set permission(val) {
     this._permission = val;
+  }
+
+  set project(val) {
+    this._project = val;
   }
 
   /**
@@ -264,8 +340,7 @@ export class EntitySelector extends TatorElement {
     this._noFrames = val;
     if (this._noFrames) {
       this._goToFrameButton.style.display = "none";
-    }
-    else {
+    } else {
       this._goToFrameButton.style.display = "block";
     }
   }
@@ -274,17 +349,21 @@ export class EntitySelector extends TatorElement {
     this._globalData = val;
   }
 
+  set redrawEnabled(val) {
+    this._redrawEnabled = val;
+  }
+
   update(data) {
     this._data = data;
     this._count.textContent = String(data.length);
     const haveData = data.length > 0;
     const current = parseInt(this._current.textContent);
     this._slider.max = data.length - 1;
-    if (haveData && (current == 0)) {
+    if (haveData && current == 0) {
       this._current.textContent = "0";
       this._slider.value = 0;
     }
-    if (haveData && (current > data.length)) {
+    if (haveData && current > data.length) {
       this._current.textContent = String(data.length);
       this._slider.value = data.length - 1;
     }
@@ -353,7 +432,6 @@ export class EntitySelector extends TatorElement {
     // entity's frame as the last frame first, then attempt to set it using the start frame.
     // Only bother doing this if the associated canvas is a video
     if (this._canvas._numFrames) {
-
       var endFrameCheck;
       var endFrame = -1;
       var currentEndFrame;
@@ -364,20 +442,17 @@ export class EntitySelector extends TatorElement {
 
       for (const attrType of this._dataType.attribute_types) {
         if (attrType.style) {
-          const styleOptions = attrType.style.split(' ');
+          const styleOptions = attrType.style.split(" ");
           if (styleOptions.includes("end_frame_check")) {
             endFrameCheck = this._data[index].attributes[attrType.name];
-          }
-          else if (styleOptions.includes("end_frame")) {
+          } else if (styleOptions.includes("end_frame")) {
             currentEndFrame = this._data[index].attributes[attrType.name];
             if (currentEndFrame > endFrame) {
               endFrame = currentEndFrame;
             }
-          }
-          else if (styleOptions.includes("start_frame_check")) {
+          } else if (styleOptions.includes("start_frame_check")) {
             startFrameCheck = this._data[index].attributes[attrType.name];
-          }
-          else if (styleOptions.includes("start_frame")) {
+          } else if (styleOptions.includes("start_frame")) {
             startFrame = this._data[index].attributes[attrType.name];
           }
         }
@@ -385,14 +460,11 @@ export class EntitySelector extends TatorElement {
 
       if (endFrameCheck === false) {
         this._data[index].frame = this._canvas._numFrames;
-      }
-      else if (endFrame > -1) {
+      } else if (endFrame > -1) {
         this._data[index].frame = endFrame;
-      }
-      else if (startFrameCheck === false) {
+      } else if (startFrameCheck === false) {
         this._data[index].frame = 0;
-      }
-      else if (startFrame > -1) {
+      } else if (startFrame > -1) {
         this._data[index].frame = startFrame;
       }
     }
@@ -403,43 +475,50 @@ export class EntitySelector extends TatorElement {
     var associatedStateType = null;
 
     var dataList = this._globalData._dataByType.get(this._data[index].type);
-    const elemIndex = dataList.findIndex(elem => elem.id === this._data[index].id);
-    if (elemIndex > -1)
-    {
+    const elemIndex = dataList.findIndex(
+      (elem) => elem.id === this._data[index].id
+    );
+    if (elemIndex > -1) {
       const data = dataList[elemIndex];
-      const isLocalization = data.type.includes("box") || data.type.includes("line") || data.type.includes("dot");
-      if (isLocalization)
-      {
-        if (data.id in this._globalData._trackDb)
-        {
-          associatedState = this._globalData._trackDb[data.id];
-          associatedStateType = this._globalData._dataTypes[associatedState.type];
+      const isLocalization =
+        data.type.includes("box") ||
+        data.type.includes("line") ||
+        data.type.includes("dot");
+      if (isLocalization) {
+        if (this._globalData._trackDb.has(data.id)) {
+          associatedState = this._globalData._trackDb.get(data.id);
+          associatedStateType =
+            this._globalData._dataTypes[associatedState.type];
         }
       }
     }
 
-    this.dispatchEvent(new CustomEvent("select", {
-      detail: {
-        data: this._data[index],
-        dataType: this._dataType,
-        byUser: byUser,
-        goToEntityFrame: goToEntityFrame,
-        associatedState: associatedState,
-        associatedStateType: associatedStateType
-      },
-      composed: composed,
-    }));
+    this.dispatchEvent(
+      new CustomEvent("select", {
+        detail: {
+          data: this._data[index],
+          dataType: this._dataType,
+          byUser: byUser,
+          goToEntityFrame: goToEntityFrame,
+          associatedState: associatedState,
+          associatedStateType: associatedStateType,
+        },
+        composed: composed,
+      })
+    );
   }
 
   _emitCapture() {
     const index = parseInt(this._current.textContent) - 1;
-    this.dispatchEvent(new CustomEvent("capture", {
-      detail: {
-        data: this._data[index],
-        dataType: this._dataType,
-      },
-      composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent("capture", {
+        detail: {
+          data: this._data[index],
+          dataType: this._dataType,
+        },
+        composed: true,
+      })
+    );
   }
 }
 

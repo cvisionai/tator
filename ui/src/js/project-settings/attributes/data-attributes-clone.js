@@ -1,4 +1,4 @@
-import { getCookie } from "../../util/get-cookie.js";
+import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { AttributesForm } from "./attributes-form.js";
 
 /* Class with methods return input types with preset values for editing.*/
@@ -15,16 +15,11 @@ export class AttributesData {
 
   _fetchPostPromise({ formData = null } = {}) {
     if (formData != null) {
-      return fetch("/rest/AttributeType/" + this.typeId, {
+      return fetchCredentials("/rest/AttributeType/" + this.typeId, {
         method: "POST",
         mode: "cors",
         credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
     } else {
       console.error("Problem with new attribute form data.");
@@ -45,17 +40,20 @@ export class AttributesData {
       this.attributeForm._getFormWithValues({ clone: true, ...cloneValue });
       let dataFromForm = this.attributeForm._getAttributeFormData();
       let formJSON = {
-        "entity_type": this.typeName,
-        "addition": dataFromForm.formData
+        entity_type: this.typeName,
+        addition: dataFromForm.formData,
       };
 
-      promise = promise.then(() => {
-        return this._fetchPostPromise({
-          "formData": formJSON
-        });
-      })
-        .then(response => response.json().then(data => ({ response: response, data: data })))
-        .then(obj => {
+      promise = promise
+        .then(() => {
+          return this._fetchPostPromise({
+            formData: formJSON,
+          });
+        })
+        .then((response) =>
+          response.json().then((data) => ({ response: response, data: data }))
+        )
+        .then((obj) => {
           let currentMessage = obj.data.message;
           let succussIcon = document.createElement("modal-success");
           let warningIcon = document.createElement("modal-warning");
@@ -71,12 +69,10 @@ export class AttributesData {
     }
     promise = promise.then(() => {
       return {
-        ok: (this.successMessages != "" && this.failedMessages == ""),
-        message: `${this.successMessages}${this.failedMessages}`
-      }
+        ok: this.successMessages != "" && this.failedMessages == "",
+        message: `${this.successMessages}${this.failedMessages}`,
+      };
     });
     return promise;
   }
-
 }
-

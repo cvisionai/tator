@@ -37,7 +37,7 @@ class TatorBackupManager:
         return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
 
     @classmethod
-    def _multipart_upload(cls, path, upload_urls, upload_id, stream):
+    def _multipart_upload(cls, file_size, upload_urls, upload_id, stream):
         num_chunks = len(upload_urls)
         parts = []
         last_progress = 0
@@ -49,8 +49,8 @@ class TatorBackupManager:
                 try:
                     kwargs = {"data": file_part}
                     if gcp_upload:
-                        first_byte = chunk_count * chunk_size
-                        last_byte = min(first_byte + chunk_size, file_size) - 1
+                        first_byte = chunk_count * cls.chunk_size
+                        last_byte = min(first_byte + cls.chunk_size, file_size) - 1
                         kwargs["headers"] = {
                             "Content-Length": str(last_byte - first_byte),
                             "Content-Range": f"bytes {first_byte}-{last_byte}/{file_size}",
@@ -111,7 +111,7 @@ class TatorBackupManager:
             return False
 
         if num_chunks > 1:
-            parts = cls._multipart_upload(path, urls, upload_id, stream)
+            parts = cls._multipart_upload(size, urls, upload_id, stream)
             return store.complete_multipart_upload(path, parts, upload_id)
         return cls._single_upload(path, urls[0], stream)
 
@@ -122,7 +122,7 @@ class TatorBackupManager:
 
     @classmethod
     def _upload_from_file(cls, store, path, filepath, size, domain):
-        with open(filepath, 'rb') as stream:
+        with open(filepath, "rb") as stream:
             return cls._upload_from_stream(store, path, stream, size, domain)
 
     @staticmethod
@@ -199,7 +199,7 @@ class TatorBackupManager:
         return bool(project_store_info), project_store_info
 
     @classmethod
-    def backup_resources(cls, projects, resource_qs, domain) -> Generator[tuple, None, None]:
+    def backup_resources(cls, project_qs, resource_qs, domain) -> Generator[tuple, None, None]:
         """
         Creates a generator that copies the resources in the given queryset from the live store to
         the backup store for their respective projects. Yields a tuple with the first element being
@@ -212,20 +212,27 @@ class TatorBackupManager:
 
         :param resource_qs: The resources to back up
         :type resource_qs: Queryset
+        :param project_qs: The resources to back up
+        :type project_qs: Queryset
         :param domain: The domain from which the request is originating, needed by GCP
         :type domain: str
         :rtype: Generator[tuple, None, None]
         """
-        successful_backups = set()
         Resource = type(resource_qs.first())
-        for project in projects.iterator():
+        for project in project_qs.iterator():
+            successful_backups = set()
             resource_project_qs = resource_qs.filter(media__project=project)
             num_backups = resource_project_qs.count()
             logger.info(f"Backing up {num_backups} resources in project {project}...")
             success, store_info = cls.get_store_info(project)
-            if success:
-                backup_info = store_info[StoreType.BACKUP]
-                backup_store = backup_info["store"]
+
+            # If unable to get backup store info, skip all resources in this project
+            if not success:
+                continue
+
+            backup_info = store_info[StoreType.BACKUP]
+            backup_store = backup_info["store"]
+
             for resource in resource_project_qs.iterator():
                 path = resource.path
                 live_store = get_tator_store(resource.bucket)
@@ -246,9 +253,12 @@ class TatorBackupManager:
 
                 if success:
                     successful_backups.add(resource.id)
+
                 if len(successful_backups) > 500:
                     with transaction.atomic():
-                        update_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                        update_qs = Resource.objects.select_for_update().filter(
+                            pk__in=successful_backups
+                        )
                         update_qs.update(backed_up=True, backup_bucket=backup_store.bucket)
                     successful_backups.clear()
 
@@ -256,7 +266,9 @@ class TatorBackupManager:
 
             if successful_backups:
                 with transaction.atomic():
-                    update_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+                    update_qs = Resource.objects.select_for_update().filter(
+                        pk__in=successful_backups
+                    )
                     update_qs.update(backed_up=True, backup_bucket=backup_store.bucket)
 
     @classmethod
@@ -282,7 +294,7 @@ class TatorBackupManager:
             live_storage_class = (
                 store_info[StoreType.LIVE]["store"].get_live_sc() or LIVE_STORAGE_CLASS
             )
-            response = store.head_object(path)
+            response = store.head_object(path)  # pylint: disable=used-before-assignment
             if not response:
                 logger.warning(f"Object {path} not found, skipping")
                 return success
@@ -338,8 +350,10 @@ class TatorBackupManager:
             live_store = store_info[StoreType.LIVE]["store"]
 
         if success:
-            live_storage_class = live_store.get_live_sc() or LIVE_STORAGE_CLASS
-            response = backup_store.head_object(path)
+            live_storage_class = (
+                live_store.get_live_sc() or LIVE_STORAGE_CLASS
+            )  # pylint: disable=used-before-assignment
+            response = backup_store.head_object(path)  # pylint: disable=used-before-assignment
             if not response:
                 logger.warning(f"Object {path} not found, skipping")
                 return success

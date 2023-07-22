@@ -1,5 +1,5 @@
 import { TatorPage } from "../components/tator-page.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
 
 export class AccountProfile extends TatorPage {
@@ -11,7 +11,10 @@ export class AccountProfile extends TatorPage {
     this._shadow.appendChild(main);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
+    div.setAttribute(
+      "class",
+      "main__header d-flex flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(div);
 
     const h1 = document.createElement("h1");
@@ -57,7 +60,7 @@ export class AccountProfile extends TatorPage {
     submit.setAttribute("value", "Update");
     footer.appendChild(submit);
 
-    this.firstName.addEventListener("input", evt => {
+    this.firstName.addEventListener("input", (evt) => {
       const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
       if (re.test(evt.target.value)) {
         submit.removeAttribute("disabled");
@@ -66,7 +69,7 @@ export class AccountProfile extends TatorPage {
       }
     });
 
-    this.lastName.addEventListener("input", evt => {
+    this.lastName.addEventListener("input", (evt) => {
       const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
       if (re.test(evt.target.value)) {
         submit.removeAttribute("disabled");
@@ -75,7 +78,7 @@ export class AccountProfile extends TatorPage {
       }
     });
 
-    this.email.addEventListener("input", evt => {
+    this.email.addEventListener("input", (evt) => {
       const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
       if (re.test(evt.target.value)) {
         submit.removeAttribute("disabled");
@@ -86,23 +89,17 @@ export class AccountProfile extends TatorPage {
 
     this._modalNotify = document.createElement("modal-notify");
     div.appendChild(this._modalNotify);
-    this._modalNotify.addEventListener("close", evt => {
+    this._modalNotify.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
-      window.location.replace("/accounts/account-profile");
+      window.location.replace("/account-profile");
     });
 
     window.addEventListener("load", () => {
-      fetch("/rest/User/GetCurrent", {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
-        .then(response => { return response.json(); })
-        .then(result => {
+      fetchCredentials("/rest/User/GetCurrent")
+        .then((response) => {
+          return response.json();
+        })
+        .then((result) => {
           this.userId = result.id;
           userName.setValue(result.username);
           this.firstName.setValue(result.first_name);
@@ -118,23 +115,21 @@ export class AccountProfile extends TatorPage {
     evt.preventDefault();
 
     const url = "/rest/User/" + this.userId;
-    const response = await fetch(url, {
+    const response = await fetchCredentials(url, {
       method: "PATCH",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
       body: JSON.stringify({
-        "first_name": this.firstName.getValue(),
-        "last_name": this.lastName.getValue(),
-        "email": this.email.getValue(),
+        first_name: this.firstName.getValue(),
+        last_name: this.lastName.getValue(),
+        email: this.email.getValue(),
       }),
-    })
-    if (response.status == '200') {
+    });
+    if (response.status == "200") {
       const data = await response.json();
-      this._modalNotify.init("Account Update", "Your account has been successfully updated!", "Ok");
+      this._modalNotify.init(
+        "Account Update",
+        "Your account has been successfully updated!",
+        "Ok"
+      );
       this._modalNotify.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     } else {
@@ -146,8 +141,6 @@ export class AccountProfile extends TatorPage {
       this.setAttribute("has-open-modal", "");
     }
   }
-
-
 }
 
 customElements.define("account-profile", AccountProfile);

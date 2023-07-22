@@ -2,6 +2,7 @@ import os
 import inspect
 import requests
 import math
+import pytest
 
 from ._common import print_page_error
 

@@ -1,13 +1,15 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
-import { fetchRetry } from "../util/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class AnnotationBreadcrumbs extends TatorElement {
   constructor() {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray");
+    div.setAttribute(
+      "class",
+      "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray"
+    );
     this._shadow.appendChild(div);
 
     this._projectText = document.createElement("a");
@@ -80,17 +82,11 @@ export class AnnotationBreadcrumbs extends TatorElement {
   _sectionName() {
     const params = new URLSearchParams(document.location.search.substring(1));
     if (params.has("section")) {
-      fetchRetry(`/rest/Section/${params.get("section")}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
-      .then(response => response.json())
-      .then(section => {this._sectionText.textContent = section.name});
+      fetchCredentials(`/rest/Section/${params.get("section")}`, {}, true)
+        .then((response) => response.json())
+        .then((section) => {
+          this._sectionText.textContent = section.name;
+        });
     } else {
       this._sectionText.textContent = "All Media";
     }

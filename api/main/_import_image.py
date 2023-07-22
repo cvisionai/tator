@@ -1,16 +1,21 @@
 # This file is outside the `api/main/rest/` folder to avoid the imports in that module's __init__.py
 import os
 import sys
+import logging
 
 try:
     import django
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tator_online.settings')
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tator_online.settings")
     django.setup()
 except Exception:
     pass
 
-from PIL import Image
-import pillow_avif # add AVIF support to pillow
+from PIL import Image, ImageOps
+import pillow_avif  # add AVIF support to pillow
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 import tempfile
 from urllib.parse import urlparse
 
@@ -20,7 +25,9 @@ from main.store import get_tator_store
 from main.download import download_file
 from main.rest._util import url_to_key
 
-def _import_image(name, url, thumbnail_url, media_id):
+
+def _import_image(name, url, thumbnail_url, media_id, reference_only):
+    """Note: In reference_only mode we do not store an alt image format"""
     try:
         media_obj = Media.objects.get(pk=media_id)
     except Exception:
@@ -30,9 +37,13 @@ def _import_image(name, url, thumbnail_url, media_id):
         tator_store = get_tator_store(project_obj.bucket)
     except Exception:
         return
-    alt_image = None
+    alt_images = []
+    alt_formats = []
+
     if url:
         # Download the image file and load it.
+        # This is required even in reference cases because we need to get the
+        # dimensions, encoding, and likely generate a thumbnail.
         ext = os.path.splitext(name)[1].lower()
         if ext in [".dng"]:
             # Digital Negative files need conversion
@@ -50,29 +61,43 @@ def _import_image(name, url, thumbnail_url, media_id):
         media_obj.width, media_obj.height = image.size
         image_format = image.format
 
-        # Add a png for compatibility purposes
-        if image_format == 'AVIF':
-            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-            image.save(alt_image, format='png')
-            alt_name = "image.png"
-            alt_format = 'png'
-        else:
-            # convert image upload to AVIF
-            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.avif')
-            image.save(alt_image, format='avif')
-            alt_name = "image.avif"
-            alt_format = 'avif'
+        image = ImageOps.exif_transpose(image)
 
+        # Add a png for compatibility purposes in case of HEIF or AVIF import.
+        # always make AVIF, but keep HEIF originals.
+        if reference_only is False:
+            if image_format == "HEIF":
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                image.save(alt_image, format="png")
+                alt_images.append(alt_image)
+                alt_formats.append("png")
+
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
+                image.save(alt_image, format="avif")
+                alt_images.append(alt_image)
+                alt_formats.append("avif")
+
+            elif image_format == "AVIF":
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                image.save(alt_image, format="png")
+                alt_images.append(alt_image)
+                alt_formats.append("png")
+            else:
+                # convert image upload to AVIF
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
+                image.save(alt_image, format="avif")
+                alt_images.append(alt_image)
+                alt_formats.append("avif")
 
         # Download or create the thumbnail.
         if thumbnail_url is None:
             temp_thumb = tempfile.NamedTemporaryFile(delete=False)
             thumb_size = (256, 256)
-            image = image.convert('RGB') # Remove alpha channel for jpeg
+            image = image.convert("RGB")  # Remove alpha channel for jpeg
             image.thumbnail(thumb_size, Image.ANTIALIAS)
-            image.save(temp_thumb.name, format='jpeg')
-            thumb_name = 'thumb.jpg'
-            thumb_format = 'jpg'
+            image.save(temp_thumb.name, format="jpeg")
+            thumb_name = "thumb.jpg"
+            thumb_format = "jpg"
             thumb_width = image.width
             thumb_height = image.height
             image.close()
@@ -87,31 +112,53 @@ def _import_image(name, url, thumbnail_url, media_id):
         thumb_height = thumb.height
         thumb.close()
 
-    if url:
+    if reference_only and url:
+        if media_obj.media_files is None:
+            media_obj.media_files = {}
+        media_obj.media_files["image"] = [
+            {
+                "path": url,
+                "size": os.stat(temp_image.name).st_size,
+                "resolution": [media_obj.height, media_obj.width],
+                "mime": f"image/{image_format.lower()}",
+            }
+        ]
+    elif url:
         if media_obj.media_files is None:
             media_obj.media_files = {}
         # Upload image.
         image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
         tator_store.put_object(image_key, temp_image)
-        media_obj.media_files['image'] = [{'path': image_key,
-                                           'size': os.stat(temp_image.name).st_size,
-                                           'resolution': [media_obj.height, media_obj.width],
-                                           'mime': f'image/{image_format.lower()}'}]
+        media_obj.media_files["image"] = [
+            {
+                "path": image_key,
+                "size": os.stat(temp_image.name).st_size,
+                "resolution": [media_obj.height, media_obj.width],
+                "mime": f"image/{image_format.lower()}",
+            }
+        ]
         os.remove(temp_image.name)
         Resource.add_resource(image_key, media_obj)
 
-    if alt_image:
+    for alt_image, alt_format in zip(alt_images, alt_formats):
+        alt_name = f"image.{alt_format}"
         if media_obj.media_files is None:
             media_obj.media_files = {}
         # Upload image.
         image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{alt_name}"
         # alt_image fp doesn't seem to work here (odd)
-        with open(alt_image.name, 'rb') as temp_fp:
+        with open(alt_image.name, "rb") as temp_fp:
             tator_store.put_object(image_key, temp_fp)
-        media_obj.media_files['image'].extend([{'path': image_key,
-                                                'size': os.stat(alt_image.name).st_size,
-                                                'resolution': [media_obj.height, media_obj.width],
-                                                'mime': f'image/{alt_format.lower()}'}])
+        media_obj.media_files["image"].extend(
+            [
+                {
+                    "path": image_key,
+                    "size": os.stat(alt_image.name).st_size,
+                    "resolution": [media_obj.height, media_obj.width],
+                    "mime": f"image/{alt_format.lower()}",
+                }
+            ]
+        )
         os.remove(alt_image.name)
         Resource.add_resource(image_key, media_obj)
 
@@ -122,10 +169,14 @@ def _import_image(name, url, thumbnail_url, media_id):
         thumb_format = image.format
         thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
         tator_store.put_object(thumb_key, temp_thumb)
-        media_obj.media_files['thumbnail'] = [{'path': thumb_key,
-                                               'size': os.stat(temp_thumb.name).st_size,
-                                               'resolution': [thumb_height, thumb_width],
-                                               'mime': f'image/{thumb_format}'}]
+        media_obj.media_files["thumbnail"] = [
+            {
+                "path": thumb_key,
+                "size": os.stat(temp_thumb.name).st_size,
+                "resolution": [thumb_height, thumb_width],
+                "mime": f"image/{thumb_format}",
+            }
+        ]
         os.remove(temp_thumb.name)
         Resource.add_resource(thumb_key, media_obj)
 

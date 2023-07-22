@@ -60,7 +60,9 @@ export class SectionFiles extends TatorElement {
   }
 
   set mediaIds(val) {
-    this._media = val.map(id => { return { id: id } });
+    this._media = val.map((id) => {
+      return { id: id };
+    });
     this._updateNumCards();
   }
 
@@ -77,6 +79,7 @@ export class SectionFiles extends TatorElement {
     const hasProject = this.hasAttribute("project-id");
 
     if (hasAlgorithms && hasProject) {
+      this._ul.innerHTML = "";
       const children = this._ul.children;
       // const cardList = [];
       this._cardElements = [];
@@ -86,22 +89,26 @@ export class SectionFiles extends TatorElement {
         const cardObj = {
           id: media.id,
           entityType: this._mediaTypesMap.get(media.type),
-          media: media
-        }
+          media: media,
+        };
         let card;
         let entityType = cardObj.entityType;
         let entityTypeId = entityType.id;
 
         /**
-        * Card labels / attributes of localization or media type
-        * - Sticky choices from localStorage or Preferences set these
-        * - But, can be overridden during a session
-        * - This always goes off of the selection in entity-gallery-labels
-        */
+         * Card labels / attributes of localization or media type
+         * - Sticky choices from localStorage or Preferences set these
+         * - But, can be overridden during a session
+         * - This always goes off of the selection in entity-gallery-labels
+         */
         const builtInChosen = this._cardAttributeLabels._getValue(-1);
-        this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
+        this.cardLabelsChosenByType[entityTypeId] =
+          this._cardAttributeLabels._getValue(entityTypeId);
         // this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId] });
-        const cardLabelsChosen = [...this.cardLabelsChosenByType[entityTypeId], ...builtInChosen];
+        const cardLabelsChosen = [
+          ...this.cardLabelsChosenByType[entityTypeId],
+          ...builtInChosen,
+        ];
 
         if (newCard) {
           card = document.createElement("entity-card");
@@ -126,14 +133,16 @@ export class SectionFiles extends TatorElement {
           card.addEventListener("cardMouseexit", (e) => {
             this.dispatchEvent(new Event("cardMouseexit"));
           });
-          
+
           // Notifiy bulk edit about multi-select controls
           card.addEventListener("ctrl-select", (e) => {
             this._bulkEdit._openEditMode(e);
           });
 
           // Update labels
-          this._cardAttributeLabels.addEventListener("labels-update", (evt) => this.updateShown(evt, card));
+          this._cardAttributeLabels.addEventListener("labels-update", (evt) =>
+            this.updateShown(evt, card)
+          );
 
           // When bulk edit changes tell the card
           this._bulkEdit.addEventListener("multi-enabled", () => {
@@ -154,23 +163,36 @@ export class SectionFiles extends TatorElement {
 
         // Setup attributes, and order for label options
         cardObj.attributes = media.attributes;
-        cardObj.attributeOrder = this.getCardLabelOptions(entityType.attribute_types); //cardLabelOptions;
+        cardObj.attributeOrder = this.getCardLabelOptions(
+          entityType.attribute_types
+        ); //cardLabelOptions;
 
         // Set in this order:mediaParams utilized to make a URL in set media()
         card.mediaParams = this._mediaParams();
         card.media = media;
-        card.posText = `(${this._startMediaIndex + index + 1} of ${this._numMedia})`;
+        card.posText = `(${this._startMediaIndex + index + 1} of ${
+          this._numMedia
+        })`;
         card.multiEnabled = this.multiEnabled;
         // console.log("this.multiEnabled "+this.multiEnabled)
 
         // If we're still in multiselect.. check if this card should be toggled...
         if (this.multiEnabled) {
-          const selectedSet = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
+          const selectedSet = this._bulkEdit._currentMultiSelectionToId.get(
+            entityType.id
+          );
           // console.log(selectedSet);
 
-          if (typeof selectedSet !== "undefined" && selectedSet.has(cardObj.id)) {
-            this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
-          } 
+          if (
+            typeof selectedSet !== "undefined" &&
+            selectedSet.has(cardObj.id)
+          ) {
+            this._bulkEdit._addSelected({
+              element: card,
+              id: cardObj.id,
+              isSelected: true,
+            });
+          }
         }
 
         // this is data used later by label chooser, and bulk edit
@@ -180,12 +202,12 @@ export class SectionFiles extends TatorElement {
           mediaInit: true,
           cardLabelsChosen,
           enableMultiselect: this.multiEnabled,
-          memberships: this._memberships
+          memberships: this._memberships,
         });
 
-       // make reference lists / object
+        // make reference lists / object
         // cardList.push(card);
-        this._cardElements.push({card});
+        this._cardElements.push({ card });
         this._currentCardIndexes[cardObj.id] = index;
 
         // This should happen last
@@ -193,13 +215,10 @@ export class SectionFiles extends TatorElement {
         if (newCard) this._ul.appendChild(card);
       }
 
-      
-        // Replace card info so that shift select can get cards in between
-        this._bulkEdit.elementList = this._cardElements;
-        // this._bulkEdit.elementList = cardList;
-        this._bulkEdit.elementIndexes = this._currentCardIndexes;
-
-
+      // Replace card info so that shift select can get cards in between
+      this._bulkEdit.elementList = this._cardElements;
+      // this._bulkEdit.elementList = cardList;
+      this._bulkEdit.elementIndexes = this._currentCardIndexes;
 
       if (children.length > cardInfo.length) {
         const len = children.length;
@@ -210,10 +229,7 @@ export class SectionFiles extends TatorElement {
     }
   }
 
-  _addToBulkEditSelected(entityType, card, cardObj) {
-
-  }
-
+  _addToBulkEditSelected(entityType, card, cardObj) {}
 
   updateCardData(newCardData) {
     if (newCardData.id in this._currentCardIndexes) {
@@ -227,11 +243,13 @@ export class SectionFiles extends TatorElement {
   }
 
   updateShown(evt, card) {
-    if (card.cardObj.entityType.id == evt.detail.typeId || evt.detail.typeId == -1) {
+    if (
+      card.cardObj.entityType.id == evt.detail.typeId ||
+      evt.detail.typeId == -1
+    ) {
       card._updateShownAttributes(evt);
     }
   }
-
 
   getCardLabelOptions(attributeTypes) {
     // Setup every time card is updated
@@ -258,7 +276,6 @@ export class SectionFiles extends TatorElement {
 
     return [...nonHiddenAttrs, ...hiddenAttrs];
   }
-  
 }
 
 customElements.define("section-files", SectionFiles);

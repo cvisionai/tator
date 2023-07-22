@@ -12,6 +12,7 @@ from ..search import TatorSearch
 from ..models import Leaf
 from ..models import LeafType
 
+from ._attribute_query import supplied_name_to_field
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attributes import KV_SEPARATOR
@@ -19,18 +20,18 @@ from ._float_array_query import get_float_array_query
 
 logger = logging.getLogger(__name__)
 
+
 def _get_leaf_psql_queryset(project, filter_ops, params):
-    """ Constructs a psql queryset.
-    """
+    """Constructs a psql queryset."""
     # Get query parameters.
-    leaf_id = params.get('leaf_id')
-    leaf_id_put = params.get('ids', None) # PUT request only
-    project = params['project']
-    filter_type = params.get('type')
-    name = params.get('name')
-    start = params.get('start')
-    stop = params.get('stop')
-    depth = params.get('depth')
+    leaf_id = params.get("leaf_id")
+    leaf_id_put = params.get("ids", None)  # PUT request only
+    project = params["project"]
+    filter_type = params.get("type")
+    name = params.get("name")
+    start = params.get("start")
+    stop = params.get("stop")
+    depth = params.get("depth")
 
     qs = Leaf.objects.filter(project=project, deleted=False)
 
@@ -55,7 +56,9 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
         qs = qs.filter(name=name)
 
     if filter_type is not None:
-        qs = get_attribute_psql_queryset(project, LeafType.objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = get_attribute_psql_queryset(
+            project, LeafType.objects.get(pk=filter_type), qs, params, filter_ops
+        )
         qs = qs.filter(type=filter_type)
     if filter_ops:
         queries = []
@@ -72,15 +75,19 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
         else:
             qs = sub_qs
 
-    if params.get('object_search'):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+    if params.get("object_search"):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
 
     # Used by GET queries
-    if params.get('encoded_search'):
-        search_obj = json.loads(base64.b64decode(params.get('encoded_search')).decode())
+    if params.get("encoded_search"):
+        search_obj = json.loads(base64.b64decode(params.get("encoded_search")).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
-    qs = qs.order_by('id')
+    if params.get("sort_by", None):
+        sortables = [supplied_name_to_field(x) for x in params.get("sort_by")]
+        qs = qs.order_by(*sortables)
+    else:
+        qs = qs.order_by("id")
 
     if start is not None and stop is not None:
         qs = qs[start:stop]
@@ -92,11 +99,12 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     logger.info(qs.explain())
     return qs
 
+
 def get_leaf_queryset(project, params):
     # Determine whether to use ES or not.
-    project = params.get('project')
-    filter_type = params.get('type')
-    filter_ops=[]
+    project = params.get("project")
+    filter_type = params.get("type")
+    filter_ops = []
     if filter_type:
         types = LeafType.objects.filter(pk=filter_type)
     else:
@@ -108,6 +116,6 @@ def get_leaf_queryset(project, params):
     qs = _get_leaf_psql_queryset(project, filter_ops, params)
     return qs
 
-def get_leaf_count(project, params):
-    return get_leaf_queryset(project,params).count()
 
+def get_leaf_count(project, params):
+    return get_leaf_queryset(project, params).count()

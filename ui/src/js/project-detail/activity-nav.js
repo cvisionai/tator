@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { svgNamespace } from "../components/tator-element.js";
 
 export class ActivityNav extends TatorElement {
@@ -22,7 +22,10 @@ export class ActivityNav extends TatorElement {
     closeDiv.appendChild(closeButton);
 
     const headerDiv = document.createElement("div");
-    headerDiv.setAttribute("class", "py-3 d-flex flex-justify-between flex-items-center");
+    headerDiv.setAttribute(
+      "class",
+      "py-3 d-flex flex-justify-between flex-items-center"
+    );
     this._nav.appendChild(headerDiv);
 
     const header = document.createElement("h3");
@@ -59,48 +62,39 @@ export class ActivityNav extends TatorElement {
 
   reload() {
     this._reloadButton.classList.add("is-rotating");
-    fetch(`/rest/Jobs/${this._project}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    })
-    .then(response => response.json())
-    .then(jobs => {
-      while (this._panel.firstChild) {
-        this._panel.removeChild(this._panel.firstChild);
-      }
-      if (jobs.length == 0) {
-        const text = document.createElement("h3");
-        text.setAttribute("class", "text-semibold px-3");
-        text.textContent = "No jobs in progress.";
-        this._panel.appendChild(text);
-      } else {
-        const ul = document.createElement("ul");
-        ul.setAttribute("class", "label-tree__groups lh-default");
-        this._panel.appendChild(ul);
+    fetchCredentials(`/rest/Jobs/${this._project}`)
+      .then((response) => response.json())
+      .then((jobs) => {
+        while (this._panel.firstChild) {
+          this._panel.removeChild(this._panel.firstChild);
+        }
+        if (jobs.length == 0) {
+          const text = document.createElement("h3");
+          text.setAttribute("class", "text-semibold px-3");
+          text.textContent = "No jobs in progress.";
+          this._panel.appendChild(text);
+        } else {
+          const ul = document.createElement("ul");
+          ul.setAttribute("class", "label-tree__groups lh-default");
+          this._panel.appendChild(ul);
 
-        // Group jobs by gid.
-        const groups = new Map();
-        const gids = [];
-        for (const job of jobs) {
-          if (!groups.has(job.gid)) {
-            groups.set(job.gid, new Set());
-            gids.push({gid: job.gid,
-                       launched: job.start_time});
+          // Group jobs by gid.
+          const groups = new Map();
+          const gids = [];
+          for (const job of jobs) {
+            if (!groups.has(job.gid)) {
+              groups.set(job.gid, new Set());
+              gids.push({ gid: job.gid, launched: job.start_time });
+            }
+            groups.get(job.gid).add(job);
           }
-          groups.get(job.gid).add(job);
-        }
 
-        // Display each group.
-        for (const gid of gids) {
-          this._showGroup(gid, groups.get(gid.gid), ul);
+          // Display each group.
+          for (const gid of gids) {
+            this._showGroup(gid, groups.get(gid.gid), ul);
+          }
         }
-      }
-    });
+      });
     this._reloadButton.classList.remove("is-rotating");
   }
 
@@ -110,29 +104,39 @@ export class ActivityNav extends TatorElement {
     ul.appendChild(li);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "label-tree__groupinv d-flex flex-items-center flex-justify-between px-3 py-2");
+    div.setAttribute(
+      "class",
+      "label-tree__groupinv d-flex flex-items-center flex-justify-between px-3 py-2"
+    );
     li.appendChild(div);
 
     const header = document.createElement("h3");
     header.setAttribute("class", "text-semibold css-truncate");
-    header.textContent = `Launched ${new Date(gid.launched).toString().split("(")[0]}`;
+    header.textContent = `Launched ${
+      new Date(gid.launched).toString().split("(")[0]
+    }`;
     div.appendChild(header);
 
     const cancel = document.createElement("cancel-button");
     cancel.style.opacity = "0";
-    div.addEventListener("mouseenter", () => {cancel.style.opacity = "1";});
-    div.addEventListener("mouseleave", () => {cancel.style.opacity = "0";});
+    div.addEventListener("mouseenter", () => {
+      cancel.style.opacity = "1";
+    });
+    div.addEventListener("mouseleave", () => {
+      cancel.style.opacity = "0";
+    });
     div.appendChild(cancel);
 
     cancel.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("deleteJobs", {
-        detail: {gid: gid.gid},
-      }));
+      this.dispatchEvent(
+        new CustomEvent("deleteJobs", {
+          detail: { gid: gid.gid },
+        })
+      );
     });
-    
+
     // Build dom tree for jobs.
     for (const job of jobs) {
-
       // Top level workflow.
       const workflow = this._showTask(job, false);
       ul.appendChild(workflow.li);
@@ -170,7 +174,10 @@ export class ActivityNav extends TatorElement {
     }
 
     const div1 = document.createElement("div");
-    div1.setAttribute("class", "label-tree__groupinv d-flex flex-items-center flex-justify-between py-2");
+    div1.setAttribute(
+      "class",
+      "label-tree__groupinv d-flex flex-items-center flex-justify-between py-2"
+    );
     li.appendChild(div1);
 
     const div = document.createElement("div");
@@ -189,7 +196,10 @@ export class ActivityNav extends TatorElement {
     div.appendChild(actions);
 
     const expand = document.createElement("button");
-    expand.setAttribute("class", "btn-clear d-flex flex-items-center flex-justify-center px-1 text-gray");
+    expand.setAttribute(
+      "class",
+      "btn-clear d-flex flex-items-center flex-justify-center px-1 text-gray"
+    );
     expand.style.opacity = "0";
     expand.style.cursor = "none";
     actions.appendChild(expand);
@@ -202,7 +212,10 @@ export class ActivityNav extends TatorElement {
     expand.appendChild(plus);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M5 13h6v6c0 0.552 0.448 1 1 1s1-0.448 1-1v-6h6c0.552 0 1-0.448 1-1s-0.448-1-1-1h-6v-6c0-0.552-0.448-1-1-1s-1 0.448-1 1v6h-6c-0.552 0-1 0.448-1 1s0.448 1 1 1z");
+    path.setAttribute(
+      "d",
+      "M5 13h6v6c0 0.552 0.448 1 1 1s1-0.448 1-1v-6h6c0.552 0 1-0.448 1-1s-0.448-1-1-1h-6v-6c0-0.552-0.448-1-1-1s-1 0.448-1 1v6h-6c-0.552 0-1 0.448-1 1s0.448 1 1 1z"
+    );
     plus.appendChild(path);
 
     const icon = document.createElementNS(svgNamespace, "svg");
@@ -285,7 +298,9 @@ export class ActivityNav extends TatorElement {
     } else if (duration < 3600) {
       time.textContent = `${Math.floor(duration / 60)}m ${duration % 60}s`;
     } else if (duration < 86400) {
-      time.textContent = `${Math.floor(duration / 3600)}h ${Math.round((duration % 3600) / 60)}m`;
+      time.textContent = `${Math.floor(duration / 3600)}h ${Math.round(
+        (duration % 3600) / 60
+      )}m`;
     } else {
       time.textContent = `${(duration / 86400).toFixed(1)}d`;
     }
@@ -320,14 +335,15 @@ export class ActivityNav extends TatorElement {
       });
 
       cancel.addEventListener("click", () => {
-        this.dispatchEvent(new CustomEvent("deleteJobs", {
-          detail: {uid: job.uid},
-        }));
+        this.dispatchEvent(
+          new CustomEvent("deleteJobs", {
+            detail: { uid: job.uid },
+          })
+        );
       });
     }
-    return {li: li, ul: ul};
+    return { li: li, ul: ul };
   }
 }
 
 customElements.define("activity-nav", ActivityNav);
-

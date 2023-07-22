@@ -3,11 +3,12 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 
 from .notify import Notify
-from datetime import datetime,timezone,timedelta
+from datetime import datetime, timezone, timedelta
 
-from .ses import TatorSES
+from .mail import get_email_service
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 UserModel = get_user_model()
@@ -15,11 +16,13 @@ UserModel = get_user_model()
 LOCKOUT_LIMIT = 3
 LOCKOUT_TIME = timedelta(minutes=10)
 
+
 class TatorAuth(ModelBackend):
     """
     Authenticates against settings.AUTH_USER_MODEL but enforces account
     lockouts based on bad password attempts
     """
+
     def authenticate(self, request, username=None, password=None, **kwargs):
         if username is None:
             username = kwargs.get(UserModel.USERNAME_FIELD)
@@ -34,15 +37,15 @@ class TatorAuth(ModelBackend):
             return
 
         if user.failed_login_count >= LOCKOUT_LIMIT:
-            now=datetime.now(timezone.utc)
-            last_failed=user.last_failed_login
-            since_last_fail=now - last_failed
+            now = datetime.now(timezone.utc)
+            last_failed = user.last_failed_login
+            since_last_fail = now - last_failed
             if since_last_fail <= LOCKOUT_TIME:
                 user.last_failed_login = now
                 user.failed_login_count += 1
                 user.save()
-                lockout_lifted=user.last_failed_login+LOCKOUT_TIME
-                time_left=lockout_lifted-now
+                lockout_lifted = user.last_failed_login + LOCKOUT_TIME
+                time_left = lockout_lifted - now
                 msg = f" *SECURITY ALERT:* Attempt to login during lockout"
                 msg += f" User={user}/{user.id}"
                 msg += f" Attempt count = {user.failed_login_count}"
@@ -72,14 +75,14 @@ class TatorAuth(ModelBackend):
                 Notify.notify_admin_msg(msg)
             # Send an email if the failed login count has been reached.
             if (user.failed_login_count == LOCKOUT_LIMIT) and settings.TATOR_EMAIL_ENABLED:
-                TatorSES().email(
+                get_email_service().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[user.email],
                     title=f"Tator account has been locked",
                     text="This message is to notify you that your Tator account (username "
-                        f"{user.username}) has been locked due to {LOCKOUT_LIMIT} failed logins. "
-                         "Your account will be unlocked automatically after 10 minutes, or you "
-                         "can unlock your account now by resetting your password. To reset your "
-                         "password, follow the procedure described here:\n\n"
-                         "https://tator.io/tutorials/2021-06-11-reset-your-password/",
+                    f"{user.username}) has been locked due to {LOCKOUT_LIMIT} failed logins. "
+                    "Your account will be unlocked automatically after 10 minutes, or you "
+                    "can unlock your account now by resetting your password. To reset your "
+                    "password, follow the procedure described here:\n\n"
+                    "https://tator.io/tutorials/2021-06-11-reset-your-password/",
                 )

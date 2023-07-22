@@ -5,7 +5,10 @@ export class SettingsBreadcrumbs extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray");
+    div.setAttribute(
+      "class",
+      "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray"
+    );
     this._shadow.appendChild(div);
 
     this._projectText = document.createElement("a");

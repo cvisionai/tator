@@ -3,7 +3,7 @@ import logging
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import Media
-from main.ses import TatorSES
+from main.mail import get_email_service
 from main.util import notify_admins, update_queryset_archive_state
 
 logger = logging.getLogger(__name__)
@@ -48,5 +48,5 @@ class Command(BaseCommand):
             update_queryset_archive_state(multi_qs, target_state)
 
         # Notify owners of blocked restore attempt
-        ses = TatorSES() if settings.TATOR_EMAIL_ENABLED else None
-        notify_admins(not_ready, ses)
+        email_service = get_email_service()
+        notify_admins(not_ready, email_service)

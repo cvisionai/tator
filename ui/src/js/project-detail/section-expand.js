@@ -6,7 +6,10 @@ export class SectionExpand extends TatorElement {
     super();
 
     this._button = document.createElement("button");
-    this._button.setAttribute("class", "files__expand d-flex flex-items-center px-0 btn-clear text-uppercase text-purple hover-text-white");
+    this._button.setAttribute(
+      "class",
+      "files__expand d-flex flex-items-center px-0 btn-clear text-uppercase text-purple hover-text-white"
+    );
     this._shadow.appendChild(this._button);
 
     this._span = document.createElement("span");
@@ -25,7 +28,10 @@ export class SectionExpand extends TatorElement {
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M7.057 12.943l8 8c0.521 0.521 1.365 0.521 1.885 0l8-8c0.521-0.521 0.521-1.365 0-1.885s-1.365-0.521-1.885 0l-7.057 7.057-7.057-7.057c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885z");
+    path.setAttribute(
+      "d",
+      "M7.057 12.943l8 8c0.521 0.521 1.365 0.521 1.885 0l8-8c0.521-0.521 0.521-1.365 0-1.885s-1.365-0.521-1.885 0l-7.057 7.057-7.057-7.057c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885z"
+    );
     svg.appendChild(path);
   }
 
@@ -66,7 +72,8 @@ export class SectionExpand extends TatorElement {
       if (numFiles == 1) {
         flabel = " file";
       }
-      this._span.textContent = "Showing " + start + " to " + stop + " of " + numFiles + flabel;
+      this._span.textContent =
+        "Showing " + start + " to " + stop + " of " + numFiles + flabel;
     }
   }
 }

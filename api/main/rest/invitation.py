@@ -14,7 +14,7 @@ from ..models import database_qs
 from ..schema import InvitationListSchema
 from ..schema import InvitationDetailSchema
 from ..schema.components import invitation as invitation_schema
-from ..ses import TatorSES
+from ..mail import get_email_service
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -22,44 +22,51 @@ from ._permissions import OrganizationAdminPermission
 
 logger = logging.getLogger(__name__)
 
-INVITATION_PROPERTIES = list(invitation_schema['properties'].keys()).remove('created_username')
+INVITATION_PROPERTIES = list(invitation_schema["properties"].keys()).remove("created_username")
+
 
 def _serialize_invitations(invitations):
     invitation_data = database_qs(invitations)
     for idx, invitation in enumerate(invitations):
-        invitation_data[idx]['created_username'] = invitation.created_by.username
-    invitation_data.sort(key=lambda invitation: invitation['created_datetime'])
+        invitation_data[idx]["created_username"] = invitation.created_by.username
+    invitation_data.sort(key=lambda invitation: invitation["created_datetime"])
     return invitation_data
 
+
 class InvitationListAPI(BaseListView):
-    """ Create or retrieve a list of project invitations.
-    """
+    """Create or retrieve a list of project invitations."""
+
     schema = InvitationListSchema()
     permission_classes = [OrganizationAdminPermission]
-    http_method_names = ['get', 'post']
+    http_method_names = ["get", "post"]
 
     def _get(self, params):
-        invites = Invitation.objects.filter(organization=params['organization'])
+        invites = Invitation.objects.filter(organization=params["organization"])
         return _serialize_invitations(invites)
 
     def _post(self, params):
-        organization = params['organization']
-        email = params['email']
-        permission = params['permission']
+        email = params["email"]
+        permission = params["permission"]
 
-        organization = Organization.objects.get(pk=params['organization'])
-        existing = Invitation.objects.filter(organization=organization, email=email, status='Pending')
+        organization = Organization.objects.get(pk=params["organization"])
+        existing = Invitation.objects.filter(
+            organization=organization, email=email, status="Pending"
+        )
         if existing.exists():
-            raise RuntimeError(f"Pending invitation already exists for organization {organization}, email {email}!")
+            raise RuntimeError(
+                f"Pending invitation already exists for organization {organization}, email {email}!"
+            )
         users = User.objects.filter(email=email)
         if users.count() > 1:
             raise RuntimeError(f"Multiple users exist with email {email}!")
         else:
-            invite = Invitation(organization=organization,
-                                email=email,
-                                permission=permission,
-                                created_by=self.request.user,
-                                registration_token=uuid.uuid1())
+            invite = Invitation(
+                organization=organization,
+                email=email,
+                permission=permission,
+                created_by=self.request.user,
+                registration_token=uuid.uuid1(),
+            )
 
             proto = settings.PROTO
             domain = self.request.get_host()
@@ -80,7 +87,7 @@ class InvitationListAPI(BaseListView):
             )
 
             if settings.TATOR_EMAIL_ENABLED:
-                TatorSES().email(
+                get_email_service().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[email],
                     title=f"Tator invitation from {organization}",
@@ -88,40 +95,40 @@ class InvitationListAPI(BaseListView):
                     raise_on_failure=f"Unable to send email to {email}! Invitation creation failed.",
                 )
             invite.save()
-        return {'message': f"User can register at {url}",
-                'id': invite.id}
+        return {"message": f"User can register at {url}", "id": invite.id}
 
     def get_queryset(self):
-        organization_id = self.kwargs['organization']
+        organization_id = self.kwargs["organization"]
         invites = Invitation.objects.filter(organization=organization_id)
         return invites
 
+
 class InvitationDetailAPI(BaseDetailView):
-    """ Interact with an individual invitation.
-    """
+    """Interact with an individual invitation."""
+
     schema = InvitationDetailSchema()
     permission_classes = [OrganizationAdminPermission]
-    lookup_field = 'id'
-    http_method_names = ['get', 'patch', 'delete']
+    lookup_field = "id"
+    http_method_names = ["get", "patch", "delete"]
 
     def _get(self, params):
-        invites = Invitation.objects.filter(pk=params['id'])
+        invites = Invitation.objects.filter(pk=params["id"])
         if invites.count() == 0:
             raise Http404
         return _serialize_invitations(invites)[0]
 
     def _patch(self, params):
-        invitation = Invitation.objects.get(pk=params['id']) 
-        if 'permission' in params:
-            invitation.permission = params['permission']
-        if 'status' in params:
-            invitation.status = params['status']
+        invitation = Invitation.objects.get(pk=params["id"])
+        if "permission" in params:
+            invitation.permission = params["permission"]
+        if "status" in params:
+            invitation.status = params["status"]
         invitation.save()
-        return {'message': f"Invitation {params['id']} successfully updated!"}
+        return {"message": f"Invitation {params['id']} successfully updated!"}
 
     def _delete(self, params):
-        Invitation.objects.get(pk=params['id']).delete()
-        return {'message': f'Invitation {params["id"]} successfully deleted!'}
+        Invitation.objects.get(pk=params["id"]).delete()
+        return {"message": f'Invitation {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return Invitation.objects.all()

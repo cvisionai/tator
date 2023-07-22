@@ -45,13 +45,13 @@
 
 .annotation__shape-indicator {
   background-color: $color-purple;
-  border-bottom-right-radius: 6px;
-  border-top-right-radius: 6px;
-  height: 30px;
+  border-bottom-right-radius: 3px;
+  border-top-right-radius: 3px;
+  height: 50px;
   left: 0;
   position: absolute;
-  top: 28px;
-  width: 4px;
+  top: 19px;
+  width: 6px;
   transition-duration: 0.25s;
   transition-property: transform;
 
@@ -102,17 +102,17 @@
   }
 
   zoom-in-button.is-selected + zoom-out-button + pan-button + & {
-    transform: translateY(434px);
+    transform: translateY(372px);
   }
 
   pan-button.is-selected + & {
-    transform: translateY(558px);
+    transform: translateY(496px);
   }
 }
 
 .annotation__panels {
   flex-shrink: 0;
-  min-width: 520px;
+  min-width: 560px;
   max-height: calc(100vh - 150px);
   overflow-y: auto;
 }
@@ -540,7 +540,7 @@ annotation-player {
 .page-tab.active,
 .page-tab:hover,
 .page-tab:focus {
-  background-color: #4A4EAE;
+  background-color: #4a4eae;
   color: #ffffff;
 }
 
@@ -548,7 +548,7 @@ annotation-player {
   border: 1px solid #262e3d;
 }
 .purple-box-border {
-  border: 2px solid #4A4EAE;
+  border: 2px solid #4a4eae;
 }
 
 .tab-btn {
@@ -572,7 +572,7 @@ annotation-player {
 .tab-btn.active,
 .tab-btn:hover,
 .tab-btn:focus {
-  background-color: #4A4EAE;
+  background-color: #4a4eae;
   color: #ffffff;
 }
 
@@ -593,7 +593,7 @@ annotation-player {
   position: absolute;
   z-index: 10;
   border: 2px solid black;
-  background-color: rgba(0,0,0,0.9);
+  background-color: rgba(0, 0, 0, 0.9);
   padding: 2px;
 }
 
@@ -603,7 +603,7 @@ annotation-player {
   position: absolute;
   z-index: 10;
   border: 2px solid black;
-  background-color: rgba(0,0,0,0.9);
+  background-color: rgba(0, 0, 0, 0.9);
   padding: 2px;
 }
 

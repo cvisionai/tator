@@ -5,8 +5,6 @@ from .algorithm import algorithm
 from .algorithm import algorithm_spec
 from .algorithm import algorithm_manifest
 from .algorithm import algorithm_manifest_spec
-from .analysis import analysis_spec
-from .analysis import analysis
 from .attribute_query import attribute_filter_schema
 from .attribute_query import attribute_combinator_schema
 from .attribute_query import attribute_operation_schema
@@ -45,8 +43,8 @@ from .favorite import favorite
 from .file import file
 from .file import file_spec
 from .file import file_update
-from. file_type import file_type_update
-from. file_type import file_type_spec
+from .file_type import file_type_update
+from .file_type import file_type_spec
 from .file_type import file_type
 from .generic_file import generic_file
 from .generic_file import generic_file_spec
@@ -107,7 +105,6 @@ from .project import project
 from .section import section_spec
 from .section import section_update
 from .section import section
-from .section_analysis import section_analysis
 from .state import state_spec
 from .state import state_bulk_update
 from .state import state_update

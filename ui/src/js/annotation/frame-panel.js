@@ -9,7 +9,10 @@ export class FramePanel extends TatorElement {
     this._shadow.appendChild(div);
 
     const headerDiv = document.createElement("div");
-    headerDiv.setAttribute("class", "d-flex flex-grow py-3 rounded-2 flex-justify-between flex-items-center");
+    headerDiv.setAttribute(
+      "class",
+      "d-flex flex-grow py-3 rounded-2 flex-justify-between flex-items-center"
+    );
     div.appendChild(headerDiv);
 
     this._name = document.createElement("h3");
@@ -33,8 +36,7 @@ export class FramePanel extends TatorElement {
       if (this._moreLessButton.textContent.includes("More")) {
         this._attributes.showMore();
         this._moreLessButton.textContent = "Less -";
-      }
-      else {
+      } else {
         this._attributes.showLess();
         this._moreLessButton.textContent = "More +";
       }
@@ -64,9 +66,17 @@ export class FramePanel extends TatorElement {
   set browserSettings(val) {
     this._browserSettings = val;
     this._attributes.browserSettings = this._browserSettings;
+
+    let moreLessToggle = this._browserSettings.getMoreLess(this._dataType);
+    if (moreLessToggle == "more") {
+      this._moreLessButton.textContent = "Less -";
+    } else if (moreLessToggle == "less") {
+      this._moreLessButton.textContent = "More +";
+    }
   }
 
   set dataType(val) {
+    this._dataType = val;
     this._name.textContent = val.name;
     this._typeId = val.id;
     this._method = val.interpolation;
@@ -79,7 +89,7 @@ export class FramePanel extends TatorElement {
       if (values !== null) {
         this._blockingUpdates = true;
         const data = this._data._dataByType.get(val.id);
-        const index = data.findIndex(elem => elem.frame === this._frame);
+        const index = data.findIndex((elem) => elem.frame === this._frame);
         if (index === -1) {
           const mediaId = Number(this.getAttribute("media-id"));
           const body = {
@@ -98,11 +108,10 @@ export class FramePanel extends TatorElement {
           this._undo.post("States", body, val);
         } else {
           const state = data[index];
-          if (this._data.getVersion().bases.indexOf(state.version) >= 0)
-          {
+          if (this._data.getVersion().bases.indexOf(state.version) >= 0) {
             let newObject = {};
             newObject.parent = state.id;
-            newObject.attributes = {...values};
+            newObject.attributes = { ...values };
             newObject.version = this._data.getVersion().id;
             newObject.type = Number(state.type.split("_")[1]);
             newObject.media_ids = state.media;
@@ -110,20 +119,27 @@ export class FramePanel extends TatorElement {
             newObject.localization_ids = state.localizations;
             console.info(JSON.stringify(newObject));
             this._undo.post("States", newObject, val);
-          }
-          else
-          {
-            this._undo.patch("State", state.id, {"attributes": values}, val);
+          } else {
+            this._undo.patch("State", state.id, { attributes: values }, val);
           }
         }
       }
     });
-    this._data.addEventListener("freshData", evt => {
+    this._data.addEventListener("freshData", (evt) => {
       const typeObj = evt.detail.typeObj;
-      if ((typeObj.id === val.id) && (this._frame !== null)) {
+      if (typeObj.id === val.id && this._frame !== null) {
         this._updateAttributes(evt.detail.data);
       }
     });
+
+    if (this._browserSettings) {
+      let moreLessToggle = this._browserSettings.getMoreLess(this._dataType);
+      if (moreLessToggle == "more") {
+        this._moreLessButton.textContent = "Less -";
+      } else if (moreLessToggle == "less") {
+        this._moreLessButton.textContent = "More +";
+      }
+    }
   }
 
   frameChange(frame) {
@@ -153,9 +169,10 @@ export class FramePanel extends TatorElement {
 
   _getInterpolated(data) {
     data.sort((a, b) => a.frame - b.frame);
-    const frameDiffs = data.map(
-      (elem, idx) => [Math.abs(elem.frame - this._frame), idx]
-    );
+    const frameDiffs = data.map((elem, idx) => [
+      Math.abs(elem.frame - this._frame),
+      idx,
+    ]);
     const nearestIdx = frameDiffs.reduce((r, a) => (a[0] < r[0] ? a : r))[1];
     let beforeIdx, afterIdx;
     const frameDiff = data[nearestIdx].frame - this._frame;

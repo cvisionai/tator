@@ -1,5 +1,4 @@
 import { TatorPage } from "../components/tator-page.js";
-import { getCookie } from "../util/get-cookie.js";
 import { store } from "./store.js";
 
 export class ProjectsDashboard extends TatorPage {
@@ -18,36 +17,49 @@ export class ProjectsDashboard extends TatorPage {
     this._placeholders = this._shadow.getElementById("project-placeholders");
 
     // Create store subscriptions
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
-    store.subscribe(state => state.projects, this._updateProjects.bind(this));
-    store.subscribe(state => state.organizations, this._updateOrganizations.bind(this));
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
+    store.subscribe((state) => state.projects, this._updateProjects.bind(this));
+    store.subscribe(
+      (state) => state.organizations,
+      this._updateOrganizations.bind(this)
+    );
 
-    this._removeCallback = evt => {
+    this._removeCallback = (evt) => {
       this._deleteProject.setAttribute("project-id", evt.detail.projectId);
       this._deleteProject.setAttribute("project-name", evt.detail.projectName);
       this._deleteProject.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
 
-    this._deleteProject.addEventListener("close", evt => {
+    this._deleteProject.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    this._newProjectDialog.addEventListener("close", evt => {
+    this._newProjectDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
       if (this._newProjectDialog._confirm) {
         this._createProject();
       }
     });
 
-    this._newProjectButton.addEventListener("click", this._openNewProjectDialog.bind(this));
-    this._newProject.addEventListener("click", this._openNewProjectDialog.bind(this));
+    this._newProjectButton.addEventListener(
+      "click",
+      this._openNewProjectDialog.bind(this)
+    );
+    this._newProject.addEventListener(
+      "click",
+      this._openNewProjectDialog.bind(this)
+    );
 
-    this._modalNotify.addEventListener("close", evt => {
+    this._modalNotify.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
       // If closed with the close button, don't redirect.
-      const doRedirect = evt.target.shadowRoot.activeElement.tagName != "MODAL-CLOSE";
+      const doRedirect =
+        evt.target.shadowRoot.activeElement.tagName != "MODAL-CLOSE";
       if (this._projectCreationRedirect && doRedirect) {
         window.location.replace(this._projectCreationRedirect);
       }
@@ -65,7 +77,12 @@ export class ProjectsDashboard extends TatorPage {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    TatorPage.prototype.attributeChangedCallback.call(
+      this,
+      name,
+      oldValue,
+      newValue
+    );
   }
 
   _updateProjects(projects, prevProjects) {
@@ -79,7 +96,9 @@ export class ProjectsDashboard extends TatorPage {
     // Remove any projects no longer present.
     for (let project of prevProjects) {
       if (!projects.includes(project)) {
-        const summary = this._shadow.getElementById(`project-summary-${project.id}`);
+        const summary = this._shadow.getElementById(
+          `project-summary-${project.id}`
+        );
         this._projects.removeChild(summary);
         this.removeAttribute("has-open-modal");
         this._deleteProject.removeAttribute("is-open");
@@ -89,7 +108,9 @@ export class ProjectsDashboard extends TatorPage {
   }
 
   _updateOrganizations(organizations, prevOrganizations) {
-    const adminOrganizations = organizations.filter(org => org.permission == "Admin");
+    const adminOrganizations = organizations.filter(
+      (org) => org.permission == "Admin"
+    );
     if (adminOrganizations.length > 0) {
       this._newProjectDialog.organizations = adminOrganizations;
       this._newProjectButton.style.display = "flex";
@@ -117,10 +138,12 @@ export class ProjectsDashboard extends TatorPage {
     const project = await store.getState().addProject(projectSpec, preset);
     this._insertProjectSummary(project);
     this._projectCreationRedirect = `/${project.id}/project-settings`;
-    this._modalNotify.init("Project created successfully!",
-                            "Continue to project settings or close this dialog.",
-                            "ok",
-                            "Continue to settings");
+    this._modalNotify.init(
+      "Project created successfully!",
+      "Continue to project settings or close this dialog.",
+      "ok",
+      "Continue to settings"
+    );
     this._modalNotify.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
   }

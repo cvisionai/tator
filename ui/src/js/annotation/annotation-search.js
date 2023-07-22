@@ -13,11 +13,13 @@ export class AnnotationSearch extends TatorElement {
     input.setAttribute("placeholder", "Search...");
     label.appendChild(input);
 
-    input.addEventListener("change",() => {
-      this.dispatchEvent(new CustomEvent("filterAnnotations", {
-        composed: true,
-        detail: {"query": input.value}
-      }));
+    input.addEventListener("change", () => {
+      this.dispatchEvent(
+        new CustomEvent("filterAnnotations", {
+          composed: true,
+          detail: { query: input.value },
+        })
+      );
     });
 
     input.addEventListener("focus", () => {

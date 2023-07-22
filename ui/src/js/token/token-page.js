@@ -1,5 +1,5 @@
 import { TatorPage } from "../components/tator-page.js";
-import { getCookie } from "../util/get-cookie.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
 
 export class TokenPage extends TatorPage {
@@ -11,14 +11,19 @@ export class TokenPage extends TatorPage {
     this._shadow.appendChild(main);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
+    div.setAttribute(
+      "class",
+      "main__header d-flex flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(div);
 
     const h1 = document.createElement("h1");
     h1.setAttribute("class", "h1");
     div.appendChild(h1);
 
-    const h1Text = document.createTextNode("Enter credentials to get API token");
+    const h1Text = document.createTextNode(
+      "Enter credentials to get API token"
+    );
     h1.appendChild(h1Text);
 
     const form = document.createElement("form");
@@ -55,7 +60,10 @@ export class TokenPage extends TatorPage {
     footer.appendChild(this._submit);
 
     const messages = document.createElement("div");
-    messages.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    messages.setAttribute(
+      "class",
+      "main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(messages);
 
     this._messageList = document.createElement("ul");
@@ -68,7 +76,8 @@ export class TokenPage extends TatorPage {
     this._refreshWarning = document.createElement("h3");
     this._refreshWarning.setAttribute("class", "h3 text-white");
     this._refreshWarning.setAttribute("style", "text-align:center;width:400px");
-    this._refreshWarning.textContent = "Warning: Refreshing token will invalidate previous token!";
+    this._refreshWarning.textContent =
+      "Warning: Refreshing token will invalidate previous token!";
     this._refreshWarning.style.display = "none";
     li.appendChild(this._refreshWarning);
 
@@ -82,49 +91,50 @@ export class TokenPage extends TatorPage {
 
     this._modalNotify = document.createElement("modal-notify");
     div.appendChild(this._modalNotify);
-    this._modalNotify.addEventListener("close", evt => {
+    this._modalNotify.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
     // Create store subscriptions
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
 
-    form.addEventListener("submit", evt => {
+    form.addEventListener("submit", (evt) => {
       evt.preventDefault();
       const body = {
         username: this._username.getValue(),
         password: this._password.getValue(),
         refresh: this._refresh.getValue(),
       };
-      fetch("/rest/Token", {
+      fetchCredentials("/rest/Token", {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(body),
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.token) {
-          this._modalNotify.init("Your API token is:",
-                                 data.token,
-                                 "ok",
-                                 "Close");
-          this._username.setValue("");
-          this._password.setValue("");
-        } else {
-          this._modalNotify.init("Token retrieval failed!",
-                                 data.message,
-                                 "error",
-                                 "Close");
-        }
-        this._modalNotify.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.token) {
+            this._modalNotify.init(
+              "Your API token is:",
+              data.token,
+              "ok",
+              "Close"
+            );
+            this._username.setValue("");
+            this._password.setValue("");
+          } else {
+            this._modalNotify.init(
+              "Token retrieval failed!",
+              data.message,
+              "error",
+              "Close"
+            );
+          }
+          this._modalNotify.setAttribute("is-open", "");
+          this.setAttribute("has-open-modal", "");
+        });
     });
   }
 

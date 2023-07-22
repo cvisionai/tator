@@ -7,14 +7,13 @@ export class AttributesForm extends TatorElement {
     // Flag values
     this._changed = false;
 
-    // 
+    //
     this._data = null;
-
   }
 
   set changed(val) {
     this.dispatchEvent(new Event("change"));
-    return this._changed = val;
+    return (this._changed = val);
   }
 
   isChanged() {
@@ -22,7 +21,7 @@ export class AttributesForm extends TatorElement {
   }
 
   changeReset() {
-    return this._changed = false;
+    return (this._changed = false);
   }
 
   _initEmptyForm() {
@@ -75,6 +74,13 @@ export class AttributesForm extends TatorElement {
     this._order.addEventListener("change", this._formChanged.bind(this));
     this.form.appendChild(this._order);
 
+    // style
+    this._style = document.createElement("text-input");
+    this._style.setAttribute("name", "Style");
+    this._style.setAttribute("type", "string");
+    this._style.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._style);
+
     // required
     this._required = document.createElement("bool-input");
     this._required.setAttribute("name", "Required");
@@ -117,40 +123,27 @@ export class AttributesForm extends TatorElement {
     this.placeholderEnum.appendChild(labelHolder);
     this.form.appendChild(this.placeholderEnum);
 
-
     // labels
     /* input inside placeholder hidden until dtype selected */
     this.placeholderLabels = document.createElement("div");
-    this.placeholderLabels.setAttribute("class", "col-3 col-modal-5 float-left");
+    this.placeholderLabels.setAttribute(
+      "class",
+      "col-3 col-modal-5 float-left"
+    );
     this.placeholderEnum.appendChild(this.placeholderLabels);
 
     // choices
     /* input inside placeholder hidden until dtype selected */
     this.placeholderChoices = document.createElement("div");
-    this.placeholderChoices.setAttribute("class", "col-3 col-modal-5 float-left");
+    this.placeholderChoices.setAttribute(
+      "class",
+      "col-3 col-modal-5 float-left"
+    );
     this.placeholderEnum.appendChild(this.placeholderChoices);
-
-
-    // style
-    // disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check
-    const styleOptions = [
-      { value: "disabled" },
-      { value: "long_string" },
-      { value: "start_frame" },
-      { value: "end_frame" },
-      { value: "start_frame_check" },
-      { value: "end_frame_check" } ]
-    this._style = document.createElement("enum-input");
-    this._style.multiple = true;
-    this._style.setAttribute("name", "Style");
-    this._style.choices = styleOptions;
-    this._style.addEventListener("change", this._formChanged.bind(this));
-    // #TODO
-    // this.form.appendChild(this._style);
 
     // autocomplete
     this._autocompleteSection = document.createElement("div");
-    this._autocompleteSection.setAttribute("class", "py-3")
+    this._autocompleteSection.setAttribute("class", "py-3");
     this._autocompleteSection.hidden = true;
     this.form.appendChild(this._autocompleteSection);
 
@@ -171,7 +164,10 @@ export class AttributesForm extends TatorElement {
     this._autocomplete_service_url.setAttribute("name", "Service URL");
     this._autocomplete_service_url.setValue(null);
     this._autocomplete_service_url.default = null;
-    this._autocomplete_service_url.addEventListener("change", this._formChanged.bind(this));
+    this._autocomplete_service_url.addEventListener(
+      "change",
+      this._formChanged.bind(this)
+    );
     this._autocompleteSection.appendChild(this._autocomplete_service_url);
 
     this._autocomplete_match_any = document.createElement("bool-input");
@@ -180,7 +176,10 @@ export class AttributesForm extends TatorElement {
     this._autocomplete_match_any.setAttribute("off-text", "No");
     this._autocomplete_match_any.setValue(null);
     this._autocomplete_match_any.default = null;
-    this._autocomplete_match_any.addEventListener("change", this._formChanged.bind(this));
+    this._autocomplete_match_any.addEventListener(
+      "change",
+      this._formChanged.bind(this)
+    );
     this._autocompleteSection.appendChild(this._autocomplete_match_any);
 
     this._shadow.appendChild(this.form);
@@ -213,7 +212,7 @@ export class AttributesForm extends TatorElement {
       choices = [],
       labels = [],
       autocomplete = null,
-      style = null
+      style = null,
     } = data;
     delete this._data["_default"];
 
@@ -237,6 +236,10 @@ export class AttributesForm extends TatorElement {
     this._order.default = order;
     this._order.setValue(order);
 
+    // Set style
+    this._style.default = style;
+    this._style.setValue(style);
+
     // required
     this._required.default = required;
     this._required.setValue(required);
@@ -252,37 +255,32 @@ export class AttributesForm extends TatorElement {
     // default depends on dtype so use this method
     this._getDefaultInput({
       dtype,
-      value: _default,  // create new el w/ this value 
-      enumOptions: { choices, labels }
+      value: _default, // create new el w/ this value
+      enumOptions: { choices, labels },
     });
 
     // use current
     this._getUseCurrent({ value: use_current });
 
     // autocomplete - part 1
-    const serviceUrl = typeof autocomplete !== "undefined" && autocomplete && autocomplete.serviceUrl ? autocomplete.serviceUrl : null;
+    const serviceUrl =
+      typeof autocomplete !== "undefined" &&
+      autocomplete &&
+      autocomplete.serviceUrl
+        ? autocomplete.serviceUrl
+        : null;
     this._autocomplete_service_url.default = serviceUrl;
     this._autocomplete_service_url.setValue(serviceUrl);
 
     // autocomplete - part 2
-    const matchAny = typeof autocomplete !== "undefined" && autocomplete && autocomplete.match_any ? autocomplete.match_any : null;
+    const matchAny =
+      typeof autocomplete !== "undefined" &&
+      autocomplete &&
+      autocomplete.match_any
+        ? autocomplete.match_any
+        : null;
     this._autocomplete_match_any.default = matchAny;
     this._autocomplete_match_any.setValue(matchAny);
-
-    // style
-    // Note: Assumes if multiple they are  always separated with white space
-    if (style) {
-      const styleOptions = style.indexOf(" ") > -1 ? style.split(" ") : [style];
-      // Changes to an array of objects usable by enum-input
-      styleOptions.map(val => {
-        return { value: val, label: val };
-      });
-      this._style.default = styleOptions;
-      this._style.setValue(styleOptions);
-    } else {
-      this._style.default = null;
-      this._style.setValue(null);
-    }
 
     // minimum
     this._getMinInput({ value: minimum });
@@ -290,11 +288,12 @@ export class AttributesForm extends TatorElement {
     // maximum
     this._getMaxInput({ value: maximum });
 
-    if (dtype == 'enum') {
-      this.choicesVal = (choices === null) ? [] : choices;
-      this.labelsVal = (labels === null) ? [] : labels;
+    if (dtype == "enum") {
+      this.choicesVal = choices === null ? [] : choices;
+      this.labelsVal = labels === null ? [] : labels;
 
-      if (this.choicesVal.length != this.labelsVal.length) this._optionLengthEqual();
+      if (this.choicesVal.length != this.labelsVal.length)
+        this._optionLengthEqual();
 
       // Choices only apply for enum types
       this._getChoicesInputs({ value: this.choicesVal });
@@ -303,7 +302,7 @@ export class AttributesForm extends TatorElement {
     }
 
     // show/hides min/max/enum/correctdefault etc.
-    this._showDynamicFields(dtype)
+    this._showDynamicFields(dtype);
 
     return this.form;
   }
@@ -327,10 +326,10 @@ export class AttributesForm extends TatorElement {
     }
   }
 
-  /* 
+  /*
    * These control the hide/show of the inputs
    *  {@param} dtype required
-   *  if the input has not been init, creates it as empty 
+   *  if the input has not been init, creates it as empty
    */
   _showDefault({ dtype } = {}) {
     if (dtype != "Select" && dtype != "enum") {
@@ -341,7 +340,7 @@ export class AttributesForm extends TatorElement {
       //this._default.setAttribute("data-ignore", "false");
       this.placeholderDefault.classList.remove("hidden");
     } else {
-      // this flag allows us not to delete a users value if 
+      // this flag allows us not to delete a users value if
       // they toggle dtype, but if it is true we don't try to PATCH it
       //if(this._default) this._default.setAttribute("data-ignore", "true");
       this.placeholderDefault.classList.add("hidden");
@@ -349,7 +348,7 @@ export class AttributesForm extends TatorElement {
   }
 
   _showUseCurrent({ dtype } = {}) {
-    if (dtype == 'datetime') {
+    if (dtype == "datetime") {
       if (typeof this._useCurrent == "undefined") {
         this._getUseCurrent({});
       }
@@ -361,7 +360,7 @@ export class AttributesForm extends TatorElement {
   }
 
   _showMin({ dtype } = {}) {
-    if (dtype == 'int' || dtype == 'float') {
+    if (dtype == "int" || dtype == "float") {
       if (typeof this._minimum == "undefined" || this._minimum == null) {
         this._getMinInput({});
       }
@@ -373,7 +372,7 @@ export class AttributesForm extends TatorElement {
   }
 
   _showMax({ dtype } = {}) {
-    if (dtype == 'int' || dtype == 'float') {
+    if (dtype == "int" || dtype == "float") {
       if (typeof this._maximum == "undefined" || this._maximum == null) {
         this._getMaxInput({});
       }
@@ -385,7 +384,7 @@ export class AttributesForm extends TatorElement {
   }
 
   _showEnumInputs({ dtype } = {}) {
-    if (dtype == 'enum') {
+    if (dtype == "enum") {
       if (typeof this._choices == "undefined" || this._choices == null) {
         this._getLabelsInputs({});
         this._getChoicesInputs({});
@@ -398,19 +397,19 @@ export class AttributesForm extends TatorElement {
     }
   }
 
-    /* 
+  /*
    * These control the hide/show of the inputs
-   *  {@param} dtype required 
+   *  {@param} dtype required
    */
-    _showAutocomplete({ dtype } = {}) {
-      if (dtype == 'string') {
-        this._autocompleteSection.hidden = false;
-      } else {
-        this._autocompleteSection.hidden = true;
-      }
+  _showAutocomplete({ dtype } = {}) {
+    if (dtype == "string") {
+      this._autocompleteSection.hidden = false;
+    } else {
+      this._autocompleteSection.hidden = true;
     }
+  }
 
-  /* 
+  /*
    * These control the hide/show of the inputs
    *  {@param} dtype required for get default ONLY
    *  {@param} value is optional
@@ -419,7 +418,6 @@ export class AttributesForm extends TatorElement {
     dtype, // required
     value = "", // keep this
   }) {
-
     if (this.placeholderDefault.children.length > 0) {
       this.placeholderDefault.innerHTML = ""; // @TODO best practice to remove all children?
       this._default = null;
@@ -436,12 +434,11 @@ export class AttributesForm extends TatorElement {
         { value: "true", label: "true" },
         { value: "false", label: "false" },
       ];
-      
+
       this._default.default = String(value);
       this._default.setValue(String(value));
-      
-      this._default.addEventListener("change", this._formChanged.bind(this));
 
+      this._default.addEventListener("change", this._formChanged.bind(this));
     } else if (dtype == "enum") {
       // enum default set in place, hide default input
       this.placeholderDefault.classList.add("hidden");
@@ -541,7 +538,7 @@ export class AttributesForm extends TatorElement {
       this._labels._newInput("");
     });
 
-    return this._choices
+    return this._choices;
   }
 
   _getLabelsInputs({ value = [] } = {}) {
@@ -563,7 +560,7 @@ export class AttributesForm extends TatorElement {
       this._choices._newInput("");
     });
 
-    return this._labels
+    return this._labels;
   }
 
   _getEnumDefaultCol({ defaultVal }) {
@@ -583,7 +580,7 @@ export class AttributesForm extends TatorElement {
 
     if (this.choicesVal && this.choicesVal.length > 0) {
       for (let val of this.choicesVal) {
-        let defaultFlag = (val == this._enumDefault.value) ? true : false;
+        let defaultFlag = val == this._enumDefault.value ? true : false;
         this.appendDefaultRow({ defaultFlag });
       }
     }
@@ -592,7 +589,7 @@ export class AttributesForm extends TatorElement {
   //
   appendDefaultRow({ defaultFlag = false } = {}) {
     let currentDefault = document.createElement("input");
-    currentDefault.setAttribute("class", "radio")
+    currentDefault.setAttribute("class", "radio");
     currentDefault.setAttribute("type", "radio");
     currentDefault.setAttribute("name", "enum-default");
     currentDefault.checked = defaultFlag;
@@ -631,7 +628,7 @@ export class AttributesForm extends TatorElement {
     // create the dtype input
     this._dtype = document.createElement("enum-input");
     this.dataTypeSelectDiv.appendChild(this._dtype);
-    this._dtype.setAttribute("name", "Data Type")
+    this._dtype.setAttribute("name", "Data Type");
 
     // If we have a value
     // - it was via FETCH so actions = edit
@@ -646,7 +643,6 @@ export class AttributesForm extends TatorElement {
       this._dtype.setValue(dtype);
 
       this._dtype.addEventListener("change", this.compareDtype.bind(this));
-
     } else {
       // ELSE there was no prior value user is selecting dtype for the first time
       // Listener will reveal the correct fields
@@ -675,25 +671,39 @@ export class AttributesForm extends TatorElement {
     let newType = this._dtype.getValue();
     this._showDynamicFields(newType);
 
-  //   // when changed check if we need to show a warning.
-  //   this._dispatchWarningEvents({ dtype: this._dtype, newType });
-  // }
+    //   // when changed check if we need to show a warning.
+    //   this._dispatchWarningEvents({ dtype: this._dtype, newType });
+    // }
     const dtype = this.currentDtype;
-  // _dispatchWarningEvents({ dtype, newType }) {
+    // _dispatchWarningEvents({ dtype, newType }) {
     if (this._irreversibleCheck({ dtype, newType })) {
-      this.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
-      this._dtype._select.dispatchEvent(new CustomEvent("input-caution", {
-        "detail":
-          { "errorMsg": `Warning: ${dtype} to ${newType} is not reversible.` }
-      }));
-
+      this.addWarningWrap(
+        this._dtype.label,
+        this.dataTypeSelectDiv,
+        this._dtype._select,
+        false
+      );
+      this._dtype._select.dispatchEvent(
+        new CustomEvent("input-caution", {
+          detail: {
+            errorMsg: `Warning: ${dtype} to ${newType} is not reversible.`,
+          },
+        })
+      );
     } else if (this._reversibleCheck({ dtype, newType })) {
-      this.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
-      this._dtype._select.dispatchEvent(new CustomEvent("input-caution", {
-        "detail":
-          { "errorMsg": `Warning: ${dtype} to ${newType} may cause data loss.` }
-      }));
-
+      this.addWarningWrap(
+        this._dtype.label,
+        this.dataTypeSelectDiv,
+        this._dtype._select,
+        false
+      );
+      this._dtype._select.dispatchEvent(
+        new CustomEvent("input-caution", {
+          detail: {
+            errorMsg: `Warning: ${dtype} to ${newType} may cause data loss.`,
+          },
+        })
+      );
     } else {
       let successEvent = new CustomEvent("input-valid");
       this._dtype._select.dispatchEvent(successEvent);
@@ -701,55 +711,69 @@ export class AttributesForm extends TatorElement {
   }
 
   _setAttributeDTypes() {
-    this.attributeDTypes = ["bool", "int", "float", "enum", "string", "datetime", "geopos"];
+    this.attributeDTypes = [
+      "bool",
+      "int",
+      "float",
+      "enum",
+      "string",
+      "datetime",
+      "geopos",
+    ];
     return this.attributeDTypes;
   }
 
   _getDTypeRules() {
-    return ({
-      "bool": {
-        "allowed": ["enum", "string"],
+    return {
+      bool: {
+        allowed: ["enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": [],
-        "irreversible": ["enum", "string"]
+        irreversible: ["enum", "string"],
       },
-      "int": {
-        "allowed": ["float", "enum", "string"],
+      int: {
+        allowed: ["float", "enum", "string"],
         "fully-reversible": ["float"],
         "reversible-with-warning": [],
-        "irreversible": ["enum", "string"]
+        irreversible: ["enum", "string"],
       },
-      "float": {
-        "allowed": ["int", "enum", "string"],
+      float: {
+        allowed: ["int", "enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": ["int"],
-        "irreversible": ["enum", "string"]
+        irreversible: ["enum", "string"],
       },
-      "enum": {
-        "allowed": ["string"],
+      enum: {
+        allowed: ["string"],
         "fully-reversible": ["string"],
         "reversible-with-warning": [],
-        "irreversible": []
+        irreversible: [],
       },
-      "string": {
-        "allowed": ["enum"],
+      string: {
+        allowed: ["enum"],
         "fully-reversible": ["enum"],
         "reversible-with-warning": [],
-        "irreversible": []
+        irreversible: [],
       },
-      "datetime": {
-        "allowed": ["enum", "string"],
+      datetime: {
+        allowed: ["enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": [],
-        "irreversible": ["enum", "string"]
+        irreversible: ["enum", "string"],
       },
-      "geopos": {
-        "allowed": ["enum", "string"],
+      geopos: {
+        allowed: ["enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": [],
-        "irreversible": ["enum", "string"]
-      }
-    });
+        irreversible: ["enum", "string"],
+      },
+      float_array: {
+        allowed: [],
+        "fully-reversible": [],
+        "reversible-with-warning": [],
+        irreversible: [],
+      },
+    };
   }
 
   _getAllowedDTypeArray(dtype) {
@@ -763,7 +787,7 @@ export class AttributesForm extends TatorElement {
 
   _reversibleCheck({ dtype = "", newType = "" } = {}) {
     let allRules = this._getDTypeRules();
-    let ruleSetForDtype = allRules[dtype]['reversible-with-warning'];
+    let ruleSetForDtype = allRules[dtype]["reversible-with-warning"];
 
     return ruleSetForDtype.includes(newType);
   }
@@ -777,7 +801,7 @@ export class AttributesForm extends TatorElement {
 
   _getFormattedOptions(typeArray) {
     return typeArray.map((i) => {
-      return ({ "label": i, "value": i });
+      return { label: i, value: i };
     });
   }
 
@@ -785,29 +809,29 @@ export class AttributesForm extends TatorElement {
   _getFormattedEnumOptions({ choices, labels }) {
     return choices.map((choice, i) => {
       if (labels[i] != null) {
-        return { value: choice, label: labels[i] }
+        return { value: choice, label: labels[i] };
       } else {
-        return { value: choice }
+        return { value: choice };
       }
     });
   }
 
   /**
-  * This will check for changed inputs, but some are required for patch call
-  * POST - Only required and if changed; UNLESS it is a clone, then pass all values
-  * PATCH - Only required and if changed
-  * 
-  * Required: (See: _check_attribute_type in attribute_type.py)
-  * - Name
-  * - Dtype
-  * - Choices (if Dtype == Enum)
-  * - Default (if Dtype Changes and it isn't null will be validated - leave null if it is "")
-  * 
-  * 
-  * @returns {formData} as JSON object
-  */
+   * This will check for changed inputs, but some are required for patch call
+   * POST - Only required and if changed; UNLESS it is a clone, then pass all values
+   * PATCH - Only required and if changed
+   *
+   * Required: (See: _check_attribute_type in attribute_type.py)
+   * - Name
+   * - Dtype
+   * - Choices (if Dtype == Enum)
+   * - Default (if Dtype Changes and it isn't null will be validated - leave null if it is "")
+   *
+   *
+   * @returns {formData} as JSON object
+   */
   _getAttributeFormData() {
-    const formData = {...this._data};
+    const formData = { ...this._data };
 
     try {
       // Name: Always sent
@@ -815,25 +839,39 @@ export class AttributesForm extends TatorElement {
 
       // Description: Only when changed, or when it is a Clone pass the value along
       // Don't send if the value is null => invalid
-      if ((this._description.changed() || this.isClone) && this._description.getValue() !== null) {
+      if (
+        (this._description.changed() || this.isClone) &&
+        this._description.getValue() !== null
+      ) {
         formData.description = this._description.getValue();
       }
 
       // Order: Only when changed, or when it is a Clone pass the value along
       // Don't send if the value is null => invalid
-      if ((this._order.changed() || this.isClone) && this._order.getValue() !== null) {
+      if (
+        (this._order.changed() || this.isClone) &&
+        this._order.getValue() !== null
+      ) {
         formData.order = this._order.getValue();
       }
 
+      // Style: Only when changed, or when it is a Clone pass the value along
+      // Don't send if the value is null => invalid
+      if (
+        (this._style.changed() || this.isClone) &&
+        this._style.getValue() !== null
+      ) {
+        formData.style = this._style.getValue();
+      }
+
       // Required: Only when changed, or when it is a Clone pass the value along
-      if ((this._required.changed() || this.isClone)) {
+      if (this._required.changed() || this.isClone) {
         formData.required = this._required.getValue();
       }
 
       // Visible: Always send
       const visible = this._visible.getValue();
-      formData.visible = (!visible || visible == null) ? false : true;
-
+      formData.visible = !visible || visible == null ? false : true;
 
       // Dtype: Always sent
       formData.dtype = this._dtype.getValue();
@@ -843,36 +881,28 @@ export class AttributesForm extends TatorElement {
       // Don't send if the value is null => invalid
       if (dtype == "string") {
         // matchAny changed
-        const matchAnyValid = (this._autocomplete_match_any.changed() || this.isClone) && this._autocomplete_match_any.getValue() !== null && this._autocomplete_match_any.getValue() !== "";
-        const serviceUrlValid = (this._autocomplete_service_url.changed() || this.isClone) && this._autocomplete_service_url.getValue() !== null;
+        const matchAnyValid =
+          (this._autocomplete_match_any.changed() || this.isClone) &&
+          this._autocomplete_match_any.getValue() !== null &&
+          this._autocomplete_match_any.getValue() !== "";
+        const serviceUrlValid =
+          (this._autocomplete_service_url.changed() || this.isClone) &&
+          this._autocomplete_service_url.getValue() !== null;
 
         // If it changed or we're copying value over for a clone add the attribute
         if (serviceUrlValid || matchAnyValid) {
           formData.autocomplete = {
             serviceUrl: this._autocomplete_service_url.getValue(),
-            match_any : this._autocomplete_match_any.getValue()
+            match_any: this._autocomplete_match_any.getValue(),
           };
         }
 
         //If the value has changed to empty string "" we want to remove it
-        if(this._autocomplete_service_url.changed() && this._autocomplete_service_url.getValue() == "") {
+        if (
+          this._autocomplete_service_url.changed() &&
+          this._autocomplete_service_url.getValue() == ""
+        ) {
           delete formData["autocomplete"];
-        }
-      }
-
-      // Style: Only when changed, or when it is a Clone pass the value along
-      // Don't send if the value is null => invalid
-      if ((this._style.changed() || this.isClone) && this._style.getValue() !== null) {
-        const rawStyleValue = this._style.getValue();
-        if (Array.isArray(rawStyleValue)) {
-          formData.style = rawStyleValue.join(' '); // join string values with string if multiple chosen
-        } else if (rawStyleValue !== "") {
-          formData.style = rawStyleValue;
-        }
-
-        // //If the value has changed to empty string "" we want to remove it
-        if(this._style.changed() && this._style.getValue() == "") {
-            delete formData["style"];
         }
       }
 
@@ -880,35 +910,49 @@ export class AttributesForm extends TatorElement {
       // Don't send if the value is null => invalid
       // String: can be ""
       // - Int, or Float: If "" will be nulled out
-      // 
-      if (dtype !== "enum" && (this.isClone || this._dtype.changed() || this._default.changed())) {
+      //
+      if (
+        dtype !== "enum" &&
+        (this.isClone || this._dtype.changed() || this._default.changed())
+      ) {
         let defaultVal = this._default.getValue();
 
         if (defaultVal !== null && defaultVal !== "null") {
           // backend does this but not when value is ""
-          if ((dtype == "int" || dtype == "float")) {
+          if (dtype == "int" || dtype == "float") {
             if (String(defaultVal).trim() === "") {
               delete formData["default"];
             } else {
               formData["default"] = defaultVal;
             }
-            
-          } else if (dtype == "datetime" && defaultVal != "" && this._useCurrent.getValue() != true) {
+          } else if (
+            dtype == "datetime" &&
+            defaultVal != "" &&
+            this._useCurrent.getValue() != true
+          ) {
             formData["default"] = defaultVal;
           } else if (dtype == "geopos" && defaultVal != "") {
             formData["default"] = defaultVal;
           } else if (dtype == "bool") {
             // allow for bool value to be changed to null
-            if (String(defaultVal).trim() === "null" || String(defaultVal).trim() === "") {
+            if (
+              String(defaultVal).trim() === "null" ||
+              String(defaultVal).trim() === ""
+            ) {
               delete formData["default"];
             } else {
-              formData["default"] = (defaultVal == "true") ? true : false;
+              formData["default"] = defaultVal == "true" ? true : false;
             }
-          } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must be the cases above
+          } else if (
+            dtype != "bool" &&
+            dtype != "datetime" &&
+            dtype != "geopos"
+          ) {
+            // these must be the cases above
             formData["default"] = defaultVal;
           }
         } else {
-           // Using PUT anything null is removed by not being sent!
+          // Using PUT anything null is removed by not being sent!
           delete formData["default"];
         }
       }
@@ -926,10 +970,16 @@ export class AttributesForm extends TatorElement {
       // #TODO does this have the same issue with ""?
       if (dtype === "int" || dtype === "float") {
         // getValue for text-input int comes back as null when default is undefined bc it is NaN
-        if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
+        if (
+          (this._minimum.changed() || this.isClone) &&
+          this._minimum.getValue() !== null
+        ) {
           formData.minimum = Number(this._minimum.getValue());
         }
-        if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() !== null) {
+        if (
+          (this._maximum.changed() || this.isClone) &&
+          this._maximum.getValue() !== null
+        ) {
           formData.maximum = Number(this._maximum.getValue());
         }
       }
@@ -938,16 +988,15 @@ export class AttributesForm extends TatorElement {
       // - Always send CHOICES with dtype enum #todo why? (this was in place before I saw labels getting erased #todo)
       // - If you don't send LABELS and you save a default it gets wiped out #todo why?
       // There is also an issue losing the default value if the choices, or labels are updated (moving enum default here
-      // 
+      //
       if (dtype === "enum") {
-
         if (
-          (this.isClone
-          || this._dtype.changed()
-          || this._enumDefault.changed
-          || this._choices.changed()
-          || this._labels.changed())
-          && this._choices.getValue().includes(this._enumDefault.value)
+          (this.isClone ||
+            this._dtype.changed() ||
+            this._enumDefault.changed ||
+            this._choices.changed() ||
+            this._labels.changed()) &&
+          this._choices.getValue().includes(this._enumDefault.value)
         ) {
           formData["default"] = this._enumDefault.value;
         }
@@ -964,7 +1013,7 @@ export class AttributesForm extends TatorElement {
       console.error("Formdata for attributes error.", err);
     }
 
-    return {formData};
+    return { formData };
   }
 
   _removeAttributeKey(key) {
@@ -974,9 +1023,8 @@ export class AttributesForm extends TatorElement {
   }
 
   addWarningWrap(labelWrap, labelDiv, inputNode, checkErrors = true) {
-
-    if (labelDiv.querySelector('.warning-row')) {
-      labelDiv.querySelector('.warning-row').remove();
+    if (labelDiv.querySelector(".warning-row")) {
+      labelDiv.querySelector(".warning-row").remove();
     }
     // Warning Message Spot
     let warningRow = document.createElement("div");
@@ -992,8 +1040,7 @@ export class AttributesForm extends TatorElement {
         let hasError = this.validate.findError(inputNode.name, inputNode.value);
         if (hasError) {
           let errorEvent = new CustomEvent("input-invalid", {
-            "detail":
-              { "errorMsg": hasError }
+            detail: { errorMsg: hasError },
           });
           inputNode.invalid = true;
           inputNode.classList.add("invalid");
@@ -1032,9 +1079,9 @@ export class AttributesForm extends TatorElement {
     const data = {};
     const attrFormObj = this._getAttributeFormData();
     const formData = {
-      "entity_type": entityType,
-      "current_name": this.dataset.oldName,
-      "attribute_type_update": attrFormObj.formData
+      entity_type: entityType,
+      current_name: this.dataset.oldName,
+      attribute_type_update: attrFormObj.formData,
     };
 
     data.newName = this._name.getValue();
@@ -1047,9 +1094,9 @@ export class AttributesForm extends TatorElement {
   async _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
     const promiseInfo = {};
     const formData = {
-      "entity_type": entityType,
-      "current_name": this.dataset.oldName,
-      "attribute_type_update": {}
+      entity_type: entityType,
+      current_name: this.dataset.oldName,
+      attribute_type_update: {},
     };
 
     promiseInfo.newName = this._name.getValue();
@@ -1064,8 +1111,6 @@ export class AttributesForm extends TatorElement {
 
     return promiseInfo;
   }
-
-
 }
 
 customElements.define("attributes-form", AttributesForm);

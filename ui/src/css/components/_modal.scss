@@ -6,11 +6,11 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  position: absolute;
+  position: fixed;
   right: 0;
-  top: 0;
-  transform: scale(.95);
-  transition-duration: .25s;
+  top: 50px;
+  transform: scale(0.95);
+  transition-duration: 0.25s;
   transition-property: transform, opacity;
   width: 620px;
   z-index: 100;
@@ -45,7 +45,7 @@
   position: relative;
   width: 100%;
 
-  .fixed-height-scroll{
+  .fixed-height-scroll {
     max-height: 300px;
     overflow-y: scroll;
   }
@@ -70,12 +70,14 @@
     margin-bottom: $spacing-2;
   }
 
-  label { // Search for Invite People to project
+  label {
+    // Search for Invite People to project
     margin-top: $spacing-4;
   }
 }
 
-.modal__back { // Appears on View Log modal
+.modal__back {
+  // Appears on View Log modal
   margin-left: -45px;
   position: absolute;
 }
@@ -85,8 +87,6 @@
   margin-bottom: $spacing-4;
   width: 95%;
 }
-
-
 
 .modal__footer {
   width: 100%;
@@ -137,5 +137,4 @@
   .col-modal-5 {
     width: (5 / 12 * 100%);
   }
-
 }

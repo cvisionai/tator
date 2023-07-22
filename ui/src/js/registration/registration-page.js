@@ -1,6 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
-import { getCookie } from "../util/get-cookie.js";
 import TatorLogo from "../../images/tator-logo.png";
+import { getCookie } from "../../../../scripts/packages/tator-js/src/utils/get-cookie.js";
 
 export class RegistrationPage extends TatorElement {
   constructor() {
@@ -11,7 +11,10 @@ export class RegistrationPage extends TatorElement {
     this._shadow.appendChild(main);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    div.setAttribute(
+      "class",
+      "main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(div);
 
     const img = document.createElement("img");
@@ -74,7 +77,10 @@ export class RegistrationPage extends TatorElement {
     footer.appendChild(this._submit);
 
     const errors = document.createElement("div");
-    errors.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    errors.setAttribute(
+      "class",
+      "main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+    );
     main.appendChild(errors);
 
     this._errorList = document.createElement("ul");
@@ -88,20 +94,22 @@ export class RegistrationPage extends TatorElement {
     // Whether the form is valid or not
     this._valid = false;
 
-    this._username.addEventListener("input", evt => this._validateForm(evt));
-    this._password.addEventListener("change", evt => this._validateForm(evt));
-    this._passwordConfirm.addEventListener("input", evt => this._validateForm(evt));
-    this._firstName.addEventListener("input", evt => this._validateForm(evt));
-    this._lastName.addEventListener("input", evt => this._validateForm(evt));
-    this._email.addEventListener("input", evt => this._validateForm(evt));
+    this._username.addEventListener("input", (evt) => this._validateForm(evt));
+    this._password.addEventListener("change", (evt) => this._validateForm(evt));
+    this._passwordConfirm.addEventListener("input", (evt) =>
+      this._validateForm(evt)
+    );
+    this._firstName.addEventListener("input", (evt) => this._validateForm(evt));
+    this._lastName.addEventListener("input", (evt) => this._validateForm(evt));
+    this._email.addEventListener("input", (evt) => this._validateForm(evt));
 
     this._modalNotify = document.createElement("modal-notify");
     div.appendChild(this._modalNotify);
-    this._modalNotify.addEventListener("close", evt => {
+    this._modalNotify.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    form.addEventListener("submit", evt => {
+    form.addEventListener("submit", (evt) => {
       evt.preventDefault();
       const body = {
         first_name: this._firstName.getValue(),
@@ -114,41 +122,47 @@ export class RegistrationPage extends TatorElement {
       if (params.has("registration_token")) {
         body.registration_token = params.get("registration_token");
       }
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (!KEYCLOAK_ENABLED) {
+        headers["X-CSRFToken"] = getCookie("csrftoken");
+      }
       fetch("/rest/Users", {
         method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
+        headers: headers,
         body: JSON.stringify(body),
       })
-      .then(response => {
-        if (response.status == 400) {
-          return response.json();
-        } else {
-          return Promise.resolve("success");
-        }
-      })
-      .then(data => {
-        if (data == "success") {
-          this._modalNotify.init("Registration succeeded!",
-                                 "Press Continue to go to login screen.",
-                                 "ok",
-                                 "Continue");
-          this._modalNotify.addEventListener("close", evt => {
-            window.location.replace("/accounts/login");
-          });
-        } else {
-          this._modalNotify.init("Registration failed!",
-                                 data.message,
-                                 "error",
-                                 "Close");
-        }
-        this._modalNotify.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-      })
+        .then((response) => {
+          if (response.status == 400) {
+            return response.json();
+          } else {
+            return Promise.resolve("success");
+          }
+        })
+        .then((data) => {
+          if (data == "success") {
+            this._modalNotify.init(
+              "Registration succeeded!",
+              "Press Continue to go to login screen.",
+              "ok",
+              "Continue"
+            );
+            this._modalNotify.addEventListener("close", (evt) => {
+              window.location.replace("/accounts/login");
+            });
+          } else {
+            this._modalNotify.init(
+              "Registration failed!",
+              data.message,
+              "error",
+              "Close"
+            );
+          }
+          this._modalNotify.setAttribute("is-open", "");
+          this.setAttribute("has-open-modal", "");
+        });
     });
   }
 
@@ -189,22 +203,22 @@ export class RegistrationPage extends TatorElement {
     if (username.length == 0) {
       this._valid = false;
     } else {
-      return fetch(`/rest/User/Exists?username=${username}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .then(response => response.json())
-      .then(exists => {
-        if (exists) {
-          this._addError("Username already taken!");
-          this._valid = false;
+      return fetch(
+        `/rest/User/Exists?username=${encodeURIComponent(username)}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
         }
-      });
+      )
+        .then((response) => response.json())
+        .then((exists) => {
+          if (exists) {
+            this._addError("Username already taken!");
+            this._valid = false;
+          }
+        });
     }
     return Promise.resolve(this._valid);
   }
@@ -236,7 +250,7 @@ export class RegistrationPage extends TatorElement {
     if (firstName.length == 0) {
       this._valid = false;
     } else if (!re.test(firstName)) {
-      this._addError("First name contains invalid characters.")
+      this._addError("First name contains invalid characters.");
       this._valid = false;
     }
   }
@@ -247,7 +261,7 @@ export class RegistrationPage extends TatorElement {
     if (lastName.length == 0) {
       this._valid = false;
     } else if (!re.test(lastName)) {
-      this._addError("Last name contains invalid characters.")
+      this._addError("Last name contains invalid characters.");
       this._valid = false;
     }
   }
@@ -258,21 +272,18 @@ export class RegistrationPage extends TatorElement {
       this._valid = false;
     } else {
       return fetch(`/rest/User/Exists?email=${email}`, {
-        method: "GET",
-        credentials: "same-origin",
         headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
       })
-      .then(response => response.json())
-      .then(exists => {
-        if (exists) {
-          this._addError("Email already in use!");
-          this._valid = false;
-        }
-      });
+        .then((response) => response.json())
+        .then((exists) => {
+          if (exists) {
+            this._addError("Email already in use!");
+            this._valid = false;
+          }
+        });
     }
     return Promise.resolve(this._valid);
   }
@@ -287,20 +298,20 @@ export class RegistrationPage extends TatorElement {
 
     // Check each field
     this._validateUsername()
-    .then(this._validateEmail())
-    .then(() => {
-      this._validatePassword();
-      this._validatePasswordConfirm();
-      this._validateFirstName();
-      this._validateLastName();
+      .then(this._validateEmail())
+      .then(() => {
+        this._validatePassword();
+        this._validatePasswordConfirm();
+        this._validateFirstName();
+        this._validateLastName();
 
-      // Enable/disable registration button
-      if (this._valid) {
-        this._submit.removeAttribute("disabled");
-      } else {
-        this._submit.setAttribute("disabled", "");
-      }
-    });
+        // Enable/disable registration button
+        if (this._valid) {
+          this._submit.removeAttribute("disabled");
+        } else {
+          this._submit.setAttribute("disabled", "");
+        }
+      });
   }
 }
 

@@ -1,34 +1,36 @@
 export class AnnotationPanelData extends HTMLElement {
-    constructor(){
-        super();
-    }
+  constructor() {
+    super();
+  }
 
-    init( modelData ) {
-        // Connect to model for fetch calls
-        this._modelData = modelData;
-    }
+  init(modelData) {
+    // Connect to model for fetch calls
+    this._modelData = modelData;
+  }
 
-    /*
-    * Gets Media information for the localization
-    * - Required information is what type of media (image/video/multi)
-    * - Other parts of media info used to get media image URL
-    * - Manipulate data here to provide that to page
-    */
-    async getMediaData(mediaId) {
-        this.mediaInfo = await this._modelData.getMedia( mediaId );
-        this.mediaTypeData = await this._modelData.getMediaType( this.mediaInfo.type );
+  /*
+   * Gets Media information for the localization
+   * - Required information is what type of media (image/video/multi)
+   * - Other parts of media info used to get media image URL
+   * - Manipulate data here to provide that to page
+   */
+  async getMediaData(mediaId) {
+    this.mediaInfo = await this._modelData.getMedia(mediaId);
+    this.mediaTypeData = await this._modelData.getMediaType(
+      this.mediaInfo.type
+    );
 
-        const mediaData = {
-            mediaInfo : this.mediaInfo,
-            mediaTypeData : this.mediaTypeData
-        };
+    const mediaData = {
+      mediaInfo: this.mediaInfo,
+      mediaTypeData: this.mediaTypeData,
+    };
 
-        return mediaData;
-    }
+    return mediaData;
+  }
 
-    /* Future object to be returned like.... */
-    // Assumes we already have the loc coordinates
-    /*
+  /* Future object to be returned like.... */
+  // Assumes we already have the loc coordinates
+  /*
         {
             mediaInfo : {
                 id : [int]
@@ -39,9 +41,6 @@ export class AnnotationPanelData extends HTMLElement {
 
 
     */
-
-    
-
 }
 
 customElements.define("annotation-panel-data", AnnotationPanelData);

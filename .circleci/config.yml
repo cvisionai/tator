@@ -13,18 +13,6 @@ jobs:
     - attach_workspace:
         at: ~/
     - run:
-        name: Copy helm config
-        command: |
-          ssh lightsail 'cp tator/helm/tator/values-microk8s.yaml tator/helm/tator/values.yaml';
-    - run:
-        name: Replace registry
-        command: |
-          ssh lightsail 'export DOCKER_REGISTRY='"'$DOCKER_REGISTRY'"';sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" tator/helm/tator/values.yaml';
-    - run:
-        name: Display values.yaml
-        command: |
-          ssh lightsail 'cat tator/helm/tator/values.yaml';
-    - run:
         name: Install Docker
         command: |
           ssh lightsail 'wget -O get_docker.sh https://get.docker.com';
@@ -43,11 +31,11 @@ jobs:
     - run:
         name: Install packages from apt for build deps (Python3, etc.)
         command: |
-          ssh lightsail 'sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential qemu-user-static binfmt-support nodejs';
+          ssh lightsail 'sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential qemu-user-static binfmt-support nodejs jq';
     - run:
         name: Install pip packages
         command: |
-          ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder progressbar2 pyyaml';
+          ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder==0.5.5 progressbar2 pyyaml typing-extensions black';
     - run:
         name: Install node packages
         command: |
@@ -58,13 +46,7 @@ jobs:
           ssh lightsail 'cd tator && make api/main/version.py';
     - run:
         name: Make docker images
-        command: |
-          ssh lightsail 'cd tator && make -j$(nproc) tator-image images';
-    - run:
-        name: Make docker images (retry)
-        command: |
-          ssh lightsail 'sleep 300 && cd tator && make -j$(nproc) tator-image images';
-        when: on_fail
+        command: ssh lightsail 'export APT_REPO_HOST='"'$APT_REPO_HOST'"';cd tator && for i in $(seq 1 3); do make -j$(nproc) tator-image images APT_REPO_HOST=$APT_REPO_HOST && s=0 && break || s=$? && sleep 10; done; (exit $s)'
     - store_artifacts:
         path: doc/_build/schema.yaml
         destination: docs/schema.yaml
@@ -81,13 +63,9 @@ jobs:
         path: /tmp/tator-py.tar
         destination: docs/tator-py.tar
     - run:
-        name: Push client image to OCI
+        name: Push images to Dockerhub
         command: |
-          ssh lightsail 'export OCI_REGISTRY='"'$OCI_REGISTRY'"';export OCIR_PASSWORD='"'$OCIR_PASSWORD'"';export OCIR_HOST='"'$OCIR_HOST'"';export OCIR_USERNAME='"'$OCIR_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_oci.sh';
-    - run:
-        name: Push backend images to AWS
-        command: |
-          ssh lightsail 'export AWS_REGISTRY='"'$AWS_REGISTRY'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_aws.sh';
+          ssh lightsail 'export DOCKERHUB_PASSWORD='"'$DOCKERHUB_PASSWORD'"';export DOCKERHUB_USERNAME='"'$DOCKERHUB_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_dockerhub.sh';
   set-versions:
     machine:
       image: ubuntu-2004:202010-01
@@ -115,19 +93,29 @@ jobs:
         name: Publish tator-js
         command: |
           ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
-  update-earlyaccess:
+  check-formatting:
     machine:
       image: ubuntu-2004:202010-01
     steps:
     - checkout
     - run:
-        name: Clone private repo
-        command: cd "$HOME" && git clone "$PRIVATE_REPO"
+        name: Initialize submodules
+        command: git submodule update --init --recursive
     - run:
-        name: Update earlyaccess
+        name: Install packages from apt for build deps (Python3, etc.)
         command: |
-          mv $HOME/project $HOME/tator
-          $HOME/$PRIVATE_REPO_NAME/oci/update.sh
+          sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential qemu-user-static binfmt-support nodejs jq
+    - run:
+        name: Install pip packages
+        command: |
+          pip3 install black==23.3.0
+    - run:
+        name: Install npm packages
+        command: |
+          nvm install stable && npm install prettier@"2.8.8"
+    - run:
+        name: Check code formatting
+        command: nvm use stable && make check-format
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
@@ -170,22 +158,21 @@ jobs:
           ssh lightsail 'pip3 install pytest pytest-xdist pandas playwright==1.27.1 pytest-playwright==0.3.0 pytesseract==0.3.9 opencv-python pytest-rerunfailures==10.2';
           ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && playwright install';
           ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
-          ssh lightsail 'unzip -o Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
+          ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
           ssh lightsail 'sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
           ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
           ssh lightsail 'wget https://github.com/mikefarah/yq/releases/download/v4.31.1/yq_linux_amd64 -O /home/ubuntu/.local/bin/yq';
     - run:
         name: Install Tator
         command: |
-          ssh lightsail 'export DOMAIN_ALIAS='"'localhost'"'; cd tator && sudo snap refresh core && sudo snap install snapd && ./install.sh';
+          ssh lightsail 'cd tator && make tator';
     - run:
-        name: Set public IP as primary domain
+        name: Create superuser
         command: |
-          ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export PRIVATE_IP='"'$(cat ~/private_ip_address.txt)'"';sed -i "s/$PRIVATE_IP/$PUBLIC_IP/g" tator/helm/tator/values.yaml';
-          ssh lightsail 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin; cd tator && make cluster-update';
+          ssh lightsail 'cd tator && echo "from main.models import User; User.objects.create_superuser('"'admin'"', password='"'admin'"')" | docker exec -i gunicorn python3 manage.py shell';
     - run:
         name: Copy whl
-        command: scp -r lightsail:/tmp/tator_py_whl /tmp
+        command: scp -r lightsail:/home/ubuntu/tator/scripts/packages/tator-py/dist /tmp/tator_py_whl
     - store_artifacts:
         path: /tmp/tator_py_whl
         destination: tator_py_whl
@@ -200,7 +187,7 @@ jobs:
         command: ssh lightsail 'cd tator && make testinit'
     - run:
         name: Run REST tests
-        command: ssh lightsail 'cd tator && make test'
+        command: ssh lightsail 'cd tator && for i in $(seq 1 3); do make rq-empty && make test && s=0 && break || s=$? && sleep 10; done; (exit $s)'
   front-end-tests:
     machine:
       image: ubuntu-2004:202010-01
@@ -217,14 +204,10 @@ jobs:
         name: Install sshfs
         command: sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install sshfs
     - run:
-        name: SSH forward
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';ssh -N -L 8080:$PUBLIC_IP:80 lightsail';
-        background: true
-    - run:
         name: Front end tests
         no_output_timeout: 30m
         command: |
-          ssh lightsail 'argo delete --all';
+          ssh lightsail 'cd tator && make rq-empty';
           mkdir -p /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos';
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
@@ -240,15 +223,16 @@ jobs:
         at: ~/
     - run:
         name: Copy test directories
-        command: ssh lightsail 'cp -r ~/tator/scripts/packages/tator-py/test ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/examples ~/tator/.';
+        command: |
+          ssh lightsail 'rm -rf ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/test ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/examples ~/tator/.';
     - run:
         name: Get API token
         command: |
-          curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://$(cat ~/public_ip_address.txt)/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
-          scp ~/token.txt lightsail:~
+          ssh lightsail "curl -d '{"'"username"'": "'"admin"'", "'"password"'": "'"admin"'", "'"refresh"'": true}' -H 'Content-Type: application/json' http://localhost:8080/rest/Token | jq '.token' | xargs printf '%b\n' | tee ~/token.txt;"
+          scp lightsail:~/token.txt ~/token.txt
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+        command: ssh lightsail 'export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do pytest tatorpy_test --ignore tatorpy_test/test_algorithm_launch.py --ignore tatorpy_test/test_job_cancel.py --host=http://localhost:8080 --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
     - run:
         name: Check db-worker logs for clean running
         command: ssh lightsail 'cd tator && make check-clean-db-logs'
@@ -285,7 +269,14 @@ workflows:
   version: 2
   build-and-test:
     jobs:
+    - check-formatting:
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
     - setup-lightsail:
+        requires:
+        - check-formatting
         context: cvisionai
         filters:
           tags:
@@ -351,17 +342,6 @@ workflows:
         - tator-py-tests
         context: cvisionai
         filters:
-          tags:
-            only: /.*/
-    - update-earlyaccess:
-        requires:
-        - rest-tests
-        - tator-py-tests
-        context: cd
-        filters:
-          branches:
-            only:
-            - rc/1.0.0
           tags:
             only: /.*/
     - cleanup-lightsail:

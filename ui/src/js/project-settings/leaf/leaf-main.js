@@ -1,17 +1,16 @@
-import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { store } from "../store.js";
 import { TatorElement } from "../../components/tator-element.js";
 
 /**
  * Main Leaf section for type forms
- * 
+ *
  */
 export class LeafMain extends TatorElement {
   constructor() {
     super();
 
-    // 
+    //
     var template = document.getElementById("leaf-main");
     var clone = document.importNode(template.content, true);
     this._shadow.appendChild(clone);
@@ -21,11 +20,15 @@ export class LeafMain extends TatorElement {
     this._leafTypeId = this._shadow.getElementById("leaf-main--type-id");
     this._leafBox = this._shadow.getElementById("leaf-main--box");
     this._leafBoxShowHide = this._shadow.getElementById("leaf-main--box-inner");
-    this._leavesContainer = this._shadow.getElementById("leaf-main--item-container");
-    this._addLeafTrigger = this._shadow.getElementById("leaf-main--add-trigger");
+    this._leavesContainer = this._shadow.getElementById(
+      "leaf-main--item-container"
+    );
+    this._addLeafTrigger = this._shadow.getElementById(
+      "leaf-main--add-trigger"
+    );
     this.minAll = this._shadow.getElementById("leaf-main--minimize");
     this.expandAll = this._shadow.getElementById("leaf-main--expand");
-    
+
     this.loading = new LoadingSpinner();
     this.loadingImg = this.loading.getImg();
 
@@ -48,14 +51,16 @@ export class LeafMain extends TatorElement {
 
   connectedCallback() {
     store.subscribe((state) => state.selection, this._updateForm.bind(this));
-    store.subscribe(state => state.Leaf, this._newData.bind(this));
+    store.subscribe((state) => state.Leaf, this._newData.bind(this));
 
     // Listener to helper links
-    this.minAll.addEventListener('click', this.minimizeAll.bind(this));
-    this.expandAll.addEventListener('click', this.maximizeAll.bind(this));
-    this._addLeafTrigger.addEventListener("click", this._newLeafEvent.bind(this));
+    this.minAll.addEventListener("click", this.minimizeAll.bind(this));
+    this.expandAll.addEventListener("click", this.maximizeAll.bind(this));
+    this._addLeafTrigger.addEventListener(
+      "click",
+      this._newLeafEvent.bind(this)
+    );
   }
-
 
   /**
    * @param {any[] | null} val
@@ -84,24 +89,24 @@ export class LeafMain extends TatorElement {
   }
 
   /**
-  * @param {string} val
-  */
+   * @param {string} val
+   */
   set fromId(val) {
     this._leafTypeId.innerHTML = val;
     this._fromId = val;
-    this._leafMainBack.setAttribute("href", `#LeafType-${val}`)
+    this._leafMainBack.setAttribute("href", `#LeafType-${val}`);
   }
 
   /**
-  * @param {string} val
-  */
+   * @param {string} val
+   */
   set attributeTypes(val) {
     this._attributeTypes = val;
   }
 
   /**
-  * @param {any[]} val
-  */
+   * @param {any[]} val
+   */
   set leaves(val) {
     this._leaves = val;
     this._leavesContainer.innerHTML = "";
@@ -115,8 +120,8 @@ export class LeafMain extends TatorElement {
 
   /**
    * For each leaf creates the leaf item and adds appropriate listeners
-   * @param {*} leaves 
-   * @returns 
+   * @param {*} leaves
+   * @returns
    */
   _getLeavesSection(leaves = this._leaves) {
     let leavesSection = document.createElement("div");
@@ -129,20 +134,24 @@ export class LeafMain extends TatorElement {
 
       // Loop through and output leaf forms
       for (let a in this._outputOrder) {
-        this._outputOrder[a].expands = (this._outputOrder[a].indent == highestLevel || !this._parents.has(this._outputOrder[a].id)) ? false : true;
+        this._outputOrder[a].expands =
+          this._outputOrder[a].indent == highestLevel ||
+          !this._parents.has(this._outputOrder[a].id)
+            ? false
+            : true;
 
         let leafContent = this.leavesOutput({
           leaves: leaves,
           leaf: this._outputOrder[a],
-          leafId: a
+          leafId: a,
         });
 
         this._leavesContainer.appendChild(leafContent);
       }
 
       // Add drop listener on outer box once
-      this._leafBox.addEventListener('dragleave', this.leafBoxStart.bind(this));
-      this._leafBox.addEventListener('dragleave', this.leafBoxLeave.bind(this));
+      this._leafBox.addEventListener("dragleave", this.leafBoxStart.bind(this));
+      this._leafBox.addEventListener("dragleave", this.leafBoxLeave.bind(this));
       this._leafBox.addEventListener("dragover", this.leafBoxEnter.bind(this));
       this._leafBox.addEventListener("dragenter", this.leafBoxEnter.bind(this));
       this._leafBox.addEventListener("drop", this.leafBoxDrop.bind(this));
@@ -169,7 +178,6 @@ export class LeafMain extends TatorElement {
             }
           }
         }
-
       }
     } catch (err) {
       console.error("Issue with minimize all.", err);
@@ -197,8 +205,12 @@ export class LeafMain extends TatorElement {
 
     // Alphabetize first
     leaves = leaves.sort((a, b) => {
-      if (a.name < b.name) { return -1; }
-      if (a.name > b.name) { return 1; }
+      if (a.name < b.name) {
+        return -1;
+      }
+      if (a.name > b.name) {
+        return 1;
+      }
       return 0;
     });
 
@@ -232,7 +244,10 @@ export class LeafMain extends TatorElement {
     if (this._levels.get(0)) {
       const main = 0;
       for (const item of this._levels.get(main)) {
-        this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
+        this._outputOrder = [
+          ...this._outputOrder,
+          ...this._recursiveChildren(item),
+        ];
       }
     }
 
@@ -263,7 +278,6 @@ export class LeafMain extends TatorElement {
     } else {
       this._leafBox.style.border = "none";
     }
-
   }
 
   _recursiveChildren(item, carryOver = []) {
@@ -293,10 +307,10 @@ export class LeafMain extends TatorElement {
     afObj.form._parentLeaf.permission = "Can Edit";
 
     this._modal._confirm({
-      "titleText": "New Leaf",
-      "mainText": afObj.form.form,
-      "buttonSave": afObj.submitLeaf,
-      "scroll": true
+      titleText: "New Leaf",
+      mainText: afObj.form.form,
+      buttonSave: afObj.submitLeaf,
+      scroll: true,
     });
     this._modal._div.classList.add("modal-wide");
     this.setAttribute("has-open-modal", "");
@@ -304,7 +318,10 @@ export class LeafMain extends TatorElement {
 
   _getAddForm(parentLeafId) {
     let form = document.createElement("leaf-form");
-    const leaves = this._leaves && this._leaves.length > 1 ? this._getOrganizedLeaves() : this._leaves;
+    const leaves =
+      this._leaves && this._leaves.length > 1
+        ? this._getOrganizedLeaves()
+        : this._leaves;
 
     form._initEmptyForm(leaves, this.projectNameClean, this._attributeTypes);
     form.fromType = this._fromId;
@@ -336,10 +353,14 @@ export class LeafMain extends TatorElement {
 
     delete formJSON["attributes"];
     let status = 0;
-    
+
     try {
-      const info = await store.getState().addType({ type: "Leaf", data: [formJSON] });
-      let currentMessage = (info.data?.message) ? info.data.message : JSON.parse(info.response.text).message;
+      const info = await store
+        .getState()
+        .addType({ type: "Leaf", data: [formJSON] });
+      let currentMessage = info.data?.message
+        ? info.data.message
+        : JSON.parse(info.response.text).message;
 
       if (info.response.ok) {
         // iconWrap.appendChild(succussIcon);
@@ -350,11 +371,10 @@ export class LeafMain extends TatorElement {
         this.loading.hideSpinner();
         this._modal._error(`${currentMessage}`);
       }
-
-    } catch(error) {
+    } catch (error) {
       this.loading.hideSpinner();
       this._modal._error(`Error: ${error}`);
-    };
+    }
   }
 
   _dispatchRefresh(e) {
@@ -362,22 +382,17 @@ export class LeafMain extends TatorElement {
   }
 
   _toggleLeaves(el) {
-    let hidden = el.hidden
+    let hidden = el.hidden;
 
-    return el.hidden = !hidden;
-  };
+    return (el.hidden = !hidden);
+  }
 
   _toggleChevron(e) {
     var el = e.target;
-    return el.classList.toggle('chevron-trigger-90');
+    return el.classList.toggle("chevron-trigger-90");
   }
 
-  leavesOutput({
-    leaves = [],
-    leaf = {},
-    leafId = undefined
-  } = {}) {
-
+  leavesOutput({ leaves = [], leaf = {}, leafId = undefined } = {}) {
     const leafItem = document.createElement("leaf-item");
     leafItem._init(leaf, this);
     this._leafBox.appendChild(leafItem);
@@ -405,7 +420,6 @@ export class LeafMain extends TatorElement {
               }
             }
           }
-
         } catch (err) {
           console.error("Problem toggling leaf node.", err);
         }
@@ -439,16 +453,24 @@ export class LeafMain extends TatorElement {
       leafSave.setAttribute("value", "Yes");
       leafSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
 
-      leafSave.addEventListener("click", (e) => {
-        e.preventDefault();
-        const data = {};
-        data.newName = "";
-        data.oldName = "";
-        data.formData = { id: forLeaf, parent: newParent, type: this._fromId };
-        data.id = forLeaf;
+      leafSave.addEventListener(
+        "click",
+        (e) => {
+          e.preventDefault();
+          const data = {};
+          data.newName = "";
+          data.oldName = "";
+          data.formData = {
+            id: forLeaf,
+            parent: newParent,
+            type: this._fromId,
+          };
+          data.id = forLeaf;
 
-        this._updateLeaf(data);
-      }, { once: true });
+          this._updateLeaf(data);
+        },
+        { once: true }
+      );
 
       let message = "";
       if (newParent == -1) {
@@ -461,13 +483,13 @@ export class LeafMain extends TatorElement {
       }
 
       this._modal._confirm({
-        "titleText": `Confirm move`,
-        "mainText": message,
-        "buttonSave": leafSave,
-        "scroll": true
+        titleText: `Confirm move`,
+        mainText: message,
+        buttonSave: leafSave,
+        scroll: true,
       });
     } else {
-      console.error("The ids given for the move were not valid integers.")
+      console.error("The ids given for the move were not valid integers.");
     }
   }
 
@@ -500,7 +522,6 @@ export class LeafMain extends TatorElement {
             this._recursiveUnhide(innerChild.id);
           }
         }
-
       }
     }
   }
@@ -535,7 +556,6 @@ export class LeafMain extends TatorElement {
           this._recursiveExpand(innerChild.id);
         }
       }
-
     }
   }
 
@@ -565,27 +585,33 @@ export class LeafMain extends TatorElement {
     leafSave.addEventListener("click", (e) => {
       e.preventDefault();
       const data = {};
-      const leafFormData = leafForm._leafFormData({ entityType: this.typeName, id: this._fromId });
+      const leafFormData = leafForm._leafFormData({
+        entityType: this.typeName,
+        id: this._fromId,
+      });
 
       return this._updateLeaf(leafFormData);
     });
 
     // this.leafForms.push(leafForm);
     this._modal._confirm({
-      "titleText": `Edit Leaf (ID ${leaf.id})`,
-      "mainText": leafForm,
-      "buttonSave": leafSave,
-      "scroll": true
+      titleText: `Edit Leaf (ID ${leaf.id})`,
+      mainText: leafForm,
+      buttonSave: leafSave,
+      scroll: true,
     });
     this._modal._div.classList.add("modal-wide");
   }
 
   /**
-   * Deprecated..... 
+   * Deprecated.....
    */
   deleteLeaf(id, name) {
     let button = document.createElement("button");
-    button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
+    button.setAttribute(
+      "class",
+      "btn btn-small btn-charcoal float-right btn-outline text-gray"
+    );
     button.style.marginRight = "10px";
 
     let deleteText = document.createTextNode(`Delete`);
@@ -596,21 +622,30 @@ export class LeafMain extends TatorElement {
     headingDiv.setAttribute("class", "clearfix py-6");
 
     let heading = document.createElement("div");
-    heading.setAttribute("class", "py-md-5 float-left col-md-5 col-sm-5 text-right");
+    heading.setAttribute(
+      "class",
+      "py-md-5 float-left col-md-5 col-sm-5 text-right"
+    );
 
     heading.appendChild(button);
 
     let description = document.createElement("div");
     let _descriptionText = document.createTextNode("");
     _descriptionText.nodeValue = descriptionText;
-    description.setAttribute("class", "py-md-6 f1 text-gray float-left col-md-7 col-sm-7");
+    description.setAttribute(
+      "class",
+      "py-md-6 f1 text-gray float-left col-md-7 col-sm-7"
+    );
     description.appendChild(_descriptionText);
 
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
     this.deleteBox = document.createElement("div");
-    this.deleteBox.setAttribute("class", `text-red py-3 rounded-2 edit-project__config`);
+    this.deleteBox.setAttribute(
+      "class",
+      `text-red py-3 rounded-2 edit-project__config`
+    );
     this.deleteBox.style.border = "1px solid $color-charcoal--light";
     this.deleteBox.style.backgroundColor = "transparent";
     this.deleteBox.append(headingDiv);
@@ -625,9 +660,9 @@ export class LeafMain extends TatorElement {
 
   _deleteLeafConfirm(id, name) {
     let button = document.createElement("button");
-    let confirmText = document.createTextNode("Confirm")
+    let confirmText = document.createTextNode("Confirm");
     button.appendChild(confirmText);
-    button.setAttribute("class", "btn btn-clear f1 text-semibold")
+    button.setAttribute("class", "btn btn-clear f1 text-semibold");
 
     button.addEventListener("click", (e) => {
       e.preventDefault();
@@ -635,20 +670,22 @@ export class LeafMain extends TatorElement {
     });
 
     this._modal._confirm({
-      "titleText": `Delete Confirmation`,
-      "mainText": `Pressing confirm will delete leaf "${name}" and its children. Do you want to continue?`,
-      "buttonSave": button,
-      "scroll": false
+      titleText: `Delete Confirmation`,
+      mainText: `Pressing confirm will delete leaf "${name}" and its children. Do you want to continue?`,
+      buttonSave: button,
+      scroll: false,
     });
   }
 
   async _deleteLeaf(id) {
-    this._modal._closeCallback();;
+    this._modal._closeCallback();
     this.loading.showSpinner();
 
     if (typeof id != "undefined") {
       try {
-        const info = await store.getState().removeType({ type: "Leaf", id: id });
+        const info = await store
+          .getState()
+          .removeType({ type: "Leaf", id: id });
         const message = JSON.parse(info.response.text).message;
         this.loading.hideSpinner();
         if (info.response.ok) {
@@ -656,22 +693,20 @@ export class LeafMain extends TatorElement {
         } else {
           this._modal._error(message);
         }
-
-      } catch(err) {
+      } catch (err) {
         console.error(err);
         this._modal._error(err);
         this.loading.hideSpinner();
         return this._modal._error("Error with delete.");
-      };
+      }
     } else {
       this.loading.hideSpinner();
       return this._modal._error("Error with delete.");
     }
-
   }
 
   async _updateLeaf(dataObject) {
-    try{
+    try {
       this.successMessages = "";
       this.failedMessages = "";
       this.confirmMessages = "";
@@ -679,8 +714,12 @@ export class LeafMain extends TatorElement {
       this.requiresConfirmation = false;
       let formData = dataObject.formData;
 
-      const info = await store.getState().updateType({ type: "Leaf", id: dataObject.id, data: formData });
-      let currentMessage = (info.data?.message) ? info.data.message : JSON.parse(info.response.text).message;
+      const info = await store
+        .getState()
+        .updateType({ type: "Leaf", id: dataObject.id, data: formData });
+      let currentMessage = info.data?.message
+        ? info.data.message
+        : JSON.parse(info.response.text).message;
 
       if (info.response.status == 200) {
         this._modal._success(currentMessage);
@@ -706,7 +745,7 @@ export class LeafMain extends TatorElement {
         const type = await store.getState().getData("LeafType", selectedType);
         this.data = {
           data,
-          type
+          type,
         };
       }
     }
@@ -715,11 +754,11 @@ export class LeafMain extends TatorElement {
   async _updateForm(newSelection, oldSelection) {
     const newType = newSelection.typeName;
     const oldType = oldSelection.typeName;
-    const affectsMe = (this.typeName == newType || this.typeName == oldType);
-    
+    const affectsMe = this.typeName == newType || this.typeName == oldType;
+
     if (affectsMe) {
       if (oldType === this.typeName && oldType !== newType) {
-        this.hidden = true; 
+        this.hidden = true;
         return;
       } else {
         this.hidden = false;
@@ -732,14 +771,13 @@ export class LeafMain extends TatorElement {
         const type = await store.getState().getData("LeafType", newId);
         this.data = {
           data,
-          type
+          type,
         };
       } else {
         this.data = null;
       }
     }
   }
-
 }
 
 customElements.define("leaf-main", LeafMain);

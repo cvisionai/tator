@@ -8,7 +8,7 @@ export class EntityGalleryAspectRatio extends TatorElement {
     let localizationBoxSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-layout"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`;
 
     // Tool to toggle export class which styles cards as aspect ratio
-    this._slider = document.createElement("bool-input")
+    this._slider = document.createElement("bool-input");
     //this._slider.prepend(imageSvg);
     this._slider.setAttribute("name", " ");
     this._slider.innerHTML = `${imageSvg} ${this._slider.innerHTML} ${localizationBoxSvg}`;
@@ -20,16 +20,17 @@ export class EntityGalleryAspectRatio extends TatorElement {
     this._shadow.appendChild(this._slider);
   }
 
-  init(gallery){
+  init(gallery) {
     this._gallery = gallery;
 
     // change handler
     this._slider.addEventListener("change", (e) => {
-      let changeToAspect = new CustomEvent("view-change", { detail : { sliderValue : this._slider.getValue } })
+      let changeToAspect = new CustomEvent("view-change", {
+        detail: { sliderValue: this._slider.getValue },
+      });
       this._gallery.dispatchEvent(changeToAspect);
     });
   }
-
 }
 
-customElements.define("entity-gallery-aspect-ratio", EntityGalleryAspectRatio);  
+customElements.define("entity-gallery-aspect-ratio", EntityGalleryAspectRatio);

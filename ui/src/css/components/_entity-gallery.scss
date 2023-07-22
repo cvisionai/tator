@@ -26,8 +26,6 @@
   }
 }
 
-
-
 entity-gallery-aspect-ratio {
   min-width: 200px;
 
@@ -95,7 +93,7 @@ entity-gallery-aspect-ratio {
     text-overflow: ellipsis;
   }
   &.is-selected {
-		border: 1px solid $color-purple;
+    border: 1px solid $color-purple;
   }
 }
 
@@ -130,7 +128,6 @@ entity-gallery-aspect-ratio {
 
     .top-bar-arrow {
       transform: scaleX(-1);
-
     }
 
     .entity-panel--container--top-bar {
@@ -169,25 +166,22 @@ entity-gallery-aspect-ratio {
       width: 300px;
       //overflow: hidden;
     }
-    
-    @media (max-width: 330px){
+
+    @media (max-width: 330px) {
       .top-bar-arrow {
         right: 0 !important;
         left: unset !important;
       }
     }
   }
-
-
-
 }
 
-@media (max-width: 330px){
+@media (max-width: 330px) {
   .sections-wrap {
     max-width: 100%;
   }
   .top-bar-arrow.left {
-      left: 0 !important;
+    left: 0 !important;
   }
 
   .entity-panel--container-left {
@@ -195,12 +189,12 @@ entity-gallery-aspect-ratio {
   }
 
   .entity-panel--container-left.slide-close {
-      left: -80%;
+    left: -80%;
   }
-  
+
   .entity-panel--container-left.slide-close .top-bar-arrow.left {
     right: 0 !important;
-    left: unset !important;     
+    left: unset !important;
   }
 }
 
@@ -260,7 +254,6 @@ entity-gallery-aspect-ratio {
   }
 }
 
-
 collections-card {
   display: block;
 }
@@ -268,7 +261,7 @@ collections-card {
   // width: 272px;
   display: block;
 
-  &:first-child{
+  &:first-child {
     margin-left: 0;
   }
 
@@ -291,12 +284,11 @@ collections-card {
   display: none;
 }
 
-
 .enitity-gallery-slider__ul {
   display: grid;
   grid-gap: 15px;
   grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fill,minmax(272px,1fr));
+  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
   overflow: hidden;
 
   &.open {
@@ -308,12 +300,10 @@ collections-card {
 
     .entity-slider-card {
       margin: 0;
-      position:relative;
-      z-index:100;
+      position: relative;
+      z-index: 100;
     }
   }
-
-
 }
 
 .entity-gallery-slider {
@@ -349,7 +339,6 @@ collections-card {
     .enitity-gallery-slider__nav {
       display: none;
     }
-  
   }
 }
 
@@ -362,8 +351,8 @@ collections-card {
   color: $color-white;
   width: $spacing-2;
   height: $spacing-2;
-  padding: 3px 8px;;
-  font-size: .8em;
+  padding: 3px 8px;
+  font-size: 0.8em;
   border-radius: 30px;
   margin: 0 $spacing-2;
 
@@ -374,7 +363,7 @@ collections-card {
 }
 
 .enitity-gallery__labels-div {
- background: $color-charcoal--medium;
+  background: $color-charcoal--medium;
 }
 
 .entity-gallery-labels {
@@ -463,37 +452,51 @@ collections-card {
 
 // }
 
-
 .reorder-progress {
   transform: translateX(-150%);
   overflow: hidden;
 }
 
 .reorder-progress.slide-in {
-  animation: slide-in .5s forwards;
-  -webkit-animation: slide-in .5s forwards;
+  animation: slide-in 0.5s forwards;
+  -webkit-animation: slide-in 0.5s forwards;
 }
 
 @keyframes slide-in {
-  0% { transform: translateX(-150%); }
-  100% { transform: translateX(0%); }
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
 }
 
 @-webkit-keyframes slide-in {
-  0% { -webkit-transform: translateX(-150%); }
-  100% { -webkit-transform: translateX(0%); }
+  0% {
+    -webkit-transform: translateX(-150%);
+  }
+  100% {
+    -webkit-transform: translateX(0%);
+  }
 }
-  
+
 @keyframes slide-out {
-  0% { transform: translateY(0%); }
-  100% { transform: translateX(-150%); }
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateX(-150%);
+  }
 }
 
 @-webkit-keyframes slide-out {
-  0% { -webkit-transform: translateX(0%); }
-  100% { -webkit-transform: translateX(-150%); }
+  0% {
+    -webkit-transform: translateX(0%);
+  }
+  100% {
+    -webkit-transform: translateX(-150%);
+  }
 }
-
 
 .entity-panel--container.slide-close.species-app {
   margin-right: -50%;
@@ -505,7 +508,7 @@ collections-card {
   width: 8px;
   top: 0;
   bottom: 0;
-  
+
   left: -5px; // relative to the container this puts it on the left border
   cursor: col-resize;
   float: left;

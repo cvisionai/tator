@@ -13,7 +13,8 @@ export class TypeFormTemplate extends TatorElement {
     this._warningSaveMessage = this._genericEditWarningMsg;
 
     // Generic fallback for delete message
-    this._genericDeleteWarningMsg = "Pressing confirm will delete this entity and all its data from your account. Do you want to continue?";
+    this._genericDeleteWarningMsg =
+      "Pressing confirm will delete this entity and all its data from your account. Do you want to continue?";
     this._warningDeleteMessage = this._genericDeleteWarningMsg;
 
     this.modal = document.createElement("modal-dialog");
@@ -21,8 +22,8 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   connectedCallback() {
-    store.subscribe(state => state.Project, this.setProjectIds.bind(this));
-    store.subscribe(state => state.isStaff, this.setIsStaff.bind(this));
+    store.subscribe((state) => state.Project, this.setProjectIds.bind(this));
+    store.subscribe((state) => state.isStaff, this.setIsStaff.bind(this));
   }
 
   setProjectIds(newProject) {
@@ -33,12 +34,12 @@ export class TypeFormTemplate extends TatorElement {
   setIsStaff(newIS, oldIS) {
     this.isStaff = newIS;
   }
-     
+
   /**
    * @param {{ map?: any; id?: string; name?: string; project?: any; description?: string; visible?: boolean; grouping_default?: boolean; media?: never[]; dtype?: string; colorMap?: null; interpolation?: string; association?: string; line_width?: number; delete_child_localizations?: boolean; cluster?: null; manifest?: null; files_per_job?: null; parameters?: never[]; categories?: string; form?: string; } | null} val
    */
-  set data (val) {
-    if(val && val !== null){
+  set data(val) {
+    if (val && val !== null) {
       this._data = val;
     } else {
       this._data = this._getEmptyData();
@@ -49,7 +50,7 @@ export class TypeFormTemplate extends TatorElement {
 
     // name
     if (this.typeName !== "Membership") {
-      let name = (this._data.id === "New") ? "" : this._data.name;
+      let name = this._data.id === "New" ? "" : this._data.name;
       this._editName.setValue(name);
       this._editName.default = name;
     }
@@ -73,7 +74,7 @@ export class TypeFormTemplate extends TatorElement {
         const respData = await this.doSaveAction(formData);
         this.handleResponse(respData);
       } catch (err) {
-        this.modal._error(err)
+        this.modal._error(err);
       }
     } else if (Array.isArray(formData) && formData.length !== 0) {
       const responses = [];
@@ -88,8 +89,8 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   /**
-   * 
-   * @param {String} 
+   *
+   * @param {String}
    */
   async warningFlowSave() {
     const msg = await this.setUpWarningSaveMsg();
@@ -103,7 +104,7 @@ export class TypeFormTemplate extends TatorElement {
     const button = document.createElement("button");
     button.setAttribute("class", "btn f1 text-semibold text-red");
 
-    let confirmText = document.createTextNode("Confirm")
+    let confirmText = document.createTextNode("Confirm");
     button.appendChild(confirmText);
 
     button.addEventListener("click", () => {
@@ -114,7 +115,7 @@ export class TypeFormTemplate extends TatorElement {
     this.modal._confirm({
       titleText: `Edit Confirmation`,
       mainText: `${this._warningSaveMessage}`,
-      buttonSave: button
+      buttonSave: button,
     });
   }
 
@@ -140,16 +141,23 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   handleResponse(info) {
-    let message = (info.data?.message) ? info.data.message : JSON.parse(info.response.text).message;
+    let message = info.data?.message
+      ? info.data.message
+      : JSON.parse(info.response.text).message;
     if (info.response.ok) {
       return this.modal._success(message);
     } else {
-      if (info.response?.text && info.response?.status && info.response?.statusText) {
-        return this.modal._error(`<strong>${info.response.status} ${info.response.statusText}</strong><br/><br/>${message}`);        
+      if (
+        info.response?.text &&
+        info.response?.status &&
+        info.response?.statusText
+      ) {
+        return this.modal._error(
+          `<strong>${info.response.status} ${info.response.statusText}</strong><br/><br/>${message}`
+        );
       } else {
         this.modal._error(`Error: Could not process request.`);
       }
-
     }
   }
 
@@ -169,12 +177,24 @@ export class TypeFormTemplate extends TatorElement {
     }
 
     if (sCount > 0 && eCount === 0) {
-      return this.modal._success(`Successfully added ${sCount} ${this.typeName}s.`);
+      return this.modal._success(
+        `Successfully added ${sCount} ${this.typeName}s.`
+      );
     } else if (sCount > 0 && eCount > 0) {
-      return this.modal._complete(`Successfully added ${sCount} ${this.typeName}s.\n Error adding ${eCount} ${this.typeName}s.\n Error message${(eCount == 1 ? '' :'s')}: ${errors}`);
+      return this.modal._complete(
+        `Successfully added ${sCount} ${
+          this.typeName
+        }s.\n Error adding ${eCount} ${this.typeName}s.\n Error message${
+          eCount == 1 ? "" : "s"
+        }: ${errors}`
+      );
     } else {
-      return this.modal._error(`Error adding ${eCount} ${this.typeName}s.\n Error message${(eCount == 1 ? '' :'s')}: ${errors}`);
-    }    
+      return this.modal._error(
+        `Error adding ${eCount} ${this.typeName}s.\n Error message${
+          eCount == 1 ? "" : "s"
+        }: ${errors}`
+      );
+    }
   }
 
   // Use the most recently set data to update the values of form
@@ -183,12 +203,11 @@ export class TypeFormTemplate extends TatorElement {
     this.setupForm(this._data);
   }
 
-  
   async _deleteType() {
     const button = document.createElement("button");
     button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
 
-    let confirmText = document.createTextNode("Confirm")
+    let confirmText = document.createTextNode("Confirm");
     button.appendChild(confirmText);
 
     button.addEventListener("click", this.asyncDelete.bind(this));
@@ -197,26 +216,29 @@ export class TypeFormTemplate extends TatorElement {
     this.modal._confirm({
       titleText: `Delete Confirmation`,
       mainText: this._warningDeleteMessage,
-      buttonSave: button
+      buttonSave: button,
     });
   }
 
   async asyncDelete() {
     this.modal._modalCloseAndClear();
     try {
-      const respData = await store.getState().removeType({ type: this.typeName, id: this._data.id });
+      const respData = await store
+        .getState()
+        .removeType({ type: this.typeName, id: this._data.id });
       this.handleResponse(respData);
 
       if (this.typeName == "Project") {
-        setTimeout(function(){
-          window.location.href = '/projects/';
-       }, 3000);
+        setTimeout(function () {
+          window.location.href = "/projects/";
+        }, 3000);
       } else {
-        window.location.replace(`${window.location.origin}${window.location.pathname}#${this.typeName}-New`);
+        window.location.replace(
+          `${window.location.origin}${window.location.pathname}#${this.typeName}-New`
+        );
       }
-      
     } catch (err) {
-      this.modal._error(err)
+      this.modal._error(err);
     }
   }
 
@@ -243,13 +265,10 @@ export class TypeFormTemplate extends TatorElement {
       files_per_job: null,
       parameters: [],
       categories: "",
-      form: "empty"
+      form: "empty",
     };
   }
-
 }
-
-
 
 if (!customElements.get("type-form-template")) {
   customElements.define("type-form-template", TypeFormTemplate);
