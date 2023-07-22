@@ -30,6 +30,7 @@ ANNOTATION_LOOKUP = {"localization": Localization, "state": State}
 
 ANNOTATION_TYPE_LOOKUP = {"localization": LocalizationType, "state": StateType}
 
+
 def _do_object_search(qs, params):
     if params.get("object_search"):
         qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
@@ -40,6 +41,8 @@ def _do_object_search(qs, params):
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
     return qs
+
+
 def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     """Constructs a psql queryset."""
 
