@@ -2,7 +2,7 @@ import create from "zustand/vanilla";
 import { subscribeWithSelector, devtools } from "zustand/middleware";
 import { getApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 
-const api = getApi(BACKEND);
+const api = getApi();
 
 const getMap = new Map();
 getMap
