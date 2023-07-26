@@ -6,9 +6,7 @@ import uuid
 import tator
 from tator.util._upload_file import _upload_file
 from tator.transcode.make_thumbnails import make_thumbnails
-from tator.transcode.transcode import make_video_definition, make_audio_definition
-from tator.transcode.make_fragment_info import make_fragment_info
-from tator.openapi.tator_openapi.models import CreateResponse
+from tator.transcode.transcode import make_video_definition
 
 def download_file(url, output):
     print(f"Downloading {url} to {output}")
@@ -39,8 +37,7 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
         try:
             thumb_path = os.path.join(td,f"{uuid.uuid4()}.jpg")
             thumb_gif_path = os.path.join(td, f"{uuid.uuid4()}.gif")
-            make_thumbnails(host, token, media_id,
-                            media_path, thumb_path,thumb_gif_path, True)
+            make_thumbnails(host, token, media_id, media_path, thumb_path,thumb_gif_path)
         except Exception as e:
             print(f"Thumbnail error: {e}")
             # Delete stale media
@@ -84,4 +81,3 @@ def print_page_error(err):
     print(f"Name: {err.name}")
     print(f"Stack: {err.stack}")
     print("--------------------------------")
-
