@@ -37,7 +37,7 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
         try:
             thumb_path = os.path.join(td,f"{uuid.uuid4()}.jpg")
             thumb_gif_path = os.path.join(td, f"{uuid.uuid4()}.gif")
-            make_thumbnails(host, token, media_id, media_path, thumb_path,thumb_gif_path)
+            make_thumbnails(host, token, media_id, media_path, thumb_path, thumb_gif_path)
         except Exception as e:
             print(f"Thumbnail error: {e}")
             # Delete stale media
