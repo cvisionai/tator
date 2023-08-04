@@ -1,12 +1,12 @@
 boto3==1.20.41
 datadog==0.43.0
-django==3.2.20
+django==4.1.10
 django_admin_json_editor==0.2.3
 django-cognito-jwt==0.0.4
-django-enumfields==2.1.1
-django-extensions==3.1.5
+django-enumfields2==3.0.2
+django-extensions==3.2.3
 django-ltree==0.5.3
-djangorestframework==3.13.1
+djangorestframework==3.14.0
 elasticsearch==7.10.1
 gevent==1.4.0
 google-auth==2.3.3
