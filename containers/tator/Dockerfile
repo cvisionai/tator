@@ -22,10 +22,7 @@ WORKDIR /working
 RUN git clone https://github.com/henxing/openapi-core.git
 WORKDIR /working/openapi-core
 RUN $POETRY_HOME/bin/poetry install --no-interaction
-RUN $POETRY_HOME/bin/poetry build
-RUN pip3 install dist/openapi_core-0.18.0-py3-none-any.whl
 WORKDIR /working
-RUN rm -rf /working/openapi-core
 
 # Install pip packages
 RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
