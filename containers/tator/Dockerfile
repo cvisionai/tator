@@ -4,7 +4,8 @@ MAINTAINER CVision AI <info@cvisionai.com>
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
 ENV APT_REPO_HOST=${APT_REPO_HOST} \
     POETRY_VERSION=1.5.1 \
-    POETRY_VIRTUALENVS_CREATE=false
+    POETRY_VIRTUALENVS_CREATE=false \
+    PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
 
