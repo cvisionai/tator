@@ -1,7 +1,7 @@
 import logging
 
-from openapi_core import create_spec
-from openapi_core.validation.request.validators import RequestValidator
+from openapi_core import Spec
+from openapi_core import V31RequestValidator as RequestValidator
 from openapi_core.contrib.django import DjangoOpenAPIRequest
 
 from ._generator import CustomGenerator
@@ -14,7 +14,7 @@ def parse(request):
     if parse.validator is None:
         generator = CustomGenerator(title="Tator REST API")
         spec = generator.get_schema(parser=True)
-        openapi_spec = create_spec(spec)
+        openapi_spec = Spec.from_dict(spec)
         parse.validator = RequestValidator(openapi_spec)
     openapi_request = DjangoOpenAPIRequest(request)
     if openapi_request.mimetype.startswith("application/json") or (not openapi_request.mimetype):
