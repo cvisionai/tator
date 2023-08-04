@@ -3,9 +3,9 @@ MAINTAINER CVision AI <info@cvisionai.com>
 
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
 ENV APT_REPO_HOST=${APT_REPO_HOST} \
-    POETRY_HOME=/opt/poetry \
     POETRY_VERSION=1.5.1 \
-    POETRY_VIRTUALENVS_CREATE=false
+    POETRY_VIRTUALENVS_CREATE=false \
+    PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
 
@@ -16,12 +16,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
         ffmpeg wget xmlsec1 python3-magic cron && rm -rf /var/lib/apt/lists
 
 # Install fork of openapi-core that works in DRF views
-RUN python3 -m venv $POETRY_HOME
-RUN $POETRY_HOME/bin/pip install "poetry==$POETRY_VERSION"
+RUN pip3 install "poetry==$POETRY_VERSION"
 WORKDIR /working
 RUN git clone https://github.com/henxing/openapi-core.git
 WORKDIR /working/openapi-core
-RUN $POETRY_HOME/bin/poetry install --no-interaction
+RUN poetry install --no-interaction
 WORKDIR /working
 RUN rm -rf /working/openapi-core
 
