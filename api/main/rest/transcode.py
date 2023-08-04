@@ -70,6 +70,9 @@ def _job_to_transcode(job):
         "media_id": job["media_id"],
     }
 
+    if not spec["email_spec"]:
+        spec.pop("email_spec", None)
+
     return {
         "spec": spec,
         "job": {
