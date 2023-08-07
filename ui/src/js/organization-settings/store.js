@@ -1,4 +1,4 @@
-import create from "zustand/vanilla";
+import { create } from "zustand/vanilla";
 import { subscribeWithSelector, devtools } from "zustand/middleware";
 import {
   ApiClient,
