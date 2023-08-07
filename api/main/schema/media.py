@@ -185,7 +185,19 @@ class MediaListSchema(AutoSchema):
     def get_responses(self, path, method):
         responses = error_responses()
         if method == "POST":
-            responses["201"] = message_with_id_list_schema("media")
+            responses["201"] = {
+                "description": "Successful creation of media",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "oneOf": [
+                                {"$ref": "#/components/schemas/CreateListResponse"},
+                                {"$ref": "#/components/schemas/CreateResponse"},
+                            ]
+                        }
+                    }
+                },
+            }
         elif method in ["GET", "PUT"]:
             responses["200"] = {
                 "description": "Successful retrieval of media list.",
