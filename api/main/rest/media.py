@@ -413,6 +413,7 @@ class MediaListAPI(BaseListView):
             obj, msg = _create_media(project, media_spec_list[0], self.request.user)
             qs = Media.objects.filter(id=obj.id)
             response_data = list(qs.values(*fields))
+            response_data = response_data if received_spec_list else response_data[0]
             id_resp = [obj.id] if received_spec_list else obj.id
             response = {"message": msg, "id": id_resp, "object": response_data}
         elif media_spec_list:
