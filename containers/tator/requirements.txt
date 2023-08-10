@@ -38,6 +38,7 @@ pyparsing==3.0.7
 pytest-django==4.5.2
 pytest-xdist==3.1.0
 python-dateutil==2.8.2
+pyyaml==5.3.1
 rawpy==0.17.2
 redis==4.4.4
 requests==2.31.0
@@ -45,3 +46,4 @@ rq==1.11.1
 slackclient==2.9.3
 ujson==5.4.0
 uritemplate==4.1.1
+wheel==0.38.1
