@@ -1,4 +1,4 @@
-FROM node:20.3.1-alpine
+FROM node:20.5.0-alpine
 
 COPY scripts/packages/tator-js/pkg/dist /tator_online/scripts/packages/tator-js/pkg/dist
 COPY ui /tator_online/ui
