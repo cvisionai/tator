@@ -106,7 +106,7 @@ class TranscodeListAPI(BaseListView):
         name = params["name"]
         project = params["project"]
         attributes = params.get("attributes", None)
-        email_spec = params.get("email_spec", None)
+        email_spec = params.get("email_spec", "{}")
         media_id = params.get("media_id", None)
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
