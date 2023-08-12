@@ -94,7 +94,7 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
             temp_thumb = tempfile.NamedTemporaryFile(delete=False)
             thumb_size = (256, 256)
             image = image.convert("RGB")  # Remove alpha channel for jpeg
-            image.thumbnail(thumb_size, Image.ANTIALIAS)
+            image.thumbnail(thumb_size, Image.LANCZOS)
             image.save(temp_thumb.name, format="jpeg")
             thumb_name = "thumb.jpg"
             thumb_format = "jpg"

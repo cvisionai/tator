@@ -1,37 +1,40 @@
 """ TODO: add documentation for this """
-from collections import defaultdict
-import copy
 import logging
 
-import datetime
 from dateutil.parser import parse as dateutil_parse
 import pytz
 import re
 
 from django.db.models.functions import Cast, Coalesce
 from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
-from django.contrib.gis.db.models import CharField
-from django.contrib.gis.db.models import BooleanField
-from django.contrib.gis.db.models import BigIntegerField
-from django.contrib.gis.db.models import FloatField
-from django.contrib.gis.db.models import DateTimeField
-from django.contrib.gis.db.models import PointField
+from django.contrib.gis.db.models import (
+    BigIntegerField,
+    BooleanField,
+    CharField,
+    DateTimeField,
+    FloatField,
+    PointField,
+)
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
 from django.http import Http404
-from pgvector.django import VectorField
+from pgvector.django import L2Distance, MaxInnerProduct, CosineDistance, VectorField
 
-from ..models import LocalizationType, Localization
-from ..models import StateType, State
-from ..models import MediaType, Media
-from ..models import LeafType, Leaf
-from ..models import FileType, File
-from ..models import Section
+from ..models import (
+    File,
+    FileType,
+    Leaf,
+    LeafType,
+    Localization,
+    LocalizationType,
+    Media,
+    MediaType,
+    Section,
+    State,
+    StateType,
+)
 
 from ._attributes import KV_SEPARATOR
-from ._float_array_query import get_float_array_query
-
-from pgvector.django import L2Distance, MaxInnerProduct, CosineDistance
 
 logger = logging.getLogger(__name__)
 
@@ -169,8 +172,9 @@ def _convert_boolean(value):
     return value
 
 
-def _get_info_for_attribute(project, entity_type, key):
+def _get_info_for_attribute(entity_type, key):
     """Returns the first matching dtype with a matching key"""
+    retval = {}
     if key.startswith("$"):
         if key in ["$x", "$y", "$u", "$v", "$width", "$height", "$fps"]:
             return {"name": key[1:], "dtype": "float"}
@@ -185,23 +189,22 @@ def _get_info_for_attribute(project, entity_type, key):
             "$section",
             "$id",
         ]:
-            return {"name": key[1:], "dtype": "int"}
+            retval = {"name": key[1:], "dtype": "int"}
         elif key in ["$created_datetime", "$modified_datetime"]:
-            return {"name": key[1:], "dtype": "datetime"}
+            retval = {"name": key[1:], "dtype": "datetime"}
         elif key in ["$name"]:
-            return {"name": key[1:], "dtype": "string"}
-        else:
-            return None
+            retval = {"name": key[1:], "dtype": "string"}
     elif key == "tator_user_sections":
-        return {"name": "tator_user_sections", "dtype": "string"}
+        retval = {"name": "tator_user_sections", "dtype": "string"}
     else:
         for attribute_info in entity_type.attribute_types:
             if attribute_info["name"] == key:
-                return attribute_info
-    return None
+                retval = attribute_info
+                break
+    return retval
 
 
-def _get_field_for_attribute(project, entity_type, key):
+def _get_field_for_attribute(entity_type, key):
     """Returns the field type for a given key in a project/annotation_type"""
     lookup_map = {
         "bool": BooleanField,
@@ -212,19 +215,17 @@ def _get_field_for_attribute(project, entity_type, key):
         "datetime": DateTimeField,
         "geopos": PointField,
         "float_array": VectorField,
+        None: None,
     }
-    info = _get_info_for_attribute(project, entity_type, key)
-    if info:
-        return lookup_map[info["dtype"]], info.get("size", None)
-    else:
-        return None, None
+    info = _get_info_for_attribute(entity_type, key)
+    return lookup_map[info.get("dtype", None)], info.get("size", None)
 
 
-def _convert_attribute_filter_value(pair, project, annotation_type, operation):
+def _convert_attribute_filter_value(pair, annotation_type, operation):
     kv = pair.split(KV_SEPARATOR, 1)
     key, value = kv
-    info = _get_info_for_attribute(project, annotation_type, key)
-    if info is None:
+    info = _get_info_for_attribute(annotation_type, key)
+    if "dtype" not in info:
         return None, None, None
     dtype = info["dtype"]
 
@@ -245,19 +246,18 @@ def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     return key, value, dtype
 
 
-def get_attribute_filter_ops(project, params, data_type):
+def get_attribute_filter_ops(params, data_type):
     filter_ops = []
-    if any([(filt in params) for filt in ALLOWED_TYPES.keys()]):
-        for op in ALLOWED_TYPES.keys():
-            if op in params:
-                for kv in params[op]:
-                    key, value, dtype = _convert_attribute_filter_value(kv, project, data_type, op)
-                    if key:
-                        filter_ops.append((key, value, op))
+    for op in ALLOWED_TYPES.keys():
+        for kv in params.get(op, []):
+            key, value, _ = _convert_attribute_filter_value(kv, data_type, op)
+            if key:
+                filter_ops.append((key, value, op))
     return filter_ops
 
 
 def build_query_recursively(query_object, castLookup, is_media, project):
+    query = Q()
     if "method" in query_object:
         method = query_object["method"].lower()
         sub_queries = [
@@ -414,24 +414,22 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     return qs.filter(q_object)
 
 
-def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
-    attribute_null = params.get("attribute_null")
-    float_queries = params.get("float_array")
-    if float_queries is None:
-        float_queries = []
+def get_attribute_psql_queryset(entity_type, qs, params, filter_ops):
+    attribute_null = params.get("attribute_null", [])
+    float_queries = params.get("float_array", [])
 
     # return original queryset if no queries were supplied
-    if not filter_ops and not float_queries and not attribute_null:
+    if not (filter_ops or float_queries or attribute_null):
         return qs
 
-    found_it = False
+    found_queryset = False
     for key, value, op in filter_ops:
         if key.startswith("$"):
             db_field = key[1:]
             qs = qs.filter(**{f"{db_field}{OPERATOR_SUFFIXES[op]}": value})
-            found_it = True
+            found_queryset = True
         else:
-            field_type, _ = _get_field_for_attribute(project, entity_type, key)
+            field_type, _ = _get_field_for_attribute(entity_type, key)
             if field_type:
                 # Annotate with a typed object prior to query to ensure index usage
                 alias_key = re.sub(r"[^\w]", "__", key)
@@ -470,7 +468,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
                         **{f"{alias_key}_typed": Cast(f"attributes__{key}", field_type())}
                     )
                     qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
-                found_it = True
+                found_queryset = True
 
     if attribute_null is not None:
         for kv in attribute_null:
@@ -485,22 +483,22 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
                 # Returns true if the attributes both have a key and it is not set to null
                 qs = qs.filter(**{f"attributes__has_key": key})
                 qs = qs.filter(~Q(**{f"attributes__contains": {key: None}}))
-            found_it = True
+            found_queryset = True
 
     for query in float_queries:
-        if not "type" in params:
-            raise (Exception("Must supply 'type' if supplying a float_query. "))
+        if "type" not in params:
+            raise Exception("Must supply 'type' if supplying a float_query.")
         logger.info(f"EXECUTING FLOAT QUERY={query}")
-        found_it = True
+        found_queryset = True
         name = query["name"]
         center = query["center"]
         upper_bound = query.get("upper_bound", None)
         lower_bound = query.get("lower_bound", None)
         metric = query.get("metric", "l2norm")
         order = query.get("order", "asc")
-        field_type, size = _get_field_for_attribute(project, entity_type, name)
+        field_type, size = _get_field_for_attribute(entity_type, name)
         if field_type:
-            found_it = True
+            found_queryset = True
             qs = qs.filter(type=params["type"])
             qs = qs.annotate(**{f"{name}_char": Cast(f"attributes__{name}", CharField())})
             qs = qs.annotate(
@@ -522,7 +520,4 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
             else:
                 qs = qs.order_by(f"-{name}_distance")
 
-    if found_it:
-        return qs
-    else:
-        return None
+    return qs if found_queryset else None

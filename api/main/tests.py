@@ -2165,7 +2165,7 @@ class VideoTestCase(
             },
             format="json",
         )
-        new_id = response.data["id"][0]
+        new_id = response.data["id"]
         response = self.client.get(f"/rest/Media/{new_id}")
         assert response.data["created_by"] == self.user_two.pk
 
