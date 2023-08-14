@@ -175,8 +175,8 @@ export class AlgorithmEdit extends TypeFormTemplate {
     // Path to manifest
     this._manifestPath.permission = !this.cantSave ? "Can Edit" : "View Only";
     if (this._data.manifest) {
-      this._manifestPath.setValue(`/media/${this._data.manifest}`);
-      this._manifestPath.default = `/media/${this._data.manifest}`;
+      this._manifestPath.setValue(`${this._data.manifest}`);
+      this._manifestPath.default = `${this._data.manifest}`;
     } else {
       this._manifestPath.setValue(null);
       this._manifestPath.default = null;
@@ -193,7 +193,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       );
       if (resp.ok) {
         const manifestData = await resp.json();
-        const viewLink = `/media/${manifestData.url}`;
+        const viewLink = `${manifestData.url}`;
         this._manifestPath.setValue(viewLink);
         Utilities.showSuccessIcon(`Manifest file uploaded to: ${viewLink}`);
       } else {
