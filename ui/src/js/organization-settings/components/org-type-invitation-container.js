@@ -63,8 +63,12 @@ export class OrgTypeInvitationContainer extends OrgTypeFormContainer {
     let objectName = "";
 
     // Setup object info
-    this.objectName = data.email;
-    this._setupButtonsInvite(this._form._data.status);
+
+    this.objectName = data && data.email ? data.email : "";
+    const status = this._form?._data?.status ? this._form._data.status : null;
+    this._setupButtonsInvite(status);    
+    
+
   }
 
   async _resetInvitation() {
@@ -84,7 +88,7 @@ export class OrgTypeInvitationContainer extends OrgTypeFormContainer {
   async _setupButtonsInvite(status) {
     const showReset = ["Expired", "Pending"];
     const showCustomButton = showReset.includes(status) || status == "Accepted";
-    const inviteEmail = this._data.email;
+    
 
     if (showCustomButton) {
       if (showReset.includes(status)) {
@@ -92,6 +96,7 @@ export class OrgTypeInvitationContainer extends OrgTypeFormContainer {
         this._customButtonSectionPrimary.hidden = true;
       } else if (status == "Accepted") {
         const result = await store.getState().initType("Affiliation");
+        const inviteEmail = this._data?.email ? this._data.email : "";
         const affiliation = store
           .getState()
           .Affiliation.emailMap.has(inviteEmail)

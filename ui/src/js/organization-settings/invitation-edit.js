@@ -45,8 +45,15 @@ export class InvitationEdit extends OrgTypeFormTemplate {
       this._permissionSelect.choices = permissionOptions;
     }
     this._permissionSelect._select.required = this._data.id === "New";
-    this._permissionSelect.setValue(this._data.permission);
-    this._permissionSelect.default = this._data.permission;
+
+    if (this._data.permission) {
+      this._permissionSelect.setValue(this._data.permission);
+      this._permissionSelect.default = this._data.permission;
+    } else {
+      this._permissionSelect.setValue("Member");
+    this._permissionSelect.default = "Member";
+    
+    }
     this._permissionSelect.permission = "Can Edit";
 
     // status

@@ -581,8 +581,7 @@ const store = create(
           }
         }
       },
-
-      addType: async ({ type, data }) => {
+      addTypeSingle: async ({ type, data }) => {
         set({
           status: {
             ...get().status,
@@ -590,23 +589,60 @@ const store = create(
             msg: `Adding ${type}...`,
           },
         });
+        const responseInfo = await get().addType({ type, data });
+
+        // Refresh all the data
+        await get().fetchTypeByOrg(type);
+
+        // Select the new type
+        let newID = responseInfo.data.id ? responseInfo.data.id : "New";
+        window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
+
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+
+        // Refresh the page data before setting the selection
+        return responseInfo;
+      },
+      addTypeArray: async ({ type, data }) => {
+        set({
+          status: {
+            ...get().status,
+            name: "pending",
+            msg: `Adding multiple ${type}...`,
+          },
+        });
+        console.log("Starting loop....");
+        let responseInfo = null;
+        const responses = [];
+        for await (let d of data) {
+          responseInfo = await get().addType({ type, data: d });
+          console.log("responseInfo in loop....", responseInfo);
+          responses.push(responseInfo);
+        }
+
+        // Refresh all the data
+        await get().fetchTypeByOrg(type);
+
+        // Select the LAST new type
+        //Response should have the newly added ID
+
+        if (responseInfo?.data?.id) {
+          const newID = responseInfo.data.id ? responseInfo.data.id : "New";
+          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;  
+        }
+
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+
+        // Refresh the page data before setting the selection
+        console.log("responses", responses);
+        return responses;
+      },
+      addType: async ({ type, data }) => {
         try {
           const fn = postMap.get(type);
           const organizationId = get().organizationId;
-          const responseInfo = await fn(organizationId, data);
-
-          // Refresh the page data before setting the selection
-          await get().fetchTypeByOrg(type);
-
-          // Select the new type
-          //Response should have the newly added ID
-          let newID = responseInfo.data.id ? responseInfo.data.id : "New";
-          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
-
-          set({ status: { ...get().status, name: "idle", msg: "" } });
-
-          // This includes the reponse so error handling can happen in ui
-          return responseInfo;
+          console.log("Found function... orgId="+organizationId, fn);
+          return await fn(organizationId, data);
         } catch (err) {
           set({ status: { ...get().status, name: "idle", msg: "" } });
           return err;
