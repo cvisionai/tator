@@ -152,7 +152,6 @@ export class EmailListInput extends TatorElement {
 
   clear() {
     if(this._input && this._input.setValue) this._input.setValue("");
-    console.log("This pills length " + this._pills.children.length, this._pills);
     this._pills.innerHTML = "";
   }
 }

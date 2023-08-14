@@ -52,8 +52,8 @@ export class OrgTypeFormTemplate extends TatorElement {
       this._data = this._getEmptyData();
     }
 
-    this.typeId = this._data.id;
-    this.objectName = this._data.name;
+    this.typeId = this._data?.id ? this._data.id : "New";
+    this.objectName = this._data?.name ? this._data.name : "";
 
     this._setupFormUnique();
   }
@@ -141,7 +141,6 @@ export class OrgTypeFormTemplate extends TatorElement {
     };
 
     if (this.typeId == "New" && isArray) {
-      console.log("Sending info to addTypeArray....", info);
       return await store.getState().addTypeArray(info);
     } else if (this.typeId == "New" && !isArray) {
       return await store.getState().addTypeSingle(info);
@@ -172,8 +171,6 @@ export class OrgTypeFormTemplate extends TatorElement {
   }
 
   handleResponseList(responses) {
-    console.log("handleResponseList: Handles responses", responses);
-
     if (responses && Array.isArray(responses)) {
       let sCount = 0;
       let eCount = 0;

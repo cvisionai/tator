@@ -29,7 +29,7 @@ export class AffiliationEdit extends OrgTypeFormTemplate {
 
   async _setupFormUnique() {
     //
-    this._userInput.hidden = this._data.id !== "New";
+    this._userInput.hidden = this._data?.id !== "New";
 
     // permission
     if (!this._permissionSelect._choices) {
@@ -40,14 +40,21 @@ export class AffiliationEdit extends OrgTypeFormTemplate {
       this._permissionSelect.choices = permissionOptions;
     }
 
-    this._permissionSelect._select.required = this._data.id === "New";
-    this._permissionSelect.setValue(this._data.permission);
-    this._permissionSelect.default = this._data.permission;
+    this._permissionSelect._select.required = this._data?.id === "New";
+    
+    if (this._data?.id === "New" || !this._data) {
+      this._permissionSelect.setValue("Member");
+      this._permissionSelect.default = "Member";
+    } else {
+      this._permissionSelect.setValue(this._data.permission);
+      this._permissionSelect.default = this._data.permission;
+    }
+
   }
 
   _getFormData() {
     let formData;
-    if (this._data.id == "New") {
+    if (this._data?.id == "New" || !this._data) {
       formData = [];
       const users = this._userData.getUsers();
       for (const user of users.values()) {

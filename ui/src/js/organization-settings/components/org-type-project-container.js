@@ -67,9 +67,7 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
     this._data = data;
     this._form.data = data;
 
-    console.log(`setUpData for ${this._typeName}..`, data);
-    this.objectName = data.name;
-
+    this.objectName = data?.name ? data.name : "";
     this._customButtonSectionPrimary.hidden = false;
     this.sideCol.hidden = false;
 
@@ -123,12 +121,6 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
   }
 
   updatedMembershipData(newMembershipData) {
-    console.log(
-      "State updated for MEMBERSHIP while we are selected for ProjectId" +
-        this._typeId,
-      newMembershipData
-    );
-
     // Setting data, should be a list of memberships projects
     const projectId = Number(this._typeId);
     const data = newMembershipData.projectIdMembersMap.get(projectId);
@@ -139,13 +131,11 @@ export class OrgTypeProjectContainer extends OrgTypeFormContainer {
     if (this._typeId !== "New") {
       this._saveEditSection.classList.add("hidden");
       const projectId = Number(this._typeId);
-      console.log("Update sidebar called with data", data);
       if (data == null) {
         data = await store.getState().getProjMembershipData(projectId);
       }
 
       this.projectMembershipSidebar.projectId = projectId;
-      console.log("Setting sidebar data to....", { projectId, data });
       this.projectMembershipSidebar.data = { projectId, data };
 
       // Projects

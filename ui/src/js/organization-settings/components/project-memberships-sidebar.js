@@ -96,9 +96,7 @@ export class ProjectMembershipSidebar extends TatorElement {
       .currentUser.membershipsByProject.has(projectId)
       ? true
       : false;
-    console.log(
-      `Does user have control of this projectId ${projectId}? hasControl=${hasControl} (if false, add new should be hidden)`
-    );
+    
     await store.getState().initType("Affiliation");
     if (!hasControl) {
       this._addNew.classList.add("hidden");

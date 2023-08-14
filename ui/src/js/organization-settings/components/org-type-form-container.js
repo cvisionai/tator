@@ -136,7 +136,7 @@ export class OrgTypeFormContainer extends TatorElement {
    */
   set objectName(val) {
     this._objectName = val;
-    console.log("Org type container ... this._objectName = " + this._objectName);
+    // console.log("Org type container ... this._objectName = " + this._objectName);
 
     if (this._typeId === "New" || val === "") {
       this.editH1.hidden = true;
@@ -156,7 +156,7 @@ export class OrgTypeFormContainer extends TatorElement {
     let objectName = "";
 
     // Setup object info
-    this.objectName = data.name;
+    this.objectName = data?.name ? data.name : "";;
   }
 
   /**

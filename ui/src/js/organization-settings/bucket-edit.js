@@ -87,7 +87,7 @@ export class BucketEdit extends OrgTypeFormTemplate {
 
   async _setupFormUnique() {
     // name
-    if (this._data.id === "New") {
+    if (this._data?.id === "New") {
       this._editName.setValue("");
       this._editName.default = "";
     } else {
@@ -96,7 +96,7 @@ export class BucketEdit extends OrgTypeFormTemplate {
     }
 
     // type
-    if (this._data.id == "New") {
+    if (this._data?.id == "New") {
       this._editStoreType.setValue("MINIO");
       this._editStoreType.default = "MINIO";
       this._editStoreType.hidden = false;
@@ -112,7 +112,7 @@ export class BucketEdit extends OrgTypeFormTemplate {
     );
 
     // external host
-    if (this._data.id == "New") {
+    if (this._data?.id == "New") {
       this._editExternalHost.setValue("");
       this._editExternalHost.default = "";
     } else {
@@ -122,7 +122,7 @@ export class BucketEdit extends OrgTypeFormTemplate {
 
     // archive storage class
     this._showArchiveScField();
-    if (this._data.id == "New") {
+    if (this._data?.id == "New") {
       this._editArchiveSc.setValue("STANDARD");
       this._editArchiveSc.default = "STANDARD";
     } else {
@@ -131,7 +131,7 @@ export class BucketEdit extends OrgTypeFormTemplate {
     }
 
     // live storage class
-    if (this._data.id == "New") {
+    if (this._data?.id == "New") {
       this._editLiveSc.setValue("STANDARD");
       this._editLiveSc.default = "STANDARD";
     } else {
@@ -146,7 +146,7 @@ export class BucketEdit extends OrgTypeFormTemplate {
 
   _getFormData() {
     let formData = {};
-    const isNew = this._data.id == "New";
+    const isNew = this._data?.id == "New";
 
     // Cannot edit bucket type after creation, so only consider if isNew
     if (isNew) {
