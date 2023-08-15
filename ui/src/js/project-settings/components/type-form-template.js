@@ -137,8 +137,6 @@ export class TypeFormTemplate extends TatorElement {
       data: formData
     };
 
-    console.log("Form data", formData);
-
     if (this.typeId == "New" && isArray) {
       return await store.getState().addTypeArray(info);
     } else if (this.typeId == "New" && !isArray) {

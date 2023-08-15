@@ -44,7 +44,6 @@ export class MembershipEdit extends TypeFormTemplate {
   }
 
   async _setupFormUnique() {
-    console.log("Membership form ... _setupFormUnique");
     this._userInput.reset();
     this._userInput.init(this._userData);
 
