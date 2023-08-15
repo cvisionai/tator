@@ -77,7 +77,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
 
     print("Confirming invitation status")
     page.click('#nav-for-Invitation')
-    link = page.locator(".SideNav-subItem ").filter(has_text=f"{user_email}")
+    link = page.locator(".SideNav-subItem ").filter(has_text=f" {user_email}")
     link.click()
     page.wait_for_selector(f'org-type-invitation-container[form="invitation-edit"] text-input[name="Status"] input')
     statusInputValue = page.eval_on_selector(f'org-type-invitation-container[form="invitation-edit"] text-input[name="Status"] input', "i => i.value")
@@ -125,7 +125,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
         for _ in range(3):
             page.keyboard.press("Tab")
         page.keyboard.press("Enter")
-    page.wait_for_selector(f'text="Successfully added 1 Affiliations."')
+    page.wait_for_selector(f'text="Successfully added 1 Affiliation."')
     response = response_info.value
     respObject = response.json()
     print(respObject)

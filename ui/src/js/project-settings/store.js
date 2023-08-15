@@ -222,7 +222,6 @@ const store = create(
 
     initHeader: async () => {
       Promise.all([api.whoami(), api.getAnnouncementList()]).then((values) => {
-        console.log(values[0]);
         set({
           user: values[0],
           announcements: values[1],
@@ -385,28 +384,11 @@ const store = create(
       }
     },
     addType: async ({ type, data }) => {
-      set({
-        status: { ...get().status, name: "pending", msg: `Adding ${type}...` },
-      });
+
       try {
         const fn = postMap.get(type);
         const projectId = get().projectId;
         const responseInfo = await fn(projectId, data);
-
-        // Refresh the page data before setting the selection
-        await get().fetchType(type);
-
-        // Select the new type (non-Leaf) forms
-        if (type === "Leaf") {
-          // Try to reset selection to refresh the same page
-          get().setSelection({ typeId: get().selection.typeId });
-        } else {
-          //Response should have the newly added ID
-          let newID = responseInfo.data.id ? responseInfo.data.id : "New";
-          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
-        }
-
-        set({ status: { ...get().status, name: "idle", msg: "" } });
 
         // This includes the reponse so error handling can happen in ui
         return responseInfo;
@@ -414,6 +396,58 @@ const store = create(
         set({ status: { ...get().status, name: "idle", msg: "" } });
         return err;
       }
+    },
+    addTypeSingle: async ({ type, data }) => {
+      set({
+        status: { ...get().status, name: "pending", msg: `Adding single ${type}...` },
+      });
+
+      const responseInfo = await get().addType({ type, data })
+
+      // Select the new type (non-Leaf) forms
+      if (type === "Leaf") {
+        // Try to reset selection to refresh the same page
+        get().setSelection({ typeId: get().selection.typeId });
+      } else {
+        //Response should have the newly added ID
+        let newID = responseInfo.data.id ? responseInfo.data.id : "New";
+        window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
+      }
+
+      // Refresh the page data before setting the selection
+      await get().fetchType(type);
+
+      set({ status: { ...get().status, name: "idle", msg: "" } });
+
+      return responseInfo;
+    },
+    addTypeArray: async ({ type, data }) => {
+      set({
+        status: { ...get().status, name: "pending", msg: `Adding array ${type}...` },
+      });
+
+      const responses = [];
+      let lastInfo = null;
+      for (let d of data) {
+        // console.log("Adding data "+type, d);
+        const responseInfo = await get().addType({ type, data: d });
+        responses.push(responseInfo);
+        lastInfo = responseInfo;
+      }
+      
+
+      // Refresh the page data before setting the selection
+      await get().fetchType(type);
+
+      // Select the new type (non-Leaf) forms
+      if (type === "Leaf") {
+        // Try to reset selection to refresh the same page
+        get().setSelection({ typeId: get().selection.typeId });
+      }
+
+      set({ status: { ...get().status, name: "idle", msg: "" } });
+
+      return responses;
     },
     updateType: async ({ type, id, data }) => {
       set({
@@ -538,10 +572,6 @@ export const getAttributeDataByType = async () => {
     const data = await store.getState().initType(type);
     const list = Array.isArray(data) ? data : data.map.values();
     for (let entity of list) {
-      console.log(
-        ` attributeDataByType[${type}][${entity.name}] = entity.attribute_types`,
-        entity.attribute_types
-      );
       attributeDataByType[type][entity.name] = entity.attribute_types;
     }
   }

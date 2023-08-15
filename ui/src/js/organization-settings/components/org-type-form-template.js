@@ -188,17 +188,20 @@ export class OrgTypeFormTemplate extends TatorElement {
 
       if (sCount > 0 && eCount === 0) {
         return this.modal._success(
-          `Successfully added ${sCount} ${this.typeName}s.`
+          `Successfully added ${sCount} ${this.typeName}${sCount == 1 ? "" : "s"
+        }.`
         );
       } else if (sCount > 0 && eCount > 0) {
         return this.modal._complete(
           `Successfully added ${sCount} ${this.typeName
-          }s.<br/><br/>Error adding ${eCount} ${this.typeName}s.<br/><br/>Error message${eCount == 1 ? "" : "s"
+          }s.<br/><br/>Error adding ${eCount} ${this.typeName}${eCount == 1 ? "" : "s"
+        }.<br/><br/>Error message${eCount == 1 ? "" : "s"
           }:<br/><br/>${errors}`
         );
       } else {
         return this.modal._error(
-          `Error adding ${eCount} ${this.typeName}s.<br/><br/>Error message${eCount == 1 ? "" : "s"
+          `Error adding ${eCount} ${this.typeName}${eCount == 1 ? "" : "s"
+        }.<br/><br/>Error message${eCount == 1 ? "" : "s"
           }:<br/><br/>${errors}`
         );
       }

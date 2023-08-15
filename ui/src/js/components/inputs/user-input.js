@@ -131,8 +131,8 @@ export class UserInput extends TatorElement {
   reset() {
     // Go back to default value
     if (this._data?._users) this._data._users = new Map();
-    if (this._pills.length) {
-      this.clear();
+    if (this._pills.children.length > 0) {
+      this._pills.innerHTML = "";
     }
   }
 

@@ -77,15 +77,14 @@ export class TypeFormTemplate extends TatorElement {
         this.modal._error(err);
       }
     } else if (Array.isArray(formData) && formData.length !== 0) {
-      const responses = [];
-      for (let d of formData) {
-        const respData = await this.doSaveAction(d);
-        responses.push(respData);
-      }
+      const responses = await this.doSaveAction(formData, true);
+
       this.handleResponseList(responses);
     } else {
       this.modal._success("Nothing new to save!");
     }
+
+    this.data = null;
   }
 
   /**
@@ -131,12 +130,21 @@ export class TypeFormTemplate extends TatorElement {
     return this._warningDeleteMessage;
   }
 
-  doSaveAction(formData) {
-    const info = { type: this.typeName, id: this.typeId, data: formData };
-    if (this.typeId == "New") {
-      return store.getState().addType(info);
+  async doSaveAction(formData, isArray = false) {
+    const info = {
+      type: this.typeName,
+      id: this.typeId,
+      data: formData
+    };
+
+    console.log("Form data", formData);
+
+    if (this.typeId == "New" && isArray) {
+      return await store.getState().addTypeArray(info);
+    } else if (this.typeId == "New" && !isArray) {
+      return await store.getState().addTypeSingle(info);
     } else {
-      return store.getState().updateType(info);
+      return await store.getState().updateType(info);
     }
   }
 
@@ -162,118 +170,116 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   handleResponseList(responses) {
-    let sCount = 0;
-    let eCount = 0;
-    let errors = "";
+    if (responses && Array.isArray(responses)) {
+      let sCount = 0;
+      let eCount = 0;
+      let errors = "";
 
-    for (let object of responses) {
-      if (object.response.ok) {
-        sCount++;
-      } else {
-        eCount++;
-        const message = JSON.parse(object.response.text).message;
-        errors += `Error: ${message} \n`; //${r.data.message}
+      for (let object of responses) {
+        if (object?.response?.ok) {
+          sCount++;
+        } else {
+          eCount++;
+          const message = JSON.parse(object.response.text).message;
+          errors += `<br/><br/>${message}`; //${r.data.message}
+        }
       }
-    }
 
-    if (sCount > 0 && eCount === 0) {
-      return this.modal._success(
-        `Successfully added ${sCount} ${this.typeName}${
-          sCount == 1 ? "" : "s"
+      if (sCount > 0 && eCount === 0) {
+        return this.modal._success(
+          `Successfully added ${sCount} ${this.typeName}${sCount == 1 ? "" : "s"
         }.`
-      );
-    } else if (sCount > 0 && eCount > 0) {
-      return this.modal._complete(
-        `Successfully added ${sCount} ${
-          this.typeName
-        }${(sCount == 1) ? '' : 's'}.\n Error adding ${eCount} ${this.typeName}${(eCount == 1) ? '' : 's'}.\n Error message${
-          eCount == 1 ? "" : "s"
-        }: ${errors}`
-      );
-    } else {
-      return this.modal._error(
-        `Error adding ${eCount} ${this.typeName}${
-          eCount == 1 ? "" : "s"
-        }.\n Error message${
-          eCount == 1 ? "" : "s"
-        }: ${errors}`
-      );
-    }
-  }
-
-  // Use the most recently set data to update the values of form
-  _resetForm(evt) {
-    evt.preventDefault();
-    this.setupForm(this._data);
-  }
-
-  async _deleteType() {
-    const button = document.createElement("button");
-    button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
-
-    let confirmText = document.createTextNode("Confirm");
-    button.appendChild(confirmText);
-
-    button.addEventListener("click", this.asyncDelete.bind(this));
-    await this.setUpWarningDeleteMsg();
-
-    this.modal._confirm({
-      titleText: `Delete Confirmation`,
-      mainText: this._warningDeleteMessage,
-      buttonSave: button,
-    });
-  }
-
-  async asyncDelete() {
-    this.modal._modalCloseAndClear();
-    try {
-      const respData = await store
-        .getState()
-        .removeType({ type: this.typeName, id: this._data.id });
-      this.handleResponse(respData);
-
-      if (this.typeName == "Project") {
-        setTimeout(function () {
-          window.location.href = "/projects/";
-        }, 3000);
+        );
+      } else if (sCount > 0 && eCount > 0) {
+        return this.modal._complete(
+          `Successfully added ${sCount} ${this.typeName
+          }s.<br/><br/>Error adding ${eCount} ${this.typeName}${eCount == 1 ? "" : "s"
+        }.<br/><br/>Error message${eCount == 1 ? "" : "s"
+          }:<br/><br/>${errors}`
+        );
       } else {
-        window.location.replace(
-          `${window.location.origin}${window.location.pathname}#${this.typeName}-New`
+        return this.modal._error(
+          `Error adding ${eCount} ${this.typeName}${eCount == 1 ? "" : "s"
+        }.<br/><br/>Error message${eCount == 1 ? "" : "s"
+          }:<br/><br/>${errors}`
         );
       }
-    } catch (err) {
-      this.modal._error(err);
+    }
+  }
+    // Use the most recently set data to update the values of form
+    _resetForm(evt) {
+      evt.preventDefault();
+      this.data = null;
+    }
+
+  async _deleteType() {
+      const button = document.createElement("button");
+      button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
+
+      let confirmText = document.createTextNode("Confirm");
+      button.appendChild(confirmText);
+
+      button.addEventListener("click", this.asyncDelete.bind(this));
+      await this.setUpWarningDeleteMsg();
+
+      this.modal._confirm({
+        titleText: `Delete Confirmation`,
+        mainText: this._warningDeleteMessage,
+        buttonSave: button,
+      });
+    }
+  
+
+  async asyncDelete() {
+      this.modal._modalCloseAndClear();
+      try {
+        const respData = await store
+          .getState()
+          .removeType({ type: this.typeName, id: this._data.id });
+        this.handleResponse(respData);
+
+        if (this.typeName == "Project") {
+          setTimeout(function () {
+            window.location.href = "/projects/";
+          }, 3000);
+        } else {
+          window.location.replace(
+            `${window.location.origin}${window.location.pathname}#${this.typeName}-New`
+          );
+        }
+      } catch (err) {
+        this.modal._error(err);
+      }
+    }
+
+    _getEmptyData() {
+      this.typeId = "New";
+      this.objectName = "";
+      return {
+        id: `New`,
+        name: "+ Add New",
+        project: this.projectId,
+        description: "",
+        visible: false,
+        grouping_default: false,
+        default_volume: 0,
+        media: [],
+        dtype: "",
+        color_map: null,
+        interpolation: "none",
+        association: "Media",
+        line_width: 2,
+        delete_child_localizations: false,
+        cluster: null,
+        manifest: null,
+        files_per_job: null,
+        parameters: [],
+        categories: "",
+        form: "empty",
+      };
     }
   }
 
-  _getEmptyData() {
-    this.typeId = "New";
-    this.objectName = "";
-    return {
-      id: `New`,
-      name: "+ Add New",
-      project: this.projectId,
-      description: "",
-      visible: false,
-      grouping_default: false,
-      default_volume: 0,
-      media: [],
-      dtype: "",
-      color_map: null,
-      interpolation: "none",
-      association: "Media",
-      line_width: 2,
-      delete_child_localizations: false,
-      cluster: null,
-      manifest: null,
-      files_per_job: null,
-      parameters: [],
-      categories: "",
-      form: "empty",
-    };
-  }
-}
-
-if (!customElements.get("type-form-template")) {
+  if(!customElements.get("type-form-template")) {
   customElements.define("type-form-template", TypeFormTemplate);
 }
