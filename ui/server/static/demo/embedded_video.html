@@ -1,258 +1,253 @@
 <html>
-    <head>
-        <title>Embedded Tator Video Example</title>
-        <!-- NOTE: This needs a of work to have less tentacles !-->
+  <head>
+    <title>Embedded Tator Video Example</title>
+    <!-- NOTE: This needs a of work to have less tentacles !-->
 
-        <script src="/static/components.js"></script>
-        <script src="/static/util.js"></script>
-        <script src="/static/annotation.js"></script>
-        <script src="/static/annotator.js"></script>
-        <script>
-         // TODO: An example of where supplying an attribute
-         // to the web component may be useful
-         let video_element = null;
+    <script src="/static/components.js"></script>
+    <script src="/static/util.js"></script>
+    <script src="/static/annotation.js"></script>
+    <script src="/static/annotator.js"></script>
+    <script>
+      // TODO: An example of where supplying an attribute
+      // to the web component may be useful
+      let video_element = null;
 
-         function *enumerate(array) {
-             for (let i = 0; i < array.length; i += 1) {
-                 yield [i,array[i]];
-             }
-         }
+      function* enumerate(array) {
+        for (let i = 0; i < array.length; i += 1) {
+          yield [i, array[i]];
+        }
+      }
 
-         class Utilities
-         {
-             // Blank function to meet interface
-             static sendNotification(msg,bool)
-             {
+      class Utilities {
+        // Blank function to meet interface
+        static sendNotification(msg, bool) {}
+      }
 
-             }
-         }
-
-         // Boiler plate-code to stub out edit
-         // capability -- TODO this is a hacky part
-         // Might want to just use a bona-fide annotation-data
-         class DataStub extends HTMLElement
-         {
-             constructor()
-             {
-                 super();
-             }
-
-             init(types)
-             {
-                 this._dataTypes={};
-                 for (const dataType of types) {
-                     this._dataTypes[dataType.id] = dataType;
-                 }
-                 this._trackDb={}; //No Tracks, TODO: fix-me
-             }
-         }
-         customElements.define("data-stub", DataStub);
-
-         function load_metadata(host, project, media_id, headers)
-         {
-             fetch(`${host}/rest/LocalizationTypes/${project}?media_id=${media_id}`,{headers:headers})
-                 .then((resp) => {
-                     return resp.json();
-                 })
-                 .then((json) => {
-                     let pArray = [];
-                     let type_objs = json;
-                     let data_stub = document.createElement('data-stub')
-                     data_stub.init(type_objs);
-                     video_element.annotationData = data_stub;
-                     for (let type_obj of json)
-                     {
-                         let p = fetch(`${host}/rest/Localizations/${project}?media_id=${media_id}&type=${type_obj.id}`,{headers:headers});
-                         pArray.push(p);
-                     }
-
-                     Promise.all(pArray).then((rArray) => {
-                         let pArray = [];
-                         for (let resp of rArray)
-                         {
-                             pArray.push(resp.json());
-                         }
-                         Promise.all(pArray).then((rArray) => {
-                             for (row of enumerate(rArray))
-                             {
-                                 // returns idx,data
-                                 video_element.insertIntoFramedData(row[1],type_objs[row[0]]);
-                             }
-                         });
-                     });
-                 });
-         }
-
-         function handle_responses(host, media_id, offsite_config, video, type)
-         {
-            console.info(video);
-            // Fetch project from media id for later
-            let project = video.project;
-
-            // Last frame is nice to have for frameChange event handler
-            let last_frame = video.num_frames-1;
-
-            let seek_bar = document.getElementById("seek");
-            seek.setAttribute("max", video.num_frames-1);
-            let debouncer = null;
-            let seek_func = (evt) => {
-                //This fires as the user drags
-                // Debounce so we only update at 33 ms or during a
-                // drag else things get janky. (30 fps)
-
-                // There are other ways to do this to be a bit more
-                // responsive
-                let delay = (debouncer != null ? 33 : 0);
-                clearTimeout(debouncer);
-                let frame_num = seek_bar.value;
-                debouncer = setTimeout(() => {
-                    const hi_res = (evt.type == "change");
-                    video_element.gotoFrame(frame_num, hi_res)
-                    debouncer = null;
-                },delay);
-            };
-            seek.addEventListener("input",seek_func);
-            seek.addEventListener("change",seek_func);
-
-            let loaded_meta = false;
-
-            // Monitor video buffering progress
-            video_element.addEventListener("bufferLoaded", (evt) => {
-                let complete = evt.detail.percent_complete;
-                console.info(`percent_complete = ${complete}`);
-
-                // Load metadata after video starts
-                if (loaded_meta == false)
-                {
-                    load_metadata(host,project,media_id, headers)
-                    loaded_meta = true;
-                }
-                // Something is weird where buffer hitting play in this
-                // particular callback is no bueno. For demo purposes
-                // let's make it
-                // >= is just being pedantic in-case math blows up and
-                // you get greater than 1 and stuck forever.
-                if (complete >= 1.0)
-                {
-                    // Example auto play:
-                    //setTimeout(() => {
-                    // Example:
-                    // Auto-play when buffer is complete.
-                    //    video_element.play();
-
-                    // Note: This runs like an old school cassete w/o a stop
-                    // One should stop it externally when it gets to the end
-                    //},500);
-                    //
-                    // going to frame 0 is nice and safe
-                    video_element.gotoFrame(0,true);
-                    console.info("video ready");
-                    document.getElementById("play").disabled=null;
-                    document.getElementById("pause").disabled=null;
-                }
-            });
-
-            // Fired for each frame of the video, not wise to do
-            // CPU-intensive things here. Drawing is done in another
-            // 'thread' but only so much protection in a browser.
-            video_element.addEventListener("frameChange", (evt) => {
-                // >= is just in case math blows up again
-                seek.value = evt.detail.frame;
-                if (evt.detail.frame >= last_frame)
-                {
-                    console.info(`Reached the end ${evt.detail.frame}`);
-                    video_element.pause();
-                }
-            });
-
-            video_element.loadFromVideoObject(video,
-                                            type,
-                                            720, //720 is quality
-                                            true, //Let video resize
-                                            offsite_config, 
-                                            null,
-                                            {height:0});
-
-            // Programmatic controls presumable to hook into buttons:
-            // video_element.play()
-            // video_element.playBackwards();
-            // video_element.pause()
-            // video_element.advance(); //1-frame
-            // video_element.back(); //1-frame back
-            // video_element.gotoFrame(N, [bool: hq])
-            // Only "non-_" functions should be called from higher level code.
-            // See video.js for event listing + more functions.
-         }
-         async function load_video(host,media_id, offsite_config)
-         {
-             if (offsite_config == undefined || offsite_config == null)
-             {
-                 offsite_config = {};
-             }
-             headers={};
-             if (offsite_config.method)
-             {
-                 headers["Authorization"] = `${offsite_config.method} ${offsite_config.value}`;
-             }
-             // TODO: Add token-based auth to header
-             let video = await(await fetch(`${host}/rest/Media/${media_id}?presigned=36000`, {headers:headers})).json();
-             let type = await(await fetch(`${host}/rest/MediaType/${video.meta}`, {headers:headers})).json();
-             this.handle_responses(host,media_id, offsite_config, video, type);
+      // Boiler plate-code to stub out edit
+      // capability -- TODO this is a hacky part
+      // Might want to just use a bona-fide annotation-data
+      class DataStub extends HTMLElement {
+        constructor() {
+          super();
         }
 
-         // Entry point for example javascript application
-         window.onload = () =>
-             {
-                 // Configurables
-                 let host = document.location.origin;
+        init(types) {
+          this._dataTypes = {};
+          for (const dataType of types) {
+            this._dataTypes[dataType.id] = dataType;
+          }
+          this._trackDb = {}; //No Tracks, TODO: fix-me
+        }
+      }
+      customElements.define("data-stub", DataStub);
 
-                 let params = new URLSearchParams(document.location.search);
-                 let media_id = null;
+      function load_metadata(host, project, media_id, headers) {
+        fetch(
+          `${host}/rest/LocalizationTypes/${project}?media_id=${media_id}`,
+          { headers: headers }
+        )
+          .then((resp) => {
+            return resp.json();
+          })
+          .then((json) => {
+            let pArray = [];
+            let type_objs = json;
+            let data_stub = document.createElement("data-stub");
+            data_stub.init(type_objs);
+            video_element.annotationData = data_stub;
+            for (let type_obj of json) {
+              let p = fetch(
+                `${host}/rest/Localizations/${project}?media_id=${media_id}&type=${type_obj.id}`,
+                { headers: headers }
+              );
+              pArray.push(p);
+            }
 
-                 // If not in query prompt user
-                 if (params.has("media_id") == true)
-                 {
-                     media_id = Number(params.get("media_id"));
-                 }
-                 else
-                 {
-                     media_id = Number(window.prompt("Media ID?",1))
-                     const new_url = document.location.href + '?media_id=' +
-                                     media_id;
-                     history.replaceState(null, null, new_url);
-                 }
+            Promise.all(pArray).then((rArray) => {
+              let pArray = [];
+              for (let resp of rArray) {
+                pArray.push(resp.json());
+              }
+              Promise.all(pArray).then((rArray) => {
+                for (row of enumerate(rArray)) {
+                  // returns idx,data
+                  video_element.insertIntoFramedData(row[1], type_objs[row[0]]);
+                }
+              });
+            });
+          });
+      }
 
-                 /////////////////////////////////
-                 // Example offsite config
-                 /////////////////////////////////
-                 //
-                 //let offsite_config = {
-                 //    "method": "Token", // Can be Bearer or Token
-                 //    "value": "<TOKEN_VALUE>",
-                 //    "host": "<HOST_NAME>"
-                 //};
-                 // Default we use null:
-                 let offsite_config = null;
+      function handle_responses(host, media_id, offsite_config, video, type) {
+        console.info(video);
+        // Fetch project from media id for later
+        let project = video.project;
 
-                 // Acquire pointer to
-                 video_element = document.getElementById("video_element");
-                 console.info(video_element);
+        // Last frame is nice to have for frameChange event handler
+        let last_frame = video.num_frames - 1;
 
+        let seek_bar = document.getElementById("seek");
+        seek.setAttribute("max", video.num_frames - 1);
+        let debouncer = null;
+        let seek_func = (evt) => {
+          //This fires as the user drags
+          // Debounce so we only update at 33 ms or during a
+          // drag else things get janky. (30 fps)
 
-                 // load video, which loads metadata (e.g. boxes) after
-                 // the first chunk of video arrives
-                 load_video(host, media_id, offsite_config);
+          // There are other ways to do this to be a bit more
+          // responsive
+          let delay = debouncer != null ? 33 : 0;
+          clearTimeout(debouncer);
+          let frame_num = seek_bar.value;
+          debouncer = setTimeout(() => {
+            const hi_res = evt.type == "change";
+            video_element.gotoFrame(frame_num, hi_res);
+            debouncer = null;
+          }, delay);
+        };
+        seek.addEventListener("input", seek_func);
+        seek.addEventListener("change", seek_func);
 
-             };
-        </script>
-    </head>
-    <body>
-        <!-- Define max width, which sets height based on aspect of video -->
-        <div style="max-width: 720px">
-            <video-canvas id="video_element"> </video-canvas>
-            <button id="play" onclick="video_element.play();" disabled>Play</button>
-            <button id="pause" onclick="video_element.pause();" disabled>Pause</button>
-            <input id="seek" type="range" min="0" max="1", step="1" value="0"></input>
-        </div>
-    </body>
+        let loaded_meta = false;
+
+        // Monitor video buffering progress
+        video_element.addEventListener("bufferLoaded", (evt) => {
+          let complete = evt.detail.percent_complete;
+          console.info(`percent_complete = ${complete}`);
+
+          // Load metadata after video starts
+          if (loaded_meta == false) {
+            load_metadata(host, project, media_id, headers);
+            loaded_meta = true;
+          }
+          // Something is weird where buffer hitting play in this
+          // particular callback is no bueno. For demo purposes
+          // let's make it
+          // >= is just being pedantic in-case math blows up and
+          // you get greater than 1 and stuck forever.
+          if (complete >= 1.0) {
+            // Example auto play:
+            //setTimeout(() => {
+            // Example:
+            // Auto-play when buffer is complete.
+            //    video_element.play();
+
+            // Note: This runs like an old school cassete w/o a stop
+            // One should stop it externally when it gets to the end
+            //},500);
+            //
+            // going to frame 0 is nice and safe
+            video_element.gotoFrame(0, true);
+            console.info("video ready");
+            document.getElementById("play").disabled = null;
+            document.getElementById("pause").disabled = null;
+          }
+        });
+
+        // Fired for each frame of the video, not wise to do
+        // CPU-intensive things here. Drawing is done in another
+        // 'thread' but only so much protection in a browser.
+        video_element.addEventListener("frameChange", (evt) => {
+          // >= is just in case math blows up again
+          seek.value = evt.detail.frame;
+          if (evt.detail.frame >= last_frame) {
+            console.info(`Reached the end ${evt.detail.frame}`);
+            video_element.pause();
+          }
+        });
+
+        video_element.loadFromVideoObject(
+          video,
+          type,
+          720, //720 is quality
+          true, //Let video resize
+          offsite_config,
+          null,
+          { height: 0 }
+        );
+
+        // Programmatic controls presumable to hook into buttons:
+        // video_element.play()
+        // video_element.playBackwards();
+        // video_element.pause()
+        // video_element.advance(); //1-frame
+        // video_element.back(); //1-frame back
+        // video_element.gotoFrame(N, [bool: hq])
+        // Only "non-_" functions should be called from higher level code.
+        // See video.js for event listing + more functions.
+      }
+      async function load_video(host, media_id, offsite_config) {
+        if (offsite_config == undefined || offsite_config == null) {
+          offsite_config = {};
+        }
+        headers = {};
+        if (offsite_config.method) {
+          headers[
+            "Authorization"
+          ] = `${offsite_config.method} ${offsite_config.value}`;
+        }
+        // TODO: Add token-based auth to header
+        let video = await (
+          await fetch(`${host}/rest/Media/${media_id}?presigned=36000`, {
+            headers: headers,
+          })
+        ).json();
+        let type = await (
+          await fetch(`${host}/rest/MediaType/${video.meta}`, {
+            headers: headers,
+          })
+        ).json();
+        this.handle_responses(host, media_id, offsite_config, video, type);
+      }
+
+      // Entry point for example javascript application
+      window.onload = () => {
+        // Configurables
+        let host = document.location.origin;
+
+        let params = new URLSearchParams(document.location.search);
+        let media_id = null;
+
+        // If not in query prompt user
+        if (params.has("media_id") == true) {
+          media_id = Number(params.get("media_id"));
+        } else {
+          media_id = Number(window.prompt("Media ID?", 1));
+          const new_url = document.location.href + "?media_id=" + media_id;
+          history.replaceState(null, null, new_url);
+        }
+
+        /////////////////////////////////
+        // Example offsite config
+        /////////////////////////////////
+        //
+        //let offsite_config = {
+        //    "method": "Token", // Can be Bearer or Token
+        //    "value": "<TOKEN_VALUE>",
+        //    "host": "<HOST_NAME>"
+        //};
+        // Default we use null:
+        let offsite_config = null;
+
+        // Acquire pointer to
+        video_element = document.getElementById("video_element");
+        console.info(video_element);
+
+        // load video, which loads metadata (e.g. boxes) after
+        // the first chunk of video arrives
+        load_video(host, media_id, offsite_config);
+      };
+    </script>
+  </head>
+  <body>
+    <!-- Define max width, which sets height based on aspect of video -->
+    <div style="max-width: 720px">
+      <video-canvas id="video_element"> </video-canvas>
+      <button id="play" onclick="video_element.play();" disabled>Play</button>
+      <button id="pause" onclick="video_element.pause();" disabled>
+        Pause
+      </button>
+      <input id="seek" type="range" min="0" max="1" , step="1" value="0" />
+    </div>
+  </body>
 </html>

@@ -1,47 +1,110 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Organization Dashboard</title>
 <script src="/static/organizations.js"></script>
-{% endblock head %}
-
-{% block body %}
+{% endblock head %} {% block body %}
 <template id="organizations-dashboard">
-   <main class="layout-max py-4">
-      <div class="main__header d-flex flex-items-center flex-justify-between py-6">
-         <h1 class="h1">Organizations</h1>
-         <a class="btn" id="new-organization-button" style="display:none">New Organization</a>
+  <main class="layout-max py-4">
+    <div
+      class="main__header d-flex flex-items-center flex-justify-between py-6"
+    >
+      <h1 class="h1">Organizations</h1>
+      <a class="btn" id="new-organization-button" style="display: none"
+        >New Organization</a
+      >
+    </div>
+    <div class="d-flex flex-column" id="organizations">
+      <div id="org-placeholders" class="placeholder-glow">
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
       </div>
-      <div class="d-flex flex-column" id="organizations">
-         <div id="org-placeholders" class="placeholder-glow">
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-            <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-         </div>
-         <new-organization style="display: none;" id="new-organization"></new-organization>
-         <new-organization-dialog id="new-organization-dialog"></new-organization-dialog>
-         <delete-organization id="delete-organization"></delete-organization>
-      </div>
-      <modal-notify id="modal-notify"></modal-notify>
-   </main>
+      <new-organization
+        style="display: none"
+        id="new-organization"
+      ></new-organization>
+      <new-organization-dialog
+        id="new-organization-dialog"
+      ></new-organization-dialog>
+      <delete-organization id="delete-organization"></delete-organization>
+    </div>
+    <modal-notify id="modal-notify"></modal-notify>
+  </main>
 </template>
 
 <template id="organization-summary">
-   <div class="projects d-flex flex-items-center rounded-2">
-      <a class="projects__link d-flex flex-items-center text-white" id="organization-link">
-         <img id="organization-thumbnail" crossorigin="anonymous" class="projects__image px-2 rounded-1" style="object-fit:cover">
-         <div class="projects__text px-3">
-            <h2 class="text-semibold py-2" id="organization-name"></h2>
-         </div>
-      </a>
-   </div>
+  <div class="projects d-flex flex-items-center rounded-2">
+    <a
+      class="projects__link d-flex flex-items-center text-white"
+      id="organization-link"
+    >
+      <img
+        id="organization-thumbnail"
+        crossorigin="anonymous"
+        class="projects__image px-2 rounded-1"
+        style="object-fit: cover"
+      />
+      <div class="projects__text px-3">
+        <h2 class="text-semibold py-2" id="organization-name"></h2>
+      </div>
+    </a>
+  </div>
 </template>
 
 <organizations-dashboard></organizations-dashboard>

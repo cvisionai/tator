@@ -617,7 +617,7 @@ const store = create(
 
         if (responseInfo?.data?.id) {
           const newID = responseInfo?.data?.id ? responseInfo.data.id : "New";
-          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;  
+          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
         }
 
         set({ status: { ...get().status, name: "idle", msg: "" } });

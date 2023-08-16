@@ -384,7 +384,6 @@ const store = create(
       }
     },
     addType: async ({ type, data }) => {
-
       try {
         const fn = postMap.get(type);
         const projectId = get().projectId;
@@ -399,10 +398,14 @@ const store = create(
     },
     addTypeSingle: async ({ type, data }) => {
       set({
-        status: { ...get().status, name: "pending", msg: `Adding single ${type}...` },
+        status: {
+          ...get().status,
+          name: "pending",
+          msg: `Adding single ${type}...`,
+        },
       });
 
-      const responseInfo = await get().addType({ type, data })
+      const responseInfo = await get().addType({ type, data });
 
       // Select the new type (non-Leaf) forms
       if (type === "Leaf") {
@@ -423,7 +426,11 @@ const store = create(
     },
     addTypeArray: async ({ type, data }) => {
       set({
-        status: { ...get().status, name: "pending", msg: `Adding array ${type}...` },
+        status: {
+          ...get().status,
+          name: "pending",
+          msg: `Adding array ${type}...`,
+        },
       });
 
       const responses = [];
@@ -434,7 +441,6 @@ const store = create(
         responses.push(responseInfo);
         lastInfo = responseInfo;
       }
-      
 
       // Refresh the page data before setting the selection
       await get().fetchType(type);

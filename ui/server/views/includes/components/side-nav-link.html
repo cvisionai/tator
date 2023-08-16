@@ -1,17 +1,29 @@
 <template id="settings-nav-link">
-   <div id="sub-nav" class="SubNav">
-     <div id="sub-nav--heading-group" class="SideNav-heading f1 clearfix">
-       <button id="sub-nav--heading-button" class="col-10 float-left" selected="false">
-         <span>
-           <slot id="sub-nav--icon" name="icon"></slot>
-           <slot id="sub-nav--label" class="item-label" name="label"></slot>
-         </span>
-         </span>
-       </button>
-       <a id="sub-nav--plus-link" href="" class="text-white float-right Nav-action col-2 f1 text-bold clickable ">+</a>
-     </div>
-     <nav id="sub-nav--section" class="SideNav SubItems" hidden="">
-       <placeholder-glow id="placeholder-glow" rows="6" className="SideNav-subItem"></placeholder-glow>
-     </nav>
-   </div>
- </template>
+  <div id="sub-nav" class="SubNav">
+    <div id="sub-nav--heading-group" class="SideNav-heading f1 clearfix">
+      <button
+        id="sub-nav--heading-button"
+        class="col-10 float-left"
+        selected="false"
+      >
+        <span>
+          <slot id="sub-nav--icon" name="icon"></slot>
+          <slot id="sub-nav--label" class="item-label" name="label"></slot>
+        </span>
+      </button>
+      <a
+        id="sub-nav--plus-link"
+        href=""
+        class="text-white float-right Nav-action col-2 f1 text-bold clickable"
+        >+</a
+      >
+    </div>
+    <nav id="sub-nav--section" class="SideNav SubItems" hidden="">
+      <placeholder-glow
+        id="placeholder-glow"
+        rows="6"
+        className="SideNav-subItem"
+      ></placeholder-glow>
+    </nav>
+  </div>
+</template>

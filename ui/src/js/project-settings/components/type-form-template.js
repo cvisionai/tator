@@ -134,7 +134,7 @@ export class TypeFormTemplate extends TatorElement {
     const info = {
       type: this.typeName,
       id: this.typeId,
-      data: formData
+      data: formData,
     };
 
     if (this.typeId == "New" && isArray) {
@@ -185,99 +185,104 @@ export class TypeFormTemplate extends TatorElement {
 
       if (sCount > 0 && eCount === 0) {
         return this.modal._success(
-          `Successfully added ${sCount} ${this.typeName}${sCount == 1 ? "" : "s"
-        }.`
+          `Successfully added ${sCount} ${this.typeName}${
+            sCount == 1 ? "" : "s"
+          }.`
         );
       } else if (sCount > 0 && eCount > 0) {
         return this.modal._complete(
-          `Successfully added ${sCount} ${this.typeName
-          }s.<br/><br/>Error adding ${eCount} ${this.typeName}${eCount == 1 ? "" : "s"
-        }.<br/><br/>Error message${eCount == 1 ? "" : "s"
+          `Successfully added ${sCount} ${
+            this.typeName
+          }s.<br/><br/>Error adding ${eCount} ${this.typeName}${
+            eCount == 1 ? "" : "s"
+          }.<br/><br/>Error message${
+            eCount == 1 ? "" : "s"
           }:<br/><br/>${errors}`
         );
       } else {
         return this.modal._error(
-          `Error adding ${eCount} ${this.typeName}${eCount == 1 ? "" : "s"
-        }.<br/><br/>Error message${eCount == 1 ? "" : "s"
+          `Error adding ${eCount} ${this.typeName}${
+            eCount == 1 ? "" : "s"
+          }.<br/><br/>Error message${
+            eCount == 1 ? "" : "s"
           }:<br/><br/>${errors}`
         );
       }
     }
   }
-    // Use the most recently set data to update the values of form
-    _resetForm(evt) {
-      evt.preventDefault();
-      this.data = null;
-    }
+  // Use the most recently set data to update the values of form
+  _resetForm(evt) {
+    evt.preventDefault();
+    this.data = null;
+  }
 
   async _deleteType() {
-      const button = document.createElement("button");
-      button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
+    const button = document.createElement("button");
+    button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
 
-      let confirmText = document.createTextNode("Confirm");
-      button.appendChild(confirmText);
+    let confirmText = document.createTextNode("Confirm");
+    button.appendChild(confirmText);
 
-      button.addEventListener("click", this.asyncDelete.bind(this));
-      await this.setUpWarningDeleteMsg();
+    button.addEventListener("click", this.asyncDelete.bind(this));
+    await this.setUpWarningDeleteMsg();
 
-      this.modal._confirm({
-        titleText: `Delete Confirmation`,
-        mainText: this._warningDeleteMessage,
-        buttonSave: button,
-      });
-    }
-  
+    this.modal._confirm({
+      titleText: `Delete Confirmation`,
+      mainText: this._warningDeleteMessage,
+      buttonSave: button,
+    });
+  }
 
   async asyncDelete() {
-      this.modal._modalCloseAndClear();
-      try {
-        const respData = await store
-          .getState()
-          .removeType({ type: this.typeName, id: this._data.id });
-        this.handleResponse(respData);
+    this.modal._modalCloseAndClear();
+    try {
+      const respData = await store
+        .getState()
+        .removeType({ type: this.typeName, id: this._data.id });
+      this.handleResponse(respData);
 
-        if (this.typeName == "Project") {
-          setTimeout(function () {
-            window.location.href = "/projects/";
-          }, 3000);
-        } else {
-          window.location.replace(
-            `${window.location.origin}${window.location.pathname}#${this.typeName}-New`
-          );
-        }
-      } catch (err) {
-        this.modal._error(err);
+      if (this.typeName == "Project") {
+        setTimeout(function () {
+          window.location.href = "/projects/";
+        }, 3000);
+      } else {
+        window.location.replace(
+          `${window.location.origin}${window.location.pathname}#${this.typeName}-New`
+        );
       }
-    }
-
-    _getEmptyData() {
-      this.typeId = "New";
-      this.objectName = "";
-      return {
-        id: `New`,
-        name: "+ Add New",
-        project: this.projectId,
-        description: "",
-        visible: false,
-        grouping_default: false,
-        default_volume: 0,
-        media: [],
-        dtype: "",
-        color_map: null,
-        interpolation: "none",
-        association: "Media",
-        line_width: 2,
-        delete_child_localizations: false,
-        cluster: null,
-        manifest: null,
-        files_per_job: null,
-        parameters: [],
-        categories: "",
-        form: "empty",
-      };
+    } catch (err) {
+      this.modal._error(err);
     }
   }
 
-  if(!customElements.get("type-form-template")) {
+  _getEmptyData() {
+    this.typeId = "New";
+    this.objectName = "";
+    return {
+      id: `New`,
+      name: "+ Add New",
+      project: this.projectId,
+      description: "",
+      visible: false,
+      grouping_default: false,
+      default_volume: 0,
+      media: [],
+      dtype: "",
+      color_map: null,
+      interpolation: "none",
+      association: "Media",
+      line_width: 2,
+      delete_child_localizations: false,
+      cluster: null,
+      manifest: null,
+      files_per_job: null,
+      parameters: [],
+      categories: "",
+      form: "empty",
+    };
+  }
+}
+
+if (!customElements.get("type-form-template")) {
   customElements.define("type-form-template", TypeFormTemplate);
 }

@@ -1,69 +1,117 @@
 <template id="type-form-container">
-   <div class="item-box">
-     <div class="d-flex flex-row">
-       <div class="pl-md-6 col-12 px-6">
-         <h1 class="h3 pb-3 edit-project__h1" id="type-form--edit-h1">
-           <span id="type-form-objectName">
-             <!--OBJECT NAME GOES HERE-->
-           </span>
-           <span class="px-2"> | </span>
-           <span class="text-gray text-normal type-form-typeName">
-             <!--TYPE NAME GOES HERE-->
-           </span>
-           <span class="text-gray text-normal"> (ID <span id="type-form-id">
-               <!--ID GOES HERE-->
-             </span>)</span>
-             <span id="type-form--add-edit-leaves" hidden>
-               <span class="px-2">|</span> &nbsp;
-               <a id="type-form--add-edit-leaves_link" class="text-normal text-purple">Add/Edit Leaves</a>
-             </span>
-             <span id="type-form--leaves-active" hidden>
-               <span class="px-2">|</span> &nbsp;
-               <span class="h3 pb-3 edit-project__h1 text-normal text-gray">Leaves</span>
-             </span>
-             
-         </h1>
-         <h1 id="type-form--new-h1" class="h3 pb-3 edit-project__h1" hidden>Add new <span class="type-form-typeName">
-             <!--TYPE NAME GOES HERE-->
-           </span></h1>
-         <div>
-           <div id="type-form-div" class="py-3 rounded-2   edit-project__config ">
-             <!-- form goes here -->
-           </div>
-         </div>
-         <div id="type-form--save-reset-section" class="d-flex flex-items-center flex-justify-center py-3">
-           <input id="type-form-save" type="submit" value="Save" class="btn btn-clear f1 text-semibold">
-           <a href="#" id="type-form-reset" class="px-5 f1 text-gray hover-text-white">Reset</a>
-         </div>
-         <div hidden id="type-form--custom-button-section-primary" class="mt-3 text-center">
-          <button id="type-form--custom-button-primary" class="btn-auto-width btn btn-clear btn-large col-12">
-
-          </button>
+  <div class="item-box">
+    <div class="d-flex flex-row">
+      <div class="pl-md-6 col-12 px-6">
+        <h1 class="h3 pb-3 edit-project__h1" id="type-form--edit-h1">
+          <span id="type-form-objectName">
+            <!--OBJECT NAME GOES HERE-->
+          </span>
+          <span class="px-2"> | </span>
+          <span class="text-gray text-normal type-form-typeName">
+            <!--TYPE NAME GOES HERE-->
+          </span>
+          <span class="text-gray text-normal">
+            (ID
+            <span id="type-form-id"> <!--ID GOES HERE--> </span>)</span
+          >
+          <span id="type-form--add-edit-leaves" hidden>
+            <span class="px-2">|</span> &nbsp;
+            <a
+              id="type-form--add-edit-leaves_link"
+              class="text-normal text-purple"
+              >Add/Edit Leaves</a
+            >
+          </span>
+          <span id="type-form--leaves-active" hidden>
+            <span class="px-2">|</span> &nbsp;
+            <span class="h3 pb-3 edit-project__h1 text-normal text-gray"
+              >Leaves</span
+            >
+          </span>
+        </h1>
+        <h1 id="type-form--new-h1" class="h3 pb-3 edit-project__h1" hidden>
+          Add new
+          <span class="type-form-typeName">
+            <!--TYPE NAME GOES HERE-->
+          </span>
+        </h1>
+        <div>
+          <div id="type-form-div" class="py-3 rounded-2 edit-project__config">
+            <!-- form goes here -->
+          </div>
+        </div>
+        <div
+          id="type-form--save-reset-section"
+          class="d-flex flex-items-center flex-justify-center py-3"
+        >
+          <input
+            id="type-form-save"
+            type="submit"
+            value="Save"
+            class="btn btn-clear f1 text-semibold"
+          />
+          <a
+            href="#"
+            id="type-form-reset"
+            class="px-5 f1 text-gray hover-text-white"
+            >Reset</a
+          >
+        </div>
+        <div
+          hidden
+          id="type-form--custom-button-section-primary"
+          class="mt-3 text-center"
+        >
+          <button
+            id="type-form--custom-button-primary"
+            class="btn-auto-width btn btn-clear btn-large col-12"
+          ></button>
         </div>
 
-         <div hidden id="type-form--custom-button-section" class="mt-3 text-center">
-          <button id="type-form--custom-button" class="btn-auto-width btn btn-clear btn-large btn-charcoal col-12">
-
-          </button>
+        <div
+          hidden
+          id="type-form--custom-button-section"
+          class="mt-3 text-center"
+        >
+          <button
+            id="type-form--custom-button"
+            class="btn-auto-width btn btn-clear btn-large btn-charcoal col-12"
+          ></button>
         </div>
 
-         <div id="type-form-delete-div"  class="text-red py-3 rounded-2  edit-project__config" style="background-color: transparent;">
-           <div class="clearfix py-6">
-             <div class="py-md-5 float-left col-md-5 col-sm-5 text-right">
-               <button id="type-form-delete" class="btn btn-small btn-charcoal float-right btn-outline text-gray"
-                 style="margin-right: 10px;">Delete</button>
-             </div>
-             <div class="py-md-6 f1 text-gray float-left col-md-7 col-sm-7">
-               Delete this <span class="type-form-typeName">
-                 <!--TYPE NAME GOES HERE-->
-               </span> and all its data?
-             </div>
-           </div>
-         </div>
-       </div>
-       <div id="type-form-attr-column" class="col-4" hidden="">
-         <!-- <attributes-main id="type-form-attr-main"></attributes-main> -->
-       </div>
-     </div>
-   </div>
- </template>
+        <div
+          id="type-form-delete-div"
+          class="text-red py-3 rounded-2 edit-project__config"
+          style="background-color: transparent"
+        >
+          <div class="clearfix py-6">
+            <div class="py-md-5 float-left col-md-5 col-sm-5 text-right">
+              <button
+                id="type-form-delete"
+                class="
+                  btn btn-small btn-charcoal
+                  float-right
+                  btn-outline
+                  text-gray
+                "
+                style="margin-right: 10px"
+              >
+                Delete
+              </button>
+            </div>
+            <div class="py-md-6 f1 text-gray float-left col-md-7 col-sm-7">
+              Delete this
+              <span class="type-form-typeName">
+                <!--TYPE NAME GOES HERE-->
+              </span>
+              and all its data?
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="type-form-attr-column" class="col-4" hidden="">
+        <!-- <attributes-main id="type-form-attr-main"></attributes-main> -->
+      </div>
+    </div>
+  </div>
+</template>

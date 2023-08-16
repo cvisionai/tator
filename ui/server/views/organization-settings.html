@@ -1,126 +1,228 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Organization Settings</title>
 <script src="/static/project-settings.js"></script>
 <script src="/static/organization-settings.js"></script>
-{% endblock head %}
-
-{% block body %}
-
-{% include "includes/organization-settings/forms.html" %}
+{% endblock head %} {% block body %} {% include
+"includes/organization-settings/forms.html" %}
 
 <template id="organization-settings--header">
-   <div id="header" class="annotation__header d-flex flex-items-center flex-justify-between px-2 f3">
-      <div class="d-flex flex-items-center">
-         <org-settings-breadcrumbs id="organization-settings--breadcrumbs"></settings-breadcrumbs>
-      </div>
-      <div class="d-flex">
-         <span style="width: 32px;">
-            <success-light></success-light>
-         </span>
-      </div>
-   </div>
+  <div
+    id="header"
+    class="
+      annotation__header
+      d-flex
+      flex-items-center flex-justify-between
+      px-2
+      f3
+    "
+  >
+    <div class="d-flex flex-items-center">
+      <org-settings-breadcrumbs
+        id="organization-settings--breadcrumbs"
+      ></org-settings-breadcrumbs>
+    </div>
+    <div class="d-flex">
+      <span style="width: 32px">
+        <success-light></success-light>
+      </span>
+    </div>
+  </div>
 </template>
-
 
 {% include "includes/components/form-container.html" %}
 <template id="organization-settings">
-   <main id="organization-settings--main" class="position-relative">
-      <div id="organization-nav--div" class="py-6 clearfix position-relative px-md-6">
-         <!-- Side nav -->
-         <settings-nav id="organization-nav--nav"></settings-nav>
+  <main id="organization-settings--main" class="position-relative">
+    <div
+      id="organization-nav--div"
+      class="py-6 clearfix position-relative px-md-6"
+    >
+      <!-- Side nav -->
+      <settings-nav id="organization-nav--nav"></settings-nav>
 
-         <!-- Main page container -->
-         <div id="organization-nav--item-container" class="NavItem float-left col-md-9 col-xl-10 col-xs-12">
-            <org-type-form-container form="organization-main-edit" hidden></org-type-form-container>
-            <org-type-affiliate-container form="affiliation-edit" hidden></org-type-affiliate-container>
-            <org-type-invitation-container form="invitation-edit" hidden></org-type-invitation-container>
-            <org-type-form-container form="bucket-edit" hidden></org-type-form-container>
-            <org-type-form-container form="job-cluster-edit" hidden></org-type-form-container>
-            <org-type-project-container form="project-display-list" hidden></org-type-project-container>
-         </div>
+      <!-- Main page container -->
+      <div
+        id="organization-nav--item-container"
+        class="NavItem float-left col-md-9 col-xl-10 col-xs-12"
+      >
+        <org-type-form-container
+          form="organization-main-edit"
+          hidden
+        ></org-type-form-container>
+        <org-type-affiliate-container
+          form="affiliation-edit"
+          hidden
+        ></org-type-affiliate-container>
+        <org-type-invitation-container
+          form="invitation-edit"
+          hidden
+        ></org-type-invitation-container>
+        <org-type-form-container
+          form="bucket-edit"
+          hidden
+        ></org-type-form-container>
+        <org-type-form-container
+          form="job-cluster-edit"
+          hidden
+        ></org-type-form-container>
+        <org-type-project-container
+          form="project-display-list"
+          hidden
+        ></org-type-project-container>
       </div>
-   </main>
-   <modal-dialog id="organization-settings--modal"></modal-dialog>
+    </div>
+  </main>
+  <modal-dialog id="organization-settings--modal"></modal-dialog>
 </template>
-
 
 {% include "includes/components/side-nav-link.html" %}
 <template id="settings-nav-template">
-   <div id="settings-nav--nav" class="SideNav rounded-2 float-left col-xl-2 col-md-3 col-xs-12">
-      <!-- Organization sidebar item -->
-      <org-settings-nav-link type="Organization" add="false">
-         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
-            viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-            <rect x="9" y="9" width="6" height="6"></rect>
-            <line x1="9" y1="1" x2="9" y2="4"></line>
-            <line x1="15" y1="1" x2="15" y2="4"></line>
-            <line x1="9" y1="20" x2="9" y2="23"></line>
-            <line x1="15" y1="20" x2="15" y2="23"></line>
-            <line x1="20" y1="9" x2="23" y2="9"></line>
-            <line x1="20" y1="14" x2="23" y2="14"></line>
-            <line x1="1" y1="9" x2="4" y2="9"></line>
-            <line x1="1" y1="14" x2="4" y2="14"></line>
-         </svg>
-         <span slot="label">Organization</span>
-      </org-settings-nav-link>
+  <div
+    id="settings-nav--nav"
+    class="SideNav rounded-2 float-left col-xl-2 col-md-3 col-xs-12"
+  >
+    <!-- Organization sidebar item -->
+    <org-settings-nav-link type="Organization" add="false">
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="1em"
+        height="1em"
+        viewBox="0 0 24 24"
+        style="fill: none"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+        <rect x="9" y="9" width="6" height="6"></rect>
+        <line x1="9" y1="1" x2="9" y2="4"></line>
+        <line x1="15" y1="1" x2="15" y2="4"></line>
+        <line x1="9" y1="20" x2="9" y2="23"></line>
+        <line x1="15" y1="20" x2="15" y2="23"></line>
+        <line x1="20" y1="9" x2="23" y2="9"></line>
+        <line x1="20" y1="14" x2="23" y2="14"></line>
+        <line x1="1" y1="9" x2="4" y2="9"></line>
+        <line x1="1" y1="14" x2="4" y2="14"></line>
+      </svg>
+      <span slot="label">Organization</span>
+    </org-settings-nav-link>
 
-      <!-- Affiliation Sidebar item -->
+    <!-- Affiliation Sidebar item -->
     <!-- Projects sidebar item -->
     <org-settings-nav-link type="Project" add="false">
-      <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"
-        width="16" height="16">
-        <path fill-rule="evenodd"
-          d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z">
-        </path>
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 16 16"
+        width="16"
+        height="16"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z"
+        ></path>
       </svg>
       <span slot="label">Projects</span>
     </org-settings-nav-link>
 
-      <!-- Affiliation Sidebar item -->
-      <org-settings-nav-link type="Affiliation">
-         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-         </svg>
-         <span slot="label">Affiliations</span>
-      </org-settings-nav-link>
+    <!-- Affiliation Sidebar item -->
+    <org-settings-nav-link type="Affiliation">
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="1em"
+        height="1em"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      <span slot="label">Affiliations</span>
+    </org-settings-nav-link>
 
-      <!-- Invitation Sidebar item -->
-      <org-settings-nav-link type="Invitation">
-         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
-            viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
-         </svg>
-         <span slot="label">Invitations</span>
-      </org-settings-nav-link>
+    <!-- Invitation Sidebar item -->
+    <org-settings-nav-link type="Invitation">
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="1em"
+        height="1em"
+        viewBox="0 0 24 24"
+        style="fill: none"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+        ></path>
+        <polyline points="22,6 12,13 2,6"></polyline>
+      </svg>
+      <span slot="label">Invitations</span>
+    </org-settings-nav-link>
 
-      <!-- Bucket Sidebar item -->
-      <org-settings-nav-link type="Bucket">
-         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
-            viewBox="0 0 20 20">
-            <path
-               d="M11 1c-4.908 0-7.998 1.592-7.79 2.95 0.060 0.389 0.225 1.945 0.434 3.273-2.405 0.934-3.202 2.449-3.095 3.684 0.127 1.461 1.441 3.025 4.328 3.295 1.648 0.154 3.631-0.75 4.916-2.295-0.122-0.207-0.193-0.45-0.193-0.707 0-0.774 0.627-1.4 1.4-1.4s1.4 0.627 1.4 1.4c0 0.762-0.61 1.381-1.369 1.398-1.529 1.973-3.858 3.164-6.064 3.025 0.051 0.324 0.070 0.947 0.096 1.113 0.090 0.579 2.347 2.26 5.937 2.264 3.59-0.004 5.847-1.685 5.938-2.263 0.088-0.577 1.641-11.409 1.852-12.787 0.208-1.358-2.883-2.95-7.79-2.95zM1.943 10.785c-0.055-0.643 0.455-1.498 1.924-2.139 0.211 1.34 0.441 2.797 0.643 4.074-1.604-0.313-2.498-1.149-2.567-1.935zM11 6.024c-3.59-0.002-6.137-1.334-6.137-1.832-0.002-0.494 2.547-1.79 6.137-1.788 3.59-0.002 6.139 1.294 6.137 1.788 0 0.498-2.547 1.83-6.137 1.832z">
-            </path>
-         </svg>
-         <span slot="label">Buckets</span>
-      </org-settings-nav-link>
+    <!-- Bucket Sidebar item -->
+    <org-settings-nav-link type="Bucket">
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="1em"
+        height="1em"
+        viewBox="0 0 20 20"
+      >
+        <path
+          d="M11 1c-4.908 0-7.998 1.592-7.79 2.95 0.060 0.389 0.225 1.945 0.434 3.273-2.405 0.934-3.202 2.449-3.095 3.684 0.127 1.461 1.441 3.025 4.328 3.295 1.648 0.154 3.631-0.75 4.916-2.295-0.122-0.207-0.193-0.45-0.193-0.707 0-0.774 0.627-1.4 1.4-1.4s1.4 0.627 1.4 1.4c0 0.762-0.61 1.381-1.369 1.398-1.529 1.973-3.858 3.164-6.064 3.025 0.051 0.324 0.070 0.947 0.096 1.113 0.090 0.579 2.347 2.26 5.937 2.264 3.59-0.004 5.847-1.685 5.938-2.263 0.088-0.577 1.641-11.409 1.852-12.787 0.208-1.358-2.883-2.95-7.79-2.95zM1.943 10.785c-0.055-0.643 0.455-1.498 1.924-2.139 0.211 1.34 0.441 2.797 0.643 4.074-1.604-0.313-2.498-1.149-2.567-1.935zM11 6.024c-3.59-0.002-6.137-1.334-6.137-1.832-0.002-0.494 2.547-1.79 6.137-1.788 3.59-0.002 6.139 1.294 6.137 1.788 0 0.498-2.547 1.83-6.137 1.832z"
+        ></path>
+      </svg>
+      <span slot="label">Buckets</span>
+    </org-settings-nav-link>
 
-      <!-- JobCluster Sidebar item -->
-      <org-settings-nav-link type="JobCluster">
-         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-         <span slot="label">Job Clusters</span>
-      </org-settings-nav-link>
-   </div>
+    <!-- JobCluster Sidebar item -->
+    <org-settings-nav-link type="JobCluster">
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="1em"
+        height="1em"
+        viewBox="0 0 24 24"
+        style="fill: none"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+        <rect x="9" y="9" width="6" height="6"></rect>
+        <line x1="9" y1="1" x2="9" y2="4"></line>
+        <line x1="15" y1="1" x2="15" y2="4"></line>
+        <line x1="9" y1="20" x2="9" y2="23"></line>
+        <line x1="15" y1="20" x2="15" y2="23"></line>
+        <line x1="20" y1="9" x2="23" y2="9"></line>
+        <line x1="20" y1="14" x2="23" y2="14"></line>
+        <line x1="1" y1="9" x2="4" y2="9"></line>
+        <line x1="1" y1="14" x2="4" y2="14"></line>
+      </svg>
+      <span slot="label">Job Clusters</span>
+    </org-settings-nav-link>
+  </div>
 </template>
 
 <organization-settings email_enabled="{{email_enabled}}">

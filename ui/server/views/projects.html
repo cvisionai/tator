@@ -1,31 +1,81 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Project Dashboard</title>
 <script src="/static/projects.js"></script>
-{% endblock head %}
-
-{% block body %}
-<template id=projects-dashboard>
+{% endblock head %} {% block body %}
+<template id="projects-dashboard">
   <main class="layout-max py-4">
-    <div class="main__header d-flex flex-items-center flex-justify-between py-6">
+    <div
+      class="main__header d-flex flex-items-center flex-justify-between py-6"
+    >
       <h1 class="h1">Projects</h1>
-      <a class="btn" id="new-project-button" style="display:none">New Project</a>
+      <a class="btn" id="new-project-button" style="display: none"
+        >New Project</a
+      >
     </div>
     <div class="d-flex flex-column" id="projects">
       <div id="project-placeholders" class="placeholder-glow">
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-        <div class="placeholder rounded-2" style="width:100%; height:100px; margin: 10px 10px 0 0;">&nbsp;</div>
-     </div>
-      <new-project style="display:none" id="new-project"></new-project>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+        <div
+          class="placeholder rounded-2"
+          style="width: 100%; height: 100px; margin: 10px 10px 0 0"
+        >
+          &nbsp;
+        </div>
+      </div>
+      <new-project style="display: none" id="new-project"></new-project>
       <new-project-dialog id="new-project-dialog"></new-project-dialog>
       <delete-project id="delete-project"></delete-project>
     </div>
@@ -33,38 +83,95 @@
   </main>
 </template>
 
-<template id=project-summary>
+<template id="project-summary">
   <div class="projects d-flex flex-items-center rounded-2">
-    <a class="projects__link d-flex flex-items-center text-white" id="project-link">
-      <img class="projects__image px-2 rounded-1" crossorigin="anonymous" style="object-fit:cover" id="thumbnail">
+    <a
+      class="projects__link d-flex flex-items-center text-white"
+      id="project-link"
+    >
+      <img
+        class="projects__image px-2 rounded-1"
+        crossorigin="anonymous"
+        style="object-fit: cover"
+        id="thumbnail"
+      />
       <div class="projects__text px-3">
         <h2 class="text-semibold py-2" id="name"></h2>
         <div class="projects__description d-flex py-2 f2 text-gray">
-          <span id="num-files"></span><span class="px-2">·</span><span id="duration"></span>
+          <span id="num-files"></span><span class="px-2">·</span
+          ><span id="duration"></span>
           <div class="px-6 d-flex flex-items-center"></div>
         </div>
       </div>
     </a>
-    <div class="projects__collaborators avatars d-flex flex-grow" id="avatars"></div>
+    <div
+      class="projects__collaborators avatars d-flex flex-grow"
+      id="avatars"
+    ></div>
     <details class="px-4 position-relative">
       <div class="projects__nav d-flex flex-items-center">
         <a class="px-2 h3 text-gray hover-text-white" id="settings-button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings" style="fill:none">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="1em"
+            height="1em"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="feather feather-settings"
+            style="fill: none"
+          >
             <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+            ></path>
           </svg>
         </a>
-        <button class="px-2 btn-clear h3 text-gray hover-text-white" id="remove-button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2" style="fill:none">
+        <button
+          class="px-2 btn-clear h3 text-gray hover-text-white"
+          id="remove-button"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="1em"
+            height="1em"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="feather feather-trash-2"
+            style="fill: none"
+          >
             <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            ></path>
             <line x1="10" y1="11" x2="10" y2="17"></line>
             <line x1="14" y1="11" x2="14" y2="17"></line>
           </svg>
         </button>
       </div>
-      <summary class="projects__more btn-clear h2 text-gray hover-text-white" id="more-button">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-more-horizontal">
+      <summary
+        class="projects__more btn-clear h2 text-gray hover-text-white"
+        id="more-button"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="feather feather-more-horizontal"
+        >
           <circle cx="12" cy="12" r="1"></circle>
           <circle cx="19" cy="12" r="1"></circle>
           <circle cx="5" cy="12" r="1"></circle>
