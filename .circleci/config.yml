@@ -35,6 +35,8 @@ jobs:
     - run:
         name: Install pip packages
         command: |
+          ssh lightsail 'curl -sSL https://install.python-poetry.org | python3 -'
+          ssh lightsail 'echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc'
           ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder==0.5.5 progressbar2 pyyaml typing-extensions black toml';
     - run:
         name: Install node packages
