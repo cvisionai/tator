@@ -18,7 +18,7 @@ else
 YAML_ARGS=
 endif
 
-TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
+TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import toml; a = toml.load("scripts/packages/tator-py/pyproject.toml"); print(a["tool"]["poetry"]["version"])')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 FAKE_DEV_VERSION=248.434.5508
 TATOR_PY_DEV_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(FAKE_DEV_VERSION)-py3-none-any.whl
@@ -265,7 +265,9 @@ $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	python3 setup.py sdist bdist_wheel
+	poetry run python codegen.py
+	poetry install
+	poetry build
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -275,7 +277,9 @@ $(TATOR_PY_DEV_WHEEL_FILE): doc/_build/schema.yaml scripts/packages/tator-py/con
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	python3 setup.py sdist bdist_wheel
+	poetry run python codegen.py
+	poetry install
+	poetry build
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -292,10 +296,10 @@ python-bindings:
 
 .PHONY: install-dev-python
 install-dev-python:
-	cp scripts/packages/tator-py/config.json scripts/packages/tator-py/.config.json
-	sed -i "s/DEVELOPMENT_VERSION/${FAKE_DEV_VERSION}/g" scripts/packages/tator-py/config.json
+	cp scripts/packages/tator-py/pyproject.toml scripts/packages/tator-py/.pyproject.toml
+	sed -i 's/\(version = "\).*\("\)/\1${FAKE_DEV_VERSION}\2/g' scripts/packages/tator-py/pyproject.toml
 	$(MAKE) $(TATOR_PY_DEV_WHEEL_FILE)
-	mv scripts/packages/tator-py/.config.json scripts/packages/tator-py/config.json
+	mv scripts/packages/tator-py/.pyproject.toml scripts/packages/tator-py/pyproject.toml
 
 	pip3 install --force-reinstall $(TATOR_PY_DEV_WHEEL_FILE)
 
