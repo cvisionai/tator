@@ -75,7 +75,7 @@ jobs:
     - run:
         name: Set version in tator-py, tator-js, and REST interface
         command: |
-          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-py/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/248.434.5508/$TATOR_VERSION/g" tator/scripts/packages/tator-py/pyproject.toml';
           ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-js/config.json';
           ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/api/main/urls.py';
   publish-clients:
