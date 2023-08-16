@@ -273,7 +273,7 @@ $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	fi
 	cd ../../..
 
-$(TATOR_PY_DEV_WHEEL_FILE): doc/_build/schema.yaml scripts/packages/tator-py/config.json
+$(TATOR_PY_DEV_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
