@@ -97,7 +97,7 @@ export class AffiliationMembershipDialog extends ModalDialog {
 
   showHiddenNewFields() {
     const versionChosen = this._versions.getValue();
-
+    
     if (
       versionChosen === "__add_custom_version_name" ||
       versionChosen === "__add_user_first_last"
@@ -160,13 +160,15 @@ export class AffiliationMembershipDialog extends ModalDialog {
       skipList = store
         .getState()
         .Membership.usernameProjectIdMap.get(this._username);
+
     }
+
 
     const projectChoices = await getCompiledList({
       type: "Project",
       skip: Array.from(skipList),
     });
-
+    
     if (projectChoices.length === 1) {
       this._messageList.innerHTML = `
             <li>${

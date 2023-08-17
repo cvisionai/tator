@@ -51,6 +51,7 @@ export class MembershipEdit extends TypeFormTemplate {
       await store.getState().initType("Version");
     }
 
+    
     if (this._data.id == "New") {
       this._userInput.hidden = false;
     } else {

@@ -1,23 +1,18 @@
 <html>
-  <head>
-    <title>Tator | Notice</title>
-    <link rel="stylesheet" type="text/css" href="/static/components.css" />
-  </head>
-  <body>
-    <main class="layout-max py-4">
-      <div
-        class="
-          main__header
-          d-flex
-          flex-column flex-items-center flex-justify-center
-        "
-      >
-        <h2 class="h2 py-6">
-          {% for item in prelogin_message %} {{ item }}<br />
-          {% endfor %}
-        </h2>
-        <a href="{{ prelogin_redirect }}" class="btn">Accept</a>
-      </div>
-    </main>
-  </body>
+<head>
+<title>Tator | Notice</title>
+<link rel="stylesheet" type="text/css" href="/static/components.css" />
+</head>
+<body>
+<main class="layout-max py-4">
+  <div class="main__header d-flex flex-column flex-items-center flex-justify-center">
+    <h2 class="h2 py-6">
+    {% for item in prelogin_message %}
+    {{ item }}<br>
+    {% endfor %}
+    </h2>
+    <a href="{{ prelogin_redirect }}" class="btn">Accept</a>
+  </div>
+</main>
+</body>
 </html>

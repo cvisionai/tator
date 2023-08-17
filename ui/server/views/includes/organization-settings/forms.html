@@ -1,329 +1,153 @@
 <template id="organization-edit">
-  <form id="organization-edit--form">
-    <thumb-input
-      id="organization-edit--thumb"
-      name="Thumbnail"
-      for="thumb"
-    ></thumb-input>
-    <text-input
-      id="organization-edit--name"
-      name="Name"
-      type="string"
-    ></text-input>
-    <enum-input
-      id="organization-edit--default-permission"
-      name="Default Membership Permission"
-    ></enum-input>
-    <p class="f3 offset-lg-4 text-gray">
-      Note: Changes to default membership level are not retroactive.
-    </p>
-  </form>
+   <form id="organization-edit--form">
+      <thumb-input id="organization-edit--thumb" name="Thumbnail" for="thumb"></thumb-input>
+      <text-input id="organization-edit--name" name="Name" type="string"></text-input>
+      <enum-input id="organization-edit--default-permission" name="Default Membership Permission"></enum-input>
+      <p class="f3 offset-lg-4 text-gray">Note: Changes to default membership level are not retroactive.</p>
+   </form>
 </template>
+
 
 <template id="affiliation-edit">
-  <form id="affiliation-edit--form">
-    <user-input
-      hidden
-      id="affiliation-edit--search-users"
-      name="Search users"
-    ></user-input>
-    <enum-input
-      id="affiliation-edit--permission"
-      name="Org Permission"
-    ></enum-input>
-  </form>
+   <form id="affiliation-edit--form">
+      <user-input hidden id="affiliation-edit--search-users" name="Search users"></user-input>
+      <enum-input id="affiliation-edit--permission" name="Org Permission"></enum-input>
+   </form>
 </template>
+
 
 <template id="invitation-edit">
-  <form id="invitation-edit--form">
-    <email-list-input
-      id="invitation-edit--email"
-      hidden
-      name="Email addresses"
-    ></email-list-input>
-    <enum-input id="invitation-edit--permission" name="Permission"></enum-input>
-    <text-input
-      id="invitation-edit--status"
-      hidden
-      name="Status"
-      type="string"
-    ></text-input>
-    <link-input
-      id="invitation-edit--reg-link"
-      hidden
-      name="Registration Link"
-    ></link-input>
-    <link-input
-      id="invitation-edit--aff-link"
-      hidden
-      name="Affiliation Record"
-    ></link-input>
-  </form>
+   <form id="invitation-edit--form">
+      <email-list-input id="invitation-edit--email" hidden name="Email addresses"></email-list-input>
+      <enum-input id="invitation-edit--permission" name="Permission"></enum-input>
+      <text-input id="invitation-edit--status" hidden name="Status" type="string"></text-input>
+      <link-input id="invitation-edit--reg-link" hidden name="Registration Link"></link-input>
+      <link-input id="invitation-edit--aff-link" hidden name="Affiliation Record"></link-input>
+   </form>
 </template>
+
 
 <template id="bucket-edit">
-  <form id="bucket-edit--form">
-    <text-input id="bucket-edit--name" name="Name" type="string"></text-input>
-    <radio-set id="bucket-edit--store-type" name="Bucket Type"></radio-set>
-    <text-input
-      id="bucket-edit--external-host"
-      name="Proxy host (if required)"
-      type="string"
-    ></text-input>
-    <radio-set
-      id="bucket-edit--archive-storage-class-default"
-      name="Archive Storage Class"
-      type="string"
-    ></radio-set>
-    <radio-set
-      id="bucket-edit--archive-storage-class-aws"
-      hidden
-      name="Archive Storage Class"
-      type="string"
-    ></radio-set>
-    <radio-set
-      id="bucket-edit--archive-storage-class-gcs"
-      hidden
-      name="Archive Storage Class"
-      type="string"
-    ></radio-set>
-    <radio-set
-      id="bucket-edit--live-storage-class"
-      name="Live Storage Class"
-      type="string"
-    ></radio-set>
-    <text-area
-      id="bucket-edit--config"
-      name="Bucket access configuration JSON"
-      type="json"
-    ></text-area>
-  </form>
+   <form id="bucket-edit--form">
+      <text-input id="bucket-edit--name" name="Name" type="string"></text-input>
+      <radio-set id="bucket-edit--store-type" name="Bucket Type"></radio-set>
+      <text-input id="bucket-edit--external-host" name="Proxy host (if required)" type="string"></text-input>
+      <radio-set id="bucket-edit--archive-storage-class-default" name="Archive Storage Class" type="string"></radio-set>
+      <radio-set id="bucket-edit--archive-storage-class-aws" hidden name="Archive Storage Class" type="string"></radio-set>
+      <radio-set id="bucket-edit--archive-storage-class-gcs" hidden name="Archive Storage Class" type="string"></radio-set>
+      <radio-set id="bucket-edit--live-storage-class" name="Live Storage Class" type="string"></radio-set>
+      <text-area id="bucket-edit--config" name="Bucket access configuration JSON" type="json"></text-area>
+   </form>
 </template>
 
+
 <template id="job-cluster-edit">
-  <form id="job-cluster-edit--form">
-    <text-input
-      id="job-cluster-edit--name"
-      name="Name"
-      type="string"
-    ></text-input>
-    <text-input
-      id="job-cluster-edit--host"
-      name="Host"
-      type="string"
-    ></text-input>
-    <text-input id="job-cluster-edit--port" name="Port" type="int"></text-input>
-    <text-input
-      id="job-cluster-edit--token"
-      name="Token"
-      type="password"
-    ></text-input>
-    <text-area
-      id="job-cluster-edit--cert"
-      name="Cert"
-      type="string"
-    ></text-area>
-  </form>
+   <form id="job-cluster-edit--form">
+      <text-input id="job-cluster-edit--name" name="Name" type="string"></text-input>
+      <text-input id="job-cluster-edit--host" name="Host" type="string"></text-input>
+      <text-input id="job-cluster-edit--port" name="Port" type="int"></text-input>
+      <text-input id="job-cluster-edit--token" name="Token" type="password"></text-input>
+      <text-area id="job-cluster-edit--cert" name="Cert" type="string"></text-area>
+   </form>
 </template>
 
 <template id="project-display">
-  <form id="project-display--form">
-    <div class="d-flex flex-items-center flex-justify-between pb-3">
-      <div class="text-center">
-        <img
-          id="project-thumbnail"
-          class="projects__image px-2 rounded-1"
-          crossorigin="anonymous"
-          style="object-fit: cover"
-        />
+   <form id="project-display--form">
+      <div class="d-flex flex-items-center flex-justify-between pb-3">
+         <div class="text-center">
+            <img id="project-thumbnail" class="projects__image px-2 rounded-1" crossorigin="anonymous"
+         style="object-fit:cover">
+         </div>
+         <h2 id="project-display--name" class="col-8 h2">Project Name</h2>
       </div>
-      <h2 id="project-display--name" class="col-8 h2">Project Name</h2>
-    </div>
 
-    <!-- <text-input id="project-display--name" name="Name" type="string" hidden></text-input> -->
-    <text-input
-      id="project-display--summary"
-      name="Summary"
-      type="string"
-    ></text-input>
-    <text-link id="project-display--edit-link" name="Edit Link"> </text-link>
-    <text-input
-      id="project-display--num-files"
-      name="Num files"
-      type="string"
-    ></text-input>
-    <text-input
-      id="project-display--size"
-      name="Size"
-      type="string"
-    ></text-input>
-    <text-input
-      id="project-display--duration"
-      name="Duration"
-      type="string"
-    ></text-input>
-  </form>
-  <org-new-project-dialog id="new-project-dialog"></org-new-project-dialog>
+      <!-- <text-input id="project-display--name" name="Name" type="string" hidden></text-input> -->
+      <text-input id="project-display--summary" name="Summary" type="string"></text-input>
+      <text-link id="project-display--edit-link" name="Edit Link">
+         </text-input>
+         <text-input id="project-display--num-files" name="Num files" type="string"></text-input>
+         <text-input id="project-display--size" name="Size" type="string"></text-input>
+         <text-input id="project-display--duration" name="Duration" type="string"></text-input>
+         
+   </form>
+   <org-new-project-dialog id="new-project-dialog"></org-new-project-dialog>
 </template>
 
 <template id="org-project-memberships-template">
-  <div id="org-project-memberships">
-    <div>
-      <h2 class="h3 pb-3 edit-project__h1 text-normal text-gray">
-        Memberships
-      </h2>
-    </div>
-    <div class="py-3 rounded-2 edit-project__config">
+   <div id="org-project-memberships">
       <div>
-        <h3 class="f1 text-gray pb-3">
-          Affiliated Members (<span id="aff-member-cout">0</span>)
-        </h3>
-        <div id="org-project-memberships--affilate-list" class="pb-3"></div>
-
-        <h3 class="f1 text-gray pb-3">
-          Non-Affiliated Members (<span id="nonaff-member-cout">0</span>)
-        </h3>
-        <div id="org-project-memberships--nonaffilate-list" class="pb-3"></div>
+         <h2 class="h3 pb-3 edit-project__h1 text-normal text-gray">Memberships</h2>
       </div>
+      <div class="py-3 rounded-2 edit-project__config">
+         <div>
+            <h3 class="f1 text-gray pb-3">Affiliated Members (<span id="aff-member-cout">0</span>)</h3>
+            <div id="org-project-memberships--affilate-list" class="pb-3"></div>
 
-      <a
-        id="memberships-sidebar--add"
-        class="
-          py-2
-          my-2
-          clickable
-          add-new-in-form add-new
-          d-flex
-          flex-items-center
-          px-3
-          text-gray
-          rounded-2
-        "
-        target="_blank"
-      >
-        <span class="px-3">
-          Add/Edit Memberships
-          <!-- <span class="px-1">
+            <h3 class="f1 text-gray pb-3">Non-Affiliated Members (<span id="nonaff-member-cout">0</span>)</h3>
+            <div id="org-project-memberships--nonaffilate-list" class="pb-3"></div>
+         </div>
+
+         <a id="memberships-sidebar--add" class="py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2" target="_blank">
+            <span class="px-3">
+               Add/Edit Memberships
+               <!-- <span class="px-1">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-corner-up-right no-fill"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
                </span> -->
-        </span>
-      </a>
-    </div>
-  </div>
+            </span>
+         </a>
+      </div>
+   </div>
 </template>
 
 <template id="memberships-sidebar-item-template">
-  <div id="membership-item" class="attributes-edit flex-items-center rounded-2">
-    <div id="username" class="hidden col-10 py-3 px-3 d-flex flex-items-center">
-      <!--clickable-->
-      <span
-        id="membership-item--avatar"
-        class="avatar circle d-flex flex-items-center flex-justify-center f3"
-        ><!--circle with initials--></span
-      >
-      <span id="membership-item--name" class="px-3 css-truncate col-7"
-        ><!--name--></span
-      >
-    </div>
-    <div
-      id="projectname"
-      class="hidden col-10 py-3 px-3 d-flex flex-items-center"
-    >
-      <!--clickable-->
-      <img
-        id="membership-item--thumb"
-        class="avatar d-flex flex-items-center flex-justify-center f3"
-      />
-
-      <a
-        id="membership-item--project"
-        class="
-          px-3
-          css-truncate
-          col-7
-          text-white
-          hover-text-underline
-          clickable
-        "
-        target="_blank"
-      >
-        <!--project name-->
-      </a>
-    </div>
-    <div class="d-flex flex-row">
-      <a
-        class="col-10 clickable px-3 hover-text-white f3 ml-6 text-gray pb-3"
-        id="membership-item--edit"
-        target="_blank"
-      >
-        <span class="px-2" id="membership-item--permission"></span>
-        <span class="py-2 px-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="1em"
-            height="1em"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="no-fill"
-          >
-            <path
-              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-            ></path>
-            <path
-              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-            ></path>
-          </svg>
-        </span>
-      </a>
-    </div>
-  </div>
+   <div id="membership-item" class="attributes-edit flex-items-center rounded-2">
+      <div id="username"  class="hidden col-10 py-3 px-3  d-flex flex-items-center"> <!--clickable-->
+         <span id="membership-item--avatar" class="avatar circle d-flex flex-items-center flex-justify-center f3"><!--circle with initials--></span>
+         <span id="membership-item--name" class="px-3 css-truncate col-7" ><!--name--></span>
+      </div>
+      <div id="projectname"  class="hidden col-10 py-3 px-3  d-flex flex-items-center"> <!--clickable-->
+         <img id="membership-item--thumb" class="avatar d-flex flex-items-center flex-justify-center f3">
+            <!--circle with initials-->
+         </img>
+         <a id="membership-item--project" class="px-3 css-truncate col-7 text-white hover-text-underline clickable" target="_blank">
+            <!--project name-->
+         </a>
+      </div>
+      <div class="d-flex flex-row">
+         <a class="col-10 clickable px-3 hover-text-white f3 ml-6 text-gray pb-3" id="membership-item--edit" target="_blank">
+            <span class="px-2" id="membership-item--permission"></span>
+            <span class="py-2 px-2">
+               <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+               </svg>
+            </span>
+         </a>
+      </div>
+   </div>
 </template>
 
 <template id="memberships-sidebar-template">
-  <div id="memberships-sidebar">
-    <div>
-      <h2 class="h3 pb-3 edit-project__h1 text-normal text-gray">
-        Projects (<span id="memberships-sidebar--count"></span>)
-      </h2>
-      <div class="py-3 rounded-2 edit-project__config">
-        <div>
-          <!-- <h3 class="f1 text-gray pb-3"><span class=""> Edit Attributes (3)</span></h3> -->
-          <div id="memberships-sidebar--list" class="attributes-edit--list">
-            <!--List of membership-items here-->
-          </div>
-        </div>
-        <span
-          id="memberships-sidebar--add"
-          class="
-            py-2
-            my-2
-            clickable
-            add-new-in-form add-new
-            d-flex
-            flex-items-center
-            px-3
-            text-gray
-            rounded-2
-          "
-        >
-          <span
-            class="
-              add-new__icon
-              d-flex
-              flex-items-center flex-justify-center
-              text-white
-              circle
-            "
-          >
-            +
-          </span>
-          <span class="px-3"> New Membership</span>
-        </span>
+   <div id="memberships-sidebar">
+      <div>
+         <h2 class="h3 pb-3 edit-project__h1 text-normal text-gray">Projects (<span id="memberships-sidebar--count"></span>)</h2>
+         <div class="py-3 rounded-2 edit-project__config">
+            <div>
+               <!-- <h3 class="f1 text-gray pb-3"><span class=""> Edit Attributes (3)</span></h3> -->
+               <div id="memberships-sidebar--list" class="attributes-edit--list">
+                  <!--List of membership-items here-->
+               </div>
+            </div>
+            <span id="memberships-sidebar--add" class="py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2">
+               <span class="add-new__icon d-flex flex-items-center flex-justify-center text-white circle">
+                  +
+               </span>
+               <span class="px-3"> New Membership</span>
+            </span>
+         </div>
+
       </div>
-    </div>
-  </div>
+
+   </div>
 </template>

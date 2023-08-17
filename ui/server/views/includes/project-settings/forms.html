@@ -1,170 +1,60 @@
 <template id="project-edit">
   <form id="project-edit--form">
-    <thumb-input
-      id="project-edit--thumb"
-      name="Thumbnail"
-      for="thumb"
-    ></thumb-input>
+    <thumb-input id="project-edit--thumb" name="Thumbnail" for="thumb"></thumb-input>
     <text-input id="project-edit--name" name="Name" type="string"></text-input>
-    <text-input
-      id="project-edit--summary"
-      name="Summary"
-      type="string"
-    ></text-input>
-    <bool-input
-      id="project-edit--downloads"
-      name="Enable Downloads"
-      on-text="Yes"
-      off-text="No"
-    ></bool-input>
+    <text-input id="project-edit--summary" name="Summary" type="string"></text-input>
+    <bool-input id="project-edit--downloads" name="Enable Downloads" on-text="Yes" off-text="No"></bool-input>
   </form>
 </template>
 
 <template id="media-type-edit">
   <form id="media-type-edit--form">
-    <text-input
-      id="media-type-edit--name"
-      name="Name"
-      type="string"
-    ></text-input>
+    <text-input id="media-type-edit--name" name="Name" type="string"></text-input>
     <enum-input id="media-type-edit--data-type" name="Data Type"></enum-input>
-    <text-input
-      id="media-type-edit--description"
-      name="Description"
-      type="string"
-    ></text-input>
+    <text-input id="media-type-edit--description" name="Description" type="string"></text-input>
     <div id="media-type-edit--volume-div" hidden="">
-      <text-input
-        id="media-type-edit--volume"
-        name="Default volume"
-        type="number"
-      ></text-input>
-      <div class="col-8 float-right f3 text-gray">
-        Note: Range from 0 (no sound) to 100.
-      </div>
+      <text-input id="media-type-edit--volume" name="Default volume" type="number"></text-input>
+      <div class="col-8 float-right f3 text-gray">Note: Range from 0 (no sound) to 100.</div>
     </div>
-    <bool-input
-      id="media-type-edit--visible"
-      name="Visible"
-      on-text="Yes"
-      off-text="No"
-    ></bool-input>
+    <bool-input id="media-type-edit--visible" name="Visible" on-text="Yes" off-text="No"></bool-input>
   </form>
 </template>
 
 <template id="localization-type-edit">
   <form id="localization-type-edit--form">
-    <text-input
-      id="localization-type-edit--name"
-      name="Name"
-      type="string"
-    ></text-input>
-    <enum-input
-      id="localization-type-edit--data-type"
-      name="Data Type"
-    ></enum-input>
-    <text-input
-      id="localization-type-edit--description"
-      name="Description"
-      type="string"
-    ></text-input>
-    <color-inputs
-      id="localization-type-edit--color-map"
-      name="Color Map"
-    ></color-inputs>
-    <bool-input
-      id="localization-type-edit--visible"
-      name="Visible"
-      on-text="Yes"
-      off-text="No"
-    ></bool-input>
-    <bool-input
-      id="localization-type-edit--drawable"
-      name="Drawable"
-      on-text="Yes"
-      off-text="No"
-    ></bool-input>
-    <text-input
-      id="localization-type-edit--line-width"
-      name="Line Width"
-      type="int"
-    ></text-input>
-    <bool-input
-      id="localization-type-edit--grouping-default"
-      name="Grouping Default"
-      on-text="Yes"
-      off-text="No"
-    >
+    <text-input id="localization-type-edit--name" name="Name" type="string"></text-input>
+    <enum-input id="localization-type-edit--data-type" name="Data Type"></enum-input>
+    <text-input id="localization-type-edit--description" name="Description" type="string"></text-input>
+    <color-inputs id="localization-type-edit--color-map" name="Color Map"></color-inputs>
+    <bool-input id="localization-type-edit--visible" name="Visible" on-text="Yes" off-text="No"></bool-input>
+    <bool-input id="localization-type-edit--drawable" name="Drawable" on-text="Yes" off-text="No"></bool-input>
+    <text-input id="localization-type-edit--line-width" name="Line Width" type="int"></text-input>
+    <bool-input id="localization-type-edit--grouping-default" name="Grouping Default" on-text="Yes" off-text="No">
     </bool-input>
-    <checkbox-set
-      id="localization-type-edit--media"
-      name="Media"
-      type="number"
-    ></checkbox-set>
+    <checkbox-set id="localization-type-edit--media" name="Media" type="number"></checkbox-set>
   </form>
 </template>
 
 <template id="state-type-edit">
   <form id="state-type-edit--form">
-    <text-input
-      id="state-type-edit--name"
-      name="Name"
-      type="string"
-    ></text-input>
+    <text-input id="state-type-edit--name" name="Name" type="string"></text-input>
     <enum-input id="state-type-edit--data-type" name="Data Type"></enum-input>
-    <text-input
-      id="state-type-edit--description"
-      name="Description"
-      type="string"
-    ></text-input>
-    <bool-input
-      id="state-type-edit--visible"
-      name="Visible"
-      on-text="Yes"
-      off-text="No"
-    ></bool-input>
-    <bool-input
-      id="state-type-edit--grouping-default"
-      name="Grouping Default"
-      on-text="Yes"
-      off-text="No"
-    ></bool-input>
-    <checkbox-set
-      id="state-type-edit--media"
-      name="Media"
-      type="number"
-    ></checkbox-set>
-    <enum-input
-      id="state-type-edit--association"
-      name="Association"
-    ></enum-input>
-    <enum-input
-      id="state-type-edit--interpolation"
-      name="Interpolation"
-    ></enum-input>
-    <bool-input
-      id="state-type-edit--delete-child"
-      name="Delete Child Localizations"
-      on-text="Yes"
-      off-text="No"
-    >
+    <text-input id="state-type-edit--description" name="Description" type="string"></text-input>
+    <bool-input id="state-type-edit--visible" name="Visible" on-text="Yes" off-text="No"></bool-input>
+    <bool-input id="state-type-edit--grouping-default" name="Grouping Default" on-text="Yes" off-text="No"></bool-input>
+    <checkbox-set id="state-type-edit--media" name="Media" type="number"></checkbox-set>
+    <enum-input id="state-type-edit--association" name="Association"></enum-input>
+    <enum-input id="state-type-edit--interpolation" name="Interpolation"></enum-input>
+    <bool-input id="state-type-edit--delete-child" name="Delete Child Localizations" on-text="Yes" off-text="No">
     </bool-input>
   </form>
 </template>
 
 <template id="leaf-type-edit">
   <form id="leaf-type-edit--form">
-    <text-input
-      id="leaf-type-edit--name"
-      name="Name"
-      type="string"
-    ></text-input>
+    <text-input id="leaf-type-edit--name" name="Name" type="string"></text-input>
     <enum-input id="leaf-type-edit--data-type" name="Data Type"></enum-input>
-    <text-input
-      id="leaf-type-edit--description"
-      name="Description"
-      type="string"
-    ></text-input>
+    <text-input id="leaf-type-edit--description" name="Description" type="string"></text-input>
   </form>
 </template>
 
@@ -172,201 +62,87 @@
   <div id="leaf-main--container">
     <div class="px-6">
       <!-- Heading -->
-      <a
-        id="leaf-main--back"
-        href=""
-        class="h3 pb-3 edit-project__h1 clickable text-white"
-      >
+      <a id="leaf-main--back" href="" class="h3 pb-3 edit-project__h1 clickable text-white">
         <span id="leaf-main--type-name"></span>
         <span class="px-2"> | </span>
         <span class="text-gray text-normal"> LeafType</span>
-        <span class="text-gray text-normal">
-          (ID <span id="leaf-main--type-id"></span>)</span
-        >
+        <span class="text-gray text-normal"> (ID <span id="leaf-main--type-id"></span>)</span>
         <span class="px-2">|</span>
-        <span class="h3 pb-3 edit-project__h1 text-normal text-gray"
-          >Leaves</span
-        >
+        <span class="h3 pb-3 edit-project__h1 text-normal text-gray">Leaves</span>
       </a>
 
-      <!-- box -->
-      <div
-        id="leaf-main--box"
-        class="py-3 rounded-2 edit-project__config"
-        style="min-height: 150px"
-      >
-        <a
-          id="leaf-main--add-trigger"
-          class="
-            btn btn-default
-            float-right
-            clickable
-            d-flex
-            flex-items-center
-            px-3
-            rounded-2
-          "
-        >
+       <!-- box -->
+      <div id="leaf-main--box" class="py-3 rounded-2   edit-project__config" style="min-height: 150px;">
+        <a id="leaf-main--add-trigger" class="btn btn-default float-right clickable  d-flex flex-items-center px-3 rounded-2">
           <span class="d-flex flex-items-center flex-justify-center">+</span>
           <span class="px-3"> New Leaf</span>
         </a>
-        <div id="leaf-main--box-inner" style="min-height: 150px" hidden>
-          <h3 class="f2 text-gray pb-3">
-            <span class="text-white f1">
-              <span id="leaf-main--count"></span> Leaves</span
-            >
+        <div id="leaf-main--box-inner" style="min-height: 150px;" hidden>
+          <h3 class="f2 text-gray pb-3"><span class="text-white f1">
+            <span id="leaf-main--count"></span> Leaves</span>
           </h3>
           <div class="f2 text-gray pb-3 edit-project__h1 text-normal text-gray">
-            <div class="py-1">
-              Quick tips: Drag and drop to organize leaves into a heirarchy.
-            </div>
-            <div class="py-1">
-              To make a leaf top level, drag to container's edge.
-            </div>
+            <div class="py-1">Quick tips: Drag and drop to organize leaves into a heirarchy.</div>
+            <div class="py-1">To make a leaf top level, drag to container's edge.</div>
             <div class="py-1">Edit details using the edit icon.</div>
           </div>
           <p class="f2 text-gray pb-3 text-normal text-gray py-3">
-            <a
-              class="text-purple text-underline"
-              href="#"
-              id="leaf-main--expand"
-            >
+            <a class="text-purple text-underline" href="#" id="leaf-main--expand">
               Expand all
             </a>
             <span class="px-3">|</span>
-            <a
-              class="text-purple text-underline"
-              href="#"
-              id="leaf-main--minimize"
-              >Minimize all</a
-            >
+            <a class="text-purple text-underline" href="#" id="leaf-main--minimize">Minimize all</a>
           </p>
           <div id="leaf-main--item-container" class="leaves-edit--list">
             <!-- Leaf items go here -->
           </div>
         </div>
       </div>
-    </div>
-    <img
-      class="loading"
-      rel="preload"
-      src="https://cloud.tator.io/static/33e4a5c934209387e1cd.gif"
-      style="display: none"
-    />
+    </div><img class="loading" rel="preload" src="https://cloud.tator.io/static/33e4a5c934209387e1cd.gif"
+      style="display: none;">
   </div>
 </template>
 
 <template id="membership-edit">
   <form id="membership-edit--form">
-    <user-input
-      id="membership-edit--search-users"
-      name="Search users"
-    ></user-input>
+    <user-input id="membership-edit--search-users" name="Search users"></user-input>
     <enum-input id="membership-edit--permission" name="Permission"></enum-input>
-    <enum-input
-      id="membership-edit--default-version"
-      name="Default version"
-    ></enum-input>
+    <enum-input id="membership-edit--default-version" name="Default version"></enum-input>
   </form>
 </template>
 
 <template id="versions-edit">
   <form id="versions-edit--form">
     <text-input id="versions-edit--name" name="Name" type="string"></text-input>
-    <text-input
-      id="versions-edit--description"
-      name="Description"
-      type="string"
-    ></text-input>
-    <bool-input
-      id="versions-edit--show-empty"
-      name="Show Empty"
-      onText="Yes"
-      offText="No"
-    ></bool-input>
-    <text-input
-      id="versions-edit--number"
-      name="Number"
-      disabled
-      class="disabled"
-      type="int"
-    ></text-input>
-    <checkbox-set
-      id="versions-edit--bases"
-      name="Bases"
-      type="number"
-    ></checkbox-set>
+    <text-input id="versions-edit--description" name="Description" type="string"></text-input>
+    <bool-input id="versions-edit--show-empty" name="Show Empty" onText="Yes" offText="No"></bool-input>
+    <text-input id="versions-edit--number" name="Number" disabled class="disabled" type="int"></text-input>
+    <checkbox-set id="versions-edit--bases" name="Bases" type="number"></checkbox-set>
   </form>
 </template>
 
 <template id="algorithm-edit">
   <form id="algorithm-edit--form">
-    <p
-      hidden
-      id="algorithm-edit--user-message"
-      class="py-3 text-gray border-red rounded-2 px-3 my-2"
-    ></p>
-    <text-input
-      id="algorithm-edit--name"
-      name="Name"
-      type="string"
-    ></text-input>
-    <text-input
-      id="algorithm-edit--description"
-      name="Description"
-      type="string"
-    ></text-input>
+    <p hidden id="algorithm-edit--user-message" class="py-3 text-gray border-red rounded-2 px-3 my-2"></p>
+    <text-input id="algorithm-edit--name" name="Name" type="string"></text-input>
+    <text-input id="algorithm-edit--description" name="Description" type="string"></text-input>
     <text-input id="algorithm-edit--user" name="User" hidden></text-input>
-    <text-input
-      id="algorithm-edit--registering-user"
-      name="Registering User"
-    ></text-input>
-    <file-input
-      id="algorithm-edit--manifest"
-      name="Manifest"
-      for="manifest"
-      type="yaml"
-    ></file-input>
-    <enum-input
-      id="algorithm-edit--job-cluster"
-      name="Job Cluster"
-    ></enum-input>
-    <text-input
-      id="algorithm-edit--files"
-      name="Files Per Job"
-      type="int"
-    ></text-input>
-    <array-input
-      id="algorithm-edit--categories"
-      name="Categories"
-      description="Remove categories by empyting the field(s) and saving the changes."
-    ></array-input>
-    <array-object-input
-      id="algorithm-edit--parameters"
-      name="Parameters"
-    ></array-object-input>
+    <text-input id="algorithm-edit--registering-user" name="Registering User"></text-input>
+    <file-input id="algorithm-edit--manifest" name="Manifest" for="manifest" type="yaml"></file-input>
+    <enum-input id="algorithm-edit--job-cluster" name="Job Cluster"></enum-input>
+    <text-input id="algorithm-edit--files" name="Files Per Job" type="int"></text-input>
+    <array-input id="algorithm-edit--categories" name="Categories" description="Remove categories by empyting the field(s) and saving the changes."></array-input>
+    <array-object-input id="algorithm-edit--parameters" name="Parameters"></array-object-input>
   </form>
 </template>
+
 
 <template id="applet-edit">
   <form id="applet-edit--form">
     <text-input id="applet-edit--name" name="Name" type="string"></text-input>
     <link-input id="applet-edit--link" name="Link" type="string"></link-input>
-    <text-input
-      id="applet-edit--description"
-      name="Description"
-      type="string"
-    ></text-input>
-    <file-input
-      id="applet-edit--html-file"
-      name="HTML File"
-      for="applet"
-      type="html"
-    ></file-input>
-    <array-input
-      id="applet-edit--categories"
-      name="Categories"
-      description="Remove categories by emptying the field(s) and saving the changes."
-    ></array-input>
+    <text-input id="applet-edit--description" name="Description" type="string"></text-input>
+    <file-input id="applet-edit--html-file" name="HTML File" for="applet" type="html"></file-input>
+    <array-input id="applet-edit--categories" name="Categories" description="Remove categories by emptying the field(s) and saving the changes."></array-input>
   </form>
 </template>

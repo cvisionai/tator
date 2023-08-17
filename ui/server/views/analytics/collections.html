@@ -1,7 +1,11 @@
-{% extends "tator-base.html" %} {% block head %}
+{% extends "tator-base.html" %}
+
+{% block head %}
 <title>Tator | Analytics | Collections</title>
 <script src="/static/portal.js"></script>
-{% endblock head %} {% block body %} {% include
-"includes/components/entity-panel-image.html" %}
+{% endblock head %}
+
+{% block body %}
+{% include "includes/components/entity-panel-image.html" %}
 <analytics-collections></analytics-collections>
 {% endblock body %}
