@@ -151,7 +151,7 @@ export class EmailListInput extends TatorElement {
   }
 
   clear() {
-    if(this._input && this._input.setValue) this._input.setValue("");
+    if (this._input && this._input.setValue) this._input.setValue("");
     this._pills.innerHTML = "";
   }
 }

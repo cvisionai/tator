@@ -156,7 +156,7 @@ export class OrgTypeFormContainer extends TatorElement {
     let objectName = "";
 
     // Setup object info
-    this.objectName = data?.name ? data.name : "";;
+    this.objectName = data?.name ? data.name : "";
   }
 
   /**
@@ -220,10 +220,7 @@ export class OrgTypeFormContainer extends TatorElement {
           this._form.data = data;
           return;
         }
-        
       }
-
-
 
       /* Clear container in any other case */
       // ie. NEW form (data is null), or no data from store

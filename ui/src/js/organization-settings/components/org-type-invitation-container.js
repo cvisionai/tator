@@ -66,9 +66,7 @@ export class OrgTypeInvitationContainer extends OrgTypeFormContainer {
 
     this.objectName = data && data.email ? data.email : "";
     const status = this._form?._data?.status ? this._form._data.status : null;
-    this._setupButtonsInvite(status);    
-    
-
+    this._setupButtonsInvite(status);
   }
 
   async _resetInvitation() {
@@ -88,7 +86,6 @@ export class OrgTypeInvitationContainer extends OrgTypeFormContainer {
   async _setupButtonsInvite(status) {
     const showReset = ["Expired", "Pending"];
     const showCustomButton = showReset.includes(status) || status == "Accepted";
-    
 
     if (showCustomButton) {
       if (showReset.includes(status)) {

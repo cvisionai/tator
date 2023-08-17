@@ -41,7 +41,7 @@ export class AffiliationEdit extends OrgTypeFormTemplate {
     }
 
     this._permissionSelect._select.required = this._data?.id === "New";
-    
+
     if (this._data?.id === "New" || !this._data) {
       this._permissionSelect.setValue("Member");
       this._permissionSelect.default = "Member";
@@ -49,7 +49,6 @@ export class AffiliationEdit extends OrgTypeFormTemplate {
       this._permissionSelect.setValue(this._data.permission);
       this._permissionSelect.default = this._data.permission;
     }
-
   }
 
   _getFormData() {
