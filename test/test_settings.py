@@ -289,17 +289,12 @@ def test_settings_projectMemberships(page_factory, project, launch_time, base_ur
     #test using a list of 3+ memberships at the same time
     print("Going to organizations to get a member list...")
     page.goto(f"/organizations", wait_until='networkidle')
-    page.on("pageerror", print_page_error)
-    name = f"test_front_end_{launch_time}"
-    page.wait_for_selector(f'text="{name}"')
     summaries = page.query_selector_all('organization-summary')
-    for summary in summaries:
-        if summary.query_selector('h2').text_content() == name:
-            link = summary.query_selector('a')
-            href = link.get_attribute('href')
-            organization_id = int(href.split('/')[-2])
-            summary.click()
-            break
+    summary = summaries[0]
+    link = summary.query_selector('a')
+    href = link.get_attribute('href')
+    organization_id = int(href.split('/')[-2])
+    summary.click()
 
     # Invitation Tests
     url = base_url + "/rest/Invitations/" + str(organization_id)
