@@ -119,6 +119,13 @@ file_filter_parameter_schema = [
         "schema": {"type": "integer"},
     },
     {
+        "name": file_fields.name,
+        "in": "query",
+        "required": False,
+        "description": "Name of the file.",
+        "schema": {"type": "string"},
+    },
+    {
         "name": "after",
         "in": "query",
         "required": False,
