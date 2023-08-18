@@ -265,10 +265,10 @@ $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	$HOME/.local/bin/poetry install --no-root
-	$HOME/.local/bin/poetry run python codegen.py
-	$HOME/.local/bin/poetry install
-	$HOME/.local/bin/poetry build
+	${HOME}/.local/bin/poetry install --no-root
+	${HOME}/.local/bin/poetry run python codegen.py
+	${HOME}/.local/bin/poetry install
+	${HOME}/.local/bin/poetry build
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -278,10 +278,10 @@ $(TATOR_PY_DEV_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	$HOME/.local/bin/poetry install --no-root
-	$HOME/.local/bin/poetry run python codegen.py
-	$HOME/.local/bin/poetry install
-	$HOME/.local/bin/poetry build
+	${HOME}/.local/bin/poetry install --no-root
+	${HOME}/.local/bin/poetry run python codegen.py
+	${HOME}/.local/bin/poetry install
+	${HOME}/.local/bin/poetry build
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
