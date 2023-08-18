@@ -38,7 +38,7 @@ jobs:
         command: |
           ssh lightsail 'curl -sSL https://install.python-poetry.org | python3 -'
           ssh lightsail 'echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc'
-          ssh lightsail 'cd tator/scripts/packages/tator-py && poetry install --no-root --all-extras';
+          ssh lightsail 'cd tator/scripts/packages/tator-py && $HOME/.local/bin/poetry install --no-root --all-extras';
     - run:
         name: Install node packages
         command: |
