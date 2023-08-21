@@ -224,17 +224,13 @@ jobs:
     - attach_workspace:
         at: ~/
     - run:
-        name: Copy test directories
-        command: |
-          ssh lightsail 'rm -rf ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/test ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/examples ~/tator/.';
-    - run:
         name: Get API token
         command: |
           ssh lightsail "curl -d '{"'"username"'": "'"admin"'", "'"password"'": "'"admin"'", "'"refresh"'": true}' -H 'Content-Type: application/json' http://localhost:8080/rest/Token | jq '.token' | xargs printf '%b\n' | tee ~/token.txt;"
           scp lightsail:~/token.txt ~/token.txt
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do poetry run pytest tatorpy_test --ignore tatorpy_test/test_algorithm_launch.py --ignore tatorpy_test/test_job_cancel.py --host=http://localhost:8080 --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+        command: ssh lightsail 'export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator/scripts/packages/tator-py && for i in $(seq 1 3); do poetry run pytest test --ignore test/test_algorithm_launch.py --ignore test/test_job_cancel.py --host=http://localhost:8080 --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
     - run:
         name: Check db-worker logs for clean running
         command: ssh lightsail 'cd tator && make check-clean-db-logs'
