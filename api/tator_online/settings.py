@@ -78,6 +78,7 @@ MIDDLEWARE = (
         "django.middleware.security.SecurityMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
         "django.middleware.common.CommonMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
     ]
     + (
         [
@@ -86,7 +87,6 @@ MIDDLEWARE = (
         if KEYCLOAK_ENABLED
         else [
             "django.middleware.csrf.CsrfViewMiddleware",
-            "django.contrib.auth.middleware.AuthenticationMiddleware",
         ]
     )
     + [
