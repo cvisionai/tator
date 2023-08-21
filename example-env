@@ -66,3 +66,7 @@ USE_MIN_JS=true
 
 # Whether this is a compose deployment (always true for OSS)
 COMPOSE_DEPLOY=true
+
+STATSD_ENABLED=false
+
+AUDIT_ENABLED=false
