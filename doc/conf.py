@@ -52,7 +52,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -162,7 +162,10 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.viewcode']
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "sphinx_markdown_builder",
+]
 
 autodoc_mock_imports = ['django', 'progressbar']
