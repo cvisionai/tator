@@ -35,7 +35,7 @@ jobs:
     - run:
         name: Install pip packages
         command: |
-          ssh lightsail 'pip3 install sphinx-markdown-builder==0.6.5'
+          ssh lightsail 'pip3 install sphinx-markdown-builder==0.5.5'
           ssh lightsail 'curl -sSL https://install.python-poetry.org | python3 -'
           ssh lightsail 'echo "export PATH=$HOME/.local/bin:$PATH" >> $HOME/.bashrc'
           ssh lightsail 'cd tator/scripts/packages/tator-py && $HOME/.local/bin/poetry install --no-root --all-extras';
