@@ -37,7 +37,9 @@ endif
 # Set this ENV to http://iad-ad-1.clouds.archive.ubuntu.com/ubuntu/ for
 # faster builds on Oracle OCI 
 APT_REPO_HOST ?= $(shell cat /etc/apt/sources.list | grep -E "focal main|jammy main" | grep -v cdrom | head -n1 | awk '{print $$2}')
-
+ifeq ($(APT_REPO_HOST),)
+APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
+endif
 
 #############################
 ## Help Rule + Generic targets
