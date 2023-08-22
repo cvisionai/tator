@@ -15,7 +15,6 @@ from ..models import MediaType
 from ..models import Media
 from ..schema import TranscodeListSchema
 from ..schema import TranscodeDetailSchema
-from ..notify import Notify
 
 from .media import _create_media
 from ._util import url_to_key

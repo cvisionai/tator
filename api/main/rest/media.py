@@ -32,7 +32,6 @@ from ..models import (
 )
 from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
-from ..notify import Notify
 from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
