@@ -445,7 +445,7 @@ def user_pre_save(sender, instance, **kwargs):
 
         if is_monitored:
             if password_modified:
-                instance.last_failed_login = 0
+                instance.failed_login_count = 0
                 block_user_save_email(instance, "save")
             logger.info(msg)
             email_service = get_email_service()
