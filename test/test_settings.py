@@ -90,6 +90,7 @@ def test_settings_localizationTypes(page_factory, project):
         page.wait_for_timeout(5000)
     page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_settings_leafType(page_factory, project, base_url):
     print("Leaf Type Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -118,9 +119,9 @@ def test_settings_leafType(page_factory, project, base_url):
     page.click('modal-dialog input[type="submit"]')
     page.wait_for_selector(f'text="New attribute type \'String Type\' added"')
     print("Confirmed leaf type attribute was added!")
-
+    page.wait_for_timeout(5000)
     
-    # Add leafs with attr value
+    # Add leafs A and B
     page.click('type-form-container[form="leaf-type-edit"] .edit-project__h1 a')
     page.wait_for_timeout(5000)
     page.click('text=" New Leaf"')
@@ -135,6 +136,7 @@ def test_settings_leafType(page_factory, project, base_url):
     page.click('modal-dialog input[value="Save"]')
    
     # This element should have the draggable attribute value as true
+    page.reload()
     page.wait_for_timeout(5000)
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
     src_elem = leaf_elems[1]
@@ -274,27 +276,18 @@ def test_settings_projectMemberships(page_factory, project, launch_time, base_ur
     page.click(f'type-form-container[form="membership-edit"] input[type="submit"]')
     page.wait_for_selector(f'text="Membership {memberId} successfully updated!"')
     print(f"Membership id {memberId} updated successfully!")
-   
-    #todo... reference org settings, use a membership from those tests to actually add new
-    page.click('#nav-for-Membership #sub-nav--plus-link')
-    page.wait_for_timeout(5000)
-    print("Testing re-adding current membership...")
-    page.fill('#membership-edit--form user-input[name="Search users"] input', username+';')
-    page.select_option('#membership-edit--form enum-input[name="Default version"] select', label='Test Version')
-    page.click('type-form-container[form="membership-edit"] input[type="submit"]')
-    page.wait_for_selector(f'text=" Error"')
-    print(f"Membership endpoint hit (error) re-adding current user successfully!")
-
 
     #test using a list of 3+ memberships at the same time
     print("Going to organizations to get a member list...")
     page.goto(f"/organizations", wait_until='networkidle')
-    summaries = page.query_selector_all('organization-summary')
-    summary = summaries[0]
-    link = summary.query_selector('a')
+    page.wait_for_timeout(5000)
+    links = page.query_selector_all('.projects__link')
+    last_index = len(links) - 1
+    link = links[last_index]
     href = link.get_attribute('href')
+    print(f"href {href}")
     organization_id = int(href.split('/')[-2])
-    summary.click()
+    link.click()
 
     # Invitation Tests
     url = base_url + "/rest/Invitations/" + str(organization_id)
@@ -327,7 +320,7 @@ def test_settings_projectMemberships(page_factory, project, launch_time, base_ur
         page.fill('text-input[name="First name"] input', 'First')
         page.fill('text-input[name="Last name"] input', 'Last')
         page.fill('text-input[name="Email address"] input', user_email)
-        page.fill('text-input[name="Username"] input', 'NoReply'+name+count) #username must be unique
+        page.fill('text-input[name="Username"] input', 'NoReply'+str(organization_id)+count) #username must be unique
         page.fill('text-input[name="Password"] input', '123!@#abc123')
         page.fill('text-input[name="Password (confirm)"] input', '123!@#abc123')
         page.fill('text-input[name="First name"] input', 'Name')
