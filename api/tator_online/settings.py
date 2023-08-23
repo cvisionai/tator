@@ -36,6 +36,9 @@ if ALIAS_HOSTS:
 # Whether keycloak is being used for authentication
 KEYCLOAK_ENABLED = os.getenv("KEYCLOAK_ENABLED") == "TRUE"
 
+STATSD_ENABLED = os.getenv("STATSD_ENABLED", "TRUE") == "TRUE"
+AUDIT_ENABLED = os.getenv("AUDIT_ENABLED", "TRUE") == "TRUE"
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -89,9 +92,21 @@ MIDDLEWARE = (
             "django.contrib.auth.middleware.AuthenticationMiddleware",
         ]
     )
+    + (
+        [
+            "tator_online.StatsdMiddleware",
+        ]
+        if STATSD_ENABLED
+        else []
+    )
+    + (
+        [
+            "tator_online.AuditMiddleware",
+        ]
+        if AUDIT_ENABLED
+        else []
+    )
     + [
-        "tator_online.StatsdMiddleware",
-        "tator_online.AuditMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
     ]
