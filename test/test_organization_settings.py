@@ -29,6 +29,8 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.wait_for_selector(f'text="Organization {organization_id} updated successfully!"')
     print(f'Organization {organization_id} updated successfully!')
 
+    
+
     # Invitation Tests
     print("Testing invitation create...")
     url = base_url + "/rest/Invitations/" + str(organization_id)
@@ -75,13 +77,40 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
 
     print("Confirming invitation status")
     page.click('#nav-for-Invitation')
-    link = page.locator(".SideNav-subItem ").filter(has_text=f"{user_email}")
+    link = page.locator(".SideNav-subItem ").filter(has_text=f" {user_email}")
     link.click()
     page.wait_for_selector(f'org-type-invitation-container[form="invitation-edit"] text-input[name="Status"] input')
     statusInputValue = page.eval_on_selector(f'org-type-invitation-container[form="invitation-edit"] text-input[name="Status"] input', "i => i.value")
     print(statusInputValue)
     assert  statusInputValue == "Accepted"
     print("Invitation status shown as accepted!")
+
+    # Multiple invitation Tests
+    print("Testing 3+ invitations, with 1 repeat create...")
+    url = base_url + "/rest/Invitations/" + str(organization_id)
+    page.click('#nav-for-Invitation #sub-nav--plus-link')
+    user_email1 = 'no-reply'+str(organization_id)+'1@cvisionai.com' # NEW
+    user_email2 = 'no-reply'+str(organization_id)+'2@cvisionai.com' # NEW
+    #user_email = 'no-reply'+str(organization_id)+'@cvisionai.com' # DUPE
+    user_email3 = 'no-reply'+str(organization_id)+'3@cvisionai.com' # NEW
+    user_email4 = 'no-reply'+str(organization_id)+'4@cvisionai.com' # NEW
+    user_email5 = 'no-reply'+str(organization_id)+'5@cvisionai.com' # NEW
+    page.wait_for_selector('org-type-invitation-container[form="invitation-edit"]')
+    page.wait_for_timeout(1000)
+    page.select_option(f'org-type-invitation-container[form="invitation-edit"] enum-input[name="Permission"] select', label="Member")
+    page.fill(f'#invitation-edit--form email-list-input input', user_email1+';'+user_email2+';'+user_email+';'+user_email3+';'+user_email4+';'+user_email5+';')
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(1000)
+    # with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(1000)
+    for _ in range(3):
+        page.keyboard.press("Tab")
+    page.click('org-type-invitation-container[form="invitation-edit"] input[type="submit"]')
+    page.wait_for_timeout(1000)
+    page.wait_for_selector('text="Successfully added 5 Invitations."')
+    print(f'Multiple invitations sent successfully! (Successfully added 5 Invitations. And Error for 1 pending did not interupt flow)')
+
 
     print("Testing affiliation create...")
     url = base_url + "/rest/Affiliations/" + str(organization_id)
@@ -96,7 +125,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
         for _ in range(3):
             page.keyboard.press("Tab")
         page.keyboard.press("Enter")
-    page.wait_for_selector(f'text="Successfully added 1 Affiliations."')
+    page.wait_for_selector(f'text="Successfully added 1 Affiliation."')
     response = response_info.value
     respObject = response.json()
     print(respObject)

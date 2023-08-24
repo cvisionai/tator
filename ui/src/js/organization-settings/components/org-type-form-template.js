@@ -52,8 +52,8 @@ export class OrgTypeFormTemplate extends TatorElement {
       this._data = this._getEmptyData();
     }
 
-    this.typeId = this._data.id;
-    this.objectName = this._data.name;
+    this.typeId = this._data?.id ? this._data.id : "New";
+    this.objectName = this._data?.name ? this._data.name : "";
 
     this._setupFormUnique();
   }
@@ -68,7 +68,7 @@ export class OrgTypeFormTemplate extends TatorElement {
 
   async saveDataFunction() {
     const formData = this._getFormData();
-    console.log("formData", formData);
+
     if (Object.entries(formData).length !== 0 && !Array.isArray(formData)) {
       try {
         const respData = await this.doSaveAction(formData);
@@ -77,16 +77,17 @@ export class OrgTypeFormTemplate extends TatorElement {
         this.modal._error(err);
       }
     } else if (Array.isArray(formData) && formData.length !== 0) {
-      const responses = [];
-      for (let d of formData) {
-        const respData = await this.doSaveAction(d);
-        responses.push(respData);
+      try {
+        const respData = await this.doSaveAction(formData, true);
+        this.handleResponseList(respData);
+      } catch (err) {
+        this.modal._error(err);
       }
-      console.log("formData do save action responses", responses);
-      this.handleResponseList(responses);
     } else {
       this.modal._success("Nothing new to save!");
     }
+
+    this.data = null;
   }
 
   /**
@@ -132,12 +133,19 @@ export class OrgTypeFormTemplate extends TatorElement {
     return this._warningDeleteMessage;
   }
 
-  doSaveAction(formData) {
-    const info = { type: this.typeName, id: this.typeId, data: formData };
-    if (this.typeId == "New") {
-      return store.getState().addType(info);
+  async doSaveAction(formData, isArray = false) {
+    const info = {
+      type: this.typeName,
+      id: this.typeId,
+      data: formData,
+    };
+
+    if (this.typeId == "New" && isArray) {
+      return await store.getState().addTypeArray(info);
+    } else if (this.typeId == "New" && !isArray) {
+      return await store.getState().addTypeSingle(info);
     } else {
-      return store.getState().updateType(info);
+      return await store.getState().updateType(info);
     }
   }
 
@@ -163,38 +171,46 @@ export class OrgTypeFormTemplate extends TatorElement {
   }
 
   handleResponseList(responses) {
-    let sCount = 0;
-    let eCount = 0;
-    let errors = "";
+    if (responses && Array.isArray(responses)) {
+      let sCount = 0;
+      let eCount = 0;
+      let errors = "";
 
-    for (let object of responses) {
-      if (object.response.ok) {
-        sCount++;
-      } else {
-        eCount++;
-        const message = JSON.parse(object.response.text).message;
-        errors += `Error: ${message} \n`; //${r.data.message}
+      for (let object of responses) {
+        if (object.response.ok) {
+          sCount++;
+        } else {
+          eCount++;
+          const message = JSON.parse(object.response.text).message;
+          errors += `<br/><br/>${message}`; //${r.data.message}
+        }
       }
-    }
 
-    if (sCount > 0 && eCount === 0) {
-      return this.modal._success(
-        `Successfully added ${sCount} ${this.typeName}s.`
-      );
-    } else if (sCount > 0 && eCount > 0) {
-      return this.modal._complete(
-        `Successfully added ${sCount} ${
-          this.typeName
-        }s.\n Error adding ${eCount} ${this.typeName}s.\n Error message${
-          eCount == 1 ? "" : "s"
-        }: ${errors}`
-      );
-    } else {
-      return this.modal._error(
-        `Error adding ${eCount} ${this.typeName}s.\n Error message${
-          eCount == 1 ? "" : "s"
-        }: ${errors}`
-      );
+      if (sCount > 0 && eCount === 0) {
+        return this.modal._success(
+          `Successfully added ${sCount} ${this.typeName}${
+            sCount == 1 ? "" : "s"
+          }.`
+        );
+      } else if (sCount > 0 && eCount > 0) {
+        return this.modal._complete(
+          `Successfully added ${sCount} ${
+            this.typeName
+          }s.<br/><br/>Error adding ${eCount} ${this.typeName}${
+            eCount == 1 ? "" : "s"
+          }.<br/><br/>Error message${
+            eCount == 1 ? "" : "s"
+          }:<br/><br/>${errors}`
+        );
+      } else {
+        return this.modal._error(
+          `Error adding ${eCount} ${this.typeName}${
+            eCount == 1 ? "" : "s"
+          }.<br/><br/>Error message${
+            eCount == 1 ? "" : "s"
+          }:<br/><br/>${errors}`
+        );
+      }
     }
   }
 

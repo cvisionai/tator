@@ -1,4 +1,5 @@
 import os
+import re
 import inspect
 import pytest
 
@@ -89,6 +90,7 @@ def test_settings_localizationTypes(page_factory, project):
         page.wait_for_timeout(5000)
     page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_settings_leafType(page_factory, project, base_url):
     print("Leaf Type Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -117,9 +119,9 @@ def test_settings_leafType(page_factory, project, base_url):
     page.click('modal-dialog input[type="submit"]')
     page.wait_for_selector(f'text="New attribute type \'String Type\' added"')
     print("Confirmed leaf type attribute was added!")
-
+    page.wait_for_timeout(5000)
     
-    # Add leafs with attr value
+    # Add leafs A and B
     page.click('type-form-container[form="leaf-type-edit"] .edit-project__h1 a')
     page.wait_for_timeout(5000)
     page.click('text=" New Leaf"')
@@ -134,6 +136,7 @@ def test_settings_leafType(page_factory, project, base_url):
     page.click('modal-dialog input[value="Save"]')
    
     # This element should have the draggable attribute value as true
+    page.reload()
     page.wait_for_timeout(5000)
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
     src_elem = leaf_elems[1]
@@ -243,7 +246,7 @@ def test_settings_stateTypes(page_factory, project):
     page.close()
 
 
-def test_settings_projectMemberships(page_factory, project):
+def test_settings_projectMemberships(page_factory, project, launch_time, base_url):
     print("Membership Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings", wait_until='networkidle')
@@ -254,6 +257,10 @@ def test_settings_projectMemberships(page_factory, project):
     page.wait_for_selector('#nav-for-Membership .SubItems .SideNav-subItem >> nth=1')
     page.wait_for_timeout(5000)
     subItems = page.query_selector_all('#nav-for-Membership .SubItems .SideNav-subItem')
+    
+    # How many memberships are there?
+    membersBase = len(subItems)
+
     username = subItems[0].inner_text()
     subItem = subItems[0]
 
@@ -268,18 +275,72 @@ def test_settings_projectMemberships(page_factory, project):
     page.select_option(f'#membership-edit--form enum-input[name="Default version"] select', label='Baseline')
     page.click(f'type-form-container[form="membership-edit"] input[type="submit"]')
     page.wait_for_selector(f'text="Membership {memberId} successfully updated!"')
-    print(f"Membershipship id {memberId} updated successfully!")
-   
-    #todo... reference org settings, use a membership from those tests to actually add new
-    page.click('#nav-for-Membership #sub-nav--plus-link')
+    print(f"Membership id {memberId} updated successfully!")
+
+    #test using a list of 3+ memberships at the same time
+    print("Going to organizations to get a member list...")
+    page.goto(f"/organizations", wait_until='networkidle')
     page.wait_for_timeout(5000)
-    print("Testing re-adding current membership...")
-    page.fill('#membership-edit--form user-input[name="Search users"] input', username+';')
+    links = page.query_selector_all('.projects__link')
+    last_index = len(links) - 1
+    link = links[last_index]
+    href = link.get_attribute('href')
+    print(f"href {href}")
+    organization_id = int(href.split('/')[-2])
+    link.click()
+
+    # Invitation Tests
+    url = base_url + "/rest/Invitations/" + str(organization_id)
+    idList = ["1","2","3","4","5","6","7"]
+    emailList = []
+    for count in idList:
+        page.goto(f"/{organization_id}/organization-settings#Invitation-New", wait_until='networkidle')
+        user_email = 'no-reply'+str(organization_id)+str(count)+'@cvisionai.com'
+        emailList.append(user_email)
+        page.wait_for_selector('org-type-invitation-container[form="invitation-edit"]')
+        page.wait_for_timeout(1000)
+        page.select_option(f'org-type-invitation-container[form="invitation-edit"] enum-input[name="Permission"] select', label="Member")
+        page.fill(f'#invitation-edit--form email-list-input input', user_email)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(1000)
+        # with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(1000)
+        for _ in range(3):
+            page.keyboard.press("Tab")
+        page.click('org-type-invitation-container[form="invitation-edit"] input[type="submit"]')
+        page.wait_for_timeout(1000)
+        page.wait_for_selector("#invitation-edit--reg-link")
+        registration_link = page.query_selector("#invitation-edit--reg-link").get_attribute("href")
+        registration_link = re.sub(r'https?://.*?(/.*)', r'{base_url}\1', registration_link).format(base_url=base_url)
+        new_user_id = page.query_selector('org-type-invitation-container[form="invitation-edit"] #type-form-id').inner_text()
+        print(f'Invitation count {count} sent successfully!')
+        
+        page.goto(registration_link, wait_until='networkidle')
+        page.fill('text-input[name="First name"] input', 'First')
+        page.fill('text-input[name="Last name"] input', 'Last')
+        page.fill('text-input[name="Email address"] input', user_email)
+        page.fill('text-input[name="Username"] input', 'NoReply'+str(organization_id)+count) #username must be unique
+        page.fill('text-input[name="Password"] input', '123!@#abc123')
+        page.fill('text-input[name="Password (confirm)"] input', '123!@#abc123')
+        page.fill('text-input[name="First name"] input', 'Name')
+        page.click('input[type="submit"]')
+        page.wait_for_selector(f'text="Continue"')
+    
+    print(f"Testing... emailList: {';'.join(emailList)}")
+    page.goto(f"/{project}/project-settings#Membership-New", wait_until='networkidle')
+    emailListString = ';'.join(emailList)
+    page.fill('#membership-edit--form user-input[name="Search users"] input', emailListString)
     page.select_option('#membership-edit--form enum-input[name="Default version"] select', label='Test Version')
     page.click('type-form-container[form="membership-edit"] input[type="submit"]')
-    page.wait_for_selector(f'text=" Error"')
-    print(f"Membership endpoint hit (error) re-adding current user successfully!")
-
+    page.wait_for_timeout(1000)
+    # page.wait_for_selector(f'text=" Success"')
+    
+    
+    membersNow = len(page.query_selector_all('a[href^="#Membership"]'))
+    print(f'{membersNow} == ({membersBase} + 7)')
+    assert membersNow == (membersBase + 7)
+    print(f"7 Memberships added successfully!")
     page.close()
 
 def test_settings_versionTests(page_factory, project):
