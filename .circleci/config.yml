@@ -209,9 +209,11 @@ jobs:
         command: |
           ssh lightsail 'cd tator && make rq-empty';
           mkdir -p /tmp/videos;
+          mkdir -p frontend-test-results;
           ssh lightsail 'mkdir -p /tmp/videos';
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
-          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do if [ -d "test-results" ]; then rm -f test-results/*; else mkdir -p test-results; fi; pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+          ssh lightsail 'test -e tator/test-results/frontend-junit.xml' && scp lightsail:tator/test-results/frontend-junit.xml frontend-test-results/;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -233,11 +235,11 @@ jobs:
     - run:
         name: Run tator-py tests
         command: |
-          mkdir -p test-results
+          mkdir -p tatorpy-test-results;
           ssh lightsail 'export TATOR_TOKEN='"'$(cat ~/token.txt)'"'; export TATOR_HOST=http://localhost:8080; export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do if [ -d "test-results" ]; then rm -f test-results/*; else mkdir -p test-results; fi; pytest tatorpy_test --ignore tatorpy_test/test_algorithm_launch.py --ignore tatorpy_test/test_job_cancel.py -s --keep --junitxml=test-results/tatorpy-junit.xml && s=0 && break || s=$? && sleep 10; done; (exit $s)';
-          ssh lightsail 'test -e tator/test-results/tatorpy-junit.xml' && scp lightsail:tator/test-results/tatorpy-junit.xml test-results/
+          ssh lightsail 'test -e tator/test-results/tatorpy-junit.xml' && scp lightsail:tator/test-results/tatorpy-junit.xml tatorpy-test-results/;
     - store_test_results:
-        path: test-results
+        path: tatorpy-test-results
     - run:
         name: Check db-worker logs for clean running
         command: ssh lightsail 'cd tator && make check-clean-db-logs'
@@ -250,7 +252,6 @@ jobs:
     - store_artifacts:
         path: /tmp/logs
         destination: container_logs
-        when: always
   cron-job-tests:
     machine:
       image: ubuntu-2004:202010-01
