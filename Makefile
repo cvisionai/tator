@@ -253,7 +253,7 @@ testinit:
 .PHONY: test
 test:
 	docker exec gunicorn sh -c 'bash scripts/addExtensionsToInit.sh'
-	docker exec gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
+	docker exec gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db --junitxml=./test-results/rest-junit.xml main/tests.py'
 
 .PHONY: cache_clear
 cache-clear:
