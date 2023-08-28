@@ -1710,8 +1710,8 @@ def file_save(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=File)
 def file_post_delete(sender, instance, **kwargs):
     # Delete the path reference
-    if not instance.path is None:
-        safe_delete(instance.path, instance.project.id)
+    if not (instance.path is None and getattr(instance.path, "name") is None):
+        safe_delete(instance.path.name, instance.project.id)
 
 
 class Localization(Model, ModelDiffMixin):
