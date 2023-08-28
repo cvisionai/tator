@@ -190,7 +190,7 @@ jobs:
         command: |
           mkdir -p rest-test-results;
           ssh lightsail 'cd tator && for i in $(seq 1 3); do make rq-empty && make test && s=0 && break || s=$? && sleep 10; done; (exit $s)'
-          ssh lightsail 'test -e tator/rest-junit.xml' && scp lightsail:tator/rest-junit.xml tatorpy-test-results/ || exit 0;
+          ssh lightsail 'test -e tator/rest-junit.xml' && scp lightsail:tator/rest-junit.xml rest-test-results/ || exit 0;
     - store_test_results:
         path: rest-test-results
   front-end-tests:
@@ -219,6 +219,8 @@ jobs:
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do if [ -d "test-results" ]; then rm -f test-results/*; else mkdir -p test-results; fi; pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s && s=0 && break || s=$? && sleep 10; done; (exit $s)';
           ssh lightsail 'test -e tator/test-results/frontend-junit.xml' && scp lightsail:tator/test-results/frontend-junit.xml frontend-test-results/ || exit 0;
+    - store_test_results:
+        path: frontend-test-results
     - store_artifacts:
         path: /tmp/videos
         destination: videos
