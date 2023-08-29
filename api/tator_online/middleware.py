@@ -42,6 +42,7 @@ class StatsdMiddleware(MiddlewareMixin):
         )
         return response
 
+
 class KeycloakMiddleware(KeycloakAuthenticationMixin):
     def __init__(self, get_response):
         self.get_response = get_response
