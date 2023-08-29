@@ -88,12 +88,20 @@ export class AnnotationSidebar extends TatorElement {
       if (document.body.classList.contains("shortcuts-disabled")) {
         return;
       }
-      if (evt.key == "Escape") {
-        this._edit.click();
-      } else if (evt.key == "+") {
-        zoomIn.click();
-      } else if (evt.key == "-") {
-        zoomOut.click();
+      if (evt.ctrlKey) {
+        if (evt.key == "p") {
+          evt.preventDefault();
+          evt.stopPropagation();
+          pan.click();
+        }
+      } else {
+        if (evt.key == "Escape") {
+          this._edit.click();
+        } else if (evt.key == "+") {
+          zoomIn.click();
+        } else if (evt.key == "-") {
+          zoomOut.click();
+        }
       }
     });
   }
