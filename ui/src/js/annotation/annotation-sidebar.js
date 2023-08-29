@@ -88,11 +88,11 @@ export class AnnotationSidebar extends TatorElement {
       if (document.body.classList.contains("shortcuts-disabled")) {
         return;
       }
-      if (evt.keyCode == 27) {
+      if (evt.key == "Escape") {
         this._edit.click();
-      } else if (evt.keyCode == 187 || evt.keyCode == 107) {
+      } else if (evt.key == "+") {
         zoomIn.click();
-      } else if (evt.keyCode == 189 || evt.keyCode == 109) {
+      } else if (evt.key == "-") {
         zoomOut.click();
       }
     });
