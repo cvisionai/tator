@@ -216,6 +216,10 @@ endif
 collect-static: webpack
 	@scripts/collect-static.sh
 
+force-static:
+	@rm -fr scripts/packages/tator-js/pkg/
+	$(MAKE) collect-static
+
 dev-push:
 	@scripts/dev-push.sh
 

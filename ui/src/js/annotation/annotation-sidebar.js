@@ -45,8 +45,8 @@ export class AnnotationSidebar extends TatorElement {
     const zoomOut = document.createElement("zoom-out-button");
     this._div.appendChild(zoomOut);
 
-    const pan = document.createElement("pan-button");
-    this._div.appendChild(pan);
+    this._pan = document.createElement("pan-button");
+    this._div.appendChild(this._pan);
 
     this._indicator = document.createElement("span");
     this._indicator.setAttribute("class", "annotation__shape-indicator");
@@ -61,7 +61,7 @@ export class AnnotationSidebar extends TatorElement {
       this._track,
       zoomIn,
       zoomOut,
-      pan,
+      this._pan,
     ];
 
     this._edit.addEventListener("click", () => {
@@ -79,8 +79,8 @@ export class AnnotationSidebar extends TatorElement {
       zoomOut.blur();
     });
 
-    pan.addEventListener("click", () => {
-      this._selectButton(pan);
+    this._pan.addEventListener("click", () => {
+      this._selectButton(this._pan);
       this.dispatchEvent(new Event("pan"));
     });
 
@@ -240,6 +240,14 @@ export class AnnotationSidebar extends TatorElement {
   modeChange(newMode, metaMode) {
     if (newMode == "new_poly") {
       this._selectButton(this._poly, metaMode);
+    }
+    if (newMode == "pan") {
+      this._selectButton(this._pan, metaMode);
+      this.dispatchEvent(new Event("pan"));
+    }
+    if (newMode == "query") {
+      this._selectButton(this._edit, metaMode);
+      this.dispatchEvent(new Event("default"));
     } else {
       console.info(`Mode change to ${newMode} ignored.`);
     }
