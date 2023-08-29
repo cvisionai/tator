@@ -192,7 +192,7 @@ def _get_info_for_attribute(entity_type, key):
             retval = {"name": key[1:], "dtype": "int"}
         elif key in ["$created_datetime", "$modified_datetime"]:
             retval = {"name": key[1:], "dtype": "datetime"}
-        elif key in ["$name"]:
+        elif key in ["$name", "$elemental_id"]:
             retval = {"name": key[1:], "dtype": "string"}
     elif key == "tator_user_sections":
         retval = {"name": "tator_user_sections", "dtype": "string"}
@@ -407,7 +407,13 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         "$id",
     ]:
         attributeCast[key] = int
-    for key in ["$created_datetime", "$modified_datetime", "$name", "$archive_state"]:
+    for key in [
+        "$created_datetime",
+        "$modified_datetime",
+        "$name",
+        "$archive_state",
+        "$elemental_id",
+    ]:
         attributeCast[key] = str
 
     q_object = build_query_recursively(query_object, attributeCast, is_media, qs[0].project)
