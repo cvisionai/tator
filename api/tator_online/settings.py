@@ -10,9 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
-import json
 import os
-import socket
 from django.contrib.messages import constants as messages
 import yaml
 
@@ -37,7 +35,6 @@ if ALIAS_HOSTS:
 KEYCLOAK_ENABLED = os.getenv("KEYCLOAK_ENABLED") == "TRUE"
 
 STATSD_ENABLED = os.getenv("STATSD_ENABLED", "TRUE") == "TRUE"
-AUDIT_ENABLED = os.getenv("AUDIT_ENABLED", "TRUE") == "TRUE"
 
 # Application definition
 
@@ -97,13 +94,6 @@ MIDDLEWARE = (
             "tator_online.StatsdMiddleware",
         ]
         if STATSD_ENABLED
-        else []
-    )
-    + (
-        [
-            "tator_online.AuditMiddleware",
-        ]
-        if AUDIT_ENABLED
         else []
     )
     + [
