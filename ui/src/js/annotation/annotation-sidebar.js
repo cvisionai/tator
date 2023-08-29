@@ -244,11 +244,11 @@ export class AnnotationSidebar extends TatorElement {
     if (newMode == "pan") {
       this._selectButton(this._pan, metaMode);
       this.dispatchEvent(new Event("pan"));
-    } if (newMode == "query") {
+    }
+    if (newMode == "query") {
       this._selectButton(this._edit, metaMode);
       this.dispatchEvent(new Event("default"));
-    }
-    else {
+    } else {
       console.info(`Mode change to ${newMode} ignored.`);
     }
   }
