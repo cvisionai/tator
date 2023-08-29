@@ -58,36 +58,23 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
             temp_image = tempfile.NamedTemporaryFile(delete=False)
             download_file(url, temp_image.name, 5)
         image = Image.open(temp_image.name)
-        media_obj.width, media_obj.height = image.size
         image_format = image.format
 
         image = ImageOps.exif_transpose(image)
+        media_obj.width, media_obj.height = image.size
 
         # Add a png for compatibility purposes in case of HEIF or AVIF import.
-        # always make AVIF, but keep HEIF originals.
+        # always make AVIF
         if reference_only is False:
-            if image_format == "HEIF":
-                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                image.save(alt_image, format="png")
-                alt_images.append(alt_image)
-                alt_formats.append("png")
+            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+            image.save(alt_image, format="png", quality=100, subsampling=0)
+            alt_images.append(alt_image)
+            alt_formats.append("png")
 
-                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
-                image.save(alt_image, format="avif")
-                alt_images.append(alt_image)
-                alt_formats.append("avif")
-
-            elif image_format == "AVIF":
-                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                image.save(alt_image, format="png")
-                alt_images.append(alt_image)
-                alt_formats.append("png")
-            else:
-                # convert image upload to AVIF
-                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
-                image.save(alt_image, format="avif")
-                alt_images.append(alt_image)
-                alt_formats.append("avif")
+            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
+            image.save(alt_image, format="avif", quality=100)
+            alt_images.append(alt_image)
+            alt_formats.append("avif")
 
         # Download or create the thumbnail.
         if thumbnail_url is None:
@@ -112,6 +99,7 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         thumb_height = thumb.height
         thumb.close()
 
+    media_obj.media_files = {}
     if reference_only and url:
         if media_obj.media_files is None:
             media_obj.media_files = {}
@@ -123,23 +111,10 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
                 "mime": f"image/{image_format.lower()}",
             }
         ]
-    elif url:
-        if media_obj.media_files is None:
-            media_obj.media_files = {}
-        # Upload image.
-        image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-        tator_store.put_object(image_key, temp_image)
-        media_obj.media_files["image"] = [
-            {
-                "path": image_key,
-                "size": os.stat(temp_image.name).st_size,
-                "resolution": [media_obj.height, media_obj.width],
-                "mime": f"image/{image_format.lower()}",
-            }
-        ]
-        os.remove(temp_image.name)
-        Resource.add_resource(image_key, media_obj)
+    else:
+        media_obj.media_files["image"] = []
 
+    # Handle all formats the same way
     for alt_image, alt_format in zip(alt_images, alt_formats):
         alt_name = f"image.{alt_format}"
         if media_obj.media_files is None:
