@@ -240,10 +240,15 @@ export class AnnotationSidebar extends TatorElement {
   modeChange(newMode, metaMode) {
     if (newMode == "new_poly") {
       this._selectButton(this._poly, metaMode);
-    } if (newMode == "pan" ) {
+    }
+    if (newMode == "pan") {
       this._selectButton(this._pan, metaMode);
       this.dispatchEvent(new Event("pan"));
-    } else {
+    } if (newMode == "query") {
+      this._selectButton(this._edit, metaMode);
+      this.dispatchEvent(new Event("default"));
+    }
+    else {
       console.info(`Mode change to ${newMode} ignored.`);
     }
   }
