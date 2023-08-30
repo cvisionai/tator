@@ -1,14 +1,15 @@
 .modal-wrap {
   align-items: flex-start;
   left: 0;
-  margin: 15vh auto;
+  margin: auto;
   display: none;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   position: fixed;
   right: 0;
-  top: 50px;
+  top: 20px;
+  bottom: 20px;
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
@@ -25,6 +26,7 @@
     width: 790px;
   }
   overflow: auto;
+  max-height: calc(100vh - 50px);
 }
 
 .modal-wide {
