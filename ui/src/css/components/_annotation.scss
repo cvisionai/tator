@@ -147,7 +147,7 @@ save-dialog {
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
-  z-index: 2;
+  z-index: 4;
   &.is-open {
     opacity: 1;
     pointer-events: initial;
@@ -174,7 +174,7 @@ modify-track-dialog {
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
-  z-index: 2;
+  z-index: 4;
   &.is-open {
     opacity: 1;
     pointer-events: initial;
@@ -338,6 +338,7 @@ favorite-button {
 }
 
 .annotation__video-player {
+  z-index: 2;
   display: flex;
   flex-direction: column;
   flex-grow: 1;

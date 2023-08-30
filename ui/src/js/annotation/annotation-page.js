@@ -1381,7 +1381,6 @@ export class AnnotationPage extends TatorPage {
                   requestObj,
                   metaMode
                 );
-                this._makePreview(objDescription, dragInfo, canvasPosition);
               }
             });
 
@@ -1955,7 +1954,6 @@ export class AnnotationPage extends TatorPage {
         requestObj,
         metaMode
       );
-      this._makePreview(objDescription, dragInfo, canvasPosition);
     });
 
     if (typeof canvas.addCreateTrackType !== "undefined") {
@@ -1970,7 +1968,6 @@ export class AnnotationPage extends TatorPage {
       save.classList.remove("is-open");
       this.removeAttribute("has-open-modal");
       document.body.classList.remove("shortcuts-disabled");
-      this._main.removeChild(this._preview);
     }
   }
 
@@ -2020,34 +2017,6 @@ export class AnnotationPage extends TatorPage {
     Object.values(this._saves).forEach((save) => {
       save.metaMode = false;
     });
-  }
-
-  _makePreview(objDescription, dragInfo, canvasPosition) {
-    this._preview = document.createElement("div");
-    this._preview.style.overflow = "hidden";
-    this._preview.style.position = "absolute";
-    const prevTop = Math.min(dragInfo.start.y, dragInfo.end.y);
-    const prevLeft = Math.min(dragInfo.start.x, dragInfo.end.x);
-    this._preview.style.top = canvasPosition.top + prevTop + "px";
-    this._preview.style.left = canvasPosition.left + prevLeft + "px";
-    this._preview.style.width =
-      Math.abs(dragInfo.start.x - dragInfo.end.x) - 6 + "px";
-    this._preview.style.height =
-      Math.abs(dragInfo.start.y - dragInfo.end.y) - 6 + "px";
-    this._preview.style.borderStyle = "solid";
-    this._preview.style.borderWidth = "3px";
-    this._preview.style.borderColor = "white";
-    this._preview.style.zIndex = 2;
-    this._main.appendChild(this._preview);
-
-    const img = new Image();
-    img.src = dragInfo.url;
-    img.style.position = "absolute";
-    img.style.top = -prevTop - 3 + "px";
-    img.style.left = -prevLeft - 3 + "px";
-    img.style.width = canvasPosition.width + "px";
-    img.style.height = canvasPosition.height + "px";
-    this._preview.appendChild(img);
   }
 
   /// Turn on or off ability to edit annotations
