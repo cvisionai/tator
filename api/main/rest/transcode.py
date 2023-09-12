@@ -26,9 +26,7 @@ from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
 
-SCHEME = "https://" if os.getenv("REQUIRE_HTTPS") == "TRUE" else "http://"
-
-HOST = f"{SCHEME}{os.getenv('MAIN_HOST')}"
+HOST = "http://gunicorn-svc:8000"
 GUNICORN_HOST = os.getenv("GUNICORN_HOST")
 COMPOSE_DEPLOY = os.getenv("COMPOSE_DEPLOY")
 if GUNICORN_HOST is not None and COMPOSE_DEPLOY is not None:
