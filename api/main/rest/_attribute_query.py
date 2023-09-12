@@ -5,7 +5,7 @@ from dateutil.parser import parse as dateutil_parse
 import pytz
 import re
 
-from django.db.models.functions import Cast, Coalesce
+from django.db.models.functions import Cast, Greatest
 from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
 from django.contrib.gis.db.models import (
     BigIntegerField,
@@ -98,6 +98,7 @@ def _related_search(
         local_qs = get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
         if local_qs.count():
             related_matches.append(local_qs)
+
     if related_matches:
         # Convert result matches to use Media model because related_matches might be States or Localizations
         # Note: 'media' becomes 'id' when this happens. The two columns are 'id','count' in this result.
@@ -105,56 +106,29 @@ def _related_search(
         # for any matching metadata.
         # Finally reselect all media in this concatenated set by id. Annotate the incident with the count from the previous record set, which is
         # now the sum of any hit across any metadata type.
+        orig_list = [*related_matches]
         related_match = related_matches.pop()
-        media_vals = related_match.values("media").annotate(count=Count("media"))
-        media_matches = (
-            qs.filter(pk__in=media_vals.values("media"))
-            .annotate(
-                count=Subquery(
-                    media_vals.filter(media=OuterRef("id")).order_by("-count")[:1].values("count")
-                )
-            )
-            .values("id", "count")
-        )
-        logger.info(
-            f"related matches interim count = {related_match[0]._meta.db_table} this={media_vals} total={media_matches}"
-        )
-        for r in related_matches:
-            this_vals = r.values("media").annotate(count=Count("media"))
-            this_run = (
-                qs.filter(
-                    Q(pk__in=this_vals.values("media")) | Q(pk__in=media_matches.values("id"))
-                )
-                .annotate(
-                    this_count=Coalesce(
-                        Subquery(
-                            this_vals.filter(media=OuterRef("id"))
-                            .order_by("-count")[:1]
-                            .values("count")
-                        ),
-                        0,
-                    ),
-                    last_count=Coalesce(
-                        Subquery(
-                            media_vals.filter(media=OuterRef("id"))
-                            .order_by("-count")[:1]
-                            .values("count")
-                        ),
-                        Value(0),
-                    ),
-                    count=F("this_count") + F("last_count"),
-                )
-                .values("id", "count")
-            )
-            media_matches = this_run
-            logger.info(
-                f"related matches interim count = {r[0]._meta.db_table} this={this_run} , total={media_matches}"
-            )
-        qs = (
-            qs.filter(pk__in=media_matches.values("id"))
-            .annotate(incident=Subquery(media_matches.filter(id=OuterRef("id")).values("count")))
-            .distinct()
-        )
+        # Pop and process the list
+        media_vals = related_match.values("media")
+        for related_match in related_matches:
+            this_vals = related_match.values("media")
+            media_vals = media_vals.union(this_vals)
+
+        # We now have all the matching media, but lost the score information
+        # going back to the original set, make a bunch of subqueries to calculate the
+        # greatest score for a particular media, if there were duplicates
+        # list comp didn't play nice here, but this is easier to read anyway
+        score = []
+        for x in orig_list:
+            annotated_x = x.annotate(count=Count("media"))
+            filtered_x = annotated_x.filter(media=OuterRef("id"))
+            values_x = filtered_x.values("count").order_by("-count")[:1]
+            score.append(Subquery(values_x))
+        logger.info(f"SCORE = {len(score)}")
+        if len(score) > 1:
+            qs = qs.filter(pk__in=media_vals.values("id")).annotate(incident=Greatest(*score))
+        else:
+            qs = qs.filter(pk__in=media_vals.values("id")).annotate(incident=score[0])
     else:
         qs = qs.filter(pk=-1).annotate(incident=Value(0))
     return qs
@@ -241,7 +215,11 @@ def _convert_attribute_filter_value(pair, annotation_type, operation):
         value = dateutil_parse(value)
     elif dtype == "geopos":
         distance, lat, lon = value.split("::")
-        value = (Point(float(lon), float(lat), srid=4326), Distance(km=float(distance)), "spheroid")
+        value = (
+            Point(float(lon), float(lat), srid=4326),
+            Distance(km=float(distance)),
+            "spheroid",
+        )
         logger.info(f"{distance}, {lat},{lon}")
     return key, value, dtype
 
