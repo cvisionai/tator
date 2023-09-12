@@ -49,7 +49,6 @@ class CloneMediaListAPI(BaseListView):
         os.makedirs(os.path.join("/media", str(dest)), exist_ok=True)
 
         # Retrieve media that will be cloned.
-        response_data = []
         original_medias = get_media_queryset(self.kwargs["project"], params)
 
         # If there are too many Media to create at once, raise an exception.

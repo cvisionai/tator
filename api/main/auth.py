@@ -60,7 +60,7 @@ class TatorAuth(ModelBackend):
         if user.check_password(password) and self.user_can_authenticate(user):
             user.last_login = datetime.now(timezone.utc)
             if user.failed_login_count >= LOCKOUT_LIMIT:
-                msg = "Login proceeded after lock expiry User={user}/{user.id}"
+                msg = f"Login proceeded after lock expiry User={user}/{user.id}"
                 Notify.notify_admin_msg(msg)
             user.failed_login_count = 0
             user.save()
