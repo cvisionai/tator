@@ -126,9 +126,9 @@ def _related_search(
             score.append(Subquery(values_x))
         logger.info(f"SCORE = {len(score)}")
         if len(score) > 1:
-            qs = qs.filter(pk__in=media_vals.values("id")).annotate(incident=Greatest(*score))
+            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=Greatest(*score))
         else:
-            qs = qs.filter(pk__in=media_vals.values("id")).annotate(incident=score[0])
+            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=score[0])
     else:
         qs = qs.filter(pk=-1).annotate(incident=Value(0))
     return qs
