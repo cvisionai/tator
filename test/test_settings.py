@@ -322,18 +322,20 @@ def test_settings_projectMemberships(page_factory, project, launch_time, base_ur
         print(f'Invitation count {count} sent successfully!')
         
         page.goto(registration_link, wait_until='networkidle')
+        page.wait_for_timeout(1000)
         page.fill('text-input[name="First name"] input', 'First')
         page.fill('text-input[name="Last name"] input', 'Last')
         page.fill('text-input[name="Email address"] input', user_email)
-        page.fill('text-input[name="Username"] input', 'NoReply'+str(organization_id)+count) #username must be unique
         page.fill('text-input[name="Password"] input', '123!@#abc123')
         page.fill('text-input[name="Password (confirm)"] input', '123!@#abc123')
         page.fill('text-input[name="First name"] input', 'Name')
+        page.fill('text-input[name="Username"] input', 'NoReply'+str(organization_id)+count+generate_random_string(6)) #username must be unique
         page.click('input[type="submit"]')
         page.wait_for_selector(f'text="Continue"')
     
     print(f"Testing... emailList: {';'.join(emailList)}")
     page.goto(f"/{project}/project-settings#Membership-New", wait_until='networkidle')
+    page.wait_for_timeout(1000)
     emailListString = ';'.join(emailList)
     page.fill('#membership-edit--form user-input[name="Search users"] input', emailListString)
     page.select_option('#membership-edit--form enum-input[name="Default version"] select', label='Test Version')
