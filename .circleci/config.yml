@@ -155,7 +155,7 @@ jobs:
           ssh lightsail 'wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb';
           ssh lightsail 'sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb';
           ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr python3-pip ffmpeg wget unzip';
-          ssh lightsail 'pip3 install pytest pytest-xdist pandas playwright==1.27.1 pytest-playwright==0.3.0 pytesseract==0.3.9 opencv-python pytest-rerunfailures==10.2';
+          ssh lightsail 'pip3 install pytest pytest-xdist pandas playwright==1.37.0 pytest-playwright==0.4.2 pytesseract==0.3.9 opencv-python pytest-rerunfailures==10.2';
           ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && playwright install';
           ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
           ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
