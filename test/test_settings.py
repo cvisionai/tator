@@ -1,10 +1,15 @@
 import os
 import re
+import string
+import random
 import inspect
 import pytest
 
 from ._common import print_page_error
 
+def generate_random_string(length):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for i in range(length))
 ## Status: In progress
 # Goals:
 # - Edited: Project; Todo: Assert changes stick single edits
@@ -295,7 +300,7 @@ def test_settings_projectMemberships(page_factory, project, launch_time, base_ur
     emailList = []
     for count in idList:
         page.goto(f"/{organization_id}/organization-settings#Invitation-New", wait_until='networkidle')
-        user_email = 'no-reply'+str(organization_id)+str(count)+'@cvisionai.com'
+        user_email = 'no-reply'+str(organization_id)+str(count)+generate_random_string(6)+'@cvisionai.com'
         emailList.append(user_email)
         page.wait_for_selector('org-type-invitation-container[form="invitation-edit"]')
         page.wait_for_timeout(1000)
