@@ -577,8 +577,11 @@ def test_concat(page_factory, project, concat_test):
   # Pause the video
   play_button.click()
   _wait_for_color(page, canvas, 0, timeout=30, name='seek (pause)')
-  
-  page.close()
+ 
+  try: 
+    page.close()
+  except Exception as err:
+    print(f"Error closing page during test_concat: {err}")
 
 """
 This test would be good, but doesn't work because playback isn't performant enough in test runner

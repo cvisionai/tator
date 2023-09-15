@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const express = require('express');
+const helmet = require('helmet');
 const nunjucks = require('nunjucks');
 const favicon = require('serve-favicon');
 const proxy = require('express-http-proxy');
@@ -56,6 +57,28 @@ app.use('/static', express.static('./server/static'));
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
+      connectSrc: ["'self'", argv.backend],
+      frameSrc: ["'self'", argv.backend],
+    }
+  },
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false,
+  originAgentCluster: false,
+  referrerPolicy: false,
+  strictTransportSecurity: false,
+  xContentTypeOptions: false,
+  xDnsPrefetchControl: false,
+  xDownloadOptions: false,
+  xFrameOptions: false,
+  xPermittedCrossDomainPolicies: false,
+  xPoweredBy: false,
+  xXssProtection: false,
+}));
 
 if (params.backend) {
   let opts = {};
