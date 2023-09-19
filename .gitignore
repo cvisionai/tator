@@ -40,6 +40,7 @@ helm/tator/configs/*
 **/debug.log
 **/.pylint-venv
 .env
+test-results
 
 # Hidden mac files
 ._.

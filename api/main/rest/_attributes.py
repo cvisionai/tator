@@ -275,7 +275,7 @@ def bulk_patch_attributes(new_attrs, q_s):
         q_s.update(
             attributes=ReplaceValue(
                 "attributes",
-                keyname=key,
+                keyname=key.replace("%", "%%"),
                 new_value=_process_for_bulk_op(raw_val),
                 create_missing=True,
             )
@@ -290,8 +290,8 @@ def bulk_rename_attributes(new_attrs, q_s):
         q_s.update(
             attributes=ReplaceKey(
                 "attributes",
-                old_key=old_key,
-                new_key=new_key,
+                old_key=old_key.replace("%", "%%"),
+                new_key=new_key.replace("%", "%%"),
                 create_missing=True,
             )
         )
@@ -302,4 +302,4 @@ def bulk_delete_attributes(attrs_to_delete: List[str], q_s):
     Removes attribute keys.
     """
     for attr in attrs_to_delete:
-        q_s.update(attributes=DeleteKey("attributes", key=attr))
+        q_s.update(attributes=DeleteKey("attributes", key=attr.replace("%", "%%")))

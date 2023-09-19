@@ -1101,3 +1101,25 @@ def convert_old_buckets():
 
             if success:
                 logger.info(f"Converted {store_type} bucket ({bucket.id})!")
+
+
+def upgrade_vector_db():
+    from main.models import LocalizationType, MediaType, StateType
+    from main.search import get_connection, TatorSearch
+    from django.db import connection
+    import time
+
+    with get_connection(connection.settings_dict["NAME"]).cursor() as cursor:
+        cursor.execute("ALTER EXTENSION vector UPDATE;")
+
+    ts = TatorSearch()
+
+    for entity_type in [
+        *LocalizationType.objects.all(),
+        *MediaType.objects.all(),
+        *StateType.objects.all(),
+    ]:
+        for attribute_info in entity_type.attribute_types:
+            if attribute_info["dtype"] == "float_array":
+                print(f"Reindexing {attribute_info['name']} of {entity_type.name}")
+                ts.create_psql_index(entity_type, attribute_info, flush=True, concurrent=True)

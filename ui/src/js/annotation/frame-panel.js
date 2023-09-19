@@ -66,9 +66,17 @@ export class FramePanel extends TatorElement {
   set browserSettings(val) {
     this._browserSettings = val;
     this._attributes.browserSettings = this._browserSettings;
+
+    let moreLessToggle = this._browserSettings.getMoreLess(this._dataType);
+    if (moreLessToggle == "more") {
+      this._moreLessButton.textContent = "Less -";
+    } else if (moreLessToggle == "less") {
+      this._moreLessButton.textContent = "More +";
+    }
   }
 
   set dataType(val) {
+    this._dataType = val;
     this._name.textContent = val.name;
     this._typeId = val.id;
     this._method = val.interpolation;
@@ -123,6 +131,15 @@ export class FramePanel extends TatorElement {
         this._updateAttributes(evt.detail.data);
       }
     });
+
+    if (this._browserSettings) {
+      let moreLessToggle = this._browserSettings.getMoreLess(this._dataType);
+      if (moreLessToggle == "more") {
+        this._moreLessButton.textContent = "Less -";
+      } else if (moreLessToggle == "less") {
+        this._moreLessButton.textContent = "More +";
+      }
+    }
   }
 
   frameChange(frame) {

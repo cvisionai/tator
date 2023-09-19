@@ -62,8 +62,9 @@ export class OrgTypeAffiliateContainer extends OrgTypeFormContainer {
     this._form.data = data;
 
     // Setup object info
-    this.objectName = data.username;
-    this.updateAffiliateSidebar(data.username);
+    const userName = data?.username ? data.username : "";
+    this.objectName = userName;
+    this.updateAffiliateSidebar(userName);
   }
 
   async updatedProjectData(newProjectData) {

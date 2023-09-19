@@ -13,6 +13,22 @@ autocomplete_service = {
             "type": "boolean",
             "default": False,
         },
+        "mode": {
+            "description": "Change flavor of autocomplete to use built-in WoRMs support. For information on WoRMs see https://www.marinespecies.org/rest/",
+            "type": "string",
+            "default": "tator",
+            "enum": ["tator", "worms"],
+        },
+        "minLevel": {
+            "description": "If using WoRMS, set this to the minimum returnable taxonomic level"
+            "See https://www.marinespecies.org/rest/AphiaTaxonRanksByID/-1?AphiaID=2"
+            " for the levels, Note: 220 is species",
+            "type": "integer",
+        },
+        "useCommon": {
+            "description": "If using WoRMS, if set to true, use common names (vernacular in their API)",
+            "type": "boolean",
+        },
     },
 }
 
@@ -73,6 +89,7 @@ attribute_type_properties = {
         "description": "Number of elements for `float_array` dtype.",
         "type": "integer",
         "minimum": 1,
+        "maximum": 2000,
     },
     "style": {
         "description": "Available options: disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check   "

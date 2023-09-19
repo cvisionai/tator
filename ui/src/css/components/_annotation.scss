@@ -45,13 +45,13 @@
 
 .annotation__shape-indicator {
   background-color: $color-purple;
-  border-bottom-right-radius: 6px;
-  border-top-right-radius: 6px;
-  height: 30px;
+  border-bottom-right-radius: 3px;
+  border-top-right-radius: 3px;
+  height: 50px;
   left: 0;
   position: absolute;
-  top: 28px;
-  width: 4px;
+  top: 19px;
+  width: 6px;
   transition-duration: 0.25s;
   transition-property: transform;
 
@@ -102,17 +102,17 @@
   }
 
   zoom-in-button.is-selected + zoom-out-button + pan-button + & {
-    transform: translateY(434px);
+    transform: translateY(372px);
   }
 
   pan-button.is-selected + & {
-    transform: translateY(558px);
+    transform: translateY(496px);
   }
 }
 
 .annotation__panels {
   flex-shrink: 0;
-  min-width: 520px;
+  min-width: 560px;
   max-height: calc(100vh - 150px);
   overflow-y: auto;
 }
@@ -147,7 +147,7 @@ save-dialog {
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
-  z-index: 2;
+  z-index: 4;
   &.is-open {
     opacity: 1;
     pointer-events: initial;
@@ -174,7 +174,7 @@ modify-track-dialog {
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
-  z-index: 2;
+  z-index: 4;
   &.is-open {
     opacity: 1;
     pointer-events: initial;
@@ -338,6 +338,7 @@ favorite-button {
 }
 
 .annotation__video-player {
+  z-index: 2;
   display: flex;
   flex-direction: column;
   flex-grow: 1;

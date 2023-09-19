@@ -3,14 +3,12 @@ import shutil
 import datetime
 import subprocess
 import tarfile
-import tempfile
 import pytest
-import requests
 import inspect
 
 import tator
 
-from ._common import get_video_path, download_file, create_media, upload_media_file
+from ._common import download_file, create_media, upload_media_file
 
 class PageFactory:
     def __init__(self, browser, browser_context_args, storage, base_path):
@@ -389,9 +387,10 @@ def referenced_image(request, base_url, token, page_factory, project, image_sect
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
     image_type = None
-    for m in media_types:
+    for m in reversed(media_types):
         if m.dtype == "image":
             image_type = m
+            break
     media_spec = {'type': image_type.id,
                   'section': "Referenced Image",
                   'name': 'Referenced Image.jpg',
@@ -409,9 +408,10 @@ def referenced_video(request, base_url, token, page_factory, project):
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
     video_type = None
-    for m in media_types:
+    for m in reversed(media_types):
         if m.dtype == "video":
             video_type = m
+            break
     media_spec = {'type': video_type.id,
                   'section': "Referenced Image",
                   'name': 'Referenced Image.jpg',
@@ -508,9 +508,8 @@ def rgb_test(request, base_url, project, token, video_files):
     media_id = create_media(api, project, base_url, token, video_type_id, "color_check.mp4", "Color Check Video", red_mp4)
     colors=[red_mp4, green_mp4, blue_mp4]
     segments=[red_segments, green_segments, blue_segments]
-    with tempfile.TemporaryDirectory() as td:
-        for color,segment in zip(colors, segments):
-            upload_media_file(api, project, media_id, color, segment)
+    for color,segment in zip(colors, segments):
+        upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
@@ -530,9 +529,8 @@ def rgb_test_2(request, base_url, project, token, video_files):
     media_id = create_media(api, project, base_url, token, video_type_id, "color_check.mp4", "Color Check Video", red_mp4)
     colors=[red_mp4, green_mp4, blue_mp4]
     segments=[red_segments, green_segments, blue_segments]
-    with tempfile.TemporaryDirectory() as td:
-        for color,segment in zip(colors, segments):
-            upload_media_file(api, project, media_id, color, segment)
+    for color,segment in zip(colors, segments):
+        upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
@@ -557,9 +555,8 @@ def small_video(request, base_url, project, token, video_files):
     media_id = create_media(api, project, base_url, token, video_type_id, "color_check.mp4", "Color Check Video", blue_mp4)
     colors=[blue_mp4]
     segments=[blue_segments]
-    with tempfile.TemporaryDirectory() as td:
-        for color,segment in zip(colors, segments):
-            upload_media_file(api, project, media_id, color, segment)
+    for color,segment in zip(colors, segments):
+        upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
@@ -577,9 +574,8 @@ def count_test(request, base_url, project, token, video_files):
     colors=[count_mp4, count_360_mp4]
     segments=[count_segments, count_360_segments]
     media_id = create_media(api, project, base_url, token, video_type_id, "count_check.mp4", "Counts", count_mp4)
-    with tempfile.TemporaryDirectory() as td:
-        for color,segment in zip(colors, segments):
-            upload_media_file(api, project, media_id, color, segment)
+    for color,segment in zip(colors, segments):
+        upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
@@ -595,9 +591,8 @@ def count_1fps_test(request, base_url, project, token, video_files):
     colors=[count_mp4]
     segments=[count_segments]
     media_id = create_media(api, project, base_url, token, video_type_id, "count_1fps_check.mp4", "Counts", count_mp4)
-    with tempfile.TemporaryDirectory() as td:
-        for color,segment in zip(colors, segments):
-            upload_media_file(api, project, media_id, color, segment)
+    for color,segment in zip(colors, segments):
+        upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
@@ -615,9 +610,8 @@ def count_test_2(request, base_url, project, token, video_files):
     colors=[count_mp4, count_360_mp4]
     segments=[count_segments, count_360_segments]
     media_id = create_media(api, project, base_url, token, video_type_id, "count_check.mp4", "Counts", count_mp4)
-    with tempfile.TemporaryDirectory() as td:
-        for color,segment in zip(colors, segments):
-            upload_media_file(api, project, media_id, color, segment)
+    for color,segment in zip(colors, segments):
+        upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
@@ -642,8 +636,5 @@ def multi_offset_count(request, base_url, token, project, count_test, count_test
 @pytest.fixture(scope='session')
 def concat_test(request, base_url, token, project, rgb_test, rgb_test_2):
     api = tator.get_api(host=base_url, token=token)
-    media_types = api.get_media_type_list(project)
-    multi_types = [m for m in media_types if m.dtype == "multi"]
-    multi_type_id = multi_types[0]
     response = tator.util.make_concat(api, "test_concat",[rgb_test,rgb_test_2], "Concat")
     yield response.id[0]

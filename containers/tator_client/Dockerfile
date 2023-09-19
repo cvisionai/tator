@@ -20,13 +20,15 @@ RUN ldconfig
 
 # Install pip packages
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
-RUN pip3 --no-cache-dir --timeout=1000 install pillow==9.5.0 imageio==2.14.0 progressbar2==4.0.0 boto3==1.20.41 pandas==1.4.0 rq==1.11.1
+COPY containers/tator_client/requirements.txt requirements.txt
+RUN pip3 --no-cache-dir --timeout=1000 install -r requirements.txt
+RUN rm requirements.txt
 
 # Copy over scripts
 COPY scripts/transcoder /scripts
 COPY scripts/packages/tator-py/dist/*.whl /tmp
 
-# Build tator-py
+# Install tator-py
 RUN pip3 install /tmp/*.whl
 
 WORKDIR /scripts

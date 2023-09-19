@@ -7,23 +7,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.http import JsonResponse
-from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 
 from django.template.response import TemplateResponse
 from rest_framework.authentication import TokenAuthentication
-import yaml
 
 from .models import Project
 from .models import Membership
-from .models import Affiliation
-from .models import Invitation
-from .models import User
 from .notify import Notify
 from .cache import TatorCache
 
-import os
 import logging
 
 import sys
@@ -34,10 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_login(request):
-    if request.user.is_authenticated:
-        return JsonResponse({"is_authenticated": True})
-    else:
-        return JsonResponse({"is_authenticated": False})
+    return JsonResponse({"is_authenticated": bool(request.user.is_authenticated)})
 
 
 class LoginRedirect(View):
@@ -65,7 +56,7 @@ class ProjectBase(LoginRequiredMixin):
 
         # Check if user is part of project.
         if not project.has_user(self.request.user.pk):
-            raise PermissionDenied
+            raise PermissionDenied(f"User {self.request.user} does not have access to {project.id}")
         return context
 
 
@@ -132,15 +123,13 @@ class AuthProjectView(View):
         user = request.user
         if isinstance(user, AnonymousUser):
             try:
-                (user, token) = TokenAuthentication().authenticate(request)
-            except Exception as e:
+                user, _ = TokenAuthentication().authenticate(request)
+            except Exception:
                 msg = "*Security Alert:* "
                 msg += f"Bad credentials presented for '{original_url}' ({user})"
                 Notify.notify_admin_msg(msg)
-                logger.warn(msg)
+                logger.warn(msg, exc_info=True)
                 return HttpResponse(status=403)
-
-        filename = os.path.basename(original_url)
 
         project = None
         try:
@@ -150,21 +139,19 @@ class AuthProjectView(View):
                 project_id = comps[3]
             project = Project.objects.get(pk=project_id)
             authorized = validate_project(user, project)
-        except Exception as e:
-            logger.info(f"ERROR: {e}")
+        except Exception:
+            logger.info("Could not validate project access", exc_info=True)
             authorized = False
 
         if authorized:
             return HttpResponse(status=200)
-        else:
-            # Files that aren't in the whitelist or database are forbidden
-            msg = f"({user}/{user.id}): "
-            msg += f"Attempted to access unauthorized file '{original_url}'"
-            msg += f". "
-            msg += f"Does not have access to '{project}'"
-            Notify.notify_admin_msg(msg)
-            return HttpResponse(status=403)
 
+        # Files that aren't in the whitelist or database are forbidden
+        msg = (
+            f"({user}/{user.id}): Attempted to access unauthorized file '{original_url}'; does not "
+            f"have access to '{project}'"
+        )
+        Notify.notify_admin_msg(msg)
         return HttpResponse(status=403)
 
 
@@ -183,23 +170,18 @@ class AuthAdminView(View):
         user = request.user
         if isinstance(user, AnonymousUser):
             try:
-                (user, token) = TokenAuthentication().authenticate(request)
-            except Exception as e:
-                msg = "*Security Alert:* "
-                msg += f"Bad credentials presented for '{original_url}'"
+                user, _ = TokenAuthentication().authenticate(request)
+            except Exception:
+                msg = f"*Security Alert:* Bad credentials presented for '{original_url}'"
                 Notify.notify_admin_msg(msg)
                 return HttpResponse(status=403)
 
         if user.is_staff:
             return HttpResponse(status=200)
-        else:
-            # Files that aren't in the whitelist or database are forbidden
-            msg = f"({user}/{user.id}): "
-            msg += f"Attempted to access unauthorized URL '{original_url}'"
-            msg += f"."
-            Notify.notify_admin_msg(msg)
-            return HttpResponse(status=403)
 
+        # Files that aren't in the whitelist or database are forbidden
+        msg = f"({user}/{user.id}): Attempted to access unauthorized URL '{original_url}'."
+        Notify.notify_admin_msg(msg)
         return HttpResponse(status=403)
 
 
@@ -214,11 +196,10 @@ def ErrorNotifierView(request, code, message, details=None):
 
     # Generate slack message
     if Notify.notification_enabled():
-        msg = f"{request.get_host()}:"
-        msg += f" ({request.user}/{request.user.id})"
-        msg += f" caused {code} at {request.get_full_path()}"
+        user = request.user
+        msg = f"{request.get_host()}: ({user}/{user.id}) caused {code} at {request.get_full_path()}"
         if details:
-            Notify.notify_admin_file(msg, msg + "\n" + details)
+            Notify.notify_admin_file(msg, f"{msg}\n{details}")
         else:
             if code == 404 and isinstance(request.user, AnonymousUser):
                 logger.warn(msg)

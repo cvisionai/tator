@@ -194,6 +194,8 @@ app.post('/exchange', async (req, res) => {
       res.cookie("access_token", data.access_token, options);
       options.path = "/admin";
       res.cookie("access_token", data.access_token, options);
+      options.path = "/bespoke";
+      res.cookie("access_token", data.access_token, options);
       res.setHeader("Access-Control-Allow-Credentials", 'true');
       res.status(200).json({
         access_token: data.access_token,
@@ -246,6 +248,8 @@ app.get('/refresh', async (req, res) => {
         }
         res.cookie("access_token", data.access_token, options);
         options.path = "/admin";
+        res.cookie("access_token", data.access_token, options);
+        options.path = "/bespoke";
         res.cookie("access_token", data.access_token, options);
         res.status(200).json({
           access_token: data.access_token,

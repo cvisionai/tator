@@ -44,15 +44,15 @@ export class MembershipEdit extends TypeFormTemplate {
   }
 
   async _setupFormUnique() {
-    console.log("_setupFormUnique");
+    console.log("Membership form ... _setupFormUnique");
+    this._userInput.reset();
+    this._userInput.init(this._userData);
+
     if (store.getState().Version.init === false) {
       await store.getState().initType("Version");
-      await this.setVersionChoices();
     }
 
-    this._userInput.reset();
     if (this._data.id == "New") {
-      this._userInput.init(this._userData);
       this._userInput.hidden = false;
     } else {
       this._userInput.hidden = true;
@@ -94,7 +94,6 @@ export class MembershipEdit extends TypeFormTemplate {
   async setVersionChoices() {
     this._versionSelect.clear();
     const versionOptions = await getCompiledList({ type: "Version" });
-    console.log("versionOptions", versionOptions);
     this._versionSelect.choices = versionOptions;
   }
 
@@ -107,11 +106,8 @@ export class MembershipEdit extends TypeFormTemplate {
       for (const [userId, user] of users.entries()) {
         formData.push({
           user: userId,
-          username: user.username, // ignored by BE, used by FE only
-          project: this.projectId,
           permission: this._permissionSelect.getValue(),
           default_version: Number(this._versionSelect.getValue()),
-          default_version_id: Number(this._versionSelect.getValue()), // ignored by BE, used by FE only
         });
       }
     } else {

@@ -1,6 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class EntitySelector extends TatorElement {
   constructor() {
@@ -128,6 +129,8 @@ export class EntitySelector extends TatorElement {
     redraw.style.marginLeft = "8px";
     redraw.style.display = "none";
     controls.appendChild(redraw);
+    this._redraw = redraw;
+    this._redrawEnabled = true;
 
     const more = document.createElement("entity-more");
     controls.appendChild(more);
@@ -178,7 +181,12 @@ export class EntitySelector extends TatorElement {
       const index = parseInt(this._current.textContent) - 1;
       if (this._dataType.isLocalization) {
         endpoint = "Localization";
-        this._canvas.deleteLocalization(this._data[index]);
+
+        // First verify if the localization is part of any states. We will need to remove
+        // the localization.
+        this.removeLocFromRelatedStates(this._data[index]).then(() => {
+          this._canvas.deleteLocalization(this._data[index]);
+        });
       } else {
         endpoint = "State";
         let had_parent = this._data[index].parent != null;
@@ -212,7 +220,9 @@ export class EntitySelector extends TatorElement {
       if (capture.style.display == "none") {
         if (hasPermission(this._permission, "Can Edit")) {
           this._del.style.display = "block";
-          redraw.style.display = "block";
+          if (this._redrawEnabled) {
+            redraw.style.display = "block";
+          }
         } else {
           this._del.style.display = "none";
           redraw.style.display = "none";
@@ -241,6 +251,44 @@ export class EntitySelector extends TatorElement {
     });
   }
 
+  async removeLocFromRelatedStates(loc) {
+    // Find if there are any related states/tracks associated with this localization
+    var response = await fetchCredentials(
+      `/rest/States/${this._project}?related_id=${loc.id}`
+    );
+    var relatedList = await response.json();
+    var relatedStates = [];
+    for (const entry of relatedList) {
+      if (entry.hasOwnProperty("localizations")) {
+        for (const trackLocId of entry.localizations) {
+          if (loc.id == trackLocId) {
+            relatedStates.push(entry);
+            break;
+          }
+        }
+      }
+    }
+
+    // Remove the id from the states
+    for (const state of relatedStates) {
+      var response = await fetchCredentials(`/rest/State/${state.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          localization_ids_remove: [loc.id],
+        }),
+      });
+      var msg = await response.json();
+      console.log(`removeLocFromRelatedStates: ${msg}`);
+    }
+
+    if (relatedStates.length > 0) {
+      this._canvas._data.updateAllTypes(
+        this._canvas.refresh.bind(this._canvas),
+        null
+      );
+    }
+  }
+
   static get observedAttributes() {
     return ["name"];
   }
@@ -256,8 +304,13 @@ export class EntitySelector extends TatorElement {
   set canvas(val) {
     this._canvas = val;
   }
+
   set permission(val) {
     this._permission = val;
+  }
+
+  set project(val) {
+    this._project = val;
   }
 
   /**
@@ -294,6 +347,10 @@ export class EntitySelector extends TatorElement {
 
   set globalDataBuffer(val) {
     this._globalData = val;
+  }
+
+  set redrawEnabled(val) {
+    this._redrawEnabled = val;
   }
 
   update(data) {

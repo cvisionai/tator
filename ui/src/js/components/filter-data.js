@@ -232,6 +232,13 @@ export class FilterData {
           };
           entityType.attribute_types.push(dtypeAttribute);
 
+          var elemental_id = {
+            name: "$elemental_id",
+            label: "Elemental ID",
+            dtype: "string",
+          };
+          entityType.attribute_types.push(elemental_id);
+
           var archiveStateAttribute = {
             choices: ["live", "to_archive", "archived", "to_live"],
             name: "$archive_state",
@@ -286,6 +293,13 @@ export class FilterData {
             };
             entityType.attribute_types.push(geo_height);
           }
+
+          var elemental_id = {
+            name: "$elemental_id",
+            label: "Elemental ID",
+            dtype: "string",
+          };
+          entityType.attribute_types.push(elemental_id);
 
           var frameAttribute = {
             name: "$frame",

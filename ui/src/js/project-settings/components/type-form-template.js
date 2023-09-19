@@ -77,15 +77,14 @@ export class TypeFormTemplate extends TatorElement {
         this.modal._error(err);
       }
     } else if (Array.isArray(formData) && formData.length !== 0) {
-      const responses = [];
-      for (let d of formData) {
-        const respData = await this.doSaveAction(d);
-        responses.push(respData);
-      }
+      const responses = await this.doSaveAction(formData, true);
+
       this.handleResponseList(responses);
     } else {
       this.modal._success("Nothing new to save!");
     }
+
+    this.data = null;
   }
 
   /**
@@ -131,12 +130,21 @@ export class TypeFormTemplate extends TatorElement {
     return this._warningDeleteMessage;
   }
 
-  doSaveAction(formData) {
-    const info = { type: this.typeName, id: this.typeId, data: formData };
-    if (this.typeId == "New") {
-      return store.getState().addType(info);
+  async doSaveAction(formData, isArray = false) {
+    const info = {
+      type: this.typeName,
+      id: this.typeId,
+      data: formData,
+    };
+
+    console.log("Form data", formData);
+
+    if (this.typeId == "New" && isArray) {
+      return await store.getState().addTypeArray(info);
+    } else if (this.typeId == "New" && !isArray) {
+      return await store.getState().addTypeSingle(info);
     } else {
-      return store.getState().updateType(info);
+      return await store.getState().updateType(info);
     }
   }
 
@@ -162,45 +170,52 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   handleResponseList(responses) {
-    let sCount = 0;
-    let eCount = 0;
-    let errors = "";
+    if (responses && Array.isArray(responses)) {
+      let sCount = 0;
+      let eCount = 0;
+      let errors = "";
 
-    for (let object of responses) {
-      if (object.response.ok) {
-        sCount++;
+      for (let object of responses) {
+        if (object?.response?.ok) {
+          sCount++;
+        } else {
+          eCount++;
+          const message = JSON.parse(object.response.text).message;
+          errors += `<br/><br/>${message}`; //${r.data.message}
+        }
+      }
+
+      if (sCount > 0 && eCount === 0) {
+        return this.modal._success(
+          `Successfully added ${sCount} ${this.typeName}${
+            sCount == 1 ? "" : "s"
+          }.`
+        );
+      } else if (sCount > 0 && eCount > 0) {
+        return this.modal._complete(
+          `Successfully added ${sCount} ${
+            this.typeName
+          }s.<br/><br/>Error adding ${eCount} ${this.typeName}${
+            eCount == 1 ? "" : "s"
+          }.<br/><br/>Error message${
+            eCount == 1 ? "" : "s"
+          }:<br/><br/>${errors}`
+        );
       } else {
-        eCount++;
-        const message = JSON.parse(object.response.text).message;
-        errors += `Error: ${message} \n`; //${r.data.message}
+        return this.modal._error(
+          `Error adding ${eCount} ${this.typeName}${
+            eCount == 1 ? "" : "s"
+          }.<br/><br/>Error message${
+            eCount == 1 ? "" : "s"
+          }:<br/><br/>${errors}`
+        );
       }
     }
-
-    if (sCount > 0 && eCount === 0) {
-      return this.modal._success(
-        `Successfully added ${sCount} ${this.typeName}s.`
-      );
-    } else if (sCount > 0 && eCount > 0) {
-      return this.modal._complete(
-        `Successfully added ${sCount} ${
-          this.typeName
-        }s.\n Error adding ${eCount} ${this.typeName}s.\n Error message${
-          eCount == 1 ? "" : "s"
-        }: ${errors}`
-      );
-    } else {
-      return this.modal._error(
-        `Error adding ${eCount} ${this.typeName}s.\n Error message${
-          eCount == 1 ? "" : "s"
-        }: ${errors}`
-      );
-    }
   }
-
   // Use the most recently set data to update the values of form
   _resetForm(evt) {
     evt.preventDefault();
-    this.setupForm(this._data);
+    this.data = null;
   }
 
   async _deleteType() {

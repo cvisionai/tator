@@ -24,7 +24,7 @@ export class EntityRedrawButton extends TatorElement {
     button.appendChild(svg);
 
     const title = document.createElementNS(svgNamespace, "title");
-    title.textContent = "Redraw";
+    title.textContent = "Redraw/Edit (E)";
     svg.appendChild(title);
 
     const path1 = document.createElementNS(svgNamespace, "path");

@@ -8,7 +8,7 @@ import {
   frameToTime,
   PlayInteraction,
 } from "./annotation-common.js";
-import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { TimeStore } from "./time-store.js";
 
 import { VideoCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
@@ -87,6 +87,7 @@ export class AnnotationMulti extends TatorElement {
       "Pan Timeline Left",
       "pan-timeline-left-btn"
     );
+    btn._button.setAttribute("title", "Pan Left");
     this._timelineZoomMenu.appendChild(btn);
     this._timelineZoomButtons.panLeft = btn;
     btn.addEventListener("click", () => {
@@ -101,6 +102,7 @@ export class AnnotationMulti extends TatorElement {
       "Pan Timeline Right",
       "pan-timeline-right-btn"
     );
+    btn._button.setAttribute("title", "Pan Right");
     this._timelineZoomMenu.appendChild(btn);
     this._timelineZoomButtons.panRight = btn;
     btn.addEventListener("click", () => {
@@ -115,6 +117,7 @@ export class AnnotationMulti extends TatorElement {
       "Zoom Timeline In",
       "zoom-timeline-in-btn"
     );
+    btn._button.setAttribute("title", "Zoom In");
     this._timelineZoomMenu.appendChild(btn);
     this._timelineZoomButtons.zoomIn = btn;
     btn.addEventListener("click", () => {
@@ -129,6 +132,7 @@ export class AnnotationMulti extends TatorElement {
       "Zoom Timeline Out",
       "zoom-timeline-out-btn"
     );
+    btn._button.setAttribute("title", "Zoom Out");
     this._timelineZoomMenu.appendChild(btn);
     this._timelineZoomButtons.zoomOut = btn;
     btn.addEventListener("click", () => {
@@ -149,6 +153,7 @@ export class AnnotationMulti extends TatorElement {
       "Reset Timeline",
       "reset-timeline-btn"
     );
+    btn._button.setAttribute("title", "Reset Zoom");
     this._timelineZoomMenu.appendChild(btn);
     this._timelineZoomButtons.reset = btn;
     btn.addEventListener("click", () => {
@@ -165,6 +170,7 @@ export class AnnotationMulti extends TatorElement {
       "Zoom Timeline Controls",
       "zoom-timeline-controls-btn"
     );
+    btn._button.setAttribute("title", "Zoom Timeline Controls");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._videoTimelineControlsBtn = btn;
@@ -192,6 +198,7 @@ export class AnnotationMulti extends TatorElement {
       "Entity Timeline Info",
       "entity-timeline-expand-btn"
     );
+    btn._button.setAttribute("title", "Toggle Entity Timeline Controls");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._timelineMore = btn;
@@ -389,6 +396,7 @@ export class AnnotationMulti extends TatorElement {
       "Player Settings",
       "player-settings-btn"
     );
+    btn._button.setAttribute("title", "Player Settings");
     btn._button.classList.remove("px-2");
     settingsDiv.appendChild(btn);
     this._playerSettingsBtn = btn;
@@ -1395,7 +1403,9 @@ export class AnnotationMulti extends TatorElement {
       }
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
-      video_resp.push(fetchRetry(`/rest/Media/${vid_id}?presigned=28800`));
+      video_resp.push(
+        fetchCredentials(`/rest/Media/${vid_id}?presigned=28800`, {}, true)
+      );
       this._handleNotReadyTimeout.push(null);
       this._timeoutIndex.push(0);
 

@@ -141,6 +141,11 @@ export class EntityBrowser extends TatorElement {
     } else {
       this._group.setValue("Off");
     }
+
+    this._redrawEnabled = false;
+    if (this._dataType.isLocalization) {
+      this._redrawEnabled = true;
+    }
   }
 
   set undoBuffer(val) {
@@ -281,6 +286,7 @@ export class EntityBrowser extends TatorElement {
         this._ul.appendChild(li);
 
         const selector = document.createElement("entity-selector");
+        selector.project = this._data._projectId;
         selector.noFrames = this._noFrames;
         selector.canvas = this._canvas;
         selector.permission = this._permission;
@@ -291,6 +297,10 @@ export class EntityBrowser extends TatorElement {
         selector.update(groups[group]);
         li.appendChild(selector);
         this._selectors[group] = selector;
+
+        if (!this._redrawEnabled) {
+          selector.redrawEnabled = false;
+        }
 
         if (!this._dataType.isTLState) {
           const attributes = document.createElement("attribute-panel");
@@ -428,6 +438,26 @@ export class EntityBrowser extends TatorElement {
     if (this._dataType.isTrack) {
       for (let groupId in this._attributes) {
         this._attributes[groupId].setFrame(frame);
+      }
+    }
+  }
+
+  redraw() {
+    if (this._redrawEnabled) {
+      for (const typeName in this._selectors) {
+        if (this._selectors[typeName]._div.classList.contains("is-open")) {
+          this._selectors[typeName]._redraw.click();
+          break;
+        }
+      }
+    }
+  }
+
+  deleteEntity() {
+    for (const typeName in this._selectors) {
+      if (this._selectors[typeName]._div.classList.contains("is-open")) {
+        this._selectors[typeName]._del.click();
+        break;
       }
     }
   }

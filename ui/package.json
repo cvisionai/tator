@@ -41,7 +41,7 @@
     "libtess": "1.2.0",
     "marked": "4.0.12",
     "mp4box": "0.4.9",
-    "nodemon": "^2.0.20",
+    "nodemon": "^3.0.1",
     "nunjucks": "^3.2.4",
     "serve-favicon": "^2.5.0",
     "spark-md5": "3.0.2",

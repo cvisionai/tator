@@ -35,7 +35,7 @@ jobs:
     - run:
         name: Install pip packages
         command: |
-          ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder progressbar2 pyyaml typing-extensions black';
+          ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder==0.5.5 progressbar2 pyyaml typing-extensions black';
     - run:
         name: Install node packages
         command: |
@@ -112,10 +112,10 @@ jobs:
     - run:
         name: Install npm packages
         command: |
-          npm install prettier@"2.8.8"
+          nvm install stable && npm install prettier@"2.8.8"
     - run:
         name: Check code formatting
-        command: make api/main/version.py && make check-format
+        command: nvm use stable && make check-format
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
@@ -131,8 +131,8 @@ jobs:
           ssh lightsail 'python3 get-pip.py';
           ssh lightsail '/home/ubuntu/.local/bin/pip3 install --upgrade awscli';
           echo 'Initiating lightsail self-destruct sequence...';
-          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sh -c "sleep 10800 && /home/ubuntu/.local/bin/aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION" >/dev/null 2>&1 &';
-          ssh lightsail 'echo "This lightsail instance will self-destruct in 3 hours."';
+          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sh -c "sleep 14400 && /home/ubuntu/.local/bin/aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION" >/dev/null 2>&1 &';
+          ssh lightsail 'echo "This lightsail instance will self-destruct in 4 hours."';
     - run:
         name: Clone source on lightsail
         command: |
@@ -155,7 +155,7 @@ jobs:
           ssh lightsail 'wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb';
           ssh lightsail 'sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb';
           ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr python3-pip ffmpeg wget unzip';
-          ssh lightsail 'pip3 install pytest pytest-xdist pandas playwright==1.27.1 pytest-playwright==0.3.0 pytesseract==0.3.9 opencv-python pytest-rerunfailures==10.2';
+          ssh lightsail 'pip3 install pytest pytest-xdist pandas playwright==1.37.0 pytest-playwright==0.4.2 pytesseract==0.3.9 opencv-python pytest-rerunfailures==10.2';
           ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && playwright install';
           ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
           ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
@@ -187,7 +187,12 @@ jobs:
         command: ssh lightsail 'cd tator && make testinit'
     - run:
         name: Run REST tests
-        command: ssh lightsail 'cd tator && for i in $(seq 1 3); do make rq-empty && make test && s=0 && break || s=$? && sleep 10; done; (exit $s)'
+        command: |
+          mkdir -p rest-test-results;
+          ssh lightsail 'cd tator && for i in $(seq 1 3); do make rq-empty && make test && s=0 && break || s=$? && sleep 10; done; (exit $s)'
+          ssh lightsail 'test -e tator/rest-junit.xml' && scp lightsail:tator/rest-junit.xml rest-test-results/ || exit 0;
+    - store_test_results:
+        path: rest-test-results
   front-end-tests:
     machine:
       image: ubuntu-2004:202010-01
@@ -209,9 +214,13 @@ jobs:
         command: |
           ssh lightsail 'cd tator && make rq-empty';
           mkdir -p /tmp/videos;
+          mkdir -p frontend-test-results;
           ssh lightsail 'mkdir -p /tmp/videos';
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
-          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do if [ -d "test-results" ]; then rm -f test-results/*; else mkdir -p test-results; fi; pytest test --slowmo 30 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s --junitxml=test-results/frontend-junit.xml && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+          ssh lightsail 'test -e tator/test-results/frontend-junit.xml' && scp lightsail:tator/test-results/frontend-junit.xml frontend-test-results/ || exit 0;
+    - store_test_results:
+        path: frontend-test-results
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -232,7 +241,12 @@ jobs:
           scp lightsail:~/token.txt ~/token.txt
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do pytest tatorpy_test --ignore tatorpy_test/test_algorithm_launch.py --ignore tatorpy_test/test_job_cancel.py --host=http://localhost:8080 --token=$TOKEN -s --keep && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+        command: |
+          mkdir -p tatorpy-test-results;
+          ssh lightsail 'export TATOR_TOKEN='"'$(cat ~/token.txt)'"'; export TATOR_HOST=http://localhost:8080; export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && for i in $(seq 1 3); do if [ -d "test-results" ]; then rm -f test-results/*; else mkdir -p test-results; fi; pytest tatorpy_test --ignore tatorpy_test/test_algorithm_launch.py --ignore tatorpy_test/test_job_cancel.py -s --keep --junitxml=test-results/tatorpy-junit.xml && s=0 && break || s=$? && sleep 10; done; (exit $s)';
+          ssh lightsail 'test -e tator/test-results/tatorpy-junit.xml' && scp lightsail:tator/test-results/tatorpy-junit.xml tatorpy-test-results/ || exit 0;
+    - store_test_results:
+        path: tatorpy-test-results
     - run:
         name: Check db-worker logs for clean running
         command: ssh lightsail 'cd tator && make check-clean-db-logs'
@@ -245,7 +259,6 @@ jobs:
     - store_artifacts:
         path: /tmp/logs
         destination: container_logs
-        when: always
   cron-job-tests:
     machine:
       image: ubuntu-2004:202010-01

@@ -1,5 +1,4 @@
 """ TODO: add documentation for this """
-from collections import defaultdict
 import logging
 from urllib import parse as urllib_parse
 
@@ -7,24 +6,19 @@ import json
 import base64
 import uuid
 
-from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.http import Http404
 
-from ..search import TatorSearch
-from ..models import Section
-from ..models import Media, Localization, State
-from ..models import MediaType, LocalizationType, StateType
-from ..models import State
+from ..models import LocalizationType, Media, MediaType, Localization, Section, State, StateType
 
 from ..schema._attributes import related_keys
-
-from ._attribute_query import supplied_name_to_field
-from ._attribute_query import get_attribute_filter_ops
-from ._attribute_query import get_attribute_psql_queryset
-from ._attribute_query import get_attribute_psql_queryset_from_query_obj
-from ._attribute_query import _related_search
-from ._attributes import KV_SEPARATOR
+from ._attribute_query import (
+    _related_search,
+    get_attribute_filter_ops,
+    get_attribute_psql_queryset,
+    get_attribute_psql_queryset_from_query_obj,
+    supplied_name_to_field,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,13 +116,13 @@ def _get_media_psql_queryset(project, filter_ops, params):
             media__in=[filter_type]
         )
         qs = get_attribute_psql_queryset(
-            project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops
+            MediaType.objects.get(pk=filter_type), qs, params, filter_ops
         )
         qs = qs.filter(type=filter_type)
     elif filter_ops or params.get("float_array", None):
         queries = []
         for entity_type in MediaType.objects.filter(project=project):
-            sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
+            sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if sub_qs:
                 queries.append(sub_qs.filter(type=entity_type))
             else:
@@ -157,11 +151,10 @@ def _get_media_psql_queryset(project, filter_ops, params):
         logger.info(faux_params)
         related_matches = []
         for entity_type in related_state_types:
-            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(
                     get_attribute_psql_queryset(
-                        project,
                         entity_type,
                         State.objects.filter(project=project),
                         faux_params,
@@ -169,11 +162,10 @@ def _get_media_psql_queryset(project, filter_ops, params):
                     )
                 )
         for entity_type in related_localization_types:
-            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(
                     get_attribute_psql_queryset(
-                        project,
                         entity_type,
                         Localization.objects.filter(project=project),
                         faux_params,
@@ -208,7 +200,6 @@ def _get_media_psql_queryset(project, filter_ops, params):
                 section[0].related_object_search,
             )
 
-    related_encoded_search_qs = None
     if params.get("encoded_related_search"):
         search_obj = json.loads(base64.b64decode(params.get("encoded_related_search")).decode())
         qs = _related_search(
@@ -229,12 +220,10 @@ def _get_media_psql_queryset(project, filter_ops, params):
     else:
         qs = qs.order_by("name", "id")
 
-    if start is not None and stop is not None:
-        qs = qs[start:stop]
-    elif start is not None:
-        qs = qs[start:]
-    elif stop is not None:
+    if stop is not None:
         qs = qs[:stop]
+    if start is not None:
+        qs = qs[start:]
 
     logger.info(qs.query)
     logger.info(qs.explain())
@@ -250,7 +239,7 @@ def _get_section_and_params(project, params):
     else:
         types = MediaType.objects.filter(project=project)
     for entity_type in types:
-        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
+        filter_ops.extend(get_attribute_filter_ops(params, entity_type))
 
     return filter_ops
 
@@ -268,8 +257,8 @@ def get_media_count(project, params):
     return qs.count()
 
 
-def query_string_to_media_ids(project_id, url):
+def query_string_to_media_ids(project, url):
     """TODO: add documentation for this"""
     params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
-    media_ids = get_media_queryset(project_id, params).values_list("id", flat=True)
+    media_ids = get_media_queryset(project, params).values_list("id", flat=True)
     return media_ids

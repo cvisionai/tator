@@ -1,5 +1,4 @@
 """ TODO: add documentation for this """
-from collections import defaultdict
 import logging
 
 import json
@@ -8,15 +7,13 @@ import base64
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 
-from ..search import TatorSearch
-from ..models import Leaf
-from ..models import LeafType
+from ..models import Leaf, LeafType
 
-from ._attribute_query import supplied_name_to_field
-from ._attribute_query import get_attribute_filter_ops
-from ._attribute_query import get_attribute_psql_queryset
-from ._attributes import KV_SEPARATOR
-from ._float_array_query import get_float_array_query
+from ._attribute_query import (
+    get_attribute_filter_ops,
+    get_attribute_psql_queryset,
+    supplied_name_to_field,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +54,13 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
 
     if filter_type is not None:
         qs = get_attribute_psql_queryset(
-            project, LeafType.objects.get(pk=filter_type), qs, params, filter_ops
+            LeafType.objects.get(pk=filter_type), qs, params, filter_ops
         )
         qs = qs.filter(type=filter_type)
     if filter_ops:
         queries = []
         for entity_type in LeafType.objects.filter(project=project):
-            sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
+            sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if sub_qs:
                 queries.append(sub_qs.filter(type=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
@@ -102,7 +99,6 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
 
 def get_leaf_queryset(project, params):
     # Determine whether to use ES or not.
-    project = params.get("project")
     filter_type = params.get("type")
     filter_ops = []
     if filter_type:
@@ -110,7 +106,7 @@ def get_leaf_queryset(project, params):
     else:
         types = LeafType.objects.filter(project=project)
     for entity_type in types:
-        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
+        filter_ops.extend(get_attribute_filter_ops(params, entity_type))
 
     # If using PSQL, construct the queryset.
     qs = _get_leaf_psql_queryset(project, filter_ops, params)

@@ -97,7 +97,7 @@ export class AffiliationMembershipDialog extends ModalDialog {
 
   showHiddenNewFields() {
     const versionChosen = this._versions.getValue();
-    console.log(`Version was chosen! ${versionChosen}`, this._user);
+
     if (
       versionChosen === "__add_custom_version_name" ||
       versionChosen === "__add_user_first_last"
@@ -128,8 +128,10 @@ export class AffiliationMembershipDialog extends ModalDialog {
   }
 
   set username(val) {
-    this._username = val;
-    this.setUserId(this._username);
+    if (val) {
+      this._username = val;
+      this.setUserId(this._username);
+    }
   }
 
   set pageModal(val) {
@@ -150,12 +152,6 @@ export class AffiliationMembershipDialog extends ModalDialog {
     // todo skip if user doesn't have those project permissions Or if is already in that project
     // should only return projects in which user has Full Control
     // should skip any that the current user is already a member of....
-    console.log(
-      "DO WE HAVE A USER ID? " +
-        this._userId +
-        "DO WE HAVE A USER NAME? " +
-        this._username
-    );
     let skipList = [];
     if (
       this._username &&
@@ -164,15 +160,13 @@ export class AffiliationMembershipDialog extends ModalDialog {
       skipList = store
         .getState()
         .Membership.usernameProjectIdMap.get(this._username);
-      console.log(skipList);
     }
 
-    console.log(skipList);
     const projectChoices = await getCompiledList({
       type: "Project",
       skip: Array.from(skipList),
     });
-    console.log("projectChoices.length = " + projectChoices.length);
+
     if (projectChoices.length === 1) {
       this._messageList.innerHTML = `
             <li>${

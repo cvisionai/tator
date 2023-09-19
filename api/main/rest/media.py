@@ -14,9 +14,6 @@ from django.db import transaction
 from django.db.models import Case, When
 from django.http import Http404
 from PIL import Image
-import pillow_avif  # add AVIF support to pillow
-import rawpy
-import imageio
 
 from ..models import (
     Media,
@@ -32,7 +29,6 @@ from ..models import (
 )
 from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
-from ..notify import Notify
 from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
@@ -403,14 +399,19 @@ class MediaListAPI(BaseListView):
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
 
-        if not isinstance(media_spec_list, list):
+        if isinstance(media_spec_list, list):
+            received_spec_list = True
+        else:
+            received_spec_list = False
             media_spec_list = [media_spec_list]
         if len(media_spec_list) == 1:
             # Creates a single media object synchronously, works with video and images
             obj, msg = _create_media(project, media_spec_list[0], self.request.user)
             qs = Media.objects.filter(id=obj.id)
             response_data = list(qs.values(*fields))
-            response = {"message": msg, "id": [obj.id], "object": response_data}
+            response_data = response_data if received_spec_list else response_data[0]
+            id_resp = [obj.id] if received_spec_list else obj.id
+            response = {"message": msg, "id": id_resp, "object": response_data}
         elif media_spec_list:
             # Creates multiple media objects asynchronously, works with images only
             assert_list_of_image_specs(project, media_spec_list)
