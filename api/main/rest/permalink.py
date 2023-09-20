@@ -24,7 +24,7 @@ from ..schema import PermalinkSchema, parse
 from ..schema.components import media as media_schema
 from ..store import get_tator_store, get_storage_lookup
 
-from ._base_views import process_exception
+from ._base_views import ExceptionMixin
 from ._permissions import PermalinkPermission
 
 import sys
@@ -73,7 +73,7 @@ def _presign(expiration, medias, fields=None):
                         )
 
 
-class PermalinkAPI(APIView):
+class PermalinkAPI(ExceptionMixin, APIView):
     """Provide a permalink to an object-store resource
 
     Given a media object this endpoint will redirect to a pre-signed URL of the required
@@ -144,9 +144,6 @@ class PermalinkAPI(APIView):
                 quality_idx = idx
                 max_delta = delta
         return search_in[quality_idx]["path"]
-
-    def handle_exception(self, exc):
-        return process_exception(exc)
 
     def get_queryset(self):
         return Media.objects.all()
