@@ -1,74 +1,57 @@
-import json
-import os
-import psycopg2
-import random
-import string
-from typing import List, Generator, Tuple
-
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.gis.db.models import Model
-from django.contrib.gis.db.models import ForeignKey
-from django.contrib.gis.db.models import ManyToManyField
-from django.contrib.gis.db.models import OneToOneField
-from django.contrib.gis.db.models import CharField
-from django.contrib.gis.db.models import TextField
-from django.contrib.gis.db.models import URLField
-from django.contrib.gis.db.models import SlugField
-from django.contrib.gis.db.models import BooleanField
-from django.contrib.gis.db.models import IntegerField
-from django.contrib.gis.db.models import BigIntegerField
-from django.contrib.gis.db.models import PositiveIntegerField
-from django.contrib.gis.db.models import FloatField
-from django.contrib.gis.db.models import DateTimeField
-from django.contrib.gis.db.models import PointField
-from django.contrib.gis.db.models import FileField
-from django.contrib.gis.db.models import FilePathField
-from django.contrib.gis.db.models import EmailField
-from django.contrib.gis.db.models import PROTECT
-from django.contrib.gis.db.models import CASCADE
-from django.contrib.gis.db.models import SET_NULL
-from django.contrib.gis.geos import Point
-from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.models import UserManager
-from django.contrib.postgres.fields import ArrayField
-from django.core.validators import MinValueValidator
-from django.core.validators import RegexValidator
-from django.db.models import JSONField
-from django.db.models import FloatField, Transform, UUIDField
-from django.db.models.signals import m2m_changed, pre_delete, pre_save, post_delete, post_save
-from django.dispatch import receiver
-from django.conf import settings
-from django.forms.models import model_to_dict
-from enumfields import Enum
-from enumfields import EnumField
-from django_ltree.fields import PathField
-from django.db import transaction
-from django.db.models import UniqueConstraint
-
-from .backup import TatorBackupManager
-from .search import TatorSearch
-from .mail import get_email_service
-from .download import download_file
-from .encoders import TatorJSONEncoder
-from .store import (
-    get_tator_store,
-    ObjectStore,
-    get_storage_lookup,
-    DEFAULT_STORAGE_CLASSES,
-    VALID_STORAGE_CLASSES,
-)
-from .cognito import TatorCognito
-
-from collections import UserDict
-from urllib.parse import urlparse
-
-import pytz
 import datetime
 import logging
 import os
+import psycopg2
+import pytz
+import random
 import shutil
+import string
+from typing import Any, Dict, List, Generator, Optional, Tuple
+from urllib.parse import urlparse
 import uuid
+
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser, UserManager
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.gis.db.models import (
+    BigIntegerField,
+    BooleanField,
+    CASCADE,
+    CharField,
+    DateTimeField,
+    EmailField,
+    FileField,
+    FilePathField,
+    FloatField,
+    ForeignKey,
+    IntegerField,
+    ManyToManyField,
+    Model,
+    PositiveIntegerField,
+    PROTECT,
+    SET_NULL,
+    SlugField,
+    TextField,
+)
+from django.contrib.postgres.fields import ArrayField
+from django.core.validators import MinValueValidator
+from django.db import transaction
+from django.db.models import FloatField, JSONField, Transform, UUIDField
+from django.db.models import UniqueConstraint
+from django.db.models.signals import m2m_changed, pre_delete, pre_save, post_delete, post_save
+from django.dispatch import receiver
+from django.forms.models import model_to_dict
+from django_ltree.fields import PathField
+from enumfields import Enum, EnumField
+
+from .backup import TatorBackupManager
+from .cognito import TatorCognito
+from .encoders import TatorJSONEncoder
+from .download import download_file
+from .mail import get_email_service
+from .search import TatorSearch
+from .store import DEFAULT_STORAGE_CLASSES, get_tator_store, ObjectStore, VALID_STORAGE_CLASSES
+
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
@@ -183,29 +166,12 @@ class Depth(Transform):
 
 PathField.register_lookup(Depth)
 
-FileFormat = [("mp4", "mp4"), ("webm", "webm"), ("mov", "mov")]
-ImageFileFormat = [("jpg", "jpg"), ("png", "png"), ("bmp", "bmp"), ("raw", "raw")]
-
 ## Describes different association models in the database
 AssociationTypes = [
     ("Media", "Relates to one or more media items"),
     ("Frame", "Relates to a specific frame in a video"),  # Relates to one or more frames in a video
     ("Localization", "Relates to localization(s)"),  # Relates to one-to-many localizations
 ]
-
-
-class MediaAccess(Enum):
-    VIEWABLE = "viewable"
-    DOWNLOADABLE = "downloadable"
-    ARCHIVAL = "archival"
-    REMOVE = "remove"
-
-
-class Marker(Enum):
-    NONE = "none"
-    CROSSHAIR = "crosshair"
-    SQUARE = "square"
-    CIRCLE = "circle"
 
 
 class InterpolationMethods(Enum):
@@ -216,19 +182,6 @@ class InterpolationMethods(Enum):
     SPLINE = "spline"
 
 
-class JobResult(Enum):
-    FINISHED = "finished"
-    FAILED = "failed"
-
-
-class JobStatus(Enum):  # Keeping for migration compatiblity
-    pass
-
-
-class JobChannel(Enum):  # Keeping for migration compatiblity
-    pass
-
-
 class Permission(Enum):
     NO_ACCESS = "n"
     VIEW_ONLY = "r"
@@ -236,16 +189,6 @@ class Permission(Enum):
     CAN_TRANSFER = "t"
     CAN_EXECUTE = "x"
     FULL_CONTROL = "a"
-
-
-class HistogramPlotType(Enum):
-    PIE = "pie"
-    BAR = "bar"
-
-
-class TwoDPlotType(Enum):
-    LINE = "line"
-    SCATTER = "scatter"
 
 
 class Organization(Model):
@@ -527,9 +470,9 @@ def affiliation_save(sender, instance, created, **kwargs):
     organization = instance.organization
     user = instance.user
     email_service = get_email_service()
-    if created:
+    if email_service:
+        if created:
         # Send email notification to organizational admins.
-        if email_service:
             recipients = Affiliation.objects.filter(
                 organization=organization, permission="Admin"
             ).values_list("user", flat=True)
@@ -551,14 +494,12 @@ def affiliation_save(sender, instance, created, **kwargs):
                 text=text + footer,
             )
             logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
-    else:
-        title = f"{user}'s affiliation with {organization} modified"
-        text = (
-            f"You are being notified that {user}'s affiliation with {organization} has been "
-            f"modified to the {instance.permission} level."
-        )
-
-    if email_service:
+        else:
+            title = f"{user}'s affiliation with {organization} modified"
+            text = (
+                f"You are being notified that {user}'s affiliation with {organization} has been "
+                f"modified to the {instance.permission} level."
+            )
         email_service.email_staff(sender=settings.TATOR_EMAIL_SENDER, title=title, text=text)
 
 
@@ -1434,7 +1375,7 @@ class Media(Model, ModelDiffMixin):
                 if hasattr(obj, "__getitem__"):
                     yield (key, obj)
 
-    def path_iterator(self, keys: List[str] = None) -> Generator[str, None, None]:
+    def path_iterator(self, keys: Optional[List[str]] = None) -> Generator[str, None, None]:
         """
         Returns a generator that yields the path strings for the desired set of `media_files` entries.
 
@@ -1659,12 +1600,12 @@ def media_save(sender, instance, created, **kwargs):
 
 def safe_delete(path, project_id=None):
     proj_str = f" from project {project_id}" if project_id else ""
-    logger.info(f"Deleting resource for {path}{proj_str}")
+    logger.info(f"Deleting resource for %s%s", path, proj_str)
 
     try:
         Resource.delete_resource(path, project_id)
-    except:
-        logger.warning(f"Could not remove {path}{proj_str}", exc_info=True)
+    except Exception:
+        logger.warning("Could not remove %s%s", path, proj_str, exc_info=True)
 
 
 def drop_file_from_resource(path, generic_file):

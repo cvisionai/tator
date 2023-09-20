@@ -1,51 +1,37 @@
 import logging
-import datetime
-import os
-import shutil
-import mimetypes
-import datetime
-import tempfile
-from uuid import uuid1
-from urllib.parse import urlparse
+import sys
 
-from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
-from django.db.models import Case, When
 from django.http import Http404
-from PIL import Image
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
 
 from ..models import Media, Resource
 
 from ..schema import PermalinkSchema, parse
 from ..schema.components import media as media_schema
-from ..store import get_tator_store, get_storage_lookup
+from ..store import get_storage_lookup
 
-from ._base_views import process_exception
+from ._base_views import ErrorMixin
 from ._permissions import PermalinkPermission
 
-import sys
-
 logger = logging.getLogger(__name__)
-
 MEDIA_PROPERTIES = list(media_schema["properties"].keys())
+DEFAULT_FIELDS = [
+    "archival",
+    "streaming",
+    "audio",
+    "image",
+    "thumbnail",
+    "thumbnail_gif",
+    "attachment",
+]
 
 
 def _presign(expiration, medias, fields=None):
     """Replaces specified media fields with presigned urls."""
     # First get resources referenced by the given media.
-    fields = fields or [
-        "archival",
-        "streaming",
-        "audio",
-        "image",
-        "thumbnail",
-        "thumbnail_gif",
-        "attachment",
-    ]
+    fields = fields or DEFAULT_FIELDS
     media_ids = [media["id"] for media in medias]
     resources = Resource.objects.filter(media__in=media_ids)
     storage_lookup = get_storage_lookup(resources)
@@ -73,7 +59,7 @@ def _presign(expiration, medias, fields=None):
                         )
 
 
-class PermalinkAPI(APIView):
+class PermalinkAPI(APIView, ErrorMixin):
     """Provide a permalink to an object-store resource
 
     Given a media object this endpoint will redirect to a pre-signed URL of the required
@@ -118,6 +104,8 @@ class PermalinkAPI(APIView):
                 element = "image"
             elif qs[0].type.dtype == "multi":
                 return None
+
+        search_in = None
         if element == "audio":
             return response_data[0].get("media_files", {}).get("audio", [])[0]["path"]
         elif element == "thumbnail":
@@ -144,9 +132,6 @@ class PermalinkAPI(APIView):
                 quality_idx = idx
                 max_delta = delta
         return search_in[quality_idx]["path"]
-
-    def handle_exception(self, exc):
-        return process_exception(exc)
 
     def get_queryset(self):
         return Media.objects.all()

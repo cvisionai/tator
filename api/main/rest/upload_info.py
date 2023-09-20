@@ -39,8 +39,10 @@ class UploadInfoAPI(BaseDetailView):
         else:
             PROTO = "http"
 
-        if media_id is not None and file_id is not None:
-            raise ValueError(f"Both a file_id and media_id was provided!")
+        if media_id and file_id:
+            raise ValueError(
+                "Both a file_id and media_id were provided, expected one or the other!"
+            )
 
         # Get organization.
         project_obj = Project.objects.get(pk=project)
@@ -57,15 +59,7 @@ class UploadInfoAPI(BaseDetailView):
             components = os.path.splitext(name)
             name = f"{components[0]}_{rand_str}{components[1]}"
 
-        if media_id is None and file_id is None:
-            # Generate an object name
-            today = datetime.datetime.now().strftime("%Y-%m-%d")
-            user = self.request.user.pk
-            key = f"_uploads/{today}/{organization}/{project}/{user}/{name}"
-            upload_bucket = project_obj.get_bucket(upload=True)
-            use_upload = not upload_bucket
-            tator_store = get_tator_store(upload_bucket, upload=use_upload)
-        elif media_id is not None:
+        if media_id:
             qs = Media.objects.filter(project=project, pk=media_id)
             if qs.exists():
                 key = f"{organization}/{project}/{media_id}/{name}"
@@ -73,8 +67,7 @@ class UploadInfoAPI(BaseDetailView):
                 raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
             use_upload = not project_obj.bucket
             tator_store = get_tator_store(project_obj.bucket)
-        else:
-            # By process of elimination, `file_id` must be "not None"
+        elif file_id:
             qs = File.objects.filter(project=project, pk=file_id)
             if qs.exists():
                 key = f"{organization}/{project}/files/{file_id}/{name}"
@@ -82,6 +75,15 @@ class UploadInfoAPI(BaseDetailView):
                 raise ValueError(f"File ID {file_id} does not exist in project {project}!")
             use_upload = not project_obj.bucket
             tator_store = get_tator_store(project_obj.bucket)
+        else:
+            # By process of elimination, both ids are None
+            # Generate an object name
+            today = datetime.datetime.now().strftime("%Y-%m-%d")
+            user = self.request.user.pk
+            key = f"_uploads/{today}/{organization}/{project}/{user}/{name}"
+            upload_bucket = project_obj.get_bucket(upload=True)
+            use_upload = not upload_bucket
+            tator_store = get_tator_store(upload_bucket, upload=use_upload)
 
         # Generate presigned urls.
         urls, upload_id = tator_store.get_upload_urls(

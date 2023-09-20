@@ -1,23 +1,20 @@
 import datetime
 import logging
 import os
+from typing import List
 from uuid import uuid4
 
 from django.db import transaction
-from django.conf import settings
 
 from ..models import Project
 from ..models import Resource
 from ..models import File
 from ..models import FileType
-from ..models import User
 from ..models import database_qs
 from ..models import safe_delete
 from ..models import drop_file_from_resource
-from ..search import TatorSearch
 from ..schema import FileListSchema
 from ..schema import FileDetailSchema
-from ..schema import parse
 from ..schema.components.file import file
 from ..schema.components.file import file_fields as fields
 
@@ -43,7 +40,7 @@ class FileListAPI(BaseListView):
     http_method_names = ["get", "post"]
     entity_type = FileType
 
-    def _get(self, params: dict) -> dict:
+    def _get(self, params: dict) -> List:
         qs = get_file_queryset(params["project"], params)
         response_data = list(qs.values(*FILE_PROPERTIES))
         return response_data
@@ -51,13 +48,12 @@ class FileListAPI(BaseListView):
     def _post(self, params: dict) -> dict:
         # Does the project ID exist?
         project_id = params[fields.project]
-        elemental_id = params.get("elemental_id", uuid4())
+        elemental_id = params.get("elemental_id", None) or uuid4()
         try:
             project = Project.objects.get(pk=project_id)
-        except Exception as exc:
-            log_msg = f"Provided project ID ({project_id}) does not exist"
-            logger.error(log_msg)
-            raise exc
+        except Exception:
+            logger.error("Provided project ID (%s) does not exist", project_id)
+            raise
 
         # Description required
         description = params.get(fields.description, None)

@@ -1,42 +1,38 @@
 """ TODO: add documentation for this """
-import traceback
 import logging
+import traceback
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
-from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
+from rest_framework.exceptions import PermissionDenied
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from ..schema import parse
-
-from ..rest import _base_views
 
 logger = logging.getLogger(__name__)
 
 """ TODO: add documentation for this """
 
 
-def process_exception(exc):
-    """TODO: add documentation for this"""
-    logger.info("Handling Exception!")
-    logger.info(type(exc))
-    if isinstance(exc, response.Http404):
-        resp = Response({"message": str(exc)}, status=status.HTTP_404_NOT_FOUND)
-    elif isinstance(exc, ObjectDoesNotExist):
-        logger.error(f"Not found in GET request: {str(exc)}")
-        resp = Response({"message": str(exc)}, status=status.HTTP_404_NOT_FOUND)
-    elif isinstance(exc, PermissionDenied):
-        logger.error(f"Permission denied error: {str(exc)}")
-        resp = Response({"message": str(exc)}, status=status.HTTP_403_FORBIDDEN)
-    else:
-        logger.error(f"Exception in request: {traceback.format_exc()}")
-        resp = Response(
-            {"message": str(exc), "details": traceback.format_exc()},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    return resp
+class ErrorMixin:
+    def handle_exception(self, exc):
+        """TODO: add documentation for this"""
+        if isinstance(exc, response.Http404):
+            msg = "Page not found: %s"
+            resp = Response({"message": "Page not found"}, status=status.HTTP_404_NOT_FOUND)
+        elif isinstance(exc, ObjectDoesNotExist):
+            msg = "Object not found: %s"
+            resp = Response({"message": "Object not found"}, status=status.HTTP_404_NOT_FOUND)
+        elif isinstance(exc, PermissionDenied):
+            msg = "Permission denied error: %s"
+            resp = Response({"message": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            msg = "Exception in request: %s"
+            resp = Response({"message": "Bad request"}, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(msg, traceback.format_exc())
+        return resp
 
 
 class GetMixin:
@@ -97,19 +93,13 @@ class PutMixin:
         return resp
 
 
-class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
+class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin, ErrorMixin):
     """Base class for list views."""
 
     http_method_names = ["get", "post", "patch", "delete", "put"]
 
-    def handle_exception(self, exc):
-        return process_exception(exc)
 
-
-class BaseDetailView(APIView, GetMixin, PatchMixin, DeleteMixin):
+class BaseDetailView(APIView, GetMixin, PatchMixin, DeleteMixin, ErrorMixin):
     """Base class for detail views."""
 
     http_method_names = ["get", "patch", "delete"]
-
-    def handle_exception(self, exc):
-        return process_exception(exc)

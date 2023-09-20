@@ -65,8 +65,9 @@ class KeycloakAuthenticationMixin:
                 raise AuthenticationFailed(f"Access token decode failed: Invalid issuer!")
             except jwt.DecodeError:
                 raise AuthenticationFailed(f"Access token decode failed: Invalid signature!")
-            except Exception as e:
-                raise AuthenticationFailed(f"Access token decode failed: {e}")
+            except Exception:
+                logger.error("Access token decode failed: unknown reason", exc_info=True)
+                raise AuthenticationFailed(f"Access token decode failed: reason unknown!")
         return out
 
 
