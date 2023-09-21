@@ -24,6 +24,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APITransactionTestCase
 from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
+from main.throttles import BurstableThrottle
 
 from .backup import TatorBackupManager
 from .models import *
@@ -468,7 +469,9 @@ class ElementalIDChangeMixin:
             )
             assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(list_endpoint, {"elemental_id": elemental_id, "show_all_marks": 1}, format="json")
+        response = self.client.get(
+            list_endpoint, {"elemental_id": elemental_id, "show_all_marks": 1}, format="json"
+        )
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(self.entities))
 
@@ -481,7 +484,9 @@ class ElementalIDChangeMixin:
         )
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(list_endpoint, {"elemental_id": new_elemental_id, "show_all_marks": 1}, format="json")
+        response = self.client.get(
+            list_endpoint, {"elemental_id": new_elemental_id, "show_all_marks": 1}, format="json"
+        )
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), existing_count)
 
@@ -2233,6 +2238,7 @@ class LocalizationBoxTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2314,6 +2320,7 @@ class LocalizationLineTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2395,6 +2402,7 @@ class LocalizationDotTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2474,6 +2482,7 @@ class LocalizationPolyTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2552,6 +2561,7 @@ class StateTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
