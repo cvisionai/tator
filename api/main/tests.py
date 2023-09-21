@@ -2074,7 +2074,7 @@ class VideoTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "video1", "last_edit_start": "2017-07-21T17:32:28Z"}
 
-    @unittest.skip("Skip until fixed")
+    # @unittest.skip("Skip until fixed")
     def test_search(self):
         box_type = LocalizationType.objects.create(
             name="boxes",
