@@ -67,7 +67,7 @@ GRAPH_MODELS = {
     'group_models': True,
 }
 
-LOGIN_URL = "/accounts/login/"
+LOGIN_URL = "/redirect/login/"
 LOGIN_REDIRECT_URL = '/projects'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 AUTH_USER_MODEL = 'main.User'
