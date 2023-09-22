@@ -188,14 +188,6 @@ textarea.form-control {
 
 .radio-slide-wrap {
   height: 40px;
-
-  input:checked + label {
-    color: $color-white;
-  }
-  input:not(:first-child) + label {
-    // To put other choice to the right of radio slide
-    order: 1;
-  }
 }
 
 .radio-slide {
@@ -207,23 +199,30 @@ textarea.form-control {
   width: 25px;
   transition-duration: 0.25s;
   transition-property: background-color;
-  &:after {
-    background-color: $color-white;
-    border-radius: 50%;
-    content: "";
-    height: 8px;
-    left: 2px;
-    position: absolute;
-    top: 2px;
-    transition-duration: 0.25s;
-    transition-property: transform;
-    width: 8px;
+  &.disable{
+    background-color: $color-gray--dark50;
   }
-  input:not(:first-child):checked + label + & {
-    background-color: $color-charcoal--light;
-    &:after {
-      transform: translateX(13px);
-    }
+}
+
+.radio-slide-circle {
+  background-color: $color-white;
+  border-radius: 50%;
+  content: "";
+  height: 8px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition-duration: 0.25s;
+  transition-property: transform;
+  width: 8px;
+
+  &.null-value {
+    background-color: $color-gray--light;
+    transform: translateX(6px);
+  }
+  &.false-value {
+    background-color: $color-gray--light;
+    transform: translateX(13px);
   }
 }
 
