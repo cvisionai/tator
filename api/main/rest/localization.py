@@ -272,7 +272,10 @@ class LocalizationListAPI(BaseListView):
                     original.pk = None
                     original.id = None
                     for key, value in update_kwargs.items():
-                        setattr(original, key, value)
+                        if key == "version":
+                            setattr(original, key, Version.objects.get(pk=value))
+                        else:
+                            setattr(original, key, value)
                     original.attributes.update(new_attrs)
                     objs.append(original)
                 Localization.objects.bulk_create(objs)
@@ -417,6 +420,9 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
+        elemental_id = obj.elemental_id
+        version_id = obj.version.id
+        mark = obj.mark
         if params["prune"] == 1:
             delete_and_log_changes(obj, obj.project, self.request.user)
         else:
@@ -424,7 +430,9 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             b.variant_deleted = True
             b.save()
             log_changes(b, b.model_dict, b.project, self.request.user)
-        return {"message": f'Localization {params["id"]} successfully deleted!'}
+        return {
+            "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!"
+        }
 
     def get_queryset(self):
         return Localization.objects.all()
