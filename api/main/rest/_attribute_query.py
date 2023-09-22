@@ -120,11 +120,10 @@ def _related_search(
         # list comp didn't play nice here, but this is easier to read anyway
         score = []
         for x in orig_list:
-            annotated_x = x.annotate(count=Count("media"))
+            annotated_x = x.values("media").annotate(count=Count("media"))
             filtered_x = annotated_x.filter(media=OuterRef("id"))
             values_x = filtered_x.values("count").order_by("-count")[:1]
             score.append(Subquery(values_x))
-        logger.info(f"SCORE = {len(score)}")
         if len(score) > 1:
             qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=Greatest(*score))
         else:
