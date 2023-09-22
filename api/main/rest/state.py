@@ -530,6 +530,9 @@ class StateDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         state = qs[0]
+        elemental_id = state.elemental_id
+        version_id = state.version.id
+        mark = state.mark
         project = state.project
         delete_localizations = []
         if state.type.delete_child_localizations:
@@ -559,7 +562,7 @@ class StateDetailBaseAPI(BaseDetailView):
                 new_attributes=None,
             )
 
-        return {"message": f'State {params["id"]} successfully deleted!'}
+        return {"message": f"State {version_id}/{elemental_id}@@{mark} successfully deleted!"}
 
     def get_queryset(self):
         return State.objects.all()
