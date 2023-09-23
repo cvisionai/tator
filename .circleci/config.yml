@@ -47,7 +47,7 @@ jobs:
     - run:
         name: Install pip packages
         command: |
-          ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder progressbar2 pyyaml';
+          ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder==0.5.5 progressbar2 pyyaml';
     - run:
         name: Install node packages
         command: |
