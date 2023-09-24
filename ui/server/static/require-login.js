@@ -5,11 +5,8 @@ function getCookie(name) {
     return parts.pop().split(";").shift();
   }
 }
-const NO_LOGIN_VIEWS = [
-  '/accounts/login', '/redirect/login',
-]
 const backend = window.localStorage.getItem("backend");
-if (!NO_LOGIN_VIEWS.includes(window.location.pathname)) {
+if (window.location.pathname != "/redirect/login") {
   fetch(`${backend}/accounts/account-profile`, {
     method: "GET",
     credentials: "include",
@@ -19,11 +16,13 @@ if (!NO_LOGIN_VIEWS.includes(window.location.pathname)) {
       "Content-Type": "application/json"
     }
   })
-  .then(response => {
+  .then((response) => {
     const url = new URL(response.url);
-    if (response.status == 301 || url.pathname.startsWith('/accounts/login')) {
-      window.location.href = `/accounts/login/?next=${window.location.pathname}`;
+    if (response.status == 301 || url.pathname.startsWith('/redirect/login')) {
+      window.location.href = `/redirect/login/?next=${window.location.pathname}`;
     }
+  },
+  (error) => {
+      window.location.href = `/redirect/login/?next=${window.location.pathname}`;
   });
 }
-  
