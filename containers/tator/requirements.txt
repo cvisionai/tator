@@ -9,7 +9,7 @@ django-extensions==3.1.5
 django-ltree==0.5.3
 djangorestframework==3.13.1
 elasticsearch==7.10.1
-gevent==23.7.0
+gevent==23.9.1
 google-auth==2.3.3
 google-cloud-storage==2.1.0
 grafana-django-saml2-auth==3.9.0
