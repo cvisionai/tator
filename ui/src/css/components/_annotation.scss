@@ -2,6 +2,23 @@
   flex-grow: 1;
 }
 
+.annotation-subheader {
+  color: $color-white;
+  background-color: $color-blue-iris50;
+  box-sizing: border-box;
+  height: 32px;
+  width: 100%;
+}
+
+.annotation-subheader-close {
+  background-color: transparent;
+  border: none;
+  &:hover,
+  &:focus {
+    color: $color-white;
+  }
+}
+
 .annotation__breadcrumbs {
   button {
     margin-left: $spacing-3;
@@ -594,7 +611,7 @@ annotation-player {
   position: absolute;
   z-index: 10;
   border: 2px solid black;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: $color-charcoal--dark;
   padding: 2px;
 }
 
@@ -603,8 +620,7 @@ annotation-player {
   overflow: initial;
   position: absolute;
   z-index: 10;
-  border: 2px solid black;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: $color-charcoal--dark;
   padding: 2px;
 }
 
