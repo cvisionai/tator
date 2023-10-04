@@ -185,5 +185,5 @@ customElements.define("poly-button", PolyButton);
 customElements.define("track-button", TrackButton);
 customElements.define("zoom-in-button", ZoomInButton);
 customElements.define("zoom-out-button", ZoomOutButton);
-customElements.define("pan-button", PanButton)
+customElements.define("pan-button", PanButton);
 customElements.define("canvas-applet-button", CanvasAppletButton);

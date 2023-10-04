@@ -92,7 +92,7 @@ export class AnnotationPage extends TatorPage {
     this._canvasAppletMenu.style.display = "none";
     var menuDiv = document.createElement("div");
     menuDiv.setAttribute("class", "h3 px-2 py-3 mb-2");
-    menuDiv.textContent = "Applets"
+    menuDiv.textContent = "Applets";
     this._canvasAppletMenu.appendChild(menuDiv);
     this._main.appendChild(this._canvasAppletMenu);
 
@@ -1134,8 +1134,7 @@ export class AnnotationPage extends TatorPage {
             this._sidebar.addEventListener("canvasApplet", (evt) => {
               if (this._canvasAppletMenu.style.display == "none") {
                 this.showCanvasAppletMenu();
-              }
-              else {
+              } else {
                 this.hideCanvasAppletMenu();
               }
             });
@@ -1503,8 +1502,7 @@ export class AnnotationPage extends TatorPage {
             // Add the applet to the dialog
             this._menuAppletDialog.saveApplet(applet);
             canvas.addAppletToMenu(applet.name, applet.categories);
-          }
-          else if (applet.categories.includes("annotator-canvas")) {
+          } else if (applet.categories.includes("annotator-canvas")) {
             // Add canvas applet
             canvasAppletObjects.push(applet);
           }
@@ -1547,13 +1545,13 @@ export class AnnotationPage extends TatorPage {
         if (this._numCanvasApplets == 0) {
           this._sidebar.disableCanvasApplet();
         }
-        
+
         this._mediaCanvas = null;
-        if ('_video' in this._canvas) {
-           this._mediaCanvas = this._canvas._video;
+        if ("_video" in this._canvas) {
+          this._mediaCanvas = this._canvas._video;
         }
-        if ('_image' in this._canvas) {
-           this._mediaCanvas = this._canvas._image;
+        if ("_image" in this._canvas) {
+          this._mediaCanvas = this._canvas._image;
         }
         if (this._mediaCanvas == null) {
           // In the future, add multi
@@ -1563,7 +1561,6 @@ export class AnnotationPage extends TatorPage {
         this._canvasElement = canvasElement;
 
         for (const applet of canvasAppletObjects) {
-
           // Create the canvas applet
           const appletElem = document.createElement("canvas-applet");
           appletElem.style.display = "none";
@@ -1591,9 +1588,8 @@ export class AnnotationPage extends TatorPage {
 
           div.addEventListener("click", () => {
             this.showCanvasApplet(applet.id);
-          })
+          });
         }
-
       });
   }
 
@@ -2221,7 +2217,6 @@ export class AnnotationPage extends TatorPage {
    *
    */
   showCanvasApplet(appletId) {
-
     this.hideCanvasAppletMenu();
 
     var appletData = {
@@ -2237,7 +2232,10 @@ export class AnnotationPage extends TatorPage {
     this._currentCanvasApplet.style.display = "flex";
 
     this._canvasAppletHeader.style.display = "flex";
-    this._canvasAppletHeader.setAttribute("title", this._currentCanvasApplet.getTitle());
+    this._canvasAppletHeader.setAttribute(
+      "title",
+      this._currentCanvasApplet.getTitle()
+    );
 
     //
     // HIDE MAIN PAGE PARTS
@@ -2245,18 +2243,16 @@ export class AnnotationPage extends TatorPage {
     this._versionButton.style.display = "none";
     this._settings.style.display = "none";
     this._main.style.display = "none";
-
   }
 
   /**
    *
    */
   exitCanvasApplet() {
-
     this._currentCanvasApplet.style.display = "none";
     this._currentCanvasApplet.close(); // #TODO add allowedToClose() check
     this._canvasAppletHeader.style.display = "none";
-  
+
     //
     // SHOW MAIN PAGE PARTS
     //
@@ -2264,7 +2260,6 @@ export class AnnotationPage extends TatorPage {
     this._settings.style.display = "block";
     this._main.style.display = "flex";
   }
-
 }
 
 customElements.define("annotation-page", AnnotationPage);

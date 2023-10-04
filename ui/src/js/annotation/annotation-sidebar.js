@@ -65,7 +65,7 @@ export class AnnotationSidebar extends TatorElement {
       zoomIn,
       zoomOut,
       this._pan,
-      this._canvasApplet
+      this._canvasApplet,
     ];
 
     this._edit.addEventListener("click", () => {
