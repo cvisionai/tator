@@ -73,8 +73,8 @@ export class AnnotationPage extends TatorPage {
     this._canvasAppletHeader.style.display = "none";
     this._shadow.appendChild(this._canvasAppletHeader);
 
-    this._canvasAppletWrapper = document.createElement("div");
-    this._shadow.appendChild(this._canvasAppletWrapper);
+    this._canvasAppletPageWrapper = document.createElement("div");
+    this._shadow.appendChild(this._canvasAppletPageWrapper);
 
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex");
@@ -90,11 +90,20 @@ export class AnnotationPage extends TatorPage {
       "annotation-canvas-overlay-menu d-flex flex-row flex-items-center flex-justify-between rounded-2 box-border"
     );
     this._canvasAppletMenu.style.display = "none";
+    this._main.appendChild(this._canvasAppletMenu);
+
     var menuDiv = document.createElement("div");
     menuDiv.setAttribute("class", "h3 px-2 py-3 mb-2");
     menuDiv.textContent = "Applets";
     this._canvasAppletMenu.appendChild(menuDiv);
-    this._main.appendChild(this._canvasAppletMenu);
+
+    this._canvasAppletMenuLoading = document.createElement("div");
+    this._canvasAppletMenuLoading.setAttribute(
+      "class",
+      "text-gray f3 pb-3 pl-2 pr-6"
+    );
+    this._canvasAppletMenuLoading.textContent = "Initializing applets...";
+    this._canvasAppletMenu.appendChild(this._canvasAppletMenuLoading);
 
     this._versionDialog = document.createElement("version-dialog");
     this._main.appendChild(this._versionDialog);
@@ -1503,6 +1512,11 @@ export class AnnotationPage extends TatorPage {
             this._menuAppletDialog.saveApplet(applet);
             canvas.addAppletToMenu(applet.name, applet.categories);
           } else if (applet.categories.includes("annotator-canvas")) {
+            // #TODO Future work. Enable canvas applets for multiview.
+            if (this._player.mediaType.dtype == "multi") {
+              continue;
+            }
+
             // Add canvas applet
             canvasAppletObjects.push(applet);
           }
@@ -1560,36 +1574,47 @@ export class AnnotationPage extends TatorPage {
         this._annotationCanvas = canvas;
         this._canvasElement = canvasElement;
 
+        var canvasAppletInitPromises = [];
         for (const applet of canvasAppletObjects) {
           // Create the canvas applet
-          const appletElem = document.createElement("canvas-applet");
-          appletElem.style.display = "none";
-          appletElem.init(applet);
-          this._canvasAppletWrapper.appendChild(appletElem);
-          this._canvasApplets[applet.id] = appletElem;
-
-          // Add option to the applet menu
-          const div = document.createElement("div");
-          div.style.width = "400px";
-          div.setAttribute(
-            "class",
-            "annotation-canvas-overlay-menu-option text-gray d-flex flex-grow px-2 py-2 flex-items-center text-left"
+          const appletInterface = document.createElement(
+            "canvas-applet-wrapper"
           );
-          div.innerHTML = `
-            <div class="d-flex py-3 px-3 box-border rounded-2">
-              ${appletElem.getIcon()}
-            </div>
-            <div class="d-flex flex-column ml-3 col-9">
-            <div class="text-semibold text-uppercase f2">${appletElem.getTitle()}</div>
-            <div class="text-dark-gray f3">${appletElem.getDescription()}</div>
-            </div>
-          `;
-          this._canvasAppletMenu.appendChild(div);
-
-          div.addEventListener("click", () => {
-            this.showCanvasApplet(applet.id);
-          });
+          appletInterface.style.display = "none";
+          appletInterface.style.height = "90vh";
+          canvasAppletInitPromises.push(appletInterface.init(applet));
+          this._canvasAppletPageWrapper.appendChild(appletInterface);
+          this._canvasApplets[applet.id] = appletInterface;
         }
+
+        Promise.all(canvasAppletInitPromises).then(() => {
+          this._canvasAppletMenuLoading.style.display = "none";
+
+          // #TODO Add alphabetical ordering
+          for (const appletId in this._canvasApplets) {
+            var appletInterface = this._canvasApplets[appletId];
+            const div = document.createElement("div");
+            div.style.width = "400px";
+            div.setAttribute(
+              "class",
+              "annotation-canvas-overlay-menu-option text-gray d-flex flex-grow px-2 py-2 flex-items-center text-left"
+            );
+            div.innerHTML = `
+              <div class="d-flex py-3 px-3 box-border rounded-2">
+                ${appletInterface.getIcon()}
+              </div>
+              <div class="d-flex flex-column ml-3 col-9">
+              <div class="text-semibold text-uppercase f2">${appletInterface.getTitle()}</div>
+              <div class="text-dark-gray f3">${appletInterface.getDescription()}</div>
+              </div>
+            `;
+            this._canvasAppletMenu.appendChild(div);
+
+            div.addEventListener("click", () => {
+              this.showCanvasApplet(appletId);
+            });
+          }
+        });
       });
   }
 
@@ -2249,8 +2274,12 @@ export class AnnotationPage extends TatorPage {
    *
    */
   exitCanvasApplet() {
+    if (!this._currentCanvasApplet.allowedToClose()) {
+      return;
+    }
+
     this._currentCanvasApplet.style.display = "none";
-    this._currentCanvasApplet.close(); // #TODO add allowedToClose() check
+    this._currentCanvasApplet.close();
     this._canvasAppletHeader.style.display = "none";
 
     //
