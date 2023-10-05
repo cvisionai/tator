@@ -285,6 +285,44 @@ export class CanvasAppletElement extends TatorElement {
   }
 
   /**
+   * Utility function used to create normalized coordinates for the visible and
+   * offscreen canvases based on the provided mouse event
+   * @param {Event} event
+   *    Event provided when a mouse event occurs
+   * @return
+   *    Object with the following fields:
+   *    - visible:   Normalized coordinates of mouse in the visible canvas
+   *                 (0,0 is top left, 1,1 is bottom right)
+   *    - offscreen: Normalized coordinates of mouse in the offscreen canvas
+   *                 (0,0 is top left, 1,1 is bottom right)
+   */
+  createNormalizedCoordinates(event) {
+    var visibleCoordinates = [
+      event.offsetX / this._frameCanvas.offsetWidth,
+      event.offsetY / this._frameCanvas.offsetHeight,
+    ];
+
+    for (let idx = 0; idx < 2; idx++) {
+      if (visibleCoordinates[idx] > 1.0) {
+        visibleCoordinates[idx] = 1;
+      }
+      if (visibleCoordinates[idx] < 0.0) {
+        visibleCoordinates[idx] = 0;
+      }
+    }
+
+    var offscreenCoordinates = this.convertVisibleToOffscreen(
+      visibleCoordinates[0],
+      visibleCoordinates[1]
+    );
+
+    return {
+      visible: visibleCoordinates,
+      offscreen: offscreenCoordinates,
+    };
+  }
+
+  /**
    * Helper drawing function. Not expected to be reimplemented by derived class.
    */
   createCanvas() {
@@ -302,7 +340,20 @@ export class CanvasAppletElement extends TatorElement {
 
     this._dragging = false;
 
-    this._frameCanvas.addEventListener("mousedown", (event) => {
+    this._frameCanvas.addEventListener("click", (event) => {
+      var coords = this.createNormalizedCoordinates(event);
+
+      //
+      // APPLET-SPECIFIC MODE CALLBACK
+      //
+      var appletCanvasModes = this.getAppletCanvasModes();
+      if (appletCanvasModes.includes(this._canvasMode)) {
+        this.applyAppletMouseClick(coords.visible, coords.offscreen);
+        return;
+      }
+    });
+
+    this._frameCanvas.addEventListener("mouseout", (event) => {
       this.applyAppletMouseOut();
     });
 
@@ -312,31 +363,15 @@ export class CanvasAppletElement extends TatorElement {
       this._event = { start: {}, current: {} };
       this._event.start.time = Date.now();
 
-      //
-      // GET NORMALIZED COORDINATES OF MOUSE DOWN
-      //
-      var currentCanvasPoint = [
-        event.offsetX / this._frameCanvas.offsetWidth,
-        event.offsetY / this._frameCanvas.offsetHeight,
-      ];
-
-      for (let idx = 0; idx < 2; idx++) {
-        if (currentCanvasPoint[idx] > 1.0) {
-          currentCanvasPoint[idx] = 1;
-        }
-        if (currentCanvasPoint[idx] < 0.0) {
-          currentCanvasPoint[idx] = 0;
-        }
-      }
-
-      this._event.start.point = currentCanvasPoint;
+      var coords = this.createNormalizedCoordinates(event);
+      this._event.start.point = coords.visible;
 
       //
       // APPLET-SPECIFIC MODE CALLBACK
       //
       var appletCanvasModes = this.getAppletCanvasModes();
       if (appletCanvasModes.includes(this._canvasMode)) {
-        this.applyAppletMouseDown(currentCanvasPoint);
+        this.applyAppletMouseDown(coords.visible, coords.offscreen);
         return;
       }
     });
@@ -344,30 +379,14 @@ export class CanvasAppletElement extends TatorElement {
     this._frameCanvas.addEventListener("mouseup", (event) => {
       this._dragging = false;
       this._event = null;
-
-      //
-      // GET NORMALIZED COORDINATES OF MOUSE UP
-      //
-      var currentCanvasPoint = [
-        event.offsetX / this._frameCanvas.offsetWidth,
-        event.offsetY / this._frameCanvas.offsetHeight,
-      ];
-
-      for (let idx = 0; idx < 2; idx++) {
-        if (currentCanvasPoint[idx] > 1.0) {
-          currentCanvasPoint[idx] = 1;
-        }
-        if (currentCanvasPoint[idx] < 0.0) {
-          currentCanvasPoint[idx] = 0;
-        }
-      }
+      var coords = this.createNormalizedCoordinates(event);
 
       //
       // APPLET-SPECIFIC MODE CALLBACK
       //
       var appletCanvasModes = this.getAppletCanvasModes();
       if (appletCanvasModes.includes(this._canvasMode)) {
-        this.applyAppletMouseDown(currentCanvasPoint);
+        this.applyAppletMouseDown(coords.visible, coords.offscreen);
         return;
       }
 
@@ -383,8 +402,8 @@ export class CanvasAppletElement extends TatorElement {
 
         // The 0.25 is related with zoom.
         this._canvasCenterPoint = [
-          currentCanvasPoint[0] + 0.25,
-          currentCanvasPoint[1] + 0.25,
+          coords.visible[0] + 0.25,
+          coords.visible[1] + 0.25,
         ];
         this.redrawCanvas();
       } else if (this._canvasMode == "zoom-out") {
@@ -393,37 +412,22 @@ export class CanvasAppletElement extends TatorElement {
           this._canvasZoom = 1;
         }
         this._canvasCenterPoint = [
-          currentCanvasPoint[0] - 0.5,
-          currentCanvasPoint[1] - 0.5,
+          coords.visible[0] - 0.5,
+          coords.visible[1] - 0.5,
         ];
         this.redrawCanvas();
       }
     });
 
     this._frameCanvas.addEventListener("mousemove", (event) => {
-      //
-      // GET NORMALIZED COORDINATES
-      //
-      var currentCanvasPoint = [
-        event.offsetX / this._frameCanvas.offsetWidth,
-        event.offsetY / this._frameCanvas.offsetHeight,
-      ];
-
-      for (let idx = 0; idx < 2; idx++) {
-        if (currentCanvasPoint[idx] > 1.0) {
-          currentCanvasPoint[idx] = 1;
-        }
-        if (currentCanvasPoint[idx] < 0.0) {
-          currentCanvasPoint[idx] = 0;
-        }
-      }
+      var coords = this.createNormalizedCoordinates(event);
 
       //
       // APPLET-SPECIFIC MODE CALLBACK
       //
       var appletCanvasModes = this.getAppletCanvasModes();
       if (appletCanvasModes.includes(this._canvasMode)) {
-        this.applyAppletMouseMove(currentCanvasPoint);
+        this.applyAppletMouseMove(coords.visible, coords.offscreen);
         return;
       }
 
@@ -438,13 +442,13 @@ export class CanvasAppletElement extends TatorElement {
       var duration = now - this._event.start.time;
 
       if (this._canvasMode == "pan" && duration > 1000.0 / 60) {
-        this._deltaX = currentCanvasPoint[0] - this._event.start.point[0];
-        this._deltaY = currentCanvasPoint[1] - this._event.start.point[1];
+        this._deltaX = coords.visible[0] - this._event.start.point[0];
+        this._deltaY = coords.visible[1] - this._event.start.point[1];
         this._canvasCenterPoint[0] = 0.5 - this._deltaX;
         this._canvasCenterPoint[1] = 0.5 - this._deltaY;
 
         this._event.start.time = now;
-        this._event.start.point = currentCanvasPoint;
+        this._event.start.point = coords.visible;
 
         this.redrawCanvas();
       }
@@ -712,11 +716,15 @@ export class CanvasAppletElement extends TatorElement {
    *
    * @abstract
    *    Override if applet needs to respond to mousemove events in the visible canvas
-   * @param {array} mouseLocation
+   * @param {array} visibleCoordinates
    *    Normalized mouse location relative to the visible canvas
    *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   * @param {array} offscreenCoordinates
+   *    Normalized mouse location relative to the offscreen canvas
+   *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   *    If zoom level is 1, this is the same as the visible coordinates.
    */
-  applyAppletMouseMove(mouseLocation) {
+  applyAppletMouseMove(visibleCoordinates, offscreenCoordinates) {
     return;
   }
 
@@ -725,11 +733,15 @@ export class CanvasAppletElement extends TatorElement {
    *
    * @abstract
    *    Override if applet needs to respond to mousedown events in the visible canvas
-   * @param {array} mouseLocation
+   * @param {array} visibleCoordinates
    *    Normalized mouse location relative to the visible canvas
    *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   * @param {array} offscreenCoordinates
+   *    Normalized mouse location relative to the offscreen canvas
+   *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   *    If zoom level is 1, this is the same as the visible coordinates.
    */
-  applyAppletMouseDown(mouseLocation) {
+  applyAppletMouseDown(visibleCoordinates, offscreenCoordinates) {
     return;
   }
 
@@ -738,11 +750,32 @@ export class CanvasAppletElement extends TatorElement {
    *
    * @abstract
    *    Override if applet needs to respond to mouseup events in the visible canvas
-   * @param {array} mouseLocation
+   * @param {array} visibleCoordinates
    *    Normalized mouse location relative to the visible canvas
    *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   * @param {array} offscreenCoordinates
+   *    Normalized mouse location relative to the offscreen canvas
+   *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   *    If zoom level is 1, this is the same as the visible coordinates.
    */
-  applyAppletMouseUp(mouseLocation) {
+  applyAppletMouseUp(visibleCoordinates, offscreenCoordinates) {
+    return;
+  }
+
+  /**
+   * Method called when the mouseout event is caught and an applet specific canvas mode is active
+   *
+   * @abstract
+   *    Override if applet needs to respond to click events in the visible canvas
+   * @param {array} visibleCoordinates
+   *    Normalized mouse location relative to the visible canvas
+   *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   * @param {array} offscreenCoordinates
+   *    Normalized mouse location relative to the offscreen canvas
+   *    (e.g. top left is 0,0 and the bottom right is 1,1)
+   *    If zoom level is 1, this is the same as the visible coordinates.
+   */
+  applyAppletMouseClick(visibleCoordinates, offscreenCoordinates) {
     return;
   }
 
