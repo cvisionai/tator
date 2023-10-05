@@ -396,6 +396,21 @@ class TatorAlgorithm(JobManagerMixin):
             "name": self.alg.name,
         }
 
+        # Set any steps in the templates to disable eviction
+        for tidx in range(len(manifest["spec"]["templates"])):
+            if "container" in manifest["spec"]["templates"][tidx]:
+                metadata = manifest["spec"]["templates"][tidx].get("metadata", {})
+                annotations = metadata.get("annotations", {})
+                annotations = {
+                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false",
+                    **annotations,
+                }
+                metadata = {
+                    **metadata,
+                    "annotations": annotations,
+                }
+                manifest["spec"]["templates"][tidx]["metadata"] = metadata
+
         # Set exit handler that sends an email if email specs are given
         if success_email_spec is not None or failure_email_spec is not None:
             manifest["spec"]["onExit"] = "exit-handler"
