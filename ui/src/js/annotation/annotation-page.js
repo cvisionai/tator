@@ -76,9 +76,13 @@ export class AnnotationPage extends TatorPage {
     this._canvasAppletPageWrapper = document.createElement("div");
     this._shadow.appendChild(this._canvasAppletPageWrapper);
 
+    this._outerMain = document.createElement("main");
+    this._outerMain.setAttribute("class", "d-flex");
+    this._shadow.appendChild(this._outerMain);
+
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex");
-    this._shadow.appendChild(this._main);
+    this._outerMain.appendChild(this._main);
 
     this._canvasAppletHeader.addEventListener("close", () => {
       this.exitCanvasApplet();
@@ -273,6 +277,7 @@ export class AnnotationPage extends TatorPage {
             this._breadcrumbs.setAttribute("media-name", data.name);
             this._browser.mediaInfo = data;
             this._undo.mediaInfo = data;
+            this._currentFrame = 0;
 
             fetchCredentials("/rest/MediaType/" + data.type, {}, true)
               .then((response) => response.json())
@@ -1173,6 +1178,7 @@ export class AnnotationPage extends TatorPage {
             canvas.addEventListener("frameChange", (evt) => {
               this._browser.frameChange(evt.detail.frame);
               this._settings.setAttribute("frame", evt.detail.frame);
+              this._currentFrame = evt.detail.frame;
 
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
@@ -1288,6 +1294,7 @@ export class AnnotationPage extends TatorPage {
               canvas.handleSliderChange(evt);
             });
             this._browser.addEventListener("frameChange", (evt) => {
+              this._currentFrame = evt.detail.frame;
               if ("track" in evt.detail) {
                 canvas.selectTrack(evt.detail.track, evt.detail.frame);
               } else {
@@ -1353,7 +1360,7 @@ export class AnnotationPage extends TatorPage {
                   favorites
                 );
                 this._settings.setAttribute("version", this._version.id);
-                this._main.appendChild(save);
+                this._outerMain.appendChild(save);
                 this._saves[dataType] = save;
 
                 save.addEventListener("cancel", () => {
@@ -1379,7 +1386,7 @@ export class AnnotationPage extends TatorPage {
                 favorites
               );
               this._settings.setAttribute("version", this._version.id);
-              this._main.appendChild(save);
+              this._outerMain.appendChild(save);
               this._saves[dataType.id] = save;
 
               // For states specifically, if we are using the multi-view, we will
@@ -1433,7 +1440,12 @@ export class AnnotationPage extends TatorPage {
               this._sidebar.modeChange(evt.detail.newMode, evt.detail.metaMode);
             });
 
-            this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
+            this._setupContextMenuDialogs(
+              canvas,
+              canvasElement,
+              stateTypes,
+              favorites
+            );
 
             canvas.addEventListener("maximize", () => {
               document.documentElement.requestFullscreen();
@@ -1448,7 +1460,17 @@ export class AnnotationPage extends TatorPage {
     );
   }
 
-  _setupAnnotatorApplets(canvas, canvasElement) {
+  /**
+   *
+   * @param {AnnotationCanvas} canvas
+   *    Annotation canvas object class to add the context menu and toolbar applets to
+   * @param {HTMLElement} canvasElement
+   *    <canvas> element containing the frame image(s)
+   *    Used for size information
+   * @param {array} favorites
+   *    List of Tator.Favorites associated with the user
+   */
+  _setupAnnotatorApplets(canvas, canvasElement, favorites) {
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
@@ -1581,8 +1603,10 @@ export class AnnotationPage extends TatorPage {
             "canvas-applet-wrapper"
           );
           appletInterface.style.display = "none";
-          appletInterface.style.height = "90vh";
-          canvasAppletInitPromises.push(appletInterface.init(applet));
+          appletInterface.style.height = "100vh";
+          canvasAppletInitPromises.push(
+            appletInterface.init(applet, this._data, favorites, this._undo)
+          );
           this._canvasAppletPageWrapper.appendChild(appletInterface);
           this._canvasApplets[applet.id] = appletInterface;
         }
@@ -1593,6 +1617,15 @@ export class AnnotationPage extends TatorPage {
           // #TODO Add alphabetical ordering
           for (const appletId in this._canvasApplets) {
             var appletInterface = this._canvasApplets[appletId];
+
+            // Preload the canvas applets with the current image to speed things up
+            if (this._mediaType.dtype == "image") {
+              this._mediaCanvas.getPNGdata(false).then((blob) => {
+                appletInterface.updateFrame(0, blob);
+              });
+            }
+
+            // Add the applet to the toolbar menu option
             const div = document.createElement("div");
             div.style.width = "400px";
             div.setAttribute(
@@ -1618,8 +1651,8 @@ export class AnnotationPage extends TatorPage {
       });
   }
 
-  _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
-    this._setupAnnotatorApplets(canvas, canvasElement);
+  _setupContextMenuDialogs(canvas, canvasElement, stateTypes, favorites) {
+    this._setupAnnotatorApplets(canvas, canvasElement, favorites);
 
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
@@ -2218,7 +2251,7 @@ export class AnnotationPage extends TatorPage {
   }
 
   /**
-   *
+   * Display the canvas applet menu toolbar next to the toolbar button
    */
   showCanvasAppletMenu() {
     this._sidebar._canvasApplet._button.classList.add("purple-box-border");
@@ -2231,7 +2264,7 @@ export class AnnotationPage extends TatorPage {
   }
 
   /**
-   *
+   * Hide the canvas applet menu
    */
   hideCanvasAppletMenu() {
     this._canvasAppletMenu.style.display = "none";
@@ -2239,19 +2272,32 @@ export class AnnotationPage extends TatorPage {
   }
 
   /**
-   *
+   * Bring up the canvas applet to the forefront and hide the main annotation parts.
+   * Pass along information about the current state to the applet.
+   * @param {int} appletId
+   *    Applet to display
    */
   showCanvasApplet(appletId) {
     this.hideCanvasAppletMenu();
 
     var appletData = {
-      canvas: this._canvas,
+      selectedTrack: this._canvas._activeTrack,
+      selectedLocalization: this._canvas.activeLocalization,
+      media: this._canvas._mediaInfo,
     };
+
     this._currentCanvasApplet = this._canvasApplets[appletId];
 
-    this._mediaCanvas.getPNGdata(false).then((blob) => {
-      this._currentCanvasApplet.updateFrame(blob);
-    });
+    // #TODO Consider if this should be done earlier.
+    //       For images, it might make sense to call this right away when the image is loaded.
+    if (
+      this._mediaType.dtype != "image" &&
+      this._currentCanvasApplet._lastFrameUpdate != this._currentFrame
+    ) {
+      this._mediaCanvas.getPNGdata(false).then((blob) => {
+        this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
+      });
+    }
 
     this._currentCanvasApplet.show(appletData);
     this._currentCanvasApplet.style.display = "flex";
@@ -2271,7 +2317,9 @@ export class AnnotationPage extends TatorPage {
   }
 
   /**
-   *
+   * Request to close up the visible canvas applet and show the main annotator
+   * If the applet isn't allowed to close yet, then do nothing.
+   * If it is allowed, set the applet display to none and bring the annotation page back to usual.
    */
   exitCanvasApplet() {
     if (!this._currentCanvasApplet.allowedToClose()) {
@@ -2288,6 +2336,9 @@ export class AnnotationPage extends TatorPage {
     this._versionButton.style.display = "block";
     this._settings.style.display = "block";
     this._main.style.display = "flex";
+
+    // Required resize to reset the elements correctly
+    window.dispatchEvent(new Event("resize"));
   }
 }
 

@@ -13,6 +13,7 @@ export class CanvasAppletWrapper extends TatorElement {
     super();
 
     this._applet = null; // Must call init()
+    this._lastFrameUpdate = -1; // Used to help determine if re-init is required
   }
 
   /**
@@ -60,11 +61,19 @@ export class CanvasAppletWrapper extends TatorElement {
 
   /**
    * Call this at construction
-   * @param {TatorElement.Applet} applet
+   * @param {Tator.Applet} applet
+   *    Applet to initialize the element with
+   * @param {annotation-data} data
+   *    Annotation page data buffer
+   *    Used by the applets to query state/localization types necessary at initialization
+   * @param {array of Tator.Applet} favorites
+   *    List of user-associated favorites
+   * @param {undo-buffer} undo
+   *    Undo buffer for patching/posting required by elements like the save dialog
    * @return Promise
    *    Resolves when the applet element has been initialized
    */
-  init(applet) {
+  init(applet, data, favorites, undo) {
     return new Promise((resolve) => {
       var appletView = document.createElement("iframe");
       appletView.setAttribute("class", "d-flex col-12");
@@ -73,7 +82,7 @@ export class CanvasAppletWrapper extends TatorElement {
       appletView.onload = function () {
         that._appletElement =
           appletView.contentWindow.document.getElementById("mainApplet");
-        that._appletElement.init(applet);
+        that._appletElement.init(applet, data, favorites, undo);
         resolve();
       };
 
@@ -85,16 +94,17 @@ export class CanvasAppletWrapper extends TatorElement {
   /**
    * @precondition init() must have been called
    */
-  show() {
-    this._appletElement.show();
+  show(data) {
+    this._appletElement.show(data);
   }
 
   /**
    * Update applet with current frame information
    * @precondition init() must have been called
    */
-  updateFrame(blob) {
-    this._appletElement.updateFrame(blob);
+  updateFrame(frame, blob) {
+    this._lastFrameUpdate = frame;
+    this._appletElement.updateFrame(frame, blob);
   }
 }
 

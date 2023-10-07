@@ -44,6 +44,7 @@ export class AnnotationData extends HTMLElement {
 
     this._version = version;
     this._projectId = projectId;
+    this._mediaId = mediaId;
 
     if (update) {
       for (const dataType of dataTypes) {

@@ -15,28 +15,53 @@ export class CanvasAppletElement extends TatorElement {
   constructor() {
     super();
 
-    this._applet = null; // Must call init()
+    this._applet = null;
+    this._data = null;
+    this._favorites = null;
+    this._undo = null;
     this._active = false;
 
     this._selectButtonEnabled = true;
     this._zoomInButtonEnabled = true;
     this._zoomOutButtonEnabled = true;
     this._panButtonEnabled = true;
+
+    this._canvasCenterPoint = [0.5, 0.5]; // Unclear why this is needed here yet.
   }
 
   /**
-   * @param {TatorElement.Applet} applet
+   * @param {Tator.Applet} applet
+   *    Applet to initialize the element with
+   * @param {annotation-data} data
+   *    Annotation page data buffer
+   *    Used by the applets to query state/localization types necessary at initialization
+   * @param {array of Tator.Applet} favorites
+   *    List of user-associated favorites
+   * @param {undo-buffer} undo
+   *    Undo buffer for patching/posting required by elements like the save dialog
    */
-  init(applet) {
+  init(applet, data, favorites, undo) {
     console.log(
       `Initializing canvas applet element with ${applet.name} (ID: ${applet.id})`
     );
 
     this._applet = applet;
+    this._data = data;
+    this._undo = undo;
+    this._favorites = favorites;
 
     this._main = document.createElement("main");
-    this._main.setAttribute("class", "d-flex");
+    this._main.setAttribute("class", "d-flex flex-justify-center");
     this._shadow.appendChild(this._main);
+
+    this._toolbarWrapper = document.createElement("div");
+    this._main.appendChild(this._toolbarWrapper);
+    this._canvasWrapper = document.createElement("div");
+    this._main.appendChild(this._canvasWrapper);
+    this._infoWrapper = document.createElement("div");
+    this._main.appendChild(this._infoWrapper);
+
+    this.applyAppletInit();
 
     this.createToolbar();
     this.createCanvas();
@@ -86,7 +111,7 @@ export class CanvasAppletElement extends TatorElement {
       "d-flex flex-column flex-items-center py-1 px-3"
     );
     this._sidebar.style.width = "65px";
-    this._main.appendChild(this._sidebar);
+    this._toolbarWrapper.appendChild(this._sidebar);
 
     //
     // SELECT BUTTON
@@ -327,12 +352,12 @@ export class CanvasAppletElement extends TatorElement {
    */
   createCanvas() {
     this._frameCanvas = document.createElement("canvas");
-    this._main.appendChild(this._frameCanvas);
+    this._canvasWrapper.appendChild(this._frameCanvas);
     this._frameCanvasContext = this._frameCanvas.getContext("2d");
 
-    this._frameCanvas.offScreenCanvas = document.createElement("canvas");
+    this._frameCanvas.offscreenCanvas = document.createElement("canvas");
     this._offscreenCanvasContext =
-      this._frameCanvas.offScreenCanvas.getContext("2d");
+      this._frameCanvas.offscreenCanvas.getContext("2d");
 
     this._frameImage = new Image();
 
@@ -358,13 +383,12 @@ export class CanvasAppletElement extends TatorElement {
     });
 
     this._frameCanvas.addEventListener("mousedown", (event) => {
-      this._dragging = true;
-
       this._event = { start: {}, current: {} };
       this._event.start.time = Date.now();
 
       var coords = this.createNormalizedCoordinates(event);
       this._event.start.point = coords.visible;
+      this._dragging = true;
 
       //
       // APPLET-SPECIFIC MODE CALLBACK
@@ -469,31 +493,49 @@ export class CanvasAppletElement extends TatorElement {
     // Set the visible canvas size based on available document space
     // while maintaining frame image ratio.
     //
-    var canvasHeight = window.innerHeight - 100;
-    var ratio = canvasHeight / this._frameImage.height;
+    var canvasMaxHeight = window.innerHeight - 110;
+    var canvasWrapperWidth = Math.round(
+      window.innerWidth -
+        this._toolbarWrapper.offsetWidth -
+        this._infoWrapper.offsetWidth
+    );
+    var canvasWrapperHeight = Math.round(
+      (this._frameImage.height / this._frameImage.width) * canvasWrapperWidth
+    );
+    if (canvasWrapperHeight > canvasMaxHeight) {
+      canvasWrapperHeight = canvasMaxHeight;
+      canvasWrapperWidth = Math.round(
+        (this._frameImage.width / this._frameImage.height) * canvasMaxHeight
+      );
+    }
 
-    var imageCanvasSize = [
-      Math.round(ratio * this._frameImage.width),
-      Math.round(ratio * this._frameImage.height),
-    ];
-    this._frameCanvas.width = imageCanvasSize[0];
-    this._frameCanvas.height = imageCanvasSize[1];
+    this._frameCanvas.width = canvasWrapperWidth;
+    this._frameCanvas.height = canvasWrapperHeight;
 
-    // #TODO Figure out zoom based on the ratio
-    console.log(`frameImage <-> document space ratio: ${ratio}`);
-    console.log(`imageCanvasSize: ${imageCanvasSize[0]} ${imageCanvasSize[1]}`);
+    console.log(
+      `imageDimensions: ${this._frameImage.width} ${this._frameImage.height}`
+    );
+    console.log(
+      `visibleCanvas: ${this._frameCanvas.offsetWidth} ${this._frameCanvas.offsetHeight}`
+    );
 
     //
     // Create the offscreen canvas size based on the frame image ratio and requested zoom
     //
-    var offScreenCanvasSize = [0, 0];
-    offScreenCanvasSize[0] = Math.round(imageCanvasSize[0] * this._canvasZoom);
-    offScreenCanvasSize[1] = Math.round(imageCanvasSize[1] * this._canvasZoom);
-    this._frameCanvas.offScreenCanvas.width = offScreenCanvasSize[0];
-    this._frameCanvas.offScreenCanvas.height = offScreenCanvasSize[1];
+    var visibleCanvasRatio =
+      this._frameCanvas.offsetWidth / this._frameImage.width;
+    var offscreenCanvasSize = [0, 0];
+    offscreenCanvasSize[0] = Math.round(
+      this._frameImage.width * this._canvasZoom * visibleCanvasRatio
+    );
+    offscreenCanvasSize[1] = Math.round(
+      this._frameImage.height * this._canvasZoom * visibleCanvasRatio
+    );
+    this._frameCanvas.offscreenCanvas.width = offscreenCanvasSize[0];
+    this._frameCanvas.offscreenCanvas.height = offscreenCanvasSize[1];
 
     console.log(
-      `offScreenCanvasSize - ${offScreenCanvasSize[0]} ${offScreenCanvasSize[1]}`
+      `offscreenCanvasSize - ${offscreenCanvasSize[0]} ${offscreenCanvasSize[1]}`
     );
     console.log(`canvasZoom: ${this._canvasZoom}`);
 
@@ -503,15 +545,15 @@ export class CanvasAppletElement extends TatorElement {
     this._offscreenCanvasContext.clearRect(
       0,
       0,
-      offScreenCanvasSize[0],
-      offScreenCanvasSize[1]
+      offscreenCanvasSize[0],
+      offscreenCanvasSize[1]
     );
     this._offscreenCanvasContext.drawImage(
       this._frameImage,
       0,
       0,
-      offScreenCanvasSize[0],
-      offScreenCanvasSize[1]
+      offscreenCanvasSize[0],
+      offscreenCanvasSize[1]
     );
 
     //
@@ -524,7 +566,7 @@ export class CanvasAppletElement extends TatorElement {
       this._offscreenRoi
     );
 
-    var rWidth = imageCanvasSize[0] / offScreenCanvasSize[0];
+    var rWidth = this._frameCanvas.offsetWidth / offscreenCanvasSize[0];
     if (rWidth + rOffscreenTopLeft[0] > 1.0) {
       rOffscreenTopLeft[0] = 1 - rWidth;
     }
@@ -532,11 +574,11 @@ export class CanvasAppletElement extends TatorElement {
       rOffscreenTopLeft[0] = 0;
     }
 
-    var rHeight = imageCanvasSize[1] / offScreenCanvasSize[1];
+    var rHeight = this._frameCanvas.offsetHeight / offscreenCanvasSize[1];
     if (rHeight + rOffscreenTopLeft[1] > 1.0) {
       rOffscreenTopLeft[1] = 1 - rHeight;
     }
-    if (rOffscreenTopLeft[0] < 0) {
+    if (rOffscreenTopLeft[1] < 0) {
       rOffscreenTopLeft[1] = 0;
     }
 
@@ -553,30 +595,34 @@ export class CanvasAppletElement extends TatorElement {
     //
     this.drawAppletData();
 
+    console.log(`offscreenROI: ${this._offscreenRoi}`);
+
     //
     // Draw
     //
     this._frameCanvasContext.clearRect(
       0,
       0,
-      imageCanvasSize[0],
-      imageCanvasSize[1]
+      this._frameCanvas.offsetWidth,
+      this._frameCanvas.offsetHeight
     );
     this._frameCanvasContext.drawImage(
-      this._frameCanvas.offScreenCanvas,
-      this._offscreenRoi[0] * offScreenCanvasSize[0], // sx
-      this._offscreenRoi[1] * offScreenCanvasSize[1], // sy
-      this._offscreenRoi[2] * offScreenCanvasSize[0], // swidth
-      this._offscreenRoi[3] * offScreenCanvasSize[1], // swidth
+      this._frameCanvas.offscreenCanvas,
+      this._offscreenRoi[0] * offscreenCanvasSize[0], // sx
+      this._offscreenRoi[1] * offscreenCanvasSize[1], // sy
+      this._offscreenRoi[2] * offscreenCanvasSize[0], // swidth
+      this._offscreenRoi[3] * offscreenCanvasSize[1], // sheight
       0, // dx
       0, // dy
-      imageCanvasSize[0], // dwidth
-      imageCanvasSize[1]
-    ); // dheight
+      this._frameCanvas.offsetWidth, // dwidth
+      this._frameCanvas.offsetHeight // dheight
+    );
   }
 
   /**
    * Reinitialize the canvas with the frame image to update
+   * @param {integer} frame
+   *    Frame number associated with the image
    * @param {blob} frameBlob
    *    Blob of media frame image to display in the canvas
    * @postcondition
@@ -584,7 +630,8 @@ export class CanvasAppletElement extends TatorElement {
    * @return {Promise}
    *    Resolves when the image is loaded with the provided frame blob
    */
-  updateFrame(frameBlob) {
+  updateFrame(frame, frameBlob) {
+    this._frame = frame;
     this._frameBlob = frameBlob;
     return new Promise((resolve) => {
       this._canvasZoom = 1;
@@ -796,6 +843,16 @@ export class CanvasAppletElement extends TatorElement {
    *    Override if applet needs to draw stuff on top of the frame image
    */
   drawAppletData() {
+    return;
+  }
+
+  /**
+   * Method called after saving the provided data interfaces but before the UI creation.
+   *
+   * @abstract
+   *    Override if applet needs to perform tasks at initialization
+   */
+  applyAppletInit() {
     return;
   }
 

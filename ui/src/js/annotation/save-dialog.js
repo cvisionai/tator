@@ -30,6 +30,7 @@ export class SaveDialog extends TatorElement {
 
     const close = document.createElement("modal-close");
     header.appendChild(close);
+    this._modalClose = close;
 
     this._hookButtonDiv = document.createElement("div");
     this._hookButtonDiv.setAttribute("class", "hooks-button-div");

@@ -4,7 +4,7 @@
 
 .annotation-subheader {
   color: $color-white;
-  background-color: $color-blue-iris50;
+  background-color: $color-charcoal--light;
   box-sizing: border-box;
   height: 32px;
   width: 100%;
@@ -560,6 +560,28 @@ annotation-player {
 .page-tab:focus {
   background-color: #4a4eae;
   color: #ffffff;
+}
+.dark-page-tab {
+  align-items: center;
+  background-color: $color-charcoal--dark;
+  color: #a2afcd;
+  cursor: pointer;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  border-bottom: 1px solid #262e3d;
+}
+.dark-page-tab:focus {
+  outline: none;
+}
+.dark-page-tab.active,
+.dark-page-tab:hover,
+.dark-page-tab:focus {
+  color: $color-white;
+  background-color: $color-charcoal--dark;
+  border-bottom: 1px solid #ffffff;
 }
 
 .box-border {
