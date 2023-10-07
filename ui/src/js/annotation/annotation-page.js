@@ -1074,13 +1074,24 @@ export class AnnotationPage extends TatorPage {
               if (this._newEntityId) {
                 for (const elem of evt.detail.data) {
                   if (elem.id == this._newEntityId) {
+                    this._newEntity = elem;
                     this._browser.selectEntity(elem);
 
                     if (this._player.selectTimelineData) {
                       this._player.selectTimelineData(elem);
                     }
 
+                    // If the page is in canvas applet mode, let the applet know
+                    // there is a fresh batch of data, it might've invoked it.
+                    if (this._currentCanvasApplet != null) {
+                      this._currentCanvasApplet.newData(
+                        this._newEntity,
+                        evt.detail.typeObj
+                      );
+                    }
+
                     this._newEntityId = null;
+                    this._newEntity = null;
                     break;
                   }
                 }
@@ -1211,8 +1222,10 @@ export class AnnotationPage extends TatorPage {
               // when the data is retrieved (ie freshData event)
               if (evt.detail.method == "POST") {
                 this._newEntityId = evt.detail.id;
+                this._newEntity = null; // Updates in "freshData"
               } else {
                 this._newEntityId = null;
+                this._newEntity = null;
               }
 
               this._data.updateTypeLocal(
@@ -1638,7 +1651,7 @@ export class AnnotationPage extends TatorPage {
               </div>
               <div class="d-flex flex-column ml-3 col-9">
               <div class="text-semibold text-uppercase f2">${appletInterface.getTitle()}</div>
-              <div class="text-dark-gray f3">${appletInterface.getDescription()}</div>
+              <div class="text-dark-gray f3 py-2">${appletInterface.getDescription()}</div>
               </div>
             `;
             this._canvasAppletMenu.appendChild(div);
@@ -2288,8 +2301,6 @@ export class AnnotationPage extends TatorPage {
 
     this._currentCanvasApplet = this._canvasApplets[appletId];
 
-    // #TODO Consider if this should be done earlier.
-    //       For images, it might make sense to call this right away when the image is loaded.
     if (
       this._mediaType.dtype != "image" &&
       this._currentCanvasApplet._lastFrameUpdate != this._currentFrame
@@ -2329,6 +2340,7 @@ export class AnnotationPage extends TatorPage {
     this._currentCanvasApplet.style.display = "none";
     this._currentCanvasApplet.close();
     this._canvasAppletHeader.style.display = "none";
+    this._currentCanvasApplet = null;
 
     //
     // SHOW MAIN PAGE PARTS

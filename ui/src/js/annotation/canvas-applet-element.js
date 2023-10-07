@@ -39,6 +39,8 @@ export class CanvasAppletElement extends TatorElement {
    *    List of user-associated favorites
    * @param {undo-buffer} undo
    *    Undo buffer for patching/posting required by elements like the save dialog
+   * @param {undo-buffer} undo
+   *    Undo buffer for patching/posting required by elements like the save dialog
    */
   init(applet, data, favorites, undo) {
     console.log(
@@ -640,9 +642,10 @@ export class CanvasAppletElement extends TatorElement {
 
       var that = this;
       this._frameImage.onload = function () {
-        that.redrawCanvas();
-        that.appletFrameUpdateCallback();
-        resolve();
+        that.appletFrameUpdateCallback().then(() => {
+          that.redrawCanvas();
+          resolve();
+        });
       };
       this._frameImage.src = URL.createObjectURL(frameBlob);
     });
@@ -863,18 +866,21 @@ export class CanvasAppletElement extends TatorElement {
    *    #TODO
    *
    * @param data {Object}
-   * - frame
-   * - version
-   * - media
-   * - projectId
-   * - selectedTrack
-   * - selectedLocalization
-   * - annotationData
-   * - canvas
+   *    #TODO
    */
   show(data) {
     this._active = true;
     this.setCanvasMode(this.getDefaultMode());
+  }
+
+  /**
+   * #TODO
+   * @param {*} newElement
+   * @param {*} associatedType
+   * @returns
+   */
+  newData(newElement, associatedType) {
+    return;
   }
 
   /**

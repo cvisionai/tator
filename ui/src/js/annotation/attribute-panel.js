@@ -51,6 +51,13 @@ export class AttributePanel extends TatorElement {
     this._standardWidgetsDiv.appendChild(this._frameWidget);
     this._widgets.push(this._frameWidget);
 
+    this._typeWidget = document.createElement("text-input");
+    this._typeWidget.permission = "View Only";
+    this._typeWidget.setAttribute("name", "Type");
+    this._standardWidgetsDiv.appendChild(this._typeWidget);
+    this._widgets.push(this._typeWidget);
+    this._typeWidget.style.display = "none";
+
     this._versionWidget = document.createElement("text-input");
     this._versionWidget.setAttribute("name", "Version");
     this._versionWidget.permission = "View Only";
@@ -159,6 +166,7 @@ export class AttributePanel extends TatorElement {
     this._timeStore = null;
     this._browserSettings = null;
     this._disableWidgets = new Set();
+    this._disableWidgets.add("Type");
   }
 
   static get observedAttributes() {
@@ -235,6 +243,7 @@ export class AttributePanel extends TatorElement {
       if (
         widget.getAttribute("name") != "ID" &&
         widget.getAttribute("name") != "Frame" &&
+        widget.getAttribute("name") != "Type" &&
         widget.getAttribute("name") != "Version"
       ) {
         // Widget may have been marked as disabled, and its permission have already been
@@ -1097,6 +1106,9 @@ export class AttributePanel extends TatorElement {
     if (val == "Frame") {
       this._frameWidget.style.display = "none";
     }
+    if (val == "Type") {
+      this._typeWidget.style.display = "none";
+    }
     if (val == "Version") {
       this._versionWidget.style.display = "none";
     }
@@ -1116,6 +1128,9 @@ export class AttributePanel extends TatorElement {
 
     if (!this._disableWidgets.has("ID")) {
       this._idWidget.style.display = "block";
+    }
+    if (!this._disableWidgets.has("Type")) {
+      this._typeWidget.style.display = "block";
     }
     if (!this._disableWidgets.has("Frame")) {
       this._frameWidget.style.display = "block";
@@ -1143,6 +1158,7 @@ export class AttributePanel extends TatorElement {
     var standardWidgets = [
       { attrName: "ID", widget: this._idWidget },
       { attrName: "Frame", widget: this._frameWidget },
+      { attrName: "Type", widget: this._typeWidget },
       { attrName: "Version", widget: this._versionWidget },
     ];
     for (const info of standardWidgets) {
@@ -1192,6 +1208,9 @@ export class AttributePanel extends TatorElement {
     // Set the ID widget
     this._idWidget.setValue(values.id);
     this._frameWidget.setValue(values.frame);
+    this._typeWidget.setValue(
+      `${this._dataType.name} (ID: ${this._dataType.id})`
+    );
 
     let version = null;
     let foundVersion = false;

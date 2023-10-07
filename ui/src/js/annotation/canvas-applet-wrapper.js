@@ -102,9 +102,14 @@ export class CanvasAppletWrapper extends TatorElement {
    * Update applet with current frame information
    * @precondition init() must have been called
    */
-  updateFrame(frame, blob) {
+  async updateFrame(frame, blob) {
     this._lastFrameUpdate = frame;
-    this._appletElement.updateFrame(frame, blob);
+    await this._appletElement.updateFrame(frame, blob);
+  }
+
+  // #TODO
+  newData(newElement, associatedType) {
+    this._appletElement.newData(newElement, associatedType);
   }
 }
 
