@@ -2310,8 +2310,8 @@ export class AnnotationPage extends TatorPage {
       });
     }
 
-    this._currentCanvasApplet.show(appletData);
     this._currentCanvasApplet.style.display = "flex";
+    this._currentCanvasApplet.show(appletData);
 
     this._canvasAppletHeader.style.display = "flex";
     this._canvasAppletHeader.setAttribute(
