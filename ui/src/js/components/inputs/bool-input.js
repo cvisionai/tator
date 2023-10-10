@@ -152,7 +152,7 @@ export class BoolInput extends TatorElement {
   }
 
   changed() {
-    console.log("bool-input: changed")
+    console.log("bool-input: changed");
     return this.getValue() !== this._default;
   }
 
