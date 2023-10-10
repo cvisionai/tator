@@ -41,6 +41,7 @@ helm/tator/configs/*
 **/.pylint-venv
 .env
 test-results
+rest-junit.xml
 
 # Hidden mac files
 ._.
