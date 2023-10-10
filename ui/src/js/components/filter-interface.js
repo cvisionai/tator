@@ -208,8 +208,7 @@ export class FilterInterface extends TatorElement {
       distance_lte: "Within",
     };
     let humanReadable = operator_convert[filter.operation];
-    if (filter.inverse == true)
-    {
+    if (filter.inverse == true) {
       humanReadable = `NOT ${humanReadable}`;
     }
     const display = humanReadable ? humanReadable : filter.operation;

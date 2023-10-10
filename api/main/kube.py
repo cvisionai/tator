@@ -354,7 +354,7 @@ class TatorAlgorithm(JobManagerMixin):
                 },
                 {
                     "name": "rest_url",
-                    "value": f'{self.host}/rest',
+                    "value": f"{self.host}/rest",
                 },
                 {
                     "name": "rest_token",
@@ -362,7 +362,7 @@ class TatorAlgorithm(JobManagerMixin):
                 },
                 {
                     "name": "tus_url",
-                    "value": f'{self.host}/files/',
+                    "value": f"{self.host}/files/",
                 },
                 {
                     "name": "project_id",
@@ -439,7 +439,7 @@ class TatorAlgorithm(JobManagerMixin):
                                 f"Authorization: Token {token}",
                                 "-d",
                                 json.dumps(success_email_spec),
-                                f'{self.host}/rest/Email/{project}',
+                                f"{self.host}/rest/Email/{project}",
                             ],
                         },
                     }
@@ -467,7 +467,7 @@ class TatorAlgorithm(JobManagerMixin):
                                 f"Authorization: Token {token}",
                                 "-d",
                                 json.dumps(failure_email_spec),
-                                f'{self.host}/rest/Email/{project}',
+                                f"{self.host}/rest/Email/{project}",
                             ],
                         },
                     }
