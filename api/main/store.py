@@ -449,7 +449,8 @@ class MinIOStorage(TatorStorage):
                 MultipartUpload={"Parts": parts},
                 UploadId=upload_id,
             )
-        except Exception:
+        except Exception as excep:
+            logger.info(f"Multipart failed: {excep}")
             return False
         return True
 
