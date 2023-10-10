@@ -25,8 +25,6 @@ export class CanvasAppletElement extends TatorElement {
     this._zoomInButtonEnabled = true;
     this._zoomOutButtonEnabled = true;
     this._panButtonEnabled = true;
-
-    this._canvasCenterPoint = [0.5, 0.5]; // Unclear why this is needed here yet.
   }
 
   /**
@@ -271,11 +269,9 @@ export class CanvasAppletElement extends TatorElement {
    * Helper drawing function. Not expected to be reimplemented by derived class.
    *
    * @param {float} x
-   *    -1.0 .. 1.0 in visible canvas coordinates (width)
-   *    This is a percentage of the offscreenRoi's width
+   *    -1.0 .. 1.0 in visible canvas coordinates relative to offscreen (width)
    * @param {float} y
-   *    -1.0 .. 1.0 in visible canvas coordinates (height)
-   *    This is a percentage of the offscreenRoi's height
+   *    -1.0 .. 1.0 in visible canvas coordinates relative to offscreen (height)
    * @param {array} offscreenRoi
    *    [0] = x (0.0 .. 1.0)
    *    [1] = y (0.0 .. 1.0)
@@ -378,6 +374,34 @@ export class CanvasAppletElement extends TatorElement {
         this.applyAppletMouseClick(coords.visible, coords.offscreen);
         return;
       }
+
+      //
+      // ZOOM MODES
+      //
+      if (this._canvasMode == "zoom-in") {
+        this._canvasZoom *= 2;
+
+        if (this._canvasZoom > 8) {
+          this._canvasZoom = 8;
+        }
+
+        // The 0.25 is related with zoom.
+        this._canvasCenterPoint = [
+          coords.visible[0] + 0.25,
+          coords.visible[1] + 0.25,
+        ];
+        this.redrawCanvas();
+      } else if (this._canvasMode == "zoom-out") {
+        this._canvasZoom *= 0.5;
+        if (this._canvasZoom < 1) {
+          this._canvasZoom = 1;
+        }
+        this._canvasCenterPoint = [
+          coords.visible[0] - 0.5,
+          coords.visible[1] - 0.5,
+        ];
+        this.redrawCanvas();
+      }
     });
 
     this._frameCanvas.addEventListener("mouseout", (event) => {
@@ -414,34 +438,6 @@ export class CanvasAppletElement extends TatorElement {
       if (appletCanvasModes.includes(this._canvasMode)) {
         this.applyAppletMouseDown(coords.visible, coords.offscreen);
         return;
-      }
-
-      //
-      // ZOOM MODES
-      //
-      if (this._canvasMode == "zoom-in") {
-        this._canvasZoom *= 2;
-
-        if (this._canvasZoom > 8) {
-          this._canvasZoom = 8;
-        }
-
-        // The 0.25 is related with zoom.
-        this._canvasCenterPoint = [
-          coords.visible[0] + 0.25,
-          coords.visible[1] + 0.25,
-        ];
-        this.redrawCanvas();
-      } else if (this._canvasMode == "zoom-out") {
-        this._canvasZoom *= 0.5;
-        if (this._canvasZoom < 1) {
-          this._canvasZoom = 1;
-        }
-        this._canvasCenterPoint = [
-          coords.visible[0] - 0.5,
-          coords.visible[1] - 0.5,
-        ];
-        this.redrawCanvas();
       }
     });
 
@@ -487,6 +483,10 @@ export class CanvasAppletElement extends TatorElement {
   redrawCanvas() {
     console.log("******************** canvas-applet: redrawCanvas");
 
+    if (this._canvasCenterPoint == null) {
+      return; // Not initialized yet.
+    }
+
     console.log(
       `currentCanvasPoint - ${this._canvasCenterPoint[0]} ${this._canvasCenterPoint[1]}`
     );
@@ -520,6 +520,10 @@ export class CanvasAppletElement extends TatorElement {
     console.log(
       `visibleCanvas: ${this._frameCanvas.offsetWidth} ${this._frameCanvas.offsetHeight}`
     );
+
+    if (this._frameCanvas.offsetWidth == 0) {
+      return; // Canvas isn't visible, don't bother drawing
+    }
 
     //
     // Create the offscreen canvas size based on the frame image ratio and requested zoom
@@ -568,6 +572,8 @@ export class CanvasAppletElement extends TatorElement {
       this._offscreenRoi
     );
 
+    console.log(`rOffscreenTopLeft: ${rOffscreenTopLeft}`);
+
     var rWidth = this._frameCanvas.offsetWidth / offscreenCanvasSize[0];
     if (rWidth + rOffscreenTopLeft[0] > 1.0) {
       rOffscreenTopLeft[0] = 1 - rWidth;
@@ -597,8 +603,6 @@ export class CanvasAppletElement extends TatorElement {
     //
     this.drawAppletData();
 
-    console.log(`offscreenROI: ${this._offscreenRoi}`);
-
     //
     // Draw
     //
@@ -619,6 +623,8 @@ export class CanvasAppletElement extends TatorElement {
       this._frameCanvas.offsetWidth, // dwidth
       this._frameCanvas.offsetHeight // dheight
     );
+
+    this._canvasCenterPoint = [0.5, 0.5];
   }
 
   /**
@@ -862,11 +868,15 @@ export class CanvasAppletElement extends TatorElement {
   /**
    * Called when the applet is active/shown in the annotator
    *
+   * @postcondition
+   *    this._active is set to true, which allows it to redraw on window resize events
+   *    Canvas mode is set to the default mode
    * @abstract
-   *    #TODO
-   *
+   *    Called after updateFrame() has been called.
+   *    The canvas applet is shown on the annotation-page (display != none) and this function
+   *    is called. This may not be necssary to re-implement.
    * @param data {Object}
-   *    #TODO
+   *    Refer to annotation-page.js for the latest information
    */
   show(data) {
     this._active = true;
@@ -874,10 +884,15 @@ export class CanvasAppletElement extends TatorElement {
   }
 
   /**
-   * #TODO
-   * @param {*} newElement
-   * @param {*} associatedType
-   * @returns
+   * Called when "freshData" event is emitted by annotation-data
+   *
+   * @abstract
+   *    Derived implementation will respond to newly created Tator element (if needed)
+   *    This is likely necessary to implement if this applet creates the element.
+   * @param {Tator.Entity} newElement
+   *    Localization or state element that was recently created
+   * @param {Tator.EntityType} associatedType
+   *    LocalizationType or StateType associated with newElement
    */
   newData(newElement, associatedType) {
     return;
@@ -889,7 +904,6 @@ export class CanvasAppletElement extends TatorElement {
    * @abstract
    *    Derived implementation should decide if it is ready to close (e.g. all data has been saved)
    *    and also inform the user in the UI appropriately.
-   *
    * @return {bool}
    *    True if the applet is ready to close. False otherwise.
    */
