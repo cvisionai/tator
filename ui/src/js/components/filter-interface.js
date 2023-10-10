@@ -207,7 +207,11 @@ export class FilterInterface extends TatorElement {
       date_range: "Within",
       distance_lte: "Within",
     };
-    const humanReadable = operator_convert[filter.operation];
+    let humanReadable = operator_convert[filter.operation];
+    if (filter.inverse == true)
+    {
+      humanReadable = `NOT ${humanReadable}`;
+    }
     const display = humanReadable ? humanReadable : filter.operation;
     return `${filter.attribute} ${display} ${filter.value}`;
   }
