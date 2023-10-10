@@ -376,7 +376,7 @@ export class FilesPage extends TatorPage {
     this._loading.style.display = "block";
 
     const fileListPromise = fetchCredentials(
-      `/rest/Files/${this._projectId}?meta=${fileType.id}`
+      `/rest/Files/${this._projectId}?type=${fileType.id}`
     );
     fileListPromise.then((response) => {
       const fileListData = response.json();
