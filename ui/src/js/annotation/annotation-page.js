@@ -65,9 +65,49 @@ export class AnnotationPage extends TatorPage {
     this._settings = document.createElement("annotation-settings");
     settingsDiv.appendChild(this._settings);
 
+    this._canvasAppletHeader = document.createElement("annotation-header");
+    this._canvasAppletHeader.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-between f3"
+    );
+    this._canvasAppletHeader.style.display = "none";
+    this._shadow.appendChild(this._canvasAppletHeader);
+
+    this._canvasAppletPageWrapper = document.createElement("div");
+    this._shadow.appendChild(this._canvasAppletPageWrapper);
+
+    this._outerMain = document.createElement("main");
+    this._outerMain.setAttribute("class", "d-flex");
+    this._shadow.appendChild(this._outerMain);
+
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex");
-    this._shadow.appendChild(this._main);
+    this._outerMain.appendChild(this._main);
+
+    this._canvasAppletHeader.addEventListener("close", () => {
+      this.exitCanvasApplet();
+    });
+
+    this._canvasAppletMenu = document.createElement("div");
+    this._canvasAppletMenu.setAttribute(
+      "class",
+      "annotation-canvas-overlay-menu d-flex flex-row flex-items-center flex-justify-between rounded-2 box-border"
+    );
+    this._canvasAppletMenu.style.display = "none";
+    this._main.appendChild(this._canvasAppletMenu);
+
+    var menuDiv = document.createElement("div");
+    menuDiv.setAttribute("class", "h3 px-2 py-3 mb-2");
+    menuDiv.textContent = "Applets";
+    this._canvasAppletMenu.appendChild(menuDiv);
+
+    this._canvasAppletMenuLoading = document.createElement("div");
+    this._canvasAppletMenuLoading.setAttribute(
+      "class",
+      "text-gray f3 pb-3 pl-2 pr-6"
+    );
+    this._canvasAppletMenuLoading.textContent = "Initializing applets...";
+    this._canvasAppletMenu.appendChild(this._canvasAppletMenuLoading);
 
     this._versionDialog = document.createElement("version-dialog");
     this._main.appendChild(this._versionDialog);
@@ -237,6 +277,7 @@ export class AnnotationPage extends TatorPage {
             this._breadcrumbs.setAttribute("media-name", data.name);
             this._browser.mediaInfo = data;
             this._undo.mediaInfo = data;
+            this._currentFrame = 0;
 
             fetchCredentials("/rest/MediaType/" + data.type, {}, true)
               .then((response) => response.json())
@@ -1033,13 +1074,24 @@ export class AnnotationPage extends TatorPage {
               if (this._newEntityId) {
                 for (const elem of evt.detail.data) {
                   if (elem.id == this._newEntityId) {
+                    this._newEntity = elem;
                     this._browser.selectEntity(elem);
 
                     if (this._player.selectTimelineData) {
                       this._player.selectTimelineData(elem);
                     }
 
+                    // If the page is in canvas applet mode, let the applet know
+                    // there is a fresh batch of data, it might've invoked it.
+                    if (this._currentCanvasApplet != null) {
+                      this._currentCanvasApplet.newData(
+                        this._newEntity,
+                        evt.detail.typeObj
+                      );
+                    }
+
                     this._newEntityId = null;
+                    this._newEntity = null;
                     break;
                   }
                 }
@@ -1103,6 +1155,14 @@ export class AnnotationPage extends TatorPage {
 
             this._sidebar.localizationTypes = byType;
             this._sidebar.trackTypes = trackTypes;
+
+            this._sidebar.addEventListener("canvasApplet", (evt) => {
+              if (this._canvasAppletMenu.style.display == "none") {
+                this.showCanvasAppletMenu();
+              } else {
+                this.hideCanvasAppletMenu();
+              }
+            });
             this._sidebar.addEventListener("default", (evt) => {
               this.clearMetaCaches();
               canvas.defaultMode();
@@ -1129,6 +1189,7 @@ export class AnnotationPage extends TatorPage {
             canvas.addEventListener("frameChange", (evt) => {
               this._browser.frameChange(evt.detail.frame);
               this._settings.setAttribute("frame", evt.detail.frame);
+              this._currentFrame = evt.detail.frame;
 
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
@@ -1161,8 +1222,10 @@ export class AnnotationPage extends TatorPage {
               // when the data is retrieved (ie freshData event)
               if (evt.detail.method == "POST") {
                 this._newEntityId = evt.detail.id;
+                this._newEntity = null; // Updates in "freshData"
               } else {
                 this._newEntityId = null;
+                this._newEntity = null;
               }
 
               this._data.updateTypeLocal(
@@ -1244,6 +1307,7 @@ export class AnnotationPage extends TatorPage {
               canvas.handleSliderChange(evt);
             });
             this._browser.addEventListener("frameChange", (evt) => {
+              this._currentFrame = evt.detail.frame;
               if ("track" in evt.detail) {
                 canvas.selectTrack(evt.detail.track, evt.detail.frame);
               } else {
@@ -1309,7 +1373,7 @@ export class AnnotationPage extends TatorPage {
                   favorites
                 );
                 this._settings.setAttribute("version", this._version.id);
-                this._main.appendChild(save);
+                this._outerMain.appendChild(save);
                 this._saves[dataType] = save;
 
                 save.addEventListener("cancel", () => {
@@ -1335,7 +1399,7 @@ export class AnnotationPage extends TatorPage {
                 favorites
               );
               this._settings.setAttribute("version", this._version.id);
-              this._main.appendChild(save);
+              this._outerMain.appendChild(save);
               this._saves[dataType.id] = save;
 
               // For states specifically, if we are using the multi-view, we will
@@ -1389,7 +1453,12 @@ export class AnnotationPage extends TatorPage {
               this._sidebar.modeChange(evt.detail.newMode, evt.detail.metaMode);
             });
 
-            this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
+            this._setupContextMenuDialogs(
+              canvas,
+              canvasElement,
+              stateTypes,
+              favorites
+            );
 
             canvas.addEventListener("maximize", () => {
               document.documentElement.requestFullscreen();
@@ -1404,7 +1473,17 @@ export class AnnotationPage extends TatorPage {
     );
   }
 
-  _setupAnnotatorApplets(canvas, canvasElement) {
+  /**
+   *
+   * @param {AnnotationCanvas} canvas
+   *    Annotation canvas object class to add the context menu and toolbar applets to
+   * @param {HTMLElement} canvasElement
+   *    <canvas> element containing the frame image(s)
+   *    Used for size information
+   * @param {array} favorites
+   *    List of Tator.Favorites associated with the user
+   */
+  _setupAnnotatorApplets(canvas, canvasElement, favorites) {
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
@@ -1433,6 +1512,8 @@ export class AnnotationPage extends TatorPage {
       .then((response) => response.json())
       .then((applets) => {
         this._appletMap = {};
+        this._canvasApplets = {};
+        var canvasAppletObjects = [];
 
         for (let applet of applets) {
           if (applet.categories == null) {
@@ -1465,6 +1546,14 @@ export class AnnotationPage extends TatorPage {
             // Add the applet to the dialog
             this._menuAppletDialog.saveApplet(applet);
             canvas.addAppletToMenu(applet.name, applet.categories);
+          } else if (applet.categories.includes("annotator-canvas")) {
+            // #TODO Future work. Enable canvas applets for multiview.
+            if (this._player.mediaType.dtype == "multi") {
+              continue;
+            }
+
+            // Add canvas applet
+            canvasAppletObjects.push(applet);
           }
           // Init for annotator tools applets
           if (applet.categories.includes("annotator-tools")) {
@@ -1497,11 +1586,86 @@ export class AnnotationPage extends TatorPage {
 
           this._appletMap[applet.name] = applet;
         }
+
+        //
+        // Setup the canvas applets
+        //
+        this._numCanvasApplets = canvasAppletObjects.length;
+        if (this._numCanvasApplets == 0) {
+          this._sidebar.disableCanvasApplet();
+        }
+
+        this._mediaCanvas = null;
+        if ("_video" in this._canvas) {
+          this._mediaCanvas = this._canvas._video;
+        }
+        if ("_image" in this._canvas) {
+          this._mediaCanvas = this._canvas._image;
+        }
+        if (this._mediaCanvas == null) {
+          // In the future, add multi
+          return;
+        }
+        this._annotationCanvas = canvas;
+        this._canvasElement = canvasElement;
+
+        var canvasAppletInitPromises = [];
+        for (const applet of canvasAppletObjects) {
+          // Create the canvas applet
+          const appletInterface = document.createElement(
+            "canvas-applet-wrapper"
+          );
+          appletInterface.style.display = "none";
+          appletInterface.style.height = "100vh";
+          canvasAppletInitPromises.push(
+            appletInterface.init(applet, this._data, favorites, this._undo)
+          );
+          this._canvasAppletPageWrapper.appendChild(appletInterface);
+          this._canvasApplets[applet.id] = appletInterface;
+        }
+
+        Promise.all(canvasAppletInitPromises).then(() => {
+          this._canvasAppletMenuLoading.style.display = "none";
+
+          // #TODO Add alphabetical ordering
+          for (const appletId in this._canvasApplets) {
+            var appletInterface = this._canvasApplets[appletId];
+
+            // Preload the canvas applets with the current image to speed things up
+            if (this._mediaType.dtype == "image") {
+              this._mediaCanvas.getPNGdata(false).then((blob) => {
+                appletInterface.updateFrame(0, blob);
+              });
+            }
+
+            // Add the applet to the toolbar menu option
+            const div = document.createElement("div");
+            div.style.width = "400px";
+            div.setAttribute(
+              "class",
+              "annotation-canvas-overlay-menu-option text-gray d-flex flex-grow px-2 py-2 flex-items-center text-left"
+            );
+            div.innerHTML = `
+              <div class="d-flex py-3 px-3 box-border rounded-2">
+                ${appletInterface.getIcon()}
+              </div>
+              <div class="d-flex flex-column ml-3 col-9">
+              <div class="text-semibold text-uppercase f2">${appletInterface.getTitle()}</div>
+              <div class="text-dark-gray f3 py-2">${appletInterface.getDescription()}</div>
+              </div>
+            `;
+            this._canvasAppletMenu.appendChild(div);
+
+            div.addEventListener("click", () => {
+              this.showCanvasApplet(appletId);
+            });
+          }
+        });
       });
   }
 
-  _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
-    this._setupAnnotatorApplets(canvas, canvasElement);
+  _setupContextMenuDialogs(canvas, canvasElement, stateTypes, favorites) {
+    this._setupAnnotatorApplets(canvas, canvasElement, favorites);
 
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
@@ -2097,6 +2261,96 @@ export class AnnotationPage extends TatorPage {
       }
     }
     return;
+  }
+
+  /**
+   * Display the canvas applet menu toolbar next to the toolbar button
+   */
+  showCanvasAppletMenu() {
+    this._sidebar._canvasApplet._button.classList.add("purple-box-border");
+
+    let pos = this._sidebar._canvasApplet.getBoundingClientRect();
+    let padding = 20 + this._numCanvasApplets * 60;
+    this._canvasAppletMenu.style.top = `${pos.top - padding}px`;
+    this._canvasAppletMenu.style.left = `${pos.right + 18}px`;
+    this._canvasAppletMenu.style.display = "block";
+  }
+
+  /**
+   * Hide the canvas applet menu
+   */
+  hideCanvasAppletMenu() {
+    this._canvasAppletMenu.style.display = "none";
+    this._sidebar._canvasApplet._button.classList.remove("purple-box-border");
+  }
+
+  /**
+   * Bring up the canvas applet to the forefront and hide the main annotation parts.
+   * Pass along information about the current state to the applet.
+   * @param {int} appletId
+   *    Applet to display
+   */
+  showCanvasApplet(appletId) {
+    this.hideCanvasAppletMenu();
+
+    var appletData = {
+      selectedTrack: this._canvas._activeTrack,
+      selectedLocalization: this._canvas.activeLocalization,
+      media: this._canvas._mediaInfo,
+    };
+
+    this._currentCanvasApplet = this._canvasApplets[appletId];
+
+    if (
+      this._mediaType.dtype != "image" &&
+      this._currentCanvasApplet._lastFrameUpdate != this._currentFrame
+    ) {
+      this._mediaCanvas.getPNGdata(false).then((blob) => {
+        this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
+      });
+    }
+
+    this._currentCanvasApplet.style.display = "flex";
+    this._currentCanvasApplet.show(appletData);
+
+    this._canvasAppletHeader.style.display = "flex";
+    this._canvasAppletHeader.setAttribute(
+      "title",
+      this._currentCanvasApplet.getTitle()
+    );
+
+    //
+    // HIDE MAIN PAGE PARTS
+    //
+    this._versionButton.style.display = "none";
+    this._settings.style.display = "none";
+    this._main.style.display = "none";
+  }
+
+  /**
+   * Request to close up the visible canvas applet and show the main annotator
+   * If the applet isn't allowed to close yet, then do nothing.
+   * If it is allowed, set the applet display to none and bring the annotation page back to usual.
+   */
+  exitCanvasApplet() {
+    if (!this._currentCanvasApplet.allowedToClose()) {
+      return;
+    }
+
+    this._currentCanvasApplet.style.display = "none";
+    this._currentCanvasApplet.close();
+    this._canvasAppletHeader.style.display = "none";
+    this._currentCanvasApplet = null;
+
+    //
+    // SHOW MAIN PAGE PARTS
+    //
+    this._versionButton.style.display = "block";
+    this._settings.style.display = "block";
+    this._main.style.display = "flex";
+
+    // Required resize to reset the elements correctly
+    window.dispatchEvent(new Event("resize"));
   }
 }
 

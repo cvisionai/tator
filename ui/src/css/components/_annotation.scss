@@ -2,6 +2,23 @@
   flex-grow: 1;
 }
 
+.annotation-subheader {
+  color: $color-white;
+  background-color: $color-charcoal--light;
+  box-sizing: border-box;
+  height: 32px;
+  width: 100%;
+}
+
+.annotation-subheader-close {
+  background-color: transparent;
+  border: none;
+  &:hover,
+  &:focus {
+    color: $color-white;
+  }
+}
+
 .annotation__breadcrumbs {
   button {
     margin-left: $spacing-3;
@@ -544,10 +561,37 @@ annotation-player {
   background-color: #4a4eae;
   color: #ffffff;
 }
+.dark-page-tab {
+  align-items: center;
+  background-color: $color-charcoal--dark;
+  color: #a2afcd;
+  cursor: pointer;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  border-bottom: 1px solid #262e3d;
+}
+.dark-page-tab:focus {
+  outline: none;
+}
+.dark-page-tab.active,
+.dark-page-tab:hover,
+.dark-page-tab:focus {
+  color: $color-white;
+  background-color: $color-charcoal--dark;
+  border-bottom: 1px solid #ffffff;
+}
 
 .box-border {
   border: 1px solid #262e3d;
 }
+
+.dark-box-border {
+  border: 1px solid #151b28;
+}
+
 .purple-box-border {
   border: 2px solid #4a4eae;
 }
@@ -594,7 +638,7 @@ annotation-player {
   position: absolute;
   z-index: 10;
   border: 2px solid black;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: $color-charcoal--dark;
   padding: 2px;
 }
 
@@ -603,8 +647,7 @@ annotation-player {
   overflow: initial;
   position: absolute;
   z-index: 10;
-  border: 2px solid black;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: $color-charcoal--dark;
   padding: 2px;
 }
 

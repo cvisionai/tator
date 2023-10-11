@@ -48,6 +48,9 @@ export class AnnotationSidebar extends TatorElement {
     this._pan = document.createElement("pan-button");
     this._div.appendChild(this._pan);
 
+    this._canvasApplet = document.createElement("canvas-applet-button");
+    this._div.appendChild(this._canvasApplet);
+
     this._indicator = document.createElement("span");
     this._indicator.setAttribute("class", "annotation__shape-indicator");
     this._div.appendChild(this._indicator);
@@ -62,6 +65,7 @@ export class AnnotationSidebar extends TatorElement {
       zoomIn,
       zoomOut,
       this._pan,
+      this._canvasApplet,
     ];
 
     this._edit.addEventListener("click", () => {
@@ -82,6 +86,11 @@ export class AnnotationSidebar extends TatorElement {
     this._pan.addEventListener("click", () => {
       this._selectButton(this._pan);
       this.dispatchEvent(new Event("pan"));
+    });
+
+    this._canvasApplet.addEventListener("click", () => {
+      this._canvasApplet.blur();
+      this.dispatchEvent(new Event("canvasApplet"));
     });
 
     document.addEventListener("keydown", (evt) => {
@@ -115,11 +124,14 @@ export class AnnotationSidebar extends TatorElement {
       if (!this._poly.permanentDisable) this._poly.removeAttribute("disabled");
       if (!this._track.permanentDisable)
         this._track.removeAttribute("disabled");
+      if (!this._canvasApplet.permanentDisable)
+        this._canvasApplet.removeAttribute("disabled");
     } else {
       this._box.setAttribute("disabled", "");
       this._line.setAttribute("disabled", "");
       this._point.setAttribute("disabled", "");
       this._track.setAttribute("disabled", "");
+      this._canvasApplet.setAttribute("disabled", "");
     }
   }
 
@@ -280,6 +292,10 @@ export class AnnotationSidebar extends TatorElement {
 
   selectDefault() {
     this._edit.click();
+  }
+
+  disableCanvasApplet() {
+    this._canvasApplet.permanentDisable = true;
   }
 
   addAppletPanel(panel, trigger) {
