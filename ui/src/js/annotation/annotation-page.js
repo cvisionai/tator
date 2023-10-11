@@ -26,6 +26,7 @@ export class AnnotationPage extends TatorPage {
     );
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
+    this._headerDiv.style.zIndex = 3;
 
     const div = document.createElement("div");
     div.setAttribute("class", "d-flex flex-items-center");
@@ -55,9 +56,11 @@ export class AnnotationPage extends TatorPage {
 
     this._success = document.createElement("success-light");
     this._lightSpacer.appendChild(this._success);
+    this._success.style.zIndex = 3;
 
     this._warning = document.createElement("warning-light");
     this._lightSpacer.appendChild(this._warning);
+    this._warning.style.zIndex = 3;
 
     this._versionButton = document.createElement("version-button");
     settingsDiv.appendChild(this._versionButton);
