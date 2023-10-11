@@ -3,6 +3,10 @@ section_post_properties = {
         "type": "string",
         "description": "Unique name of the section.",
     },
+    "path": {
+        "type": "string",
+        "description": "A path to represent nested sections",
+    },
     "tator_user_sections": {
         "type": "string",
         "description": "Attribute that is applied to media to identify membership to a section.",
