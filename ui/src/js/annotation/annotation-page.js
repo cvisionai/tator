@@ -2297,6 +2297,7 @@ export class AnnotationPage extends TatorPage {
     this.hideCanvasAppletMenu();
 
     var appletData = {
+      frame: this._currentFrame,
       selectedTrack: this._canvas._activeTrack,
       selectedLocalization: this._canvas.activeLocalization,
       media: this._canvas._mediaInfo,
