@@ -5231,6 +5231,22 @@ class SectionTestCase(TatorTransactionTest):
         print(response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        ###################################################################
+        # Make a bunch of test data
+        ###################################################################
+        # Honda
+        #   - Accord
+        #       + Sport
+        #       + EX-L
+        #   - Civic
+        #       + Sport
+        #       + EX-L
+        #   - CR-V
+        #       + Sport-L
+        # Ford
+        #   - Mustang
+        ###################################################################
+
         section_spec = {
             "name": "Honda Accord EX-L",
             "tator_user_sections": uuid.uuid4(),
@@ -5254,3 +5270,25 @@ class SectionTestCase(TatorTransactionTest):
         }
         response = self.client.post(url, section_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        section_spec = {
+            "name": "Honda CR-V Sport-L",
+            "tator_user_sections": uuid.uuid4(),
+            "path": "Honda.CR-V.Sport-L",
+        }
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        section_spec = {
+            "name": "Ford Mustang",
+            "tator_user_sections": uuid.uuid4(),
+            "path": "Ford.Mustang",
+        }
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        #####################################
+        ## Query the test data
+        ######################################
+
+
