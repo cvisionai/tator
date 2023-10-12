@@ -70,7 +70,7 @@ export class CanvasContextMenu extends TatorElement {
   }
 
   displayMenu(x, y) {
-    this._div.style.zIndex = 2;
+    this._div.style.zIndex = 3; // Needs to be above video for menu items to be selectable
     this._div.style.left = x + "px";
     this._div.style.top = y + "px";
     this._div.style.display = "block";
