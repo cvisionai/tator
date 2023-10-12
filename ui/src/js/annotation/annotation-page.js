@@ -1606,7 +1606,7 @@ export class AnnotationPage extends TatorPage {
           this._mediaCanvas = this._canvas._image;
         }
         if (this._mediaCanvas == null) {
-          // In the future, add multi
+          this._sidebar.disableCanvasApplet();
           return;
         }
         this._annotationCanvas = canvas;
@@ -2297,6 +2297,7 @@ export class AnnotationPage extends TatorPage {
     this.hideCanvasAppletMenu();
 
     var appletData = {
+      frame: this._currentFrame,
       selectedTrack: this._canvas._activeTrack,
       selectedLocalization: this._canvas.activeLocalization,
       media: this._canvas._mediaInfo,

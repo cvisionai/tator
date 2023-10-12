@@ -130,6 +130,7 @@ export class AnnotationSidebar extends TatorElement {
       this._box.setAttribute("disabled", "");
       this._line.setAttribute("disabled", "");
       this._point.setAttribute("disabled", "");
+      this._poly.setAttribute("disabled", "");
       this._track.setAttribute("disabled", "");
       this._canvasApplet.setAttribute("disabled", "");
     }
@@ -295,6 +296,7 @@ export class AnnotationSidebar extends TatorElement {
   }
 
   disableCanvasApplet() {
+    this._canvasApplet.setAttribute("disabled", "");
     this._canvasApplet.permanentDisable = true;
   }
 
