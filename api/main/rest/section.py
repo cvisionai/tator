@@ -49,7 +49,7 @@ class SectionListAPI(BaseListView):
         project = params["project"]
         name = params["name"]
         path = params.get("path", name)
-        path = re.sub(r"[^A-Za-z0-9_-]", "", path)
+        path = re.sub(r"[^A-Za-z0-9_]", "_", path)
         object_search = params.get("object_search", None)
         related_search = params.get("related_search", None)
         tator_user_sections = params.get("tator_user_sections", None)
@@ -59,7 +59,7 @@ class SectionListAPI(BaseListView):
         if Section.objects.filter(project=project, name__iexact=params["name"]).exists():
             raise Exception("Section with this name already exists!")
 
-        if Section.objects.filter(project=project, path__exact=path).exists():
+        if Section.objects.filter(project=project, path__match=path).exists():
             raise Exception("Section with this path already exists!")
 
         project = Project.objects.get(pk=project)
@@ -102,7 +102,7 @@ class SectionDetailAPI(BaseDetailView):
                 raise Exception("Section with this name already exists!")
             section.name = params["name"]
         if "path" in params:
-            if Section.objects.filter(project=section.project, path__exact=params["path"]).exists():
+            if Section.objects.filter(project=section.project, path__match=params["path"]).exists():
                 raise Exception("Section with this path already exists!")
             section.path = params["path"]
         if "object_search" in params:

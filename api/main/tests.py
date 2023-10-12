@@ -5211,7 +5211,6 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.post(url, section_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-
         section_spec = {
             "name": "Lone Pine Mall",
             "tator_user_sections": uuid.uuid4(),
@@ -5220,3 +5219,38 @@ class SectionTestCase(TatorTransactionTest):
         # Verify section with the same path can't be created.
         response = self.client.post(url, section_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_section_lookup(self):
+        section_spec = {
+            "name": "Honda Civic EX-L",
+            "tator_user_sections": uuid.uuid4(),
+            "path": "Honda.Civic.EX-L",
+        }
+        url = f"/rest/Sections/{self.project.pk}"
+        response = self.client.post(url, section_spec, format="json")
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        section_spec = {
+            "name": "Honda Accord EX-L",
+            "tator_user_sections": uuid.uuid4(),
+            "path": "Honda.Accord.EX-L",
+        }
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        section_spec = {
+            "name": "Honda Civic Sport",
+            "tator_user_sections": uuid.uuid4(),
+            "path": "Honda.Civic.Sport",
+        }
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        section_spec = {
+            "name": "Honda Accord Sport",
+            "tator_user_sections": uuid.uuid4(),
+            "path": "Honda.Accord.Sport",
+        }
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
