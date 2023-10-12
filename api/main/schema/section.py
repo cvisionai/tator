@@ -14,6 +14,48 @@ Sections represent groups of media using saved queries.
 """
 )
 
+lquery_docs = """
+            - foo         Match the exact label path foo
+            - *.foo.*     Match any label path containing the label foo
+            - *.foo       Match any label path whose last label is foo
+
+            Modifiers:
+            - @           Match case-insensitively, for example a@ matches A
+            - *           Match any label with this prefix, for example foo* matches foobar
+            - %           Match initial underscore-separated words
+
+            American@.Foot@*
+
+            would match both
+            america.Football and America.footwear
+        
+        For more information: https://www.postgresql.org/docs/current/ltree.html
+"""
+# These are LTREE-based operations we can apply to section paths
+section_path_filters = [
+    {
+        "name": "match",
+        "in": "query",
+        "required": False,
+        "description": f"""Find any sections matching using an lquery. \n\n{lquery_docs}""",
+        "schema": {"type": "string"},
+    },
+    {
+        "name": "ancestors",
+        "in": "query",
+        "required": False,
+        "description": f"""Find ancestors using using an lquery. \n\n{lquery_docs}""",
+        "schema": {"type": "string"},
+    },
+    {
+        "name": "descendants",
+        "in": "query",
+        "required": False,
+        "description": f"""Find descendants using using an lquery. \n\n{lquery_docs}""",
+        "schema": {"type": "string"},
+    },
+]
+
 
 class SectionListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -57,6 +99,7 @@ class SectionListSchema(AutoSchema):
                     "schema": {"type": "string"},
                 },
                 *type_filter_parameter_schema,
+                *section_path_filters,
             ]
         return params
 

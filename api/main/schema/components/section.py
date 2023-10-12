@@ -5,7 +5,8 @@ section_post_properties = {
     },
     "path": {
         "type": "string",
-        "description": "A path to represent nested sections",
+        "description": "A path to represent nested sections. If not supplied, defaults to `re.sub(r'[^A-Za-z0-9_-]',path)`",
+        "nullable": True,
     },
     "tator_user_sections": {
         "type": "string",
