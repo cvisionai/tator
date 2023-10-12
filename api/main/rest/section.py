@@ -35,6 +35,13 @@ class SectionListAPI(BaseListView):
             # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
             qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+
+        # Just in case something slips by the schema, have a look up table from schema to db operation
+        op_table = {"match": "match", "ancestors": "ancestors", "descendants": "descendants"}
+        for schema_key, db_operation in op_table.items():
+            value = params.get(schema_key, None)
+            if value:
+                qs = qs.filter(**{f"path__{db_operation}": value})
         qs = qs.order_by("name")
         return database_qs(qs)
 
@@ -51,6 +58,9 @@ class SectionListAPI(BaseListView):
 
         if Section.objects.filter(project=project, name__iexact=params["name"]).exists():
             raise Exception("Section with this name already exists!")
+
+        if Section.objects.filter(project=project, path__exact=path).exists():
+            raise Exception("Section with this path already exists!")
 
         project = Project.objects.get(pk=project)
         section = Section.objects.create(
@@ -91,6 +101,10 @@ class SectionDetailAPI(BaseDetailView):
             ).exists():
                 raise Exception("Section with this name already exists!")
             section.name = params["name"]
+        if "path" in params:
+            if Section.objects.filter(project=section.project, path__exact=params["path"]).exists():
+                raise Exception("Section with this path already exists!")
+            section.path = params["path"]
         if "object_search" in params:
             section.object_search = params["object_search"]
         if "tator_user_sections" in params:
