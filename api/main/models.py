@@ -794,6 +794,7 @@ def project_save(sender, instance, created, **kwargs):
     if created:
         make_default_version(instance)
         add_org_users(instance)
+        TatorSearch().create_section_index(instance)
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 
