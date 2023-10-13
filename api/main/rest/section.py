@@ -41,7 +41,8 @@ class SectionListAPI(BaseListView):
         for schema_key, db_operation in op_table.items():
             value = params.get(schema_key, None)
             if value:
-                qs = qs.filter(**{f"path__{db_operation}": value})
+                # NOTE: we need to escape with ' here because of `database_qs` shenanigans...
+                qs = qs.filter(**{f"path__{db_operation}": f"'{value}'"})
         qs = qs.order_by("name")
         return database_qs(qs)
 
@@ -49,7 +50,7 @@ class SectionListAPI(BaseListView):
         project = params["project"]
         name = params["name"]
         path = params.get("path", name)
-        path = re.sub(r"[^A-Za-z0-9_]", "_", path)
+        path = re.sub(r"[^A-Za-z0-9_.]", "_", path)
         object_search = params.get("object_search", None)
         related_search = params.get("related_search", None)
         tator_user_sections = params.get("tator_user_sections", None)

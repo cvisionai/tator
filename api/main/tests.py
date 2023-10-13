@@ -5196,11 +5196,11 @@ class SectionTestCase(TatorTransactionTest):
         }
         url = f"/rest/Sections/{self.project.pk}"
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         # Verify section with the same name can't be created.
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         section_spec = {
             "name": "Twin Pines Mall",
@@ -5209,7 +5209,7 @@ class SectionTestCase(TatorTransactionTest):
         }
         url = f"/rest/Sections/{self.project.pk}"
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         section_spec = {
             "name": "Lone Pine Mall",
@@ -5218,7 +5218,7 @@ class SectionTestCase(TatorTransactionTest):
         }
         # Verify section with the same path can't be created.
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_section_lookup(self):
         section_spec = {
@@ -5228,8 +5228,8 @@ class SectionTestCase(TatorTransactionTest):
         }
         url = f"/rest/Sections/{self.project.pk}"
         response = self.client.post(url, section_spec, format="json")
-        print(response.data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         ###################################################################
         # Make a bunch of test data
@@ -5253,7 +5253,7 @@ class SectionTestCase(TatorTransactionTest):
             "path": "Honda.Accord.EX-L",
         }
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         section_spec = {
             "name": "Honda Civic Sport",
@@ -5261,7 +5261,7 @@ class SectionTestCase(TatorTransactionTest):
             "path": "Honda.Civic.Sport",
         }
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         section_spec = {
             "name": "Honda Accord Sport",
@@ -5269,7 +5269,7 @@ class SectionTestCase(TatorTransactionTest):
             "path": "Honda.Accord.Sport",
         }
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         section_spec = {
             "name": "Honda CR-V Sport-L",
@@ -5277,7 +5277,7 @@ class SectionTestCase(TatorTransactionTest):
             "path": "Honda.CR-V.Sport-L",
         }
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         section_spec = {
             "name": "Ford Mustang",
@@ -5285,10 +5285,39 @@ class SectionTestCase(TatorTransactionTest):
             "path": "Ford.Mustang",
         }
         response = self.client.post(url, section_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         #####################################
         ## Query the test data
         ######################################
 
+        section_spec = {
+            "name": "Ford Mustang",
+            "tator_user_sections": uuid.uuid4(),
+            "path": "Ford.Mustang",
+        }
+        response = self.client.get(f"{url}?match=Ford.Mustang", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
 
+        response = self.client.get(f"{url}?match=Tesla.Model3", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+        # Match all Hondas
+        response = self.client.get(f"{url}?match=Honda.*", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 5)
+
+        # Match all Hondas with EX-L trims
+        response = self.client.get(f"{url}?match=Honda.*.EX_L", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        response = self.client.get(f"{url}?ancestors=Honda.Accord", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"{url}?descendants=Honda.Accord", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
