@@ -61,6 +61,10 @@ OPERATOR_SUFFIXES = {
 }
 
 
+def _sanitize(name):
+    return re.sub(r"[^a-zA-Z]", "_", name)
+
+
 def supplied_name_to_field(supplied_name):
     logger.info(f"SNAME={supplied_name}")
     if supplied_name.startswith("-"):
@@ -304,7 +308,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
             if attr_name.startswith("$"):
                 db_lookup = attr_name[1:]
             else:
-                db_lookup = f"casted_{attr_name}"
+                db_lookup = f"casted_{_sanitize(attr_name)}"
                 casts.append(attr_name)
             if operation.startswith("date_"):
                 # python is more forgiving then SQL so convert any partial dates to
@@ -418,7 +422,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         logger.info(f"\t {annotation} to {annotateField[annotation]()}")
         qs = qs.annotate(
             **{
-                f"casted_{annotation}": Cast(
+                f"casted_{_sanitize(annotation)}": Cast(
                     F(f"attributes__{annotation}"), annotateField[annotation]()
                 )
             }
