@@ -477,7 +477,13 @@ def get_attribute_psql_queryset(entity_type, qs, params, filter_ops):
                     qs = qs.annotate(
                         **{f"{alias_key}_typed": Cast(f"attributes__{key}", field_type())}
                     )
-                    qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": f'"{value}"'})
+                    if OPERATOR_SUFFIXES[op]:
+                        qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                    else:
+                        # BUG: database_qs mangles the SQL and requires this workaround:
+                        qs = qs.filter(
+                            **{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": f'"{value}"'}
+                        )
                 else:
                     qs = qs.annotate(
                         **{f"{alias_key}_typed": Cast(f"attributes__{key}", field_type())}
