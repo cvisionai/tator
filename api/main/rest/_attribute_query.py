@@ -15,6 +15,8 @@ from django.contrib.gis.db.models import (
     FloatField,
     PointField,
 )
+from enumfields import EnumField
+
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
 from django.http import Http404
@@ -237,12 +239,15 @@ def build_query_recursively(query_object, castLookup, is_media, project):
     query = Q()
     if "method" in query_object:
         method = query_object["method"].lower()
-        sub_queries = [
-            build_query_recursively(x, castLookup, is_media, project)
-            for x in query_object["operations"]
-        ]
+        sub_queries = []
+        all_casts = set()
+        for x in query_object["operations"]:
+            query, casts = build_query_recursively(x, castLookup, is_media, project)
+            sub_queries.append(query)
+            for cast in casts:
+                all_casts.add(cast)
         if len(sub_queries) == 0:
-            return Q()
+            return Q(), []
         if method == "not":
             if len(sub_queries) != 1:
                 raise (Exception("NOT operator can only be applied to one suboperation"))
@@ -260,6 +265,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
         operation = query_object["operation"]
         inverse = query_object.get("inverse", False)
         value = query_object["value"]
+        casts = []
 
         if attr_name == "$section":
             # Handle section based look-up
@@ -293,11 +299,13 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                 query = Q(pk__in=media_qs)
             else:
                 query = Q(media__in=media_qs)
+            casts.append("tator_user_sections")
         else:
             if attr_name.startswith("$"):
                 db_lookup = attr_name[1:]
             else:
-                db_lookup = f"attributes__{attr_name}"
+                db_lookup = f"casted_{attr_name}"
+                casts.append(attr_name)
             if operation.startswith("date_"):
                 # python is more forgiving then SQL so convert any partial dates to
                 # full-up ISO8601 datetime strings WITH TIMEZONE.
@@ -325,7 +333,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
             elif castFunc:
                 value = castFunc(value)
             else:
-                return Q(pk=-1)
+                return Q(pk=-1), []
             if operation in ["date_eq", "eq"]:
                 query = Q(**{f"{db_lookup}": value})
             else:
@@ -334,7 +342,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
         if inverse:
             query = ~query
 
-    return query
+    return query, casts
 
 
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
@@ -352,23 +360,30 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         Leaf: LeafType,
         File: FileType,
     }
+    # NOTE: Usage of database_qs requires escaping string values manually
+    # Else lookups will result in misses.
     castLookup = {
         "bool": _convert_boolean,
         "int": int,
         "float": float,
-        "enum": str,
-        "string": str,
+        "enum": lambda x: f'"{x}"',
+        "string": lambda x: f'"{x}"',
         "datetime": str,
         "geopos": lambda x: x,
         "float_array": None,
     }
+
     attributeCast = {}
+    annotateField = {}
     typeModel = typeLookup[type(qs[0])]
     typeObjects = qs.values("type").distinct()
     for typeObjectPk in typeObjects:
         typeObject = typeModel.objects.get(pk=typeObjectPk["type"])
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType["name"]] = castLookup[attributeType["dtype"]]
+            annotateField[attributeType["name"]], _ = _get_field_for_attribute(
+                typeObject, attributeType["name"]
+            )
     attributeCast["tator_user_sections"] = str
     for key in ["$x", "$y", "$u", "$v", "$width", "$height", "$fps"]:
         attributeCast[key] = float
@@ -393,7 +408,21 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     ]:
         attributeCast[key] = str
 
-    q_object = build_query_recursively(query_object, attributeCast, is_media, qs[0].project)
+    q_object, required_annotations = build_query_recursively(
+        query_object, attributeCast, is_media, qs[0].project
+    )
+
+    logger.info(f"Q_Object = {q_object}")
+    logger.info(f"Query requires the following annotations: {required_annotations}")
+    for annotation in required_annotations:
+        logger.info(f"\t {annotation} to {annotateField[annotation]()}")
+        qs = qs.annotate(
+            **{
+                f"casted_{annotation}": Cast(
+                    F(f"attributes__{annotation}"), annotateField[annotation]()
+                )
+            }
+        )
     return qs.filter(q_object)
 
 
@@ -444,8 +473,11 @@ def get_attribute_psql_queryset(entity_type, qs, params, filter_ops):
                         **{f"{alias_key}_typed": Cast(f"{alias_key}_text", DateTimeField())}
                     )
                     qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
-                elif field_type == CharField:
-                    qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
+                elif field_type == CharField or field_type == EnumField:
+                    qs = qs.annotate(
+                        **{f"{alias_key}_typed": Cast(f"attributes__{key}", field_type())}
+                    )
+                    qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": f'"{value}"'})
                 else:
                     qs = qs.annotate(
                         **{f"{alias_key}_typed": Cast(f"attributes__{key}", field_type())}
