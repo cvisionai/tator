@@ -234,7 +234,7 @@ export class CanvasAppletElement extends TatorElement {
     if (appletCanvasModes.includes(mode)) {
       this.selectAppletCanvasMode(mode);
     } else if (this._canvasMode == "select") {
-      this._frameCanvas.style.cursor = "select";
+      this._frameCanvas.style.cursor = "pointer";
       this._selectButton.classList.add("btn-purple50");
     } else if (this._canvasMode == "zoom-in") {
       this._frameCanvas.style.cursor = "zoom-in";
@@ -436,7 +436,7 @@ export class CanvasAppletElement extends TatorElement {
       //
       var appletCanvasModes = this.getAppletCanvasModes();
       if (appletCanvasModes.includes(this._canvasMode)) {
-        this.applyAppletMouseDown(coords.visible, coords.offscreen);
+        this.applyAppletMouseUp(coords.visible, coords.offscreen);
         return;
       }
     });
