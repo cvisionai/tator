@@ -198,7 +198,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 query = query | Q(media__in=r)
             qs = qs.filter(query).distinct()
 
-    qs = _do_object_search(qs, params)
     if params.get("encoded_related_search"):
         search_obj = json.loads(
             base64.b64decode(params.get("encoded_related_search").encode()).decode()
@@ -251,8 +250,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs[:stop]
 
     # Useful for profiling / checking out query complexity
-    logger.info(qs.query)
-    logger.info(qs.explain())
+    logger.info(f"QUERY={qs.query}")
+    logger.info(f"EXPLAIN={qs.explain()}")
 
     return qs
 
