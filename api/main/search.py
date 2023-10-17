@@ -66,6 +66,12 @@ def _get_unique_index_name(entity_type, attribute):
     type_name_sanitized = entity_type.__class__.__name__.lower()
     entity_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", entity_type.name).lower()
     attribute_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", attribute_name).lower()
+
+    if attribute["dtype"] == "section_btree":
+        attribute_name_sanitized += "_btree"
+    if attribute["dtype"] == "section_uuid_btree":
+        attribute_name_sanitized += "_uuid_btree"
+
     if attribute["name"].startswith("$"):
         # Native fields are only scoped to project, native-string types are project/type bound
         # Both need to incorporate type name in the name for uniqueness.
@@ -319,6 +325,82 @@ def make_section_index(
         print(sql_str.as_string(cursor))
 
 
+def make_section_generic_index(
+    db_name,
+    project_id,
+    entity_type_id,
+    table_name,
+    index_name,
+    attribute,
+    flush,
+    concurrent,
+    cast_type,
+):
+    col_name = _get_column_name(attribute)
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.SQL(index_name)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING btree (CAST({col_name} AS {cast_type}))
+                                 WHERE project=%s"""
+        ).format(
+            index_name=sql.SQL(index_name),
+            concurrent=sql.SQL(concurrent_str),
+            cast_type=sql.SQL(cast_type),
+            table_name=sql.Identifier(table_name),
+            col_name=sql.SQL(col_name),
+        )
+        cursor.execute(sql_str, (project_id,))
+        print(sql_str.as_string(cursor))
+
+
+def make_section_btree_index(
+    db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
+):
+    make_section_generic_index(
+        db_name,
+        project_id,
+        entity_type_id,
+        table_name,
+        index_name,
+        attribute,
+        flush,
+        concurrent,
+        "text",
+    )
+
+
+def make_section_uuid_index(
+    db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
+):
+    make_section_generic_index(
+        db_name,
+        project_id,
+        entity_type_id,
+        table_name,
+        index_name,
+        attribute,
+        flush,
+        concurrent,
+        "uuid",
+    )
+
+
 def make_native_string_index(
     db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
 ):
@@ -499,6 +581,8 @@ class TatorSearch:
         "native": make_native_index,
         "native_string": make_native_string_index,
         "section": make_section_index,
+        "section_btree": make_section_btree_index,
+        "section_uuid_btree": make_section_uuid_index,
         "upper_string": make_upper_string_index,
     }
 

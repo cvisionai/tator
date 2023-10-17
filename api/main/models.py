@@ -2218,6 +2218,8 @@ BUILT_IN_INDICES = {
         {"name": "$created_datetime", "dtype": "native"},
         {"name": "$modified_datetime", "dtype": "native"},
         {"name": "tator_user_sections", "dtype": "section"},
+        {"name": "tator_user_sections", "dtype": "section_btree"},
+        {"name": "tator_user_sections", "dtype": "section_uuid_btree"},
         {"name": "$restoration_requested", "dtype": "native"},
         {"name": "$archive_status_date", "dtype": "native"},
         {"name": "$archive_state", "dtype": "native_string"},
