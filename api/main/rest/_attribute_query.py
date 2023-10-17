@@ -6,8 +6,8 @@ import pytz
 import re
 import uuid
 
-from django.db.models.functions import Cast, Greatest
-from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
+from django.db.models.functions import Cast
+from django.db.models import Func, F, Q, Count, ExpressionWrapper, Value, Sum, Case, When
 from django.contrib.gis.db.models import (
     BigIntegerField,
     BooleanField,
@@ -106,45 +106,48 @@ def _related_search(
             project=project, type=entity_type, deleted=False, variant_deleted=False
         )
         state_qs = get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
-        if state_qs.count():
+        if state_qs.exists():
             related_matches.append(state_qs)
     for entity_type in related_localization_types:
         local_qs = Localization.objects.filter(
             project=project, type=entity_type, deleted=False, variant_deleted=False
         )
         local_qs = get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
-        if local_qs.count():
+        if local_qs.exists():
             related_matches.append(local_qs)
 
     if related_matches:
-        # Convert result matches to use Media model because related_matches might be States or Localizations
-        # Note: 'media' becomes 'id' when this happens. The two columns are 'id','count' in this result.
-        # Iterate over each related match and merge it into the previous Media result set. Add 'count' so it is an accurate hit count
-        # for any matching metadata.
-        # Finally reselect all media in this concatenated set by id. Annotate the incident with the count from the previous record set, which is
-        # now the sum of any hit across any metadata type.
-        orig_list = [*related_matches]
-        related_match = related_matches.pop()
-        # Pop and process the list
-        media_vals = related_match.values("media")
+        # Construct an incident score which is the sum of the matching states and localizations
+        local_pks = Localization.objects.filter(pk=-1)
+        state_pks = State.objects.filter(pk=-1)
         for related_match in related_matches:
-            this_vals = related_match.values("media")
-            media_vals = media_vals.union(this_vals)
+            if type(related_match[0]) is State:
+                if state_pks.exists():
+                    state_pks.union(related_match.values("pk"))
+                else:
+                    state_pks = related_match.values("pk")
+            if type(related_match[0]) is Localization:
+                if local_pks.exists():
+                    local_pks.union(related_match.values("pk"))
+                else:
+                    local_pks = related_match.values("pk")
 
-        # We now have all the matching media, but lost the score information
-        # going back to the original set, make a bunch of subqueries to calculate the
-        # greatest score for a particular media, if there were duplicates
-        # list comp didn't play nice here, but this is easier to read anyway
-        score = []
-        for x in orig_list:
-            annotated_x = x.values("media").annotate(count=Count("media"))
-            filtered_x = annotated_x.filter(media=OuterRef("id"))
-            values_x = filtered_x.values("count").order_by("-count")[:1]
-            score.append(Subquery(values_x))
-        if len(score) > 1:
-            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=Greatest(*score))
-        else:
-            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=score[0])
+        qs = qs.filter(
+            Q(pk__in=Localization.objects.filter(pk__in=local_pks).values("media"))
+            | Q(pk__in=State.objects.filter(pk__in=state_pks).values("media"))
+        )
+
+        logger.info(f"Media={qs.count()}")
+        logger.info(f"LKs={local_pks}")
+        qs = qs.annotate(incident=Count("localization", filter=Q(pk__in=local_pks)))
+        # Argh: ManyToMany field in State calls this 'media' so its awkwardly named, but we mean state here
+        # qs = qs.annotate(
+        #    incident=ExpressionWrapper(
+        #        Count("localization", filter=Q(pk__in=local_pks))
+        #        + Count("media", filter=Q(pk__in=state_pks)),
+        #        BigIntegerField(),
+        #    )
+        # )
     else:
         qs = qs.filter(pk=-1).annotate(incident=Value(0))
     return qs
@@ -308,7 +311,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                     relevant_localization_type_ids,
                     section[0].related_object_search,
                 )
-            if media_qs.count() == 0:
+            if media_qs.exists() == False:
                 query = Q(pk=-1)
             elif is_media:
                 query = Q(pk__in=media_qs)
@@ -361,7 +364,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
 
 
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
-    if qs.count() == 0:
+    if qs.exists() == False:
         return qs.filter(pk=-1)
 
     is_media = False
