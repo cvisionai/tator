@@ -56,7 +56,22 @@ class TatorTransactionTest(APITransactionTestCase):
 
 def wait_for_indices(entity_type):
     built_ins = BUILT_IN_INDICES.get(type(entity_type), [])
-    for attribute in [*entity_type.attribute_types, *built_ins]:
+    types_to_scan = [*entity_type.attribute_types, *built_ins]
+    # Wait for btree indices too
+    for t in types_to_scan:
+        if t["dtype"] == "string":
+            new_obj = {**t}
+            new_obj["dtype"] = "string_btree"
+            types_to_scan.append(new_obj)
+        if t["dtype"] == "native_string":
+            new_obj = {**t}
+            new_obj["dtype"] = "native_string_btree"
+            types_to_scan.append(new_obj)
+        if t["dtype"] == "upper_string":
+            new_obj = {**t}
+            new_obj["dtype"] = "upper_string_btree"
+            types_to_scan.append(new_obj)
+    for attribute in types_to_scan:
         found_it = False
         for i in range(1, 600):
             if TatorSearch().is_index_present(entity_type, attribute) == True:
