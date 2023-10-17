@@ -76,7 +76,7 @@ def _get_unique_index_name(entity_type, attribute):
     if attribute["dtype"] == "native_string_btree":
         attribute_name_sanitized += "_btree"
     if attribute["dtype"] == "upper_string_btree":
-        attribute_name_sanitized += "upper_btree"
+        attribute_name_sanitized += "_upper_btree"
 
     if attribute["name"].startswith("$"):
         # Native fields are only scoped to project, native-string types are project/type bound
@@ -333,7 +333,6 @@ def make_upper_string_btree_index(
     db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
 ):
     col_name = _get_column_name(attribute)
-    index_name += "_upper"
     concurrent_str = ""
     if concurrent:
         concurrent_str = "CONCURRENTLY"
