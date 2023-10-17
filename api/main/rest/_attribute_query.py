@@ -391,9 +391,8 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     attributeCast = {}
     annotateField = {}
     typeModel = typeLookup[type(qs[0])]
-    typeObjects = qs.values("type").distinct()
-    for typeObjectPk in typeObjects:
-        typeObject = typeModel.objects.get(pk=typeObjectPk["type"])
+    typeObjects = typeModel.objects.filter(project=qs[0].project)
+    for typeObject in typeObjects:
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType["name"]] = castLookup[attributeType["dtype"]]
             annotateField[attributeType["name"]], _ = _get_field_for_attribute(
