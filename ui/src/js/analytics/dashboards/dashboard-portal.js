@@ -97,7 +97,8 @@ export class DashboardPortal extends TatorPage {
           if (
             dashboard.categories == null ||
             (!dashboard.categories.includes("annotator-menu") &&
-              !dashboard.categories.includes("annotator-tools"))
+              !dashboard.categories.includes("annotator-tools") &&
+              !dashboard.categories.includes("annotator-canvas"))
           ) {
             this._insertDashboardSummary(dashboard);
           }
