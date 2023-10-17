@@ -4,6 +4,7 @@ import logging
 from dateutil.parser import parse as dateutil_parse
 import pytz
 import re
+import uuid
 
 from django.db.models.functions import Cast, Greatest
 from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
@@ -14,6 +15,8 @@ from django.contrib.gis.db.models import (
     DateTimeField,
     FloatField,
     PointField,
+    TextField,
+    UUIDField,
 )
 from enumfields import EnumField
 
@@ -63,6 +66,31 @@ OPERATOR_SUFFIXES = {
 
 def _sanitize(name):
     return re.sub(r"[^a-zA-Z]", "_", name)
+
+
+def _is_uuid(value):
+    try:
+        _ = uuid.UUID(value)
+        return True
+    except ValueError:
+        return False
+
+
+def _look_for_section_uuid(media_qs, maybe_uuid_val):
+    """If the search is a UUID use that cast, else"""
+    if _is_uuid(maybe_uuid_val):
+        ## Need to go to text than UUID, query gets simplified by ORM.
+        media_qs = media_qs.annotate(
+            section_text=Cast(F("attributes__tator_user_section"), TextField())
+        ).annotate(section_val=Cast(F("section_text"), UUIDField()))
+        logger.info(f"SECTION_QUERY={media_qs.query}")
+        return media_qs.filter(section_val=maybe_uuid_val)
+    else:
+        media_qs = media_qs.annotate(
+            section_val=Cast(F("attributes__tator_user_section"), TextField())
+        )
+        # Note: This escape is required because of database_qs usage
+        return media_qs.filter(section_val=f'"{maybe_uuid_val}"')
 
 
 def supplied_name_to_field(supplied_name):
@@ -282,7 +310,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
             media_qs = Media.objects.filter(project=project)
             section_uuid = section[0].tator_user_sections
             if section_uuid:
-                media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
+                media_qs = _look_for_section_uuid(media_qs, section_uuid)
 
             if section[0].object_search:
                 media_qs = get_attribute_psql_queryset_from_query_obj(
