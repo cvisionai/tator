@@ -1632,7 +1632,7 @@ export class AnnotationPage extends TatorPage {
 
           // #TODO Add alphabetical ordering
           for (const appletId in this._canvasApplets) {
-            var appletInterface = this._canvasApplets[appletId];
+            const appletInterface = this._canvasApplets[appletId];
 
             // Preload the canvas applets with the current image to speed things up
             if (this._mediaType.dtype == "image") {

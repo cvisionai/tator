@@ -41,10 +41,6 @@ export class CanvasAppletElement extends TatorElement {
    *    Undo buffer for patching/posting required by elements like the save dialog
    */
   init(applet, data, favorites, undo) {
-    console.log(
-      `Initializing canvas applet element with ${applet.name} (ID: ${applet.id})`
-    );
-
     this._applet = applet;
     this._data = data;
     this._undo = undo;
@@ -359,8 +355,6 @@ export class CanvasAppletElement extends TatorElement {
 
     this._frameImage = new Image();
 
-    console.log(`Windows device pixel ratio: ${window.devicePixelRatio}`);
-
     this._dragging = false;
 
     this._frameCanvas.addEventListener("click", (event) => {
@@ -481,15 +475,9 @@ export class CanvasAppletElement extends TatorElement {
    * Helper function not expected to be re-implemented in a derived class.
    */
   redrawCanvas() {
-    console.log("******************** canvas-applet: redrawCanvas");
-
     if (this._canvasCenterPoint == null) {
       return; // Not initialized yet.
     }
-
-    console.log(
-      `currentCanvasPoint - ${this._canvasCenterPoint[0]} ${this._canvasCenterPoint[1]}`
-    );
 
     //
     // Set the visible canvas size based on available document space
@@ -514,13 +502,6 @@ export class CanvasAppletElement extends TatorElement {
     this._frameCanvas.width = canvasWrapperWidth;
     this._frameCanvas.height = canvasWrapperHeight;
 
-    console.log(
-      `imageDimensions: ${this._frameImage.width} ${this._frameImage.height}`
-    );
-    console.log(
-      `visibleCanvas: ${this._frameCanvas.offsetWidth} ${this._frameCanvas.offsetHeight}`
-    );
-
     if (this._frameCanvas.offsetWidth == 0) {
       return; // Canvas isn't visible, don't bother drawing
     }
@@ -539,11 +520,6 @@ export class CanvasAppletElement extends TatorElement {
     );
     this._frameCanvas.offscreenCanvas.width = offscreenCanvasSize[0];
     this._frameCanvas.offscreenCanvas.height = offscreenCanvasSize[1];
-
-    console.log(
-      `offscreenCanvasSize - ${offscreenCanvasSize[0]} ${offscreenCanvasSize[1]}`
-    );
-    console.log(`canvasZoom: ${this._canvasZoom}`);
 
     //
     // Draw the stuff on the offscreen canvas
@@ -571,8 +547,6 @@ export class CanvasAppletElement extends TatorElement {
       this._canvasCenterPoint[1] - 0.5,
       this._offscreenRoi
     );
-
-    console.log(`rOffscreenTopLeft: ${rOffscreenTopLeft}`);
 
     var rWidth = this._frameCanvas.offsetWidth / offscreenCanvasSize[0];
     if (rWidth + rOffscreenTopLeft[0] > 1.0) {
