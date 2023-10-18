@@ -2134,7 +2134,13 @@ class VideoTestCase(
             self.project,
             self.entities[0],
             0,
-            {"String Test": "Foo", "Enum Test": "enum_val1", "Int Test": 1, "Float Test": 1.0},
+            {
+                "String Test": "Foo",
+                "Enum Test": "enum_val1",
+                "Int Test": 1,
+                "Float Test": 1.0,
+                "Bool Test": True,
+            },
         )
         boxes.append(foo_box)
         boxes.append(foo_box)
@@ -2146,7 +2152,13 @@ class VideoTestCase(
             self.project,
             self.entities[1],
             0,
-            {"String Test": "Foo", "Enum Test": "enum_val1", "Int Test": 1, "Float Test": 1.0},
+            {
+                "String Test": "Foo",
+                "Enum Test": "enum_val1",
+                "Int Test": 1,
+                "Float Test": 1.0,
+                "Bool Test": True,
+            },
         )
         boxes.append(box)
         boxes.append(
@@ -2161,6 +2173,7 @@ class VideoTestCase(
                     "Enum Test": "enum_val2",
                     "Int Test": 2,
                     "Float Test": 2.0,
+                    "Bool Test": False,
                 },
             )
         )
@@ -2176,6 +2189,7 @@ class VideoTestCase(
                     "Enum Test": "enum_val3",
                     "Int Test": 3,
                     "Float Test": 3.0,
+                    "Bool Test": False,
                 },
             )
         )
@@ -2191,12 +2205,18 @@ class VideoTestCase(
                     "Enum Test": "enum_val4",
                     "Int Test": 4,
                     "Float Test": 4.0,
+                    "Bool Test": False,
                 },
             )
         )
         Localization.objects.bulk_create(boxes)
 
-        searches = [["String Test", "Foo"], ["Int Test", 1], ["Float Test", 1.0]]
+        searches = [
+            ["String Test", "Foo"],
+            ["Int Test", 1],
+            ["Float Test", 1.0],
+            ["Bool Test", True],
+        ]
         for key, value in searches:
             response = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?attribute={key}::{value}", format=json
