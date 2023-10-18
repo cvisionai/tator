@@ -250,14 +250,13 @@ def get_attribute_filter_ops(params, data_type):
     return filter_ops
 
 
-def build_query_recursively(query_object, castLookup, is_media, project):
+def build_query_recursively(query_object, castLookup, is_media, project, all_casts=set()):
     query = Q()
     if "method" in query_object:
         method = query_object["method"].lower()
         sub_queries = []
-        all_casts = set()
         for x in query_object["operations"]:
-            query, casts = build_query_recursively(x, castLookup, is_media, project)
+            query, casts = build_query_recursively(x, castLookup, is_media, project, all_casts)
             sub_queries.append(query)
             for cast in casts:
                 all_casts.add(cast)
@@ -280,7 +279,6 @@ def build_query_recursively(query_object, castLookup, is_media, project):
         operation = query_object["operation"]
         inverse = query_object.get("inverse", False)
         value = query_object["value"]
-        casts = []
 
         if attr_name == "$section":
             # Handle section based look-up
@@ -314,13 +312,13 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                 query = Q(pk__in=media_qs)
             else:
                 query = Q(media__in=media_qs)
-            casts.append("tator_user_sections")
+            all_casts.add("tator_user_sections")
         else:
             if attr_name.startswith("$"):
                 db_lookup = attr_name[1:]
             else:
                 db_lookup = f"casted_{_sanitize(attr_name)}"
-                casts.append(attr_name)
+                all_casts.add(attr_name)
             if operation.startswith("date_"):
                 # python is more forgiving then SQL so convert any partial dates to
                 # full-up ISO8601 datetime strings WITH TIMEZONE.
@@ -357,7 +355,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
         if inverse:
             query = ~query
 
-    return query, casts
+    return query, all_casts
 
 
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
@@ -400,7 +398,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
             )
 
     annotateField["tator_user_sections"] = TextField
-    attributeCast["tator_user_sections"] = str
+    attributeCast["tator_user_sections"] = lambda x: f'"{x}"'
     for key in ["$x", "$y", "$u", "$v", "$width", "$height", "$fps"]:
         attributeCast[key] = float
     for key in [
@@ -497,6 +495,7 @@ def get_attribute_psql_queryset(entity_type, qs, params, filter_ops):
                         qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
                     else:
                         # BUG: database_qs mangles the SQL and requires this workaround:
+                        # This is only on equal for some reason.
                         qs = qs.filter(
                             **{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": f'"{value}"'}
                         )
