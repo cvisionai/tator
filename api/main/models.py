@@ -794,6 +794,7 @@ def project_save(sender, instance, created, **kwargs):
     if created:
         make_default_version(instance)
         add_org_users(instance)
+        TatorSearch().create_section_index(instance)
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 
@@ -1946,6 +1947,10 @@ class Section(Model):
     name = CharField(max_length=128)
     """ Name of the section.
     """
+
+    path = PathField(null=True, blank=True)
+    """ Path of the section. Can only have A-Za-z0-9_- in the path name, versus any ASCII for name """
+
     lucene_search = CharField(max_length=1024, null=True, blank=True)
     """ Optional lucene query syntax search string.
     """

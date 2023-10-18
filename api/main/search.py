@@ -87,6 +87,70 @@ def _get_column_name(attribute):
         return f"attributes->>'{name}'"  # embedded in JSONB field
 
 
+def make_section_btree_index(
+    db_name,
+    project_id,
+    index_name,
+    flush,
+    concurrent,
+):
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.Identifier(index_name), concurrent=sql.SQL(concurrent_str)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON main_section
+                        USING btree (path)
+                        WHERE project=%s"""
+        ).format(index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str))
+        cursor.execute(sql_str, (project_id,))
+        print(sql_str)
+
+
+def make_section_gist_index(
+    db_name,
+    project_id,
+    index_name,
+    flush,
+    concurrent,
+):
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.Identifier(index_name), concurrent=sql.SQL(concurrent_str)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON main_section
+                        USING GIST (path gist_ltree_ops(siglen=100))
+                        WHERE project=%s"""
+        ).format(index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str))
+        cursor.execute(sql_str, (project_id,))
+        print(sql_str)
+
+
 def make_btree_index(
     db_name,
     project_id,
@@ -551,6 +615,16 @@ class TatorSearch:
                 result = cursor.fetchall()
                 return bool(result)
 
+    def is_index_present_by_name(self, index_name):
+        with get_connection(connection.settings_dict["NAME"]).cursor() as cursor:
+            cursor.execute(
+                "SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(
+                    index_name
+                )
+            )
+            result = cursor.fetchall()
+            return bool(result)
+
     def create_psql_index(self, entity_type, attribute, flush=False, concurrent=True):
         """Create a psql index for the given attribute"""
         index_name = _get_unique_index_name(entity_type, attribute)
@@ -593,6 +667,37 @@ class TatorSearch:
 
         for attribute in entity_type.attribute_types:
             self.create_psql_index(entity_type, attribute, flush=flush, concurrent=concurrent)
+
+    def create_section_index(self, project, flush=False, concurrent=True):
+        btree_index_name = f"tator_proj_{project.pk}_internalv2_path_btree"
+        gist_index_name = f"tator_proj_{project.pk}_internalv2_path_gist"
+        if self.is_index_present_by_name(btree_index_name) is False or flush is True:
+            push_job(
+                "db_jobs",
+                make_section_btree_index,
+                args=(
+                    connection.settings_dict["NAME"],
+                    project.pk,
+                    btree_index_name,
+                    flush,
+                    concurrent,
+                ),
+                result_ttl=0,
+            )
+
+        if self.is_index_present_by_name(gist_index_name) is False or flush is True:
+            push_job(
+                "db_jobs",
+                make_section_gist_index,
+                args=(
+                    connection.settings_dict["NAME"],
+                    project.pk,
+                    gist_index_name,
+                    flush,
+                    concurrent,
+                ),
+                result_ttl=0,
+            )
 
     def rename_alias(self, entity_type, old_name, new_name):
         """

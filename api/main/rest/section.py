@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 
 from django.db import transaction
@@ -34,12 +35,22 @@ class SectionListAPI(BaseListView):
             # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
             qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+
+        # Just in case something slips by the schema, have a look up table from schema to db operation
+        op_table = {"match": "match", "ancestors": "ancestors", "descendants": "descendants"}
+        for schema_key, db_operation in op_table.items():
+            value = params.get(schema_key, None)
+            if value:
+                # NOTE: we need to escape with ' here because of `database_qs` shenanigans...
+                qs = qs.filter(**{f"path__{db_operation}": f"'{value}'"})
         qs = qs.order_by("name")
         return database_qs(qs)
 
     def _post(self, params):
         project = params["project"]
         name = params["name"]
+        path = params.get("path", name)
+        path = re.sub(r"[^A-Za-z0-9_.]", "_", path)
         object_search = params.get("object_search", None)
         related_search = params.get("related_search", None)
         tator_user_sections = params.get("tator_user_sections", None)
@@ -49,10 +60,14 @@ class SectionListAPI(BaseListView):
         if Section.objects.filter(project=project, name__iexact=params["name"]).exists():
             raise Exception("Section with this name already exists!")
 
+        if Section.objects.filter(project=project, path__match=path).exists():
+            raise Exception("Section with this path already exists!")
+
         project = Project.objects.get(pk=project)
         section = Section.objects.create(
             project=project,
             name=name,
+            path=path,
             object_search=object_search,
             related_object_search=related_search,
             tator_user_sections=tator_user_sections,
@@ -87,6 +102,10 @@ class SectionDetailAPI(BaseDetailView):
             ).exists():
                 raise Exception("Section with this name already exists!")
             section.name = params["name"]
+        if "path" in params:
+            if Section.objects.filter(project=section.project, path__match=params["path"]).exists():
+                raise Exception("Section with this path already exists!")
+            section.path = params["path"]
         if "object_search" in params:
             section.object_search = params["object_search"]
         if "tator_user_sections" in params:
