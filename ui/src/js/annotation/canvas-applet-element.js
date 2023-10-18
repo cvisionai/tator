@@ -41,7 +41,6 @@ export class CanvasAppletElement extends TatorElement {
    *    Undo buffer for patching/posting required by elements like the save dialog
    */
   init(applet, data, favorites, undo) {
-
     this._applet = applet;
     this._data = data;
     this._undo = undo;
@@ -476,7 +475,6 @@ export class CanvasAppletElement extends TatorElement {
    * Helper function not expected to be re-implemented in a derived class.
    */
   redrawCanvas() {
-
     if (this._canvasCenterPoint == null) {
       return; // Not initialized yet.
     }
