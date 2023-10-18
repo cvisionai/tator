@@ -2219,7 +2219,7 @@ BUILT_IN_INDICES = {
         {"name": "$modified_datetime", "dtype": "native"},
         {"name": "tator_user_sections", "dtype": "section"},
         {"name": "tator_user_sections", "dtype": "section_btree"},
-        {"name": "tator_user_sections", "dtype": "section_uuid_btree"},
+        # {"name": "tator_user_sections", "dtype": "section_uuid_btree"}, # This doesn't work well, because we don't enforce uuids well enough, leaving in for growth
         {"name": "$restoration_requested", "dtype": "native"},
         {"name": "$archive_status_date", "dtype": "native"},
         {"name": "$archive_state", "dtype": "native_string"},

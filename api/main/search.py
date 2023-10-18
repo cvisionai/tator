@@ -695,7 +695,7 @@ class TatorSearch:
         "native_string_btree": make_native_string_btree_index,
         "section": make_section_index,
         "section_btree": make_section_btree_index,
-        "section_uuid_btree": make_section_uuid_index,
+        # "section_uuid_btree": make_section_uuid_index,
         "upper_string": make_upper_string_index,
         "upper_string_btree": make_upper_string_btree_index,
     }
