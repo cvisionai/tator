@@ -39,7 +39,7 @@ export class UploadElement extends TatorElement {
       /(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
     );
     const isVideo = ext.match(
-      /(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd)$/i
+      /(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
     );
     const isArchive = ext.match(/^(zip|tar)/i);
     const mediaTypes = this._store.getState().mediaTypes;
