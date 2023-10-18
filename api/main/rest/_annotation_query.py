@@ -208,7 +208,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         for entity_type in related_media_types:
             media_qs = Media.objects.filter(project=project, type=entity_type)
             media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
-            if media_qs.count():
+            if media_qs.exists():
                 related_matches.append(media_qs)
         if related_matches:
             related_match = related_matches.pop()
