@@ -8,6 +8,8 @@ import uuid
 
 from django.db.models import Q
 from django.http import Http404
+from django.db.models.functions import Cast
+from django.db.models import UUIDField, TextField, F
 
 from ..models import LocalizationType, Media, MediaType, Localization, Section, State, StateType
 
@@ -18,6 +20,7 @@ from ._attribute_query import (
     get_attribute_psql_queryset,
     get_attribute_psql_queryset_from_query_obj,
     supplied_name_to_field,
+    _look_for_section_uuid,
 )
 
 logger = logging.getLogger(__name__)
@@ -186,7 +189,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
 
         section_uuid = section[0].tator_user_sections
         if section_uuid:
-            qs = qs.filter(attributes__tator_user_sections=section_uuid)
+            qs = _look_for_section_uuid(qs, section_uuid)
 
         if section[0].object_search:
             qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)

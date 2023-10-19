@@ -56,7 +56,22 @@ class TatorTransactionTest(APITransactionTestCase):
 
 def wait_for_indices(entity_type):
     built_ins = BUILT_IN_INDICES.get(type(entity_type), [])
-    for attribute in [*entity_type.attribute_types, *built_ins]:
+    types_to_scan = [*entity_type.attribute_types, *built_ins]
+    # Wait for btree indices too
+    for t in types_to_scan:
+        if t["dtype"] == "string":
+            new_obj = {**t}
+            new_obj["dtype"] = "string_btree"
+            types_to_scan.append(new_obj)
+        if t["dtype"] == "native_string":
+            new_obj = {**t}
+            new_obj["dtype"] = "native_string_btree"
+            types_to_scan.append(new_obj)
+        if t["dtype"] == "upper_string":
+            new_obj = {**t}
+            new_obj["dtype"] = "upper_string_btree"
+            types_to_scan.append(new_obj)
+    for attribute in types_to_scan:
         found_it = False
         for i in range(1, 600):
             if TatorSearch().is_index_present(entity_type, attribute) == True:
@@ -266,6 +281,28 @@ def create_test_box(user, entity_type, project, media, frame, attributes={}):
     )
 
 
+def make_box_obj(user, entity_type, project, media, frame, attributes={}):
+    x = random.uniform(0.0, float(media.width))
+    y = random.uniform(0.0, float(media.height))
+    w = random.uniform(0.0, float(media.width) - x)
+    h = random.uniform(0.0, float(media.height) - y)
+    return Localization(
+        user=user,
+        created_by=user,
+        modified_by=user,
+        type=entity_type,
+        project=project,
+        version=project.version_set.all()[0],
+        media=media,
+        frame=frame,
+        x=x,
+        y=y,
+        width=w,
+        height=h,
+        attributes=attributes,
+    )
+
+
 def create_test_box_with_attributes(user, entity_type, project, media, frame, attributes):
     test_box = create_test_box(user, entity_type, project, media, frame)
     test_box.attributes.update(attributes)
@@ -346,7 +383,7 @@ def create_test_attribute_types():
         dict(
             name="Enum Test",
             dtype="enum",
-            choices=["enum_val1", "enum_val2", "enum_val3"],
+            choices=["enum_val1", "enum_val2", "enum_val3", "enum_val4"],
             default="enum_val1",
         ),
         dict(
@@ -2088,59 +2125,131 @@ class VideoTestCase(
         response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
         assert response.data[0].get("incident", None) == None
 
-        create_test_box(
-            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
+        print("About to create a bunch of boxes")
+        # Make a whole bunch of boxes to make sure indices get utilized
+        boxes = []
+        foo_box = make_box_obj(
+            self.user,
+            box_type,
+            self.project,
+            self.entities[0],
+            0,
+            {
+                "String Test": "Foo",
+                "Enum Test": "enum_val1",
+                "Int Test": 1,
+                "Float Test": 1.0,
+                "Bool Test": True,
+            },
         )
-        create_test_box(
-            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
-        )
-        create_test_box(
-            self.user, box_type, self.project, self.entities[0], 0, {"String Test": "Foo"}
-        )
+        boxes.append(foo_box)
+        boxes.append(foo_box)
+        boxes.append(foo_box)
 
-        create_test_box(
-            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Foo"}
+        box = make_box_obj(
+            self.user,
+            box_type,
+            self.project,
+            self.entities[1],
+            0,
+            {
+                "String Test": "Foo",
+                "Enum Test": "enum_val1",
+                "Int Test": 1,
+                "Float Test": 1.0,
+                "Bool Test": True,
+            },
         )
-        create_test_box(
-            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Bar"}
+        boxes.append(box)
+        boxes.append(
+            make_box_obj(
+                self.user,
+                box_type,
+                self.project,
+                self.entities[1],
+                0,
+                {
+                    "String Test": "Bar",
+                    "Enum Test": "enum_val2",
+                    "Int Test": 2,
+                    "Float Test": 2.0,
+                    "Bool Test": False,
+                },
+            )
         )
-        create_test_box(
-            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Baz"}
+        boxes.append(
+            make_box_obj(
+                self.user,
+                box_type,
+                self.project,
+                self.entities[1],
+                0,
+                {
+                    "String Test": "Baz",
+                    "Enum Test": "enum_val3",
+                    "Int Test": 3,
+                    "Float Test": 3.0,
+                    "Bool Test": False,
+                },
+            )
         )
-        create_test_box(
-            self.user, box_type, self.project, self.entities[1], 0, {"String Test": "Zoo"}
+        boxes.append(
+            make_box_obj(
+                self.user,
+                box_type,
+                self.project,
+                self.entities[1],
+                0,
+                {
+                    "String Test": "Zoo",
+                    "Enum Test": "enum_val4",
+                    "Int Test": 4,
+                    "Float Test": 4.0,
+                    "Bool Test": False,
+                },
+            )
         )
+        Localization.objects.bulk_create(boxes)
 
-        response = self.client.get(
-            f"/rest/Localizations/{self.project.pk}?attribute=String Test::Foo", format=json
-        )
-        self.assertEqual(len(response.data), 4)
-        encoded_search = base64.b64encode(
-            json.dumps({"attribute": "String Test", "operation": "eq", "value": "Foo"}).encode()
-        )
-        response = self.client.get(
-            f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
-            format="json",
-        )
+        searches = [
+            ["String Test", "Foo"],
+            ["Int Test", 1],
+            ["Float Test", 1.0],
+            ["Bool Test", True],
+        ]
+        for key, value in searches:
+            response = self.client.get(
+                f"/rest/Localizations/{self.project.pk}?attribute={key}::{value}", format=json
+            )
+            self.assertEqual(len(response.data), 4)
+            encoded_search = base64.b64encode(
+                json.dumps({"attribute": key, "operation": "eq", "value": value}).encode()
+            )
+            response = self.client.get(
+                f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
+                format="json",
+            )
+            from pprint import pprint
 
-        first_hit = response.data[0]
-        second_hit = response.data[1]
-        self.assertEqual(first_hit.get("incident", None), 3)
-        self.assertEqual(first_hit["id"], self.entities[0].pk)
-        self.assertEqual(second_hit.get("incident", None), 1)
-        self.assertEqual(second_hit["id"], self.entities[1].pk)
+            pprint(response.data)
+            first_hit = response.data[0]
+            second_hit = response.data[1]
+            self.assertEqual(first_hit.get("incident", None), 3)
+            self.assertEqual(first_hit["id"], self.entities[0].pk)
+            self.assertEqual(second_hit.get("incident", None), 1)
+            self.assertEqual(second_hit["id"], self.entities[1].pk)
 
-        # reverse it
-        response = self.client.get(
-            f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=$incident",
-            format="json",
-        )
-        first_hit = response.data[0]
-        second_hit = response.data[1]
-        self.assertEqual(second_hit.get("incident", None), 3)
-        self.assertEqual(second_hit["id"], self.entities[0].pk)
-        self.assertEqual(first_hit.get("incident", None), 1)
-        self.assertEqual(first_hit["id"], self.entities[1].pk)
+            # reverse it
+            response = self.client.get(
+                f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=$incident",
+                format="json",
+            )
+            first_hit = response.data[0]
+            second_hit = response.data[1]
+            self.assertEqual(second_hit.get("incident", None), 3)
+            self.assertEqual(second_hit["id"], self.entities[0].pk)
+            self.assertEqual(first_hit.get("incident", None), 1)
+            self.assertEqual(first_hit["id"], self.entities[1].pk)
 
     def test_author_change(self):
         test_video = create_test_video(self.user, f"asdf_0", self.entity_type, self.project)
