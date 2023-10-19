@@ -99,7 +99,7 @@ def _get_column_name(attribute):
         return f"attributes->>'{name}'"  # embedded in JSONB field
 
 
-def make_section_btree_index(
+def make_section_path_btree_index(
     db_name,
     project_id,
     index_name,
@@ -131,7 +131,7 @@ def make_section_btree_index(
         print(sql_str)
 
 
-def make_section_gist_index(
+def make_section_path_gist_index(
     db_name,
     project_id,
     index_name,
@@ -889,7 +889,7 @@ class TatorSearch:
         if self.is_index_present_by_name(btree_index_name) is False or flush is True:
             push_job(
                 "db_jobs",
-                make_section_btree_index,
+                make_section_path_btree_index,
                 args=(
                     connection.settings_dict["NAME"],
                     project.pk,
@@ -903,7 +903,7 @@ class TatorSearch:
         if self.is_index_present_by_name(gist_index_name) is False or flush is True:
             push_job(
                 "db_jobs",
-                make_section_gist_index,
+                make_section_path_gist_index,
                 args=(
                     connection.settings_dict["NAME"],
                     project.pk,
