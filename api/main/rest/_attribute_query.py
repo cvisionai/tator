@@ -250,7 +250,7 @@ def get_attribute_filter_ops(params, data_type):
     return filter_ops
 
 
-def build_query_recursively(query_object, castLookup, is_media, project, all_casts=set()):
+def build_query_recursively(query_object, castLookup, is_media, project, all_casts):
     query = Q()
     if "method" in query_object:
         method = query_object["method"].lower()
@@ -423,7 +423,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         attributeCast[key] = str
 
     q_object, required_annotations = build_query_recursively(
-        query_object, attributeCast, is_media, qs[0].project
+        query_object, attributeCast, is_media, qs[0].project, set()
     )
 
     logger.info(f"Q_Object = {q_object}")
