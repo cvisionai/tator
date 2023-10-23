@@ -114,7 +114,16 @@ export class GalleryPanelLocalization extends TatorElement {
     ) {
       // get the frame
       const resp = await fetchCredentials(
-        `/rest/GetFrame/${mediaData.id}?frames=${localizationData.frame}`
+        `/rest/GetFrame/${mediaData.id}?frames=${localizationData.frame}`,
+        {
+          mode: "cors",
+          headers: {
+            "Content-Type": "image/*",
+            Accept: "image/*",
+          },
+        },
+        false,
+        true
       );
       const sourceBlob = await resp.blob();
       imageSource = URL.createObjectURL(sourceBlob);
