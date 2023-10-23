@@ -368,8 +368,8 @@ export class EntitySelector extends TatorElement {
       this._slider.value = data.length - 1;
     }
 
-    if (this._selectAttempt) {
-      this.selectEntity(this._selectAttempt, true);
+    if (this._selectedObject) {
+      this.selectEntity(this._selectedObject);
     }
 
     this._emitSelection(false, true, false);
@@ -396,32 +396,24 @@ export class EntitySelector extends TatorElement {
     }
   }
 
-  selectEntity(obj, attemptPrevSelect) {
-    var selectedObject = false;
+  selectEntity(obj) {
+    var foundObject = false;
     for (const [index, data] of this._data.entries()) {
       if (data.id == obj.id) {
         this._div.classList.add("is-open");
         this.dispatchEvent(new Event("open"));
         this._current.textContent = String(index + 1);
         this._slider.value = index;
-        selectedObject = true;
+        foundObject = true;
         break;
       }
     }
 
-    if (attemptPrevSelect) {
-      this._selectAttempt = null;
+    if (!foundObject) {
       return;
     }
 
-    // If the object was attempted to be selected, it might not have been
-    // a part of the data entries yet. Save it and when the data buffer is updated,
-    // attempt to select it.
-    if (!selectedObject) {
-      this._selectAttempt = obj;
-    }
-
-    this._emitSelection(false, false, false);
+    this._emitSelection(true, true, false);
   }
 
   _emitSelection(byUser, composed, goToEntityFrame) {
@@ -492,6 +484,8 @@ export class EntitySelector extends TatorElement {
         }
       }
     }
+
+    this._selectedObject = this._data[index];
 
     this.dispatchEvent(
       new CustomEvent("select", {

@@ -431,6 +431,10 @@ export class EntityBrowser extends TatorElement {
     if (selector) {
       // Selector may not exist if element was deleted.
       selector.selectEntity(obj);
+    } else {
+      // It's possible the group has not been created yet with the update, so stage the update
+      // This may need to be revisited if there's an asynchronous problem
+      this.selectEntityOnUpdate(obj.id);
     }
   }
 
