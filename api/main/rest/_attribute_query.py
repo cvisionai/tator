@@ -341,6 +341,10 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 )
 
             castFunc = castLookup.get(attr_name, None)
+            # NOTE: For string functions avoid the '"' work around due to the django
+            # string handling bug
+            if operation in ["icontains", "iendswith", "istartswith"]:
+                castFunc = lambda x: x
             if operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
