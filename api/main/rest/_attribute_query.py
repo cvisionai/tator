@@ -345,6 +345,9 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             # only apply if cast func is active
             if castFunc and operation in ["icontains", "iendswith", "istartswith"]:
                 castFunc = lambda x: x
+                # Don't use casts for these operations either
+                if attr_name.startswith("$") == False:
+                    db_lookup = f"attributes__{attr_name}"
             if operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
