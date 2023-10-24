@@ -437,13 +437,31 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     logger.info(f"Query requires the following annotations: {required_annotations}")
     for annotation in required_annotations:
         logger.info(f"\t {annotation} to {annotateField[annotation]()}")
-        qs = qs.annotate(
-            **{
-                f"casted_{_sanitize(annotation)}": Cast(
-                    F(f"attributes__{annotation}"), annotateField[annotation]()
-                )
-            }
-        )
+        if annotateField[annotation] == DateTimeField:
+            # Cast DateTime to text first
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}_text": Cast(
+                        F(f"attributes__{annotation}"), TextField()
+                    )
+                }
+            )
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}": Cast(
+                        F(f"casted_{_sanitize(annotation)}_text"),
+                        annotateField[annotation](),
+                    )
+                }
+            )
+        else:
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}": Cast(
+                        F(f"attributes__{annotation}"), annotateField[annotation]()
+                    )
+                }
+            )
     return qs.filter(q_object)
 
 
