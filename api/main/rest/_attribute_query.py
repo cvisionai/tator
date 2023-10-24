@@ -318,7 +318,6 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 db_lookup = attr_name[1:]
             else:
                 db_lookup = f"casted_{_sanitize(attr_name)}"
-                all_casts.add(attr_name)
             if operation.startswith("date_"):
                 # python is more forgiving then SQL so convert any partial dates to
                 # full-up ISO8601 datetime strings WITH TIMEZONE.
@@ -343,7 +342,8 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             castFunc = castLookup.get(attr_name, None)
             # NOTE: For string functions avoid the '"' work around due to the django
             # string handling bug
-            if operation in ["icontains", "iendswith", "istartswith"]:
+            # only apply if cast func is active
+            if castFunc and operation in ["icontains", "iendswith", "istartswith"]:
                 castFunc = lambda x: x
             if operation in ["isnull"]:
                 value = _convert_boolean(value)
@@ -356,6 +356,9 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             else:
                 query = Q(**{f"{db_lookup}__{operation}": value})
 
+            # If we actually use the entity, add it to casts.
+            if attr_name.startswith("$") is False:
+                all_casts.add(attr_name)
         if inverse:
             query = ~query
 
