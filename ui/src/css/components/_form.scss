@@ -190,7 +190,6 @@ textarea.form-control {
   height: 40px;
 }
 
-
 .radio-slide {
   background-color: $color-purple;
   height: 12px;
@@ -200,11 +199,11 @@ textarea.form-control {
   width: 25px;
   transition-duration: 0.25s;
   transition-property: background-color;
-  &.disable{
+  &.disable {
     background-color: $color-red;
   }
   &.null {
-   background-color: $color-gray--dark50;
+    background-color: $color-gray--dark50;
   }
 }
 

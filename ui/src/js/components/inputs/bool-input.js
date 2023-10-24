@@ -66,6 +66,12 @@ export class BoolInput extends TatorElement {
     this._spanCircle = spanCircle;
 
     span.addEventListener("click", () => {
+      // If any of the labels has the readonly attribute, don't proceed.
+      // The component is in the disabled/view only state.
+      if (this._on.hasAttribute("readonly")) {
+        return;
+      }
+
       if (this._null.checked) {
         this.setValue(true);
       } else if (this._on.checked) {
@@ -103,14 +109,10 @@ export class BoolInput extends TatorElement {
       this._on.removeAttribute("readonly");
       this._off.removeAttribute("readonly");
       this._null.removeAttribute("readonly");
-      this._onLabel.removeEventListener("click", this._preventDefault);
-      this._offLabel.removeEventListener("click", this._preventDefault);
     } else {
       this._on.setAttribute("readonly", "");
       this._off.setAttribute("readonly", "");
       this._null.setAttribute("readonly", "");
-      this._onLabel.addEventListener("click", this._preventDefault);
-      this._offLabel.addEventListener("click", this._preventDefault);
     }
   }
 
