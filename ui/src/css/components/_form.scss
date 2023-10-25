@@ -200,7 +200,7 @@ textarea.form-control {
   transition-duration: 0.25s;
   transition-property: background-color;
   &.disable {
-    background-color: $color-red;
+    background-color: $color-gray--dark;
   }
   &.null {
     background-color: $color-gray--dark50;
