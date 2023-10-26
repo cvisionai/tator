@@ -3855,6 +3855,52 @@ class VersionTestCase(
         response = self.client.get(f"/rest/Version/{test_version.pk}")
         assert str(response.data["elemental_id"]) == new_uuid
 
+    def test_version_delete(self):
+        # Verify we can delete an empty version
+        test_version = create_test_version(f"My Version", f"desc", 10, self.project, self.media)
+        response = self.client.get(f"/rest/Version/{test_version.pk}")
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.delete(f"/rest/Version/{test_version.pk}")
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        # Verify we can delete non-empty versions
+        test_version = create_test_version(f"My Version", f"desc", 10, self.project, self.media)
+        response = self.client.get(f"/rest/Version/{test_version.pk}")
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        # Make some boxes on the version
+        entity_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype="box",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        wait_for_indices(entity_type)
+        media_entity_type = MediaType.objects.create(
+            name="video",
+            dtype="video",
+            project=self.project,
+        )
+        entity_type.media.add(media_entity_type)
+        media = create_test_video(self.user, f"Test Video", media_entity_type, self.project)
+
+        test_box = create_test_box(self.user, entity_type, self.project, media, 0)
+        test_box.version = test_version
+        test_box.save()
+
+        # Verify we can't delete a version with a box
+        response = self.client.delete(f"/rest/Version/{test_version.pk}")
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+
+        # Delete the box and try again
+        response = self.client.delete(f"/rest/Localization/{test_box.pk}")
+        assertResponse(self, response, status.HTTP_200_OK)
+        test_box = Localization.objects.get(pk=test_box.pk)
+
+        # Verify we can't delete a version with a box
+        response = self.client.delete(f"/rest/Version/{test_version.pk}")
+        assertResponse(self, response, status.HTTP_200_OK)
+
 
 class FavoriteStateTestCase(
     TatorTransactionTest,
