@@ -118,9 +118,11 @@ class VersionDetailAPI(BaseDetailView):
 
     def _delete(self, params):
         localization_count = Localization.objects.filter(
-            version=params["id"], deleted=False
+            version=params["id"], deleted=False, variant_deleted=False
         ).count()
-        state_count = State.objects.filter(version=params["id"], deleted=False).count()
+        state_count = State.objects.filter(
+            version=params["id"], deleted=False, variant_deleted=False
+        ).count()
         if localization_count > 0 or state_count > 0:
             raise Exception(
                 f"Cannot delete version with annotations! Found "
