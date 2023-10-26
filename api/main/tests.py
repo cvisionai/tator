@@ -3897,7 +3897,7 @@ class VersionTestCase(
         assertResponse(self, response, status.HTTP_200_OK)
         test_box = Localization.objects.get(pk=test_box.pk)
 
-        # Verify we can't delete a version with a box
+        # Verify we can now delete a version, as metadata is all cleared
         response = self.client.delete(f"/rest/Version/{test_version.pk}")
         assertResponse(self, response, status.HTTP_200_OK)
 
