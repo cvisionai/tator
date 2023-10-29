@@ -1074,6 +1074,8 @@ export class AnnotationPage extends TatorPage {
               memberships
             );
             this._data.addEventListener("freshData", (evt) => {
+              this._browser.updateData(evt);
+
               if (this._newEntityId) {
                 for (const elem of evt.detail.data) {
                   if (elem.id == this._newEntityId) {

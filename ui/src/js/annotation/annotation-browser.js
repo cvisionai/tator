@@ -380,6 +380,16 @@ export class AnnotationBrowser extends TatorElement {
       }
     }
   }
+
+  /**
+   * @param {Object} evt
+   *    event emitted from annotation-data "freshData"
+   */
+  updateData(evt) {
+    for (const dataTypeId in this._entityPanels) {
+      this._entityPanels[dataTypeId].updateData(evt);
+    }
+  }
 }
 
 customElements.define("annotation-browser", AnnotationBrowser);

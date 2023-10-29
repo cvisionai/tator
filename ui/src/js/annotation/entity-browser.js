@@ -152,28 +152,30 @@ export class EntityBrowser extends TatorElement {
     this._undo = val;
   }
 
+  /**
+   * @param {Object} evt
+   *    event emitted from annotation-data "freshData"
+   */
+  updateData(evt) {
+    if (evt.detail.typeObj.id === this._dataType.id) {
+      if (!this._initialized) {
+        this._initialized = true;
+      }
+      this._evt = evt;
+      this._drawControls();
+
+      if (this._selectEntityId != null) {
+        for (let group in this._selectors) {
+          this._selectors[group].selectEntityWithId(this._selectEntityId, true);
+        }
+        this._selectEntityId = null;
+      }
+    }
+  }
+
   set annotationData(val) {
     this._data = val;
     this._jumpFrame.setValue(false);
-    this._data.addEventListener("freshData", (evt) => {
-      if (evt.detail.typeObj.id === this._dataType.id) {
-        if (!this._initialized) {
-          this._initialized = true;
-        }
-        this._evt = evt;
-        this._drawControls();
-
-        if (this._selectEntityId != null) {
-          for (let group in this._selectors) {
-            this._selectors[group].selectEntityWithId(
-              this._selectEntityId,
-              true
-            );
-          }
-          this._selectEntityId = null;
-        }
-      }
-    });
 
     this._filterModal.data = this._data;
     this._search.addEventListener("click", (evt) => {
