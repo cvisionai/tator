@@ -112,14 +112,14 @@ export class AnnotationFilterDialog extends ModalDialog {
 
   set dataType(val) {
     this._dataType = val;
-    this._isLocalization = "dtype" in val;
+    this._isLocalization = !val.dtype.includes("state");
   }
   set data(data) {
     this._td = new ModelDataConverter(data.project, data);
     let excludeList = [];
     let excludeCategories = ["Medias"];
     if (this._dataType) {
-      if (data.isLocalization) {
+      if (this._isLocalization) {
         excludeCategories.push(
           ...["MediaStates", "LocalizationStates", "FrameStates"]
         );
