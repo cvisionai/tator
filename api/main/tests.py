@@ -1986,39 +1986,54 @@ class VideoTestCase(
         print("About to create a bunch of boxes")
         # Make a whole bunch of boxes to make sure indices get utilized
         boxes = []
-        foo_box = make_box_obj(
-            self.user,
-            box_type,
-            self.project,
-            self.entities[0],
-            0,
-            {
-                "String Test": "Foo",
-                "Enum Test": "enum_val1",
-                "Int Test": 1,
-                "Float Test": 1.0,
-                "Bool Test": True,
-            },
+        foo_val = {
+            "String Test": "Foo",
+            "Enum Test": "enum_val1",
+            "Int Test": 1,
+            "Float Test": 1.0,
+            "Bool Test": True,
+        }
+        boxes.append(
+            make_box_obj(
+                self.user,
+                box_type,
+                self.project,
+                self.entities[0],
+                0,
+                foo_val,
+            )
         )
-        boxes.append(foo_box)
-        boxes.append(foo_box)
-        boxes.append(foo_box)
+        boxes.append(
+            make_box_obj(
+                self.user,
+                box_type,
+                self.project,
+                self.entities[0],
+                0,
+                foo_val,
+            )
+        )
+        boxes.append(
+            make_box_obj(
+                self.user,
+                box_type,
+                self.project,
+                self.entities[0],
+                0,
+                foo_val,
+            )
+        )
+        boxes.append(
+            make_box_obj(
+                self.user,
+                box_type,
+                self.project,
+                self.entities[1],
+                0,
+                foo_val,
+            )
+        )
 
-        box = make_box_obj(
-            self.user,
-            box_type,
-            self.project,
-            self.entities[1],
-            0,
-            {
-                "String Test": "Foo",
-                "Enum Test": "enum_val1",
-                "Int Test": 1,
-                "Float Test": 1.0,
-                "Bool Test": True,
-            },
-        )
-        boxes.append(box)
         boxes.append(
             make_box_obj(
                 self.user,
@@ -2051,6 +2066,7 @@ class VideoTestCase(
                 },
             )
         )
+
         boxes.append(
             make_box_obj(
                 self.user,
@@ -2087,9 +2103,7 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
-            from pprint import pprint
 
-            pprint(response.data)
             first_hit = response.data[0]
             second_hit = response.data[1]
             self.assertEqual(first_hit.get("incident", None), 3)
