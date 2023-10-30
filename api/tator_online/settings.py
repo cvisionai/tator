@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 from django.contrib.messages import constants as messages
 import yaml
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "django_admin_json_editor",
     "django_ltree",
+    "pgtrigger",
 ]
 
 GRAPH_MODELS = {
@@ -262,11 +264,10 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
+        "main.throttles.BurstableThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "10/second",
-        "user": "100/second",
     },
     "TEST_REQUEST_RENDERER_CLASSES": [
         "main.renderers.TatorRenderer",

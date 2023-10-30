@@ -74,6 +74,10 @@ localization_properties = {
         "type": "string",
         "nullable": True,
     },
+    "mark": {
+        "description": "Revision number of this object on this version branch",
+        "type": "integer",
+    },
 }
 
 post_properties = {
@@ -198,6 +202,13 @@ localization_update = {
                 "minimum": 1,
             },
         },
+        "in_place": {
+            "type": "integer",
+            "description": "Set to 1 to edit this record in-place, else mark-based versioning rules apply. This changes to 1 for authorship changes automatically.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
     },
 }
 
@@ -222,6 +233,14 @@ localization_id_query = {
             "type": "array",
             "items": {
                 "type": "integer",
+                "minimum": 1,
+            },
+        },
+        "elemental_ids": {
+            "description": "Array of localizations to retrieve.",
+            "type": "array",
+            "items": {
+                "type": "string",
                 "minimum": 1,
             },
         },
@@ -259,22 +278,6 @@ localization_bulk_delete_schema = {
     "properties": {
         **localization_delete_schema["properties"],
         **localization_id_query["properties"],
-        "null_attributes": {
-            "description": "Null a value in the attributes body",
-            "type": "array",
-            "items": {
-                "type": "string",
-                "minimum": 1,
-            },
-        },
-        "reset_attributes": {
-            "description": "Reset an attribute to the default value specified in the Type object",
-            "type": "array",
-            "items": {
-                "type": "string",
-                "minimum": 1,
-            },
-        },
     },
 }
 
@@ -298,6 +301,29 @@ localization_bulk_update = {
         "user_elemental_id": {
             "description": "Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id",
             "type": "string",
+        },
+        "null_attributes": {
+            "description": "Null a value in the attributes body",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minimum": 1,
+            },
+        },
+        "reset_attributes": {
+            "description": "Reset an attribute to the default value specified in the Type object",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minimum": 1,
+            },
+        },
+        "in_place": {
+            "type": "integer",
+            "description": "Set to 1 to edit this record in-place, else mark-based versioning rules apply. Note: If querying by ids or applying a author change this is always treated as 1.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
         },
         **localization_id_query["properties"],
     },

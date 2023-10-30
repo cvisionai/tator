@@ -260,6 +260,10 @@ urlpatterns += [
         LocalizationDetailAPI.as_view(),
     ),
     path(
+        "rest/Localization/<int:version>/<str:elemental_id>",
+        LocalizationDetailByElementalIdAPI.as_view(),
+    ),
+    path(
         "rest/LocalizationCount/<int:project>",
         LocalizationCountAPI.as_view(),
     ),
@@ -363,6 +367,10 @@ urlpatterns += [
     path(
         "rest/State/<int:id>",
         StateDetailAPI.as_view(),
+    ),
+    path(
+        "rest/State/<int:version>/<str:elemental_id>",
+        StateDetailByElementalIdAPI.as_view(),
     ),
     path(
         "rest/MergeStates/<int:id>",

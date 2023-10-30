@@ -70,8 +70,28 @@ import os
 import shutil
 import uuid
 
+import pgtrigger
+
 # Load the main.view logger
 logger = logging.getLogger(__name__)
+
+BEFORE_MARK_TRIGGER_FUNC = """
+IF NEW.elemental_id IS NULL THEN
+            RAISE EXCEPTION 'elemental_id cannot be null';
+END IF;
+IF NEW.version IS NULL THEN
+            RAISE EXCEPTION 'version cannot be null';
+END IF;
+EXECUTE format('SELECT COALESCE(MAX(mark)+1,0) FROM %I.%I WHERE elemental_id=%L AND version=%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+NEW.mark = _var;
+RETURN NEW;
+"""
+
+AFTER_MARK_TRIGGER_FUNC = """
+EXECUTE format('SELECT COALESCE(MAX(mark),0) FROM %I.%I WHERE elemental_id=%L AND version=%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+EXECUTE format('UPDATE %I.%I SET latest_mark=%s WHERE elemental_id=%L AND version=%s',TG_TABLE_SCHEMA, TG_TABLE_NAME, _var, NEW.elemental_id, NEW.version);
+RETURN NEW;
+"""
 
 
 class ModelDiffMixin(object):
@@ -190,8 +210,8 @@ ImageFileFormat = [("jpg", "jpg"), ("png", "png"), ("bmp", "bmp"), ("raw", "raw"
 AssociationTypes = [
     ("Media", "Relates to one or more media items"),
     ("Frame", "Relates to a specific frame in a video"),  # Relates to one or more frames in a video
-    ("Localization", "Relates to localization(s)"),  # Relates to one-to-many localizations
-]
+    ("Localization", "Relates to localization(s)"),
+]  # Relates to one-to-many localizations
 
 
 class MediaAccess(Enum):
@@ -1716,6 +1736,24 @@ def file_post_delete(sender, instance, **kwargs):
 
 
 class Localization(Model, ModelDiffMixin):
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name="localization_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.Before,
+                declare=[("_var", "integer")],
+                func=BEFORE_MARK_TRIGGER_FUNC,
+            ),
+            pgtrigger.Trigger(
+                name="post_localization_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC,
+            ),
+        ]
+
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
     type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column="meta")
     """ Meta points to the definition of the attribute field. That is
@@ -1753,7 +1791,7 @@ class Localization(Model, ModelDiffMixin):
         related_name="localization_thumbnail_image",
         db_column="thumbnail_image",
     )
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column="version")
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column="version")
     x = FloatField(null=True, blank=True)
     """ Horizontal position."""
     y = FloatField(null=True, blank=True)
@@ -1778,6 +1816,8 @@ class Localization(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
+    latest_mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the latest revision number of the element  """
 
 
 @receiver(pre_delete, sender=Localization)
@@ -1792,6 +1832,24 @@ class State(Model, ModelDiffMixin):
     a media element. It is associated with 0 (1 to be useful) or more media
     elements. If a frame is supplied it was collected at that time point.
     """
+
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name="state_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.Before,
+                declare=[("_var", "integer")],
+                func=BEFORE_MARK_TRIGGER_FUNC,
+            ),
+            pgtrigger.Trigger(
+                name="post_state_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC,
+            ),
+        ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
     type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column="meta")
@@ -1819,7 +1877,7 @@ class State(Model, ModelDiffMixin):
         related_name="state_modified_by",
         db_column="modified_by",
     )
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column="version")
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column="version")
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True, db_column="parent")
     """ Pointer to localization in which this one was generated from """
     media = ManyToManyField(Media, related_name="media")
@@ -1843,6 +1901,8 @@ class State(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
+    latest_mark = PositiveIntegerField(default=0, blank=True)
+    """ Mark represents the latest revision number of the element  """
 
     @staticmethod
     def selectOnMedia(media_id):

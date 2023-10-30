@@ -7,6 +7,7 @@ django-cognito-jwt==0.0.4
 django-enumfields==2.1.1
 django-extensions==3.1.5
 django-ltree==0.5.3
+django-pgtrigger==4.6.0
 djangorestframework==3.13.1
 elasticsearch==7.10.1
 gevent==23.9.1

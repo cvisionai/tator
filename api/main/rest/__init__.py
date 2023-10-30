@@ -44,6 +44,7 @@ from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
 from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
+from .localization import LocalizationDetailByElementalIdAPI
 from .localization_count import LocalizationCountAPI
 from .localization_type import LocalizationTypeListAPI
 from .localization_type import LocalizationTypeDetailAPI
@@ -72,6 +73,7 @@ from .section import SectionListAPI
 from .section import SectionDetailAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
+from .state import StateDetailByElementalIdAPI
 from .state_count import StateCountAPI
 from .state import MergeStatesAPI
 from .state import TrimStateEndAPI

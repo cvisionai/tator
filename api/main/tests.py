@@ -25,6 +25,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APITransactionTestCase
 from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
+from main.throttles import BurstableThrottle
 
 from .backup import TatorBackupManager
 from .models import *
@@ -321,6 +322,7 @@ def create_test_line(user, entity_type, project, media, frame, attributes={}):
         modified_by=user,
         type=entity_type,
         project=project,
+        version=project.version_set.all()[0],
         media=media,
         frame=frame,
         x=x0,
@@ -340,6 +342,7 @@ def create_test_dot(user, entity_type, project, media, frame, attributes={}):
         modified_by=user,
         type=entity_type,
         project=project,
+        version=project.version_set.all()[0],
         media=media,
         frame=frame,
         x=x,
@@ -504,19 +507,26 @@ class ElementalIDChangeMixin:
             )
             assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(list_endpoint, {"elemental_id": elemental_id}, format="json")
+        response = self.client.get(
+            list_endpoint, {"elemental_id": elemental_id, "show_all_marks": 1}, format="json"
+        )
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(self.entities))
 
+        response = self.client.get(list_endpoint, format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        existing_count = len(response.data)
         new_elemental_id = uuid4()
         response = self.client.patch(
             list_endpoint, {"new_elemental_id": new_elemental_id}, format="json"
         )
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(list_endpoint, {"elemental_id": new_elemental_id}, format="json")
+        response = self.client.get(
+            list_endpoint, {"elemental_id": new_elemental_id, "show_all_marks": 1}, format="json"
+        )
         assertResponse(self, response, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), len(self.entities))
+        self.assertEqual(len(response.data), existing_count)
 
         for obj in response.data:
             self.assertEqual(obj["elemental_id"], new_elemental_id)
@@ -973,7 +983,12 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_200_OK)
         for entity in self.entities:
-            response = self.client.get(f"/rest/{self.detail_uri}/{entity.pk}")
+            if hasattr(entity, "mark") and hasattr(entity, "elemental_id"):
+                response = self.client.get(
+                    f"/rest/{self.detail_uri}/{entity.version.pk}/{entity.elemental_id}"
+                )
+            else:
+                response = self.client.get(f"/rest/{self.detail_uri}/{entity.pk}")
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(response.data["attributes"]["Bool Test"], test_val)
 
@@ -987,7 +1002,7 @@ class AttributeTestMixin:
             # Update objects with a string so we know which to delete
             response = self.client.patch(
                 f"/rest/{self.detail_uri}/{obj_id}",
-                {"attributes": {"String Test": "DELETE ME!!!"}},
+                {"in_place": 1, "attributes": {"String Test": "DELETE ME!!!"}},
                 format="json",
             )
 
@@ -1032,10 +1047,21 @@ class AttributeTestMixin:
 
         # Nullify all the Bool Tests
         for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}", {"null_attributes": ["Bool Test"]}, format="json"
-            )
+            if hasattr(self.entities[idx], "mark") and hasattr(self.entities[idx], "elemental_id"):
+                elemental_id = self.entities[idx].elemental_id
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[idx].version.pk}/{elemental_id}?format=json",
+                    {"null_attributes": ["Bool Test"]},
+                    format="json",
+                )
+            else:
+                pk = self.entities[idx].pk
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{pk}",
+                    {"null_attributes": ["Bool Test"]},
+                    format="json",
+                )
+
             assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(
@@ -1058,6 +1084,136 @@ class AttributeTestMixin:
         )
         self.assertEqual(len(response.data), 0)
 
+    def generic_attr_helper(self, idx, name, test_val):
+        def to_string(dt):
+            return dt.isoformat().replace("+00:00", "Z")
+
+        pk = self.entities[idx].pk
+        is_date = type(test_val) == datetime.datetime
+        if is_date:
+            test_val = to_string(test_val)
+
+        if hasattr(self.entities[idx], "mark") and hasattr(self.entities[idx], "elemental_id"):
+            elemental_id = self.entities[idx].elemental_id
+            fetch_url = f"/rest/{self.detail_uri}/{self.entities[idx].version.pk}/{elemental_id}?format=json"
+            mark_based = True
+        else:
+            fetch_url = f"/rest/{self.detail_uri}/{pk}"
+            mark_based = False
+
+        initial_value = self.entities[idx].attributes.get(name, None)
+        response = self.client.patch(
+            f"/rest/{self.detail_uri}/{pk}", {"attributes": {name: test_val}}, format="json"
+        )
+        assertResponse(self, response, status.HTTP_200_OK)
+        # Do this again to test after the attribute object has been created.
+        # This verifies patching non-latest element by serial doesn't work
+        response = self.client.patch(
+            f"/rest/{self.detail_uri}/{pk}", {"attributes": {name: test_val}}, format="json"
+        )
+        if mark_based:
+            assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
+        else:
+            assertResponse(self, response, status.HTTP_200_OK)
+
+        # By serial ID the result is actually the initial value, the change went to
+        # a new version
+        if mark_based:
+            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
+            self.assertEqual(response.data["id"], pk)
+            self.assertEqual(response.data["attributes"].get(name, None), initial_value)
+            this_mark = response.data["mark"]
+            last_mark = this_mark
+
+        # Access via the UUID accessor + verify we got a new mark on the version
+        # Use fetch_url which is the pk-based method for elements with out mark-based versioning
+        response = self.client.get(fetch_url)
+        if is_date:
+            self.assertEqual(response.data["attributes"][name].replace("+00:00", "Z"), test_val)
+        else:
+            self.assertEqual(response.data["attributes"][name], test_val)
+        if mark_based:
+            self.assertEqual(response.data["elemental_id"], elemental_id)
+            this_mark = response.data["mark"]
+            self.assertEqual(last_mark + 1, this_mark)
+        else:
+            self.assertEqual(response.data["id"], pk)
+
+    def generic_reset_nullification(self, attribute_name, default_value, null_value=None):
+        # Test attribute reset / nullification
+        # Of note; this also tests PATCH/GET via version/UUID path
+        if hasattr(self.entities[0], "mark") and hasattr(self.entities[0], "elemental_id"):
+            elemental_id = self.entities[0].elemental_id
+            version = self.entities[0].version.pk
+            fetch_url = f"/rest/{self.detail_uri}/{self.entities[0].version.pk}/{elemental_id}?"
+        else:
+            pk = self.entities[0].pk
+            fetch_url = f"/rest/{self.detail_uri}/{pk}"
+
+        project = self.entities[0].project
+        many_pks = [e.pk for e in self.entities]
+        response = self.client.patch(
+            fetch_url, {"reset_attributes": [attribute_name]}, format="json"
+        )
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(fetch_url, format="json")
+        assert response.data["attributes"][attribute_name] == default_value
+        response = self.client.patch(
+            fetch_url, {"null_attributes": [attribute_name]}, format="json"
+        )
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(fetch_url, format="json")
+        assert response.data["attributes"][attribute_name] == null_value
+
+        # verify bulk modifications via ids / in-place updates
+        response = self.client.patch(
+            f"/rest/{self.list_uri}/{project.pk}",
+            {"ids": many_pks, "reset_attributes": [attribute_name]},
+            format="json",
+        )
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
+            assert response.data["attributes"][attribute_name] == default_value
+
+        response = self.client.patch(
+            f"/rest/{self.list_uri}/{project.pk}",
+            {"ids": many_pks, "null_attributes": [attribute_name]},
+            format="json",
+        )
+        assertResponse(self, response, status.HTTP_200_OK)
+        for pk in many_pks:
+            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
+            assert response.data["attributes"][attribute_name] == null_value
+
+        if hasattr(self.entities[0], "mark") and hasattr(self.entities[0], "elemental_id"):
+            version = self.entities[0].version.pk
+            many_eids = [e.elemental_id for e in self.entities]
+            # verify bulk modifications via mark-based bulk update
+            response = self.client.patch(
+                f"/rest/{self.list_uri}/{project.pk}",
+                {"elemental_ids": many_eids, "reset_attributes": [attribute_name]},
+                format="json",
+            )
+            assertResponse(self, response, status.HTTP_200_OK)
+            for eid in many_eids:
+                response = self.client.get(
+                    f"/rest/{self.detail_uri}/{version}/{eid}", format="json"
+                )
+                assert response.data["attributes"][attribute_name] == default_value
+
+            response = self.client.patch(
+                f"/rest/{self.list_uri}/{project.pk}",
+                {"elemental_ids": many_eids, "null_attributes": [attribute_name]},
+                format="json",
+            )
+            assertResponse(self, response, status.HTTP_200_OK)
+            for eid in many_eids:
+                response = self.client.get(
+                    f"/rest/{self.detail_uri}/{version}/{eid}", format="json"
+                )
+                assert response.data["attributes"][attribute_name] == null_value
+
     def test_bool_attr(self):
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
         # Test setting an invalid bool
@@ -1068,23 +1224,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"Bool Test": test_val}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            # Do this again to test after the attribute object has been created.
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"Bool Test": test_val}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
-            self.assertEqual(response.data["id"], pk)
-            self.assertEqual(response.data["attributes"]["Bool Test"], test_val)
+            self.generic_attr_helper(idx, "Bool Test", test_val)
 
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::true&type={self.entity_type.pk}&format=json"
@@ -1132,15 +1272,7 @@ class AttributeTestMixin:
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"Int Test": test_val}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
-            self.assertEqual(response.data["id"], pk)
-            self.assertEqual(response.data["attributes"]["Int Test"], test_val)
+            self.generic_attr_helper(idx, "Int Test", test_val)
             # Test that attribute maximum is working.
             response = self.client.patch(
                 f"/rest/{self.detail_uri}/{pk}", {"attributes": {"Int Test": 100000}}, format="json"
@@ -1184,45 +1316,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
-        pk = self.entities[0].pk
-        project = self.entities[0].project
-        many_pks = [e.pk for e in self.entities]
-        default_value = 42
-        attribute_name = "Int Test"
-        # Test attribute reset / nullification
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"reset_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"]["Int Test"] == default_value
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"null_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == None
-
-        # verify bulk
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "reset_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == default_value
-
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "null_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == None
+        self.generic_reset_nullification("Int Test", 42)
 
     def test_float_attr(self):
         test_vals = [random.uniform(-1000.0, 1000.0) for _ in range(len(self.entities))]
@@ -1235,15 +1329,7 @@ class AttributeTestMixin:
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"Float Test": test_val}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
-            self.assertEqual(response.data["id"], pk)
-            self.assertEqual(response.data["attributes"]["Float Test"], test_val)
+            self.generic_attr_helper(idx, "Float Test", test_val)
             # Test that attribute maximum is working.
             response = self.client.patch(
                 f"/rest/{self.detail_uri}/{pk}",
@@ -1289,45 +1375,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
-        pk = self.entities[0].pk
-        project = self.entities[0].project
-        many_pks = [e.pk for e in self.entities]
-        default_value = 42.0
-        attribute_name = "Float Test"
-        # Test attribute reset / nullification
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"reset_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == default_value
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"null_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == None
-
-        # verify bulk
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "reset_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == default_value
-
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "null_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == None
+        self.generic_reset_nullification("Float Test", 42.0)
 
     def test_enum_attr(self):
         test_vals = [
@@ -1342,16 +1390,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"Enum Test": test_val}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
-            self.assertEqual(response.data["id"], pk)
-            self.assertEqual(response.data["attributes"]["Enum Test"], test_val)
+            self.generic_attr_helper(idx, "Enum Test", test_val)
 
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Enum Test::0&type={self.entity_type.pk}&format=json"
@@ -1383,45 +1422,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
-        pk = self.entities[0].pk
-        project = self.entities[0].project
-        many_pks = [e.pk for e in self.entities]
-        default_value = "enum_val1"
-        attribute_name = "Enum Test"
-        # Test attribute reset / nullification
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"reset_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == default_value
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"null_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == None
-
-        # verify bulk
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "reset_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == default_value
-
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "null_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == None
+        self.generic_reset_nullification("Enum Test", "enum_val1")
 
     def test_string_attr(self):
         test_vals = [
@@ -1429,16 +1430,7 @@ class AttributeTestMixin:
             for _ in range(len(self.entities))
         ]
         for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"String Test": test_val}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
-            self.assertEqual(response.data["id"], pk)
-            self.assertEqual(response.data["attributes"]["String Test"], test_val)
+            self.generic_attr_helper(idx, "String Test", test_val)
 
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=String Test::0&type={self.entity_type.pk}&format=json"
@@ -1470,45 +1462,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
-        pk = self.entities[0].pk
-        project = self.entities[0].project
-        many_pks = [e.pk for e in self.entities]
-        default_value = "asdf_default"
-        attribute_name = "String Test"
-        # Test attribute reset / nullification
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"reset_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == default_value
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"null_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == None
-
-        # verify bulk
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "reset_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == default_value
-
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "null_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == None
+        self.generic_reset_nullification("String Test", "asdf_default")
 
     def test_datetime_attr(self):
         def to_string(dt):
@@ -1525,16 +1479,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"Datetime Test": to_string(test_val)}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
-            self.assertEqual(response.data["id"], pk)
-            self.assertEqual(dateutil_parse(response.data["attributes"]["Datetime Test"]), test_val)
+            self.generic_attr_helper(idx, "Datetime Test", test_val)
 
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Datetime Test::{to_string(test_val)}&"
@@ -1579,45 +1524,7 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
-        pk = self.entities[0].pk
-        project = self.entities[0].project
-        many_pks = [e.pk for e in self.entities]
-        default_value = None
-        attribute_name = "Datetime Test"
-        # Test attribute reset / nullification
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"reset_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == default_value
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"null_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == None
-
-        # verify bulk
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "reset_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == default_value
-
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "null_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == None
+        self.generic_reset_nullification("Datetime Test", None)
 
     def test_geoposition_attr(self):
         test_vals = [
@@ -1641,18 +1548,8 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
             lat, lon = test_val
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{pk}",
-                {"attributes": {"Geoposition Test": [lon, lat]}},
-                format="json",
-            )
-            assertResponse(self, response, status.HTTP_200_OK)
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}?format=json")
-            self.assertEqual(response.data["id"], pk)
-            attrs = response.data["attributes"]["Geoposition Test"]
-            self.assertEqual(response.data["attributes"]["Geoposition Test"], [lon, lat])
+            self.generic_attr_helper(idx, "Geoposition Test", [lon, lat])
 
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Geoposition Test::10::{lat}::{lon}&"
@@ -1700,47 +1597,7 @@ class AttributeTestMixin:
                 ),
             )
 
-        pk = self.entities[0].pk
-        project = self.entities[0].project
-        many_pks = [e.pk for e in self.entities]
-        default_value = [-179.0, -89.0]
-        attribute_name = "Geoposition Test"
-        # Test attribute reset / nullification
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"reset_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == default_value
-
-        # Of note, geopositions can't be null so -1.0,-1.0 is used instead.
-        response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"null_attributes": [attribute_name]}, format="json"
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-        assert response.data["attributes"][attribute_name] == [-1.0, -1.0]
-
-        # verify bulk
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "reset_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == default_value
-
-        response = self.client.patch(
-            f"/rest/{self.list_uri}/{project.pk}",
-            {"ids": many_pks, "null_attributes": [attribute_name]},
-            format="json",
-        )
-        assertResponse(self, response, status.HTTP_200_OK)
-        for pk in many_pks:
-            response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
-            assert response.data["attributes"][attribute_name] == [-1.0, -1.0]
+        self.generic_reset_nullification("Geoposition Test", [-179.0, -89.0], [-1.0, -1.0])
 
 
 class FileMixin:
@@ -1939,6 +1796,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
             State.objects.create(
                 type=self.state_type,
                 project=self.project,
+                version=self.project.version_set.all()[0],
             )
             for _ in range(random.randint(6, 10))
         ]
@@ -2490,6 +2348,7 @@ class LocalizationBoxTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2552,7 +2411,7 @@ class LocalizationBoxTestCase(
             }
         ]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {"name": "box1"}
+        self.patch_json = {"name": "box1", "in_place": 1}
 
 
 class LocalizationLineTestCase(
@@ -2571,6 +2430,7 @@ class LocalizationLineTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2633,7 +2493,7 @@ class LocalizationLineTestCase(
             }
         ]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {"name": "line1"}
+        self.patch_json = {"name": "line1", "in_place": 1}
 
 
 class LocalizationDotTestCase(
@@ -2652,6 +2512,7 @@ class LocalizationDotTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2712,7 +2573,7 @@ class LocalizationDotTestCase(
             }
         ]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {"name": "dot1"}
+        self.patch_json = {"name": "dot1", "in_place": 1}
 
 
 class LocalizationPolyTestCase(
@@ -2731,6 +2592,7 @@ class LocalizationPolyTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2790,7 +2652,7 @@ class LocalizationPolyTestCase(
             }
         ]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {"name": "box1"}
+        self.patch_json = {"name": "box1", "in_place": 1}
 
 
 class StateTestCase(
@@ -2809,6 +2671,7 @@ class StateTestCase(
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
+        BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2869,7 +2732,7 @@ class StateTestCase(
             }
         ]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {"name": "state1"}
+        self.patch_json = {"name": "state1", "in_place": 1}
 
     def test_elemental_id(self):
         # Test on type object

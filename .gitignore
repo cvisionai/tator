@@ -49,3 +49,6 @@ rest-junit.xml
 .DS_Store
 *.DS_Store
 *DS_Store*
+
+# CI Files
+rest-junit.xml
