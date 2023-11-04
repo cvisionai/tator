@@ -285,10 +285,12 @@ class TatorAlgorithm(JobManagerMixin):
             api_client = ApiClient(conf)
             self.corev1 = CoreV1Api(api_client)
             self.custom = CustomObjectsApi(api_client)
+            self.host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         else:
             load_incluster_config()
             self.corev1 = CoreV1Api()
             self.custom = CustomObjectsApi()
+            self.host = "http://gunicorn-svc:8000"
 
         # Read in the manifest.
         if alg.manifest:
@@ -348,11 +350,11 @@ class TatorAlgorithm(JobManagerMixin):
                 },
                 {
                     "name": "host",
-                    "value": f'{PROTO}{os.getenv("MAIN_HOST")}',
+                    "value": self.host,
                 },
                 {
                     "name": "rest_url",
-                    "value": f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
+                    "value": f"{self.host}/rest",
                 },
                 {
                     "name": "rest_token",
@@ -360,7 +362,7 @@ class TatorAlgorithm(JobManagerMixin):
                 },
                 {
                     "name": "tus_url",
-                    "value": f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
+                    "value": f"{self.host}/files/",
                 },
                 {
                     "name": "project_id",
@@ -394,6 +396,21 @@ class TatorAlgorithm(JobManagerMixin):
             "name": self.alg.name,
         }
 
+        # Set any steps in the templates to disable eviction
+        for tidx in range(len(manifest["spec"]["templates"])):
+            if "container" in manifest["spec"]["templates"][tidx]:
+                metadata = manifest["spec"]["templates"][tidx].get("metadata", {})
+                annotations = metadata.get("annotations", {})
+                annotations = {
+                    "cluster-autoscaler.kubernetes.io/safe-to-evict": "false",
+                    **annotations,
+                }
+                metadata = {
+                    **metadata,
+                    "annotations": annotations,
+                }
+                manifest["spec"]["templates"][tidx]["metadata"] = metadata
+
         # Set exit handler that sends an email if email specs are given
         if success_email_spec is not None or failure_email_spec is not None:
             manifest["spec"]["onExit"] = "exit-handler"
@@ -422,7 +439,7 @@ class TatorAlgorithm(JobManagerMixin):
                                 f"Authorization: Token {token}",
                                 "-d",
                                 json.dumps(success_email_spec),
-                                f'{PROTO}{os.getenv("MAIN_HOST")}/rest/Email/{project}',
+                                f"{self.host}/rest/Email/{project}",
                             ],
                         },
                     }
@@ -450,7 +467,7 @@ class TatorAlgorithm(JobManagerMixin):
                                 f"Authorization: Token {token}",
                                 "-d",
                                 json.dumps(failure_email_spec),
-                                f'{PROTO}{os.getenv("MAIN_HOST")}/rest/Email/{project}',
+                                f"{self.host}/rest/Email/{project}",
                             ],
                         },
                     }

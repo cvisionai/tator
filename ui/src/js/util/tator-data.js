@@ -267,10 +267,18 @@ export class TatorData {
    * Returns data for getFrame with project ID
    */
   async getFrame(frameId) {
-    const response = await fetchCredentials(`/rest/GetFrame/${frameId}`, {
-      mode: "cors",
-      credentials: "include",
-    });
+    const response = await fetchCredentials(
+      `/rest/GetFrame/${frameId}`,
+      {
+        mode: "cors",
+        headers: {
+          "Content-Type": "image/*",
+          Accept: "image/*",
+        },
+      },
+      false,
+      true
+    );
     const data = await response.json();
 
     return data;

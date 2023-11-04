@@ -1,15 +1,11 @@
-import uuid
-import os
 import logging
+import uuid
 
-from django.db import transaction
 from django.conf import settings
-from django.http import Http404
 
-from ..models import PasswordReset
-from ..models import User
-from ..schema import PasswordResetListSchema
 from ..mail import get_email_service
+from ..models import PasswordReset, User
+from ..schema import PasswordResetListSchema
 
 from ._base_views import BaseListView
 
@@ -31,17 +27,21 @@ class PasswordResetListAPI(BaseListView):
             raise RuntimeError(f"Email {email} is in use by multiple users!")
         user = users[0]
         reset = PasswordReset(user=user, reset_token=uuid.uuid1())
-        url = f"{os.getenv('MAIN_HOST')}/password-reset?reset_token={reset.reset_token}&user={user.id}"
-        if settings.TATOR_EMAIL_ENABLED:
-            get_email_service().email(
+        url = f"{settings.PROTO}://{settings.MAIN_HOST}/password-reset?reset_token={reset.reset_token}&user={user.id}"
+        email_service = get_email_service()
+        if email_service:
+            text = (
+                f"A password reset has been requested for this email address ({email}). If you did "
+                f"not initiate the reset this message can be ignored. To reset your password, "
+                f"please visit: \n\n{url}\n\nThis URL will expire in 24 hours."
+            )
+            failure_msg = f"Unable to send email to {email}! Password reset creation failed."
+            email_service.email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=[email],
                 title=f"Tator password reset",
-                text=f"A password reset has been requested for this email address ({email}). "
-                f"If you did not initiate the reset this message can be ignored. "
-                f"To reset your password, please visit: \n\n{url}\n\n"
-                "This URL will expire in 24 hours.",
-                raise_on_failure=f"Unable to send email to {email}! Password reset creation failed.",
+                text=text,
+                raise_on_failure=failure_msg,
             )
         else:
             raise RuntimeError(

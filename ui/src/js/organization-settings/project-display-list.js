@@ -67,8 +67,8 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
   // _getFormData() {
   // }
 
+  //THIS IS THE OVERRIDE FOR SAVE DATA....
   async _saveData() {
-    console.log("THIS IS THE OVERRIDE FOR SAVE DATA....");
     const projectSpec = this._newProjectDialog.getProjectSpec();
     const preset = this._newProjectDialog.getProjectPreset();
 
@@ -76,7 +76,6 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
       const projectInfo = await store
         .getState()
         .addProject(projectSpec, preset);
-      console.log("Project response info ", projectInfo);
 
       if (projectInfo.response.ok) {
         this.data = null;

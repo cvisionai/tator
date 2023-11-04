@@ -118,7 +118,6 @@ class AttributeTypeListAPI(BaseListView):
 
         ts = TatorSearch()
         old_name = params["current_name"]
-        old_dtype = None
         old_attribute_type = None
         attribute_type_update = params["attribute_type_update"]
 
@@ -128,11 +127,9 @@ class AttributeTypeListAPI(BaseListView):
         # Get the old and new dtypes
         with transaction.atomic():
             entity_type, obj_qs = cls._get_objects(params)
-            has_related_objects = cls._has_related_objects(entity_type, old_name)
 
             for attribute_type in entity_type.attribute_types:
                 if attribute_type["name"] == old_name:
-                    old_dtype = attribute_type["dtype"]
                     old_attribute_type = dict(attribute_type)
                     break
             else:
@@ -199,10 +196,8 @@ class AttributeTypeListAPI(BaseListView):
                 if dtype_mutated:
                     if obj_qs.exists():
                         # Get the new attribute type to convert the existing value
-                        new_attribute = None
                         for attribute_type in entity_type.attribute_types:
                             if attribute_type["name"] == new_name:
-                                new_attribute = attribute_type
                                 break
 
                 if mod_type == "update":
@@ -255,7 +250,7 @@ class AttributeTypeListAPI(BaseListView):
             if entity_type.attribute_types:
                 existing_names = [a["name"] for a in entity_type.attribute_types]
                 if attribute_type_update["name"] in existing_names:
-                    raise ValueError(f"{a['name']} is already an attribute.")
+                    raise ValueError(f"{attribute_type_update['name']} is already an attribute.")
                 entity_type.attribute_types.append(attribute_type_update)
             else:
                 entity_type.attribute_types = []

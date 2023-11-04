@@ -37,7 +37,9 @@ endif
 # Set this ENV to http://iad-ad-1.clouds.archive.ubuntu.com/ubuntu/ for
 # faster builds on Oracle OCI 
 APT_REPO_HOST ?= $(shell cat /etc/apt/sources.list | grep -E "focal main|jammy main" | grep -v cdrom | head -n1 | awk '{print $$2}')
-
+ifeq ($(APT_REPO_HOST),)
+APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
+endif
 
 #############################
 ## Help Rule + Generic targets
@@ -214,6 +216,10 @@ endif
 collect-static: webpack
 	@scripts/collect-static.sh
 
+force-static:
+	@rm -fr scripts/packages/tator-js/pkg/
+	$(MAKE) collect-static
+
 dev-push:
 	@scripts/dev-push.sh
 
@@ -251,7 +257,8 @@ testinit:
 .PHONY: test
 test:
 	docker exec gunicorn sh -c 'bash scripts/addExtensionsToInit.sh'
-	docker exec gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db main/tests.py'
+	docker exec gunicorn sh -c 'pytest --ds=tator_online.settings -n 4 --reuse-db --create-db --junitxml=./test-results/rest-junit.xml main/tests.py'
+	docker cp gunicorn:/tator_online/test-results/rest-junit.xml rest-junit.xml
 
 .PHONY: cache_clear
 cache-clear:

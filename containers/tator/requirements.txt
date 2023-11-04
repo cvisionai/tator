@@ -1,4 +1,5 @@
-boto3==1.20.41
+boto3==1.28.32
+cryptography==41.0.4
 datadog==0.43.0
 django==3.2.20
 django_admin_json_editor==0.2.3
@@ -8,11 +9,10 @@ django-extensions==3.1.5
 django-ltree==0.5.3
 djangorestframework==3.13.1
 elasticsearch==7.10.1
-gevent==1.4.0
+gevent==23.9.1
 google-auth==2.3.3
 google-cloud-storage==2.1.0
 grafana-django-saml2-auth==3.9.0
-greenlet==0.4.15
 gunicorn==20.1.0
 hiredis==2.0.0
 imageio==2.22.2
@@ -20,10 +20,10 @@ jsonschema==4.9.1
 kubernetes==21.7.0
 markdown==3.3.6
 minio==7.1.5
-oci==2.89.0
-okta-jwt-verifier==0.2.3
+oci==2.110.0
+okta-jwt-verifier==0.2.4
 pgvector==0.1.8
-pillow==9.5.0
+pillow==10.0.1
 pillow-avif-plugin==1.2.2
 pillow-heif==0.11.1
 progressbar2==4.0.0
@@ -38,6 +38,7 @@ pyparsing==3.0.7
 pytest-django==4.5.2
 pytest-xdist==3.1.0
 python-dateutil==2.8.2
+pyyaml==6.0.1
 rawpy==0.17.2
 redis==4.4.4
 requests==2.31.0
@@ -45,3 +46,4 @@ rq==1.11.1
 slackclient==2.9.3
 ujson==5.4.0
 uritemplate==4.1.1
+wheel==0.38.1

@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 MAINTAINER CVision AI <info@cvisionai.com>
 
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
@@ -7,9 +7,24 @@ RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sour
 
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        python3 python3-pip libgraphviz-dev xdot \
-        python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
-        ffmpeg wget xmlsec1 python3-magic cron && rm -rf /var/lib/apt/lists
+    cron \
+    curl \
+    ffmpeg \
+    gcc \
+    git \
+    libffi-dev \
+    libgdal-dev \
+    libgraphviz-dev \
+    python3 \
+    python3-dev \
+    python3-magic \
+    python3-pip \
+    python3-setuptools \
+    vim \
+    wget \
+    xdot \
+    xmlsec1 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Install fork of openapi-core that works in DRF views
 WORKDIR /working
@@ -21,8 +36,6 @@ RUN rm -rf /working/openapi-core
 
 # Install pip packages
 RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
-RUN pip3 --no-cache-dir --timeout=1000 install wheel==0.38.1
-RUN pip3 --no-cache-dir --timeout=1000 install pyyaml==5.3.1
 COPY containers/tator/requirements.txt requirements.txt
 RUN pip3 --no-cache-dir --timeout=1000 install -r requirements.txt
 RUN rm requirements.txt

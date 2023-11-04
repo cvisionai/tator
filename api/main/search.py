@@ -66,6 +66,18 @@ def _get_unique_index_name(entity_type, attribute):
     type_name_sanitized = entity_type.__class__.__name__.lower()
     entity_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", entity_type.name).lower()
     attribute_name_sanitized = re.sub(r"[^a-zA-Z0-9]", "_", attribute_name).lower()
+
+    if attribute["dtype"] == "section_btree":
+        attribute_name_sanitized += "_btree"
+    if attribute["dtype"] == "section_uuid_btree":
+        attribute_name_sanitized += "_uuid_btree"
+    if attribute["dtype"] == "string_btree":
+        attribute_name_sanitized += "_btree"
+    if attribute["dtype"] == "native_string_btree":
+        attribute_name_sanitized += "_btree"
+    if attribute["dtype"] == "upper_string_btree":
+        attribute_name_sanitized += "_upper_btree"
+
     if attribute["name"].startswith("$"):
         # Native fields are only scoped to project, native-string types are project/type bound
         # Both need to incorporate type name in the name for uniqueness.
@@ -85,6 +97,70 @@ def _get_column_name(attribute):
         return name[1:]  # internal field
     else:
         return f"attributes->>'{name}'"  # embedded in JSONB field
+
+
+def make_section_path_btree_index(
+    db_name,
+    project_id,
+    index_name,
+    flush,
+    concurrent,
+):
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.Identifier(index_name), concurrent=sql.SQL(concurrent_str)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON main_section
+                        USING btree (path)
+                        WHERE project=%s"""
+        ).format(index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str))
+        cursor.execute(sql_str, (project_id,))
+        print(sql_str)
+
+
+def make_section_path_gist_index(
+    db_name,
+    project_id,
+    index_name,
+    flush,
+    concurrent,
+):
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.Identifier(index_name), concurrent=sql.SQL(concurrent_str)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON main_section
+                        USING GIST (path gist_ltree_ops(siglen=100))
+                        WHERE project=%s"""
+        ).format(index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str))
+        cursor.execute(sql_str, (project_id,))
+        print(sql_str)
 
 
 def make_btree_index(
@@ -207,6 +283,41 @@ def make_float_index(
     )
 
 
+def make_string_btree_index(
+    db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
+):
+    col_name = _get_column_name(attribute)
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING btree (CAST({col_name} AS text))
+                                 WHERE project=%s and meta=%s"""
+        ).format(
+            index_name=sql.SQL(index_name),
+            concurrent=sql.SQL(concurrent_str),
+            table_name=sql.Identifier(table_name),
+            col_name=sql.SQL(col_name),
+        )
+        logger.info(sql_str.as_string(cursor))
+        cursor.execute(sql_str, (project_id, entity_type_id))
+
+
 def make_string_index(
     db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
 ):
@@ -282,6 +393,41 @@ def make_upper_string_index(
         print(sql_str.as_string(cursor))
 
 
+def make_upper_string_btree_index(
+    db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
+):
+    col_name = _get_column_name(attribute)
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrently} IF EXISTS {index_name}").format(
+                    index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING btree (UPPER(CAST({col_name} AS text)))
+                                 WHERE project=%s and meta=%s"""
+        ).format(
+            index_name=sql.SQL(index_name),
+            concurrent=sql.SQL(concurrent_str),
+            table_name=sql.Identifier(table_name),
+            col_name=sql.SQL(col_name),
+        )
+        cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str.as_string(cursor))
+
+
 def make_section_index(
     db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
 ):
@@ -312,6 +458,117 @@ def make_section_index(
             index_name=sql.SQL(index_name),
             concurrent=sql.SQL(concurrent_str),
             method=sql.SQL(method.lower()),
+            table_name=sql.Identifier(table_name),
+            col_name=sql.SQL(col_name),
+        )
+        cursor.execute(sql_str, (project_id,))
+        print(sql_str.as_string(cursor))
+
+
+def make_section_generic_index(
+    db_name,
+    project_id,
+    entity_type_id,
+    table_name,
+    index_name,
+    attribute,
+    flush,
+    concurrent,
+    cast_type,
+):
+    col_name = _get_column_name(attribute)
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.SQL(index_name)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING btree (CAST({col_name} AS {cast_type}))
+                                 WHERE project=%s"""
+        ).format(
+            index_name=sql.SQL(index_name),
+            concurrent=sql.SQL(concurrent_str),
+            cast_type=sql.SQL(cast_type),
+            table_name=sql.Identifier(table_name),
+            col_name=sql.SQL(col_name),
+        )
+        cursor.execute(sql_str, (project_id,))
+        print(sql_str.as_string(cursor))
+
+
+def make_section_btree_index(
+    db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
+):
+    make_section_generic_index(
+        db_name,
+        project_id,
+        entity_type_id,
+        table_name,
+        index_name,
+        attribute,
+        flush,
+        concurrent,
+        "text",
+    )
+
+
+def make_section_uuid_index(
+    db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
+):
+    make_section_generic_index(
+        db_name,
+        project_id,
+        entity_type_id,
+        table_name,
+        index_name,
+        attribute,
+        flush,
+        concurrent,
+        "uuid",
+    )
+
+
+def make_native_string_btree_index(
+    db_name, project_id, entity_type_id, table_name, index_name, attribute, flush, concurrent
+):
+    col_name = _get_column_name(attribute)
+    concurrent_str = ""
+    if concurrent:
+        concurrent_str = "CONCURRENTLY"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(
+                sql.SQL("DROP INDEX {concurrent} IF EXISTS {index_name}").format(
+                    index_name=sql.SQL(index_name), concurrent=sql.SQL(concurrent_str)
+                )
+            )
+        cursor.execute(
+            "SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s",
+            (index_name,),
+        )
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str = sql.SQL(
+            """CREATE INDEX {concurrent} {index_name} ON {table_name}
+                                 USING btree ({col_name})
+                                 WHERE project=%s"""
+        ).format(
+            index_name=sql.SQL(index_name),
+            concurrent=sql.SQL(concurrent_str),
             table_name=sql.Identifier(table_name),
             col_name=sql.SQL(col_name),
         )
@@ -493,13 +750,18 @@ class TatorSearch:
         "float": make_float_index,
         "enum": make_string_index,
         "string": make_string_index,
+        "string_btree": make_string_btree_index,
         "datetime": make_datetime_index,
         "geopos": make_geopos_index,
         "float_array": make_vector_index,
         "native": make_native_index,
         "native_string": make_native_string_index,
+        "native_string_btree": make_native_string_btree_index,
         "section": make_section_index,
+        "section_btree": make_section_btree_index,
+        # "section_uuid_btree": make_section_uuid_index,
         "upper_string": make_upper_string_index,
+        "upper_string_btree": make_upper_string_btree_index,
     }
 
     def list_indices(self, project):
@@ -551,8 +813,35 @@ class TatorSearch:
                 result = cursor.fetchall()
                 return bool(result)
 
+    def is_index_present_by_name(self, index_name):
+        with get_connection(connection.settings_dict["NAME"]).cursor() as cursor:
+            cursor.execute(
+                "SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(
+                    index_name
+                )
+            )
+            result = cursor.fetchall()
+            return bool(result)
+
     def create_psql_index(self, entity_type, attribute, flush=False, concurrent=True):
         """Create a psql index for the given attribute"""
+
+        # Handle btrees too
+        if attribute["dtype"] == "string":
+            temp_attr = {**attribute}
+            temp_attr["dtype"] = "string_btree"
+            self.create_psql_index(entity_type, temp_attr, flush, concurrent)
+
+        if attribute["dtype"] == "native_string":
+            temp_attr = {**attribute}
+            temp_attr["dtype"] = "native_string_btree"
+            self.create_psql_index(entity_type, temp_attr, flush, concurrent)
+
+        if attribute["dtype"] == "upper_string":
+            temp_attr = {**attribute}
+            temp_attr["dtype"] = "upper_string_btree"
+            self.create_psql_index(entity_type, temp_attr, flush, concurrent)
+
         index_name = _get_unique_index_name(entity_type, attribute)
         if self.is_index_present(entity_type, attribute) and flush == False:
             logger.info(f"Index '{index_name}' already exists.")
@@ -593,6 +882,37 @@ class TatorSearch:
 
         for attribute in entity_type.attribute_types:
             self.create_psql_index(entity_type, attribute, flush=flush, concurrent=concurrent)
+
+    def create_section_index(self, project, flush=False, concurrent=True):
+        btree_index_name = f"tator_proj_{project.pk}_internalv2_path_btree"
+        gist_index_name = f"tator_proj_{project.pk}_internalv2_path_gist"
+        if self.is_index_present_by_name(btree_index_name) is False or flush is True:
+            push_job(
+                "db_jobs",
+                make_section_path_btree_index,
+                args=(
+                    connection.settings_dict["NAME"],
+                    project.pk,
+                    btree_index_name,
+                    flush,
+                    concurrent,
+                ),
+                result_ttl=0,
+            )
+
+        if self.is_index_present_by_name(gist_index_name) is False or flush is True:
+            push_job(
+                "db_jobs",
+                make_section_path_gist_index,
+                args=(
+                    connection.settings_dict["NAME"],
+                    project.pk,
+                    gist_index_name,
+                    flush,
+                    concurrent,
+                ),
+                result_ttl=0,
+            )
 
     def rename_alias(self, entity_type, old_name, new_name):
         """

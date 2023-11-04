@@ -372,36 +372,32 @@ class User(AbstractUser):
         )
 
 
-@receiver(post_save, sender=User)
-def user_save(sender, instance, created, **kwargs):
+def block_user_save_email(instance, method, *args, **kwargs):
     # Create random attribute name with static prefix for determining if this is the root trigger of
     # this signal
     attr_prefix = "_saving_"
     random_attr = f"{attr_prefix}{''.join(random.sample(string.ascii_lowercase, 16))}"
 
+    # Adds random attribute to suppress email from save during creation, then removes it
+    setattr(instance, random_attr, True)
+    getattr(instance, method)(*args, **kwargs)
+    delattr(instance, random_attr)
+
+
+@receiver(post_save, sender=User)
+def user_save(sender, instance, created, **kwargs):
     if os.getenv("COGNITO_ENABLED") == "TRUE":
         if created:
-            # Adds random attribute to suppress email from save during creation, then removes it
-            setattr(instance, random_attr, True)
-            instance.move_to_cognito()
-            delattr(instance, random_attr)
+            block_user_save_email(instance, "move_to_cognito")
         else:
             TatorCognito().update_attributes(instance)
     if created:
         if instance.username:
             instance.username = instance.username.strip()
-
-            # Adds random attribute to suppress email from save during creation, then removes it
-            setattr(instance, random_attr, True)
-            instance.save()
-            delattr(instance, random_attr)
+            block_user_save_email(instance, "save")
         if settings.SAML_ENABLED and not instance.email:
             instance.email = instance.username
-
-            # Adds random attribute to suppress email from save during creation, then removes it
-            setattr(instance, random_attr, True)
-            instance.save()
-            delattr(instance, random_attr)
+            block_user_save_email(instance, "save")
         invites = Invitation.objects.filter(email=instance.email, status="Pending")
         if (invites.count() == 0) and (os.getenv("AUTOCREATE_ORGANIZATIONS")):
             organization = Organization.objects.create(name=f"{instance}'s Team")
@@ -413,48 +409,52 @@ def user_pre_save(sender, instance, **kwargs):
     # Prefix for random attribute name to determine if this is the root trigger of this signal
     attr_prefix = "_saving_"
     user_desc = instance.get_description()
-    is_root = all(not attr.startswith(attr_prefix) for attr in dir(instance))
-    created = not instance.pk
-
-    if created:
-        msg = (
-            f"You are being notified that a new user {instance} (username {instance.username}, "
-            f"email {instance.email}) has been added to the Tator deployment with the following "
-            f"attributes:\n\n{user_desc}"
-        )
-        is_monitored = True
-    else:
-        msg = (
-            f"You are being notified that an existing user {instance} been modified with the "
-            f"following values:\n\n{user_desc}"
-        )
-
-        # Only send an email if this is the root `post_save` trigger, i.e. does not have a random
-        # attribute added to it, and is a modification of a monitored field.
-        original_instance = type(instance).objects.get(pk=instance.id)
-        monitored_fields = [
-            "username",
-            "first_name",
-            "last_name",
-            "email",
-            "is_staff",
-            "profile",
-            "password",
-        ]
-        is_monitored = any(
-            getattr(instance, fieldname, None) != getattr(original_instance, fieldname, None)
-            for fieldname in monitored_fields
-        )
-
-    if is_root and is_monitored:
-        logger.info(msg)
-        email_service = get_email_service()
-        if email_service:
-            email_service.email_staff(
-                sender=settings.TATOR_EMAIL_SENDER,
-                title=f"{'Created' if created else 'Modified'} user",
-                text=msg,
+    if all(not attr.startswith(attr_prefix) for attr in dir(instance)):
+        created = not instance.pk
+        if created:
+            msg = (
+                f"You are being notified that a new user {instance} (username {instance.username}, "
+                f"email {instance.email}) has been added to the Tator deployment with the "
+                f"following attributes:\n\n{user_desc}"
             )
+            is_monitored = True
+            password_modified = False
+        else:
+            msg = (
+                f"You are being notified that an existing user {instance} been modified with the "
+                f"following values:\n\n{user_desc}"
+            )
+
+            # Only send an email if this is the root `pre_save` trigger, i.e. does not have a random
+            # attribute added to it, and is a modification of a monitored field.
+            original_instance = type(instance).objects.get(pk=instance.id)
+            monitored_fields = [
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "is_staff",
+                "profile",
+                "password",
+            ]
+            password_modified = instance.password != original_instance.password
+            is_monitored = password_modified or any(
+                getattr(instance, fieldname, None) != getattr(original_instance, fieldname, None)
+                for fieldname in monitored_fields
+            )
+
+        if is_monitored:
+            if password_modified:
+                instance.failed_login_count = 0
+                block_user_save_email(instance, "save")
+            logger.info(msg)
+            email_service = get_email_service()
+            if email_service:
+                email_service.email_staff(
+                    sender=settings.TATOR_EMAIL_SENDER,
+                    title=f"{'Created' if created else 'Modified'} user",
+                    text=msg,
+                )
 
 
 @receiver(post_delete, sender=User)
@@ -794,6 +794,7 @@ def project_save(sender, instance, created, **kwargs):
     if created:
         make_default_version(instance)
         add_org_users(instance)
+        TatorSearch().create_section_index(instance)
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 
@@ -1409,7 +1410,7 @@ class Media(Model, ModelDiffMixin):
         :type keys: List[str]
         :rtype: Generator[Tuple[str, dict], None, None]
         """
-        whitelisted_keys = [
+        accepted_keys = [
             "archival",
             "streaming",
             "audio",
@@ -1424,7 +1425,7 @@ class Media(Model, ModelDiffMixin):
             keys = []
 
         for key in keys:
-            if key not in whitelisted_keys:
+            if key not in accepted_keys:
                 continue
             files = self.media_files.get(key, [])
             if files is None:
@@ -1710,8 +1711,8 @@ def file_save(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=File)
 def file_post_delete(sender, instance, **kwargs):
     # Delete the path reference
-    if not instance.path is None:
-        safe_delete(instance.path, instance.project.id)
+    if not (instance.path is None and getattr(instance.path, "name") is None):
+        safe_delete(instance.path.name, instance.project.id)
 
 
 class Localization(Model, ModelDiffMixin):
@@ -1946,6 +1947,10 @@ class Section(Model):
     name = CharField(max_length=128)
     """ Name of the section.
     """
+
+    path = PathField(null=True, blank=True)
+    """ Path of the section. Can only have A-Za-z0-9_- in the path name, versus any ASCII for name """
+
     lucene_search = CharField(max_length=1024, null=True, blank=True)
     """ Optional lucene query syntax search string.
     """
@@ -2218,6 +2223,8 @@ BUILT_IN_INDICES = {
         {"name": "$created_datetime", "dtype": "native"},
         {"name": "$modified_datetime", "dtype": "native"},
         {"name": "tator_user_sections", "dtype": "section"},
+        {"name": "tator_user_sections", "dtype": "section_btree"},
+        # {"name": "tator_user_sections", "dtype": "section_uuid_btree"}, # This doesn't work well, because we don't enforce uuids well enough, leaving in for growth
         {"name": "$restoration_requested", "dtype": "native"},
         {"name": "$archive_status_date", "dtype": "native"},
         {"name": "$archive_state", "dtype": "native_string"},

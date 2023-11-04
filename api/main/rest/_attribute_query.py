@@ -4,8 +4,9 @@ import logging
 from dateutil.parser import parse as dateutil_parse
 import pytz
 import re
+import uuid
 
-from django.db.models.functions import Cast, Coalesce
+from django.db.models.functions import Cast, Greatest
 from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
 from django.contrib.gis.db.models import (
     BigIntegerField,
@@ -14,7 +15,11 @@ from django.contrib.gis.db.models import (
     DateTimeField,
     FloatField,
     PointField,
+    TextField,
+    UUIDField,
 )
+from enumfields import EnumField
+
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
 from django.http import Http404
@@ -59,6 +64,18 @@ OPERATOR_SUFFIXES = {
 }
 
 
+def _sanitize(name):
+    return re.sub(r"[^a-zA-Z]", "_", name)
+
+
+def _look_for_section_uuid(media_qs, maybe_uuid_val):
+    media_qs = media_qs.annotate(
+        section_val=Cast(F("attributes__tator_user_sections"), TextField())
+    )
+    # Note: This escape is required because of database_qs usage
+    return media_qs.filter(section_val=f'"{maybe_uuid_val}"')
+
+
 def supplied_name_to_field(supplied_name):
     logger.info(f"SNAME={supplied_name}")
     if supplied_name.startswith("-"):
@@ -89,15 +106,16 @@ def _related_search(
             project=project, type=entity_type, deleted=False, variant_deleted=False
         )
         state_qs = get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
-        if state_qs.count():
+        if state_qs.exists():
             related_matches.append(state_qs)
     for entity_type in related_localization_types:
         local_qs = Localization.objects.filter(
             project=project, type=entity_type, deleted=False, variant_deleted=False
         )
         local_qs = get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
-        if local_qs.count():
+        if local_qs.exists():
             related_matches.append(local_qs)
+
     if related_matches:
         # Convert result matches to use Media model because related_matches might be States or Localizations
         # Note: 'media' becomes 'id' when this happens. The two columns are 'id','count' in this result.
@@ -105,56 +123,28 @@ def _related_search(
         # for any matching metadata.
         # Finally reselect all media in this concatenated set by id. Annotate the incident with the count from the previous record set, which is
         # now the sum of any hit across any metadata type.
+        orig_list = [*related_matches]
         related_match = related_matches.pop()
-        media_vals = related_match.values("media").annotate(count=Count("media"))
-        media_matches = (
-            qs.filter(pk__in=media_vals.values("media"))
-            .annotate(
-                count=Subquery(
-                    media_vals.filter(media=OuterRef("id")).order_by("-count")[:1].values("count")
-                )
-            )
-            .values("id", "count")
-        )
-        logger.info(
-            f"related matches interim count = {related_match[0]._meta.db_table} this={media_vals} total={media_matches}"
-        )
-        for r in related_matches:
-            this_vals = r.values("media").annotate(count=Count("media"))
-            this_run = (
-                qs.filter(
-                    Q(pk__in=this_vals.values("media")) | Q(pk__in=media_matches.values("id"))
-                )
-                .annotate(
-                    this_count=Coalesce(
-                        Subquery(
-                            this_vals.filter(media=OuterRef("id"))
-                            .order_by("-count")[:1]
-                            .values("count")
-                        ),
-                        0,
-                    ),
-                    last_count=Coalesce(
-                        Subquery(
-                            media_vals.filter(media=OuterRef("id"))
-                            .order_by("-count")[:1]
-                            .values("count")
-                        ),
-                        Value(0),
-                    ),
-                    count=F("this_count") + F("last_count"),
-                )
-                .values("id", "count")
-            )
-            media_matches = this_run
-            logger.info(
-                f"related matches interim count = {r[0]._meta.db_table} this={this_run} , total={media_matches}"
-            )
-        qs = (
-            qs.filter(pk__in=media_matches.values("id"))
-            .annotate(incident=Subquery(media_matches.filter(id=OuterRef("id")).values("count")))
-            .distinct()
-        )
+        # Pop and process the list
+        media_vals = related_match.values("media")
+        for related_match in related_matches:
+            this_vals = related_match.values("media")
+            media_vals = media_vals.union(this_vals)
+
+        # We now have all the matching media, but lost the score information
+        # going back to the original set, make a bunch of subqueries to calculate the
+        # greatest score for a particular media, if there were duplicates
+        # list comp didn't play nice here, but this is easier to read anyway
+        score = []
+        for x in orig_list:
+            annotated_x = x.values("media").annotate(count=Count("media"))
+            filtered_x = annotated_x.filter(media=OuterRef("id"))
+            values_x = filtered_x.values("count").order_by("-count")[:1]
+            score.append(Subquery(values_x))
+        if len(score) > 1:
+            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=Greatest(*score))
+        else:
+            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=score[0])
     else:
         qs = qs.filter(pk=-1).annotate(incident=Value(0))
     return qs
@@ -192,7 +182,7 @@ def _get_info_for_attribute(entity_type, key):
             retval = {"name": key[1:], "dtype": "int"}
         elif key in ["$created_datetime", "$modified_datetime"]:
             retval = {"name": key[1:], "dtype": "datetime"}
-        elif key in ["$name"]:
+        elif key in ["$name", "$elemental_id"]:
             retval = {"name": key[1:], "dtype": "string"}
     elif key == "tator_user_sections":
         retval = {"name": "tator_user_sections", "dtype": "string"}
@@ -241,7 +231,11 @@ def _convert_attribute_filter_value(pair, annotation_type, operation):
         value = dateutil_parse(value)
     elif dtype == "geopos":
         distance, lat, lon = value.split("::")
-        value = (Point(float(lon), float(lat), srid=4326), Distance(km=float(distance)), "spheroid")
+        value = (
+            Point(float(lon), float(lat), srid=4326),
+            Distance(km=float(distance)),
+            "spheroid",
+        )
         logger.info(f"{distance}, {lat},{lon}")
     return key, value, dtype
 
@@ -256,16 +250,18 @@ def get_attribute_filter_ops(params, data_type):
     return filter_ops
 
 
-def build_query_recursively(query_object, castLookup, is_media, project):
+def build_query_recursively(query_object, castLookup, is_media, project, all_casts):
     query = Q()
     if "method" in query_object:
         method = query_object["method"].lower()
-        sub_queries = [
-            build_query_recursively(x, castLookup, is_media, project)
-            for x in query_object["operations"]
-        ]
+        sub_queries = []
+        for x in query_object["operations"]:
+            query, casts = build_query_recursively(x, castLookup, is_media, project, all_casts)
+            sub_queries.append(query)
+            for cast in casts:
+                all_casts.add(cast)
         if len(sub_queries) == 0:
-            return Q()
+            return Q(), []
         if method == "not":
             if len(sub_queries) != 1:
                 raise (Exception("NOT operator can only be applied to one suboperation"))
@@ -295,7 +291,7 @@ def build_query_recursively(query_object, castLookup, is_media, project):
             media_qs = Media.objects.filter(project=project)
             section_uuid = section[0].tator_user_sections
             if section_uuid:
-                media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
+                media_qs = _look_for_section_uuid(media_qs, section_uuid)
 
             if section[0].object_search:
                 media_qs = get_attribute_psql_queryset_from_query_obj(
@@ -310,17 +306,18 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                     relevant_localization_type_ids,
                     section[0].related_object_search,
                 )
-            if media_qs.count() == 0:
+            if media_qs.exists() == False:
                 query = Q(pk=-1)
             elif is_media:
                 query = Q(pk__in=media_qs)
             else:
                 query = Q(media__in=media_qs)
+            all_casts.add("tator_user_sections")
         else:
             if attr_name.startswith("$"):
                 db_lookup = attr_name[1:]
             else:
-                db_lookup = f"attributes__{attr_name}"
+                db_lookup = f"casted_{_sanitize(attr_name)}"
             if operation.startswith("date_"):
                 # python is more forgiving then SQL so convert any partial dates to
                 # full-up ISO8601 datetime strings WITH TIMEZONE.
@@ -343,25 +340,36 @@ def build_query_recursively(query_object, castLookup, is_media, project):
                 )
 
             castFunc = castLookup.get(attr_name, None)
+            # NOTE: For string functions avoid the '"' work around due to the django
+            # string handling bug
+            # only apply if cast func is active
+            if castFunc and operation in ["icontains", "iendswith", "istartswith"]:
+                castFunc = lambda x: x
+                # Don't use casts for these operations either
+                if attr_name.startswith("$") == False:
+                    db_lookup = f"attributes__{attr_name}"
             if operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
                 value = castFunc(value)
             else:
-                return Q(pk=-1)
+                return Q(pk=-1), []
             if operation in ["date_eq", "eq"]:
                 query = Q(**{f"{db_lookup}": value})
             else:
                 query = Q(**{f"{db_lookup}__{operation}": value})
 
+            # If we actually use the entity, add it to casts.
+            if attr_name.startswith("$") is False:
+                all_casts.add(attr_name)
         if inverse:
             query = ~query
 
-    return query
+    return query, all_casts
 
 
 def get_attribute_psql_queryset_from_query_obj(qs, query_object):
-    if qs.count() == 0:
+    if qs.exists() == False:
         return qs.filter(pk=-1)
 
     is_media = False
@@ -375,24 +383,32 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         Leaf: LeafType,
         File: FileType,
     }
+    # NOTE: Usage of database_qs requires escaping string values manually
+    # Else lookups will result in misses.
     castLookup = {
         "bool": _convert_boolean,
         "int": int,
         "float": float,
-        "enum": str,
-        "string": str,
+        "enum": lambda x: f'"{x}"',
+        "string": lambda x: f'"{x}"',
         "datetime": str,
         "geopos": lambda x: x,
         "float_array": None,
     }
+
     attributeCast = {}
+    annotateField = {}
     typeModel = typeLookup[type(qs[0])]
-    typeObjects = qs.values("type").distinct()
-    for typeObjectPk in typeObjects:
-        typeObject = typeModel.objects.get(pk=typeObjectPk["type"])
+    typeObjects = typeModel.objects.filter(project=qs[0].project)
+    for typeObject in typeObjects:
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType["name"]] = castLookup[attributeType["dtype"]]
-    attributeCast["tator_user_sections"] = str
+            annotateField[attributeType["name"]], _ = _get_field_for_attribute(
+                typeObject, attributeType["name"]
+            )
+
+    annotateField["tator_user_sections"] = TextField
+    attributeCast["tator_user_sections"] = lambda x: f'"{x}"'
     for key in ["$x", "$y", "$u", "$v", "$width", "$height", "$fps"]:
         attributeCast[key] = float
     for key in [
@@ -407,10 +423,48 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         "$id",
     ]:
         attributeCast[key] = int
-    for key in ["$created_datetime", "$modified_datetime", "$name", "$archive_state"]:
+    for key in [
+        "$created_datetime",
+        "$modified_datetime",
+        "$name",
+        "$archive_state",
+        "$elemental_id",
+    ]:
         attributeCast[key] = str
 
-    q_object = build_query_recursively(query_object, attributeCast, is_media, qs[0].project)
+    q_object, required_annotations = build_query_recursively(
+        query_object, attributeCast, is_media, qs[0].project, set()
+    )
+
+    logger.info(f"Q_Object = {q_object}")
+    logger.info(f"Query requires the following annotations: {required_annotations}")
+    for annotation in required_annotations:
+        logger.info(f"\t {annotation} to {annotateField[annotation]()}")
+        if annotateField[annotation] == DateTimeField:
+            # Cast DateTime to text first
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}_text": Cast(
+                        F(f"attributes__{annotation}"), TextField()
+                    )
+                }
+            )
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}": Cast(
+                        F(f"casted_{_sanitize(annotation)}_text"),
+                        annotateField[annotation](),
+                    )
+                }
+            )
+        else:
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}": Cast(
+                        F(f"attributes__{annotation}"), annotateField[annotation]()
+                    )
+                }
+            )
     return qs.filter(q_object)
 
 
@@ -461,8 +515,18 @@ def get_attribute_psql_queryset(entity_type, qs, params, filter_ops):
                         **{f"{alias_key}_typed": Cast(f"{alias_key}_text", DateTimeField())}
                     )
                     qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
-                elif field_type == CharField:
-                    qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
+                elif field_type == CharField or field_type == EnumField:
+                    qs = qs.annotate(
+                        **{f"{alias_key}_typed": Cast(f"attributes__{key}", field_type())}
+                    )
+                    if OPERATOR_SUFFIXES[op]:
+                        qs = qs.filter(**{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                    else:
+                        # BUG: database_qs mangles the SQL and requires this workaround:
+                        # This is only on equal for some reason.
+                        qs = qs.filter(
+                            **{f"{alias_key}_typed{OPERATOR_SUFFIXES[op]}": f'"{value}"'}
+                        )
                 else:
                     qs = qs.annotate(
                         **{f"{alias_key}_typed": Cast(f"attributes__{key}", field_type())}

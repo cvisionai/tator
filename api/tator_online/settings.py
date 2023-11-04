@@ -10,9 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
-import json
 import os
-import socket
 from django.contrib.messages import constants as messages
 import yaml
 
@@ -35,6 +33,8 @@ if ALIAS_HOSTS:
 
 # Whether keycloak is being used for authentication
 KEYCLOAK_ENABLED = os.getenv("KEYCLOAK_ENABLED") == "TRUE"
+
+STATSD_ENABLED = os.getenv("STATSD_ENABLED", "TRUE") == "TRUE"
 
 # Application definition
 
@@ -78,6 +78,7 @@ MIDDLEWARE = (
         "django.middleware.security.SecurityMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
         "django.middleware.common.CommonMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
     ]
     + (
         [
@@ -86,12 +87,16 @@ MIDDLEWARE = (
         if KEYCLOAK_ENABLED
         else [
             "django.middleware.csrf.CsrfViewMiddleware",
-            "django.contrib.auth.middleware.AuthenticationMiddleware",
         ]
     )
+    + (
+        [
+            "tator_online.StatsdMiddleware",
+        ]
+        if STATSD_ENABLED
+        else []
+    )
     + [
-        "tator_online.StatsdMiddleware",
-        "tator_online.AuditMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
     ]

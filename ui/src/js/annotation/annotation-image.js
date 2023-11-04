@@ -162,6 +162,13 @@ export class AnnotationImage extends TatorElement {
   updateAllLocalizations() {
     this._image.updateAllLocalizations();
   }
+
+  /**
+   * Place holder for annotation-page.js. The current frame is generally assumed to be 0.
+   */
+  goToFrame(frame) {
+    return;
+  }
 }
 
 if (!customElements.get("annotation-image")) {

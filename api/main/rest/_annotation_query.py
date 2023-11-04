@@ -20,6 +20,7 @@ from ._attribute_query import (
     get_attribute_psql_queryset,
     get_attribute_psql_queryset_from_query_obj,
     supplied_name_to_field,
+    _look_for_section_uuid,
 )
 
 logger = logging.getLogger(__name__)
@@ -154,7 +155,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             related_object_search = section.related_object_search
             media_qs = Media.objects.filter(project=project, type=media_type_id)
             if section_uuid:
-                media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
+                media_qs = _look_for_section_uuid(media_qs, section_uuid)
             if object_search:
                 media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, object_search)
             if related_object_search:
@@ -198,7 +199,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 query = query | Q(media__in=r)
             qs = qs.filter(query).distinct()
 
-    qs = _do_object_search(qs, params)
     if params.get("encoded_related_search"):
         search_obj = json.loads(
             base64.b64decode(params.get("encoded_related_search").encode()).decode()
@@ -208,7 +208,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         for entity_type in related_media_types:
             media_qs = Media.objects.filter(project=project, type=entity_type)
             media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
-            if media_qs.count():
+            if media_qs.exists():
                 related_matches.append(media_qs)
         if related_matches:
             related_match = related_matches.pop()
@@ -251,8 +251,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs[:stop]
 
     # Useful for profiling / checking out query complexity
-    logger.info(qs.query)
-    logger.info(qs.explain())
+    logger.info(f"QUERY={qs.query}")
+    logger.info(f"EXPLAIN={qs.explain()}")
 
     return qs
 

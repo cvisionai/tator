@@ -60,7 +60,7 @@ export class NavMain extends TatorElement {
       const idToken = localStorage.getItem("id_token");
       logout.setAttribute(
         "href",
-        `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=${window.location.origin}/accounts/login`
+        `/accounts/logout?id_token_hint=${idToken}&post_logout_redirect_uri=${window.location.origin}`
       );
       logout.addEventListener("click", (evt) => {
         localStorage.removeItem("access_token");

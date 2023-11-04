@@ -1,4 +1,4 @@
-FROM cvisionai/svt_encoder:v0.0.10 AS cvtranscoder
+FROM cvisionai/svt_encoder:v0.0.11 AS cvtranscoder
 MAINTAINER CVision AI <info@cvisionai.com>
 
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip \
         python3-setuptools git vim curl unzip wget \
-        fastjar libsm6 libxext6 libxrender1 libx265-179 libx264-155 \
+        fastjar libsm6 libxext6 libxrender1 libx265-199 libx264-163 \
         libpng16-16 libfreetype6 python3-opencv \
         && rm -rf /var/lib/apt/lists
 
@@ -20,13 +20,15 @@ RUN ldconfig
 
 # Install pip packages
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
-RUN pip3 --no-cache-dir --timeout=1000 install pillow==9.5.0 imageio==2.14.0 progressbar2==4.0.0 boto3==1.20.41 pandas==1.4.0 rq==1.11.1
+COPY containers/tator_client/requirements.txt requirements.txt
+RUN pip3 --no-cache-dir --timeout=1000 install -r requirements.txt
+RUN rm requirements.txt
 
 # Copy over scripts
 COPY scripts/transcoder /scripts
 COPY scripts/packages/tator-py/dist/*.whl /tmp
 
-# Build tator-py
+# Install tator-py
 RUN pip3 install /tmp/*.whl
 
 WORKDIR /scripts

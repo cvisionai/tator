@@ -512,12 +512,7 @@ const store = create(
                 projectList = [...new Set(projectList)];
                 usernameProjectIdMap.set(item.username, projectList);
 
-                //
-                console.log(
-                  `${
-                    item.user
-                  } ${typeof item.user} === ${currentUserId} ${typeof currentUserId} `
-                );
+                /* */
                 if (
                   item.user === currentUserId &&
                   item.permission === "Full Control"
@@ -529,11 +524,6 @@ const store = create(
               console.error("Object response not ok for fetchType", object);
             }
           }
-
-          console.log(
-            "membershipsByProject is set to currentUserMap",
-            currentUserMap
-          );
 
           set({
             Membership: {
@@ -581,8 +571,7 @@ const store = create(
           }
         }
       },
-
-      addType: async ({ type, data }) => {
+      addTypeSingle: async ({ type, data }) => {
         set({
           status: {
             ...get().status,
@@ -590,23 +579,57 @@ const store = create(
             msg: `Adding ${type}...`,
           },
         });
+        const responseInfo = await get().addType({ type, data });
+
+        // Refresh all the data
+        await get().fetchTypeByOrg(type);
+
+        // Select the new type
+        let newID = responseInfo.data.id ? responseInfo.data.id : "New";
+        window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
+
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+
+        // Refresh the page data before setting the selection
+        return responseInfo;
+      },
+      addTypeArray: async ({ type, data }) => {
+        set({
+          status: {
+            ...get().status,
+            name: "pending",
+            msg: `Adding multiple ${type}...`,
+          },
+        });
+
+        let responseInfo = null;
+        const responses = [];
+        for await (let d of data) {
+          responseInfo = await get().addType({ type, data: d });
+          responses.push(responseInfo);
+        }
+
+        // Refresh all the data
+        await get().fetchTypeByOrg(type);
+
+        // Select the LAST new type
+        //Response should have the newly added ID
+
+        if (responseInfo?.data?.id) {
+          const newID = responseInfo?.data?.id ? responseInfo.data.id : "New";
+          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
+        }
+
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+
+        // Refresh the page data before setting the selection
+        return responses;
+      },
+      addType: async ({ type, data }) => {
         try {
           const fn = postMap.get(type);
           const organizationId = get().organizationId;
-          const responseInfo = await fn(organizationId, data);
-
-          // Refresh the page data before setting the selection
-          await get().fetchTypeByOrg(type);
-
-          // Select the new type
-          //Response should have the newly added ID
-          let newID = responseInfo.data.id ? responseInfo.data.id : "New";
-          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
-
-          set({ status: { ...get().status, name: "idle", msg: "" } });
-
-          // This includes the reponse so error handling can happen in ui
-          return responseInfo;
+          return await fn(organizationId, data);
         } catch (err) {
           set({ status: { ...get().status, name: "idle", msg: "" } });
           return err;
@@ -663,14 +686,12 @@ const store = create(
           const type = "Invitation";
           const fn = deleteMap.get(type);
           const object = await fn(inviteSpec.id);
-          console.log("Result deleting" + inviteSpec.id, object);
 
           const createFn = postMap.get(type);
           const objectCreate = await createFn(get().organizationId, {
             email: inviteSpec.email,
             permission: inviteSpec.permission,
           });
-          console.log("Result adding a new with the same spec", objectCreate);
 
           get().setSelection({
             typeName: "Invitation",
@@ -688,7 +709,6 @@ const store = create(
       },
       getProjectByUsername: async (username) => {
         const info = await get().initType("Project");
-        console.log("Project info....", info);
         const userProjects = info.userMap.has(username)
           ? info.userMap.has(username)
           : [];
@@ -700,7 +720,6 @@ const store = create(
         newVersion = false,
         newVersionName = "",
       }) => {
-        console.log("addMembership to projectId " + projectId);
         set({
           status: {
             ...get().status,
@@ -709,19 +728,15 @@ const store = create(
           },
         });
         try {
-          console.log(
-            `newVersion ${newVersion} newVersionName ${newVersionName}`
-          );
           if (newVersion) {
             const info = await api.createVersionWithHttpInfo(projectId, {
               name: newVersionName,
             });
             if (info.response.ok) {
-              const newVersionId = info.data.id;
+              const newVersionId = info.data?.id ? info.data.id : null;
               formData.default_version = newVersionId;
             }
           }
-          console.log("Creating membership with formdata", formData);
 
           const info = await api.createMembershipWithHttpInfo(
             projectId,
@@ -729,7 +744,6 @@ const store = create(
           );
 
           await get().fetchMemberships();
-          console.log("Returning ", info);
           return info;
         } catch (err) {
           set({ status: { ...get().status, name: "idle", msg: "" } });
@@ -737,7 +751,6 @@ const store = create(
         }
       },
       updateMembership: async ({ membershipId, formData }) => {
-        console.log("updateMembership, membershipId: " + membershipId);
         set({
           status: {
             ...get().status,
@@ -832,7 +845,6 @@ const loopMap = ({ map, skip, check, type }) => {
   ];
 
   for (let [id, item] of map) {
-    console.log(`Is this id in skip? id ${id} ${!skip.includes(id)}`, skip);
     if (typeof item !== "undefined" && id !== skip && !skip.includes(id)) {
       newList.push({
         id: id,
