@@ -318,7 +318,6 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 db_lookup = attr_name[1:]
             else:
                 db_lookup = f"casted_{_sanitize(attr_name)}"
-                all_casts.add(attr_name)
             if operation.startswith("date_"):
                 # python is more forgiving then SQL so convert any partial dates to
                 # full-up ISO8601 datetime strings WITH TIMEZONE.
@@ -341,6 +340,14 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 )
 
             castFunc = castLookup.get(attr_name, None)
+            # NOTE: For string functions avoid the '"' work around due to the django
+            # string handling bug
+            # only apply if cast func is active
+            if castFunc and operation in ["icontains", "iendswith", "istartswith"]:
+                castFunc = lambda x: x
+                # Don't use casts for these operations either
+                if attr_name.startswith("$") == False:
+                    db_lookup = f"attributes__{attr_name}"
             if operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
@@ -352,6 +359,9 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             else:
                 query = Q(**{f"{db_lookup}__{operation}": value})
 
+            # If we actually use the entity, add it to casts.
+            if attr_name.startswith("$") is False:
+                all_casts.add(attr_name)
         if inverse:
             query = ~query
 
@@ -430,13 +440,31 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     logger.info(f"Query requires the following annotations: {required_annotations}")
     for annotation in required_annotations:
         logger.info(f"\t {annotation} to {annotateField[annotation]()}")
-        qs = qs.annotate(
-            **{
-                f"casted_{_sanitize(annotation)}": Cast(
-                    F(f"attributes__{annotation}"), annotateField[annotation]()
-                )
-            }
-        )
+        if annotateField[annotation] == DateTimeField:
+            # Cast DateTime to text first
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}_text": Cast(
+                        F(f"attributes__{annotation}"), TextField()
+                    )
+                }
+            )
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}": Cast(
+                        F(f"casted_{_sanitize(annotation)}_text"),
+                        annotateField[annotation](),
+                    )
+                }
+            )
+        else:
+            qs = qs.annotate(
+                **{
+                    f"casted_{_sanitize(annotation)}": Cast(
+                        F(f"attributes__{annotation}"), annotateField[annotation]()
+                    )
+                }
+            )
     return qs.filter(q_object)
 
 

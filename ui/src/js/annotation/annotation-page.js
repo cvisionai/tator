@@ -1074,6 +1074,8 @@ export class AnnotationPage extends TatorPage {
               memberships
             );
             this._data.addEventListener("freshData", (evt) => {
+              this._browser.updateData(evt);
+
               if (this._newEntityId) {
                 for (const elem of evt.detail.data) {
                   if (elem.id == this._newEntityId) {
@@ -2135,6 +2137,12 @@ export class AnnotationPage extends TatorPage {
       save.classList.remove("is-open");
       this.removeAttribute("has-open-modal");
       document.body.classList.remove("shortcuts-disabled");
+
+      if (this._mediaType.dtype == "multi") {
+        for (const video of this._player._videos) {
+          video.style.zIndex = "unset";
+        }
+      }
     }
   }
 
@@ -2147,6 +2155,12 @@ export class AnnotationPage extends TatorPage {
     save.classList.add("is-open");
     this.setAttribute("has-open-modal", "");
     document.body.classList.add("shortcuts-disabled");
+
+    if (this._mediaType.dtype == "multi") {
+      for (const video of this._player._videos) {
+        video.style.zIndex = 2;
+      }
+    }
   }
 
   _updateURL() {

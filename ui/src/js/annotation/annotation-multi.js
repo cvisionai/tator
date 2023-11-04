@@ -1469,6 +1469,7 @@ export class AnnotationMulti extends TatorElement {
           this._primaryVideoIndex = this._longest_idx;
           for (let idx = 0; idx < video_info.length; idx++) {
             setup_video(idx, info[idx]);
+            this._videos[idx].style.zIndex = "unset";
             if (this._frameOffsets[idx] != 0) {
               const searchParams = new URLSearchParams(window.location.search);
               let frameInit = 0;
