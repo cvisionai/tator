@@ -4,6 +4,7 @@ import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/util
 import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
+import { downloadFileList } from "../util/download-file-list.js";
 import streamSaver from "../util/StreamSaver.js";
 
 export class MediaSection extends TatorElement {
@@ -356,73 +357,62 @@ export class MediaSection extends TatorElement {
           }
         }
 
-        const batchSize = numImages > numVideos ? 20 : 2;
         const filenames = new Set();
         const re = /(?:\.([^.]+))?$/;
-        const fileStream = streamSaver.createWriteStream(
-          this._sectionName + ".zip"
-        );
-        const readableZipStream = new ZIP({
-          async pull(ctrl) {
-            let url = `${getUrl("Medias")}&stop=${batchSize}&presigned=28800`;
-            if (lastId != null) {
-              url += "&after=" + encodeURIComponent(lastId);
-            }
-            await fetchCredentials(url, {}, true)
-              .then((response) => response.json())
-              .then(async (medias) => {
-                if (medias.length == 0) {
-                  ctrl.close();
-                }
-                for (const media of medias) {
-                  lastId = media.id;
-                  const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
-                  const ext = re.exec(media.name)[0];
-                  let basename = basenameOrig;
-                  let vers = 1;
-                  while (filenames.has(basename)) {
-                    basename = basenameOrig + " (" + vers + ")";
-                    vers++;
-                  }
-                  filenames.add(basename);
+        let url = `${getUrl("Medias")}&presigned=28800`;
+        await fetchCredentials(url, {}, true)
+          .then((response) => response.json())
+          .then(async (medias) => {
+            const names = [];
+            const urls = [];
+            const dialog = document.createElement("download-dialog");
+            const page = document.getElementsByTagName("project-detail")[0];
+            page._projects.appendChild(dialog);
+            dialog.setAttribute("is-open", "");
+            page.setAttribute("has-open-modal", "");
+            dialog.addEventListener("close", (evt) => {
+              page.removeAttribute("has-open-modal", "");
+              page._projects.removeChild(dialog);
+            });
+            dialog._setTotalFiles(medias.length);
+            const callback = (numDone, name) => {
+              dialog._setFilesCompleted(numDone);
+              dialog._setFilename(name);
+            };
+            let cancel = false;
+            dialog.addEventListener("cancel", () => {
+              cancel = true;
+              page.removeAttribute("has-open-modal", "");
+              page._projects.removeChild(dialog);
+            });
+            const abort = () => {
+              return cancel;
+            };
+            for (const media of medias) {
+              lastId = media.id;
+              const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
+              const ext = re.exec(media.name)[0];
+              let basename = basenameOrig;
+              let vers = 1;
+              while (filenames.has(basename)) {
+                basename = basenameOrig + " (" + vers + ")";
+                vers++;
+              }
+              filenames.add(basename);
 
-                  const request = Utilities.getDownloadInfo(media)["request"];
-                  if (request !== null) {
-                    // Media objects with no downloadable files will return null.
-                    // Download media file.
-                    console.log(
-                      "Downloading " +
-                        media.name +
-                        " from " +
-                        request.url +
-                        "..."
-                    );
-                    await fetchRetry(request).then((response) => {
-                      const stream = () => response.body;
-                      const name = basename + ext;
-                      ctrl.enqueue({ name, stream });
-                    });
-                  }
-                }
-              });
-          },
-        });
-        if (window.WritableStream && readableZipStream.pipeTo) {
-          readableZipStream
-            .pipeTo(fileStream)
-            .then(() => console.log("done writing"));
-        } else {
-          const writer = fileStream.getWriter();
-          const reader = readableZipStream.getReader();
-          const pump = () =>
-            reader
-              .read()
-              .then((res) =>
-                res.done ? writer.close() : writer.write(res.value).then(pump)
-              )
-              .then(() => console.log("done writing"));
-          pump();
-        }
+              const request = Utilities.getDownloadInfo(media)["request"];
+              if (request !== null) {
+                // Media objects with no downloadable files will return null.
+                names.push(basename + ext);
+                urls.push(request.url);
+              } else {
+                dialog._addError(
+                  `Could not find download URL for media ${media.name} (ID ${media.id}), skipping...`
+                );
+              }
+            }
+            downloadFileList(names, urls, callback, abort);
+          });
       });
   }
 
