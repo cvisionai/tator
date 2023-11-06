@@ -393,7 +393,7 @@ export class MediaSection extends TatorElement {
             });
             const abort = () => {
               return cancel;
-            }
+            };
             for (const media of medias) {
               lastId = media.id;
               const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
@@ -412,7 +412,9 @@ export class MediaSection extends TatorElement {
                 names.push(basename + ext);
                 urls.push(request.url);
               } else {
-                dialog._addError(`Could not find download URL for media ${media.name} (ID ${media.id}), skipping...`);
+                dialog._addError(
+                  `Could not find download URL for media ${media.name} (ID ${media.id}), skipping...`
+                );
               }
             }
             downloadFileList(names, urls, callback, abort);

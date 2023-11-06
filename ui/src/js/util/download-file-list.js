@@ -6,7 +6,7 @@ async function downloadFile(name, url, index, existing, dirHandle) {
     msg = `Downloading file ${name}...\n`;
     const response = await fetch(url);
     const data = await response.blob();
-    const fileHandle = await dirHandle.getFileHandle(name, {create: true});
+    const fileHandle = await dirHandle.getFileHandle(name, { create: true });
     const writableStream = await fileHandle.createWritable();
     await writableStream.write(data);
     await writableStream.close();
@@ -15,7 +15,10 @@ async function downloadFile(name, url, index, existing, dirHandle) {
 }
 
 export async function downloadFileList(names, urls, callback, abort) {
-  const dirHandle = await window.showDirectoryPicker({mode: "readwrite", startIn: "downloads"});
+  const dirHandle = await window.showDirectoryPicker({
+    mode: "readwrite",
+    startIn: "downloads",
+  });
   if (dirHandle) {
     const existing = new Set();
     for await (const entry of dirHandle.values()) {
@@ -38,4 +41,3 @@ export async function downloadFileList(names, urls, callback, abort) {
     }
   }
 }
-
