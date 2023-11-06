@@ -365,6 +365,29 @@ export class MediaSection extends TatorElement {
           .then(async (medias) => {
             const names = [];
             const urls = [];
+            const dialog = document.createElement("download-dialog");
+            const page = document.getElementsByTagName("project-detail")[0];
+            page._projects.appendChild(dialog);
+            dialog.setAttribute("is-open", "");
+            page.setAttribute("has-open-modal", "");
+            dialog.addEventListener("close", (evt) => {
+              page.removeAttribute("has-open-modal", "");
+              page._projects.removeChild(dialog);
+            });
+            dialog._setTotalFiles(medias.length);
+            const callback = (numDone, name) => {
+              dialog._setFilesCompleted(numDone);
+              dialog._setFilename(name);
+            };
+            let cancel = false;
+            dialog.addEventListener("cancel", () => {
+              cancel = true;
+              page.removeAttribute("has-open-modal", "");
+              page._projects.removeChild(dialog);
+            });
+            const abort = () => {
+              return cancel;
+            }
             for (const media of medias) {
               lastId = media.id;
               const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
@@ -382,9 +405,11 @@ export class MediaSection extends TatorElement {
                 // Media objects with no downloadable files will return null.
                 names.push(basename + ext);
                 urls.push(request.url);
+              } else {
+                dialog._addError(`Could not find download URL for media ${media.name} (ID ${media.id}), skipping...`);
               }
             }
-            downloadFileList(names, urls);
+            downloadFileList(names, urls, callback, abort);
           });
       });
   }
