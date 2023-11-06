@@ -151,8 +151,7 @@ export class DownloadDialog extends ModalDialog {
       this._cancelButton.style.display = "none";
       this._close.style.display = "flex";
       if (this._failFiles == 0) {
-        this._downloadText.textContent =
-          'Download complete!';
+        this._downloadText.textContent = "Download complete!";
         this._title.nodeValue = "Download Complete!";
       } else {
         this._downloadText.textContent = "Download failure! See errors below.";
