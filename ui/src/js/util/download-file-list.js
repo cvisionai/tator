@@ -14,7 +14,7 @@ async function downloadFile(name, url, index, existing, dirHandle) {
   return msg;
 }
 
-export async function downloadFileList(names, urls, callback) {
+export async function downloadFileList(names, urls, callback, abort) {
   const dirHandle = await window.showDirectoryPicker({mode: "readwrite", startIn: "downloads"});
   if (dirHandle) {
     const existing = new Set();
@@ -24,10 +24,17 @@ export async function downloadFileList(names, urls, callback) {
       }
     }
     for (let i = 0; i < urls.length; i++) {
-      const msg = await downloadFile(names[i], urls[i], i, existing, dirHandle);
       if (typeof callback !== "undefined") {
-        callback(i, msg);
+        callback(i, names[i]);
       }
+      const msg = await downloadFile(names[i], urls[i], i, existing, dirHandle);
+      console.log(msg);
+      if (abort()) {
+        return;
+      }
+    }
+    if (typeof callback !== "undefined") {
+      callback(urls.length, null);
     }
   }
 }
