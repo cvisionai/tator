@@ -366,7 +366,7 @@ export class MediaSection extends TatorElement {
         const filenames = new Set();
         const re = /(?:\.([^.]+))?$/;
         let url = `${getUrl("Medias")}&presigned=28800`;
-        await fetchCredentials(url, {}, true)
+        await fetchRetry(url)
           .then((response) => response.json())
           .then(async (medias) => {
             const names = [];
