@@ -285,12 +285,10 @@ class TatorAlgorithm(JobManagerMixin):
             api_client = ApiClient(conf)
             self.corev1 = CoreV1Api(api_client)
             self.custom = CustomObjectsApi(api_client)
-            self.host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         else:
             load_incluster_config()
             self.corev1 = CoreV1Api()
             self.custom = CustomObjectsApi()
-            self.host = "http://gunicorn-svc:8000"
 
         # Read in the manifest.
         if alg.manifest:
@@ -350,11 +348,11 @@ class TatorAlgorithm(JobManagerMixin):
                 },
                 {
                     "name": "host",
-                    "value": self.host,
+                    "value": f'{PROTO}{os.getenv("MAIN_HOST")}',
                 },
                 {
                     "name": "rest_url",
-                    "value": f"{self.host}/rest",
+                    "value": f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
                 },
                 {
                     "name": "rest_token",
@@ -362,7 +360,7 @@ class TatorAlgorithm(JobManagerMixin):
                 },
                 {
                     "name": "tus_url",
-                    "value": f"{self.host}/files/",
+                    "value": f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
                 },
                 {
                     "name": "project_id",
@@ -439,7 +437,7 @@ class TatorAlgorithm(JobManagerMixin):
                                 f"Authorization: Token {token}",
                                 "-d",
                                 json.dumps(success_email_spec),
-                                f"{self.host}/rest/Email/{project}",
+                                f'{PROTO}{os.getenv("MAIN_HOST")}/rest/Email/{project}',
                             ],
                         },
                     }
@@ -467,7 +465,7 @@ class TatorAlgorithm(JobManagerMixin):
                                 f"Authorization: Token {token}",
                                 "-d",
                                 json.dumps(failure_email_spec),
-                                f"{self.host}/rest/Email/{project}",
+                                f'{PROTO}{os.getenv("MAIN_HOST")}/rest/Email/{project}',
                             ],
                         },
                     }
