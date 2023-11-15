@@ -26,9 +26,14 @@
         ],
         layout: "BaseLayout",
         requestInterceptor: (request) => {
+          const accessToken = localStorage.access_token;
+          if (typeof accessToken !== "undefined") {
+              request.headers['Authorization'] = `Bearer ${accessToken}`;
+          }
           request.headers['X-CSRFToken'] = getCookie('csrftoken');
           return request;
-        }
+        },
+        withCredentials: true,
       })
     </script>
   </body>
