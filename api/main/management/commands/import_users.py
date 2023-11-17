@@ -3,10 +3,12 @@ import logging
 import csv
 
 from django.core.management.base import BaseCommand
+from django.utils.crypto import get_random_string
 from main.models import User
 from main.models import Affiliation
 from main.models import Membership
 from main.models import Organization
+from main.models import Project
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,8 @@ def _get_name(row):
         parts = name.split(' ', 1)
         first_name = parts[0]
         last_name = parts[1] if len(parts) > 1 else ""
+    first_name = first_name.strip()
+    last_name = last_name.strip()
     return (first_name, last_name)
 
 def _get_username(row, first_name, last_name):
@@ -85,6 +89,74 @@ def _find_memberships(options, existing, new):
         num_new = total_users * len(projects) - len(existing_memberships)
     return existing_memberships, num_new
 
+def _create_users(new):
+    created = User.objects.bulk_create(new)
+    print(f"Created {len(created)} new users!")
+    return list(created)
+
+def _set_passwords(options, created):
+    static_password = options.get("password")
+    password_length = 12
+    characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    user_passwords = {}
+    for user in created:
+        if static_password is None:
+            random_password = get_random_string(length=password_length, allowed_chars=characters)
+            user.set_password(random_password)
+            user.save()
+            user_passwords[user.username] = random_password
+        else:
+            user.set_password(static_password)
+            user.save()
+    if static_password is None and len(user_passwords) > 0:
+        print(f"New passwords:")
+        print(f"username, password")
+        for username in user_passwords:
+            print(f"{username}, {user_passwords[username]}")
+
+def _create_affiliations(options, existing, num_new, users):
+    existing_lookup = {(aff.user.id, aff.organization.id) for aff in existing}
+    organization = Organization.objects.get(pk=options["organization"])
+    new = []
+    for user in users:
+        if (user.id, organization.id) in existing_lookup:
+            continue
+        obj = Affiliation(
+            organization=organization,
+            user=user,
+            permission="Member",
+        )
+        new.append(obj)
+    if len(new) != num_new:
+        raise ValueError(f"Incorrect number of affiliations to be created (got {len(new)}, expected {num_new}!")
+    created = Affiliation.objects.bulk_create(new)
+    print(f"Created {len(created)} new affiliations!")
+    return list(created)
+
+def _create_memberships(options, existing, num_new, users):
+    existing_lookup = {(mem.user.id, mem.project.id) for mem in existing}
+    project_ids = options.get("projects")
+    if project_ids is None:
+        return []
+    projects = Project.objects.filter(pk__in=project_ids)
+    permission = options.get('project_permission', 'r')
+    new = []
+    for user in users:
+        for project in projects:
+            if (user.id, project.id) in existing_lookup:
+                continue
+            obj = Membership(
+                project=project,
+                user=user,
+                permission=permission,
+            )
+            new.append(obj)
+    if len(new) != num_new:
+        raise ValueError(f"Incorrect number of memberships to be created (got {len(new)}, expected {num_new}!")
+    created = Membership.objects.bulk_create(new)
+    print(f"Created {len(created)} new memberships!")
+    return list(created)
+
 class Command(BaseCommand):
     help = (
         "Create users from a CSV, optionally adding them to organizations or projects."
@@ -128,6 +200,9 @@ class Command(BaseCommand):
         print(f"Create {num_memberships} new memberships ({len(existing_memberships)} already exist)")
         proceed = input("Continue? [y/N]: ")
         if proceed.lower().strip() == 'y':
-            pass
+            created = _create_users(new)
+            _set_passwords(options, created)
+            users = list(existing.values()) + created
+            created = _create_affiliations(options, existing_affiliations, num_affiliations, users)
+            created = _create_memberships(options, existing_memberships, num_memberships, users)
 
-        
