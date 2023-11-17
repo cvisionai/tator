@@ -35,13 +35,13 @@ def _get_name(row):
 def _get_username(row, first_name, last_name):
     username = _get(row, "username")
     if username is None:
-        username = first_name            
+        username = first_name.lower()
         if User.objects.filter(username=username).exists():
-            username = first_name[0] + last_name
+            username = first_name[0].lower() + last_name.lower()
             increment = None
             while True:
                 inc_str = "" if increment is None else str(increment)
-                check = username + increment
+                check = username + inc_str
                 if User.objects.filter(username=check).exists():
                     increment = 1 if increment is None else increment + 1
                 else:
@@ -68,6 +68,11 @@ def _find_users(options, data):
             is_active=True,
         )
         new.append(obj)
+    if len(new) > 0:
+        print(f"The following {len(new)} users would be created:")
+        print(f"First name, Last name, username, email")
+        for user in new:
+            print(f"{user.first_name},{user.last_name},{user.username},{user.email}")
     return existing, new
 
 def _find_affiliations(options, existing, new):
