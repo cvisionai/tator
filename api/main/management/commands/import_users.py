@@ -114,10 +114,8 @@ def _set_passwords(options, created):
             user.set_password(static_password)
             user.save()
     if static_password is None and len(user_passwords) > 0:
-        print(f"New passwords:")
-        print(f"username, password")
-        for username in user_passwords:
-            print(f"{username}, {user_passwords[username]}")
+        pass
+        # TODO: email the password to user email addresses
 
 def _create_affiliations(options, existing, num_new, users):
     existing_lookup = {(aff.user.id, aff.organization.id) for aff in existing}
