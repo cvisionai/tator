@@ -189,6 +189,9 @@ export class AttributesForm extends TatorElement {
 
   _formChanged() {
     this.changed = true;
+    this._getDefaultInput({
+      dtype: this._dtype.getValue() // only dtype required
+    });
     return this.form.classList.add("changed");
   }
 
