@@ -83,8 +83,6 @@ export class TypeFormTemplate extends TatorElement {
     } else {
       this.modal._success("Nothing new to save!");
     }
-
-    this.data = null;
   }
 
   /**
@@ -136,8 +134,6 @@ export class TypeFormTemplate extends TatorElement {
       id: this.typeId,
       data: formData,
     };
-
-    console.log("Form data", formData);
 
     if (this.typeId == "New" && isArray) {
       return await store.getState().addTypeArray(info);
