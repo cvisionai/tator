@@ -1,5 +1,5 @@
 boto3==1.28.32
-cryptography==41.0.4
+cryptography==41.0.6
 datadog==0.43.0
 django==3.2.23
 django_admin_json_editor==0.2.3
