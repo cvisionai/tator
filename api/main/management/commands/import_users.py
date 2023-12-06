@@ -12,11 +12,13 @@ from main.models import Project
 
 logger = logging.getLogger(__name__)
 
+
 def _get(d, key):
     for k, v in d.items():
-        if k.lower().replace(' ', '_') == key:
+        if k.lower().replace(" ", "_") == key:
             return v
     return None
+
 
 def _get_name(row):
     first_name = _get(row, "first_name")
@@ -25,12 +27,13 @@ def _get_name(row):
         name = _get(row, "name")
         if name is None:
             raise ValueError(f"Could not find a name column for user with email {user['email']}!")
-        parts = name.split(' ', 1)
+        parts = name.split(" ", 1)
         first_name = parts[0]
         last_name = parts[1] if len(parts) > 1 else ""
     first_name = first_name.strip()
     last_name = last_name.strip()
     return (first_name, last_name)
+
 
 def _get_username(row, first_name, last_name):
     username = _get(row, "username")
@@ -49,10 +52,11 @@ def _get_username(row, first_name, last_name):
                     break
     return username
 
+
 def _find_users(options, data):
     emails = [_get(row, "email") for row in data]
     users = list(User.objects.filter(email__in=emails))
-    existing = {user.email:user for user in users}
+    existing = {user.email: user for user in users}
     new = []
     for user in data:
         email = _get(user, "email")
@@ -75,13 +79,17 @@ def _find_users(options, data):
             print(f"{user.first_name},{user.last_name},{user.username},{user.email}")
     return existing, new
 
+
 def _find_affiliations(options, existing, new):
     total_users = len(existing) + len(new)
     organization = options["organization"]
     existing_ids = [user.id for user in existing.values()]
-    existing_affiliations = list(Affiliation.objects.filter(organization=organization, user__in=existing_ids))
+    existing_affiliations = list(
+        Affiliation.objects.filter(organization=organization, user__in=existing_ids)
+    )
     num_new = total_users - len(existing_affiliations)
     return existing_affiliations, num_new
+
 
 def _find_memberships(options, existing, new):
     total_users = len(existing) + len(new)
@@ -90,19 +98,23 @@ def _find_memberships(options, existing, new):
     num_new = 0
     if projects is not None:
         existing_ids = [user.id for user in existing.values()]
-        existing_memberships = list(Membership.objects.filter(project__in=projects, user__in=existing_ids))
+        existing_memberships = list(
+            Membership.objects.filter(project__in=projects, user__in=existing_ids)
+        )
         num_new = total_users * len(projects) - len(existing_memberships)
     return existing_memberships, num_new
+
 
 def _create_users(new):
     created = User.objects.bulk_create(new)
     print(f"Created {len(created)} new users!")
     return list(created)
 
+
 def _set_passwords(options, created):
     static_password = options.get("password")
     password_length = 12
-    characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     user_passwords = {}
     for user in created:
         if static_password is None:
@@ -116,6 +128,7 @@ def _set_passwords(options, created):
     if static_password is None and len(user_passwords) > 0:
         pass
         # TODO: email the password to user email addresses
+
 
 def _create_affiliations(options, existing, num_new, users):
     existing_lookup = {(aff.user.id, aff.organization.id) for aff in existing}
@@ -131,10 +144,13 @@ def _create_affiliations(options, existing, num_new, users):
         )
         new.append(obj)
     if len(new) != num_new:
-        raise ValueError(f"Incorrect number of affiliations to be created (got {len(new)}, expected {num_new}!")
+        raise ValueError(
+            f"Incorrect number of affiliations to be created (got {len(new)}, expected {num_new}!"
+        )
     created = Affiliation.objects.bulk_create(new)
     print(f"Created {len(created)} new affiliations!")
     return list(created)
+
 
 def _create_memberships(options, existing, num_new, users):
     existing_lookup = {(mem.user.id, mem.project.id) for mem in existing}
@@ -142,7 +158,7 @@ def _create_memberships(options, existing, num_new, users):
     if project_ids is None:
         return []
     projects = Project.objects.filter(pk__in=project_ids)
-    permission = options.get('project_permission', 'r')
+    permission = options.get("project_permission", "r")
     new = []
     for user in users:
         for project in projects:
@@ -155,18 +171,24 @@ def _create_memberships(options, existing, num_new, users):
             )
             new.append(obj)
     if len(new) != num_new:
-        raise ValueError(f"Incorrect number of memberships to be created (got {len(new)}, expected {num_new}!")
+        raise ValueError(
+            f"Incorrect number of memberships to be created (got {len(new)}, expected {num_new}!"
+        )
     created = Membership.objects.bulk_create(new)
     print(f"Created {len(created)} new memberships!")
     return list(created)
 
+
 class Command(BaseCommand):
-    help = (
-        "Create users from a CSV, optionally adding them to organizations or projects."
-    )
+    help = "Create users from a CSV, optionally adding them to organizations or projects."
 
     def add_arguments(self, parser):
-        parser.add_argument("--csv", type=str, required=True, help="Path to csv file. Columns may include first name, last name, name, email, username, and password. For names, first name and last name is searched first. If it does not exist, the name column is used and the first space is used to split first and last name. Email is required and is used for idempotency, so they must be unique. If username is not specified, usernames are created using first name (lowercase), unless that user already exists in which case first initial and last name is used. If that exists a number is appended. If password is not specified, random passwords are generated unless the `--password` parameter is supplied, in which case the same password is used for all users.")
+        parser.add_argument(
+            "--csv",
+            type=str,
+            required=True,
+            help="Path to csv file. Columns may include first name, last name, name, email, username, and password. For names, first name and last name is searched first. If it does not exist, the name column is used and the first space is used to split first and last name. Email is required and is used for idempotency, so they must be unique. If username is not specified, usernames are created using first name (lowercase), unless that user already exists in which case first initial and last name is used. If that exists a number is appended. If password is not specified, random passwords are generated unless the `--password` parameter is supplied, in which case the same password is used for all users.",
+        )
         parser.add_argument(
             "--organization",
             type=int,
@@ -199,13 +221,16 @@ class Command(BaseCommand):
         existing_affiliations, num_affiliations = _find_affiliations(options, existing, new)
         existing_memberships, num_memberships = _find_memberships(options, existing, new)
         print(f"Create {len(new)} new users ({len(existing)} already exist)")
-        print(f"Create {num_affiliations} new affiliations ({len(existing_affiliations)} already exist)")
-        print(f"Create {num_memberships} new memberships ({len(existing_memberships)} already exist)")
+        print(
+            f"Create {num_affiliations} new affiliations ({len(existing_affiliations)} already exist)"
+        )
+        print(
+            f"Create {num_memberships} new memberships ({len(existing_memberships)} already exist)"
+        )
         proceed = input("Continue? [y/N]: ")
-        if proceed.lower().strip() == 'y':
+        if proceed.lower().strip() == "y":
             created = _create_users(new)
             _set_passwords(options, created)
             users = list(existing.values()) + created
             created = _create_affiliations(options, existing_affiliations, num_affiliations, users)
             created = _create_memberships(options, existing_memberships, num_memberships, users)
-
