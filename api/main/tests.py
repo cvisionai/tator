@@ -55,6 +55,7 @@ class TatorTransactionTest(APITransactionTestCase):
 
 
 def wait_for_indices(entity_type):
+    entity_type.refresh_from_db()
     built_ins = BUILT_IN_INDICES.get(type(entity_type), [])
     types_to_scan = [*entity_type.attribute_types, *built_ins]
     # Wait for btree indices too
