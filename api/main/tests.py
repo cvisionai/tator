@@ -497,6 +497,8 @@ class AttributeRenameMixin:
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
 
+        # TODO: This could result in 400 if someone slams the UI, but it won't break
+        # for test reliability, wait for all indices to complete prior to renaming back
         wait_for_indices(self.entity_type)
         # Rename back
         resp = self.client.patch(
@@ -516,6 +518,55 @@ class AttributeRenameMixin:
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
+
+        # A corner case of renaming when the attribute is not present in the data
+        # to emulate this corner case we will add a new attribute to the data w/o a default
+        # and then rename it
+        # We then refetch the entities and ensure that the existing attributes are
+        # unadulterated.
+        resp = self.client.post(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "addition": {"name": "Attribute Not Present", "dtype": "float"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        wait_for_indices(self.entity_type)
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+
+        # Check 2; attribute has no default set but it is registered
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+            self.assertTrue("Attribute Not Present" not in resp.data[idx]["attributes"])
+
+        resp = self.client.patch(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "current_name": "Attribute Not Present",
+                "attribute_type_update": {"name": "BingoBango"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        wait_for_indices(self.entity_type)
+
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+
+        # Check 3; attributes are not effected by renaming a non-existant attribute
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+            self.assertTrue("Attribute Not Present" not in resp.data[idx]["attributes"])
 
 
 class ElementalIDChangeMixin:
