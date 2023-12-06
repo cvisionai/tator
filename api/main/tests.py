@@ -568,6 +568,28 @@ class AttributeRenameMixin:
             self.assertEqual(val, new_values[idx])
             self.assertTrue("Attribute Not Present" not in resp.data[idx]["attributes"])
 
+        # Delete attribute and verify no records have changed
+        resp = self.client.delete(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "name": "BingoBango",
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        wait_for_indices(self.entity_type)
+
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+
+        # Check 3; attributes are not effected by renaming a non-existant attribute
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+            self.assertTrue("Attribute Not Present" not in resp.data[idx]["attributes"])
+
 
 class ElementalIDChangeMixin:
     def test_elemental_id_create(self):
