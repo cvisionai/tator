@@ -50,7 +50,7 @@ class ReplaceKey(Func):  # pylint: disable=abstract-method
     """
 
     function = "jsonb_set"
-    template = "%(function)s(%(expressions)s #- '{\"%(old_key)s\"}', '{\"%(new_key)s\"}', %(expressions)s #> '{\"%(old_key)s\"}', %(create_missing)s)"  # pylint: disable=line-too-long
+    template = "%(function)s(%(expressions)s #- '{\"%(old_key)s\"}', '{\"%(new_key)s\"}', COALESCE(%(expressions)s #> '{\"%(old_key)s\"}','null'::jsonb), %(create_missing)s)"  # pylint: disable=line-too-long
     arity = 1
 
     def __init__(
