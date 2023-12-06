@@ -2564,6 +2564,7 @@ class LocalizationLineTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2646,6 +2647,7 @@ class LocalizationDotTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2726,6 +2728,7 @@ class LocalizationPolyTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2805,6 +2808,7 @@ class StateTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
