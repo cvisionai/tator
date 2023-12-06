@@ -471,6 +471,55 @@ affiliation_levels = [
 ]
 
 
+class AttributeRenameMixin:
+    def test_attribute_rename(self):
+        """Test that renaming an attribute works."""
+        # Fetching existing values
+        type_name = self.detail_uri + "Type"
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+        values = [x["attributes"].get("Float Test") for x in resp.data]
+
+        # Rename float test to something else the back again
+        resp = self.client.patch(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "current_name": "Float Test",
+                "attribute_type_update": {"name": "Float Test Renamed"},
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+        new_values = [x["attributes"].get("Float Test Renamed") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+
+        wait_for_indices(self.entity_type)
+        # Rename back
+        resp = self.client.patch(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "current_name": "Float Test Renamed",
+                "attribute_type_update": {"name": "Float Test"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+
+
 class ElementalIDChangeMixin:
     def test_elemental_id_create(self):
         endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
@@ -2358,6 +2407,7 @@ class LocalizationBoxTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
