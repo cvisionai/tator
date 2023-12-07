@@ -292,7 +292,7 @@ def bulk_rename_attributes(new_attrs, q_s):
                 "attributes",
                 old_key=old_key.replace("%", "%%"),
                 new_key=new_key.replace("%", "%%"),
-                create_missing=True,
+                create_missing=False,
             )
         )
 
