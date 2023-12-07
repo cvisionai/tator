@@ -3,6 +3,7 @@ from typing import List
 import logging
 
 from django.db.models.expressions import Func
+from django.db.models import Case, When, F
 from django.contrib.gis.measure import D as GisDistance
 from django.contrib.gis.geos import Point
 from django.shortcuts import get_object_or_404
@@ -287,12 +288,17 @@ def bulk_rename_attributes(new_attrs, q_s):
     Updates attribute keys.
     """
     for old_key, new_key in new_attrs.items():
+        old = old_key.replace("%", "%%")
+        new = new_key.replace("%", "%%")
         q_s.update(
-            attributes=ReplaceKey(
-                "attributes",
-                old_key=old_key.replace("%", "%%"),
-                new_key=new_key.replace("%", "%%"),
-                create_missing=False,
+            attributes=Case(
+                When(attributes__has_key=old, then=ReplaceKey(
+                    "attributes",
+                    old_key=old,
+                    new_key=new,
+                    create_missing=True,
+                )),
+                default=F("attributes"),
             )
         )
 
