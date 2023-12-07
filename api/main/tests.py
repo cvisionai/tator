@@ -56,6 +56,7 @@ class TatorTransactionTest(APITransactionTestCase):
 
 
 def wait_for_indices(entity_type):
+    entity_type.refresh_from_db()
     built_ins = BUILT_IN_INDICES.get(type(entity_type), [])
     types_to_scan = [*entity_type.attribute_types, *built_ins]
     # Wait for btree indices too
@@ -469,6 +470,128 @@ affiliation_levels = [
     "Member",
     "Admin",
 ]
+
+
+class AttributeRenameMixin:
+    def test_attribute_rename(self):
+        """Test that renaming an attribute works."""
+        # Fetching existing values
+        type_name = self.detail_uri + "Type"
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+        values = [x["attributes"].get("Float Test") for x in resp.data]
+
+        # Rename float test to something else the back again
+        resp = self.client.patch(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "current_name": "Float Test",
+                "attribute_type_update": {"name": "Float Test Renamed"},
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+        new_values = [x["attributes"].get("Float Test Renamed") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+
+        # TODO: This could result in 400 if someone slams the UI, but it won't break
+        # for test reliability, wait for all indices to complete prior to renaming back
+        wait_for_indices(self.entity_type)
+        # Rename back
+        resp = self.client.patch(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "current_name": "Float Test Renamed",
+                "attribute_type_update": {"name": "Float Test"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+
+        # A corner case of renaming when the attribute is not present in the data
+        # to emulate this corner case we will add a new attribute to the data w/o a default
+        # and then rename it
+        # We then refetch the entities and ensure that the existing attributes are
+        # unadulterated.
+        resp = self.client.post(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "addition": {"name": "Attribute Not Present", "dtype": "float"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        wait_for_indices(self.entity_type)
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+
+        # Check 2; attribute has no default set but it is registered
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+            self.assertTrue("Attribute Not Present" not in resp.data[idx]["attributes"])
+
+        resp = self.client.patch(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "current_name": "Attribute Not Present",
+                "attribute_type_update": {"name": "BingoBango"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        wait_for_indices(self.entity_type)
+
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+
+        # Check 3; attributes are not effected by renaming a non-existant attribute
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+            self.assertTrue("Attribute Not Present" not in resp.data[idx]["attributes"])
+
+        # Delete attribute and verify no records have changed
+        resp = self.client.delete(
+            f"/rest/AttributeType/{self.entity_type.pk}",
+            {
+                "entity_type": type_name,
+                "name": "BingoBango",
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        wait_for_indices(self.entity_type)
+
+        resp = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
+        )
+
+        # Check 3; attributes are not effected by renaming a non-existant attribute
+        new_values = [x["attributes"].get("Float Test") for x in resp.data]
+        for idx, val in enumerate(values):
+            self.assertEqual(val, new_values[idx])
+            self.assertTrue("Attribute Not Present" not in resp.data[idx]["attributes"])
 
 
 class ElementalIDChangeMixin:
@@ -2358,6 +2481,7 @@ class LocalizationBoxTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2440,6 +2564,7 @@ class LocalizationLineTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2522,6 +2647,7 @@ class LocalizationDotTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2602,6 +2728,7 @@ class LocalizationPolyTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
@@ -2681,6 +2808,7 @@ class StateTestCase(
     PermissionDetailTestMixin,
     EntityAuthorChangeMixin,
     ElementalIDChangeMixin,
+    AttributeRenameMixin,
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
