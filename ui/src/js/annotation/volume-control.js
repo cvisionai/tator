@@ -142,6 +142,7 @@ export class VolumeControl extends TatorElement {
     this._div.style.align = "center";
     this._div.style.position = "absolute";
     this._div.style.top = "-70px";
+    this._div.style.zIndex = "3";
 
     // TODO: Move this into css
     this._div.style.background = "#151b28";
