@@ -409,6 +409,7 @@ export class ProjectDetail extends TatorPage {
               });
           }
           spec.name = newSectionDialog._input.value;
+          delete spec.path; // clear path to allow saved searches of saved searches
 
           if (params.has("encoded_search")) {
             let object_search = JSON.parse(atob(params.get("encoded_search")));
