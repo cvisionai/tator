@@ -12,6 +12,7 @@ import os
 template="""
 [Unit]
 Description=Restart docker compose tator install
+Requires=docker.service
 
 [Service]
 Type=oneshot
