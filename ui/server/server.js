@@ -232,8 +232,10 @@ app.get('/refresh', async (req, res) => {
           sameSite: "strict",
           secure: true,
           httpOnly: true,
-          path: "/media",
+          path: "/refresh",
         }
+        res.cookie("refresh_token", data.refresh_token, options);
+        options.path = "/media";
         res.cookie("access_token", data.access_token, options);
         options.path = "/admin";
         res.cookie("access_token", data.access_token, options);
