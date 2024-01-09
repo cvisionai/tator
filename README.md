@@ -8,11 +8,11 @@ Unlock the true potential of your imagery datasets with Tator, the flexible web 
 
 Visit https://tator.io to learn more.
 
-<img src="https://github.com/cvisionai/tator/assets/7937658/43e2ab79-1c68-4628-af3c-7970022a4e8f" />
+<img src="https://github.com/cvisionai/tator/assets/7937658/31eb1c49-aed3-4b2f-990f-27b410037532" alt="SAM applet" />
 <p></p>
-<img src="https://github.com/cvisionai/tator/assets/7937658/9f423b3d-be1b-4664-afc8-c18527654b24" />
+<img src="https://github.com/cvisionai/tator/assets/7937658/43e2ab79-1c68-4628-af3c-7970022a4e8f" alt="Annotation view" />
 <p></p>
-<img src="https://github.com/cvisionai/tator/assets/7937658/3ab13fb5-a845-43ed-acf1-8369341e95b7" />
+<img src="https://github.com/cvisionai/tator/assets/7937658/9f423b3d-be1b-4664-afc8-c18527654b24" alt="Localization analytics view" />
 
 
 Quick start
