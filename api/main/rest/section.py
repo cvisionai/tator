@@ -75,6 +75,9 @@ class SectionListAPI(BaseListView):
         tator_user_sections = params.get("tator_user_sections", None)
         visible = params.get("visible", True)
         elemental_id = params.get("elemental_id", uuid.uuid4())
+        attributes = params.get("attributes", {})
+        explicit_listing = params.get("explicit_listing", False)
+        media_list = params.get("media", [])
 
         if Section.objects.filter(project=project, name__iexact=params["name"]).exists():
             raise Exception("Section with this name already exists!")
@@ -92,7 +95,14 @@ class SectionListAPI(BaseListView):
             tator_user_sections=tator_user_sections,
             visible=visible,
             elemental_id=elemental_id,
+            created_by=self.request.user,
+            attributes=attributes,
+            explicit_listing=explicit_listing,
         )
+        if media_list:
+            for media_id in media_list:
+                section.media.add(media_id)
+            section.save()
         return {"message": f"Section {name} created!", "id": section.id}
 
     def get_queryset(self):
