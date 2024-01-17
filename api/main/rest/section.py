@@ -3,6 +3,7 @@ import re
 import uuid
 
 from django.db import transaction
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from ..models import Section
 from ..models import Project
@@ -15,6 +16,22 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
+
+
+def _fill_m2m(response_data):
+    section_ids = [section["id"] for section in response_data]
+    media = {
+        obj["section_id"]: obj["media"]
+        for obj in Section.media.through.objects.filter(section__in=section_ids)
+        .values("section_id")
+        .order_by("section_id")
+        .annotate(media=ArrayAgg("media_id"))
+        .iterator()
+    }
+    # Copy many to many fields into response data.
+    for state in response_data:
+        state["media"] = media.get(state["id"], [])
+    return response_data
 
 
 class SectionListAPI(BaseListView):
@@ -44,7 +61,9 @@ class SectionListAPI(BaseListView):
                 # NOTE: we need to escape with ' here because of `database_qs` shenanigans...
                 qs = qs.filter(**{f"path__{db_operation}": f"'{value}'"})
         qs = qs.order_by("name")
-        return database_qs(qs)
+        results = database_qs(qs)
+        results = _fill_m2m(results)
+        return results
 
     def _post(self, params):
         project = params["project"]
@@ -91,7 +110,9 @@ class SectionDetailAPI(BaseDetailView):
     http_method_names = ["get", "patch", "delete"]
 
     def _get(self, params):
-        return database_qs(Section.objects.filter(pk=params["id"]))[0]
+        results = database_qs(Section.objects.filter(pk=params["id"]))
+        results = _fill_m2m(results)
+        return results[0]
 
     @transaction.atomic
     def _patch(self, params):

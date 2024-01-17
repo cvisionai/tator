@@ -23,6 +23,21 @@ section_post_properties = {
         "type": "string",
         "nullable": True,
     },
+    "created_datetime": {
+        "description": "The elemental ID of the object.",
+        "type": "string",
+        "format": "date-time",
+        "nullable": True,
+    },
+    "created_by": {
+        "type": "integer",
+        "description": "Unique integer identifying the user who created this localization.",
+    },
+    "attributes": {
+        "description": "Object containing attribute values.",
+        "type": "object",
+        "additionalProperties": {"$ref": "#/components/schemas/AttributeValue"},
+    },
 }
 
 section_spec = {
