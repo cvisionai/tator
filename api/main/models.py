@@ -2046,6 +2046,16 @@ class Section(Model):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    """ Time in which the section was created """
+
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
+
+    attributes = JSONField(null=True, blank=True, default=dict)
+
+    explicit_listing = BooleanField(default=False, null=True, blank=True)
+    media = ManyToManyField(Media)
+
 
 class Favorite(Model):
     """Stores an annotation saved by a user."""
