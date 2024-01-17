@@ -30,8 +30,10 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._hooksPanel.setAttribute("class", "col-12");
     this._hooksPanel.hidden = true;
     this._shadow.appendChild(this._hooksPanel);
+  }
 
-    // On construction check for applets after everything else is init
+  connectedCallback() {
+    // On connection check for applets after everything else is init
     this.setupApplets();
   }
 
