@@ -23,6 +23,23 @@ section_post_properties = {
         "type": "string",
         "nullable": True,
     },
+    "attributes": {
+        "description": "Object containing attribute values.",
+        "type": "object",
+        "additionalProperties": {"$ref": "#/components/schemas/AttributeValue"},
+    },
+    "explicit_listing": {
+        "type": "boolean",
+        "description": "Determines whether the section is explicitly made up of media IDs.",
+    },
+    "media": {
+        "description": "List of mediia IDs that this state applies to (if explicit_listing is True)",
+        "type": "array",
+        "items": {"type": "integer"},
+    },
+}
+
+section_get_properties = {
     "created_datetime": {
         "description": "The elemental ID of the object.",
         "type": "string",
@@ -32,11 +49,6 @@ section_post_properties = {
     "created_by": {
         "type": "integer",
         "description": "Unique integer identifying the user who created this localization.",
-    },
-    "attributes": {
-        "description": "Object containing attribute values.",
-        "type": "object",
-        "additionalProperties": {"$ref": "#/components/schemas/AttributeValue"},
     },
 }
 
@@ -67,5 +79,6 @@ section = {
             "description": "Unique integer identifying the project associated with the section.",
         },
         **section_post_properties,
+        **section_get_properties,
     },
 }
