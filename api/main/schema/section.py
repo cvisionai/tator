@@ -7,6 +7,7 @@ from ._message import message_with_id_schema
 from ._errors import error_responses
 
 from ._type_query import type_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema
 
 boilerplate = dedent(
     """\
@@ -96,6 +97,13 @@ class SectionListSchema(AutoSchema):
                     "in": "query",
                     "required": False,
                     "description": "Name of the section.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "encoded_search",
+                    "in": "query",
+                    "required": False,
+                    "description": "Base64 encoded string representing an `Object_Search` defined in /components/AttributeOperationSpec",
                     "schema": {"type": "string"},
                 },
                 *type_filter_parameter_schema,

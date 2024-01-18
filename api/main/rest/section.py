@@ -16,6 +16,7 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectEditPermission
 from ._util import check_required_fields
 from ._attributes import validate_attributes, patch_attributes
+from ._annotation_query import _do_object_search
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,9 @@ class SectionListAPI(BaseListView):
             if value:
                 # NOTE: we need to escape with ' here because of `database_qs` shenanigans...
                 qs = qs.filter(**{f"path__{db_operation}": f"'{value}'"})
+
+        qs = _do_object_search(qs, params)
+
         qs = qs.order_by("name")
         results = database_qs(qs)
         results = _fill_m2m(results)
