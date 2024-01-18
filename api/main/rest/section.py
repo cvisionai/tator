@@ -89,9 +89,7 @@ class SectionListAPI(BaseListView):
 
         project = Project.objects.get(pk=project)
 
-        attrs = check_required_fields(
-            {}, project.section_attribute_types, {"attributes": attributes}
-        )
+        attrs = check_required_fields({}, project.attribute_types, {"attributes": attributes})
         section = Section.objects.create(
             project=project,
             name=name,
@@ -166,7 +164,7 @@ class SectionDetailAPI(BaseDetailView):
             section.media.remove(m)
 
         # Handle attributes
-        new_attrs = validate_attributes(params, section, section.project.section_attribute_types)
+        new_attrs = validate_attributes(params, section, section.project.attribute_types)
         section = patch_attributes(new_attrs, section)
 
         section.save()

@@ -713,7 +713,7 @@ class Project(Model):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
-    section_attribute_types = JSONField(default=list, null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ Defines the attribute types that can be used to filter sections for this project
     """
 
