@@ -5538,7 +5538,7 @@ class SectionTestCase(TatorTransactionTest):
         # Verify patching a section with bad attributes fails
         update_spec = {"attributes": {"abcdef": False}}
         url = f"/rest/Section/{section_id}"
-        response = self.client.post(url, update_spec, format="json")
+        response = self.client.patch(url, update_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # Add a string attribute to the section
@@ -5550,7 +5550,7 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.post(url, add_string_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # Verify we can post a string to the section
-        update_spec = {"attributes": {"String Test": "foo"}}
+        update_spec = {"attributes": {"String Attribute": "foo"}}
         url = f"/rest/Section/{section_id}"
         response = self.client.patch(url, update_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
