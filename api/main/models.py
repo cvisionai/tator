@@ -2049,7 +2049,7 @@ class Section(Model):
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     """ Time in which the section was created """
 
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, db_column="created_by")
 
     attributes = JSONField(null=True, blank=True, default=dict)
 

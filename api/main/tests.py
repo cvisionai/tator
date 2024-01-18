@@ -5500,3 +5500,25 @@ class SectionTestCase(TatorTransactionTest):
         }
         url = f"/rest/Sections/{self.project.pk}"
         response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        section_id = response.data["id"]
+        url = f"/rest/Section/{section_id}"
+
+        def check_it(section, section_spec):
+            self.assertEqual(section["name"], section_spec["name"])
+            self.assertEqual(section["path"], section_spec["path"])
+            self.assertEqual(section["explicit_listing"], section_spec["explicit_listing"])
+            self.assertEqual(section["media"], section_spec["media"])
+            self.assertEqual(section["created_by"], self.user.pk)
+
+        # Test that the section is returned as it was setup
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        check_it(response.data, section_spec)
+
+        # Test it out via list accessor too
+        url = f"/rest/Sections/{self.project.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        section_match = [s for s in response.data if s["id"] == section_id]
+        check_it(section_match[0], section_spec)
