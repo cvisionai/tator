@@ -218,6 +218,10 @@ def validate_attributes(params, obj, attribute_types=None):
     """
     if attribute_types is None:
         attribute_types = obj.type.attribute_types
+        obj_type_name = obj.type.name
+    else:
+        obj_type_name = f"Section of {obj.project.name}"
+
     attributes = params.get("attributes", {})
     attr_types = {a["name"]: a for a in attribute_types}
     if attributes:
@@ -228,7 +232,7 @@ def validate_attributes(params, obj, attribute_types=None):
             if attr_name in attr_types:
                 attr_type = attr_types[attr_name]
             else:
-                raise Exception(f"Invalid attribute {attr_name} for entity type {obj.type.name}")
+                raise Exception(f"Invalid attribute {attr_name} for entity type {obj_type_name}")
             attributes[attr_name] = convert_attribute(attr_type, attributes[attr_name])
     for attr in params.get("reset_attributes", []):
         attributes[attr] = attr_types[attr].get("default", None)
