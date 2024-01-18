@@ -5522,3 +5522,21 @@ class SectionTestCase(TatorTransactionTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         section_match = [s for s in response.data if s["id"] == section_id]
         check_it(section_match[0], section_spec)
+
+        # Verify adding a section with bad attributes fails
+        section_spec = {
+            "name": "Test",
+            "path": "Foo.Test",
+            "explicit_listing": True,
+            "media": [],
+            "attributes": {"abcdef": False},
+        }
+        url = f"/rest/Sections/{self.project.pk}"
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Verify patching a section with bad attributes fails
+        update_spec = {"attributes": {"abcdef": False}}
+        url = f"/rest/Section/{section_id}"
+        response = self.client.post(url, update_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

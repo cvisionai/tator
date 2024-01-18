@@ -14,6 +14,8 @@ from ..schema import SectionDetailSchema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectEditPermission
+from ._util import check_required_fields
+from ._attributes import validate_attributes, patch_attributes
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +88,10 @@ class SectionListAPI(BaseListView):
             raise Exception("Section with this path already exists!")
 
         project = Project.objects.get(pk=project)
+
+        attrs = check_required_fields(
+            {}, project.section_attribute_types, {"attributes": attributes}
+        )
         section = Section.objects.create(
             project=project,
             name=name,
@@ -96,7 +102,7 @@ class SectionListAPI(BaseListView):
             visible=visible,
             elemental_id=elemental_id,
             created_by=self.request.user,
-            attributes=attributes,
+            attributes=attrs,
             explicit_listing=explicit_listing,
         )
         if media_list:
@@ -158,6 +164,10 @@ class SectionDetailAPI(BaseDetailView):
             section.media.add(m)
         for m in media_del:
             section.media.remove(m)
+
+        # Handle attributes
+        new_attrs = validate_attributes(params, section, section.project.section_attribute_types)
+        section = patch_attributes(new_attrs, section)
 
         section.save()
         return {"message": f"Section {section.name} updated successfully!"}

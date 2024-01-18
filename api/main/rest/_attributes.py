@@ -212,12 +212,14 @@ def convert_attribute(attr_type, attr_val):  # pylint: disable=too-many-branches
     return val
 
 
-def validate_attributes(params, obj):
+def validate_attributes(params, obj, attribute_types=None):
     """Validates attributes by looking up attribute type and attempting
     a type conversion.
     """
+    if attribute_types is None:
+        attribute_types = obj.type.attribute_types
     attributes = params.get("attributes", {})
-    attr_types = {a["name"]: a for a in obj.type.attribute_types}
+    attr_types = {a["name"]: a for a in attribute_types}
     if attributes:
         for attr_name in attributes:
             if attr_name == "tator_user_sections":
@@ -292,12 +294,15 @@ def bulk_rename_attributes(new_attrs, q_s):
         new = new_key.replace("%", "%%")
         q_s.update(
             attributes=Case(
-                When(attributes__has_key=old, then=ReplaceKey(
-                    "attributes",
-                    old_key=old,
-                    new_key=new,
-                    create_missing=True,
-                )),
+                When(
+                    attributes__has_key=old,
+                    then=ReplaceKey(
+                        "attributes",
+                        old_key=old,
+                        new_key=new,
+                        create_missing=True,
+                    ),
+                ),
                 default=F("attributes"),
             )
         )
