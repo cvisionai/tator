@@ -5348,6 +5348,7 @@ class SectionTestCase(TatorTransactionTest):
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = create_test_video
 
     def test_unique_section_name(self):
         section_spec = {
@@ -5481,3 +5482,21 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.get(f"{url}?descendants=Honda.Accord", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
+
+    def test_adv_sections(self):
+        entity_type = MediaType.objects.create(
+            name="video",
+            dtype="video",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        wait_for_indices(entity_type)
+        media = create_test_video(self.user, "test.mp4", entity_type, self.project)
+        section_spec = {
+            "name": "Test",
+            "path": "Foo.Test",
+            "explicit_listing": True,
+            "media": [media.pk],
+        }
+        url = f"/rest/Sections/{self.project.pk}"
+        response = self.client.post(url, section_spec, format="json")

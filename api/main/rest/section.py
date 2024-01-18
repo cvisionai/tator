@@ -146,6 +146,19 @@ class SectionDetailAPI(BaseDetailView):
         elemental_id = params.get("elemental_id", None)
         if elemental_id:
             section.elemental_id = elemental_id
+
+        explicit_listing = params.get("explicit_listing", None)
+        if explicit_listing is not None:
+            section.explicit_listing = explicit_listing
+
+        # Handle removing/adding media
+        media_add = params.get("media_add", [])
+        media_del = params.get("media_del", [])
+        for m in media_add:
+            section.media.add(m)
+        for m in media_del:
+            section.media.remove(m)
+
         section.save()
         return {"message": f"Section {section.name} updated successfully!"}
 
