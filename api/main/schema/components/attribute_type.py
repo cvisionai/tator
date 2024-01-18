@@ -121,6 +121,14 @@ attribute_type_spec = {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
+            "enum": [
+                "FileType",
+                "MediaType",
+                "LocalizationType",
+                "StateType",
+                "LeafType",
+                "Section",
+            ],
         },
         "addition": {"$ref": "#/components/schemas/AttributeType"},
     },
@@ -139,6 +147,14 @@ attribute_type_update = {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
+            "enum": [
+                "FileType",
+                "MediaType",
+                "LocalizationType",
+                "StateType",
+                "LeafType",
+                "Section",
+            ],
         },
         "current_name": {
             "type": "string",
@@ -158,6 +174,14 @@ attribute_type_delete = {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
+            "enum": [
+                "FileType",
+                "MediaType",
+                "LocalizationType",
+                "StateType",
+                "LeafType",
+                "Section",
+            ],
         },
         "name": {
             "type": "string",
