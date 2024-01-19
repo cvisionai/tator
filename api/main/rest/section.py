@@ -3,6 +3,7 @@ import re
 import uuid
 
 from django.db import transaction
+from django.db.models import F
 from django.contrib.postgres.aggregates import ArrayAgg
 
 from ..models import Section
@@ -10,6 +11,7 @@ from ..models import Project
 from ..models import database_qs
 from ..schema import SectionListSchema
 from ..schema import SectionDetailSchema
+from ..schema.components import section
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -19,6 +21,9 @@ from ._attributes import validate_attributes, patch_attributes
 from ._annotation_query import _do_object_search
 
 logger = logging.getLogger(__name__)
+
+SECTION_PROPERTIES = [*section["properties"]]
+SECTION_PROPERTIES.pop(SECTION_PROPERTIES.index("media"))
 
 
 def _fill_m2m(response_data):
@@ -61,13 +66,17 @@ class SectionListAPI(BaseListView):
         for schema_key, db_operation in op_table.items():
             value = params.get(schema_key, None)
             if value:
-                # NOTE: we need to escape with ' here because of `database_qs` shenanigans...
-                qs = qs.filter(**{f"path__{db_operation}": f"'{value}'"})
+                qs = qs.filter(**{f"path__{db_operation}": f"{value}"})
 
         qs = _do_object_search(qs, params)
+        # Annotate the response to match the schema
+        qs = qs.annotate(related_search=F("related_object_search"))
 
         qs = qs.order_by("name")
-        results = database_qs(qs)
+        results = list(qs.values(*SECTION_PROPERTIES))
+        # values does not convert Ltree.Path to a string consistently
+        for idx, r in enumerate(results):
+            results[idx]["path"] = str(r["path"])
         results = _fill_m2m(results)
         return results
 
@@ -128,7 +137,11 @@ class SectionDetailAPI(BaseDetailView):
     http_method_names = ["get", "patch", "delete"]
 
     def _get(self, params):
-        results = database_qs(Section.objects.filter(pk=params["id"]))
+        # Make result match schema
+        qs = Section.objects.filter(pk=params["id"]).annotate(
+            related_search=F("related_object_search")
+        )
+        results = list(qs.values(*SECTION_PROPERTIES))
         results = _fill_m2m(results)
         return results[0]
 
