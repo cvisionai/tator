@@ -412,10 +412,6 @@ def create_test_attribute_types():
             dtype="string",
             default="fun",
         ),
-        dict(
-            name="Test Blob",
-            dtype="blob",
-        ),
     ]
 
 
@@ -5608,7 +5604,12 @@ class SectionTestCase(TatorTransactionTest):
             name="video",
             dtype="video",
             project=self.project,
-            attribute_types=create_test_attribute_types(),
+            attribute_types=[*create_test_attribute_types(),        
+            dict(
+                name="Test Blob",
+                dtype="blob",
+                default="",
+            )]
         )
         wait_for_indices(entity_type)
 
