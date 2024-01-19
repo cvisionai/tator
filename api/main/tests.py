@@ -5484,6 +5484,12 @@ class SectionTestCase(TatorTransactionTest):
         self.assertEqual(len(response.data), 2)
 
     def test_adv_sections(self):
+        """
+        Test case for performing advanced section operations.
+
+        This test creates a media type, a section, and performs various operations on the section.
+        It verifies the creation, retrieval, modification, and search functionality of sections.
+        """
         entity_type = MediaType.objects.create(
             name="video",
             dtype="video",
@@ -5585,3 +5591,44 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.get(url, format="json")
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], section_id)
+
+    def test_multi_section_lookup(self):
+        """
+        Test case for performing a multi-section lookup.
+
+        This test creates a media type, multiple sections, and multiple media objects.
+        It then performs a multi-section lookup and asserts that the response contains
+        the expected number of media objects.
+        """
+        entity_type = MediaType.objects.create(
+            name="video",
+            dtype="video",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        wait_for_indices(entity_type)
+
+        lms = []
+        for r in range(5):
+            media = create_test_video(self.user, f"test{r}.mp4", entity_type, self.project)
+            lms.append(media)
+
+        sect_ids = []
+        for r in range(5):
+            section_spec = {
+                "name": f"Test{r}",
+                "path": f"Foo.Test{r}",
+                "explicit_listing": True,
+                "media": [lms[r].id],
+            }
+            url = f"/rest/Sections/{self.project.pk}"
+            response = self.client.post(url, section_spec, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            sect_ids.append(response.data["id"])
+
+        sect_id_strs = [str(i) for i in sect_ids]
+        for x in range(4):
+            sect_ids_str = ",".join(sect_id_strs[x:])
+            url = f"/rest/Medias/{self.project.pk}?multi_section={sect_ids_str}"
+            response = self.client.get(url, format="json")
+            self.assertEqual(len(response.data), 5 - x)

@@ -59,6 +59,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
     start = params.get("start")
     stop = params.get("stop")
     section_id = params.get("section")
+    multiple_section = params.get("multi_section")
     archive_states = _get_archived_filter(params)
     elemental_id = params.get("elemental_id")
 
@@ -202,6 +203,44 @@ def _get_media_psql_queryset(project, filter_ops, params):
                 relevant_localization_type_ids,
                 section[0].related_object_search,
             )
+
+        if section[0].explicit_listing:
+            qs = qs.filter(pk__in=section[0].media.all())
+
+    if multiple_section:
+        sections = Section.objects.filter(pk__in=multiple_section)
+        match_list = []
+        for section in sections:
+            match_qs = qs.filter(pk=-1)
+            section_uuid = section.tator_user_sections
+            if section_uuid:
+                match_qs = _look_for_section_uuid(qs, section_uuid)
+
+            if section.object_search:
+                match_qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+
+            if section.related_object_search:
+                match_qs = _related_search(
+                    match_qs,
+                    project,
+                    relevant_state_type_ids,
+                    relevant_localization_type_ids,
+                    section.related_object_search,
+                )
+
+            if section.explicit_listing:
+                match_qs = qs.filter(pk__in=section.media.all())
+
+            if match_qs.exists():
+                match_list.append(match_qs)
+
+        if match_list:
+            logger.info(match_list)
+            it_qs = match_list.pop()
+            query = Q(pk__in=it_qs.values("pk"))
+            for match in match_list:
+                query = query | Q(pk__in=match.values("pk"))
+            qs = qs.filter(query)
 
     if params.get("encoded_related_search"):
         search_obj = json.loads(base64.b64decode(params.get("encoded_related_search")).decode())
