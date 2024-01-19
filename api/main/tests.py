@@ -5505,8 +5505,6 @@ class SectionTestCase(TatorTransactionTest):
         url = f"/rest/Section/{section_id}"
 
         def check_it(section, section_spec):
-            print(section)
-            print(section_spec)
             self.assertEqual(section["name"], section_spec["name"])
             self.assertEqual(section["path"], section_spec["path"])
             self.assertEqual(section["explicit_listing"], section_spec["explicit_listing"])
@@ -5551,6 +5549,16 @@ class SectionTestCase(TatorTransactionTest):
         url = f"/rest/AttributeType/{self.project.pk}"
         response = self.client.post(url, add_string_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check project response has attribute_type return
+        url = f"/rest/Project/{self.project.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["attribute_types"]), 1)
+        serv_resp = response.data["attribute_types"][0]
+        self.assertEqual(serv_resp["name"], "String Attribute")
+        self.assertEqual(serv_resp["dtype"], "string")
+
         # Verify we can post a string to the section
         update_spec = {"attributes": {"String Attribute": "foo"}}
         url = f"/rest/Section/{section_id}"
@@ -5562,7 +5570,7 @@ class SectionTestCase(TatorTransactionTest):
                 {"attribute": "String Attribute", "operation": "eq", "value": "zoo"}
             ).encode()
         )
-        print(search_blob)
+
         url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
         response = self.client.get(url, format="json")
         self.assertEqual(len(response.data), 0)

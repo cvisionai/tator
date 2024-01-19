@@ -143,6 +143,8 @@ class SectionDetailAPI(BaseDetailView):
         )
         results = list(qs.values(*SECTION_PROPERTIES))
         results = _fill_m2m(results)
+        for idx, r in enumerate(results):
+            results[idx]["path"] = str(r["path"])
         return results[0]
 
     @transaction.atomic
