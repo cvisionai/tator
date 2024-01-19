@@ -398,8 +398,12 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
 
     attributeCast = {}
     annotateField = {}
-    typeModel = typeLookup[type(qs[0])]
-    typeObjects = typeModel.objects.filter(project=qs[0].project)
+    # For Section the attribute types are stored in the project itself
+    if type(qs[0]) == Section:
+        typeObjects = [qs[0].project]
+    else:
+        typeModel = typeLookup[type(qs[0])]
+        typeObjects = typeModel.objects.filter(project=qs[0].project)
     for typeObject in typeObjects:
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType["name"]] = castLookup[attributeType["dtype"]]

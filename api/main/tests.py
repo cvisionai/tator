@@ -5505,6 +5505,8 @@ class SectionTestCase(TatorTransactionTest):
         url = f"/rest/Section/{section_id}"
 
         def check_it(section, section_spec):
+            print(section)
+            print(section_spec)
             self.assertEqual(section["name"], section_spec["name"])
             self.assertEqual(section["path"], section_spec["path"])
             self.assertEqual(section["explicit_listing"], section_spec["explicit_listing"])
@@ -5554,3 +5556,24 @@ class SectionTestCase(TatorTransactionTest):
         url = f"/rest/Section/{section_id}"
         response = self.client.patch(url, update_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        search_blob = base64.b64encode(
+            json.dumps(
+                {"attribute": "String Attribute", "operation": "eq", "value": "zoo"}
+            ).encode()
+        )
+        print(search_blob)
+        url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(len(response.data), 0)
+
+        search_blob = base64.b64encode(
+            json.dumps(
+                {"attribute": "String Attribute", "operation": "eq", "value": "foo"}
+            ).encode()
+        )
+
+        url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], section_id)
