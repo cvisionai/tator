@@ -57,8 +57,9 @@ class TatorTransactionTest(APITransactionTestCase):
 
 def wait_for_indices(entity_type):
     entity_type.refresh_from_db()
+    attr_indices = [x for x in entity_type.attribute_types if x["dtype"] != "blob"]
     built_ins = BUILT_IN_INDICES.get(type(entity_type), [])
-    types_to_scan = [*entity_type.attribute_types, *built_ins]
+    types_to_scan = [*attr_indices, *built_ins]
     # Wait for btree indices too
     for t in types_to_scan:
         if t["dtype"] == "string":
@@ -410,6 +411,10 @@ def create_test_attribute_types():
             name="Special Characters are %&<>:;,()@",
             dtype="string",
             default="fun",
+        ),
+        dict(
+            name="Test Blob",
+            dtype="blob",
         ),
     ]
 
@@ -5348,7 +5353,6 @@ class SectionTestCase(TatorTransactionTest):
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = create_test_video
 
     def test_unique_section_name(self):
         section_spec = {
@@ -5632,3 +5636,13 @@ class SectionTestCase(TatorTransactionTest):
             url = f"/rest/Medias/{self.project.pk}?multi_section={sect_ids_str}"
             response = self.client.get(url, format="json")
             self.assertEqual(len(response.data), 5 - x)
+
+        # Test a blob attribute
+        url = f"/rest/Media/{lms[0].id}"
+        update_spec = {"attributes": {"Test Blob": "foo"}}
+        response = self.client.patch(url, update_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["attributes"]["Test Blob"], "foo")

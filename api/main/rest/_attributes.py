@@ -150,7 +150,7 @@ def convert_attribute(attr_type, attr_val):  # pylint: disable=too-many-branches
             raise Exception(
                 f"Invalid attribute value {attr_val} for enum attribute {attr_type['name']}. Valid choices are: {attr_type['choices']}."
             )
-    elif dtype == "string":
+    elif dtype == "string" or dtype == "blob":
         val = attr_val
     elif dtype == "datetime":  # pylint: disable=line-too-long
         try:

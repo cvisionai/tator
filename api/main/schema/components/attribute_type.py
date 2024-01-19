@@ -45,7 +45,17 @@ attribute_type_properties = {
     "dtype": {
         "description": "Data type of the attribute.",
         "type": "string",
-        "enum": ["bool", "int", "float", "enum", "string", "datetime", "geopos", "float_array"],
+        "enum": [
+            "bool",
+            "int",
+            "float",
+            "enum",
+            "string",
+            "datetime",
+            "geopos",
+            "float_array",
+            "blob",
+        ],
     },
     "required": {
         "description": "True if this attribute is required for POST requests.",
