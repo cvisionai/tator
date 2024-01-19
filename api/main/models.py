@@ -2251,6 +2251,7 @@ class RowProtection(Model):
     localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
     state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
     file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
+    section = ForeignKey(Section, on_delete=CASCADE, null=True, blank=True)
 
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
