@@ -1901,7 +1901,7 @@ class State(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
-    latest_mark = PositiveIntegerField(default=0, blank=True)
+    latest_mark = PositiveIntegerField(default=0, blank=True, null=True)
     """ Mark represents the latest revision number of the element  """
 
     @staticmethod
