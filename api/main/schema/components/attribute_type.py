@@ -45,7 +45,17 @@ attribute_type_properties = {
     "dtype": {
         "description": "Data type of the attribute.",
         "type": "string",
-        "enum": ["bool", "int", "float", "enum", "string", "datetime", "geopos", "float_array"],
+        "enum": [
+            "bool",
+            "int",
+            "float",
+            "enum",
+            "string",
+            "datetime",
+            "geopos",
+            "float_array",
+            "blob",
+        ],
     },
     "required": {
         "description": "True if this attribute is required for POST requests.",
@@ -121,6 +131,14 @@ attribute_type_spec = {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
+            "enum": [
+                "FileType",
+                "MediaType",
+                "LocalizationType",
+                "StateType",
+                "LeafType",
+                "Section",
+            ],
         },
         "addition": {"$ref": "#/components/schemas/AttributeType"},
     },
@@ -139,6 +157,14 @@ attribute_type_update = {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
+            "enum": [
+                "FileType",
+                "MediaType",
+                "LocalizationType",
+                "StateType",
+                "LeafType",
+                "Section",
+            ],
         },
         "current_name": {
             "type": "string",
@@ -158,6 +184,14 @@ attribute_type_delete = {
         "entity_type": {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
+            "enum": [
+                "FileType",
+                "MediaType",
+                "LocalizationType",
+                "StateType",
+                "LeafType",
+                "Section",
+            ],
         },
         "name": {
             "type": "string",

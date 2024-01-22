@@ -23,6 +23,46 @@ section_post_properties = {
         "type": "string",
         "nullable": True,
     },
+    "attributes": {
+        "description": "Object containing attribute values.",
+        "type": "object",
+        "additionalProperties": {"$ref": "#/components/schemas/AttributeValue"},
+    },
+    "explicit_listing": {
+        "type": "boolean",
+        "description": "Determines whether the section is explicitly made up of media IDs.",
+    },
+}
+
+section_get_properties = {
+    "created_datetime": {
+        "description": "The elemental ID of the object.",
+        "type": "string",
+        "format": "date-time",
+        "nullable": True,
+    },
+    "created_by": {
+        "type": "integer",
+        "description": "Unique integer identifying the user who created this localization.",
+    },
+    "media": {
+        "description": "List of media IDs that belong in this section.",
+        "type": "array",
+        "items": {"type": "integer"},
+    },
+}
+
+section_patch_properties = {
+    "media_add": {
+        "description": "List of media IDs to add to this section.",
+        "type": "array",
+        "items": {"type": "integer"},
+    },
+    "media_del": {
+        "description": "List of media IDs to remove from this section.",
+        "type": "array",
+        "items": {"type": "integer"},
+    },
 }
 
 section_spec = {
@@ -30,14 +70,17 @@ section_spec = {
     "required": ["name"],
     "properties": {
         **section_post_properties,
+        "media": {
+            "description": "List of mediia IDs that this state applies to (if explicit_listing is True)",
+            "type": "array",
+            "items": {"type": "integer"},
+        },
     },
 }
 
 section_update = {
     "type": "object",
-    "properties": {
-        **section_post_properties,
-    },
+    "properties": {**section_post_properties, **section_patch_properties},
 }
 
 section = {
@@ -52,5 +95,6 @@ section = {
             "description": "Unique integer identifying the project associated with the section.",
         },
         **section_post_properties,
+        **section_get_properties,
     },
 }

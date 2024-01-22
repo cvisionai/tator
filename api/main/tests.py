@@ -57,8 +57,9 @@ class TatorTransactionTest(APITransactionTestCase):
 
 def wait_for_indices(entity_type):
     entity_type.refresh_from_db()
+    attr_indices = [x for x in entity_type.attribute_types if x["dtype"] != "blob"]
     built_ins = BUILT_IN_INDICES.get(type(entity_type), [])
-    types_to_scan = [*entity_type.attribute_types, *built_ins]
+    types_to_scan = [*attr_indices, *built_ins]
     # Wait for btree indices too
     for t in types_to_scan:
         if t["dtype"] == "string":
@@ -5481,3 +5482,168 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.get(f"{url}?descendants=Honda.Accord", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
+
+    def test_adv_sections(self):
+        """
+        Test case for performing advanced section operations.
+
+        This test creates a media type, a section, and performs various operations on the section.
+        It verifies the creation, retrieval, modification, and search functionality of sections.
+        """
+        entity_type = MediaType.objects.create(
+            name="video",
+            dtype="video",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        wait_for_indices(entity_type)
+        media = create_test_video(self.user, "test.mp4", entity_type, self.project)
+        section_spec = {
+            "name": "Test",
+            "path": "Foo.Test",
+            "explicit_listing": True,
+            "media": [media.pk],
+        }
+        url = f"/rest/Sections/{self.project.pk}"
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        section_id = response.data["id"]
+        url = f"/rest/Section/{section_id}"
+
+        def check_it(section, section_spec):
+            self.assertEqual(section["name"], section_spec["name"])
+            self.assertEqual(section["path"], section_spec["path"])
+            self.assertEqual(section["explicit_listing"], section_spec["explicit_listing"])
+            self.assertEqual(section["media"], section_spec["media"])
+            self.assertEqual(section["created_by"], self.user.pk)
+
+        # Test that the section is returned as it was setup
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        check_it(response.data, section_spec)
+
+        # Test it out via list accessor too
+        url = f"/rest/Sections/{self.project.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        section_match = [s for s in response.data if s["id"] == section_id]
+        check_it(section_match[0], section_spec)
+
+        # Verify adding a section with bad attributes fails
+        section_spec = {
+            "name": "Test",
+            "path": "Foo.Test",
+            "explicit_listing": True,
+            "media": [],
+            "attributes": {"abcdef": False},
+        }
+        url = f"/rest/Sections/{self.project.pk}"
+        response = self.client.post(url, section_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Verify patching a section with bad attributes fails
+        update_spec = {"attributes": {"abcdef": False}}
+        url = f"/rest/Section/{section_id}"
+        response = self.client.patch(url, update_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Add a string attribute to the section
+        add_string_spec = {
+            "entity_type": "Section",
+            "addition": {"name": "String Attribute", "dtype": "string"},
+        }
+        url = f"/rest/AttributeType/{self.project.pk}"
+        response = self.client.post(url, add_string_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check project response has attribute_type return
+        url = f"/rest/Project/{self.project.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["attribute_types"]), 1)
+        serv_resp = response.data["attribute_types"][0]
+        self.assertEqual(serv_resp["name"], "String Attribute")
+        self.assertEqual(serv_resp["dtype"], "string")
+
+        # Verify we can post a string to the section
+        update_spec = {"attributes": {"String Attribute": "foo"}}
+        url = f"/rest/Section/{section_id}"
+        response = self.client.patch(url, update_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        search_blob = base64.b64encode(
+            json.dumps(
+                {"attribute": "String Attribute", "operation": "eq", "value": "zoo"}
+            ).encode()
+        )
+
+        url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(len(response.data), 0)
+
+        search_blob = base64.b64encode(
+            json.dumps(
+                {"attribute": "String Attribute", "operation": "eq", "value": "foo"}
+            ).encode()
+        )
+
+        url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], section_id)
+
+    def test_multi_section_lookup(self):
+        """
+        Test case for performing a multi-section lookup.
+
+        This test creates a media type, multiple sections, and multiple media objects.
+        It then performs a multi-section lookup and asserts that the response contains
+        the expected number of media objects.
+        """
+        entity_type = MediaType.objects.create(
+            name="video",
+            dtype="video",
+            project=self.project,
+            attribute_types=[*create_test_attribute_types(),        
+            dict(
+                name="Test Blob",
+                dtype="blob",
+                default="",
+            )]
+        )
+        wait_for_indices(entity_type)
+
+        lms = []
+        for r in range(5):
+            media = create_test_video(self.user, f"test{r}.mp4", entity_type, self.project)
+            lms.append(media)
+
+        sect_ids = []
+        for r in range(5):
+            section_spec = {
+                "name": f"Test{r}",
+                "path": f"Foo.Test{r}",
+                "explicit_listing": True,
+                "media": [lms[r].id],
+            }
+            url = f"/rest/Sections/{self.project.pk}"
+            response = self.client.post(url, section_spec, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            sect_ids.append(response.data["id"])
+
+        sect_id_strs = [str(i) for i in sect_ids]
+        for x in range(4):
+            sect_ids_str = ",".join(sect_id_strs[x:])
+            url = f"/rest/Medias/{self.project.pk}?multi_section={sect_ids_str}"
+            response = self.client.get(url, format="json")
+            self.assertEqual(len(response.data), 5 - x)
+
+        # Test a blob attribute
+        url = f"/rest/Media/{lms[0].id}"
+        update_spec = {"attributes": {"Test Blob": "foo"}}
+        response = self.client.patch(url, update_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["attributes"]["Test Blob"], "foo")

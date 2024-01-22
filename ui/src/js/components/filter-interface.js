@@ -261,12 +261,12 @@ export class FilterInterface extends TatorElement {
         );
       }
     }
-    if (section.related_object_search) {
+    if (section.related_search) {
       let ops = [];
-      if (Object.hasOwn(section.related_object_search, "attribute")) {
-        ops.push(section.related_object_search);
+      if (Object.hasOwn(section.related_search, "attribute")) {
+        ops.push(section.related_search);
       } else {
-        ops.push(...section.related_object_search.operations);
+        ops.push(...section.related_search.operations);
       }
       for (const filter of ops) {
         this._addConstantPill(

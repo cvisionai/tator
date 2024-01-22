@@ -713,6 +713,10 @@ class Project(Model):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ Defines the attribute types that can be used to filter sections for this project
+    """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
@@ -2046,6 +2050,16 @@ class Section(Model):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    """ Time in which the section was created """
+
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, db_column="created_by")
+
+    attributes = JSONField(null=True, blank=True, default=dict)
+
+    explicit_listing = BooleanField(default=False, null=True, blank=True)
+    media = ManyToManyField(Media)
+
 
 class Favorite(Model):
     """Stores an annotation saved by a user."""
@@ -2237,6 +2251,7 @@ class RowProtection(Model):
     localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
     state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
     file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
+    section = ForeignKey(Section, on_delete=CASCADE, null=True, blank=True)
 
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)

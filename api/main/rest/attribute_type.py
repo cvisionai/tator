@@ -10,10 +10,12 @@ from ..models import (
     Media,
     LocalizationType,
     Localization,
-    StateType,
-    State,
     LeafType,
     Leaf,
+    Project,
+    Section,
+    StateType,
+    State,
 )
 from ..search import TatorSearch
 from ..schema import AttributeTypeListSchema, parse
@@ -35,6 +37,7 @@ ENTITY_TYPES = {
     "LocalizationType": (LocalizationType, Localization),
     "StateType": (StateType, State),
     "LeafType": (LeafType, Leaf),
+    "Section": (Project, Section),
 }
 
 
@@ -86,7 +89,10 @@ class AttributeTypeListAPI(BaseListView):
         models = AttributeTypeListAPI._get_models(params["entity_type"])
         entity_type = models[0].objects.select_for_update(nowait=True).get(pk=parent_id)
         model = models[1]
-        obj_qs = model.objects.filter(type=parent_id)
+        if models[0] == Project:
+            obj_qs = Section.objects.filter(project=params["id"])
+        else:
+            obj_qs = model.objects.filter(type=parent_id)
         return entity_type, obj_qs
 
     @staticmethod
