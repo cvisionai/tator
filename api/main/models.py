@@ -2393,11 +2393,16 @@ class RowProtection(Model):
 
     permission = BigIntegerField(default=0, db_index=True)
     """ Permission bitmask for the row in question
+
+        CRUD permissions are encoded as follows:
         0 - Can not see
         0x1 - Exist
-        0x2 - Read
+        0x2 - Read (e.g. generate presigned URLs)
         0x4 - Write
         0x8 - Full control (ability to delete)
+
+        In the next nibble, the following permissions are encoded:
+        0x10 - Execute bit (for algorithms/projects)
         bits above this are reserved for future use.
     """
 
