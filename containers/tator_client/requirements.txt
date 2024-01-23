@@ -1,6 +1,6 @@
 boto3==1.28.32
 imageio==2.14.0
 pandas==1.4.0
-pillow==10.0.1
+pillow==10.2.0
 progressbar2==4.0.0
 rq==1.11.1
