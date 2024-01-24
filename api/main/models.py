@@ -2366,12 +2366,53 @@ class GroupMembership(Model):
     """ Descriptive name for the role of this user in the group """
 
 
+class PermissionMask:
+    EXIST = 0x1  # Allows a row to be seen in a list, or individual GET
+    READ = 0x2  # Allows a references to be accessed, e.g. generate presigned URLs
+    WRITE = 0x4  # Allows a row to be updated
+    DELETE = 0x8  # Allows a row to be deleted (pruned for metadata)
+    EXECUTE = 0x10  # Allows an algorithm to be executed (applies to project-level only)
+    UPLOAD = 0x20  # Allows media to be uploaded (applies to project-level only)
+    PROJECT_EXIST = 0x100  # Allows a project to be seen in a list, or individual GET
+    PROJECT_EDIT = 0x200  # Allows a project to be edited
+    PROJECT_DELETE = 0x800  # Allows a project to be deleted
+
+    # Convenience wrappers to original tator permission system
+    OLD_READ = self.EXIST | self.READ | self.PROJECT_EXIST
+    OLD_WRITE = self.OLD_READ | self.WRITE | self.DELETE
+    OLD_TRANSFER = self.OLD_WRITE | self.UPLOAD
+    OLD_EXECUTE = self.TRANSFER | self.EXECUTE
+    OLD_FULL_CONTROL = self.EXECUTE | self.PROJECT_EDIT | self.PROJECT_DELETE
+
+
 class RowProtection(Model):
+    """
+    Row  protection  models cascade in  two dimensions. The first dimension is
+    the type of object being protected. The second dimension is the type of
+    object, or the subject, who is doing the action.
+
+    Permissions are encoded as a bitmask. If multiple permissions apply the most
+    specific applies. Specifically permission masks are NOT OR'd together. Examples:
+
+    A project row permission project grants a user permission to read/write/execute. For
+    a specific algorithm, the user does not have permission to execute. Therefore the can
+    not execute this particular algorithm.
+
+    Similarly, if  a project is set  to be read-only for all organization members; then
+    an override object can be set for a user or group to supply write permissions for certain
+    groups.
+
+    For ease of use of this system, it is recommended to utilize Groups to manage permissions
+    for sets of users.
+
+
+    For Media Requests:
+       - Find permission objects that match media+user
+    """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(
         User, on_delete=SET_NULL, null=True, blank=True, related_name="rp_created_by"
     )
-
     # Pointer to protected row element, one of the following should be non-null.
     # Note: Currently type objects are protected by project membership status
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -2403,6 +2444,17 @@ class RowProtection(Model):
 
         In the next nibble, the following permissions are encoded:
         0x10 - Execute bit (for algorithms/projects)
+        0x20  - Upload bit (can upload media)
+        0x40  - RESERVED
+        0x80  - RESERVED
+
+        In the next nibble, the following permissions for projects properties are
+        encoded
+        0x100 - Can see project existence
+        0x200 - Can edit project attributes
+        0x400 - RESERVED
+        0x800 - Can delete project
+
         bits above this are reserved for future use.
     """
 
