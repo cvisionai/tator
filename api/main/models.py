@@ -2424,6 +2424,8 @@ class RowProtection(Model):
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
 
+    target_organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    target_group = ForeignKey(Group, on_delete=CASCADE, null=True, blank=True)
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
     """ Pointer to the user this permission/rule refers to """
@@ -2454,6 +2456,13 @@ class RowProtection(Model):
         0x200 - Can edit project attributes
         0x400 - RESERVED
         0x800 - Can delete project
+
+        In the next nibble, the following permission for organization properties are
+        encoded
+        0x1000 - Can see organization existence
+        0x2000 - Can edit organization attributes
+        0x4000 - Can add groups to an organization
+        0x8000 - Can delete an organization
 
         bits above this are reserved for future use.
     """
