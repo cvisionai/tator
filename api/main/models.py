@@ -2358,7 +2358,6 @@ class Group(Model):
 class GroupMembership(Model):
     """Associates a user to a group"""
 
-    project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
     group = ForeignKey(Group, on_delete=CASCADE)
     group_admin = BooleanField(default=False)
