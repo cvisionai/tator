@@ -1124,7 +1124,6 @@ def upgrade_vector_db():
                 print(f"Reindexing {attribute_info['name']} of {entity_type.name}")
                 ts.create_psql_index(entity_type, attribute_info, flush=True, concurrent=True)
 
-
 def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.fromtimestamp(0)):
     from django.db.models import F, Window, Count, ExpressionWrapper
     from django.db.models.functions import Lag
@@ -1200,3 +1199,83 @@ def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.from
                 modified_datetime__gte=since_when,
             )
             find_bad_marks(potential_states)
+
+def memberships_to_rowp(project_id):
+    print("This tool will convert membership objects to row permissions.")
+    print(
+        "It does so in a way that retains all legacy permissions. It may not be the most optimal."
+    )
+    print("Example: Groups can span multiple projects, but this makes 1 group per project.")
+    print("Manual migration of permissions would be preferable in some situations.")
+    print(
+        "This tool will not delete membership objects, but is designed to make them redundant in  terms of  permission level"
+    )
+    print(
+        "This tool will not delete any row permissions; if doing this on migration, confirm you deleted all row protection prior."
+    )
+
+    if project_id:
+        print(f"Processing memberships for {project_id}")
+        memberships = Membership.objects.filter(project=project_id)
+    else:
+        print("Processing all memberships")
+        memberships = Membership.objects.all()
+    print("There are {len(memberships)} memberships to convert.")
+
+    """
+    class Permission(Enum):
+    NO_ACCESS = "n"
+    VIEW_ONLY = "r"
+    CAN_EDIT = "w"
+    CAN_TRANSFER = "t"
+    CAN_EXECUTE = "x"
+    FULL_CONTROL = "a"
+    """
+
+    def group_for_project(project, permission):
+        """This subfunction will create a group for a project based on the permission level"""
+        if permission == "a":
+            new_permission = PermissionMask.OLD_FULL_CONTROL
+            permission_name = "Full Control"
+        elif permission == "x":
+            new_permission = PermissionMask.OLD_EXECUTE
+            permission_name = "Can Execute"
+        elif permission in ["t"]:
+            new_permission = PermissionMask.OLD_TRANSFER
+            permission_name = "Can Transfer"
+        elif permission == "w":
+            new_permission = PermissionMask.OLD_EDIT
+            permission_name = "Can Edit"
+        elif permission == "r":
+            new_permission = PermissionMask.OLD_READ
+            permission_name = "Can Read"
+        elif permission == "n":
+            new_permission = 0x0  # None
+            permission_name = "None"
+
+        group_name = f"{project.name} {permission_name}"
+        org_group = Group.objects.filter(organization=project.organization).filter(name=group_name)
+        if org_group.exists():
+            return org_group.first()
+        else:
+            group = Group.objects.create(name=group_name, organization=project.organization)
+            rp = RowProtection.objects.create(
+                project=project, group=group, permission=new_permission
+            )
+            print(f"Created {group.name}")
+            return group
+
+    for membership in memberships:
+        project = membership.project
+        user = membership.user
+        permission = membership.permission
+        group = group_for_project(project, permission)
+
+        # Check if the user is already in the group
+        membership = GroupMembership.objects.filter(group=group, user=user)
+        if membership.exists():
+            print(f"User {user.username} already in group {group.name}")
+        else:
+            print(f"Adding user {user.username} to group {group.name}")
+            GroupMembership.objects.create(group=group, user=user)
+
