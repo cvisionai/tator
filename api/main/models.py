@@ -922,6 +922,16 @@ class Algorithm(Model):
     )
     categories = ArrayField(CharField(max_length=128), default=list, null=True)
     parameters = JSONField(default=list, null=True, blank=True)
+    template = ForeignKey(HostedFile, on_delete=SET_NULL, null=True)
+    """ Hosted template, if given then `manifest` is ignored. """
+    tparams = JSONField(default=dict)
+    """ Template parameters, any values set here override default values in
+        the HostedTemplate object.
+    """
+    headers = JSONField(default=dict)
+    """ Request headers for hosted template, any values set here override 
+        default values in the HostedTemplate object.
+    """
 
     def __str__(self):
         return self.name
@@ -2163,6 +2173,16 @@ class Dashboard(Model):
     """ Name of the applet """
     project = ForeignKey(Project, on_delete=CASCADE, db_column="project")
     """ Project associated with the applet """
+    template = ForeignKey(HostedTemplate, on_delete=SET_NULL, null=True)
+    """ Hosted template, if given then `html_file` is ignored. """
+    tparams = JSONField(default=dict)
+    """ Template parameters, any values set here override default values in
+        the HostedTemplate object.
+    """
+    headers = JSONField(default=dict)
+    """ Request headers for hosted template, any values set here override 
+        default values in the HostedTemplate object.
+    """
 
 
 def type_to_obj(typeObj):
@@ -2288,6 +2308,18 @@ class RowProtection(Model):
             )
         ]
 
+class HostedTemplate(Model):
+    name = CharField(max_length=128)
+    """ Name of the template. """
+    url = CharField(max_length=2048)
+    """ URL where jinja2 template is hosted, must be retrievable with a GET
+        using supplied headers."""
+    headers = JSONField(default=dict)
+    """ Headers to be used in the GET request. """
+    tparams = JSONField(default=dict)
+    """ Template parameters used to substitute values in the jinja2 template. """
+    def __str__(self):
+        return self.name
 
 # Structure to handle identifying columns with project-scoped indices
 # e.g. Not relaying solely on `db_index=True` in django.
