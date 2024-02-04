@@ -5592,6 +5592,18 @@ class SectionTestCase(TatorTransactionTest):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], section_id)
 
+        # Verify deletion of the section attribute
+        delete_string_spec = {"entity_type": "Section", "name": "String Attribute"}
+        url = f"/rest/AttributeType/{self.project.pk}"
+        response = self.client.delete(url, delete_string_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify resultset on old search is now 0
+        url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
     def test_multi_section_lookup(self):
         """
         Test case for performing a multi-section lookup.
