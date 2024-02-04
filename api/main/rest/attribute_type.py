@@ -228,12 +228,12 @@ class AttributeTypeListAPI(BaseListView):
             if type(entity_type) != Project:
                 TatorSearch().delete_alias(entity_type, name).save()
             else:
-                found_idx = None
+                found_idx = -1
                 for idx, attribute_obj in enumerate(entity_type.attribute_types):
                     if attribute_obj["name"] == name:
                         element = {**attribute_obj}
                         found_idx = idx
-                if found_idx:
+                if found_idx >= 0:
                     del entity_type.attribute_types[found_idx]
                     entity_type.save()
 
