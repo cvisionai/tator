@@ -9,6 +9,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
+from django.db.models import Q
 
 from ..models import Permission
 from ..models import Project
@@ -18,6 +19,7 @@ from ..models import Affiliation
 from ..models import User
 from ..models import Media
 from ..models import Algorithm
+from ..models import RowProtection
 from ..cache import TatorCache
 
 logger = logging.getLogger(__name__)
@@ -37,10 +39,14 @@ def _for_schema_view(request, view):
 
 
 class ProjectPermissionBase(BasePermission):
-    """Base class for requiring project permissions."""
+    """Base class for requiring project permissions.
+    With row protection objects, this provides a top-level check to map to the
+    accessibility of objects at all. It does not gaurantee permission to all objects in the queryset.
+    """
 
     def has_permission(self, request, view):
         # Get the project from the URL parameters
+        obj=None
         if "project" in view.kwargs:
             project_id = view.kwargs["project"]
             project = get_object_or_404(Project, pk=int(project_id))
@@ -70,7 +76,7 @@ class ProjectPermissionBase(BasePermission):
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)
 
-        return self._validate_project(request, project)
+        return self._validate_project(request, project, obj)
 
     def has_object_permission(self, request, view, obj):
         # Get the project from the object
@@ -86,21 +92,28 @@ class ProjectPermissionBase(BasePermission):
             project = obj
         return project
 
-    def _validate_project(self, request, project):
+    def _validate_project(self, request, project, obj):
         granted = True
 
+        query = (
+            Q(project=project)
+            | Q(version__in=project.versions.all())
+            | Q(media__in=project.media_project.all())
+            | Q(algorithm__in=project.algorithm_set.all())
+            | Q(section_in=project.section_set.all())
+        )
+        rp = RowProtection.objects.filter(query)
         if isinstance(request.user, AnonymousUser):
             granted = False
         else:
             # Find membership for this user and project
-            membership = Membership.objects.filter(user=request.user, project=project)
+            permissions = RowProtection.augment_permissions(request.user, fake_qs)
 
             # If user is not part of project, deny access
-            if membership.count() == 0:
+            if permissions.exist() == False:
                 granted = False
             else:
-                # If user has insufficient permission, deny access
-                permission = membership[0].permission
+                # This is a cursory check to see if the user likely has permission at all to a request
                 insufficient = permission in self.insufficient_permissions
                 is_edit = request.method not in SAFE_METHODS
                 if is_edit and insufficient:
