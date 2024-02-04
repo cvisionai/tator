@@ -225,7 +225,17 @@ class AttributeTypeListAPI(BaseListView):
         name = params["name"]
         with transaction.atomic():
             entity_type, obj_qs = self._get_objects(params)
-            TatorSearch().delete_alias(entity_type, name).save()
+            if type(entity_type) != Project:
+                TatorSearch().delete_alias(entity_type, name).save()
+            else:
+                found_idx = None
+                for idx, attribute_obj in enumerate(entity_type.attribute_types):
+                    if attribute_obj["name"] == name:
+                        element = {**attribute_obj}
+                        found_idx = idx
+                if found_idx:
+                    del entity_type.attribute_types[found_idx]
+                    entity_type.save()
 
         if obj_qs.exists():
             bulk_delete_attributes([name], obj_qs)
