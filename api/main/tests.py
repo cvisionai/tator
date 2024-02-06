@@ -5592,6 +5592,116 @@ class SectionTestCase(TatorTransactionTest):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], section_id)
 
+        # Verify deletion of the section attribute
+        delete_string_spec = {"entity_type": "Section", "name": "String Attribute"}
+        url = f"/rest/AttributeType/{self.project.pk}"
+        response = self.client.delete(url, delete_string_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify resultset on old search is now 0
+        url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+        # Verify search by blob
+        add_blob_spec = {
+            "entity_type": "Section",
+            "addition": {"name": "Blob Attribute", "dtype": "blob"},
+        }
+        url = f"/rest/AttributeType/{self.project.pk}"
+        response = self.client.post(url, add_blob_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Here is >2kb of  public domain text. It's a story about a delightful bear named Winnie The Pooh,  written in 1926 by A.A. Milne.
+        winnie_the_pooh = """
+        If you happen to have read another book about Christopher Robin, you may remember that he once had a swan (or the swan had Christopher Robin, I don't know which) and that he used to call this swan Pooh. That was a long time ago, and when we said good-bye, we took the name with us, as we didn't think the swan would want it any more. Well, when Edward Bear said that he would like an exciting name all to himself, Christopher Robin said at once, without stopping to think, that he was Winnie-the-Pooh. And he was. So, as I have explained the Pooh part, I will now explain the rest of it.
+
+        You can't be in London for long without going to the Zoo. There are some people who begin the Zoo at the beginning, called WAYIN, and walk as quickly as they can past every cage until they get to the one called WAYOUT, but the nicest people go straight to the animal they love the most, and stay there. So when Christopher Robin goes to the Zoo, he goes to where the Polar Bears are, and he whispers something to the third keeper from the left, and doors are unlocked, and we wander through dark passages and up steep stairs, until at last we come to the special cage, and the cage is opened, and out trots something brown and furry, and with a happy cry of "Oh, Bear!" Christopher Robin rushes into its arms. Now this bear's name is Winnie, which shows what a good name for bears it is, but the funny thing is that we can't remember whether Winnie is called after Pooh, or Pooh after Winnie. We did know once, but we have forgotten....
+
+        I had written as far as this when Piglet looked up and said in his squeaky voice, "What about Me?" "My dear Piglet," I said, "the whole book is about you." "So it is about Pooh," he squeaked. You see what it is. He is jealous because he thinks Pooh is having a Grand Introduction all to himself. Pooh is the favourite, of course, there's no denying it, but Piglet comes in for a good many things which Pooh misses; because you can't take Pooh to school without everybody knowing it, but Piglet is so small that he slips into a pocket, where it is very comforting to feel him when you are not quite sure whether twice seven is twelve or twenty-two. Sometimes he slips out and has a good look in the ink-pot, and in this way he has got more education than Pooh, but Pooh doesn't mind. Some have brains, and some haven't, he says, and there it is.
+
+        And now all the others are saying, "What about Us?" So perhaps the best thing to do is to stop writing Introductions and get on with the book.
+
+        Here is Edward Bear, coming downstairs now, bump, bump, bump, on the back of his head, behind Christopher Robin. It is, as far as he knows, the only way of coming downstairs, but sometimes he feels that there really is another way, if only he could stop bumping for a moment and think of it. And then he feels that perhaps there isn't. Anyhow, here he is at the bottom, and ready to be introduced to you. Winnie-the-Pooh.
+
+        When I first heard his name, I said, just as you are going to say, "But I thought he was a boy?"
+
+        "So did I," said Christopher Robin.
+
+        "Then you can't call him Winnie?"
+
+        "I don't."
+
+        "But you said——"
+
+        "He's Winnie-ther-Pooh. Don't you know what 'ther' means?"
+
+        "Ah, yes, now I do," I said quickly; and I hope you do too, because it is all the explanation you are going to get.
+
+        Sometimes Winnie-the-Pooh likes a game of some sort when he comes downstairs, and sometimes he likes to sit quietly in front of the fire and listen to a story. This evening——
+
+        "What about a story?" said Christopher Robin.
+
+        "What about a story?" I said.
+
+        "Could you very sweetly tell Winnie-the-Pooh one?"
+
+        "I suppose I could," I said. "What sort of stories does he like?"
+
+        "About himself. Because he's that sort of Bear."
+
+        "Oh, I see."
+
+        "So could you very sweetly?"
+
+        "I'll try," I said.
+
+        So I tried.
+
+        Once upon a time, a very long time ago now, about last Friday, Winnie-the-Pooh lived in a forest all by himself under the name of Sanders.
+
+        ("What does 'under the name' mean?" asked Christopher Robin.
+
+        "It means he had the name over the door in gold letters, and lived under it."
+
+        "Winnie-the-Pooh wasn't quite sure," said Christopher Robin.
+
+        "Now I am," said a growly voice.
+
+        "Then I will go on," said I.)
+
+        One day when he was out walking, he came to an open place in the middle of the forest, and in the middle of this place was a large oak-tree, and, from the top of the tree, there came a loud buzzing-noise.
+        """
+
+        update_spec = {"attributes": {"Blob Attribute": winnie_the_pooh}}
+        url = f"/rest/Section/{section_id}"
+        response = self.client.patch(url, update_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        url = f"/rest/Sections/{self.project.pk}"
+        search_blob = base64.b64encode(
+            json.dumps(
+                {"attribute": "Blob Attribute", "operation": "icontains", "value": "6c821fd7bb25"}
+            ).encode()
+        )
+        response = self.client.get(f"{url}?encoded_search={search_blob.decode()}", format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+        search_blob = base64.b64encode(
+            json.dumps(
+                {
+                    "attribute": "Blob Attribute",
+                    "operation": "icontains",
+                    "value": "Winnie-The-Pooh",
+                }
+            ).encode()
+        )
+        response = self.client.get(f"{url}?encoded_search={search_blob.decode()}", format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
     def test_multi_section_lookup(self):
         """
         Test case for performing a multi-section lookup.
@@ -5604,12 +5714,14 @@ class SectionTestCase(TatorTransactionTest):
             name="video",
             dtype="video",
             project=self.project,
-            attribute_types=[*create_test_attribute_types(),        
-            dict(
-                name="Test Blob",
-                dtype="blob",
-                default="",
-            )]
+            attribute_types=[
+                *create_test_attribute_types(),
+                dict(
+                    name="Test Blob",
+                    dtype="blob",
+                    default="",
+                ),
+            ],
         )
         wait_for_indices(entity_type)
 
