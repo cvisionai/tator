@@ -11,6 +11,9 @@ alg_fields = SimpleNamespace(
     files_per_job="files_per_job",
     categories="categories",
     parameters="parameters",
+    headers="headers",
+    tparams="tparams",
+    template="template",
 )
 
 algorithm_post_properties = {
@@ -49,13 +52,27 @@ algorithm_post_properties = {
         "description": "List of algorithm workflow parameters",
         "items": {"$ref": "#/components/schemas/AlgorithmParameter"},
     },
+    alg_fields.template: {
+        "type": "integer",
+        "description": "Unique integer identifying a hosted template. If set, `manifest` is ignored.",
+    },
+    alg_fields.tparams: {
+        "type": "object",
+        "description": "Template parameters used for rendering hosted template, if set.",
+        "additionalProperties": True,
+    },
+    alg_fields.headers: {
+        "type": "object",
+        "description": "Headers used to retrieve hosted template, if set.",
+        "additionalProperties": True,
+    },
 }
 
 # Note: While project is required, it's part of the path parameter(s)
 algorithm_spec = {
     "type": "object",
     "description": "Algorithm registration creation spec.",
-    "required": [alg_fields.name, alg_fields.user, alg_fields.manifest, alg_fields.files_per_job],
+    "required": [alg_fields.name, alg_fields.user, alg_fields.files_per_job],
     "properties": {
         **algorithm_post_properties,
     },
@@ -72,7 +89,12 @@ algorithm = {
             "type": "integer",
             "description": "Unique integer identifying the project associated with the algorithm.",
         },
-        **algorithm_post_properties,
+        alg_fields.rendered: {
+            "type": "string",
+            "description": "YAML format text containing rendered Argo Workflow template.",
+        },
+        # Headers are excluded from GET requests.
+        **{k:v for k, v in algorithm_post_properties.items() if k != alg_fields.headers},
     },
 }
 

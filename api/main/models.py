@@ -2311,6 +2311,8 @@ class RowProtection(Model):
 class HostedTemplate(Model):
     name = CharField(max_length=128)
     """ Name of the template. """
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
+    """ Pointer to the organization this permission/rule refers to """
     url = CharField(max_length=2048)
     """ URL where jinja2 template is hosted, must be retrievable with a GET
         using supplied headers."""
