@@ -10,6 +10,7 @@ applet_fields = SimpleNamespace(
     headers="headers",
     tparams="tparams",
     template="template",
+    rendered="rendered",
 )
 
 applet_post_properties = {
@@ -21,16 +22,16 @@ applet_post_properties = {
         "description": "List of categories the applet belongs to",
         "items": {"type": "string"},
     },
-    alg_fields.template: {
+    applet_fields.template: {
         "type": "integer",
         "description": "Unique integer identifying a hosted template. If set, `manifest` is ignored.",
     },
-    alg_fields.tparams: {
+    applet_fields.tparams: {
         "type": "object",
         "description": "Template parameters used for rendering hosted template, if set.",
         "additionalProperties": True,
     },
-    alg_fields.headers: {
+    applet_fields.headers: {
         "type": "object",
         "description": "Headers used to retrieve hosted template, if set.",
         "additionalProperties": True,

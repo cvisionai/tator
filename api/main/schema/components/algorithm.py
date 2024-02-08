@@ -14,6 +14,7 @@ alg_fields = SimpleNamespace(
     headers="headers",
     tparams="tparams",
     template="template",
+    rendered="rendered",
 )
 
 algorithm_post_properties = {

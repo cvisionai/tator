@@ -906,6 +906,20 @@ class JobCluster(Model):
 
 # Algorithm models
 
+class HostedTemplate(Model):
+    name = CharField(max_length=128)
+    """ Name of the template. """
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
+    """ Pointer to the organization this permission/rule refers to """
+    url = CharField(max_length=2048)
+    """ URL where jinja2 template is hosted, must be retrievable with a GET
+        using supplied headers."""
+    headers = JSONField(default=dict)
+    """ Headers to be used in the GET request. """
+    tparams = JSONField(default=dict)
+    """ Template parameters used to substitute values in the jinja2 template. """
+    def __str__(self):
+        return self.name
 
 class Algorithm(Model):
     name = CharField(max_length=128)
@@ -922,7 +936,7 @@ class Algorithm(Model):
     )
     categories = ArrayField(CharField(max_length=128), default=list, null=True)
     parameters = JSONField(default=list, null=True, blank=True)
-    template = ForeignKey(HostedFile, on_delete=SET_NULL, null=True)
+    template = ForeignKey(HostedTemplate, on_delete=SET_NULL, null=True)
     """ Hosted template, if given then `manifest` is ignored. """
     tparams = JSONField(default=dict)
     """ Template parameters, any values set here override default values in
@@ -2307,21 +2321,6 @@ class RowProtection(Model):
                 name="permission_uniqueness_check",
             )
         ]
-
-class HostedTemplate(Model):
-    name = CharField(max_length=128)
-    """ Name of the template. """
-    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
-    """ Pointer to the organization this permission/rule refers to """
-    url = CharField(max_length=2048)
-    """ URL where jinja2 template is hosted, must be retrievable with a GET
-        using supplied headers."""
-    headers = JSONField(default=dict)
-    """ Headers to be used in the GET request. """
-    tparams = JSONField(default=dict)
-    """ Template parameters used to substitute values in the jinja2 template. """
-    def __str__(self):
-        return self.name
 
 # Structure to handle identifying columns with project-scoped indices
 # e.g. Not relaying solely on `db_index=True` in django.
