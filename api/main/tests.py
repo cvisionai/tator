@@ -5298,6 +5298,81 @@ class JobClusterTestCase(TatorTransactionTest):
         affiliation.permission = old_permission
         affiliation.save()
 
+class HostedTemplateTestCase(TatorTransactionTest):
+    @staticmethod
+    def _hosted_template_spec():
+        uid = str(uuid1())
+        return {
+            "name": f"Hosted template {uid}",
+            "url": "https://raw.githubusercontent.com/cvisionai/tator/main/doc/examples/workflow_template/echo.yaml",
+            "headers": {},
+            "tparams": {"message": "This is a test."},
+        }
+
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
+
+    def setUp(self):
+        print(f"\n{self.__class__.__name__}=", end="", flush=True)
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.list_uri = "HostedTemplates"
+        self.detail_uri = "HostedTemplate"
+        self.create_json = self._hosted_template_spec()
+        self.entity = HostedTemplate(organization=self.organization, **self.create_json)
+        self.entity.save()
+
+    def test_list_is_an_admin_permissions(self):
+        url = f"/rest/{self.list_uri}/{self.organization.pk}"
+        response = self.client.get(url)
+        assertResponse(self, response, status.HTTP_200_OK)
+
+    def test_list_no_affiliation_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.delete()
+        url = f"/rest/{self.list_uri}/{self.organization.pk}"
+        response = self.client.get(url)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
+        affiliation.save()
+
+    def test_list_is_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        old_permission = affiliation.permission
+        affiliation.permission = "Member"
+        affiliation.save()
+        url = f"/rest/{self.list_uri}/{self.organization.pk}"
+        response = self.client.get(url)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
+        affiliation.permission = old_permission
+        affiliation.save()
+
+    def test_detail_is_an_admin_permissions(self):
+        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
+        response = self.client.get(url)
+        assertResponse(self, response, status.HTTP_200_OK)
+
+    def test_detail_no_affiliation_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.delete()
+        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
+        response = self.client.get(url)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
+        affiliation.save()
+
+    def test_detail_is_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        old_permission = affiliation.permission
+        affiliation.permission = "Member"
+        affiliation.save()
+        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
+        response = self.client.get(url)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
+        affiliation.permission = old_permission
+        affiliation.save()
+
 
 class UsernameTestCase(TatorTransactionTest):
     def setUp(self):
