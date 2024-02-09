@@ -28,6 +28,8 @@ from .file_type import FileTypeListAPI
 from .file_type import FileTypeDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
+from .hosted_template import HostedTemplateListAPI
+from .hosted_template import HostedTemplateDetailAPI
 from .image_file import ImageFileListAPI
 from .image_file import ImageFileDetailAPI
 from .invitation import InvitationListAPI

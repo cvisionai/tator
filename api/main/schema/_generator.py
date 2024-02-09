@@ -91,6 +91,8 @@ class CustomGenerator(SchemaGenerator):
                 "GenericFileSpec": generic_file_spec,
                 "LiveDefinition": live_definition,
                 "LiveUpdateDefinition": live_update_definition,
+                "HostedTemplateSpec": hosted_template_spec,
+                "HostedTemplate": hosted_template,
                 "ImageDefinition": image_definition,
                 "InvitationSpec": invitation_spec,
                 "InvitationUpdate": invitation_update,

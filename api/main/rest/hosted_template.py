@@ -46,7 +46,7 @@ class HostedTemplateListAPI(BaseListView):
         Returns the full database entries of registered hosted templates for the given organization
         """
         user = self.request.user
-        org_id = params["id"]
+        org_id = params["organization"]
         affiliations = Affiliation.objects.filter(user=user, permission="Admin")
         organization_ids = affiliations.values_list("organization", flat=True)
         if org_id not in organization_ids:
@@ -67,7 +67,7 @@ class HostedTemplateListAPI(BaseListView):
         """
         Registers a new hosted template using the provided parameters
         """
-        organization = Organization.objects.get(pk=params["id"])
+        organization = Organization.objects.get(pk=params["organization"])
 
         # Is the name unique?
         hosted_template_name = params["name"]
@@ -142,7 +142,7 @@ class HostedTemplateDetailAPI(BaseDetailView):
 
         obj.save()
 
-        return {"message": f"Hosted template {jc_id} successfully updated!"}
+        return {"message": f"Hosted template {obj_id} successfully updated!"}
 
     def get_queryset(self):
         """Returns a queryset of all hosted templates"""

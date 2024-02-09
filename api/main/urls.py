@@ -198,6 +198,14 @@ urlpatterns += [
         GetClipAPI.as_view(),
     ),
     path(
+        "rest/HostedTemplates/<int:organization>",
+        HostedTemplateListAPI.as_view(),
+    ),
+    path(
+        "rest/HostedTemplate/<int:id>",
+        HostedTemplateDetailAPI.as_view(),
+    ),
+    path(
         "rest/ImageFiles/<int:id>",
         ImageFileListAPI.as_view(),
     ),
