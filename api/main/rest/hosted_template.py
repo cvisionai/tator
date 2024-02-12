@@ -23,8 +23,8 @@ from ..schema import parse
 logger = logging.getLogger(__name__)
 
 def get_and_render(ht, reg):
-    headers = {**ht.headers, **reg["headers"]}
-    tparams = {**ht.tparams, **reg["tparams"]}
+    headers = {**ht.headers, **reg.get("headers", {})}
+    tparams = {**ht.tparams, **reg.get("tparams", {})}
     response = requests.get(ht.url, headers=headers)
     template = jinja2.Template(response.text)
     rendered_string = template.render(tparams)

@@ -8,6 +8,7 @@ from django.forms.models import model_to_dict
 
 from ..models import Project
 from ..models import Dashboard
+from ..models import HostedTemplate
 from ..models import User
 from ..models import database_qs
 from ..schema import AppletListSchema
@@ -16,6 +17,7 @@ from ..schema import parse
 from ..schema.components.applet import applet_fields as fields
 from ..schema.components.applet import applet as applet_schema
 
+from .hosted_template import get_and_render
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectExecutePermission
@@ -75,8 +77,8 @@ class AppletListAPI(BaseListView):
                 logger.error(log_msg)
                 raise ValueError(log_msg)
             ht = HostedTemplate.objects.get(pk=template)
-            headers = params[fields.headers]
-            tparams = params[fields.tparams]
+            headers = params.get(fields.headers, {})
+            tparams = params.get(fields.tparams, {})
             try:
                 get_and_render(ht, SimpleNamespace(headers=headers, tparams=tparams))
             except Exception as exc:
