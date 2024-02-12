@@ -70,8 +70,8 @@ class AppletListAPI(BaseListView):
                 raise ValueError(log_msg)
         else:
             # Make sure this file exists and is accessible with the given headers
-            manifest_url = None
-            exists = HostedTemplate.objects.exists(pk=template)
+            applet_path = None
+            exists = HostedTemplate.objects.filter(pk=template).exists()
             if not exists:
                 log_msg = f"Provided hosted template ({template}) does not exist"
                 logger.error(log_msg)
@@ -80,7 +80,7 @@ class AppletListAPI(BaseListView):
             headers = params.get(fields.headers, {})
             tparams = params.get(fields.tparams, {})
             try:
-                get_and_render(ht, SimpleNamespace(headers=headers, tparams=tparams))
+                get_and_render(ht, params)
             except Exception as exc:
                 log_msg = "Failed to get and render template {template} with supplied headers and template parameters"
                 logger.error(log_msg)

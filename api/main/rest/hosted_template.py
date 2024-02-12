@@ -69,16 +69,9 @@ class HostedTemplateListAPI(BaseListView):
         """
         organization = Organization.objects.get(pk=params["organization"])
 
-        # Is the name unique?
-        hosted_template_name = params["name"]
-        if HostedTemplate.objects.filter(organization=organization, name=hosted_template_name).exists():
-            log_msg = f"Provided hosted template name '{hosted_template_name}' already exists"
-            logger.error(log_msg)
-            raise ValueError(log_msg)
-
         # Register the hosted template
         obj = HostedTemplate(
-            name=hosted_template_name,
+            name=params["name"],
             organization=organization,
             url=params["url"],
             headers=params.get("headers"),
