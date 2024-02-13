@@ -51,6 +51,7 @@ from .generic_file import generic_file_spec
 from .hosted_template import (
     hosted_template_spec,
     hosted_template,
+    parameter,
 )
 from .invitation import (
     invitation_spec,

@@ -58,14 +58,14 @@ algorithm_post_properties = {
         "description": "Unique integer identifying a hosted template. If set, `manifest` is ignored.",
     },
     alg_fields.tparams: {
-        "type": "object",
+        "type": "array",
         "description": "Template parameters used for rendering hosted template, if set.",
-        "additionalProperties": True,
+        "items": {"$ref": "#/components/schemas/Parameter"},
     },
     alg_fields.headers: {
-        "type": "object",
+        "type": "array",
         "description": "Headers used to retrieve hosted template, if set.",
-        "additionalProperties": True,
+        "items": {"$ref": "#/components/schemas/Parameter"},
     },
 }
 

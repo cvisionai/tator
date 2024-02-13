@@ -8,16 +8,32 @@ hosted_template_post_properties = {
         "description": "URL where jinja2 template is hosted, must be retrievable with a GET using supplied headers.",
     },
     "tparams": {
-        "type": "object",
+        "type": "array",
         "description": "Template parameters used for rendering hosted template, if set.",
-        "additionalProperties": True,
+        "items": {"$ref": "#/components/schemas/Parameter"},
     },
     "headers": {
-        "type": "object",
+        "type": "array",
         "description": "Headers used to retrieve hosted template, if set.",
-        "additionalProperties": True,
+        "items": {"$ref": "#/components/schemas/Parameter"},
     },
 }
+
+parameter = {
+    "type": "object",
+    "required": ["name", "value"],
+    "properties": {
+        "name": {
+            "description": "Name of parameter",
+            "type": "string",
+        },
+        "value": {
+            "description": "Value of parameter",
+            "type": "string",
+        },
+    },
+}
+
 
 # Note: While organization is required, it's part of the path parameter(s)
 hosted_template_spec = {

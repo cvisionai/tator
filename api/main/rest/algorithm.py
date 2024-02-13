@@ -21,7 +21,7 @@ from ..schema import AlgorithmListSchema
 from ..schema.components.algorithm import alg_fields as fields
 from ..schema.components.algorithm import algorithm as alg_schema
 
-from .hosted_template import get_and_render
+from .hosted_template import get_and_render, to_dict
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
 from ._permissions import ProjectEditPermission
@@ -103,8 +103,8 @@ class AlgorithmListAPI(BaseListView):
         template = params.get(fields.template)
         if template is None:
             ht = None
-            headers = {}
-            tparams = {}
+            headers = []
+            tparams = []
             # Gather the manifest and verify it exists on the server in the right project
             manifest_file = os.path.basename(params[fields.manifest])
             manifest_url = os.path.join(str(project_id), manifest_file)
@@ -145,8 +145,8 @@ class AlgorithmListAPI(BaseListView):
                 raise PermissionDenied(log_msg)
 
             # Make sure template is accessible with given headers
-            headers = params.get(fields.headers, {})
-            tparams = params.get(fields.tparams, {})
+            headers = params.get(fields.headers, [])
+            tparams = params.get(fields.tparams, [])
             try:
                 get_and_render(ht, params)
             except Exception as exc:

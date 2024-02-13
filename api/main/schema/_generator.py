@@ -141,6 +141,7 @@ class CustomGenerator(SchemaGenerator):
                 "OrganizationSpec": organization_spec,
                 "OrganizationUpdate": organization_update,
                 "Organization": organization,
+                "Parameter": parameter,
                 "PasswordResetSpec": password_reset_spec,
                 "ProjectSpec": project_spec,
                 "ProjectUpdate": project_update,
