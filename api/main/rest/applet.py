@@ -9,8 +9,8 @@ from django.forms.models import model_to_dict
 from ..models import Project
 from ..models import Dashboard
 from ..models import HostedTemplate
+from ..models import Affiliation
 from ..models import User
-from ..models import database_qs
 from ..schema import AppletListSchema
 from ..schema import AppletDetailSchema
 from ..schema import parse
@@ -69,7 +69,7 @@ class AppletListAPI(BaseListView):
                 logging.error(log_msg)
                 raise ValueError(log_msg)
         else:
-            # Make sure this file exists and is accessible with the given headers
+            # Make sure this file exists
             applet_path = None
             exists = HostedTemplate.objects.filter(pk=template).exists()
             if not exists:
@@ -77,6 +77,21 @@ class AppletListAPI(BaseListView):
                 logger.error(log_msg)
                 raise ValueError(log_msg)
             ht = HostedTemplate.objects.get(pk=template)
+
+            # Make sure user has permission to use this hosted template
+            aff_qs = Affiliation.objects.filter(organization=ht.organization, user=self.request.user)
+            affiliated = aff_qs.exists()
+            if not affiliated:
+                log_msg = f"Insufficient permission to use hosted template {template}"
+                logger.error(log_msg)
+                raise PermissionDenied(log_msg)
+            affiliation = aff_qs.first()
+            if affiliation.permission != "Admin":
+                log_msg = f"Insufficient permission to use hosted template {template} (admin permission required)"
+                logger.error(log_msg)
+                raise PermissionDenied(log_msg)
+
+            # Make sure template is accessible with given headers
             headers = params.get(fields.headers, {})
             tparams = params.get(fields.tparams, {})
             try:

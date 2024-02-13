@@ -22,6 +22,7 @@ export class AppletEdit extends TypeFormTemplate {
       "applet-edit--description"
     );
     this._htmlFilePath = this._shadow.getElementById("applet-edit--html-file");
+    this._hostedTemplateId = this._shadow.getElementById("applet-edit--hosted-template");
     this._categoriesList = this._shadow.getElementById(
       "applet-edit--categories"
     );
@@ -98,6 +99,10 @@ export class AppletEdit extends TypeFormTemplate {
       formData.html_file = this._htmlFilePath.getValue();
     } else if (isNew && !this._htmlFilePath.changed()) {
       formData.html_file = null;
+    }
+
+    if (this._hostedTemplateId.changed() || isNew) {
+      formData.template = this._hostedTemplateId.getValue();
     }
 
     if (this._categoriesList.changed() || isNew) {
