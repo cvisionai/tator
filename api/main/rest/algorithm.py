@@ -43,9 +43,6 @@ class AlgorithmListAPI(BaseListView):
         """Returns the full database entries of algorithm registered with this project"""
         qs = Algorithm.objects.filter(project=params["project"])
         out = list(qs.values(*ALGORITHM_GET_FIELDS))
-        for alg in out:
-            ht = HostedTemplate.objects.get(pk=alg[fields.template])
-            alg[fields.rendered] = get_and_render(ht, alg)
         return out
 
     def get_queryset(self):
@@ -244,8 +241,9 @@ class AlgorithmDetailAPI(BaseDetailView):
         """Retrieve the requested algortihm entry by ID"""
         alg = Algorithm.objects.get(pk=params["id"])
         alg = model_to_dict(alg, fields=ALGORITHM_GET_FIELDS)
-        ht = HostedTemplate.objects.get(pk=alg[fields.template])
-        alg[fields.rendered] = get_and_render(ht, alg)
+        if alg[fields.template]:
+            ht = HostedTemplate.objects.get(pk=alg[fields.template])
+            alg[fields.rendered] = get_and_render(ht, alg)
         return alg
 
     @transaction.atomic

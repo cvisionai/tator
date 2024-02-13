@@ -34,9 +34,6 @@ class AppletListAPI(BaseListView):
     def _get(self, params: dict) -> dict:
         qs = Dashboard.objects.filter(project=params["project"]).order_by("id")
         out = list(qs.values(*APPLET_GET_FIELDS))
-        for applet in out:
-            ht = HostedTemplate.objects.get(pk=applet[fields.template])
-            applet[fields.rendered] = get_and_render(ht, applet)
         return out
 
     def get_queryset(self) -> dict:
@@ -148,8 +145,9 @@ class AppletDetailAPI(BaseDetailView):
     def _get(self, params):
         applet = Dashboard.objects.get(pk=params["id"])
         applet = model_to_dict(applet, fields=APPLET_GET_FIELDS)
-        ht = HostedTemplate.objects.get(pk=applet[fields.template])
-        applet[fields.rendered] = get_and_render(ht, applet)
+        if applet[fields.template]:
+            ht = HostedTemplate.objects.get(pk=applet[fields.template])
+            applet[fields.rendered] = get_and_render(ht, applet)
         return applet
 
     @transaction.atomic
