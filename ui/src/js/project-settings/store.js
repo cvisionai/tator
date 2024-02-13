@@ -69,7 +69,7 @@ const store = create(
       msg: "", // if Error this could trigger "toast" with message
     },
     projectId: Number(window.location.pathname.split("/")[1]),
-    organizationId: null,
+    organizationList: [],
     deletePermission: false,
     isStaff: false,
     user: null,
@@ -186,22 +186,22 @@ const store = create(
     /** */
     setJobClusterPermissions: async () => {
       try {
-        if (get().organizationId) {
-          const object = await get().fetchTypeByOrg("JobCluster");
+        if (get().organizationList) {
+          const objects = await get().fetchTypeByOrg("JobCluster");
+          const jobClusters = objects.map(obj => obj.data || []).flat();
 
           set({
             JobClusterPermission: {
               ...get().JobClusterPermission,
-              userCantSee: object.response.status === "403",
+              userCantSee: false,
               userCantSave:
-                !get().isStaff &&
-                (object.data == null || object.data.length == 0),
+                !get().isStaff && jobClusters.length == 0,
             },
           });
 
           // Success: Return status to idle (handles page spinner)
           set({ status: { ...get().status, name: "idle", msg: "" } });
-          return object;
+          return objects;
         }
       } catch (err) {
         console.error(err);
@@ -247,7 +247,7 @@ const store = create(
       map.set(object.data.id, object.data);
 
       set({ projectId: id });
-      set({ organizationId: object.data.organization });
+      set({ organizationList: await api.getOrganizationList() });
       set({
         Project: {
           ...get().Project,
@@ -289,26 +289,34 @@ const store = create(
       });
       try {
         const fn = getMap.get(type);
-        const orgId = get().organizationId;
-        const object = await fn(orgId);
-
-        if (object.response.ok) {
-          const setList = new Set();
-          const map = new Map();
-
-          /* Add the data via loop to: setList and map */
-          for (let item of object.data) {
-            setList.add(item.id);
-            map.set(item.id, item);
+        // Get all organizations this user has access to
+        const orgList = get().organizationList;
+        const promises = [];
+        for (const org of orgList) {
+          if (org.permission == "Admin") {
+            promises.push(fn(org.id));
           }
-          set({ [type]: { ...get()[type], setList, map, init: true } });
-
-          // Success: Return status to idle (handles page spinner)
-          set({ status: { ...get().status, name: "idle", msg: "" } });
-        } else {
-          console.error("Object response not ok for fetchType", object);
         }
-        return object;
+        const objects = await Promise.all(promises);
+        const setList = new Set();
+        const map = new Map();
+        for (const object of objects) {
+          if (object.response.ok) {
+
+            /* Add the data via loop to: setList and map */
+            for (let item of object.data) {
+              setList.add(item.id);
+              map.set(item.id, item);
+            }
+          } else {
+            console.error("Object response not ok for fetchType", object);
+          }
+        }
+        set({ [type]: { ...get()[type], setList, map, init: true } });
+
+        // Success: Return status to idle (handles page spinner)
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+        return objects;
       } catch (err) {
         // Error: Return status to idle (handles page spinner)
         console.error("Fetch type by org hit an issue.", err);
@@ -318,7 +326,7 @@ const store = create(
     },
 
     fetchType: async (type) => {
-      if (type == "JobCluster") return get().fetchTypeByOrg(type);
+      if (type == "JobCluster" || type == "HostedTemplate") return get().fetchTypeByOrg(type);
       set({
         status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` },
       });

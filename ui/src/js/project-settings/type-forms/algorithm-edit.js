@@ -34,6 +34,9 @@ export class AlgorithmEdit extends TypeFormTemplate {
     this._manifestPath = this._shadow.getElementById(
       "algorithm-edit--manifest"
     );
+    this._hostedTemplateEnumInput = this._shadow.getElementById(
+      "algorithm-edit--hosted-template"
+    );
     this._clusterEnumInput = this._shadow.getElementById(
       "algorithm-edit--job-cluster"
     );
