@@ -204,6 +204,33 @@ export class AlgorithmEdit extends TypeFormTemplate {
       }
     };
 
+    // Hosted Template
+    this._hostedTemplateEnumInput.removeAttribute("tooltip"); //reset tooltip
+    this._hostedTemplateEnumInput.clear();
+    const hostedTemplateWithChecked = await getCompiledList({
+      type: "HostedTemplate",
+      skip: null,
+      check: this._data.template,
+    });
+    // Check if there are going to be enum values first, show input with NULL
+    if (hostedTemplateWithChecked == null || hostedTemplateWithChecked.length == 0) {
+      this._hostedTemplateEnumInput.disabled = true;
+      this._hostedTemplateEnumInput.setValue("Null");
+      this._hostedTemplateEnumInput.setAttribute(
+        "tooltip",
+        "No Hosted Templates available"
+      );
+    } else {
+      this._hostedTemplateEnumInput.removeAttribute("disabled");
+      this._hostedTemplateEnumInput.permission = "Can Edit";
+      this._hostedTemplateEnumInput.choices = [
+        { label: "None", value: "" },
+        ...hostedTemplateWithChecked,
+      ];
+      this._hostedTemplateEnumInput.default = this._data.template;
+      this._hostedTemplateEnumInput.setValue(this._data.template);
+    }
+
     // Cluster
     this._clusterEnumInput.removeAttribute("tooltip"); //reset tooltip
     this._clusterEnumInput.clear();
@@ -215,26 +242,16 @@ export class AlgorithmEdit extends TypeFormTemplate {
         check: this._data.cluster,
       });
 
-      // Check if there are going to be enum values first, show input with NULL
-      if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
-        this._clusterEnumInput.disabled = true;
-        this._clusterEnumInput.setValue("Null");
-        this._clusterEnumInput.setAttribute(
-          "tooltip",
-          "No Job Clusters associated to this Organization"
-        );
-      } else {
-        this._clusterEnumInput.removeAttribute("disabled");
-        this._clusterEnumInput.permission = !this.userCantSaveCluster
-          ? "Can Edit"
-          : "View Only";
-        this._clusterEnumInput.choices = [
-          { label: "None", value: "" },
-          ...jobClusterWithChecked,
-        ];
-        this._clusterEnumInput.default = this._data.cluster;
-        this._clusterEnumInput.setValue(this._data.cluster);
-      }
+      this._clusterEnumInput.removeAttribute("disabled");
+      this._clusterEnumInput.permission = !this.userCantSaveCluster
+        ? "Can Edit"
+        : "View Only";
+      this._clusterEnumInput.choices = [
+        { label: "None", value: "" },
+        ...jobClusterWithChecked,
+      ];
+      this._clusterEnumInput.default = this._data.cluster;
+      this._clusterEnumInput.setValue(this._data.cluster);
     } else {
       this._clusterEnumInput.disabled = true;
       this._clusterEnumInput.default = this._data.cluster;
@@ -282,6 +299,19 @@ export class AlgorithmEdit extends TypeFormTemplate {
       formData.manifest = this._manifestPath.getValue();
     } else if (isNew && !this._manifestPath.changed()) {
       formData.manifest = null;
+    }
+
+    if (this._hostedTemplateEnumInput.changed() || isNew) {
+      let templateValue = this._hostedTemplateEnumInput.getValue();
+      if (
+        templateValue === null ||
+        templateValue === "Null" ||
+        templateValue == ""
+      ) {
+        formData.template = null;
+      } else {
+        formData.template = Number(templateValue);
+      }
     }
 
     if (!(this.cantSave || this.cantSee)) {

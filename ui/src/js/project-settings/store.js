@@ -15,6 +15,7 @@ getMap
   .set("Membership", api.getMembershipListWithHttpInfo.bind(api))
   .set("Version", api.getVersionListWithHttpInfo.bind(api))
   .set("Algorithm", api.getAlgorithmListWithHttpInfo.bind(api))
+  .set("HostedTemplate", api.getHostedTemplateListWithHttpInfo.bind(api))
   .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
   .set("Applet", api.getAppletListWithHttpInfo.bind(api))
   .set("User", api.getUserListWithHttpInfo.bind(api));
@@ -143,6 +144,12 @@ const store = create(
       setList: new Set(),
       map: new Map(),
       name: "Applet",
+    },
+    HostedTemplate: {
+      init: false,
+      setList: new Set(),
+      map: new Map(),
+      name: "HostedTemplate",
     },
     JobCluster: {
       init: false,
