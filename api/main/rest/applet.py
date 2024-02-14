@@ -3,6 +3,7 @@ import logging
 import os
 
 from django.db import transaction
+from django.db.models import F
 from django.conf import settings
 from django.forms.models import model_to_dict
 
@@ -24,7 +25,7 @@ from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
-APPLET_GET_FIELDS = [k for k in applet_schema["properties"].keys() if k != "rendered"]
+APPLET_GET_FIELDS = [k for k in applet_schema["properties"].keys() if k not in ["rendered", "html_file"]] + ["html_file_url"]
 
 class AppletListAPI(BaseListView):
     schema = AppletListSchema()
@@ -32,8 +33,11 @@ class AppletListAPI(BaseListView):
     http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
-        qs = Dashboard.objects.filter(project=params["project"]).order_by("id")
+        qs = Dashboard.objects.filter(project=params["project"]).order_by("id").annotate(html_file_url=F('html_file'))
         out = list(qs.values(*APPLET_GET_FIELDS))
+        for obj in out:
+            obj["html_file"] = obj["html_file_url"]
+            del obj["html_file_url"]
         return out
 
     def get_queryset(self) -> dict:
@@ -143,8 +147,9 @@ class AppletDetailAPI(BaseDetailView):
         return {"message": msg}
 
     def _get(self, params):
-        applet = Dashboard.objects.get(pk=params["id"])
-        applet = model_to_dict(applet, fields=APPLET_GET_FIELDS)
+        obj = Dashboard.objects.get(pk=params["id"])
+        applet = model_to_dict(obj, fields=APPLET_GET_FIELDS)
+        applet["html_file"] = str(obj.html_file)
         if applet[fields.template]:
             ht = HostedTemplate.objects.get(pk=applet[fields.template])
             applet[fields.rendered] = get_and_render(ht, applet)
