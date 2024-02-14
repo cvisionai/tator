@@ -37,6 +37,12 @@ export class AlgorithmEdit extends TypeFormTemplate {
     this._hostedTemplateEnumInput = this._shadow.getElementById(
       "algorithm-edit--hosted-template"
     );
+    this._headersList = this._shadow.getElementById(
+      "algorithm-edit--headers"
+    );
+    this._tparamsList = this._shadow.getElementById(
+      "algorithm-edit--tparams"
+    );
     this._clusterEnumInput = this._shadow.getElementById(
       "algorithm-edit--job-cluster"
     );
@@ -231,6 +237,28 @@ export class AlgorithmEdit extends TypeFormTemplate {
       this._hostedTemplateEnumInput.setValue(this._data.template);
     }
 
+    let paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-input",
+    });
+    let paramInputTemplate = JSON.stringify({ name: "", value: "" });
+
+    // headers
+    this._headersList.clear();
+    this._headersList.permission = !this.cantSave ? "Admin" : "Member";
+    this._headersList.setAttribute("properties", paramInputTypes);
+    this._headersList.setAttribute("empty-row", paramInputTemplate);
+    this._headersList.setValue(this._data.headers);
+    this._headersList.default = this._data.headers;
+
+    // tparams
+    this._tparamsList.clear();
+    this._tparamsList.permission = !this.cantSave ? "Admin" : "Member";
+    this._tparamsList.setAttribute("properties", paramInputTypes);
+    this._tparamsList.setAttribute("empty-row", paramInputTemplate);
+    this._tparamsList.setValue(this._data.tparams);
+    this._tparamsList.default = this._data.tparams;
+
     // Cluster
     this._clusterEnumInput.removeAttribute("tooltip"); //reset tooltip
     this._clusterEnumInput.clear();
@@ -271,11 +299,6 @@ export class AlgorithmEdit extends TypeFormTemplate {
 
     // Parameters
     this._parametersList.clear();
-    let paramInputTypes = JSON.stringify({
-      name: "text-input",
-      value: "text-input",
-    });
-    let paramInputTemplate = JSON.stringify({ name: "", value: "" });
     this._parametersList.permission = !this.cantSave ? "Can Edit" : "View Only";
     this._parametersList.setAttribute("properties", paramInputTypes);
     this._parametersList.setAttribute("empty-row", paramInputTemplate);
@@ -327,6 +350,14 @@ export class AlgorithmEdit extends TypeFormTemplate {
           formData.cluster = Number(clusterValue);
         }
       }
+    }
+
+    if (this._headersList.changed() || isNew) {
+      formData.headers = this._headersList.getValue();
+    }
+
+    if (this._tparamsList.changed() || isNew) {
+      formData.tparams = this._tparamsList.getValue();
     }
 
     if (this._userEdit.changed() || isNew) {
