@@ -128,4 +128,15 @@ export class Utilities {
       Utilities.sendNotification(message);
     });
   }
+
+  static getAppletSrc(applet) {
+    let url;
+    if (applet.rendered) {
+      const blob = new Blob([applet.rendered], { type: "text/html" });
+      url = URL.createObjectURL(blob);
+    } else {
+      url = applet.html_file;
+    }
+    return url;
+  }
 }

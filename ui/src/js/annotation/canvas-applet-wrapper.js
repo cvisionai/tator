@@ -4,6 +4,7 @@
  * Expected to have one of these per canvas applet.
  */
 import { TatorElement } from "../components/tator-element.js";
+import { Utilities } from "../util/utilities.js";
 
 export class CanvasAppletWrapper extends TatorElement {
   /**
@@ -86,7 +87,7 @@ export class CanvasAppletWrapper extends TatorElement {
         resolve();
       };
 
-      appletView.src = applet.html_file;
+      appletView.src = Utilities.getAppletSrc(applet);
       this._shadow.appendChild(appletView);
     });
   }

@@ -106,7 +106,7 @@ export class RegisteredDashboard extends TatorPage {
     document.title = `Tator | ${dashboard.name}`;
     this._dashboardId = dashboard.id;
     this._dashboard = dashboard;
-    this._dashbordSource = `${dashboard.html_file}${
+    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}${
       window.location.search !== "" ? window.location.search + "&" : "?"
     }username=${this._username}`;
     this._dashboardView.src = this._dashbordSource;
@@ -117,7 +117,7 @@ export class RegisteredDashboard extends TatorPage {
   hashHandler(e) {
     console.log("The hash has changed!");
     console.log(window.history.state);
-    this._dashbordSource = `${dashboard.html_file}${
+    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}${
       window.location.search !== "" ? window.location.search + "&" : "?"
     }username=${this._username}`;
     this._dashboardView.src = this._dashbordSource;

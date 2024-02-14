@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { Utilities } from "../util/utilities.js";
 
 export class ToolsAppletGalleryPanel extends TatorElement {
   constructor() {
@@ -29,7 +30,7 @@ export class ToolsAppletGalleryPanel extends TatorElement {
     this._entityForm = entityForm;
 
     // Then populate the panel
-    this._appletView.src = applet.html_file;
+    this._appletView.src = Utilities.getAppletSrc(applet);
     entityForm.addAppletPanel(this._panel);
   }
 
@@ -39,7 +40,7 @@ export class ToolsAppletGalleryPanel extends TatorElement {
    *
    */
   setApplet(appletName) {
-    this._appletView.src = this._applets[appletName].html_file;
+    this._appletView.src = Utilities.getAppletSrc(this._applets[appletName]);
     this.openPanel();
   }
 
