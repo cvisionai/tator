@@ -5,6 +5,7 @@ import logging
 import os
 
 from django.db import transaction
+from django.db.models import F
 from django.forms.models import model_to_dict
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
@@ -29,7 +30,7 @@ from ..schema import parse
 
 logger = logging.getLogger(__name__)
 
-ALGORITHM_GET_FIELDS = [k for k in alg_schema["properties"].keys() if k != "rendered"]
+ALGORITHM_GET_FIELDS = [k for k in alg_schema["properties"].keys() if k not in ["rendered", "manifest"]] + ["manifest_url"]
 
 class AlgorithmListAPI(BaseListView):
     """Retrieves registered algorithms and register new algorithm workflows"""
@@ -41,8 +42,11 @@ class AlgorithmListAPI(BaseListView):
 
     def _get(self, params: dict) -> dict:
         """Returns the full database entries of algorithm registered with this project"""
-        qs = Algorithm.objects.filter(project=params["project"])
+        qs = Algorithm.objects.filter(project=params["project"]).annotate(manifest_url=F("manifest"))
         out = list(qs.values(*ALGORITHM_GET_FIELDS))
+        for obj in out:
+            obj["manifest"] = obj["manifest_url"]
+            del obj["manifest_url"]
         return out
 
     def get_queryset(self):
@@ -239,11 +243,14 @@ class AlgorithmDetailAPI(BaseDetailView):
 
     def _get(self, params):
         """Retrieve the requested algortihm entry by ID"""
-        alg = Algorithm.objects.get(pk=params["id"])
-        alg = model_to_dict(alg, fields=ALGORITHM_GET_FIELDS)
+        obj = Algorithm.objects.get(pk=params["id"])
+        alg = model_to_dict(obj, fields=ALGORITHM_GET_FIELDS)
+        alg["manifest"] = str(obj.manifest)
         if alg[fields.template]:
             ht = HostedTemplate.objects.get(pk=alg[fields.template])
             alg[fields.rendered] = get_and_render(ht, alg)
+        else:
+            alg[fields.rendered] = ""
         return alg
 
     @transaction.atomic

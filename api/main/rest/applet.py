@@ -153,6 +153,8 @@ class AppletDetailAPI(BaseDetailView):
         if applet[fields.template]:
             ht = HostedTemplate.objects.get(pk=applet[fields.template])
             applet[fields.rendered] = get_and_render(ht, applet)
+        else:
+            applet[fields.rendered] = ""
         return applet
 
     @transaction.atomic
@@ -185,6 +187,18 @@ class AppletDetailAPI(BaseDetailView):
             delete_path = os.path.join(settings.MEDIA_ROOT, obj.html_file.name)
             self.safe_delete(path=delete_path)
             obj.html_file = applet_path
+
+        template = params.get(fields.template, None)
+        if template is not None:
+            obj.template = HostedTemplate.objects.get(pk=template)
+
+        headers = params.get(fields.headers, None)
+        if headers is not None:
+            obj.headers = headers
+
+        tparams = params.get(fields.tparams, None)
+        if tparams is not None:
+            obj.tparams = tparams
 
         obj.save()
 

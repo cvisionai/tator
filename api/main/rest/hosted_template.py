@@ -128,13 +128,13 @@ class HostedTemplateDetailAPI(BaseDetailView):
             obj.name = params["name"]
 
         if "url" in params:
-            obj.host = params["url"]
+            obj.url = params["url"]
 
         if "headers" in params:
-            obj.port = params["headers"]
+            obj.headers = params["headers"]
 
         if "tparams" in params:
-            obj.token = params["tparams"]
+            obj.tparams = params["tparams"]
 
         obj.save()
 
