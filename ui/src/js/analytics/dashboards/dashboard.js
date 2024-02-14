@@ -1,4 +1,5 @@
 import { TatorPage } from "../../components/tator-page.js";
+import { Utilities } from "../../util/utilities.js";
 import TatorLoading from "../../../images/tator_loading.gif";
 import { store } from "./dashboard-store.js";
 
@@ -106,7 +107,7 @@ export class RegisteredDashboard extends TatorPage {
     document.title = `Tator | ${dashboard.name}`;
     this._dashboardId = dashboard.id;
     this._dashboard = dashboard;
-    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}${
+    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}#${
       window.location.search !== "" ? window.location.search + "&" : "?"
     }username=${this._username}`;
     this._dashboardView.src = this._dashbordSource;
@@ -117,7 +118,7 @@ export class RegisteredDashboard extends TatorPage {
   hashHandler(e) {
     console.log("The hash has changed!");
     console.log(window.history.state);
-    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}${
+    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}#${
       window.location.search !== "" ? window.location.search + "&" : "?"
     }username=${this._username}`;
     this._dashboardView.src = this._dashbordSource;

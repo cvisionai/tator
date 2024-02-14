@@ -1,5 +1,5 @@
 import { TatorElement } from "../tator-element.js";
-import { Utilities } from "../util/utilities.js";
+import { Utilities } from "../../util/utilities.js";
 
 export class ToolsAppletGalleryPanel extends TatorElement {
   constructor() {
