@@ -61,11 +61,13 @@ algorithm_post_properties = {
         "type": "array",
         "description": "Template parameters used for rendering hosted template, if set.",
         "items": {"$ref": "#/components/schemas/Parameter"},
+        "default": [],
     },
     alg_fields.headers: {
         "type": "array",
         "description": "Headers used to retrieve hosted template, if set.",
         "items": {"$ref": "#/components/schemas/Parameter"},
+        "default": [],
     },
 }
 

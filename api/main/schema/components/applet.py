@@ -30,11 +30,13 @@ applet_post_properties = {
         "type": "array",
         "description": "Template parameters used for rendering hosted template, if set.",
         "items": {"$ref": "#/components/schemas/Parameter"},
+        "default": [],
     },
     applet_fields.headers: {
         "type": "array",
         "description": "Headers used to retrieve hosted template, if set.",
         "items": {"$ref": "#/components/schemas/Parameter"},
+        "default": [],
     },
 }
 

@@ -258,8 +258,6 @@ class AlgorithmDetailAPI(BaseDetailView):
         if alg[fields.template]:
             ht = HostedTemplate.objects.get(pk=alg[fields.template])
             alg[fields.rendered] = get_and_render(ht, alg)
-        else:
-            alg[fields.rendered] = ""
         return alg
 
     @transaction.atomic

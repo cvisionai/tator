@@ -161,8 +161,6 @@ class AppletDetailAPI(BaseDetailView):
         if applet[fields.template]:
             ht = HostedTemplate.objects.get(pk=applet[fields.template])
             applet[fields.rendered] = get_and_render(ht, applet)
-        else:
-            applet[fields.rendered] = ""
         return applet
 
     @transaction.atomic
