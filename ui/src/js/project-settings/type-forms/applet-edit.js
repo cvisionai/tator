@@ -23,13 +23,11 @@ export class AppletEdit extends TypeFormTemplate {
       "applet-edit--description"
     );
     this._htmlFilePath = this._shadow.getElementById("applet-edit--html-file");
-    this._hostedTemplateEnumInput = this._shadow.getElementById("applet-edit--hosted-template");
-    this._headersList = this._shadow.getElementById(
-      "applet-edit--headers"
+    this._hostedTemplateEnumInput = this._shadow.getElementById(
+      "applet-edit--hosted-template"
     );
-    this._tparamsList = this._shadow.getElementById(
-      "applet-edit--tparams"
-    );
+    this._headersList = this._shadow.getElementById("applet-edit--headers");
+    this._tparamsList = this._shadow.getElementById("applet-edit--tparams");
     this._categoriesList = this._shadow.getElementById(
       "applet-edit--categories"
     );
@@ -91,7 +89,10 @@ export class AppletEdit extends TypeFormTemplate {
       check: this._data.template,
     });
     // Check if there are going to be enum values first, show input with NULL
-    if (hostedTemplateWithChecked == null || hostedTemplateWithChecked.length == 0) {
+    if (
+      hostedTemplateWithChecked == null ||
+      hostedTemplateWithChecked.length == 0
+    ) {
       this._hostedTemplateEnumInput.disabled = true;
       this._hostedTemplateEnumInput.setValue("Null");
       this._hostedTemplateEnumInput.setAttribute(
@@ -178,7 +179,6 @@ export class AppletEdit extends TypeFormTemplate {
     if (this._tparamsList.changed() || isNew) {
       formData.tparams = this._tparamsList.getValue();
     }
-
 
     if (this._categoriesList.changed() || isNew) {
       formData.categories = this._categoriesList.getValue();

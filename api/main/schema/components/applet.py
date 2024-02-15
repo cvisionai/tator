@@ -64,6 +64,6 @@ applet = {
             "description": "HTML format text containing rendered applet template. Only filled for single retrievals (not lists).",
         },
         # Headers are excluded from GET requests.
-        **{k:v for k, v in applet_post_properties.items() if k != applet_fields.headers},
+        **{k: v for k, v in applet_post_properties.items() if k != applet_fields.headers},
     },
 }

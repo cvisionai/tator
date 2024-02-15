@@ -30,7 +30,10 @@ from ..schema import parse
 
 logger = logging.getLogger(__name__)
 
-ALGORITHM_GET_FIELDS = [k for k in alg_schema["properties"].keys() if k not in ["rendered", "manifest"]] + ["manifest_url"]
+ALGORITHM_GET_FIELDS = [
+    k for k in alg_schema["properties"].keys() if k not in ["rendered", "manifest"]
+] + ["manifest_url"]
+
 
 class AlgorithmListAPI(BaseListView):
     """Retrieves registered algorithms and register new algorithm workflows"""
@@ -42,7 +45,9 @@ class AlgorithmListAPI(BaseListView):
 
     def _get(self, params: dict) -> dict:
         """Returns the full database entries of algorithm registered with this project"""
-        qs = Algorithm.objects.filter(project=params["project"]).annotate(manifest_url=F("manifest"))
+        qs = Algorithm.objects.filter(project=params["project"]).annotate(
+            manifest_url=F("manifest")
+        )
         out = list(qs.values(*ALGORITHM_GET_FIELDS))
         for obj in out:
             obj["manifest"] = obj["manifest_url"]
@@ -111,7 +116,9 @@ class AlgorithmListAPI(BaseListView):
             manifest_url = os.path.join(str(project_id), manifest_file)
             manifest_path = os.path.join(settings.MEDIA_ROOT, manifest_url)
             if not os.path.exists(manifest_path):
-                log_msg = f"Provided manifest ({manifest_file}) does not exist in {settings.MEDIA_ROOT}"
+                log_msg = (
+                    f"Provided manifest ({manifest_file}) does not exist in {settings.MEDIA_ROOT}"
+                )
                 logger.error(log_msg)
                 raise ValueError(log_msg)
 
@@ -123,7 +130,7 @@ class AlgorithmListAPI(BaseListView):
                 logger.error(log_msg)
                 raise exc
         else:
-            # Make sure this file exists 
+            # Make sure this file exists
             manifest_url = None
             exists = HostedTemplate.objects.filter(pk=template).exists()
             if not exists:
@@ -133,7 +140,9 @@ class AlgorithmListAPI(BaseListView):
             ht = HostedTemplate.objects.get(pk=template)
 
             # Make sure user has permission to use this hosted template
-            aff_qs = Affiliation.objects.filter(organization=ht.organization, user=self.request.user)
+            aff_qs = Affiliation.objects.filter(
+                organization=ht.organization, user=self.request.user
+            )
             affiliated = aff_qs.exists()
             if not affiliated:
                 log_msg = f"Insufficient permission to use hosted template {template}"

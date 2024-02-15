@@ -906,6 +906,7 @@ class JobCluster(Model):
 
 # Algorithm models
 
+
 class HostedTemplate(Model):
     name = CharField(max_length=128)
     """ Name of the template. """
@@ -918,8 +919,10 @@ class HostedTemplate(Model):
     """ Headers to be used in the GET request. """
     tparams = JSONField(default=list)
     """ Template parameters used to substitute values in the jinja2 template. """
+
     def __str__(self):
         return self.name
+
 
 class Algorithm(Model):
     name = CharField(max_length=128)
@@ -2321,6 +2324,7 @@ class RowProtection(Model):
                 name="permission_uniqueness_check",
             )
         ]
+
 
 # Structure to handle identifying columns with project-scoped indices
 # e.g. Not relaying solely on `db_index=True` in django.

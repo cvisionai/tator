@@ -37,12 +37,8 @@ export class AlgorithmEdit extends TypeFormTemplate {
     this._hostedTemplateEnumInput = this._shadow.getElementById(
       "algorithm-edit--hosted-template"
     );
-    this._headersList = this._shadow.getElementById(
-      "algorithm-edit--headers"
-    );
-    this._tparamsList = this._shadow.getElementById(
-      "algorithm-edit--tparams"
-    );
+    this._headersList = this._shadow.getElementById("algorithm-edit--headers");
+    this._tparamsList = this._shadow.getElementById("algorithm-edit--tparams");
     this._clusterEnumInput = this._shadow.getElementById(
       "algorithm-edit--job-cluster"
     );
@@ -219,7 +215,10 @@ export class AlgorithmEdit extends TypeFormTemplate {
       check: this._data.template,
     });
     // Check if there are going to be enum values first, show input with NULL
-    if (hostedTemplateWithChecked == null || hostedTemplateWithChecked.length == 0) {
+    if (
+      hostedTemplateWithChecked == null ||
+      hostedTemplateWithChecked.length == 0
+    ) {
       this._hostedTemplateEnumInput.disabled = true;
       this._hostedTemplateEnumInput.setValue("Null");
       this._hostedTemplateEnumInput.setAttribute(

@@ -25,7 +25,10 @@ from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
-APPLET_GET_FIELDS = [k for k in applet_schema["properties"].keys() if k not in ["rendered", "html_file"]] + ["html_file_url"]
+APPLET_GET_FIELDS = [
+    k for k in applet_schema["properties"].keys() if k not in ["rendered", "html_file"]
+] + ["html_file_url"]
+
 
 class AppletListAPI(BaseListView):
     schema = AppletListSchema()
@@ -33,7 +36,11 @@ class AppletListAPI(BaseListView):
     http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
-        qs = Dashboard.objects.filter(project=params["project"]).order_by("id").annotate(html_file_url=F('html_file'))
+        qs = (
+            Dashboard.objects.filter(project=params["project"])
+            .order_by("id")
+            .annotate(html_file_url=F("html_file"))
+        )
         out = list(qs.values(*APPLET_GET_FIELDS))
         for obj in out:
             obj["html_file"] = obj["html_file_url"]
@@ -80,7 +87,9 @@ class AppletListAPI(BaseListView):
             ht = HostedTemplate.objects.get(pk=template)
 
             # Make sure user has permission to use this hosted template
-            aff_qs = Affiliation.objects.filter(organization=ht.organization, user=self.request.user)
+            aff_qs = Affiliation.objects.filter(
+                organization=ht.organization, user=self.request.user
+            )
             affiliated = aff_qs.exists()
             if not affiliated:
                 log_msg = f"Insufficient permission to use hosted template {template}"
@@ -101,7 +110,6 @@ class AppletListAPI(BaseListView):
                 log_msg = "Failed to get and render template {template} with supplied headers and template parameters"
                 logger.error(log_msg)
                 raise exc
-
 
         # Get the optional fields and to null if need be
         description = params.get(fields.description, None)

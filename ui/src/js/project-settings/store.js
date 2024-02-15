@@ -195,14 +195,13 @@ const store = create(
       try {
         if (get().organizationList) {
           const objects = await get().fetchTypeByOrg("JobCluster");
-          const jobClusters = objects.map(obj => obj.data || []).flat();
+          const jobClusters = objects.map((obj) => obj.data || []).flat();
 
           set({
             JobClusterPermission: {
               ...get().JobClusterPermission,
               userCantSee: false,
-              userCantSave:
-                !get().isStaff && jobClusters.length == 0,
+              userCantSave: !get().isStaff && jobClusters.length == 0,
             },
           });
 
@@ -309,7 +308,6 @@ const store = create(
         const map = new Map();
         for (const object of objects) {
           if (object.response.ok) {
-
             /* Add the data via loop to: setList and map */
             for (let item of object.data) {
               setList.add(item.id);
@@ -333,7 +331,8 @@ const store = create(
     },
 
     fetchType: async (type) => {
-      if (type == "JobCluster" || type == "HostedTemplate") return get().fetchTypeByOrg(type);
+      if (type == "JobCluster" || type == "HostedTemplate")
+        return get().fetchTypeByOrg(type);
       set({
         status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` },
       });

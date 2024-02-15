@@ -95,7 +95,7 @@ algorithm = {
             "description": "YAML format text containing rendered Argo Workflow template. Only filled for single retrievals (not lists).",
         },
         # Headers are excluded from GET requests.
-        **{k:v for k, v in algorithm_post_properties.items() if k != alg_fields.headers},
+        **{k: v for k, v in algorithm_post_properties.items() if k != alg_fields.headers},
     },
 }
 

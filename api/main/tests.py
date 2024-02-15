@@ -5298,6 +5298,7 @@ class JobClusterTestCase(TatorTransactionTest):
         affiliation.permission = old_permission
         affiliation.save()
 
+
 class HostedTemplateTestCase(TatorTransactionTest):
     @staticmethod
     def _hosted_template_spec():

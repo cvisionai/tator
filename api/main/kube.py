@@ -295,7 +295,9 @@ class TatorAlgorithm(JobManagerMixin):
         if alg.manifest:
             self.manifest = yaml.safe_load(alg.manifest.open(mode="r"))
         elif alg.template:
-            rendered = get_and_render(alg.template, {"headers": alg.headers, "tparams": alg.tparams})
+            rendered = get_and_render(
+                alg.template, {"headers": alg.headers, "tparams": alg.tparams}
+            )
             self.manifest = yaml.safe_load(rendered)
 
         # Save off the algorithm.

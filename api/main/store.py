@@ -167,7 +167,7 @@ class TatorStorage(ABC):
             return OCIStorage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.VAST:
             return VASTStorage(bucket, client, bucket_name, external_host)
-            
+
         raise ValueError(f"Server type '{server}' is not supported")
 
     def path_to_key(self, path: str) -> str:
@@ -514,10 +514,14 @@ class VASTStorage(MinIOStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.VAST
-        
-    # VAST does not support object tags    
-    def put_media_id_tag(self, path, media_id): return 
-    def _put_archive_tag(self, path): return
+
+    # VAST does not support object tags
+    def put_media_id_tag(self, path, media_id):
+        return
+
+    def _put_archive_tag(self, path):
+        return
+
 
 class OCIStorage(S3Storage):
     ARCHIVE_PREFIX = "_to_archive"

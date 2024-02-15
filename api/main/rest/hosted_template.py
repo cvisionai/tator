@@ -22,8 +22,10 @@ from ..schema import parse
 
 logger = logging.getLogger(__name__)
 
+
 def to_dict(param_list):
-    return {p["name"]:p["value"] for p in param_list}
+    return {p["name"]: p["value"] for p in param_list}
+
 
 def get_and_render(ht, reg):
     headers = {**to_dict(ht.headers), **to_dict(reg.get("headers", []))}
@@ -33,7 +35,9 @@ def get_and_render(ht, reg):
     rendered_string = template.render(tparams)
     return rendered_string
 
+
 HOSTED_TEMPLATE_PROPERTIES = ["id", "name", "organization", "url", "headers", "tparams"]
+
 
 class HostedTemplateListAPI(BaseListView):
     """
@@ -57,7 +61,9 @@ class HostedTemplateListAPI(BaseListView):
                 f"User {user} does not have Admin permissions for organization {org_id}"
             )
         return list(
-            HostedTemplate.objects.filter(organization__id=org_id).values(*HOSTED_TEMPLATE_PROPERTIES)
+            HostedTemplate.objects.filter(organization__id=org_id).values(
+                *HOSTED_TEMPLATE_PROPERTIES
+            )
         )
 
     def get_queryset(self):
