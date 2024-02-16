@@ -109,7 +109,7 @@ export class ArrayObjectInput extends TatorElement {
 
     let row = document.createElement("div");
     row.setAttribute("class", "d-flex flex-column text-gray");
-    
+
     // row.appendChild(styleDiv);
 
     let props = this._properties;
