@@ -36,7 +36,7 @@ def get_and_render(ht, reg):
     return rendered_string
 
 
-HOSTED_TEMPLATE_PROPERTIES = ["id", "name", "organization", "url", "headers", "tparams"]
+HOSTED_TEMPLATE_PROPERTIES = ["id", "name", "organization", "url", "tparams"]
 
 
 class HostedTemplateListAPI(BaseListView):

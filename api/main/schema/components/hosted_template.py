@@ -58,6 +58,7 @@ hosted_template = {
             "type": "integer",
             "description": "Unique integer identifying the organization associated with the hosted template.",
         },
-        **hosted_template_post_properties,
+        # Headers are excluded from GET requests.
+        **{k: v for k, v in hosted_template_post_properties.items() if k != "headers"},
     },
 }
