@@ -49,6 +49,10 @@ export class HostedTemplateEdit extends OrgTypeFormTemplate {
     this._headersList.default = this._data.headers;
 
     // tparams
+    paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-area",
+    });
     this._tparamsList.clear();
     this._tparamsList.permission = !this.cantSave ? "Admin" : "Member";
     this._tparamsList.setAttribute("properties", paramInputTypes);

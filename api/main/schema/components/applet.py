@@ -24,7 +24,8 @@ applet_post_properties = {
     },
     applet_fields.template: {
         "type": "integer",
-        "description": "Unique integer identifying a hosted template. If set, `manifest` is ignored.",
+        "description": "Unique integer identifying a hosted template. If set, `html_file` is ignored.",
+        "nullable": True,
     },
     applet_fields.tparams: {
         "type": "array",

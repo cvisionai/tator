@@ -108,7 +108,8 @@ export class ArrayObjectInput extends TatorElement {
     // styleDiv.innerHTML = `<span class="px-6">&nbsp;</span>`;
 
     let row = document.createElement("div");
-    row.setAttribute("class", "d-flex flex-row text-gray");
+    row.setAttribute("class", "d-flex flex-column text-gray");
+    
     // row.appendChild(styleDiv);
 
     let props = this._properties;
@@ -179,7 +180,7 @@ export class ArrayObjectInput extends TatorElement {
     input.setAttribute("name", inputKey);
     input.setValue(inputValue);
     input.default = inputValue;
-    input.style.paddingRight = "20px";
+    input.setAttribute("class", "col-12");
 
     input.addEventListener("change", () => {
       this.dispatchEvent(new Event("change"));

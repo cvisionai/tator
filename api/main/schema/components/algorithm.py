@@ -56,6 +56,7 @@ algorithm_post_properties = {
     alg_fields.template: {
         "type": "integer",
         "description": "Unique integer identifying a hosted template. If set, `manifest` is ignored.",
+        "nullable": True,
     },
     alg_fields.tparams: {
         "type": "array",

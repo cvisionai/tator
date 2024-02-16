@@ -251,6 +251,10 @@ export class AlgorithmEdit extends TypeFormTemplate {
     this._headersList.default = this._data.headers;
 
     // tparams
+    paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-area",
+    });
     this._tparamsList.clear();
     this._tparamsList.permission = !this.cantSave ? "Admin" : "Member";
     this._tparamsList.setAttribute("properties", paramInputTypes);
@@ -297,6 +301,10 @@ export class AlgorithmEdit extends TypeFormTemplate {
     this._categoriesList.default = this._data.categories;
 
     // Parameters
+    paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-input",
+    });
     this._parametersList.clear();
     this._parametersList.permission = !this.cantSave ? "Can Edit" : "View Only";
     this._parametersList.setAttribute("properties", paramInputTypes);
