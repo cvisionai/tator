@@ -63,6 +63,9 @@ section_patch_properties = {
         "type": "array",
         "items": {"type": "integer"},
     },
+}
+
+section_bulk_properties = {
     "path_substitution": {
         "description": "Replace the prefix of the path with this value.",
         "type": "object",
@@ -77,6 +80,11 @@ section_patch_properties = {
             },
         },
     },
+}
+
+bulk_section_update = {
+    "type": "object",
+    "properties": {**section_bulk_properties},
 }
 
 section_spec = {

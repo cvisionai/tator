@@ -149,6 +149,7 @@ class CustomGenerator(SchemaGenerator):
                 "ResolutionConfig": resolution_config,
                 "S3StorageConfig": s3_storage_config,
                 "SectionSpec": section_spec,
+                "SectionBulkUpdate": bulk_section_update,
                 "SectionUpdate": section_update,
                 "Section": section,
                 "StateSpec": state_spec,
