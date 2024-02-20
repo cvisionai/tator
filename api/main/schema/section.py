@@ -84,6 +84,9 @@ class SectionListSchema(AutoSchema):
             This method does a bulk update on all section matching a query.
             """
             )
+        elif method == "DELETE":
+            short_desc = "Delete section list"
+            long_desc = ""
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def get_path_parameters(self, path, method):
@@ -99,7 +102,7 @@ class SectionListSchema(AutoSchema):
 
     def get_filter_parameters(self, path, method):
         params = []
-        if method == "GET" or method == "PATCH":
+        if method in ["GET", "PATCH", "DELETE"]:
             params = [
                 {
                     "name": "name",

@@ -47,7 +47,7 @@ class SectionListAPI(BaseListView):
 
     schema = SectionListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ["get", "post", "patch"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def _get_qs(self, params):
         qs = Section.objects.filter(project=params["project"])
@@ -83,6 +83,12 @@ class SectionListAPI(BaseListView):
             results[idx]["path"] = str(r["path"])
         results = _fill_m2m(results)
         return results
+
+    def _delete(self, params):
+        qs = self._get_qs(params)
+        count = qs.count()
+        qs.delete()
+        return {"message": f"Successfully deleted {count} sections!"}
 
     def _post(self, params):
         project = params["project"]
