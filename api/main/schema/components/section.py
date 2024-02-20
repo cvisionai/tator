@@ -63,6 +63,20 @@ section_patch_properties = {
         "type": "array",
         "items": {"type": "integer"},
     },
+    "path_substitution": {
+        "description": "Replace the prefix of the path with this value.",
+        "type": "object",
+        "properties": {
+            "old": {
+                "type": "string",
+                "description": "The old prefix to replace.",
+            },
+            "new": {
+                "type": "string",
+                "description": "The new prefix to use.",
+            },
+        },
+    },
 }
 
 section_spec = {
