@@ -3,25 +3,36 @@
 
 import logging
 import os
+
 from django.db import transaction
+from django.db.models import F
+from django.forms.models import model_to_dict
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 import yaml
 
 from ..models import Project
 from ..models import Algorithm
+from ..models import HostedTemplate
+from ..models import Affiliation
 from ..models import User
 from ..models import JobCluster
-from ..models import database_qs
 from ..schema import AlgorithmDetailSchema
 from ..schema import AlgorithmListSchema
 from ..schema.components.algorithm import alg_fields as fields
+from ..schema.components.algorithm import algorithm as alg_schema
+
+from .hosted_template import get_and_render, to_dict
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
 from ._permissions import ProjectEditPermission
 from ..schema import parse
 
 logger = logging.getLogger(__name__)
+
+ALGORITHM_GET_FIELDS = [
+    k for k in alg_schema["properties"].keys() if k not in ["rendered", "manifest"]
+] + ["manifest_url"]
 
 
 class AlgorithmListAPI(BaseListView):
@@ -34,8 +45,14 @@ class AlgorithmListAPI(BaseListView):
 
     def _get(self, params: dict) -> dict:
         """Returns the full database entries of algorithm registered with this project"""
-        qs = Algorithm.objects.filter(project=params["project"])
-        return database_qs(qs)
+        qs = Algorithm.objects.filter(project=params["project"]).annotate(
+            manifest_url=F("manifest")
+        )
+        out = list(qs.values(*ALGORITHM_GET_FIELDS))
+        for obj in out:
+            obj["manifest"] = obj["manifest_url"]
+            del obj["manifest_url"]
+        return out
 
     def get_queryset(self):
         """Returns a queryset of algorithms related with the current request's project"""
@@ -88,22 +105,64 @@ class AlgorithmListAPI(BaseListView):
             logger.error(log_msg)
             raise exc
 
-        # Gather the manifest and verify it exists on the server in the right project
-        manifest_file = os.path.basename(params[fields.manifest])
-        manifest_url = os.path.join(str(project_id), manifest_file)
-        manifest_path = os.path.join(settings.MEDIA_ROOT, manifest_url)
-        if not os.path.exists(manifest_path):
-            log_msg = f"Provided manifest ({manifest_file}) does not exist in {settings.MEDIA_ROOT}"
-            logging.error(log_msg)
-            raise ValueError(log_msg)
+        # Is manifest or template supplied?
+        template = params.get(fields.template)
+        if template is None:
+            ht = None
+            headers = []
+            tparams = []
+            # Gather the manifest and verify it exists on the server in the right project
+            manifest_file = os.path.basename(params[fields.manifest])
+            manifest_url = os.path.join(str(project_id), manifest_file)
+            manifest_path = os.path.join(settings.MEDIA_ROOT, manifest_url)
+            if not os.path.exists(manifest_path):
+                log_msg = (
+                    f"Provided manifest ({manifest_file}) does not exist in {settings.MEDIA_ROOT}"
+                )
+                logger.error(log_msg)
+                raise ValueError(log_msg)
 
-        try:
-            with open(manifest_path, "r") as fp:
-                loaded_yaml = yaml.safe_load(fp)
-        except Exception as exc:
-            log_msg = "Provided yaml file has syntax errors"
-            logging.error(log_msg)
-            raise exc
+            try:
+                with open(manifest_path, "r") as fp:
+                    loaded_yaml = yaml.safe_load(fp)
+            except Exception as exc:
+                log_msg = "Provided yaml file has syntax errors"
+                logger.error(log_msg)
+                raise exc
+        else:
+            # Make sure this file exists
+            manifest_url = None
+            exists = HostedTemplate.objects.filter(pk=template).exists()
+            if not exists:
+                log_msg = f"Provided hosted template ({template}) does not exist"
+                logger.error(log_msg)
+                raise ValueError(log_msg)
+            ht = HostedTemplate.objects.get(pk=template)
+
+            # Make sure user has permission to use this hosted template
+            aff_qs = Affiliation.objects.filter(
+                organization=ht.organization, user=self.request.user
+            )
+            affiliated = aff_qs.exists()
+            if not affiliated:
+                log_msg = f"Insufficient permission to use hosted template {template}"
+                logger.error(log_msg)
+                raise PermissionDenied(log_msg)
+            affiliation = aff_qs.first()
+            if affiliation.permission != "Admin":
+                log_msg = f"Insufficient permission to use hosted template {template} (admin permission required)"
+                logger.error(log_msg)
+                raise PermissionDenied(log_msg)
+
+            # Make sure template is accessible with given headers
+            headers = params.get(fields.headers, [])
+            tparams = params.get(fields.tparams, [])
+            try:
+                get_and_render(ht, params)
+            except Exception as exc:
+                log_msg = "Failed to get and render template {template} with supplied headers and template parameters"
+                logger.error(log_msg)
+                raise exc
 
         # Number of files per job greater than 1?
         files_per_job = int(params[fields.files_per_job])
@@ -137,6 +196,9 @@ class AlgorithmListAPI(BaseListView):
             files_per_job=files_per_job,
             categories=categories,
             parameters=parameters,
+            template=ht,
+            headers=headers,
+            tparams=tparams,
         )
         alg_obj.save()
 
@@ -176,19 +238,27 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         # Grab the algorithm object and delete it from the database
         alg = Algorithm.objects.get(pk=params["id"])
-        manifest_file = alg.manifest.name
+        manifest = alg.manifest
         alg.delete()
 
         # Delete the correlated manifest file
-        path = os.path.join(settings.MEDIA_ROOT, manifest_file)
-        self.safe_delete(path=path)
+        if manifest is not None:
+            manifest_file = alg.manifest.name
+            path = os.path.join(settings.MEDIA_ROOT, manifest_file)
+            self.safe_delete(path=path)
 
         msg = "Registered algorithm deleted successfully!"
         return {"message": msg}
 
     def _get(self, params):
         """Retrieve the requested algortihm entry by ID"""
-        return database_qs(Algorithm.objects.filter(pk=params["id"]))[0]
+        obj = Algorithm.objects.get(pk=params["id"])
+        alg = model_to_dict(obj, fields=ALGORITHM_GET_FIELDS)
+        alg["manifest"] = str(obj.manifest)
+        if alg[fields.template]:
+            ht = HostedTemplate.objects.get(pk=alg[fields.template])
+            alg[fields.rendered] = get_and_render(ht, alg)
+        return alg
 
     @transaction.atomic
     def _patch(self, params) -> dict:
@@ -234,6 +304,18 @@ class AlgorithmDetailAPI(BaseDetailView):
         files_per_job = params.get(fields.files_per_job, None)
         if files_per_job is not None:
             obj.files_per_job = files_per_job
+
+        template = params.get(fields.template, None)
+        if template is not None:
+            obj.template = HostedTemplate.objects.get(pk=template)
+
+        headers = params.get(fields.headers, None)
+        if headers is not None:
+            obj.headers = headers
+
+        tparams = params.get(fields.tparams, None)
+        if tparams is not None:
+            obj.tparams = tparams
 
         obj.save()
 

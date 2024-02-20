@@ -21,7 +21,8 @@ from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .cache import TatorCache
-from .models import Algorithm, JobCluster, MediaType
+from .models import Algorithm, JobCluster, MediaType, HostedTemplate
+from .rest.hosted_template import get_and_render
 from .version import Git
 
 logger = logging.getLogger(__name__)
@@ -293,6 +294,11 @@ class TatorAlgorithm(JobManagerMixin):
         # Read in the manifest.
         if alg.manifest:
             self.manifest = yaml.safe_load(alg.manifest.open(mode="r"))
+        elif alg.template:
+            rendered = get_and_render(
+                alg.template, {"headers": alg.headers, "tparams": alg.tparams}
+            )
+            self.manifest = yaml.safe_load(rendered)
 
         # Save off the algorithm.
         self.alg = alg

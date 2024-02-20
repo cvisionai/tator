@@ -1,6 +1,7 @@
 import { TypeFormTemplate } from "../components/type-form-template.js";
 import { Utilities } from "../../util/utilities.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { getCompiledList, store } from "../store.js";
 
 export class AppletEdit extends TypeFormTemplate {
   constructor() {
@@ -22,6 +23,11 @@ export class AppletEdit extends TypeFormTemplate {
       "applet-edit--description"
     );
     this._htmlFilePath = this._shadow.getElementById("applet-edit--html-file");
+    this._hostedTemplateEnumInput = this._shadow.getElementById(
+      "applet-edit--hosted-template"
+    );
+    this._headersList = this._shadow.getElementById("applet-edit--headers");
+    this._tparamsList = this._shadow.getElementById("applet-edit--tparams");
     this._categoriesList = this._shadow.getElementById(
       "applet-edit--categories"
     );
@@ -50,6 +56,7 @@ export class AppletEdit extends TypeFormTemplate {
     this._editDescription.setValue(this._data.description);
     this._editDescription.default = this._data.description;
 
+    // HTML file
     if (typeof this._data.html_file == "undefined") {
       this._data.html_file = [];
     }
@@ -72,6 +79,62 @@ export class AppletEdit extends TypeFormTemplate {
           console.error("Issue saving generic file.", err);
         });
     };
+
+    // Hosted Template
+    this._hostedTemplateEnumInput.removeAttribute("tooltip"); //reset tooltip
+    this._hostedTemplateEnumInput.clear();
+    const hostedTemplateWithChecked = await getCompiledList({
+      type: "HostedTemplate",
+      skip: null,
+      check: this._data.template,
+    });
+    // Check if there are going to be enum values first, show input with NULL
+    if (
+      hostedTemplateWithChecked == null ||
+      hostedTemplateWithChecked.length == 0
+    ) {
+      this._hostedTemplateEnumInput.disabled = true;
+      this._hostedTemplateEnumInput.setValue("Null");
+      this._hostedTemplateEnumInput.setAttribute(
+        "tooltip",
+        "No Hosted Templates available"
+      );
+    } else {
+      this._hostedTemplateEnumInput.removeAttribute("disabled");
+      this._hostedTemplateEnumInput.permission = "Can Edit";
+      this._hostedTemplateEnumInput.choices = [
+        { label: "None", value: "" },
+        ...hostedTemplateWithChecked,
+      ];
+      this._hostedTemplateEnumInput.default = this._data.template;
+      this._hostedTemplateEnumInput.setValue(this._data.template);
+    }
+
+    let paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-input",
+    });
+    let paramInputTemplate = JSON.stringify({ name: "", value: "" });
+
+    // headers
+    this._headersList.clear();
+    this._headersList.permission = !this.cantSave ? "Admin" : "Member";
+    this._headersList.setAttribute("properties", paramInputTypes);
+    this._headersList.setAttribute("empty-row", paramInputTemplate);
+    this._headersList.setValue(this._data.headers);
+    this._headersList.default = this._data.headers;
+
+    // tparams
+    paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-area",
+    });
+    this._tparamsList.clear();
+    this._tparamsList.permission = !this.cantSave ? "Admin" : "Member";
+    this._tparamsList.setAttribute("properties", paramInputTypes);
+    this._tparamsList.setAttribute("empty-row", paramInputTemplate);
+    this._tparamsList.setValue(this._data.tparams);
+    this._tparamsList.default = this._data.tparams;
 
     // Categories
     this._categoriesList.clear();
@@ -98,6 +161,27 @@ export class AppletEdit extends TypeFormTemplate {
       formData.html_file = this._htmlFilePath.getValue();
     } else if (isNew && !this._htmlFilePath.changed()) {
       formData.html_file = null;
+    }
+
+    if (this._hostedTemplateEnumInput.changed() || isNew) {
+      let templateValue = this._hostedTemplateEnumInput.getValue();
+      if (
+        templateValue === null ||
+        templateValue === "Null" ||
+        templateValue == ""
+      ) {
+        formData.template = null;
+      } else {
+        formData.template = Number(templateValue);
+      }
+    }
+
+    if (this._headersList.changed() || isNew) {
+      formData.headers = this._headersList.getValue();
+    }
+
+    if (this._tparamsList.changed() || isNew) {
+      formData.tparams = this._tparamsList.getValue();
     }
 
     if (this._categoriesList.changed() || isNew) {

@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                  # new type of k8s spec
+metadata:
+  generateName: echo-           # name of the workflow spec
+spec:
+  entrypoint: whalesay          # invoke the whalesay template
+  templates:
+    - name: whalesay              # name of the template
+      container:
+        image: docker/whalesay
+        command: [ cowsay ]
+        args: [ "{{ message }}" ]
+        resources: # limit the resources
+          limits:
+            memory: 32Mi
+            cpu: 100m

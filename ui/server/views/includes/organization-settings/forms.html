@@ -51,6 +51,15 @@
    </form>
 </template>
 
+<template id="hosted-template-edit">
+   <form id="hosted-template-edit--form">
+      <text-input id="hosted-template-edit--name" name="Name" type="string"></text-input>
+      <text-input id="hosted-template-edit--url" name="URL" type="string"></text-input>
+      <array-object-input id="hosted-template-edit--headers" name="Headers"></array-object-input>
+      <array-object-input id="hosted-template-edit--tparams" name="Template Parameters"></array-object-input>
+   </form>
+</template>
+
 <template id="project-display">
    <form id="project-display--form">
       <div class="d-flex flex-items-center flex-justify-between pb-3">

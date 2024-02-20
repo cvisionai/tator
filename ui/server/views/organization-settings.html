@@ -38,6 +38,7 @@
             <org-type-invitation-container form="invitation-edit" hidden></org-type-invitation-container>
             <org-type-form-container form="bucket-edit" hidden></org-type-form-container>
             <org-type-form-container form="job-cluster-edit" hidden></org-type-form-container>
+            <org-type-form-container form="hosted-template-edit" hidden></org-type-form-container>
             <org-type-project-container form="project-display-list" hidden></org-type-project-container>
          </div>
       </div>
@@ -119,6 +120,12 @@
       <org-settings-nav-link type="JobCluster">
          <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
          <span slot="label">Job Clusters</span>
+      </org-settings-nav-link>
+
+      <!-- Hosted Template Sidebar item -->
+      <org-settings-nav-link type="HostedTemplate">
+         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+         <span slot="label">Hosted Templates</span>
       </org-settings-nav-link>
    </div>
 </template>

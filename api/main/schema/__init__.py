@@ -30,6 +30,8 @@ from .file_type import FileTypeListSchema
 from .file_type import FileTypeDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
+from .hosted_template import HostedTemplateListSchema
+from .hosted_template import HostedTemplateDetailSchema
 from .image_file import ImageFileListSchema
 from .image_file import ImageFileDetailSchema
 from .invitation import InvitationListSchema

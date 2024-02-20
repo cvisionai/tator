@@ -34,6 +34,11 @@ export class AlgorithmEdit extends TypeFormTemplate {
     this._manifestPath = this._shadow.getElementById(
       "algorithm-edit--manifest"
     );
+    this._hostedTemplateEnumInput = this._shadow.getElementById(
+      "algorithm-edit--hosted-template"
+    );
+    this._headersList = this._shadow.getElementById("algorithm-edit--headers");
+    this._tparamsList = this._shadow.getElementById("algorithm-edit--tparams");
     this._clusterEnumInput = this._shadow.getElementById(
       "algorithm-edit--job-cluster"
     );
@@ -201,6 +206,62 @@ export class AlgorithmEdit extends TypeFormTemplate {
       }
     };
 
+    // Hosted Template
+    this._hostedTemplateEnumInput.removeAttribute("tooltip"); //reset tooltip
+    this._hostedTemplateEnumInput.clear();
+    const hostedTemplateWithChecked = await getCompiledList({
+      type: "HostedTemplate",
+      skip: null,
+      check: this._data.template,
+    });
+    // Check if there are going to be enum values first, show input with NULL
+    if (
+      hostedTemplateWithChecked == null ||
+      hostedTemplateWithChecked.length == 0
+    ) {
+      this._hostedTemplateEnumInput.disabled = true;
+      this._hostedTemplateEnumInput.setValue("Null");
+      this._hostedTemplateEnumInput.setAttribute(
+        "tooltip",
+        "No Hosted Templates available"
+      );
+    } else {
+      this._hostedTemplateEnumInput.removeAttribute("disabled");
+      this._hostedTemplateEnumInput.permission = "Can Edit";
+      this._hostedTemplateEnumInput.choices = [
+        { label: "None", value: "" },
+        ...hostedTemplateWithChecked,
+      ];
+      this._hostedTemplateEnumInput.default = this._data.template;
+      this._hostedTemplateEnumInput.setValue(this._data.template);
+    }
+
+    let paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-input",
+    });
+    let paramInputTemplate = JSON.stringify({ name: "", value: "" });
+
+    // headers
+    this._headersList.clear();
+    this._headersList.permission = !this.cantSave ? "Admin" : "Member";
+    this._headersList.setAttribute("properties", paramInputTypes);
+    this._headersList.setAttribute("empty-row", paramInputTemplate);
+    this._headersList.setValue(this._data.headers);
+    this._headersList.default = this._data.headers;
+
+    // tparams
+    paramInputTypes = JSON.stringify({
+      name: "text-input",
+      value: "text-area",
+    });
+    this._tparamsList.clear();
+    this._tparamsList.permission = !this.cantSave ? "Admin" : "Member";
+    this._tparamsList.setAttribute("properties", paramInputTypes);
+    this._tparamsList.setAttribute("empty-row", paramInputTemplate);
+    this._tparamsList.setValue(this._data.tparams);
+    this._tparamsList.default = this._data.tparams;
+
     // Cluster
     this._clusterEnumInput.removeAttribute("tooltip"); //reset tooltip
     this._clusterEnumInput.clear();
@@ -212,26 +273,16 @@ export class AlgorithmEdit extends TypeFormTemplate {
         check: this._data.cluster,
       });
 
-      // Check if there are going to be enum values first, show input with NULL
-      if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
-        this._clusterEnumInput.disabled = true;
-        this._clusterEnumInput.setValue("Null");
-        this._clusterEnumInput.setAttribute(
-          "tooltip",
-          "No Job Clusters associated to this Organization"
-        );
-      } else {
-        this._clusterEnumInput.removeAttribute("disabled");
-        this._clusterEnumInput.permission = !this.userCantSaveCluster
-          ? "Can Edit"
-          : "View Only";
-        this._clusterEnumInput.choices = [
-          { label: "None", value: "" },
-          ...jobClusterWithChecked,
-        ];
-        this._clusterEnumInput.default = this._data.cluster;
-        this._clusterEnumInput.setValue(this._data.cluster);
-      }
+      this._clusterEnumInput.removeAttribute("disabled");
+      this._clusterEnumInput.permission = !this.userCantSaveCluster
+        ? "Can Edit"
+        : "View Only";
+      this._clusterEnumInput.choices = [
+        { label: "None", value: "" },
+        ...jobClusterWithChecked,
+      ];
+      this._clusterEnumInput.default = this._data.cluster;
+      this._clusterEnumInput.setValue(this._data.cluster);
     } else {
       this._clusterEnumInput.disabled = true;
       this._clusterEnumInput.default = this._data.cluster;
@@ -250,12 +301,11 @@ export class AlgorithmEdit extends TypeFormTemplate {
     this._categoriesList.default = this._data.categories;
 
     // Parameters
-    this._parametersList.clear();
-    let paramInputTypes = JSON.stringify({
+    paramInputTypes = JSON.stringify({
       name: "text-input",
       value: "text-input",
     });
-    let paramInputTemplate = JSON.stringify({ name: "", value: "" });
+    this._parametersList.clear();
     this._parametersList.permission = !this.cantSave ? "Can Edit" : "View Only";
     this._parametersList.setAttribute("properties", paramInputTypes);
     this._parametersList.setAttribute("empty-row", paramInputTemplate);
@@ -281,6 +331,19 @@ export class AlgorithmEdit extends TypeFormTemplate {
       formData.manifest = null;
     }
 
+    if (this._hostedTemplateEnumInput.changed() || isNew) {
+      let templateValue = this._hostedTemplateEnumInput.getValue();
+      if (
+        templateValue === null ||
+        templateValue === "Null" ||
+        templateValue == ""
+      ) {
+        formData.template = null;
+      } else {
+        formData.template = Number(templateValue);
+      }
+    }
+
     if (!(this.cantSave || this.cantSee)) {
       if (this._clusterEnumInput.changed() || isNew) {
         let clusterValue = this._clusterEnumInput.getValue();
@@ -294,6 +357,14 @@ export class AlgorithmEdit extends TypeFormTemplate {
           formData.cluster = Number(clusterValue);
         }
       }
+    }
+
+    if (this._headersList.changed() || isNew) {
+      formData.headers = this._headersList.getValue();
+    }
+
+    if (this._tparamsList.changed() || isNew) {
+      formData.tparams = this._tparamsList.getValue();
     }
 
     if (this._userEdit.changed() || isNew) {

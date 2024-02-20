@@ -64,7 +64,7 @@ export class ToolsAppletPanel extends TatorElement {
     this._appletTrigger.addEventListener("click", this.togglePanel.bind(this));
 
     // Then populate the panel
-    this._appletView.src = applet.html_file;
+    this._appletView.src = Utilities.getAppletSrc(applet);
   }
 
   togglePanel() {
@@ -85,7 +85,7 @@ export class ToolsAppletPanel extends TatorElement {
    *     projectId {int}
    */
   setApplet(appletName, data) {
-    this._appletView.src = this._applets[appletName].html_file;
+    this._appletView.src = Utilities.getAppletSrc(this._applets[appletName]);
     // this._appletData = data;
     this.openPanel();
   }
