@@ -129,6 +129,17 @@ class SectionListAPI(BaseListView):
     def _patch(self, params):
         qs = self._get_qs(params)
         count = 0
+        if "path_substitution" in params:
+            old_path = params["path_substitution"]["old"]
+            new_path = params["path_substitution"]["new"]
+            count = 0
+            for section in qs.iterator():
+                path_name_str = str(section.path)
+                if path_name_str.startswith(old_path):
+                    count += 1
+                    section.path = path_name_str.replace(old_path, new_path, 1)
+                    section.save()
+
         return {"message": f"Successfully patched {count} sections!"}
 
     def get_queryset(self):
