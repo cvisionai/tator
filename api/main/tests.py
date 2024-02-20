@@ -5559,6 +5559,30 @@ class SectionTestCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
 
+        # Move sections (Honda.Accord.*) to (Honda.Prologue.*)
+        response = self.client.get(f"{url}?descendants=Honda.Prologue", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+        move_spec = {"path_substitution": {"old": "Honda.Accord", "new": "Honda.Prologue"}}
+        response = self.client.patch(f"{url}?descendants=Honda.Accord", move_spec, format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+
+        response = self.client.get(f"{url}?descendants=Honda.Accord", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"{url}?descendants=Honda.Prologue", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        # Delete section by path
+        response = self.client.delete(f"{url}?descendants=Honda.Prologue", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        response = self.client.get(f"{url}?descendants=Honda.Prologue", format="json")
+        assertResponse(self, response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
     def test_adv_sections(self):
         """
         Test case for performing advanced section operations.
