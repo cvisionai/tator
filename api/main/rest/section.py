@@ -49,7 +49,7 @@ class SectionListAPI(BaseListView):
     permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post"]
 
-    def _get(self, params):
+    def _get_qs(self, params):
         qs = Section.objects.filter(project=params["project"])
         if "name" in params:
             qs = qs.filter(name__iexact=f"{params['name']}")
@@ -73,6 +73,10 @@ class SectionListAPI(BaseListView):
         qs = qs.annotate(related_search=F("related_object_search"))
 
         qs = qs.order_by("name")
+        return qs
+
+    def _get(self, params):
+        qs = self._get_qs(params)
         results = list(qs.values(*SECTION_PROPERTIES))
         # values does not convert Ltree.Path to a string consistently
         for idx, r in enumerate(results):
