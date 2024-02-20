@@ -47,7 +47,7 @@ class SectionListAPI(BaseListView):
 
     schema = SectionListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ["get", "post"]
+    http_method_names = ["get", "post", "patch"]
 
     def _get_qs(self, params):
         qs = Section.objects.filter(project=params["project"])
@@ -125,6 +125,11 @@ class SectionListAPI(BaseListView):
                 section.media.add(media_id)
             section.save()
         return {"message": f"Section {name} created!", "id": section.id}
+
+    def _patch(self, params):
+        qs = self._get_qs(params)
+        count = 0
+        return {"message": f"Successfully patched {count} sections!"}
 
     def get_queryset(self):
         project_id = self.kwargs["project"]
