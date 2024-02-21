@@ -554,7 +554,7 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   page.close()
 
 
-@pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="Too flaky")
 def test_concat(page_factory, project, concat_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
