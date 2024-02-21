@@ -442,7 +442,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         query_object, attributeCast, is_media, qs[0].project, set()
     )
 
-    logger.info(f"Q_Object = {q_object}")
+    logger.info(f"Q_Object = {q_object} Model = {qs.model}")
     logger.info(f"Query requires the following annotations: {required_annotations}")
     for annotation in required_annotations:
         logger.info(f"\t {annotation} to {annotateField[annotation]()}")
