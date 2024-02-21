@@ -65,6 +65,28 @@ section_patch_properties = {
     },
 }
 
+section_bulk_properties = {
+    "path_substitution": {
+        "description": "Replace the prefix of the path with this value.",
+        "type": "object",
+        "properties": {
+            "old": {
+                "type": "string",
+                "description": "The old prefix to replace.",
+            },
+            "new": {
+                "type": "string",
+                "description": "The new prefix to use.",
+            },
+        },
+    },
+}
+
+bulk_section_update = {
+    "type": "object",
+    "properties": {**section_bulk_properties},
+}
+
 section_spec = {
     "type": "object",
     "required": ["name"],

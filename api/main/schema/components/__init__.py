@@ -108,6 +108,7 @@ from .project import project_spec
 from .project import project_update
 from .project import project
 from .section import section_spec
+from .section import bulk_section_update
 from .section import section_update
 from .section import section
 from .state import state_spec

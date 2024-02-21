@@ -47,9 +47,9 @@ class SectionListAPI(BaseListView):
 
     schema = SectionListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ["get", "post"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
-    def _get(self, params):
+    def _get_qs(self, params):
         qs = Section.objects.filter(project=params["project"])
         if "name" in params:
             qs = qs.filter(name__iexact=f"{params['name']}")
@@ -73,12 +73,22 @@ class SectionListAPI(BaseListView):
         qs = qs.annotate(related_search=F("related_object_search"))
 
         qs = qs.order_by("name")
+        return qs
+
+    def _get(self, params):
+        qs = self._get_qs(params)
         results = list(qs.values(*SECTION_PROPERTIES))
         # values does not convert Ltree.Path to a string consistently
         for idx, r in enumerate(results):
             results[idx]["path"] = str(r["path"])
         results = _fill_m2m(results)
         return results
+
+    def _delete(self, params):
+        qs = self._get_qs(params)
+        count = qs.count()
+        qs.delete()
+        return {"message": f"Successfully deleted {count} sections!"}
 
     def _post(self, params):
         project = params["project"]
@@ -121,6 +131,22 @@ class SectionListAPI(BaseListView):
                 section.media.add(media_id)
             section.save()
         return {"message": f"Section {name} created!", "id": section.id}
+
+    def _patch(self, params):
+        qs = self._get_qs(params)
+        count = 0
+        if "path_substitution" in params:
+            old_path = params["path_substitution"]["old"]
+            new_path = params["path_substitution"]["new"]
+            count = 0
+            for section in qs.iterator():
+                path_name_str = str(section.path)
+                if path_name_str.startswith(old_path):
+                    count += 1
+                    section.path = path_name_str.replace(old_path, new_path, 1)
+                    section.save()
+
+        return {"message": f"Successfully patched {count} sections!"}
 
     def get_queryset(self):
         project_id = self.kwargs["project"]
