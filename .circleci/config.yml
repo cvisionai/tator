@@ -196,8 +196,7 @@ jobs:
         path: rest-test-results
   front-end-tests:
     machine:
-      image: ubuntu-2004:202010-01
-    resource_class: xlarge
+      image: default
     steps:
     - attach_workspace:
         at: ~/
