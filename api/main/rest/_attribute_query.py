@@ -349,12 +349,13 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 # Don't use casts for these operations either
                 if attr_name.startswith("$") == False:
                     db_lookup = f"attributes__{attr_name}"
-            if operation in ["isnull"]:
+            if castFunc and operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
                 value = castFunc(value)
             else:
                 return Q(pk=-1), []
+
             if operation in ["date_eq", "eq"]:
                 query = Q(**{f"{db_lookup}": value})
             else:
