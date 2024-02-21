@@ -344,7 +344,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             # NOTE: For string functions avoid the '"' work around due to the django
             # string handling bug
             # only apply if cast func is active
-            if castFunc and operation in ["icontains", "iendswith", "istartswith"]:
+            if castFunc and operation in ["icontains", "iendswith", "istartswith", "in"]:
                 castFunc = lambda x: x
                 # Don't use casts for these operations either
                 if attr_name.startswith("$") == False:

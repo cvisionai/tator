@@ -52,7 +52,7 @@ attribute_filter_schema = {
                 "iendswidth",
                 "istartswith",
                 "isnull",
-                "isin",
+                "in",
                 # Date specific operations
                 "date_eq",
                 "date_gte",
