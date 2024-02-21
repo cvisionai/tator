@@ -344,17 +344,18 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             # NOTE: For string functions avoid the '"' work around due to the django
             # string handling bug
             # only apply if cast func is active
-            if castFunc and operation in ["icontains", "iendswith", "istartswith"]:
+            if castFunc and operation in ["icontains", "iendswith", "istartswith", "in"]:
                 castFunc = lambda x: x
                 # Don't use casts for these operations either
                 if attr_name.startswith("$") == False:
                     db_lookup = f"attributes__{attr_name}"
-            if operation in ["isnull"]:
+            if castFunc and operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
                 value = castFunc(value)
             else:
                 return Q(pk=-1), []
+
             if operation in ["date_eq", "eq"]:
                 query = Q(**{f"{db_lookup}": value})
             else:
@@ -442,7 +443,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         query_object, attributeCast, is_media, qs[0].project, set()
     )
 
-    logger.info(f"Q_Object = {q_object}")
+    logger.info(f"Q_Object = {q_object} Model = {qs.model}")
     logger.info(f"Query requires the following annotations: {required_annotations}")
     for annotation in required_annotations:
         logger.info(f"\t {annotation} to {annotateField[annotation]()}")

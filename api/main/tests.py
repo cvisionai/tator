@@ -5692,6 +5692,17 @@ class SectionTestCase(TatorTransactionTest):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], section_id)
 
+        search_blob = base64.b64encode(
+            json.dumps(
+                {"attribute": "String Attribute", "operation": "in", "value": ["foo","zoo","abc"]}
+            ).encode()
+        )
+
+        url = f"/rest/Sections/{self.project.pk}?encoded_search={search_blob.decode()}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], section_id)
+
         # Verify deletion of the section attribute
         delete_string_spec = {"entity_type": "Section", "name": "String Attribute"}
         url = f"/rest/AttributeType/{self.project.pk}"
