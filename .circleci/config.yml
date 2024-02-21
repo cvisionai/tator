@@ -6,7 +6,7 @@ orbs:
 jobs:
   build-docker-images:
     machine:
-      image: latest
+      image: default
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
@@ -68,7 +68,7 @@ jobs:
           ssh lightsail 'export DOCKERHUB_PASSWORD='"'$DOCKERHUB_PASSWORD'"';export DOCKERHUB_USERNAME='"'$DOCKERHUB_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_dockerhub.sh';
   set-versions:
     machine:
-      image: latest
+      image: default
     steps:
     - attach_workspace:
         at: ~/
@@ -80,7 +80,7 @@ jobs:
           ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/api/main/urls.py';
   publish-clients:
     machine:
-      image: latest
+      image: default
     steps:
     - attach_workspace:
         at: ~/
@@ -95,7 +95,7 @@ jobs:
           ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
   check-formatting:
     machine:
-      image: latest
+      image: default
     steps:
     - checkout
     - run:
@@ -118,7 +118,7 @@ jobs:
         command: nvm use stable && make check-format
   setup-lightsail:
     machine:
-      image: latest
+      image: default
     steps:
     - checkout
     - run:
@@ -145,7 +145,7 @@ jobs:
         - private_ip_address.txt
   install-tator:
     machine:
-      image: latest
+      image: default
     steps:
     - attach_workspace:
         at: ~/
@@ -178,7 +178,7 @@ jobs:
         destination: tator_py_whl
   rest-tests:
     machine:
-      image: latest
+      image: default
     steps:
     - attach_workspace:
         at: ~/
@@ -196,7 +196,7 @@ jobs:
         path: rest-test-results
   front-end-tests:
     machine:
-      image: latest
+      image: default
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -228,7 +228,7 @@ jobs:
         destination: videos
   tator-py-tests:
     machine:
-      image: latest
+      image: default
     steps:
     - attach_workspace:
         at: ~/
@@ -264,7 +264,7 @@ jobs:
         destination: container_logs
   cron-job-tests:
     machine:
-      image: latest
+      image: default
     steps:
     - attach_workspace:
         at: ~/
@@ -273,7 +273,7 @@ jobs:
         command: ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && ./tator/scripts/test-cronjobs.sh'
   cleanup-lightsail:
     machine:
-      image: latest
+      image: default
     steps:
     - attach_workspace:
         at: ~/
