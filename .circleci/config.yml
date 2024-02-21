@@ -197,7 +197,6 @@ jobs:
   front-end-tests:
     machine:
       image: default
-    resource_class: xlarge
     steps:
     - attach_workspace:
         at: ~/
