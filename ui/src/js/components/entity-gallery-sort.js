@@ -4,34 +4,30 @@ import { svgNamespace } from "./tator-element.js";
 export class EntityGallerySortSimple extends TatorElement {
   constructor() {
     super();
+    const template = document.querySelector("#entity-gallery-sort");
+    this._shadow.appendChild(document.importNode(template.content, true));
+    this._ascending = this._shadow.getElementById("ascending");
+    this._descending = this._shadow.getElementById("descending");
+    this._options = this._shadow.getElementById("options");
+    this._direction = "ascending";
 
-    const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-items-center text-gray f3");
-    this._shadow.appendChild(div);
+    this._ascending.addEventListener("click", () => {
+      this._ascending.setAttribute("stroke-width", "4");
+      this._descending.setAttribute("stroke-width", "2");
+      this._direction = "ascending";
+      this._emit();
+    });
 
-    this._fieldName = document.createElement("enum-input");
-    this._fieldName.setAttribute("class", "col-4");
-    this._fieldName.setAttribute("name", "Sort By: ");
-    this._fieldName.style.marginLeft = "15px";
-    this._fieldName.permission = "View Only";
-    this._fieldName.label.setAttribute("class", "d-flex flex-items-center py-1");
-    div.appendChild(this._fieldName);
+    this._descending.addEventListener("click", () => {
+      this._ascending.setAttribute("stroke-width", "2");
+      this._descending.setAttribute("stroke-width", "4");
+      this._direction = "descending";
+      this._emit();
+    });
 
-    this._direction = document.createElement("bool-input");
-    this._direction.setAttribute("off-text", "Asc");
-    this._direction.setAttribute("on-text", "Desc");
-    div.appendChild(this._direction);
-    
-    this._fieldName.addEventListener(
-      "change",
-      this._emit.bind(this)
-    );
-
-    this._direction.addEventListener(
-      "change",
-      this._emit.bind(this)
-    );
-
+    this._options.addEventListener("change", () => {
+      this._emit();
+    });
   }
 
   /**
@@ -42,7 +38,9 @@ export class EntityGallerySortSimple extends TatorElement {
    */
   init(category, entityTypes) {
     // Remove existing choices
-    this._fieldName.clear();
+    while (this._options.options.length > 0) {
+      this._options.remove(0);
+    }
 
     // Create the menu options for the field name
     var fieldChoices = [];
@@ -87,14 +85,36 @@ export class EntityGallerySortSimple extends TatorElement {
       return a.label.localeCompare(b.label);
     });
 
-    this._fieldName.choices = {
-      "Built-in Fields": fieldChoices,
-      Geometry: geoChoices,
-      Attributes: attributeChoices,
-    };
-    this._fieldName.permission = "Can Edit";
-    this._fieldName.selectedIndex = -1;
-    this._emit();
+    const builtinGroup = document.createElement("optgroup");
+    builtinGroup.setAttribute("label", "Built-in Fields");
+    this._options.appendChild(builtinGroup);
+    for (const fieldChoice of fieldChoices) {
+      const option = document.createElement("option");
+      option.setAttribute("value", fieldChoice);
+      builtinGroup.appendChild(option);
+    }
+   
+    if (geoChoices.length > 0) {
+      const geomGroup = document.createElement("optgroup");
+      geomGroup.setAttribute("label", "Geometry");
+      this._options.appendChild(geomGroup);
+      for (const geoChoice of geoChoices) {
+        const option = document.createElement("option");
+        option.setAttribute("value", geoChoice);
+        geomGroup.appendChild(option);
+      }
+    }
+
+    if (attributeChoices > 0) {
+      const attrGroup = document.createElement("optgroup");
+      attrGroup.setAttribute("label", "Attributes");
+      this._options.appendChild(attrGroup);
+      for (const attrChoice of attributeChoices) {
+        const option = document.createElement("option");
+        option.setAttribute("value", attrChoice);
+        attrGroup.appendChild(option);
+      }
+    }
   }
 
   _emit() {
@@ -103,7 +123,7 @@ export class EntityGallerySortSimple extends TatorElement {
       new CustomEvent("sortBy", {
         composed: true,
         detail: {
-          queryParam: `{this._direction == "ascending" ? "" : "-"}{this._fieldName.getValue()}` ,
+          queryParam: `{this._direction == "ascending" ? "" : "-"}{this._fieldName.getValue()}`,
         },
       })
     );

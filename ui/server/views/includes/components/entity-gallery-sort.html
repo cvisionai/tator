@@ -1,0 +1,30 @@
+<template id="entity-gallery-sort">
+  <style>
+    .container {
+      display: flex;
+      align-items: center;
+      margin-left: 20px;
+    }
+    svg {
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    select {
+      margin-left: 10px;
+      background-color: transparent;
+      border-color: rgba(109, 122, 150, 0.5)
+    }
+  </style>
+  <div class="container text-gray f3">
+    <label for="options">Sort By:</label>
+    <select id="options" class="select-sm2 has-border">
+    </select>
+
+    <!-- Ascending -->
+    <svg xmlns="http://www.w3.org/2000/svg" title="Ascending" id="ascending" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up"><polyline points="18 15 12 9 6 15"></polyline></svg>
+
+    <!-- Descending -->
+    <svg xmlns="http://www.w3.org/2000/svg" title="Descending" id="descending" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>
+  </div>
+
+</template>
