@@ -674,7 +674,8 @@ export class TatorData {
       listStart,
       listStop,
       mediaIds,
-      null
+      null,
+      sortState,
     );
 
     return outData;

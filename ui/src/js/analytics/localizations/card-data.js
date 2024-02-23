@@ -40,13 +40,17 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * @param {array} filterConditions array of FilterConditionData objects
    */
-  async _reload(filterConditions) {
+  async _reload(filterConditions, sortState) {
     this.filterConditions = filterConditions;
+    this.sortState = sortState;
     this.cardList = {};
     this.cardList.cards = [];
     this.cardList.total = await this._modelData.getFilteredLocalizations(
       "count",
-      filterConditions
+      filterConditions,
+      NaN,
+      NaN,
+      sortState,
     );
 
     return true;
@@ -55,11 +59,12 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * Note: If the filters are in a different order, this will return with True still.
    * @param {array} filterConditions array of FilterConditionData objects
+   * @param {string} sortState query param for sort
    * @returns True if reload() needs to be called
    */
-  _needReload(filterConditions) {
+  _needReload(filterConditions, sortState) {
     return (
-      JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions)
+      JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions || JSON.stringify(sortState) != JSON.stringify(this.sortState))
     );
   }
 
@@ -154,8 +159,8 @@ export class AnnotationCardData extends HTMLElement {
   async makeCardList(filterConditions, paginationState, sortState) {
     // console.log(filterConditions)
     // console.log(paginationState);
-    if (this._needReload(filterConditions)) {
-      await this._reload(filterConditions);
+    if (this._needReload(filterConditions, sortState)) {
+      await this._reload(filterConditions, sortState);
     }
     this.cardList.cards = [];
     this.cardList.paginationState = paginationState;
@@ -228,18 +233,20 @@ export class AnnotationCardData extends HTMLElement {
     let promise = Promise.resolve();
 
     console.log(filterConditions);
+    console.log(sortState);
     if (
-      this._needReload(filterConditions) ||
+      this._needReload(filterConditions, sortState) ||
       typeof this._bulkCache == "undefined" ||
       this._bulkCache == null
     ) {
       this.filterConditions = filterConditions;
+      this.sortState = sortState;
       this.cardList = { cards: [], total: null };
       this.cardList.total = await this._modelData.getFilteredLocalizations(
         "count",
         filterConditions,
-        null,
-        null,
+        NaN,
+        NaN,
         sortState,
       );
 

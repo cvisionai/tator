@@ -287,7 +287,9 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
   // Reset the pagination back to page 0
   async _updateFilterResults(evt) {
-    this._filterConditions = evt.detail.conditions;
+    if (evt.detail.conditions) {
+      this._filterConditions = evt.detail.conditions;
+    }
     // console.log("UPDATE FILTER RESULTS");
     this._bulkEdit.checkForFilters(this._filterConditions);
 
@@ -329,10 +331,13 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._paginationState.pageSize = evt.detail.pageSize;
     this._paginationState.init = false;
 
+    this._sortState = this._filterResults._sort.getQueryParam();
+
     // get the gallery during pagination
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
+      sort: this._sortState,
       cache: true,
     });
 
