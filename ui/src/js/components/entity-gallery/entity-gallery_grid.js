@@ -38,10 +38,18 @@ export class EntityCardGallery extends TatorElement {
     this._tools.appendChild(this._p);
 
     // Gallery Pagination Top
+    const paginatorTopDiv = document.createElement("div");
+    paginatorTopDiv.setAttribute("class", "d-flex flex-items-center flex-justify-center");
+    this._main.appendChild(paginatorTopDiv);
+
     this._paginator_top = document.createElement("entity-gallery-paginator");
     this._paginator_top.setupElements();
     this._paginator_top.div.classList.add("py-3");
-    this._main.appendChild(this._paginator_top);
+    paginatorTopDiv.appendChild(this._paginator_top);
+
+    // Sort by
+    this._sort = document.createElement("entity-gallery-sort-simple");
+    paginatorTopDiv.appendChild(this._sort);
 
     // Gallery List
     this._ul = document.createElement("ul");

@@ -170,6 +170,9 @@ export class AnalyticsLocalizations extends TatorPage {
     }
 
     this._modelData.init().then(() => {
+      // Init sort
+      this._filterResults._sort.init("Localization", this._modelData._localizationTypes);
+
       // Init vars for pagination state
       let pageSize = this._settings.getPageSize();
       if (Number.isNaN(pageSize)) {

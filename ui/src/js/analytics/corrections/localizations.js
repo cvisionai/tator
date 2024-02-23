@@ -130,6 +130,9 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
     await this._modelData.init();
 
+    // Init sort
+    this._filterResults._sort.init("Localization", this._modelData._localizationTypes);
+
     // Init after modal is defined & modelData
     this._bulkEdit.init({
       page: this,
