@@ -65,7 +65,7 @@ export class EntityGallerySortSimple extends TatorElement {
 
     for (const entityType of entityTypes) {
       for (const attributeType of entityType.attribute_types) {
-        if (attributeType.dtype == "geopos") {
+        if (["geopos", "float_array"].includes(attributeType.dtype)) {
           continue;
         }
         if (uniqueFieldChoices.indexOf(attributeType.name) < 0) {
