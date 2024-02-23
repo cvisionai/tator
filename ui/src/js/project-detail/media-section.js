@@ -274,7 +274,10 @@ export class MediaSection extends TatorElement {
       sectionParams.append("section", this._filterSection);
     }
     const filterAndSearchParams = this._getFilterQueryParams();
-    return joinParams(sectionParams, filterAndSearchParams);
+    const sortParam = new URLSearchParams(this._sort.getQueryParam());
+    let params = joinParams(sectionParams, filterAndSearchParams);
+    params = joinParams(params, sortParam);
+    return params;
   }
 
   async _loadMedia() {
@@ -771,6 +774,7 @@ export class MediaSection extends TatorElement {
     });
 
     this._reload.addEventListener("click", this.reload.bind(this));
+    this._sort.addEventListener("sortBy", this.reload.bind(this));
   }
 
   async _setPage(evt, otherPaginator) {

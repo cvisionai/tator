@@ -10,6 +10,7 @@ export class EntityGallerySortSimple extends TatorElement {
     this._descending = this._shadow.getElementById("descending");
     this._options = this._shadow.getElementById("options");
     this._direction = "ascending";
+    this._initialized = false;
 
     this._ascending.addEventListener("click", () => {
       this._ascending.setAttribute("stroke-width", "4");
@@ -109,6 +110,15 @@ export class EntityGallerySortSimple extends TatorElement {
     } else {
       this._options.value = "$id";
     }
+    this._initialized = true;
+  }
+
+  getQueryParam() {
+    if (this._initialized) {
+      return `sort_by=${this._direction == "ascending" ? "" : "-"}${this._options.value}`;
+    } else {
+      return "";
+    }
   }
 
   _emit() {
@@ -117,7 +127,7 @@ export class EntityGallerySortSimple extends TatorElement {
       new CustomEvent("sortBy", {
         composed: true,
         detail: {
-          queryParam: `{this._direction == "ascending" ? "" : "-"}{this._fieldName.getValue()}`,
+          queryParam: this.getQueryParam(),
         },
       })
     );
