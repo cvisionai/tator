@@ -44,38 +44,35 @@ export class EntityGallerySortSimple extends TatorElement {
 
     // Create the menu options for the field name
     var fieldChoices = [];
-    var geoChoices = [];
     var attributeChoices = [];
     var uniqueFieldChoices = [];
-    this._currentTypes = [];
 
-    for (const attributeType of entityTypes) {
-      for (const attribute of attributeType.attribute_types) {
-        if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
-          if (attribute.label) {
-            if (
-              ["_x", "_y", "_width", "_height"].indexOf(attribute.name) >= 0
-            ) {
-              geoChoices.push({
-                value: attribute.name,
-                label: attribute.label,
-              });
-            } else {
-              fieldChoices.push({
-                value: attribute.name,
-                label: attribute.label,
-              });
-            }
-          } else {
-            attributeChoices.push({
-              value: attribute.name,
-              label: attribute.name,
-            });
-          }
-          uniqueFieldChoices.push(attribute.name);
+    fieldChoices = [
+      {value: "$id", label: "ID"},
+      {value: "$section", label: "Section ID"},
+      {value: "$created_datetime", label: "Created datetime"},
+      {value: "$created_by", label: "Created by (user ID)"},
+      {value: "$modified_datetime", label: "Modified datetime"},
+      {value: "$modified_by", label: "Modified by (user ID)"},
+    ];
+    if (category == "Media") {
+      fieldChoices = fieldChoices.concat([
+        {value: "$name", label: "Name"},
+        {value: "$fps", label: "Frame rate (fps)"},
+        {value: "$archive_state", label: "Archive state"},
+      ]);
+    }
+
+    for (const entityType of entityTypes) {
+      for (const attributeType of entityType.attribute_types) {
+        if (uniqueFieldChoices.indexOf(attributeType.name) < 0) {
+          attributeChoices.push({
+            value: attributeType.name,
+            label: attributeType.name,
+          });
+          uniqueFieldChoices.push(attributeType.name);
         }
       }
-      this._currentTypes.push(attributeType);
     }
 
     fieldChoices.sort((a, b) => {
@@ -90,30 +87,27 @@ export class EntityGallerySortSimple extends TatorElement {
     this._options.appendChild(builtinGroup);
     for (const fieldChoice of fieldChoices) {
       const option = document.createElement("option");
-      option.setAttribute("value", fieldChoice);
+      option.setAttribute("value", fieldChoice.value);
+      option.setAttribute("label", fieldChoice.label);
       builtinGroup.appendChild(option);
     }
    
-    if (geoChoices.length > 0) {
-      const geomGroup = document.createElement("optgroup");
-      geomGroup.setAttribute("label", "Geometry");
-      this._options.appendChild(geomGroup);
-      for (const geoChoice of geoChoices) {
-        const option = document.createElement("option");
-        option.setAttribute("value", geoChoice);
-        geomGroup.appendChild(option);
-      }
-    }
-
-    if (attributeChoices > 0) {
+    if (attributeChoices.length > 0) {
       const attrGroup = document.createElement("optgroup");
       attrGroup.setAttribute("label", "Attributes");
       this._options.appendChild(attrGroup);
       for (const attrChoice of attributeChoices) {
         const option = document.createElement("option");
-        option.setAttribute("value", attrChoice);
+        option.setAttribute("value", attrChoice.value);
+        option.setAttribute("label", attrChoice.label);
         attrGroup.appendChild(option);
       }
+    }
+
+    if (category == "Media") {
+      this._options.value = "$name";
+    } else {
+      this._options.value = "$id";
     }
   }
 
