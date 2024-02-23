@@ -171,7 +171,10 @@ export class AnalyticsLocalizations extends TatorPage {
 
     this._modelData.init().then(() => {
       // Init sort
-      this._filterResults._sort.init("Localization", this._modelData._localizationTypes);
+      this._filterResults._sort.init(
+        "Localization",
+        this._modelData._localizationTypes
+      );
 
       // Init vars for pagination state
       let pageSize = this._settings.getPageSize();
@@ -259,7 +262,11 @@ export class AnalyticsLocalizations extends TatorPage {
 
         this._sortState = this._filterResults._sort.getQueryParam();
         // Init Card Gallery and Right Panel. cardData required to be initialized.
-        this._cardGallery(this._filterConditions, this._paginationState, this._sortState);
+        this._cardGallery(
+          this._filterConditions,
+          this._paginationState,
+          this._sortState
+        );
 
         this.loading.hideSpinner();
         this.hideDimmer();
@@ -322,7 +329,11 @@ export class AnalyticsLocalizations extends TatorPage {
     this._sortState = this._filterResults._sort.getQueryParam();
 
     // updated the card gallery
-    this._cardGallery(this._filterConditions, this._paginationState, this._sortState);
+    this._cardGallery(
+      this._filterConditions,
+      this._paginationState,
+      this._sortState
+    );
 
     this._settings.setAttribute("filterConditions", filterURIString);
     this._settings.setAttribute("pagesize", this._paginationState.pageSize);
@@ -340,7 +351,11 @@ export class AnalyticsLocalizations extends TatorPage {
     this._paginationState.init = false;
 
     // get the gallery
-    this._cardGallery(this._filterConditions, this._paginationState, this._sortState);
+    this._cardGallery(
+      this._filterConditions,
+      this._paginationState,
+      this._sortState
+    );
 
     // make sure view lined up top and bottom
     this._filterResults._paginator.setValues(this._paginationState);

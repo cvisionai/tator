@@ -131,7 +131,10 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     await this._modelData.init();
 
     // Init sort
-    this._filterResults._sort.init("Localization", this._modelData._localizationTypes);
+    this._filterResults._sort.init(
+      "Localization",
+      this._modelData._localizationTypes
+    );
 
     // Init after modal is defined & modelData
     this._bulkEdit.init({
@@ -276,12 +279,14 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
         });
     } else {
       // Initial view-modal "Cardlist" from fetched localizations
-      this.cardData.makeCardList(conditions, pagination, sort).then((cardList) => {
-        // CardList inits Gallery component with cards & pagination on page
-        this._filterResults.show(cardList);
-        this.loading.hideSpinner();
-        this.hideDimmer();
-      });
+      this.cardData
+        .makeCardList(conditions, pagination, sort)
+        .then((cardList) => {
+          // CardList inits Gallery component with cards & pagination on page
+          this._filterResults.show(cardList);
+          this.loading.hideSpinner();
+          this.hideDimmer();
+        });
     }
   }
 

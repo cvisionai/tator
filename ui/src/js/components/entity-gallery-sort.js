@@ -49,17 +49,17 @@ export class EntityGallerySortSimple extends TatorElement {
     var uniqueFieldChoices = [];
 
     fieldChoices = [
-      {value: "$id", label: "ID"},
-      {value: "$created_datetime", label: "Created datetime"},
-      {value: "$created_by", label: "Created by (user ID)"},
-      {value: "$modified_datetime", label: "Modified datetime"},
-      {value: "$modified_by", label: "Modified by (user ID)"},
+      { value: "$id", label: "ID" },
+      { value: "$created_datetime", label: "Created datetime" },
+      { value: "$created_by", label: "Created by (user ID)" },
+      { value: "$modified_datetime", label: "Modified datetime" },
+      { value: "$modified_by", label: "Modified by (user ID)" },
     ];
     if (category == "Media") {
       fieldChoices = fieldChoices.concat([
-        {value: "$name", label: "Name"},
-        {value: "$fps", label: "Frame rate (fps)"},
-        {value: "$archive_state", label: "Archive state"},
+        { value: "$name", label: "Name" },
+        { value: "$fps", label: "Frame rate (fps)" },
+        { value: "$archive_state", label: "Archive state" },
       ]);
     }
 
@@ -94,7 +94,7 @@ export class EntityGallerySortSimple extends TatorElement {
       option.setAttribute("label", fieldChoice.label);
       builtinGroup.appendChild(option);
     }
-   
+
     if (attributeChoices.length > 0) {
       const attrGroup = document.createElement("optgroup");
       attrGroup.setAttribute("label", "Attributes");
@@ -117,7 +117,9 @@ export class EntityGallerySortSimple extends TatorElement {
 
   getQueryParam() {
     if (this._initialized) {
-      return `sort_by=${this._direction == "ascending" ? "" : "-"}${this._options.value}`;
+      return `sort_by=${this._direction == "ascending" ? "" : "-"}${
+        this._options.value
+      }`;
     } else {
       return "";
     }

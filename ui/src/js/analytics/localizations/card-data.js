@@ -50,7 +50,7 @@ export class AnnotationCardData extends HTMLElement {
       filterConditions,
       NaN,
       NaN,
-      sortState,
+      sortState
     );
 
     return true;
@@ -64,7 +64,11 @@ export class AnnotationCardData extends HTMLElement {
    */
   _needReload(filterConditions, sortState) {
     return (
-      JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions || JSON.stringify(sortState) != JSON.stringify(this.sortState))
+      JSON.stringify(filterConditions) !=
+      JSON.stringify(
+        this.filterConditions ||
+          JSON.stringify(sortState) != JSON.stringify(this.sortState)
+      )
     );
   }
 
@@ -172,7 +176,7 @@ export class AnnotationCardData extends HTMLElement {
       filterConditions,
       paginationState.start,
       paginationState.stop,
-      sortState,
+      sortState
     );
 
     // Query the media data associated with each localization
@@ -247,7 +251,7 @@ export class AnnotationCardData extends HTMLElement {
         filterConditions,
         NaN,
         NaN,
-        sortState,
+        sortState
       );
 
       let stop =
@@ -260,7 +264,7 @@ export class AnnotationCardData extends HTMLElement {
         filterConditions,
         0,
         stop,
-        sortState,
+        sortState
       );
 
       console.log("This is the prefetch results:");
@@ -279,7 +283,7 @@ export class AnnotationCardData extends HTMLElement {
             filterConditions,
             start,
             stop,
-            sortState,
+            sortState
           );
           this._bulkCache = [...this._bulkCache, ...next];
           start += this._stopChunk;

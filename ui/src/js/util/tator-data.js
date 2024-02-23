@@ -489,7 +489,7 @@ export class TatorData {
     listStop,
     mediaIds,
     ignorePresign,
-    sort,
+    sort
   ) {
     var finalAnnotationFilters = [];
     for (const filter of annotationFilterData) {
@@ -623,7 +623,13 @@ export class TatorData {
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredLocalizations(outputType, filters, listStart, listStop, sortState) {
+  async getFilteredLocalizations(
+    outputType,
+    filters,
+    listStart,
+    listStop,
+    sortState
+  ) {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
@@ -675,7 +681,7 @@ export class TatorData {
       listStop,
       mediaIds,
       null,
-      sortState,
+      sortState
     );
 
     return outData;

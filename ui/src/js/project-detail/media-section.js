@@ -69,7 +69,10 @@ export class MediaSection extends TatorElement {
     this._maxPageSizeDefault = 100;
 
     const paginatorTopDiv = document.createElement("div");
-    paginatorTopDiv.setAttribute("class", "d-flex flex-items-center flex-justify-center");
+    paginatorTopDiv.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-center"
+    );
     section.appendChild(paginatorTopDiv);
 
     this._paginator_top = document.createElement("entity-gallery-paginator");

@@ -5694,7 +5694,7 @@ class SectionTestCase(TatorTransactionTest):
 
         search_blob = base64.b64encode(
             json.dumps(
-                {"attribute": "String Attribute", "operation": "in", "value": ["foo","zoo","abc"]}
+                {"attribute": "String Attribute", "operation": "in", "value": ["foo", "zoo", "abc"]}
             ).encode()
         )
 

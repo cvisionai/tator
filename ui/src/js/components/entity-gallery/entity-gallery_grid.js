@@ -39,7 +39,10 @@ export class EntityCardGallery extends TatorElement {
 
     // Gallery Pagination Top
     const paginatorTopDiv = document.createElement("div");
-    paginatorTopDiv.setAttribute("class", "d-flex flex-items-center flex-justify-center");
+    paginatorTopDiv.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-center"
+    );
     this._main.appendChild(paginatorTopDiv);
 
     this._paginator_top = document.createElement("entity-gallery-paginator");
