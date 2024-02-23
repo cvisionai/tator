@@ -477,6 +477,8 @@ export class TatorData {
    * @param {integer} listStart
    * @param {integer} listStop
    * @param {array} mediaIds
+   * @param {boolean} ignorePresign
+   * @param {string} sort
    */
   async _getAnnotationData(
     outputType,
@@ -486,7 +488,8 @@ export class TatorData {
     listStart,
     listStop,
     mediaIds,
-    ignorePresign
+    ignorePresign,
+    sort,
   ) {
     var finalAnnotationFilters = [];
     for (const filter of annotationFilterData) {
@@ -564,6 +567,10 @@ export class TatorData {
       url += "&presigned=28800";
     }
 
+    if (sort) {
+      url += `&${sort}`;
+    }
+
     console.log("Getting data with URL: " + url);
     var promises = [];
     promises.push(fetchCredentials(url, {}, true));
@@ -610,10 +617,13 @@ export class TatorData {
    *   Used in conjunction with listStart and pagination of data.
    *   If null, pagination is ignored.
    *
+   * @param {string} sortState -
+   *   Query param for sorting.
+   *
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredLocalizations(outputType, filters, listStart, listStop) {
+  async getFilteredLocalizations(outputType, filters, listStart, listStop, sortState) {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];

@@ -180,10 +180,14 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       init: true,
     };
 
+    // Init vars for sort
+    this._sortState = this._filterResults._sort.getQueryParam();
+
     // Init Card Gallery and Right Panel
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
+      sort: this._sortState,
       cache: false,
     });
 
@@ -226,6 +230,12 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       "filterParameters",
       this._updateFilterResults.bind(this)
     );
+
+    // Listen for sort events
+    this._filterResults._sort.addEventListener(
+      "sortBy",
+      this._updateFilterResults.bind(this)
+    );
   }
 
   connectedCallback() {
@@ -247,7 +257,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     return TatorPage.observedAttributes;
   }
 
-  _cardGallery({ conditions, pagination, cache }) {
+  _cardGallery({ conditions, pagination, sort, cache }) {
     this.showDimmer();
     this.loading.showSpinner();
 
@@ -257,7 +267,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     if (cache) {
       // Initial view-modal "Cardlist" from fetched localizations
       return this.cardData
-        .makeCardListFromBulk(conditions, pagination)
+        .makeCardListFromBulk(conditions, pagination, sort)
         .then((cardList) => {
           // CardList inits Gallery component with cards & pagination on page
           this._filterResults.show(cardList);
@@ -266,7 +276,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
         });
     } else {
       // Initial view-modal "Cardlist" from fetched localizations
-      this.cardData.makeCardList(conditions, pagination).then((cardList) => {
+      this.cardData.makeCardList(conditions, pagination, sort).then((cardList) => {
         // CardList inits Gallery component with cards & pagination on page
         this._filterResults.show(cardList);
         this.loading.hideSpinner();
@@ -293,13 +303,17 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
 
+    this._sortState = this._filterResults._sort.getQueryParam();
+
     // updated the card gallery because of filter
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
+      sort: this._sortState,
       cache: false,
     });
 
+    this._settings.setAttribute("sort", this._sortState);
     this._settings.setAttribute("filterConditions", filterURIString);
     this._settings.setAttribute("pagesize", this._paginationState.pageSize);
     this._settings.setAttribute("page", this._paginationState.page);

@@ -148,9 +148,10 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * @param {array} filterConditions array of FilterConditionData objects
    * @param {object} paginationState
+   * @param {string} sortState
    * @returns {object}
    */
-  async makeCardList(filterConditions, paginationState) {
+  async makeCardList(filterConditions, paginationState, sortState) {
     // console.log(filterConditions)
     // console.log(paginationState);
     if (this._needReload(filterConditions)) {
@@ -158,13 +159,15 @@ export class AnnotationCardData extends HTMLElement {
     }
     this.cardList.cards = [];
     this.cardList.paginationState = paginationState;
+    this.cardList.sortState = sortState;
 
     // Get the localizations for the current page
     var localizations = await this._modelData.getFilteredLocalizations(
       "objects",
       filterConditions,
       paginationState.start,
-      paginationState.stop
+      paginationState.stop,
+      sortState,
     );
 
     // Query the media data associated with each localization
@@ -221,7 +224,7 @@ export class AnnotationCardData extends HTMLElement {
     }
   }
 
-  async _bulkCaching(filterConditions) {
+  async _bulkCaching(filterConditions, sortState) {
     let promise = Promise.resolve();
 
     console.log(filterConditions);
@@ -234,7 +237,10 @@ export class AnnotationCardData extends HTMLElement {
       this.cardList = { cards: [], total: null };
       this.cardList.total = await this._modelData.getFilteredLocalizations(
         "count",
-        filterConditions
+        filterConditions,
+        null,
+        null,
+        sortState,
       );
 
       let stop =
@@ -246,7 +252,8 @@ export class AnnotationCardData extends HTMLElement {
         "objects",
         filterConditions,
         0,
-        stop
+        stop,
+        sortState,
       );
 
       console.log("This is the prefetch results:");
@@ -265,7 +272,7 @@ export class AnnotationCardData extends HTMLElement {
             filterConditions,
             start,
             stop,
-            null
+            sortState,
           );
           this._bulkCache = [...this._bulkCache, ...next];
           start += this._stopChunk;
@@ -276,6 +283,7 @@ export class AnnotationCardData extends HTMLElement {
       }
 
       this.filterConditions = filterConditions;
+      this.sortState = sortState;
     } else {
       console.log("No change in filter condition.");
     }
@@ -286,18 +294,20 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * @param {array} filterConditions array of FilterConditionData objects
    * @param {object} paginationState
+   * @param {string} sortState
    * @returns {object}
    */
-  async makeCardListFromBulk(filterConditions, paginationState) {
+  async makeCardListFromBulk(filterConditions, paginationState, sortState) {
     if (filterConditions.length == 0) {
-      return this.makeCardList(filterConditions, paginationState);
+      return this.makeCardList(filterConditions, paginationState, sortState);
     }
     // this will create a cached list if the filter is new, or if we haven't made it
-    await this._bulkCaching(filterConditions);
+    await this._bulkCaching(filterConditions, sortState);
 
     console.log(paginationState);
     this.cardList.cards = [];
     this.cardList.paginationState = paginationState;
+    this.cardList.sortState = sortState;
 
     // Get the localizations for the current page
     const localizations = [];
