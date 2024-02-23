@@ -50,7 +50,6 @@ export class EntityGallerySortSimple extends TatorElement {
 
     fieldChoices = [
       {value: "$id", label: "ID"},
-      {value: "$section", label: "Section ID"},
       {value: "$created_datetime", label: "Created datetime"},
       {value: "$created_by", label: "Created by (user ID)"},
       {value: "$modified_datetime", label: "Modified datetime"},
@@ -66,6 +65,9 @@ export class EntityGallerySortSimple extends TatorElement {
 
     for (const entityType of entityTypes) {
       for (const attributeType of entityType.attribute_types) {
+        if (attributeType.dtype == "geopos") {
+          continue;
+        }
         if (uniqueFieldChoices.indexOf(attributeType.name) < 0) {
           attributeChoices.push({
             value: attributeType.name,
