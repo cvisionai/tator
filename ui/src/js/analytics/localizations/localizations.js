@@ -170,6 +170,12 @@ export class AnalyticsLocalizations extends TatorPage {
     }
 
     this._modelData.init().then(() => {
+      // Init sort
+      this._filterResults._sort.init(
+        "Localization",
+        this._modelData._localizationTypes
+      );
+
       // Init vars for pagination state
       let pageSize = this._settings.getPageSize();
       if (Number.isNaN(pageSize)) {
@@ -224,6 +230,12 @@ export class AnalyticsLocalizations extends TatorPage {
         this._updateFilterResults.bind(this)
       );
 
+      // Listen for sort events
+      this._filterResults._sort.addEventListener(
+        "sortBy",
+        this._updateFilterResults.bind(this)
+      );
+
       // Card Data export class collects raw model and parses into view-model format
       this.cardData = document.createElement("annotation-card-data");
       this.cardData.init(this._modelData).then(() => {
@@ -248,8 +260,13 @@ export class AnalyticsLocalizations extends TatorPage {
           gallery: this._filterResults,
         });
 
+        this._sortState = this._filterResults._sort.getQueryParam();
         // Init Card Gallery and Right Panel. cardData required to be initialized.
-        this._cardGallery(this._filterConditions, this._paginationState);
+        this._cardGallery(
+          this._filterConditions,
+          this._paginationState,
+          this._sortState
+        );
 
         this.loading.hideSpinner();
         this.hideDimmer();
@@ -276,13 +293,13 @@ export class AnalyticsLocalizations extends TatorPage {
     return TatorPage.observedAttributes;
   }
 
-  _cardGallery(filterConditions, paginationState) {
+  _cardGallery(filterConditions, paginationState, sortState) {
     this.showDimmer();
     this.loading.showSpinner();
 
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData
-      .makeCardList(filterConditions, paginationState)
+      .makeCardList(filterConditions, paginationState, sortState)
       .then((cardList) => {
         // CardList inits Gallery component with cards & pagination on page
         this._filterResults.show(cardList);
@@ -293,7 +310,9 @@ export class AnalyticsLocalizations extends TatorPage {
 
   // Reset the pagination back to page 0
   _updateFilterResults(evt) {
-    this._filterConditions = evt.detail.conditions;
+    if (evt.detail.conditions) {
+      this._filterConditions = evt.detail.conditions;
+    }
 
     var filterURIString = encodeURIComponent(
       JSON.stringify(this._filterConditions)
@@ -307,8 +326,14 @@ export class AnalyticsLocalizations extends TatorPage {
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
 
+    this._sortState = this._filterResults._sort.getQueryParam();
+
     // updated the card gallery
-    this._cardGallery(this._filterConditions, this._paginationState);
+    this._cardGallery(
+      this._filterConditions,
+      this._paginationState,
+      this._sortState
+    );
 
     this._settings.setAttribute("filterConditions", filterURIString);
     this._settings.setAttribute("pagesize", this._paginationState.pageSize);
@@ -326,7 +351,11 @@ export class AnalyticsLocalizations extends TatorPage {
     this._paginationState.init = false;
 
     // get the gallery
-    this._cardGallery(this._filterConditions, this._paginationState);
+    this._cardGallery(
+      this._filterConditions,
+      this._paginationState,
+      this._sortState
+    );
 
     // make sure view lined up top and bottom
     this._filterResults._paginator.setValues(this._paginationState);

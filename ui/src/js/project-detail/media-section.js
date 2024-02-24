@@ -68,11 +68,21 @@ export class MediaSection extends TatorElement {
     this._defaultPageSize = 25;
     this._maxPageSizeDefault = 100;
 
+    const paginatorTopDiv = document.createElement("div");
+    paginatorTopDiv.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-justify-center"
+    );
+    section.appendChild(paginatorTopDiv);
+
     this._paginator_top = document.createElement("entity-gallery-paginator");
     this._paginator_top._pageSize = this._defaultPageSize;
     this._paginator_top._pageMax = this._maxPageSizeDefault;
     this._paginator_top.setupElements();
-    section.appendChild(this._paginator_top);
+    paginatorTopDiv.appendChild(this._paginator_top);
+
+    this._sort = document.createElement("entity-gallery-sort-simple");
+    paginatorTopDiv.appendChild(this._sort);
 
     const div = document.createElement("div");
     div.setAttribute("class", "d-flex py-3");
@@ -267,7 +277,10 @@ export class MediaSection extends TatorElement {
       sectionParams.append("section", this._filterSection);
     }
     const filterAndSearchParams = this._getFilterQueryParams();
-    return joinParams(sectionParams, filterAndSearchParams);
+    const sortParam = new URLSearchParams(this._sort.getQueryParam());
+    let params = joinParams(sectionParams, filterAndSearchParams);
+    params = joinParams(params, sortParam);
+    return params;
   }
 
   async _loadMedia() {
@@ -764,6 +777,7 @@ export class MediaSection extends TatorElement {
     });
 
     this._reload.addEventListener("click", this.reload.bind(this));
+    this._sort.addEventListener("sortBy", this.reload.bind(this));
   }
 
   async _setPage(evt, otherPaginator) {

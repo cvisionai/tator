@@ -1003,6 +1003,10 @@ export class ProjectDetail extends TatorPage {
 
                   // used to setup filter options & string utils
                   this._mediaSection._modelData = this._modelData;
+                  this._mediaSection._sort.init(
+                    "Media",
+                    this._modelData._mediaTypes
+                  );
                   this._mediaSection._files.memberships =
                     this._modelData._memberships;
 
