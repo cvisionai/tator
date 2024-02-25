@@ -915,9 +915,9 @@ class HostedTemplate(Model):
     url = CharField(max_length=2048)
     """ URL where jinja2 template is hosted, must be retrievable with a GET
         using supplied headers."""
-    headers = JSONField(default=list)
+    headers = JSONField(default=list, null=True)
     """ Headers to be used in the GET request. """
-    tparams = JSONField(default=list)
+    tparams = JSONField(default=list, null=True)
     """ Template parameters used to substitute values in the jinja2 template. """
 
     def __str__(self):
@@ -941,11 +941,11 @@ class Algorithm(Model):
     parameters = JSONField(default=list, null=True, blank=True)
     template = ForeignKey(HostedTemplate, on_delete=SET_NULL, null=True)
     """ Hosted template, if given then `manifest` is ignored. """
-    tparams = JSONField(default=list)
+    tparams = JSONField(default=list, null=True)
     """ Template parameters, any values set here override default values in
         the HostedTemplate object.
     """
-    headers = JSONField(default=list)
+    headers = JSONField(default=list, null=True)
     """ Request headers for hosted template, any values set here override 
         default values in the HostedTemplate object.
     """
@@ -2192,11 +2192,11 @@ class Dashboard(Model):
     """ Project associated with the applet """
     template = ForeignKey(HostedTemplate, on_delete=SET_NULL, null=True)
     """ Hosted template, if given then `html_file` is ignored. """
-    tparams = JSONField(default=list)
+    tparams = JSONField(default=list, null=True)
     """ Template parameters, any values set here override default values in
         the HostedTemplate object.
     """
-    headers = JSONField(default=list)
+    headers = JSONField(default=list, null=True)
     """ Request headers for hosted template, any values set here override 
         default values in the HostedTemplate object.
     """
