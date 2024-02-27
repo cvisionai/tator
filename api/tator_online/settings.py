@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = False
 
 MAIN_HOST = os.getenv("MAIN_HOST")
-ALLOWED_HOSTS = [MAIN_HOST, "gunicorn-svc", "gunicorn"]
+ALLOWED_HOSTS = [MAIN_HOST, "gunicorn-headless-svc", "gunicorn-svc", "gunicorn"]
 ALIAS_HOSTS = os.getenv("ALIAS_HOSTS")
 if ALIAS_HOSTS:
     ALLOWED_HOSTS += ALIAS_HOSTS.split(",")
