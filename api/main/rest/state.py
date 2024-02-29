@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.http import Http404
 import numpy as np
+import uuid
 
 from ..models import State
 from ..models import StateType
@@ -545,6 +546,9 @@ class StateDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         state = qs[0]
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
         elemental_id = state.elemental_id
         version_id = state.version.id
         mark = state.mark

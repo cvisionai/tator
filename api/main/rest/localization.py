@@ -34,6 +34,8 @@ from ._util import (
 )
 from ._permissions import ProjectEditPermission
 
+import uuid
+
 logger = logging.getLogger(__name__)
 
 LOCALIZATION_PROPERTIES = list(localization_schema["properties"].keys())
@@ -325,6 +327,12 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             raise Http404
         obj = qs[0]
         model_dict = obj.model_dict
+
+        # If this is a really old object, it may not have an elemental_id
+        # but we need to add it for trigger support
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
 
         # Patch common attributes.
         frame = params.get("frame", None)
