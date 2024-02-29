@@ -2,7 +2,9 @@ import { TatorPage } from "../../components/tator-page.js";
 import { TatorData } from "../../util/tator-data.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { FilterData } from "../../components/filter-data.js";
+import { Utilities } from "../../util/utilities.js";
 import { store } from "./store.js";
+
 
 /**
  * Page that displays a grid view of selected annotations
@@ -40,8 +42,24 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
+    this._bulkEdit._editPanel.hidden = false;
     this._shadow.appendChild(this._bulkEdit);
 
+    this.deleteBulkModal = document.createElement("delete-bulk-modal");
+    this._shadow.appendChild(this.deleteBulkModal);
+
+
+    const deleteSelectedButton =
+      document.createElement("delete-button");
+    deleteSelectedButton.setAttribute(
+      "name",
+      "Delete selected localizations"
+    );
+    deleteSelectedButton._span.textContent = "Delete selected localizations";
+    this._bulkEdit._editPanel._otherTools.appendChild(deleteSelectedButton);
+
+
+  
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
     this.mainWrapper.setAttribute(
@@ -98,6 +116,12 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       this._setAnnouncements.bind(this)
     );
     store.subscribe((state) => state.project, this._init.bind(this));
+
+
+    // Event listeners
+    this.deleteBulkModal.addEventListener("confirmFileDelete", this._deleteSuccess.bind(this));
+    deleteSelectedButton.addEventListener("click", this._deleteSelection.bind(this));
+
 
     //
     /* Other */
@@ -260,6 +284,8 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     return TatorPage.observedAttributes;
   }
 
+
+
   _cardGallery({ conditions, pagination, sort, cache }) {
     this.showDimmer();
     this.loading.showSpinner();
@@ -353,6 +379,48 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._settings.setAttribute("pagesize", this._paginationState.pageSize);
     this._settings.setAttribute("page", this._paginationState.page);
     window.history.pushState({}, "", this._settings.getURL());
+  }
+
+  _deleteSelection() {
+    const list = Array.from(this._bulkEdit._currentMultiSelection);
+    console.log("Delete selection heard", list);
+
+    if (list && list.length > 0) {
+      this.deleteBulkModal.setAttribute("project-id", this.projectId);
+      this.deleteBulkModal.setAttribute("delete-name", "Selected localizations");
+      this.deleteBulkModal.setAttribute("delete-id", String(list));
+      this.deleteBulkModal.open(this._bulkEdit._currentSelectionObjects);
+
+      this.setAttribute("has-open-modal", "");
+    } else {
+      // TODO
+      // this._notify(
+      //   "Make a selection",
+      //   "Nothing to delete! Make a selection first.",
+      //   "error"
+      // );
+    }
+  }
+
+  async _deleteSuccess(evt){
+    this._bulkEdit._clearSelection();
+    this.deleteBulkModal.removeAttribute("is-open");
+    this.removeAttribute("has-open-modal", "");
+    
+    let msg = `Delete success! Updating...`;
+    Utilities.showSuccessIcon(msg);
+    await this.cardData._reload(this._filterConditions, this._sortState);
+    
+    // Setup Card Gallery and Right Panel
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      sort: this._sortState,
+      cache: false,
+    });
+
+    let msg2 = `Delete success! Gallery updated`;
+    Utilities.showSuccessIcon(msg2);
   }
 
   // Page dimmer handler

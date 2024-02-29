@@ -499,7 +499,7 @@ export class GalleryBulkEdit extends TatorElement {
           }
         }
 
-        if (r.rejected !== {}) {
+        if (Object.entries(r.rejected).length > 0) {
           for (let rej of Object.entries(r.rejected)) {
             text += `<p class="text-red py-2 px-2">- Will not update attribute '${rej[0]}' - value is invalid, or null.</p>`;
           }
@@ -594,7 +594,7 @@ export class GalleryBulkEdit extends TatorElement {
       // console.log("jsonData-----------------------------------------------------------");
       // console.log(jsonData);
 
-      if (jsonData.attributes !== {}) {
+      if (Object.entries(jsonData.attributes).length > 0) {
         promise = promise
           .then(() => this._patchMedia(jsonData))
           .then((resp) => {

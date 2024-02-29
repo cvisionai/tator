@@ -146,6 +146,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
     //}
     //else {
+    console.log("SHOW cardlist", cardList);
     if (cardList.total == 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
@@ -207,6 +208,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
    * @param {object} cardInfo
    */
   makeCards(cardInfo) {
+    console.log("makeCards cardInfo", cardInfo);
     this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
     var numberOfDisplayedCards = 0;
 
