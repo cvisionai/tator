@@ -443,6 +443,9 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
         elemental_id = obj.elemental_id
         version_id = obj.version.id
         mark = obj.mark

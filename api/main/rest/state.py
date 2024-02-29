@@ -457,6 +457,12 @@ class StateDetailBaseAPI(BaseDetailView):
         obj = qs[0]
         model_dict = obj.model_dict
 
+        # If this is a really old object, it may not have an elemental_id
+        # but we need to add it for trigger support
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
+
         if "frame" in params:
             obj.frame = params["frame"]
 
@@ -546,9 +552,9 @@ class StateDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         state = qs[0]
-        if obj.elemental_id == None:
-            obj.elemental_id = uuid.uuid4()
-            obj.save()
+        if state.elemental_id == None:
+            state.elemental_id = uuid.uuid4()
+            state.save()
         elemental_id = state.elemental_id
         version_id = state.version.id
         mark = state.mark
