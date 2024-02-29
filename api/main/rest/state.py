@@ -556,6 +556,12 @@ class StateDetailBaseAPI(BaseDetailView):
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_delete_and_log_changes(qs, project, self.request.user)
         else:
+            if params["pedantic"] and (state.mark != state.latest_mark):
+                raise ValueError(
+                    f"Pedantic mode is enabled. Can not edit prior object {state.pk}, must only edit latest mark on version."
+                    f"Object is mark {state.mark} of {state.latest_mark} for {state.version.name}/{state.elemental_id}"
+                )
+            state.pk = None
             state.variant_deleted = True
             state.save()
             log_changes(state, state.model_dict, state.project, self.request.user)

@@ -432,7 +432,13 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         if params["prune"] == 1:
             delete_and_log_changes(obj, obj.project, self.request.user)
         else:
+            if params["pedantic"] and (obj.mark != obj.latest_mark):
+                raise ValueError(
+                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                    f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+                )
             b = qs[0]
+            b.pk = None
             b.variant_deleted = True
             b.save()
             log_changes(b, b.model_dict, b.project, self.request.user)

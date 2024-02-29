@@ -270,7 +270,14 @@ state_delete_schema = {
             "minimum": 0,
             "maximum": 1,
             "default": 0,
-        }
+        },
+        "pedantic": {
+            "type": "integer",
+            "description": "Set to 1 to enforce that this is the latest mark; else push edits to end of branch.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
     },
 }
 
