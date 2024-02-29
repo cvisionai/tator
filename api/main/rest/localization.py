@@ -34,6 +34,8 @@ from ._util import (
 )
 from ._permissions import ProjectEditPermission
 
+import uuid
+
 logger = logging.getLogger(__name__)
 
 LOCALIZATION_PROPERTIES = list(localization_schema["properties"].keys())
@@ -225,13 +227,22 @@ class LocalizationListAPI(BaseListView):
                 # Delete the localizations.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
-                bulk_update_and_log_changes(
-                    qs,
-                    params["project"],
-                    self.request.user,
-                    update_kwargs={"variant_deleted": True},
-                    new_attributes=None,
-                )
+                if params.get("in_place", 0):
+                    bulk_update_and_log_changes(
+                        qs,
+                        params["project"],
+                        self.request.user,
+                        update_kwargs={"variant_deleted": True},
+                        new_attributes=None,
+                    )
+                else:
+                    objs = []
+                    for original in qs.iterator():
+                        original.pk = None
+                        original.id = None
+                        original.variant_deleted = True
+                        objs.append(original)
+                    Localization.objects.bulk_create(objs)
 
         return {"message": f"Successfully deleted {count} localizations!"}
 
@@ -316,6 +327,12 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             raise Http404
         obj = qs[0]
         model_dict = obj.model_dict
+
+        # If this is a really old object, it may not have an elemental_id
+        # but we need to add it for trigger support
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -407,9 +424,9 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             log_changes(obj, model_dict, obj.project, self.request.user)
         else:
             # Only allow iterative changes, this has to be changing off the last mark in the version
-            if obj.mark != obj.latest_mark:
+            if params["pedantic"] and (obj.mark != obj.latest_mark):
                 raise ValueError(
-                    f"Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
                     f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
                 )
 
@@ -426,13 +443,22 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
         elemental_id = obj.elemental_id
         version_id = obj.version.id
         mark = obj.mark
         if params["prune"] == 1:
             delete_and_log_changes(obj, obj.project, self.request.user)
         else:
+            if params["pedantic"] and (obj.mark != obj.latest_mark):
+                raise ValueError(
+                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                    f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+                )
             b = qs[0]
+            b.pk = None
             b.variant_deleted = True
             b.save()
             log_changes(b, b.model_dict, b.project, self.request.user)

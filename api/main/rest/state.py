@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.http import Http404
 import numpy as np
+import uuid
 
 from ..models import State
 from ..models import StateType
@@ -346,13 +347,22 @@ class StateListAPI(BaseListView):
                 # Delete states.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
-                bulk_update_and_log_changes(
-                    qs,
-                    params["project"],
-                    self.request.user,
-                    update_kwargs={"variant_deleted": True},
-                    new_attributes=None,
-                )
+                if params.get("in_place", 0):
+                    bulk_update_and_log_changes(
+                        qs,
+                        params["project"],
+                        self.request.user,
+                        update_kwargs={"variant_deleted": True},
+                        new_attributes=None,
+                    )
+                else:
+                    objs = []
+                    for original in qs.iterator():
+                        original.pk = None
+                        original.id = None
+                        original.variant_deleted = True
+                        objs.append(original)
+                    State.objects.bulk_create(objs)
 
         return {"message": f"Successfully deleted {count} states!"}
 
@@ -447,6 +457,12 @@ class StateDetailBaseAPI(BaseDetailView):
         obj = qs[0]
         model_dict = obj.model_dict
 
+        # If this is a really old object, it may not have an elemental_id
+        # but we need to add it for trigger support
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
+
         if "frame" in params:
             obj.frame = params["frame"]
 
@@ -513,9 +529,9 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.save()
             log_changes(obj, model_dict, obj.project, self.request.user)
         else:
-            if obj.mark != obj.latest_mark:
+            if params["pedantic"] and (obj.mark != obj.latest_mark):
                 raise ValueError(
-                    f"Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
                     f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
                 )
 
@@ -536,6 +552,9 @@ class StateDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         state = qs[0]
+        if state.elemental_id == None:
+            state.elemental_id = uuid.uuid4()
+            state.save()
         elemental_id = state.elemental_id
         version_id = state.version.id
         mark = state.mark
@@ -556,6 +575,12 @@ class StateDetailBaseAPI(BaseDetailView):
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_delete_and_log_changes(qs, project, self.request.user)
         else:
+            if params["pedantic"] and (state.mark != state.latest_mark):
+                raise ValueError(
+                    f"Pedantic mode is enabled. Can not edit prior object {state.pk}, must only edit latest mark on version."
+                    f"Object is mark {state.mark} of {state.latest_mark} for {state.version.name}/{state.elemental_id}"
+                )
+            state.pk = None
             state.variant_deleted = True
             state.save()
             log_changes(state, state.model_dict, state.project, self.request.user)

@@ -1231,9 +1231,11 @@ class AttributeTestMixin:
         )
         assertResponse(self, response, status.HTTP_200_OK)
         # Do this again to test after the attribute object has been created.
-        # This verifies patching non-latest element by serial doesn't work
+        # This verifies patching non-latest element by serial doesn't work (when pedantic)
         response = self.client.patch(
-            f"/rest/{self.detail_uri}/{pk}", {"attributes": {name: test_val}}, format="json"
+            f"/rest/{self.detail_uri}/{pk}",
+            {"attributes": {name: test_val}, "pedantic": 1},
+            format="json",
         )
         if mark_based:
             assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
