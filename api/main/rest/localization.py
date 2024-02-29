@@ -225,13 +225,22 @@ class LocalizationListAPI(BaseListView):
                 # Delete the localizations.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
-                bulk_update_and_log_changes(
-                    qs,
-                    params["project"],
-                    self.request.user,
-                    update_kwargs={"variant_deleted": True},
-                    new_attributes=None,
-                )
+                if params.get("in_place", 0):
+                    bulk_update_and_log_changes(
+                        qs,
+                        params["project"],
+                        self.request.user,
+                        update_kwargs={"variant_deleted": True},
+                        new_attributes=None,
+                    )
+                else:
+                    objs = []
+                    for original in qs.iterator():
+                        original.pk = None
+                        original.id = None
+                        original.variant_deleted = True
+                        objs.append(original)
+                    Localization.objects.bulk_create(objs)
 
         return {"message": f"Successfully deleted {count} localizations!"}
 
