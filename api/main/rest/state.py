@@ -513,9 +513,9 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.save()
             log_changes(obj, model_dict, obj.project, self.request.user)
         else:
-            if obj.mark != obj.latest_mark:
+            if params["pedantic"] and (obj.mark != obj.latest_mark):
                 raise ValueError(
-                    f"Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
                     f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
                 )
 
