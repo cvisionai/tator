@@ -11,9 +11,12 @@ export class AnalyticsLocalizations extends AnalyticsPage {
     this.store = store;
     this._bulkInit = false;
 
-    this._breadcrumbs = document.createElement("analytics-breadcrumbs");
-    this._div.appendChild(this._breadcrumbs);
+
+    
     this._breadcrumbs.setAttribute("analytics-name", "Localization Gallery");
+
+
+    this._settings._bulkCorrect.hidden = false;
 
     this._filterResults = document.createElement("localizations-gallery");
     this.main.appendChild(this._filterResults);

@@ -138,6 +138,7 @@ export class GalleryBulkEdit extends TatorElement {
     projectId = null,
     additionalTools = false,
     permission,
+    bulkInit = false
   }) {
     this._page = page;
     this._projectId = this._page.projectId;
@@ -161,24 +162,27 @@ export class GalleryBulkEdit extends TatorElement {
     } else {
       this._gallery = gallery;
     }
+    if (bulkInit) this.startEditMode();
   }
 
   _keyDownHandler(e) {
-    if (e.key == "Escape") {
-      this._clearSelection();
-    }
+    if (this._editMode === true) {
+      if (e.key == "Escape") {
+        this._clearSelection();
+      }
 
-    if (e.code == "Control") {
-      if (e.code == "a" || e.code == "A") {
+      if (e.code == "Control") {
+        if (e.code == "a" || e.code == "A") {
+          if (this._permission == "View Only") return;
+          this.selectAllOnPage();
+        }
+      }
+
+      if (e.ctrlKey && (e.key === "a" || e.key === "A")) {
+        e.preventDefault();
         if (this._permission == "View Only") return;
         this.selectAllOnPage();
       }
-    }
-
-    if (e.ctrlKey && (e.key === "a" || e.key === "A")) {
-      e.preventDefault();
-      if (this._permission == "View Only") return;
-      this.selectAllOnPage();
     }
   }
 
@@ -297,21 +301,24 @@ export class GalleryBulkEdit extends TatorElement {
     // console.log("startEditMode");
     this._editMode = true;
 
-    for (let el of this._elements) {
-      const cardFromEl =
-        typeof el.cardInfo != "undefined" ? el.cardInfo.card : el.card;
-      cardFromEl.multiEnabled = true;
-      if (
-        cardFromEl._li.classList.contains("is-selected") &&
-        !this._currentMultiSelection.has(cardFromEl.cardObj.id)
-      ) {
-        this._addSelected({
-          element: cardFromEl,
-          id: cardFromEl.cardObj.id,
-          isSelected: cardFromEl._li.classList.contains("is-selected"),
-        });
+    if (this._elements) {
+      for (let el of this._elements) {
+        const cardFromEl =
+          typeof el.cardInfo != "undefined" ? el.cardInfo.card : el.card;
+        cardFromEl.multiEnabled = true;
+        if (
+          cardFromEl._li.classList.contains("is-selected") &&
+          !this._currentMultiSelection.has(cardFromEl.cardObj.id)
+        ) {
+          this._addSelected({
+            element: cardFromEl,
+            id: cardFromEl.cardObj.id,
+            isSelected: cardFromEl._li.classList.contains("is-selected"),
+          });
+        }
       }
     }
+
 
     // show edit drawer and tools
     this._bulkEditBar.classList.remove("hidden");

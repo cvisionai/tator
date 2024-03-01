@@ -10,12 +10,13 @@ export class AnalyticsLocalizationsCorrections extends AnalyticsPage {
 
     this.store = store;
     this._bulkInit = true;
-    this._bulkEdit.editMode = true;
+;
     this._bulkEdit._editMode = true;
 
-    this._breadcrumbs = document.createElement("analytics-breadcrumbs");
-    this._div.appendChild(this._breadcrumbs);
+
     this._breadcrumbs.setAttribute("analytics-name", "Corrections");
+    this._settings._localizationsView.hidden = false;
+    this._settings._bulkCorrect.classList.add("hidden");
 
     this._filterResults = document.createElement("corrections-gallery");
     this.main.appendChild(this._filterResults);
@@ -27,6 +28,7 @@ export class AnalyticsLocalizationsCorrections extends AnalyticsPage {
 
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
+
   }
 }
 

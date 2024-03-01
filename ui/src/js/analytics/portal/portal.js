@@ -25,8 +25,9 @@ export class AnalyticsPortal extends TatorPage {
     header.appendChild(div);
 
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
-    div.appendChild(this._breadcrumbs);
     this._breadcrumbs.setAttribute("analytics-name", "Portal");
+    div.appendChild(this._breadcrumbs);
+
 
     this.main = document.createElement("main");
     this.main.setAttribute("class", "layout-max d-flex flex-justify-center");

@@ -27,11 +27,12 @@ export class AnalyticsPage extends TatorPage {
     this._div.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(this._div);
 
+    this._breadcrumbs = document.createElement("analytics-breadcrumbs");
+    this._div.appendChild(this._breadcrumbs);
+
     this._settings = document.createElement("analytics-settings");
     this._settings.style.marginLeft = "50px";
     this._div.appendChild(this._settings);
-
-    this._settings._localizationsView.hidden = false;
 
     // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
@@ -147,6 +148,7 @@ export class AnalyticsPage extends TatorPage {
     this._bulkEdit.init({
       page: this,
       permission: this._modelData._project.permission,
+      bulkInit: this._bulkInit
     });
 
     // Pass panel and localization types to gallery
