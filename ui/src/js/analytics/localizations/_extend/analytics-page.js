@@ -124,7 +124,7 @@ export class AnalyticsPage extends TatorPage {
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = project.id;
     this.deleteBulkModal.setAttribute("project-id", this.projectId);
-
+    this.deleteBulkModal.addEventListener("close", this.hideDimmer.bind(this));
     console.log("Corrections this._projectId" + this._projectId);
     this._modelData = new TatorData(this.projectId);
 
