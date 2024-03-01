@@ -34,8 +34,10 @@ export class DeleteBulkModal extends ModalDialog {
     cancel.textContent = "Cancel";
     this._footer.appendChild(cancel);
 
-
-    window.addEventListener("delete-entity", this._handleSingleDelete.bind(this));
+    window.addEventListener(
+      "delete-entity",
+      this._handleSingleDelete.bind(this)
+    );
     cancel.addEventListener("click", this._closeCallback);
 
     this._accept.addEventListener("click", async (evt) => {
@@ -43,8 +45,6 @@ export class DeleteBulkModal extends ModalDialog {
       const projecId = this.getAttribute("project-id");
       const single = !(localizationId.indexOf(",") > -1);
       const count = localizationId.split(",").length;
-
-      
 
       if (single) {
         this._deleteSingle(localizationId);
@@ -61,12 +61,14 @@ export class DeleteBulkModal extends ModalDialog {
     this._elementalIds = [];
     const localizationId = this.getAttribute("delete-id");
     const array = localizationId.split(",");
-    this._deleteIds.innerText = ` ${array.length} localization${(array.length == 1) ? "" : "s"}. ID${(array.length == 1) ? "" : "s"}: ${localizationId.replace(",", ", ")}`;
+    this._deleteIds.innerText = ` ${array.length} localization${
+      array.length == 1 ? "" : "s"
+    }. ID${array.length == 1 ? "" : "s"}: ${localizationId.replace(",", ", ")}`;
   }
 
   _handleSingleDelete(evt) {
     console.log("_handleSingleDelete", evt.detail);
-    if(evt?.detail?.id){
+    if (evt?.detail?.id) {
       const id = evt.detail.id;
       this.setAttribute("delete-id", `${id}`);
       this.open();
@@ -89,14 +91,14 @@ export class DeleteBulkModal extends ModalDialog {
 
   async _deleteMultiple(projecId, localizationId, count) {
     // this._deleteId;
-    const idsArray = localizationId.split(",").map(val => Number(val));
-   
+    const idsArray = localizationId.split(",").map((val) => Number(val));
+
     const url = `/rest/Localizations/${projecId}?count=${count}&ids=${localizationId}`;
     return fetchCredentials(url, {
       method: "Delete",
       body: JSON.stringify({
-        ids: idsArray
-      })
+        ids: idsArray,
+      }),
     })
       .then(() => {
         this.dispatchEvent(
@@ -125,10 +127,9 @@ export class DeleteBulkModal extends ModalDialog {
         break;
       case "delete-id":
         // this._deleteId.textContent = ;
-        this.textSummary.innerHTML = "IDs: "+newValue.replace(",", ", ");
+        this.textSummary.innerHTML = "IDs: " + newValue.replace(",", ", ");
         break;
       case "is-open":
-        
         break;
     }
   }

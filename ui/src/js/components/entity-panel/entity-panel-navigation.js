@@ -171,8 +171,8 @@ export class EntityPanelNavigation extends TatorElement {
       window.dispatchEvent(
         new CustomEvent("delete-entity", {
           detail: {
-            id: this._selectedCardEl.card.cardObj.id
-          }
+            id: this._selectedCardEl.card.cardObj.id,
+          },
         })
       );
     }

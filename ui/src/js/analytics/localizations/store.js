@@ -12,7 +12,7 @@ const store = createStore(
     announcements: [],
     project: null,
     init: async () => {
-      console.log("INIT CALLED")
+      console.log("INIT CALLED");
       return Promise.all([
         api.whoami(),
         api.getAnnouncementList(),

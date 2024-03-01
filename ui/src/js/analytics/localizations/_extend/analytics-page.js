@@ -4,7 +4,6 @@ import { LoadingSpinner } from "../../../components/loading-spinner.js";
 import { FilterData } from "../../../components/filter-data.js";
 import { Utilities } from "../../../util/utilities.js";
 
-
 /**
  * Page that displays a grid view of selected annotations
  */
@@ -43,17 +42,10 @@ export class AnalyticsPage extends TatorPage {
     this.deleteBulkModal = document.createElement("delete-bulk-modal");
     this._shadow.appendChild(this.deleteBulkModal);
 
-
-    const deleteSelectedButton =
-      document.createElement("delete-button");
-    deleteSelectedButton.setAttribute(
-      "name",
-      "Delete selected localizations"
-    );
+    const deleteSelectedButton = document.createElement("delete-button");
+    deleteSelectedButton.setAttribute("name", "Delete selected localizations");
     deleteSelectedButton._span.textContent = "Delete selected localizations";
     this._bulkEdit._editPanel._otherTools.appendChild(deleteSelectedButton);
-
-
 
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
@@ -62,7 +54,7 @@ export class AnalyticsPage extends TatorPage {
       "analysis--main--wrapper col-12 d-flex"
     );
     this._shadow.appendChild(this.mainWrapper);
-    
+
     //TODO
     // this.mainWrapper.style.paddingBottom = "200px";
 
@@ -77,7 +69,7 @@ export class AnalyticsPage extends TatorPage {
     /* Card Gallery */
     // Gallery of cards showing filter results
     // this._filterResults = this._getGallery();
-    
+
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
@@ -95,11 +87,15 @@ export class AnalyticsPage extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
-    
     // Event listeners
-    this.deleteBulkModal.addEventListener("confirmFileDelete", this._deleteSuccess.bind(this));
-    deleteSelectedButton.addEventListener("click", this._deleteSelection.bind(this));
-
+    this.deleteBulkModal.addEventListener(
+      "confirmFileDelete",
+      this._deleteSuccess.bind(this)
+    );
+    deleteSelectedButton.addEventListener(
+      "click",
+      this._deleteSelection.bind(this)
+    );
 
     //
     /* Other */
@@ -113,7 +109,6 @@ export class AnalyticsPage extends TatorPage {
     this._shadow.appendChild(this.modalNotify);
     this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
     this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
-
 
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
@@ -162,7 +157,7 @@ export class AnalyticsPage extends TatorPage {
       cardData: this.cardData,
       bulkEdit: this._bulkEdit,
       modalNotify: this.modalNotify,
-      bulkInit: this._bulkInit
+      bulkInit: this._bulkInit,
     });
 
     // Initialize the settings with the URL. The settings will be used later on.
@@ -257,8 +252,8 @@ export class AnalyticsPage extends TatorPage {
   }
 
   set store(val) {
-    this._store = val
-    
+    this._store = val;
+
     // Create store subscriptions
     this._store.subscribe((state) => state.user, this._setUser.bind(this));
     this._store.subscribe(
@@ -266,7 +261,6 @@ export class AnalyticsPage extends TatorPage {
       this._setAnnouncements.bind(this)
     );
     this._store.subscribe((state) => state.project, this._init.bind(this));
-    
 
     this._initStore();
   }
@@ -342,8 +336,6 @@ export class AnalyticsPage extends TatorPage {
   static get observedAttributes() {
     return TatorPage.observedAttributes;
   }
-
-
 
   _cardGallery({ conditions, pagination, sort, cache }) {
     this.showDimmer();
@@ -445,8 +437,10 @@ export class AnalyticsPage extends TatorPage {
     console.log("Delete selection heard", list);
 
     if (list && list.length > 0) {
-      
-      this.deleteBulkModal.setAttribute("delete-name", "Selected localizations");
+      this.deleteBulkModal.setAttribute(
+        "delete-name",
+        "Selected localizations"
+      );
       this.deleteBulkModal.setAttribute("delete-id", String(list));
       this.deleteBulkModal.open(this._bulkEdit._currentSelectionObjects);
 
@@ -482,7 +476,6 @@ export class AnalyticsPage extends TatorPage {
     Utilities.showSuccessIcon(msg2);
   }
 
-
   // Page dimmer handler
   showDimmer() {
     return this.setAttribute("has-open-modal", "");
@@ -493,7 +486,4 @@ export class AnalyticsPage extends TatorPage {
   }
 }
 
-customElements.define(
-  "analytics-page",
-  AnalyticsPage
-);
+customElements.define("analytics-page", AnalyticsPage);

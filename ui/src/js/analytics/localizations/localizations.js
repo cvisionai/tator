@@ -1,11 +1,11 @@
 import { store } from "./store.js";
-import {AnalyticsPage} from  "./_extend/analytics-page.js";
+import { AnalyticsPage } from "./_extend/analytics-page.js";
 
 /**
  * Page that displays a grid view of selected annotations
  */
 export class AnalyticsLocalizations extends AnalyticsPage {
-  constructor() { 
+  constructor() {
     super();
 
     this.store = store;

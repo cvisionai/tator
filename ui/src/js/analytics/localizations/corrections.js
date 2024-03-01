@@ -1,5 +1,5 @@
 import { store } from "./store.js";
-import  {AnalyticsPage} from "./_extend/analytics-page.js";
+import { AnalyticsPage } from "./_extend/analytics-page.js";
 
 /**
  * Page that displays a grid view of selected annotations
@@ -27,7 +27,6 @@ export class AnalyticsLocalizationsCorrections extends AnalyticsPage {
 
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
-
   }
 }
 

@@ -89,7 +89,15 @@ export class AnalyticsGallery extends EntityCardGallery {
   }
 
   // Provide access to side panel for events
-  _initPanel({ panelContainer, pageModal, cardData, modelData, modalNotify, bulkEdit, bulkInit = false }) {
+  _initPanel({
+    panelContainer,
+    pageModal,
+    cardData,
+    modelData,
+    modalNotify,
+    bulkEdit,
+    bulkInit = false,
+  }) {
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
@@ -128,8 +136,6 @@ export class AnalyticsGallery extends EntityCardGallery {
     }
   }
 
-
-
   /* Init function to show and populate gallery w/ pagination */
   show(cardList) {
     //if (cardList.total >= this.modelData.getMaxFetchCount()) {
@@ -139,11 +145,13 @@ export class AnalyticsGallery extends EntityCardGallery {
     if (cardList.total == 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
-      this._numFiles.textContent = `Viewing ${cardList.paginationState.start + 1
-        } to ${cardList.paginationState.stop > cardList.total
+      this._numFiles.textContent = `Viewing ${
+        cardList.paginationState.start + 1
+      } to ${
+        cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-        } of ${cardList.total} Results`;
+      } of ${cardList.total} Results`;
     }
 
     //}
@@ -221,7 +229,6 @@ export class AnalyticsGallery extends EntityCardGallery {
         ...this.cardLabelsChosenByType[entityTypeId],
         ...builtInChosen,
       ];
-
 
       this._bulkEdit._updateShownAttributes({
         typeId: entityTypeId,
@@ -417,9 +424,10 @@ export class AnalyticsGallery extends EntityCardGallery {
       id: e.detail.id,
       values: { attributes: e.detail.values },
       type: "Localization",
-    }).then((data) => {
-      this.updateCardData(data);
     })
+      .then((data) => {
+        this.updateCardData(data);
+      })
       .then(() => {
         this._bulkEdit.updateCardData(this._cardElements);
       });
@@ -432,7 +440,8 @@ export class AnalyticsGallery extends EntityCardGallery {
       values: { attributes: e.detail.values },
       type: "Media",
     }).then(() => {
-      this.cardData.updateMediaAttributes(mediaId)
+      this.cardData
+        .updateMediaAttributes(mediaId)
         .then(() => {
           for (let idx = 0; idx < this._cardElements.length; idx++) {
             const card = this._cardElements[idx].card.cardObj;
@@ -484,7 +493,8 @@ export class AnalyticsGallery extends EntityCardGallery {
 
   openClosedPanel(e) {
     console.log(e.target);
-    if (!this.panelContainer.open && !this._bulkEdit._editMode) this.panelContainer._toggleOpen();
+    if (!this.panelContainer.open && !this._bulkEdit._editMode)
+      this.panelContainer._toggleOpen();
     e.detail.openFlag = this.panelContainer.open;
 
     this.panelControls.openHandler(
