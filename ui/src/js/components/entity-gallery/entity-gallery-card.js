@@ -325,7 +325,7 @@ export class EntityCard extends TatorElement {
   }
 
   set multiEnabled(val) {
-    console.log("multiEnabled set..."+val)
+    console.log("multiEnabled set..." + val);
     this._multiEnabled = val;
     this._multiSelectionToggle = val;
 

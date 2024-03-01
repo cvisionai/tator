@@ -153,11 +153,13 @@ export class AnalyticsGallery extends EntityCardGallery {
     if (cardList.total == 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
-      this._numFiles.textContent = `Viewing ${cardList.paginationState.start + 1
-        } to ${cardList.paginationState.stop > cardList.total
+      this._numFiles.textContent = `Viewing ${
+        cardList.paginationState.start + 1
+      } to ${
+        cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-        } of ${cardList.total} Results`;
+      } of ${cardList.total} Results`;
     }
 
     //}
@@ -250,11 +252,18 @@ export class AnalyticsGallery extends EntityCardGallery {
         card._li.classList.add("aspect-true");
 
         /* Setup listeners */
-        this._resizeCards._slideInput.addEventListener("change", this.setupResizeListeners.bind(this, card));
-        this._cardAttributeLabels.addEventListener("labels-update", this.setupCardLabelUpdateListener.bind(this, card));
-        card.addEventListener("card-click", this.openClosedPanel.bind(this, card));
-
-
+        this._resizeCards._slideInput.addEventListener(
+          "change",
+          this.setupResizeListeners.bind(this, card)
+        );
+        this._cardAttributeLabels.addEventListener(
+          "labels-update",
+          this.setupCardLabelUpdateListener.bind(this, card)
+        );
+        card.addEventListener(
+          "card-click",
+          this.openClosedPanel.bind(this, card)
+        );
 
         this._cardElements.push({
           card: card,
@@ -264,14 +273,17 @@ export class AnalyticsGallery extends EntityCardGallery {
         card = this._cardElements[index].card;
       }
 
-      console.log("Do we have a status for edit mode?", this._bulkEdit._editMode);
-      
+      console.log(
+        "Do we have a status for edit mode?",
+        this._bulkEdit._editMode
+      );
+
       if (this._bulkEdit._editMode === true) {
         this.enableMulti(card);
         this._addBulkListeners(card);
       } else {
         console.log("_removeBulkListeners");
-        this._removeBulkListeners(card)
+        this._removeBulkListeners(card);
       }
 
       // Non-hidden attributes (ie order >= 0))
@@ -301,14 +313,17 @@ export class AnalyticsGallery extends EntityCardGallery {
         panelContainer: this.panelContainer,
         cardLabelsChosen: cardLabelsChosen,
         memberships: this.modelData._memberships,
-        enableMultiselect: this._bulkEdit._editMode
+        enableMultiselect: this._bulkEdit._editMode,
       });
 
       this._currentCardIndexes[cardObj.id] = index;
 
-
       // If these cards are already selected when we are remaking them?
-      if (this._bulkEdit?._currentMultiSelectionToId?.get(entityType.id)?.has(cardObj.id)) {
+      if (
+        this._bulkEdit?._currentMultiSelectionToId
+          ?.get(entityType.id)
+          ?.has(cardObj.id)
+      ) {
         this._bulkEdit._addSelected({
           element: card,
           id: cardObj.id,
@@ -331,9 +346,8 @@ export class AnalyticsGallery extends EntityCardGallery {
     // Replace card info so that shift select can get cards in between
     this._bulkEdit.elementList = this._cardElements;
     this._bulkEdit.elementIndexes = this._currentCardIndexes;
-    if(this._bulkEdit._editMode) this._bulkEdit.startEditMode(); //TODO
+    if (this._bulkEdit._editMode) this._bulkEdit.startEditMode(); //TODO
   }
-
 
   setupResizeListeners(card) {
     // Resize Tool needs to change style within card on change
@@ -358,18 +372,24 @@ export class AnalyticsGallery extends EntityCardGallery {
   }
 
   _removeBulkListeners(card) {
-    card.removeEventListener("ctrl-select", this._bulkEdit._openEditMode.bind(this._bulkEdit));;
+    card.removeEventListener(
+      "ctrl-select",
+      this._bulkEdit._openEditMode.bind(this._bulkEdit)
+    );
     this.disableMulti(card);
   }
 
   _addBulkListeners(card) {
-    card.addEventListener("ctrl-select", this._bulkEdit._openEditMode.bind(this._bulkEdit));
+    card.addEventListener(
+      "ctrl-select",
+      this._bulkEdit._openEditMode.bind(this._bulkEdit)
+    );
 
     this._bulkEdit.addEventListener("multi-enabled", () => {
-      this.enableMulti(card)
+      this.enableMulti(card);
     });
     this._bulkEdit.removeEventListener("multi-disabled", () => {
-      this.disableMulti(card)
+      this.disableMulti(card);
     });
   }
 
@@ -384,7 +404,6 @@ export class AnalyticsGallery extends EntityCardGallery {
     card.multiEnabled = false;
     this.multiEnabled = false;
   }
-
 
   updateCardData(newCardData) {
     if (newCardData.id in this._currentCardIndexes) {
@@ -470,13 +489,13 @@ export class AnalyticsGallery extends EntityCardGallery {
   }
 
   openClosedPanel(card, event) {
-    console.log("card, event openClosedPanel",card, event)
-    
+    console.log("card, event openClosedPanel", card, event);
+
     if (!this.panelContainer.open && !this._bulkEdit._editMode) {
       this.panelContainer._toggleOpen();
-      if(event.detail) event.detail.openFlag = this.panelContainer.open;
+      if (event.detail) event.detail.openFlag = this.panelContainer.open;
     }
-    
+
     this.panelControls.openHandler(
       event.detail,
       this._cardElements,

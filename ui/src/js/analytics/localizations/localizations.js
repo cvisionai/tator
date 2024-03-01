@@ -11,10 +11,7 @@ export class AnalyticsLocalizations extends AnalyticsPage {
     this.store = store;
     this._bulkInit = false;
 
-
-    
     this._breadcrumbs.setAttribute("analytics-name", "Localization Gallery");
-
 
     this._settings._bulkCorrect.hidden = false;
 
@@ -28,11 +25,12 @@ export class AnalyticsLocalizations extends AnalyticsPage {
 
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
-  
-  
-    this._settings._bulkCorrect.addEventListener("click", this._swapToCorrections.bind(this));
-  }
 
+    this._settings._bulkCorrect.addEventListener(
+      "click",
+      this._swapToCorrections.bind(this)
+    );
+  }
 
   _swapToCorrections(evt) {
     if (this._bulkEdit._editMode) {
@@ -42,9 +40,7 @@ export class AnalyticsLocalizations extends AnalyticsPage {
       this._settings._bulkCorrect._button.classList.remove("background-purple");
       this._bulkEdit.startEditMode(evt);
     }
-
   }
-
 }
 
 customElements.define("analytics-localizations", AnalyticsLocalizations);

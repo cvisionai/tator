@@ -10,9 +10,7 @@ export class AnalyticsLocalizationsCorrections extends AnalyticsPage {
 
     this.store = store;
     this._bulkInit = true;
-;
     this._bulkEdit._editMode = true;
-
 
     this._breadcrumbs.setAttribute("analytics-name", "Corrections");
     this._settings._localizationsView.hidden = false;
@@ -28,7 +26,6 @@ export class AnalyticsLocalizationsCorrections extends AnalyticsPage {
 
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
-
   }
 }
 

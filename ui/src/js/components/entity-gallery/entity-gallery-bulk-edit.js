@@ -138,7 +138,7 @@ export class GalleryBulkEdit extends TatorElement {
     projectId = null,
     additionalTools = false,
     permission,
-    bulkInit = false
+    bulkInit = false,
   }) {
     this._page = page;
     this._projectId = this._page.projectId;
@@ -318,7 +318,6 @@ export class GalleryBulkEdit extends TatorElement {
         }
       }
     }
-
 
     // show edit drawer and tools
     this._bulkEditBar.classList.remove("hidden");

@@ -148,7 +148,7 @@ export class AnalyticsPage extends TatorPage {
     this._bulkEdit.init({
       page: this,
       permission: this._modelData._project.permission,
-      bulkInit: this._bulkInit
+      bulkInit: this._bulkInit,
     });
 
     // Pass panel and localization types to gallery
