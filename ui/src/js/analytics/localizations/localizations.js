@@ -28,7 +28,23 @@ export class AnalyticsLocalizations extends AnalyticsPage {
 
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
+  
+  
+    this._settings._bulkCorrect.addEventListener("click", this._swapToCorrections.bind(this));
   }
+
+
+  _swapToCorrections(evt) {
+    if (this._bulkEdit._editMode) {
+      this._settings._bulkCorrect._button.classList.add("background-purple");
+      this._bulkEdit._escapeEditMode(evt);
+    } else {
+      this._settings._bulkCorrect._button.classList.remove("background-purple");
+      this._bulkEdit.startEditMode(evt);
+    }
+
+  }
+
 }
 
 customElements.define("analytics-localizations", AnalyticsLocalizations);
