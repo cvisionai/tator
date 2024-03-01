@@ -379,6 +379,14 @@ export class GalleryBulkEdit extends TatorElement {
     this._clearSelection();
     this.dispatchEvent(new Event("multi-disabled"));
 
+    if (this._elements) {
+      for (let el of this._elements) {
+        const cardFromEl =
+          typeof el.cardInfo != "undefined" ? el.cardInfo.card : el.card;
+        cardFromEl.multiEnabled = false;
+      }
+    }
+
     this._editPanel.removeEventListener("attribute-is-filtered-on", (e) => {
       if (e.detail.names.length > 0) {
         // console.log("Setting this._requiresPrefetch = true");

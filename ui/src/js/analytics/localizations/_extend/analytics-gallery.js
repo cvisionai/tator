@@ -388,7 +388,7 @@ export class AnalyticsGallery extends EntityCardGallery {
     this._bulkEdit.addEventListener("multi-enabled", () => {
       this.enableMulti(card);
     });
-    this._bulkEdit.removeEventListener("multi-disabled", () => {
+    this._bulkEdit.addEventListener("multi-disabled", () => {
       this.disableMulti(card);
     });
   }
