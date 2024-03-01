@@ -77,7 +77,7 @@ export class EntityPanelNavigation extends TatorElement {
     this._removeEntityButton._button.setAttribute("tooltip", "Delete Entity");
     this._removeEntityButton._button.setAttribute("target", "_blank");
     // Uncomment to finish issue #737
-    // this.controls.appendChild(this._removeEntityButton);
+    this.controls.appendChild(this._removeEntityButton);
 
     this._modalNotify = document.createElement("modal-notify");
     this._shadow.appendChild(this._modalNotify);

@@ -1,5 +1,5 @@
-import { ModalDialog } from "../../components/modal-dialog.js";
-import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { ModalDialog } from "../../../components/modal-dialog.js";
+import { fetchCredentials } from "../../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class DeleteBulkModal extends ModalDialog {
   constructor() {

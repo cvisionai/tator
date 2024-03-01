@@ -1,8 +1,8 @@
-import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import { Utilities } from "../../util/utilities.js";
-import { EntityCardGallery } from "../../components/entity-gallery/entity-gallery_grid.js";
+import { fetchCredentials } from "../../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { Utilities } from "../../../util/utilities.js";
+import { EntityCardGallery } from "../../../components/entity-gallery/entity-gallery_grid.js";
 
-export class AnnotationsGallery extends EntityCardGallery {
+export class AnalyticsGallery extends EntityCardGallery {
   constructor() {
     super();
     /*
@@ -89,13 +89,14 @@ export class AnnotationsGallery extends EntityCardGallery {
   }
 
   // Provide access to side panel for events
-  _initPanel({ panelContainer, pageModal, cardData, modelData, modalNotify }) {
+  _initPanel({ panelContainer, pageModal, cardData, modelData, modalNotify, bulkEdit, bulkInit = false }) {
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
     this._modalNotify = modalNotify;
+    this._bulkEdit = bulkEdit;
 
     // Listen for attribute changes
     this.panelContainer._panelTop._panel.entityData.addEventListener(
@@ -114,8 +115,22 @@ export class AnnotationsGallery extends EntityCardGallery {
         typeData: locTypeData,
         checkedFirst: true,
       });
+
+      if (bulkInit) {
+        //init panel with localization entity type definitions
+        this._bulkEdit._editPanel.addLocType(locTypeData);
+      }
+    }
+
+    if (bulkInit) {
+      // this.panelControls._box.appendChild(this._bulkEdit._editPanel);
+      this._mainTop.appendChild(this._bulkEdit._selectionPanel);
+      this._bulkEdit._showEditPanel();
+      // this._bulkEdit._showSelectionPanel();
     }
   }
+
+
 
   /* Init function to show and populate gallery w/ pagination */
   show(cardList) {
@@ -126,13 +141,11 @@ export class AnnotationsGallery extends EntityCardGallery {
     if (cardList.total == 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
-      this._numFiles.textContent = `Viewing ${
-        cardList.paginationState.start + 1
-      } to ${
-        cardList.paginationState.stop > cardList.total
+      this._numFiles.textContent = `Viewing ${cardList.paginationState.start + 1
+        } to ${cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-      } of ${cardList.total} Results`;
+        } of ${cardList.total} Results`;
     }
 
     //}
@@ -146,7 +159,12 @@ export class AnnotationsGallery extends EntityCardGallery {
 
     // Hide all cards' panels and de-select
     for (let idx = 0; idx < this._cardElements.length; idx++) {
-      this._cardElements[idx].card._deselectedCardAndPanel();
+      // this._cardElements[idx].card._deselectedCardAndPanel();
+      if (!this._bulkEdit._editMode) {
+        this._cardElements[idx].card._deselectedCardAndPanel();
+      } else {
+        this._cardElements[idx].card._li.classList.remove("is-selected");
+      }
     }
 
     // Append the cardList
@@ -206,6 +224,12 @@ export class AnnotationsGallery extends EntityCardGallery {
         ...builtInChosen,
       ];
 
+
+      this._bulkEdit._updateShownAttributes({
+        typeId: entityTypeId,
+        values: this.cardLabelsChosenByType[entityTypeId],
+      });
+
       if (newCard) {
         card = document.createElement("entity-card");
         // card._li.classList.add("analysis__annotation");
@@ -219,13 +243,40 @@ export class AnnotationsGallery extends EntityCardGallery {
 
         this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
-          this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;
+          // this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;
+          this._bulkEdit._updateShownAttributes({
+            typeId: evt.detail.typeId,
+            values: evt.detail.value,
+          });
+
+          this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;
+
           let msg = `Entry labels updated`;
           Utilities.showSuccessIcon(msg);
         });
 
         // Open panel if a card is clicked
-        card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
+        card.addEventListener("card-click", (evt) => {
+          console.log("Heard card click....");
+          // if (!this._bulkEdit._editMode) {
+          this.openClosedPanel(evt);
+          // } else {
+          // For regular clicks while edit mode is true
+          this._bulkEdit._openEditMode({
+            detail: {
+              element: card,
+              id: card.cardObj.id,
+              isSelected: card._li.classList.contains("is-selected"),
+            },
+          });
+          // }
+        }); // open if panel is closed
+
+        if (this._bulkEdit._editMode) {
+          this._addBulkListeners(card);
+        } else {
+          this._removeBulkListeners(card);
+        }
 
         // Update view
         card._li.classList.toggle("aspect-true");
@@ -238,7 +289,7 @@ export class AnnotationsGallery extends EntityCardGallery {
         };
         this._cardElements.push(cardInfo);
 
-        // Delete localization / entity
+        // Delete localization / entity from panel
         this.addEventListener("delete-entity", (evt) => {
           this._modalNotify.init(
             "Confirm remove",
@@ -301,8 +352,9 @@ export class AnnotationsGallery extends EntityCardGallery {
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
-      console.log(this.modelData._memberships);
+      // console.log(this.modelData._memberships);
       card.init({
+        idx: index,
         obj: cardObj,
         panelContainer: this.panelContainer,
         cardLabelsChosen: cardLabelsChosen,
@@ -310,6 +362,20 @@ export class AnnotationsGallery extends EntityCardGallery {
       });
 
       this._currentCardIndexes[cardObj.id] = index;
+
+      const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(
+        entityType.id
+      );
+      if (
+        typeof selectedArray !== "undefined" &&
+        selectedArray.has(cardObj.id)
+      ) {
+        this._bulkEdit._addSelected({
+          element: card,
+          id: cardObj.id,
+          isSelected: true,
+        });
+      }
 
       card.style.display = "block";
       numberOfDisplayedCards += 1;
@@ -322,6 +388,55 @@ export class AnnotationsGallery extends EntityCardGallery {
         this._cardElements[idx].card.style.display = "none";
       }
     }
+
+    // Replace card info so that shift select can get cards in between
+    this._bulkEdit.elementList = this._cardElements;
+    this._bulkEdit.elementIndexes = this._currentCardIndexes;
+    // this._bulkEdit.startEditMode(); TODO
+  }
+
+  _removeBulkListeners(card) {
+    // Notifiy bulk edit about multi-select controls
+    card.removeEventListener("ctrl-select", (e) => {
+      // console.log("Opening edit mode");
+      this._bulkEdit._openEditMode(e);
+      // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
+    });
+    card.removeEventListener("shift-select", (e) => {
+      // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
+      // console.log("Opening edit mode");
+      this._bulkEdit._openEditMode(e);
+    });
+
+    this._bulkEdit.removeEventListener("multi-enabled", () => {
+      card.multiEnabled = true;
+    });
+
+    this._bulkEdit.removeEventListener("multi-disabled", () => {
+      card.multiEnabled = false;
+    });
+  }
+
+  _addBulkListeners(card) {
+    // Notifiy bulk edit about multi-select controls
+    card.addEventListener("ctrl-select", (e) => {
+      // console.log("Opening edit mode");
+      this._bulkEdit._openEditMode(e);
+      // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
+    });
+    card.addEventListener("shift-select", (e) => {
+      // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
+      // console.log("Opening edit mode");
+      this._bulkEdit._openEditMode(e);
+    });
+
+    this._bulkEdit.addEventListener("multi-enabled", () => {
+      card.multiEnabled = true;
+    });
+
+    this._bulkEdit.addEventListener("multi-disabled", () => {
+      card.multiEnabled = false;
+    });
   }
 
   updateCardData(newCardData) {
@@ -342,6 +457,9 @@ export class AnnotationsGallery extends EntityCardGallery {
       type: "Localization",
     }).then((data) => {
       this.updateCardData(data);
+    })
+    .then(() => {
+      this._bulkEdit.updateCardData(this._cardElements);
     });
   }
 
@@ -352,13 +470,17 @@ export class AnnotationsGallery extends EntityCardGallery {
       values: { attributes: e.detail.values },
       type: "Media",
     }).then(() => {
-      this.cardData.updateMediaAttributes(mediaId).then(() => {
+      this.cardData.updateMediaAttributes(mediaId)
+      .then(() => {
         for (let idx = 0; idx < this._cardElements.length; idx++) {
           const card = this._cardElements[idx].card.cardObj;
           if (card.mediaId == mediaId) {
             this._cardElements[idx].annotationPanel.setMediaData(card);
           }
         }
+      })
+      .then(() => {
+        this._bulkEdit.updateCardData(this._cardElements);
       });
     });
   }
@@ -400,7 +522,9 @@ export class AnnotationsGallery extends EntityCardGallery {
 
   openClosedPanel(e) {
     console.log(e.target);
-    if (!this.panelContainer.open) this.panelContainer._toggleOpen();
+    if (!this.panelContainer.open && !this._bulkEdit._editMode) this.panelContainer._toggleOpen();
+    e.detail.openFlag = this.panelContainer.open;
+    
     this.panelControls.openHandler(
       e.detail,
       this._cardElements,
@@ -409,4 +533,4 @@ export class AnnotationsGallery extends EntityCardGallery {
   }
 }
 
-customElements.define("annotations-gallery", AnnotationsGallery);
+customElements.define("analytics-gallery", AnalyticsGallery);

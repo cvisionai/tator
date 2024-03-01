@@ -1,21 +1,20 @@
 import { store } from "./store.js";
-import {AnalyticsPage} from  "./_extend/analytics-page.js";
+import  {AnalyticsPage} from "./_extend/analytics-page.js";
 
 /**
  * Page that displays a grid view of selected annotations
  */
-export class AnalyticsLocalizations extends AnalyticsPage {
-  constructor() { 
+export class AnalyticsLocalizationsCorrections extends AnalyticsPage {
+  constructor() {
     super();
 
     this.store = store;
 
-
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
     this._div.appendChild(this._breadcrumbs);
-    this._breadcrumbs.setAttribute("analytics-name", "Localization Gallery");
+    this._breadcrumbs.setAttribute("analytics-name", "Corrections");
 
-    this._filterResults = document.createElement("localizations-gallery");
+    this._filterResults = document.createElement("corrections-gallery");
     this.main.appendChild(this._filterResults);
 
     // Localizations Filter
@@ -25,7 +24,11 @@ export class AnalyticsLocalizations extends AnalyticsPage {
 
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
+
   }
 }
 
-customElements.define("analytics-localizations", AnalyticsLocalizations);
+customElements.define(
+  "analytics-localizations-corrections",
+  AnalyticsLocalizationsCorrections
+);
