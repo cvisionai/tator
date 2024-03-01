@@ -34,6 +34,8 @@ export class DeleteBulkModal extends ModalDialog {
     cancel.textContent = "Cancel";
     this._footer.appendChild(cancel);
 
+
+    window.addEventListener("delete-entity", this._handleSingleDelete.bind(this));
     cancel.addEventListener("click", this._closeCallback);
 
     this._accept.addEventListener("click", async (evt) => {
@@ -60,6 +62,15 @@ export class DeleteBulkModal extends ModalDialog {
     const localizationId = this.getAttribute("delete-id");
     const array = localizationId.split(",");
     this._deleteIds.innerText = ` ${array.length} localization${(array.length == 1) ? "" : "s"}. ID${(array.length == 1) ? "" : "s"}: ${localizationId.replace(",", ", ")}`;
+  }
+
+  _handleSingleDelete(evt) {
+    console.log("_handleSingleDelete", evt.detail);
+    if(evt?.detail?.id){
+      const id = evt.detail.id;
+      this.setAttribute("delete-id", `${id}`);
+      this.open();
+    }
   }
 
   _deleteSingle(localizationId) {

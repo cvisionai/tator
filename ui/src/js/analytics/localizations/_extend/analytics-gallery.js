@@ -116,17 +116,15 @@ export class AnalyticsGallery extends EntityCardGallery {
         checkedFirst: true,
       });
 
-      if (bulkInit) {
+      if (this._bulkEdit._editMode) {
         //init panel with localization entity type definitions
         this._bulkEdit._editPanel.addLocType(locTypeData);
       }
     }
 
-    if (bulkInit) {
-      // this.panelControls._box.appendChild(this._bulkEdit._editPanel);
+    if (this._bulkEdit._editMode) {
       this._mainTop.appendChild(this._bulkEdit._selectionPanel);
       this._bulkEdit._showEditPanel();
-      // this._bulkEdit._showSelectionPanel();
     }
   }
 
@@ -258,21 +256,22 @@ export class AnalyticsGallery extends EntityCardGallery {
         // Open panel if a card is clicked
         card.addEventListener("card-click", (evt) => {
           console.log("Heard card click....");
-          // if (!this._bulkEdit._editMode) {
-          this.openClosedPanel(evt);
-          // } else {
-          // For regular clicks while edit mode is true
-          this._bulkEdit._openEditMode({
-            detail: {
-              element: card,
-              id: card.cardObj.id,
-              isSelected: card._li.classList.contains("is-selected"),
-            },
-          });
-          // }
+          if (!this._bulkEdit._editMode) {
+            this.openClosedPanel(evt);
+          } else {
+            // For regular clicks while edit mode is true
+            this._bulkEdit._openEditMode({
+              detail: {
+                element: card,
+                id: card.cardObj.id,
+                isSelected: card._li.classList.contains("is-selected"),
+              },
+            });
+          }
         }); // open if panel is closed
 
         if (this._bulkEdit._editMode) {
+          card._li.classList.add("multi-select");
           this._addBulkListeners(card);
         } else {
           this._removeBulkListeners(card);
@@ -288,43 +287,6 @@ export class AnalyticsGallery extends EntityCardGallery {
           card: card,
         };
         this._cardElements.push(cardInfo);
-
-        // Delete localization / entity from panel
-        this.addEventListener("delete-entity", (evt) => {
-          this._modalNotify.init(
-            "Confirm remove",
-            `Are you sure you want to delete ${this.cardObj.localization.name}?`,
-            "error",
-            "confirm",
-            false
-          );
-          this._modalNotify.setAttribute("is-open", "true");
-
-          this._modalNotify._accept.addEventListener("click", () => {
-            this._modalNotify.closeCallback();
-            console.log("OL!");
-            fetchCredentials(`/rest/Localization/${this.cardObj.id}`, {
-              method: "DELETE",
-            })
-              .then((response) => {
-                return response.json();
-              })
-              .then((result) => {
-                this._modalNotify.init(
-                  "Success!",
-                  `${result}`,
-                  "ok",
-                  "ok",
-                  false
-                );
-                this._modalNotify.setAttribute("is-open", "");
-                this._modalNotify.fadeOut();
-              })
-              .catch((err) => {
-                console.error("Error deleting localization entity.", err);
-              });
-          });
-        });
 
         this._ul.appendChild(card);
       } else {
@@ -458,9 +420,9 @@ export class AnalyticsGallery extends EntityCardGallery {
     }).then((data) => {
       this.updateCardData(data);
     })
-    .then(() => {
-      this._bulkEdit.updateCardData(this._cardElements);
-    });
+      .then(() => {
+        this._bulkEdit.updateCardData(this._cardElements);
+      });
   }
 
   mediaFormChange(e) {
@@ -471,17 +433,17 @@ export class AnalyticsGallery extends EntityCardGallery {
       type: "Media",
     }).then(() => {
       this.cardData.updateMediaAttributes(mediaId)
-      .then(() => {
-        for (let idx = 0; idx < this._cardElements.length; idx++) {
-          const card = this._cardElements[idx].card.cardObj;
-          if (card.mediaId == mediaId) {
-            this._cardElements[idx].annotationPanel.setMediaData(card);
+        .then(() => {
+          for (let idx = 0; idx < this._cardElements.length; idx++) {
+            const card = this._cardElements[idx].card.cardObj;
+            if (card.mediaId == mediaId) {
+              this._cardElements[idx].annotationPanel.setMediaData(card);
+            }
           }
-        }
-      })
-      .then(() => {
-        this._bulkEdit.updateCardData(this._cardElements);
-      });
+        })
+        .then(() => {
+          this._bulkEdit.updateCardData(this._cardElements);
+        });
     });
   }
 
@@ -524,7 +486,7 @@ export class AnalyticsGallery extends EntityCardGallery {
     console.log(e.target);
     if (!this.panelContainer.open && !this._bulkEdit._editMode) this.panelContainer._toggleOpen();
     e.detail.openFlag = this.panelContainer.open;
-    
+
     this.panelControls.openHandler(
       e.detail,
       this._cardElements,

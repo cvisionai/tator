@@ -127,6 +127,8 @@ export class AnalyticsPage extends TatorPage {
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = project.id;
+    this.deleteBulkModal.setAttribute("project-id", this.projectId);
+
     console.log("Corrections this._projectId" + this._projectId);
     this._modelData = new TatorData(this.projectId);
 
@@ -160,7 +162,7 @@ export class AnalyticsPage extends TatorPage {
       cardData: this.cardData,
       bulkEdit: this._bulkEdit,
       modalNotify: this.modalNotify,
-
+      bulkInit: this._bulkInit
     });
 
     // Initialize the settings with the URL. The settings will be used later on.
@@ -443,7 +445,7 @@ export class AnalyticsPage extends TatorPage {
     console.log("Delete selection heard", list);
 
     if (list && list.length > 0) {
-      this.deleteBulkModal.setAttribute("project-id", this.projectId);
+      
       this.deleteBulkModal.setAttribute("delete-name", "Selected localizations");
       this.deleteBulkModal.setAttribute("delete-id", String(list));
       this.deleteBulkModal.open(this._bulkEdit._currentSelectionObjects);

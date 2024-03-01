@@ -9,6 +9,9 @@ export class AnalyticsLocalizationsCorrections extends AnalyticsPage {
     super();
 
     this.store = store;
+    this._bulkInit = true;
+    this._bulkEdit.editMode = true;
+    this._bulkEdit._editMode = true;
 
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
     this._div.appendChild(this._breadcrumbs);

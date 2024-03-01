@@ -9,7 +9,7 @@ export class AnalyticsLocalizations extends AnalyticsPage {
     super();
 
     this.store = store;
-
+    this._bulkInit = false;
 
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
     this._div.appendChild(this._breadcrumbs);
