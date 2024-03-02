@@ -22,7 +22,7 @@ jsonschema==4.9.1
 kubernetes==21.7.0
 markdown==3.3.6
 minio==7.1.5
-oci==2.110.0
+oci==2.123.0
 okta-jwt-verifier==0.2.4
 pgvector==0.1.8
 pillow==10.2.0
