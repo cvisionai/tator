@@ -158,7 +158,7 @@ export class AnalyticsGallery extends EntityCardGallery {
     //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
     //}
     //else {
-    if (cardList.total == 0) {
+    if (cardList.total === 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
       this._numFiles.textContent = `Viewing ${
@@ -167,7 +167,7 @@ export class AnalyticsGallery extends EntityCardGallery {
         cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-      } of ${cardList.total} Results`;
+      } of ${cardList.total} Result${(totalCount === 1) ? '' : 's'}`;
     }
 
     //}
@@ -280,11 +280,6 @@ export class AnalyticsGallery extends EntityCardGallery {
       } else {
         card = this._cardElements[index].card;
       }
-
-      console.log(
-        "Do we have a status for edit mode?",
-        this._bulkEdit._editMode
-      );
 
       if (this._bulkEdit._editMode === true) {
         this.enableMulti(card);

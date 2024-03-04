@@ -98,6 +98,8 @@ export class AnalyticsPage extends TatorPage {
       this._deleteSelection.bind(this)
     );
 
+    this._bulkEdit.addEventListener("bulk-attributes-edited", this.handleOutsideUpdate.bind(this));
+
     //
     /* Other */
     // Class to hide and showing loading spinner
@@ -475,6 +477,26 @@ export class AnalyticsPage extends TatorPage {
     });
 
     let msg2 = `Delete success! Gallery updated`;
+    Utilities.showSuccessIcon(msg2);
+  }
+
+  async handleOutsideUpdate(evt) {
+    this._bulkEdit._clearSelection();
+    this._panelContainer._panelTop.openHandler({ openFlag: false }, null, null);
+
+
+    let msg = `Update success...`;
+    Utilities.showSuccessIcon(msg);
+
+    // Setup Card Gallery and Right Panel
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      sort: this._sortState,
+      cache: false,
+    });
+
+    let msg2 = `Gallery updated!`;
     Utilities.showSuccessIcon(msg2);
   }
 
