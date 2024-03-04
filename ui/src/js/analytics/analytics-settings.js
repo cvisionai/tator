@@ -22,6 +22,7 @@ export class AnalyticsSettings extends TatorElement {
     this._lightSpacer.appendChild(this._warning);
 
     this._lock = document.createElement("lock-button");
+    this._lock
     this._lock.lock();
     div.appendChild(this._lock);
 
@@ -30,6 +31,7 @@ export class AnalyticsSettings extends TatorElement {
 
     this._bulkCorrect = document.createElement("bulk-correct-button");
     this._bulkCorrect.hidden = true;
+    this._bulkCorrect._button.setAttribute("tooltip", "Swap to corrections mode");
     div.appendChild(this._bulkCorrect);
 
     this._localizationsView = document.createElement(

@@ -370,7 +370,7 @@ export class AnalyticsPage extends TatorPage {
 
   // Reset the pagination back to page 0
   async _updateFilterResults(evt) {
-    if (evt.detail.conditions) {
+    if (evt?.detail?.conditions) {
       this._filterConditions = evt.detail.conditions;
     }
     // console.log("UPDATE FILTER RESULTS");
@@ -458,12 +458,13 @@ export class AnalyticsPage extends TatorPage {
 
   async _deleteSuccess(evt) {
     this._bulkEdit._clearSelection();
+    this._panelContainer._panelTop.openHandler({ openFlag: false }, null, null);
+
     this.deleteBulkModal.removeAttribute("is-open");
     this.removeAttribute("has-open-modal", "");
 
     let msg = `Delete success! Updating...`;
     Utilities.showSuccessIcon(msg);
-    await this.cardData._reload(this._filterConditions, this._sortState);
 
     // Setup Card Gallery and Right Panel
     await this._cardGallery({

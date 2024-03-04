@@ -35,9 +35,11 @@ export class AnalyticsLocalizations extends AnalyticsPage {
   _swapToCorrections(evt) {
     if (this._bulkEdit._editMode) {
       this._settings._bulkCorrect._button.classList.remove("background-purple");
+      this._settings._bulkCorrect._button.setAttribute("tooltip", "Swap gallery to bulk corrections mode");
       this._bulkEdit._escapeEditMode(evt);
     } else {
       this._settings._bulkCorrect._button.classList.add("background-purple");
+      this._settings._bulkCorrect._button.setAttribute("tooltip", "Swap back to localizations gallery");
       this._bulkEdit.startEditMode(evt);
     }
   }
