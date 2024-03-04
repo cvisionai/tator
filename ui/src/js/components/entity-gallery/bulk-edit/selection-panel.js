@@ -19,7 +19,7 @@ export class MultiSelectionPanel extends TatorElement {
       "class",
       "text-center d-flex flex-wrap  flex-align-center flex-justify-right col-6"
     ); //flex-justify-between
-    
+
     this._bulkEditBar.appendChild(this._minimizeBar);
     this._selectAllPage = document.createElement("a");
     this._selectAllPage.setAttribute(

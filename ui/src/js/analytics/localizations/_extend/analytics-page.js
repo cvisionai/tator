@@ -98,7 +98,10 @@ export class AnalyticsPage extends TatorPage {
       this._deleteSelection.bind(this)
     );
 
-    this._bulkEdit.addEventListener("bulk-attributes-edited", this.handleOutsideUpdate.bind(this));
+    this._bulkEdit.addEventListener(
+      "bulk-attributes-edited",
+      this.handleOutsideUpdate.bind(this)
+    );
 
     //
     /* Other */
@@ -483,7 +486,6 @@ export class AnalyticsPage extends TatorPage {
   async handleOutsideUpdate(evt) {
     this._bulkEdit._clearSelection();
     this._panelContainer._panelTop.openHandler({ openFlag: false }, null, null);
-
 
     let msg = `Update success...`;
     Utilities.showSuccessIcon(msg);

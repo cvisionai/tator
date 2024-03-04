@@ -132,10 +132,8 @@ export class AnalyticsGallery extends EntityCardGallery {
         checkedFirst: true,
       });
 
-
       //init panel with localization entity type definitions
       this._bulkEdit._editPanel.addLocType(locTypeData);
-      
     }
 
     this._mainTop.appendChild(this._bulkEdit._selectionPanel);
@@ -167,7 +165,7 @@ export class AnalyticsGallery extends EntityCardGallery {
         cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-      } of ${cardList.total} Result${(totalCount === 1) ? '' : 's'}`;
+      } of ${cardList.total} Result${totalCount === 1 ? "" : "s"}`;
     }
 
     //}
@@ -394,15 +392,12 @@ export class AnalyticsGallery extends EntityCardGallery {
     this._bulkEdit.addEventListener("multi-disabled", () => {
       this.disableMulti(card);
     });
-    
   }
 
   enableMulti(card) {
     // console.log("multi-enabled heard");
     this.multiEnabled = true;
     card.multiEnabled = true;
-
-    
   }
 
   disableMulti(card) {
