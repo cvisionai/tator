@@ -145,12 +145,12 @@ export class GalleryBulkEdit extends TatorElement {
     this._editType = type;
     this._permission = permission;
 
+
+
     if (type == "media") {
-      this._editPanel.xClose.classList.remove("hidden");
-      this._selectionPanel.xClose.classList.remove("hidden");
       this._editPanel._selectionCountText.textContent = "Media(s)";
-    } else {
-      this._selectionPanel._galleryLink.hidden = false;
+      this._editPanel.xClose.classList.remove("hidden");
+      this._selectionPanel.xClose.classList.remove("hidden");  
     }
 
     if (additionalTools) {

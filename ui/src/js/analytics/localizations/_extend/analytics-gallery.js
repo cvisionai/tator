@@ -132,16 +132,24 @@ export class AnalyticsGallery extends EntityCardGallery {
         checkedFirst: true,
       });
 
-      if (this._bulkEdit._editMode) {
-        //init panel with localization entity type definitions
-        this._bulkEdit._editPanel.addLocType(locTypeData);
-      }
+
+      //init panel with localization entity type definitions
+      this._bulkEdit._editPanel.addLocType(locTypeData);
+      
     }
 
+    this._mainTop.appendChild(this._bulkEdit._selectionPanel);
+    this._bulkEdit._selectionPanel.hidden = true;
     if (this._bulkEdit._editMode) {
-      this._mainTop.appendChild(this._bulkEdit._selectionPanel);
+      this._bulkEdit._selectionPanel.hidden = false;
       this._bulkEdit._showEditPanel();
     }
+    this._bulkEdit.addEventListener("multi-enabled", () => {
+      this._bulkEdit._selectionPanel.hidden = false;
+    });
+    this._bulkEdit.addEventListener("multi-disabled", () => {
+      this._bulkEdit._selectionPanel.hidden = true;
+    });
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -391,16 +399,19 @@ export class AnalyticsGallery extends EntityCardGallery {
     this._bulkEdit.addEventListener("multi-disabled", () => {
       this.disableMulti(card);
     });
+    
   }
 
   enableMulti(card) {
-    console.log("multi-enabled heard");
+    // console.log("multi-enabled heard");
     this.multiEnabled = true;
     card.multiEnabled = true;
+
+    
   }
 
   disableMulti(card) {
-    // console.log("multi-enabled heard in section files");
+    // console.log("disableMulti heard");
     card.multiEnabled = false;
     this.multiEnabled = false;
   }
