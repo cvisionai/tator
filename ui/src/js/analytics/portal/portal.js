@@ -48,14 +48,6 @@ export class AnalyticsPortal extends TatorPage {
     });
     this.main.appendChild(localizationsBox);
 
-    // Corrections
-    const correctionsBox = this._getDashboardBox({
-      name: "Corrections",
-      href: `/${this.projectId}/analytics/corrections`,
-      iconName: "pencil-icon",
-    });
-    this.main.appendChild(correctionsBox);
-
     // Dashboards
     const dashboardsBox = this._getDashboardBox({
       name: "Dashboards",

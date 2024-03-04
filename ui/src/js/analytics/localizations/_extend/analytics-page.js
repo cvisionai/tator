@@ -125,7 +125,6 @@ export class AnalyticsPage extends TatorPage {
     this.projectId = project.id;
     this.deleteBulkModal.setAttribute("project-id", this.projectId);
     this.deleteBulkModal.addEventListener("close", this.hideDimmer.bind(this));
-    console.log("Corrections this._projectId" + this._projectId);
     this._modelData = new TatorData(this.projectId);
 
     // Card Data export class collects raw model and parses into view-model format
