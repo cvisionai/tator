@@ -138,6 +138,7 @@ export class GalleryBulkEdit extends TatorElement {
     projectId = null,
     additionalTools = false,
     permission,
+    bulkInit = false,
   }) {
     this._page = page;
     this._projectId = this._page.projectId;
@@ -161,24 +162,27 @@ export class GalleryBulkEdit extends TatorElement {
     } else {
       this._gallery = gallery;
     }
+    if (bulkInit) this.startEditMode();
   }
 
   _keyDownHandler(e) {
-    if (e.key == "Escape") {
-      this._clearSelection();
-    }
+    if (this._editMode === true) {
+      if (e.key == "Escape") {
+        this._clearSelection();
+      }
 
-    if (e.code == "Control") {
-      if (e.code == "a" || e.code == "A") {
+      if (e.code == "Control") {
+        if (e.code == "a" || e.code == "A") {
+          if (this._permission == "View Only") return;
+          this.selectAllOnPage();
+        }
+      }
+
+      if (e.ctrlKey && (e.key === "a" || e.key === "A")) {
+        e.preventDefault();
         if (this._permission == "View Only") return;
         this.selectAllOnPage();
       }
-    }
-
-    if (e.ctrlKey && (e.key === "a" || e.key === "A")) {
-      e.preventDefault();
-      if (this._permission == "View Only") return;
-      this.selectAllOnPage();
     }
   }
 
@@ -297,19 +301,21 @@ export class GalleryBulkEdit extends TatorElement {
     // console.log("startEditMode");
     this._editMode = true;
 
-    for (let el of this._elements) {
-      const cardFromEl =
-        typeof el.cardInfo != "undefined" ? el.cardInfo.card : el.card;
-      cardFromEl.multiEnabled = true;
-      if (
-        cardFromEl._li.classList.contains("is-selected") &&
-        !this._currentMultiSelection.has(cardFromEl.cardObj.id)
-      ) {
-        this._addSelected({
-          element: cardFromEl,
-          id: cardFromEl.cardObj.id,
-          isSelected: cardFromEl._li.classList.contains("is-selected"),
-        });
+    if (this._elements) {
+      for (let el of this._elements) {
+        const cardFromEl =
+          typeof el.cardInfo != "undefined" ? el.cardInfo.card : el.card;
+        cardFromEl.multiEnabled = true;
+        if (
+          cardFromEl._li.classList.contains("is-selected") &&
+          !this._currentMultiSelection.has(cardFromEl.cardObj.id)
+        ) {
+          this._addSelected({
+            element: cardFromEl,
+            id: cardFromEl.cardObj.id,
+            isSelected: cardFromEl._li.classList.contains("is-selected"),
+          });
+        }
       }
     }
 
@@ -372,6 +378,14 @@ export class GalleryBulkEdit extends TatorElement {
 
     this._clearSelection();
     this.dispatchEvent(new Event("multi-disabled"));
+
+    if (this._elements) {
+      for (let el of this._elements) {
+        const cardFromEl =
+          typeof el.cardInfo != "undefined" ? el.cardInfo.card : el.card;
+        cardFromEl.multiEnabled = false;
+      }
+    }
 
     this._editPanel.removeEventListener("attribute-is-filtered-on", (e) => {
       if (e.detail.names.length > 0) {
@@ -499,7 +513,7 @@ export class GalleryBulkEdit extends TatorElement {
           }
         }
 
-        if (r.rejected !== {}) {
+        if (Object.entries(r.rejected).length > 0) {
           for (let rej of Object.entries(r.rejected)) {
             text += `<p class="text-red py-2 px-2">- Will not update attribute '${rej[0]}' - value is invalid, or null.</p>`;
           }
@@ -594,7 +608,7 @@ export class GalleryBulkEdit extends TatorElement {
       // console.log("jsonData-----------------------------------------------------------");
       // console.log(jsonData);
 
-      if (jsonData.attributes !== {}) {
+      if (Object.entries(jsonData.attributes).length > 0) {
         promise = promise
           .then(() => this._patchMedia(jsonData))
           .then((resp) => {

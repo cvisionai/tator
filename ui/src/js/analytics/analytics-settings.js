@@ -46,14 +46,14 @@ export class AnalyticsSettings extends TatorElement {
       window.location = url;
     });
 
-    this._bulkCorrect.addEventListener("click", () => {
-      const searchParams = new URLSearchParams(window.location.search);
-      let url = window.location.origin + window.location.pathname;
-      url = url.replace("localizations", "corrections");
-      url += "?" + this._queryParams(searchParams).toString();
-      console.log(url);
-      window.location.href = url;
-    });
+    // this._bulkCorrect.addEventListener("click", () => {
+    //   const searchParams = new URLSearchParams(window.location.search);
+    //   let url = window.location.origin + window.location.pathname;
+    //   url = url.replace("localizations", "corrections");
+    //   url += "?" + this._queryParams(searchParams).toString();
+    //   console.log(url);
+    //   window.location.href = url;
+    // });
 
     this._link.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);

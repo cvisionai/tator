@@ -1,5 +1,5 @@
-import { FilterConditionData } from "../../util/filter-utilities.js";
-import { TatorData } from "../../util/tator-data.js";
+import { FilterConditionData } from "../../../util/filter-utilities.js";
+import { TatorData } from "../../../util/tator-data.js";
 
 /**
  * Class that contains the data about the annotation analytics gallery.

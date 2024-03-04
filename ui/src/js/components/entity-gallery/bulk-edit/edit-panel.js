@@ -181,7 +181,6 @@ export class MultiAttributeEditPanel extends TatorElement {
     // Other tools
     this._otherTools = document.createElement("div");
     this._otherTools.setAttribute("class", "mt-3");
-    // this._otherTools.hidden = true;
     barRightTop.appendChild(this._otherTools);
 
     // const otherToolsText = document.createTextNode("Other tools:");
