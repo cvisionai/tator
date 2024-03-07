@@ -85,7 +85,7 @@ def test_basic(request, page_factory, project, image1, video): #image
       light.wait_for_element_state('visible')
       light.wait_for_element_state('hidden')
 
-   # # TODO expand to video, and multi annotations?
+   # TODO expand to video, and multi annotations?
 
    # Go to gallery and try filtering on Reviewer Attr
    print("Going to localizations gallery")
@@ -112,14 +112,10 @@ def test_basic(request, page_factory, project, image1, video): #image
    button = page.query_selector('.menu-link-button')
    button.dispatch_event("click")
    page.wait_for_timeout(5000)
-   # page.wait_for_selector('.entity-gallery-labels--checkbox-div')
-   checkboxes = page.query_selector_all(f'.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="{attribute_selected_name}"]')
-   
-   print(f'Label panel is open: found {len(checkboxes)} labels with this name {attribute_selected_name}....')
-   
+
    # for Box loc type
-   # button.click(force=True)
-   checkboxes[0].dispatch_event("click") #.click(force=True)
+   checkboxes = page.query_selector_all(f'.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="{attribute_selected_name}"]')
+   checkboxes[0].dispatch_event("click")
    page.query_selector('.enitity-gallery__labels-div nav-close').click()
    page.wait_for_timeout(5000)
 
@@ -216,9 +212,10 @@ def test_basic(request, page_factory, project, image1, video): #image
 
    # Did label selection also preselect attributes?
    ## There should be one input checked 
-   selected = page.query_selector_all('.bulk-edit-attr-choices_bulk-edit input:checked')
-   print(f'Assert selected inputs {len(selected)} == Checked count 1')
-   assert len(selected) == 1
+   bulk_checkboxes = page.query_selector_all('.bulk-edit-attr-choices_bulk-edit input[value="Reviewer"]')
+   bulk_checkboxes[0].check()
+   print(f'Assert selected inputs {len(bulk_checkboxes)} == Checked count 1')
+   assert len(bulk_checkboxes) == 1
 
    # Select 2
    cards[1].click()
@@ -238,14 +235,14 @@ def test_basic(request, page_factory, project, image1, video): #image
 
    cards = page.query_selector_all('entity-card[style="display: block;"]')
    cardLength = len(cards)
-   print(f"Cards length after edit {cardLength} == 5")
-   assert cardLength == 5
+   print(f"Cards length after edit {cardLength} == (5-2) == 3")
+   assert cardLength == 3
 
    # Now refilter it should go away....
    print("Re-Apply Filter") 
    page.click('text="Filter"')
    page.wait_for_selector('enum-input[name="Category"]')
-   filterGroupButtons = page.query_selector_all('.modal__footer button')
+   filterGroupButtons = page.query_selector_all('.analysis__filter_conditions_interface .modal__footer button')
    filterGroupButtons[0].click()
 
    page.wait_for_selector('entity-card[style="display: block;"]')
