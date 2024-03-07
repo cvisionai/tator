@@ -19,42 +19,8 @@ export class MultiSelectionPanel extends TatorElement {
       "class",
       "text-center d-flex flex-wrap  flex-align-center flex-justify-right col-6"
     ); //flex-justify-between
-    // this._minimizeBar.style.height = "25px";
+
     this._bulkEditBar.appendChild(this._minimizeBar);
-
-    this._galleryLink = document.createElement("a");
-    this._galleryLink.setAttribute("class", "f1 text-purple pb-3");
-    this._galleryLink.setAttribute("href", "#");
-    this._galleryLink.textContent = "View in Localizations Gallery";
-    this._galleryLink.hidden = true;
-    this._shadow.appendChild(this._galleryLink);
-
-    this._galleryLink.addEventListener(
-      "click",
-      this._backToLocGallery.bind(this)
-    );
-
-    // let barLeftTop = document.createElement("div");
-    // barLeftTop.setAttribute("class", "pb-2 bulk-edit-bar--left col-3")
-    // this._bulkEditBar.appendChild(barLeftTop);
-
-    // this._bulkEditMiddle = document.createElement("div");
-    // this._bulkEditMiddle.setAttribute("class", "pb-2 bulk-edit-bar--middle col-6 position-relative");
-    // this._bulkEditBar.appendChild(this._bulkEditMiddle);
-
-    // this.barRightTop = document.createElement("div");
-    // this.barRightTop.setAttribute("class", "bulk-edit-bar--right col-3")
-    // this._bulkEditBar.appendChild(this.barRightTop);
-
-    // this._h2 = document.createElement("h2");
-    // this._h2.setAttribute("class", "py-2 px-2");
-    // this._h2.textContent = "Selection mode: Select to compare, and/or bulk correct.";
-    // barLeftTop.appendChild(this._h2);
-
-    // this._quickSelectAllDiv = document.createElement("div");
-    // this._quickSelectAllDiv.setAttribute("class", "py-2 px-2 bulk-edit--quick-select d-flex flex-row");
-    // barLeftTop.appendChild(this._quickSelectAllDiv);
-
     this._selectAllPage = document.createElement("a");
     this._selectAllPage.setAttribute(
       "class",

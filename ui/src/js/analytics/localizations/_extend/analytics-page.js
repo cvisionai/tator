@@ -98,6 +98,11 @@ export class AnalyticsPage extends TatorPage {
       this._deleteSelection.bind(this)
     );
 
+    this._bulkEdit.addEventListener(
+      "bulk-attributes-edited",
+      this.handleOutsideUpdate.bind(this)
+    );
+
     //
     /* Other */
     // Class to hide and showing loading spinner
@@ -125,7 +130,6 @@ export class AnalyticsPage extends TatorPage {
     this.projectId = project.id;
     this.deleteBulkModal.setAttribute("project-id", this.projectId);
     this.deleteBulkModal.addEventListener("close", this.hideDimmer.bind(this));
-    console.log("Corrections this._projectId" + this._projectId);
     this._modelData = new TatorData(this.projectId);
 
     // Card Data export class collects raw model and parses into view-model format
@@ -371,7 +375,7 @@ export class AnalyticsPage extends TatorPage {
 
   // Reset the pagination back to page 0
   async _updateFilterResults(evt) {
-    if (evt.detail.conditions) {
+    if (evt?.detail?.conditions) {
       this._filterConditions = evt.detail.conditions;
     }
     // console.log("UPDATE FILTER RESULTS");
@@ -459,12 +463,13 @@ export class AnalyticsPage extends TatorPage {
 
   async _deleteSuccess(evt) {
     this._bulkEdit._clearSelection();
+    this._panelContainer._panelTop.openHandler({ openFlag: false }, null, null);
+
     this.deleteBulkModal.removeAttribute("is-open");
     this.removeAttribute("has-open-modal", "");
 
     let msg = `Delete success! Updating...`;
     Utilities.showSuccessIcon(msg);
-    await this.cardData._reload(this._filterConditions, this._sortState);
 
     // Setup Card Gallery and Right Panel
     await this._cardGallery({
@@ -475,6 +480,25 @@ export class AnalyticsPage extends TatorPage {
     });
 
     let msg2 = `Delete success! Gallery updated`;
+    Utilities.showSuccessIcon(msg2);
+  }
+
+  async handleOutsideUpdate(evt) {
+    this._bulkEdit._clearSelection();
+    this._panelContainer._panelTop.openHandler({ openFlag: false }, null, null);
+
+    let msg = `Update success...`;
+    Utilities.showSuccessIcon(msg);
+
+    // Setup Card Gallery and Right Panel
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      sort: this._sortState,
+      cache: false,
+    });
+
+    let msg2 = `Gallery updated!`;
     Utilities.showSuccessIcon(msg2);
   }
 

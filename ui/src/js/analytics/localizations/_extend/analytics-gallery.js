@@ -72,7 +72,7 @@ export class AnalyticsGallery extends EntityCardGallery {
     );
     this._mainTop.appendChild(this._cardAttributeLabels);
     this._cardAttributeLabels.menuLinkTextSpan.innerHTML =
-      "Localization Labels";
+      "<span id='labelsLink'>Localization Labels</span>";
     this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
     // Init aspect toggle
@@ -132,16 +132,22 @@ export class AnalyticsGallery extends EntityCardGallery {
         checkedFirst: true,
       });
 
-      if (this._bulkEdit._editMode) {
-        //init panel with localization entity type definitions
-        this._bulkEdit._editPanel.addLocType(locTypeData);
-      }
+      //init panel with localization entity type definitions
+      this._bulkEdit._editPanel.addLocType(locTypeData);
     }
 
+    this._mainTop.appendChild(this._bulkEdit._selectionPanel);
+    this._bulkEdit._selectionPanel.hidden = true;
     if (this._bulkEdit._editMode) {
-      this._mainTop.appendChild(this._bulkEdit._selectionPanel);
+      this._bulkEdit._selectionPanel.hidden = false;
       this._bulkEdit._showEditPanel();
     }
+    this._bulkEdit.addEventListener("multi-enabled", () => {
+      this._bulkEdit._selectionPanel.hidden = false;
+    });
+    this._bulkEdit.addEventListener("multi-disabled", () => {
+      this._bulkEdit._selectionPanel.hidden = true;
+    });
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -150,7 +156,7 @@ export class AnalyticsGallery extends EntityCardGallery {
     //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
     //}
     //else {
-    if (cardList.total == 0) {
+    if (cardList.total === 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
       this._numFiles.textContent = `Viewing ${
@@ -159,7 +165,7 @@ export class AnalyticsGallery extends EntityCardGallery {
         cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-      } of ${cardList.total} Results`;
+      } of ${cardList.total} Result${cardList.total === 1 ? "" : "s"}`;
     }
 
     //}
@@ -272,11 +278,6 @@ export class AnalyticsGallery extends EntityCardGallery {
       } else {
         card = this._cardElements[index].card;
       }
-
-      console.log(
-        "Do we have a status for edit mode?",
-        this._bulkEdit._editMode
-      );
 
       if (this._bulkEdit._editMode === true) {
         this.enableMulti(card);
@@ -394,13 +395,13 @@ export class AnalyticsGallery extends EntityCardGallery {
   }
 
   enableMulti(card) {
-    console.log("multi-enabled heard");
+    // console.log("multi-enabled heard");
     this.multiEnabled = true;
     card.multiEnabled = true;
   }
 
   disableMulti(card) {
-    // console.log("multi-enabled heard in section files");
+    // console.log("disableMulti heard");
     card.multiEnabled = false;
     this.multiEnabled = false;
   }
