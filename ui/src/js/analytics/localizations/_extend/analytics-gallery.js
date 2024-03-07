@@ -72,7 +72,7 @@ export class AnalyticsGallery extends EntityCardGallery {
     );
     this._mainTop.appendChild(this._cardAttributeLabels);
     this._cardAttributeLabels.menuLinkTextSpan.innerHTML =
-      "Localization Labels";
+      "<span id='labelsLink'>Localization Labels</span>";
     this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
     // Init aspect toggle
@@ -165,7 +165,7 @@ export class AnalyticsGallery extends EntityCardGallery {
         cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-      } of ${cardList.total} Result${totalCount === 1 ? "" : "s"}`;
+      } of ${cardList.total} Result${cardList.total === 1 ? "" : "s"}`;
     }
 
     //}
