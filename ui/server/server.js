@@ -5,7 +5,15 @@ const nunjucks = require('nunjucks');
 const favicon = require('serve-favicon');
 const proxy = require('express-http-proxy');
 const cookieParser = require('cookie-parser');
+const originalFetch = require('node-fetch');
+const fetch = require('fetch-retry')(originalFetch);
+const dns = require('dns');
 const yargs = require('yargs/yargs');
+
+dns.setServers([
+  '8.8.8.8',
+  '1.1.1.1',
+]);
 const app = express();
 
 const argv = yargs(process.argv.slice(2))
@@ -156,6 +164,8 @@ app.post('/exchange', async (req, res) => {
   const url = `${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
   try {
     await fetch(url, {
+      retries: 3,
+      retryDelay: 1000,
       method: "POST",
       body: body,
       headers: {
@@ -213,6 +223,8 @@ app.get('/refresh', async (req, res) => {
     const url = `${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
     try {
       await fetch(url, {
+        retries: 3,
+        retryDelay: 1000,
         method: "POST",
         body: body,
         headers: {
