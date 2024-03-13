@@ -495,6 +495,7 @@ class TatorAlgorithm(JobManagerMixin):
                 "user": user,
                 "project": project,
                 "algorithm": self.alg.pk,
+                "media_ids": media_ids,
                 "datetime": datetime.datetime.utcnow().isoformat() + "Z",
             },
             "algorithm",
