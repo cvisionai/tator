@@ -119,6 +119,20 @@ class TatorCache:
             jobs = []
         return jobs
 
+    def get_jobs_by_media_id(self, project, media_ids,  hkey):
+        """Retrieves jobs using project ID. Set first_only=True to only retrieve first job."""
+        jobs =  []
+        for media_id in media_ids:
+            media_key = f"{hkey}_{project}_{media_id}"
+            logger.info(f"media_key={media_key}")
+            uids = self.rds.get(media_key)
+            if uids:
+                uids = uids.decode().split(",")
+                logger.info(f"uids={uids}")
+                jobs.extend([json.loads(self.rds.get(uid).decode()) for uid in uids])
+
+        return jobs
+
     def set_presigned(self, user, key, url, ttl=3600):
         """Stores presigned url."""
         self.rds.set(f"{user}__{key}", url, ex=ttl)
