@@ -8,7 +8,7 @@ function getCookie(name) {
 
 function goToLogin() {
   if (KEYCLOAK_ENABLED) {
-    window.location.href = `/accounts/login&state=${window.location.pathname}`;
+    window.location.href = `/accounts/login`;
   } else {
     window.location.href = `/accounts/login?next=${window.location.pathname}`;
   }
