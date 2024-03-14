@@ -71,6 +71,13 @@ class TatorCache:
         else:
             self.rds.set(gid, uid, ex=EXPIRE_TIME)
 
+        for media_id in job.get("media_ids",[]):
+            media_key = f"{hkey}_{project}_{media_id}"
+            if self.rds.exists(media_key):
+                self.rds.append(media_key, f",{uid}")
+            else:
+                self.rds.set(media_key, uid, ex=EXPIRE_TIME)
+
         # Store list of UIDs under project key.
         project_key = f"{hkey}_{project}"
         if self.rds.exists(project_key):
@@ -110,6 +117,20 @@ class TatorCache:
                 jobs = [json.loads(self.rds.get(uid).decode()) for uid in uids]
         else:
             jobs = []
+        return jobs
+
+    def get_jobs_by_media_id(self, project, media_ids,  hkey):
+        """Retrieves jobs using project ID. Set first_only=True to only retrieve first job."""
+        jobs =  []
+        for media_id in media_ids:
+            media_key = f"{hkey}_{project}_{media_id}"
+            logger.info(f"media_key={media_key}")
+            uids = self.rds.get(media_key)
+            if uids:
+                uids = uids.decode().split(",")
+                logger.info(f"uids={uids}")
+                jobs.extend([json.loads(self.rds.get(uid).decode()) for uid in uids])
+
         return jobs
 
     def set_presigned(self, user, key, url, ttl=3600):
