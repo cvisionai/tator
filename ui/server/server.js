@@ -164,8 +164,8 @@ app.post('/exchange', async (req, res) => {
   const url = `${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
   try {
     await fetch(url, {
-      retries: 3,
-      retryDelay: 1000,
+      retries: 10,
+      retryDelay: 100,
       method: "POST",
       body: body,
       headers: {
@@ -203,11 +203,15 @@ app.post('/exchange', async (req, res) => {
       });
     })
     .catch((error) => {
-      console.error(`Error in exchange endpoint: ${error}`);
+      console.error(`Error in fetch for exchange: ${error}`);
+      console.error(error.message);
+      console.error(error.stack);
       return Promise.reject(error);
     });
   } catch (error) {
     console.error(`Error in exchange endpoint: ${error}`);
+    console.error(error.message);
+    console.error(error.stack);
     res.status(403).send({message: "Failed to retrieve access token!"});
   }
 });
@@ -223,8 +227,8 @@ app.get('/refresh', async (req, res) => {
     const url = `${argv.backend}/auth/realms/tator/protocol/openid-connect/token`;
     try {
       await fetch(url, {
-        retries: 3,
-        retryDelay: 1000,
+        retries: 10,
+        retryDelay: 100,
         method: "POST",
         body: body,
         headers: {
@@ -261,13 +265,45 @@ app.get('/refresh', async (req, res) => {
         });
       })
       .catch((error) => {
-        console.error(`Error in refresh endpoint: ${error}`);
+        console.error(`Error in fetch for refresh: ${error}`);
+        console.error(error.message);
+        console.error(error.stack);
         return Promise.reject(error);
       });
     } catch (error) {
       console.error(`Error in refresh endpoint: ${error}`);
+      console.error(error.message);
+      console.error(error.stack);
       res.status(403).send({message: "Failed to refresh access token!"});
     }
+  }
+});
+
+app.get('/dnstest', async (req, res) => {
+  try {
+    await fetch(argv.backend, {
+      retries: 10,
+      retryDelay: 100,
+      method: "GET",
+    })
+    .then(response => {
+      if (!response.ok) {
+        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+        throw new Error("Response from backend failed!");
+      }
+      res.status(200).send({message: "DNS was resolved!"});
+    })
+    .catch((error) => {
+      console.error(`Error in fetch to backend: ${error}`);
+      console.error(error.message);
+      console.error(error.stack);
+      return Promise.reject(error);
+    });
+  } catch (error) {
+    console.error(`Error in DNS test: ${error}`);
+    console.error(error.message);
+    console.error(error.stack);
+    res.status(400).send({message: "DNS test failed!"});
   }
 });
 
