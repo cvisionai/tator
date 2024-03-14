@@ -72,7 +72,7 @@ class TatorCache:
             self.rds.set(gid, uid, ex=EXPIRE_TIME)
 
         media_id_str = job.get("media_ids","")
-        media_ids = [int(x) for x in media_id_str.split(',')]
+        media_ids = [int(x) for x in media_id_str.split(',') if x != '']
         for media_id in media_ids:
             media_key = f"{hkey}_{project}_{media_id}"
             if self.rds.exists(media_key):
