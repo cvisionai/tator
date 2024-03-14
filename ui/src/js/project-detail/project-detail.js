@@ -2,18 +2,985 @@ import { TatorPage } from "../components/tator-page.js";
 import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { TatorData } from "../util/tator-data.js";
-import { svgNamespace } from "../components/tator-element.js";
+import { TatorElement, svgNamespace } from "../components/tator-element.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
 import { FilterData } from "../components/filter-data.js";
 import { v1 as uuidv1 } from "uuid";
 import { store } from "./store.js";
-import { api } from "./store.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
 import Gear from "../../images/svg/gear.svg";
+import { ModalDialog } from "../components/modal-dialog.js";
 
+/**
+ * Dialog for creating a new section.
+ * There will be two components:
+ *
+ * - Name of the folder
+ * - A dropdown for nesting
+ *   This dropdown consist of each section and each level is padded out
+ */
+export class FolderDialog extends ModalDialog {
+
+  /**
+   * Constructor
+   */
+  constructor() {
+
+    super();
+
+    // UI elements
+    this._errorMessage = document.createElement("div");
+    this._errorMessage.setAttribute("class", "f2 text-semibold text-red px-3 py-3 text-center");
+    this._errorMessage.style.display = "none";
+    this._main.appendChild(this._errorMessage);
+
+    this._name = document.createElement("text-input");
+    this._name.setAttribute("class", "text-gray f2");
+    this._name.setAttribute("name", "Folder Name:");
+    this._main.appendChild(this._name);
+
+    this._originalName = document.createElement("div");
+    this._originalName.setAttribute("class", "text-purple f3 mt-1 mb-3");
+    this._main.appendChild(this._originalName);
+    this._originalName.style.display = "none";
+
+    this._parentFolders = document.createElement("enum-input");
+    this._parentFolders.setAttribute("class", "text-gray f2");
+    this._parentFolders.setAttribute("name", "Parent Folder:");
+    this._main.appendChild(this._parentFolders);
+
+    this._save = document.createElement("button");
+    this._save.setAttribute("class", "btn btn-clear btn-purple disabled");
+    this._footer.appendChild(this._save);
+    this._save.setAttribute("disabled", "");
+
+    const cancel = document.createElement("button");
+    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
+    cancel.textContent = "Cancel";
+    this._footer.appendChild(cancel);
+
+    // Data initialization
+    this._noParentName = "-- None --";
+
+    // Event handlers
+    this._name.addEventListener("change", () => {
+      var proposedName = this._name.getValue();
+      var parentFolder = this._parentFolders.getValue();
+
+      if (this.verifySectionRename(proposedName, parentFolder, this._sections)) {
+        this.enableSave();
+      }
+      else {
+        this.invalidName();
+      }
+
+      if (this._mode == "editFolder") {
+        if (proposedName != this._selectedSection.name) {
+          this._originalName.style.display = "block";
+          this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${this._selectedSection.name}</span>`;
+        }
+        else {
+          this._originalName.style.display = "none";
+        }
+      }
+    });
+
+    cancel.addEventListener("click", () => {
+      this.dispatchEvent(new CustomEvent("close"));
+    });
+
+    this._save.addEventListener("click", () => {
+
+      var proposedName = this._name.getValue();
+      var parentFolder = this._parentFolders.getValue();
+      var info = this.makeFolderNameAndPath(proposedName, parentFolder);
+
+      if (this._mode == "newFolder") {
+        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
+           detail: {
+             name: info.name,
+             path: info.path
+          }
+        }));
+      }
+      else if (this._mode == "editFolder") {
+
+        var patchSpec = {}
+
+        if (info.name != this._selectedSection.name) {
+          patchSpec.name = info.name;
+        }
+        if (info.path != this._selectedSection.path) {
+          patchSpec.path = info.path;
+        }
+        if (info.visible != this._selectedSection.visible) {
+          patchSpec.visible = info.visible;
+        }
+
+        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
+          detail: {
+            id: this._selectedSection.id,
+            spec: patchSpec
+         }
+       }));
+      }
+    });
+  }
+
+  /**
+   * Call to enable the save button and hide the error message
+   * Typically called after the fields have been verified
+   */
+  enableSave() {
+    this._save.removeAttribute("disabled");
+    this._errorMessage.style.display = "none";
+  }
+
+  /**
+   * Call to set the modal to an invalid name state
+   * Typically called after the fields have been verified
+   */
+  invalidName() {
+    this._save.setAttribute("disabled", "");
+    this._errorMessage.innerHTML = "Invalid name provided. Cannot share the same name as another folder in the same sub-directory or have '.' in it.";
+    this._errorMessage.style.display = "block";
+  }
+
+  /**
+   * @param {array} sections
+   *   Array of Tator.Section objects
+   *   Only sections that are not saved searches and are visible will be selectable
+   */
+  init(sections) {
+
+    this._sections = sections;
+    this._parentFolders.clear();
+    this._name.reset();
+    this._selectedSection = null;
+
+    var choices = [];
+    choices.push({ value: this._noParentName, label: this._noParentName });
+    for (const section of sections) {
+
+      if (section.visible == true) {
+        let parsedSectionName = section.name;
+
+        let sectionPath = section.path;
+        if (sectionPath == null || sectionPath == "") {
+          sectionPath = parsedSectionName.replace(/[^A-Za-z0-9_.]/g, "_");
+        }
+        choices.push({ value: sectionPath, label: sectionPath });
+      }
+    }
+
+    this._parentFolders.choices = choices;
+  }
+
+  /**
+   * @param {string} name
+   *    Needs to be trimmed
+   * @param {string} parentPath
+   *    Needs to not have "." at the end
+   * @return Object
+   *    .name {string} - name to use for the associated section
+   *    .path {string} - path to use for the associated section
+   */
+  makeFolderNameAndPath(name, parentPath) {
+
+    let sectionName = name.trim();
+
+    let pathFolderName = sectionName.replace(/[^A-Za-z0-9_.]/g, "_");
+    let sectionPath = parentPath.replace(/[^A-Za-z0-9_.]/g, "_");
+
+    if (parentPath == "" || parentPath == this._noParentName) {
+      sectionPath = pathFolderName;
+    }
+    else {
+      sectionPath += ".";
+      sectionPath += pathFolderName;
+      sectionName = parentPath + "." + sectionName;
+    }
+
+    return {name: sectionName, path: sectionPath};
+
+  }
+
+  /**
+   * @param {string} proposedName
+   *    Needs to be trimmed
+   * @param {string} proposedPath
+   *    Needs to not have "." at the end
+   * @param {array} sections
+   *    array of Tator.Section elements to check to see if the proposed name / path is unique
+   * @return {bool} True if the section rename is valid. False otherwise.
+   */
+  verifySectionRename(proposedName, sectionPath, sections) {
+
+    if (proposedName.includes(".")) {
+      return false;
+    }
+
+    // Find the adjusted path which we will use to compare against other sections
+    let info = this.makeFolderNameAndPath(proposedName, sectionPath);
+
+    // See if the adjusted path matches any of the provided sections'
+    for (const section of sections) {
+      if ((section.path == info["path"]) || (section.name == info["name"])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * @param {string} mode
+   *   "newFolder" | "editFolder"
+   * @param {integer} selectedSectionId
+   *   ID of selected section
+   */
+  setMode(mode, selectedSectionId) {
+
+    this._originalName.style.display = "none";
+
+    if (mode == "newFolder") {
+      this._title.nodeValue = "New Folder";
+      this._mode = mode;
+      this._save.textContent = "Add";
+      this._saveClickEvent = "add";
+      this._selectedSection = null;
+      this._name.setValue("");
+    }
+    else if (mode == "editFolder") {
+      this._title.nodeValue = "Edit Folder";
+      this._mode = mode;
+      this._save.textContent = "Edit";
+      this._saveClickEvent = "edit";
+
+      for (const section of this._sections) {
+        if (section.id == selectedSectionId) {
+          this._selectedSection = section;
+          this._name.setValue(section.name.split(".")[0]);
+        }
+      }
+    }
+    else {
+      throw new Error(`Invalid mode: ${mode}`);
+    }
+
+  }
+}
+customElements.define("folder-dialog", FolderDialog);
+
+
+/**
+ * Dialog for editing an existing bookmark
+ * - Currently only capability is to rename it
+ */
+export class BookmarkEditDialog extends ModalDialog {
+
+  /**
+   * Constructor
+   */
+  constructor() {
+
+    super();
+
+    this._title.nodeValue = "Edit Bookmark";
+    this._main.classList.remove("py-4");
+    this._main.classList.add("pt-3");
+
+    this._errorMessage = document.createElement("div");
+    this._errorMessage.setAttribute("class", "f2 text-semibold text-red px-3 py-3 text-center");
+    this._errorMessage.style.display = "none";
+    this._main.appendChild(this._errorMessage);
+
+    this._name = document.createElement("text-input");
+    this._name.setAttribute("class", "text-gray f2");
+    this._name.setAttribute("name", "Bookmark Name:");
+    this._main.appendChild(this._name);
+
+    this._originalName = document.createElement("div");
+    this._originalName.setAttribute("class", "text-purple f3 mt-1 mb-3");
+    this._main.appendChild(this._originalName);
+    this._originalName.style.display = "none";
+
+    this._save = document.createElement("button");
+    this._save.setAttribute("class", "btn btn-clear btn-purple disabled");
+    this._save.textContent = "Edit";
+    this._footer.appendChild(this._save);
+    this._save.setAttribute("disabled", "");
+
+    const cancel = document.createElement("button");
+    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
+    cancel.textContent = "Cancel";
+    this._footer.appendChild(cancel);
+
+    // Event handlers
+    this._name.addEventListener("change", () => {
+      var proposedName = this._name.getValue();
+
+      if (proposedName != "") {
+        this.enableSave();
+        if (proposedName != this._bookmark.name) {
+          this._originalName.style.display = "block";
+          this._originalName.innerHTML = `Changing bookmark name from: <span class="text-semibold">${this._bookmark.name}</span>`;
+        }
+      }
+      else {
+        this._originalName.style.display = "none";
+        this.invalidName();
+      }
+    });
+
+    cancel.addEventListener("click", () => {
+      this.dispatchEvent(new CustomEvent("close"));
+    });
+
+    this._save.addEventListener("click", () => {
+        var newName = this._name.getValue();
+        newName = newName.trim();
+        this.dispatchEvent(new CustomEvent("edit", {
+          detail: {
+            id: this._bookmark.id,
+            spec: {name: newName}
+         }
+       }));
+    });
+  }
+
+  /**
+   * Call to enable the save button and hide the error message
+   * Typically called after the fields have been verified
+   */
+  enableSave() {
+    this._save.removeAttribute("disabled");
+    this._errorMessage.style.display = "none";
+  }
+
+  /**
+   * Call to set the modal to an invalid name state
+   * Typically called after the fields have been verified
+   */
+  invalidName() {
+    this._save.setAttribute("disabled", "");
+    this._errorMessage.innerHTML = "Invalid bookmark name provided. Cannot be blank.";
+    this._errorMessage.style.display = "block";
+  }
+
+  /**
+   * @param {Tator.Bookmark} bookmark
+   */
+  init(bookmark) {
+    this._bookmark = bookmark;
+    this._name.setValue(bookmark.name);
+    this._originalName.style.display = "none";
+  }
+}
+customElements.define("bookmark-edit-dialog", BookmarkEditDialog);
+
+export class BookmarkDeleteModal extends ModalDialog {
+  constructor() {
+    super();
+
+    this._title.nodeValue = "Delete Bookmark";
+    this._main.classList.remove("py-4");
+    this._main.classList.add("pt-3");
+
+    const icon = document.createElement("modal-warning");
+    this._header.insertBefore(icon, this._titleDiv);
+
+    this._bookmarkText = document.createElement("div");
+    this._bookmarkText.setAttribute("class", "f2 text-gray px-3 py-3 text-center");
+    this._main.appendChild(this._bookmarkText);
+
+    this._warning = document.createElement("div");
+    this._warning.setAttribute("class", "py-3 text-center f2 text-red");
+    this._warning.innerHTML = `<span class="text-semibold">Warning: </span>This cannot be undone`;
+    this._main.appendChild(this._warning);
+
+    this._accept = document.createElement("button");
+    this._accept.setAttribute("class", "btn btn-clear btn-red");
+    this._accept.textContent = "Delete Bookmark";
+    this._footer.appendChild(this._accept);
+
+    const cancel = document.createElement("button");
+    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
+    cancel.textContent = "Cancel";
+    this._footer.appendChild(cancel);
+
+    cancel.addEventListener("click", () => {
+      this.dispatchEvent(new CustomEvent("close"));
+    });
+
+    this._accept.addEventListener("click", async (evt) => {
+      this.dispatchEvent(new CustomEvent("delete", {
+        detail: {
+          id: this._bookmark.id,
+       }
+     }));
+    });
+  }
+
+  init(bookmark) {
+    this._bookmark = bookmark;
+    this._bookmarkText.innerHTML = `<span>Are you sure you want to delete the bookmark:</span><br /><span class="text-semibold">${bookmark.name}</span>?`;
+  }
+}
+customElements.define("bookmark-delete-dialog", BookmarkDeleteModal);
+
+/**
+ * Button used for the "All Media" / home in the section list
+ */
+export class AllMediaItem extends TatorElement {
+
+  constructor() {
+
+    super();
+
+    this._mainDiv = document.createElement("div");
+    this._mainDiv.setAttribute("class", "rounded-2 px-1 py-1 d-flex flex-items-center clickable");
+    this._shadow.appendChild(this._mainDiv);
+
+    this._icon = document.createElement("div");
+    this._icon.setAttribute("class", "d-flex ml-3");
+    this._mainDiv.appendChild(this._icon);
+    this._icon.innerHTML = `
+    <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+    </svg>
+    `;
+
+    this._name = document.createElement("div");
+    this._name.setAttribute("class", "f2 text-gray ml-3 flex-grow");
+    this._name.innerHTML = "All Media";
+    this._mainDiv.appendChild(this._name);
+
+    this._mainDiv.addEventListener("mouseover", () => {
+      if (!this._active) {
+        this._mainDiv.style.backgroundColor = "#262e3d";
+        this._mainDiv.style.color = "#ffffff";
+        this._name.classList.remove("text-gray");
+        this._name.classList.add("text-white");
+      }
+    });
+
+    this._mainDiv.addEventListener("mouseout", () => {
+      if (!this._active) {
+        this._mainDiv.style.backgroundColor = "";
+        this._mainDiv.style.color = "";
+        this._name.classList.add("text-gray");
+        this._name.classList.remove("text-white");
+      }
+    });
+
+    this._mainDiv.addEventListener("click", () => {
+      this._mainDiv.blur();
+      this.setActive();
+      this.dispatchEvent(new CustomEvent("selected", { detail: { id: null } }));
+    });
+  }
+
+  setActive() {
+    this._active = true;
+    this._mainDiv.style.backgroundColor = "#202543";
+    this._mainDiv.style.color = "#ffffff";
+    this._name.classList.remove("text-gray");
+    this._name.classList.add("text-white");
+    this._name.classList.add("text-semibold");
+    this._mainDiv.classList.remove("box-border");
+  }
+
+  setInactive() {
+    this._active = false;
+    this._mainDiv.style.backgroundColor = "";
+    this._mainDiv.style.color = "";
+    this._name.classList.add("text-gray");
+    this._name.classList.remove("text-white");
+    this._name.classList.remove("text-semibold");
+    this._mainDiv.classList.add("box-border");
+  }
+}
+customElements.define("all-media-item", AllMediaItem);
+
+/**
+ * Button thats used as part of the section list
+ */
+export class SectionListItem extends TatorElement {
+
+  /**
+   * Constructor
+   */
+  constructor() {
+    super();
+
+    this.setupUIElements();
+    this.setupEventListeners();
+    this.setInactive();
+    this.collapse();
+  }
+
+  setupUIElements() {
+
+    this._mainDiv = document.createElement("div");
+    this._mainDiv.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
+    this._shadow.appendChild(this._mainDiv);
+
+    this._expand = document.createElement("div");
+    this._expand.setAttribute("class", "d-flex mr-1 d-flex flex-items-center clickable rounded-2");
+    this._mainDiv.appendChild(this._expand);
+    this._expand.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" />
+      </svg>
+    `;
+
+    this._icon = document.createElement("div");
+    this._icon.setAttribute("class", "d-flex py-1");
+    this._mainDiv.appendChild(this._icon);
+    this._icon.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
+      </svg>
+    `;
+
+    this._name = document.createElement("div");
+    this._name.setAttribute("class", "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate");
+    this._mainDiv.appendChild(this._name);
+
+    var moreWrapper = document.createElement("div");
+    moreWrapper.setAttribute("class", "d-flex flex-justify-right");
+    this._mainDiv.appendChild(moreWrapper);
+
+    this._more = document.createElement("div");
+    this._more.setAttribute("class", "d-flex mr-2 clickable rounded-2");
+    moreWrapper.appendChild(this._more);
+    this._more.innerHTML = `
+      <svg transform="rotate(90)" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      </svg>
+    `;
+    this._more.style.display = "none";
+
+    this._moreMenu = document.createElement("div");
+    this._moreMenu.setAttribute(
+      "class",
+      "more d-flex flex-column f2 px-3 py-2 lh-condensed"
+    );
+    this._moreMenu.style.display = "none";
+    this._moreMenu.style.marginTop = "5px";
+    this._moreMenu.style.marginLeft = "200px";
+    this._shadow.appendChild(this._moreMenu);
+  }
+
+  setupEventListeners() {
+    this._mainDiv.addEventListener("mouseover", () => {
+      if (!this._active) {
+        this._mainDiv.style.backgroundColor = "#262e3d";
+        this._mainDiv.style.color = "#ffffff";
+        this._name.classList.remove("text-gray");
+        this._name.classList.add("text-white");
+      }
+      this._more.style.display = "flex";
+    });
+
+    this._mainDiv.addEventListener("mouseout", () => {
+      if (!this._active) {
+        this._mainDiv.style.backgroundColor = "";
+        this._mainDiv.style.color = "";
+        this._name.classList.add("text-gray");
+        this._name.classList.remove("text-white");
+      }
+      this._more.style.display = "none";
+    });
+
+    this._name.addEventListener("click", () => {
+      this._mainDiv.blur();
+      this._moreMenu.style.display = "none";
+      this.setActive();
+      this.dispatchEvent(new CustomEvent("selected", { detail: { id: this._section.id } }));
+    });
+
+    this._expand.addEventListener("mouseover", () => {
+      this._expand.style.backgroundColor = "#3b4250";
+    });
+
+    this._expand.addEventListener("mouseout", () => {
+      this._expand.style.backgroundColor = "";
+    });
+
+    this._expand.addEventListener("click", () => {
+      this._mainDiv.blur();
+      this._moreMenu.style.display = "none";
+      if (this._expanded) {
+        this.collapse();
+        this.dispatchEvent(new Event("expand"));
+      }
+      else {
+        this.expand();
+        this.dispatchEvent(new Event("collapse"));
+      }
+    });
+
+    this._more.addEventListener("mouseover", () => {
+      this._more.style.backgroundColor = "#3b4250";
+    });
+
+    this._more.addEventListener("mouseout", () => {
+      this._more.style.backgroundColor = "";
+    });
+
+    this._more.addEventListener("click", () => {
+      if (this._moreMenu.style.display == "none") {
+        this._moreMenu.style.display = "block";
+      }
+      else {
+        this._moreMenu.style.display = "none";
+      }
+    });
+  }
+
+  /**
+   * @param {Tator.Section} section
+   *    Section object to initialize the button with
+   * @param {array} childSections
+   *    Array of child sections (Tator.Section objects)
+   */
+  init(section, childSections) {
+
+    this._section = section;
+    this._childSections = childSections;
+
+    // If section.path exists, use it. Otherwise, use section.name
+    // section.path is ParentName.ChildName - we want to just use ChildName
+    var sectionName = section.name;
+    var padding = 0;
+    if (section.path) {
+      var pathParts = sectionName.split(".");
+      padding = 10 * (sectionName.split(".").length - 1);
+      if (pathParts.length > 1) {
+        sectionName = pathParts[pathParts.length - 1];
+      }
+    }
+    this._name.innerHTML = sectionName;
+
+    // Add the appropriate padding based on how many parents this section has
+    // 10px margin left for each parent
+    if (childSections.length > 0) {
+      // There are child sections, show the expand icon
+      this._expand.style.marginLeft = `${padding}px`;
+    } else {
+      // If no children, remove the expand icon
+      this._expand.style.visibility = "hidden";
+      this._icon.style.marginLeft = `${padding}px`;
+    }
+
+    if (!section.visible) {
+      this._name.classList.add("text-dark-gray");
+      this._icon.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
+        </svg>
+      `;
+    }
+
+    // Update the more menu
+    const hideToggleButton = document.createElement("button");
+    hideToggleButton.setAttribute(
+      "class",
+      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+    );
+    if (section.visible) {
+      hideToggleButton.innerHTML = `
+      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+      Hide folder`;
+      hideToggleButton.addEventListener("click", () => {
+        this._moreMenu.style.display = "none";
+        this.dispatchEvent(new CustomEvent("hideSection", { detail: { id: section.id } }));
+      });
+    }
+    else {
+      hideToggleButton.innerHTML = `
+      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+      Restore folder`;
+      hideToggleButton.addEventListener("click", () => {
+        this._moreMenu.style.display = "none";
+        this.dispatchEvent(new CustomEvent("restoreSection", { detail: { id: section.id } }));
+      });
+    }
+    const deleteToggleButton = document.createElement("button");
+    deleteToggleButton.setAttribute(
+      "class",
+      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+    );
+    deleteToggleButton.innerHTML = `
+    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    </svg>
+    Delete folder`;
+    if (childSections.length > 0) {
+      deleteToggleButton.setAttribute("disabled", "");
+      deleteToggleButton.style.cursor = "not-allowed";
+      deleteToggleButton.setAttribute("tooltip", "Cannot delete folder when it has subfolders.");
+    }
+    else {
+      deleteToggleButton.addEventListener("click", () => {
+        this._moreMenu.style.display = "none";
+        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { id: section.id } }));
+      });
+    }
+
+    const editToggleButton = document.createElement("button");
+    editToggleButton.setAttribute(
+      "class",
+      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+    );
+    editToggleButton.innerHTML = `
+    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+    Edit folder`;
+    editToggleButton.addEventListener("click", () => {
+      this._moreMenu.style.display = "none";
+      this.dispatchEvent(new CustomEvent("editSection", { detail: { id: section.id } }));
+    });
+
+    this._moreMenu.appendChild(editToggleButton);
+    this._moreMenu.appendChild(deleteToggleButton);
+    this._moreMenu.appendChild(hideToggleButton);
+  }
+
+  /**
+   * Display this list item as active
+   */
+  setActive() {
+    this._active = true;
+    this._mainDiv.style.backgroundColor = "#202543";
+    this._mainDiv.style.color = "#ffffff";
+    this._name.classList.remove("text-gray");
+    this._name.classList.add("text-white");
+    this._name.classList.add("text-semibold");
+  }
+
+  /**
+   * Display this list item as inactive
+   */
+  setInactive() {
+    this._active = false;
+    this._mainDiv.style.backgroundColor = "";
+    this._mainDiv.style.color = "";
+    this._name.classList.add("text-gray");
+    this._name.classList.remove("text-white");
+    this._name.classList.remove("text-semibold");
+    this._moreMenu.style.display = "none";
+  }
+
+  /**
+   * @returns {Tator.Section} section object associated with this list item
+   */
+  getSection() {
+    return this._section;
+  }
+
+  collapse() {
+    this._expanded = false;
+    this._expand.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" />
+      </svg>
+    `;
+  }
+
+  expand() {
+    this._expanded = true;
+    this._expand.innerHTML = `
+      <svg transform="rotate(90)" width="14" height="14" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" />
+      </svg>
+    `;
+  }
+}
+customElements.define("section-list-item", SectionListItem);
+
+
+/**
+ * Button that used to add a bookmark
+ */
+export class BookmarkListItem extends TatorElement {
+
+  constructor() {
+    super();
+
+    this.setupUIElements();
+    this.setupEventListeners();
+  }
+
+  /**
+   * Executed by constructor only
+   */
+  setupUIElements() {
+
+    this._mainDiv = document.createElement("div");
+    this._mainDiv.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
+    this._shadow.appendChild(this._mainDiv);
+
+    this._icon = document.createElement("div");
+    this._icon.setAttribute("class", "d-flex py-1");
+    this._mainDiv.appendChild(this._icon);
+    this._icon.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4z" />
+      </svg>
+    `;
+
+    this._name = document.createElement("div");
+    this._name.setAttribute("class", "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate");
+    this._mainDiv.appendChild(this._name);
+
+    var moreWrapper = document.createElement("div");
+    moreWrapper.setAttribute("class", "d-flex flex-justify-right");
+    this._mainDiv.appendChild(moreWrapper);
+
+    this._more = document.createElement("div");
+    this._more.setAttribute("class", "d-flex mr-2 clickable rounded-2");
+    moreWrapper.appendChild(this._more);
+    this._more.innerHTML = `
+      <svg transform="rotate(90)" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      </svg>
+    `;
+    this._more.style.display = "none";
+
+    this._moreMenu = document.createElement("div");
+    this._moreMenu.setAttribute(
+      "class",
+      "more d-flex flex-column f2 px-3 py-2 lh-condensed"
+    );
+    this._moreMenu.style.display = "none";
+    this._moreMenu.style.marginTop = "5px";
+    this._moreMenu.style.marginLeft = "200px";
+    this._shadow.appendChild(this._moreMenu);
+
+    this._link = document.createElement("a");
+    this._link.style.display = "none";
+    this._shadow.appendChild(this._moreMenu);
+  }
+
+  /**
+   * Executed by constructor only
+   */
+  setupEventListeners() {
+    this._mainDiv.addEventListener("mouseover", () => {
+      if (!this._active) {
+        this._mainDiv.style.backgroundColor = "#262e3d";
+        this._mainDiv.style.color = "#ffffff";
+        this._name.classList.remove("text-gray");
+        this._name.classList.add("text-white");
+      }
+      this._more.style.display = "flex";
+    });
+
+    this._mainDiv.addEventListener("mouseout", () => {
+      if (!this._active) {
+        this._mainDiv.style.backgroundColor = "";
+        this._mainDiv.style.color = "";
+        this._name.classList.add("text-gray");
+        this._name.classList.remove("text-white");
+      }
+      this._more.style.display = "none";
+    });
+
+    this._name.addEventListener("click", () => {
+      this._mainDiv.blur();
+      this._moreMenu.style.display = "none";
+      this._link.click();
+    });
+
+    this._more.addEventListener("mouseover", () => {
+      this._more.style.backgroundColor = "#3b4250";
+    });
+
+    this._more.addEventListener("mouseout", () => {
+      this._more.style.backgroundColor = "";
+    });
+
+    this._more.addEventListener("click", () => {
+      if (this._moreMenu.style.display == "none") {
+        this._moreMenu.style.display = "block";
+      }
+      else {
+        this._moreMenu.style.display = "none";
+      }
+    });
+  }
+
+
+  /**
+   * @param {Tator.Bookmark} bookmark
+   */
+  init(bookmark) {
+
+    this._bookmark = bookmark;
+    this._name.textContent = bookmark.name;
+
+    this._link.setAttribute("target", "_blank");
+    this._link.setAttribute("href", bookmark.uri);
+
+    if (bookmark.name == "Last visited") {
+      this._mainDiv.classList.add("box-border");
+      this._mainDiv.classList.add("py-1");
+      this._mainDiv.classList.add("mb-2");
+      this._more.classList.add("hidden");
+    }
+    else {
+      const deleteToggleButton = document.createElement("button");
+      deleteToggleButton.setAttribute(
+        "class",
+        "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+      );
+      deleteToggleButton.innerHTML = `
+      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </svg>
+      Delete bookmark`;
+      deleteToggleButton.addEventListener("click", () => {
+        this._moreMenu.style.display = "none";
+        this.dispatchEvent(new CustomEvent("deleteBookmark", { detail: { id: bookmark.id } }));
+      });
+
+      const renameToggleButton = document.createElement("button");
+      renameToggleButton.setAttribute(
+        "class",
+        "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+      );
+      renameToggleButton.innerHTML = `
+      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+      Rename bookmark`;
+      renameToggleButton.addEventListener("click", () => {
+        this._moreMenu.style.display = "none";
+        this.dispatchEvent(new CustomEvent("renameBookmark", { detail: { id: bookmark.id } }));
+      });
+
+      this._moreMenu.appendChild(renameToggleButton);
+      this._moreMenu.appendChild(deleteToggleButton);
+    }
+  }
+}
+customElements.define("bookmark-list-item", BookmarkListItem);
+
+/**
+ * Main project detail page
+ */
 export class ProjectDetail extends TatorPage {
   constructor() {
     super();
+
+    document.body.setAttribute("class", "no-padding-bottom");
 
     // Success and warning Utility hooks
     const utilitiesDiv = document.createElement("div");
@@ -39,136 +1006,32 @@ export class ProjectDetail extends TatorPage {
     this.mainWrapper = document.createElement("div");
     this.mainWrapper.setAttribute(
       "class",
-      "analysis--main--wrapper col-12 d-flex"
+      "analysis--main--wrapper d-flex"
     );
+    this.mainWrapper.style.minHeight = "calc(100vh - 62px)";
     this._shadow.appendChild(this.mainWrapper);
 
-    // Original main element
-    this.main = document.createElement("main");
-    this.main.setAttribute("class", "d-flex col-11");
-    this.main.setAttribute("style", "padding-left: 390px;");
-    this.mainWrapper.appendChild(this.main);
-
-    /* LEFT*** Navigation Pane - Project Detail Viewer */
-    this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container-left col-3"); //slide-close
-    this.aside.hidden = true;
-    this.mainWrapper.appendChild(this.aside);
-
-    // Gallery navigation panel
-    this._panelContainer = document.createElement("entity-panel-container");
-    this.aside.appendChild(this._panelContainer);
+    //
+    // Left area of the page
+    //
+    this.createSidebarNav();
+    this.createLeftPanel();
 
     //
-    const section = document.createElement("section");
-    section.setAttribute("class", "sections-wrap py-6 col-3 px-5 text-gray"); //
-
-    const folderHeader = document.createElement("div");
-    folderHeader.setAttribute(
-      "class",
-      "d-flex flex-justify-between flex-items-center py-4"
-    );
-    section.appendChild(folderHeader);
-
-    const folderText = document.createElement("h2");
-    folderText.setAttribute("class", "h3 text-semibold");
-    folderText.textContent = "Library";
-    folderHeader.appendChild(folderText);
-
-    const addFolderButton = document.createElement("button");
-    addFolderButton.setAttribute(
-      "class",
-      "px-0 f2 btn-clear text-gray hover-text-white"
-    );
-    folderHeader.appendChild(addFolderButton);
-
-    const addFolderSpan = document.createElement("span");
-    addFolderSpan.setAttribute("class", "f1 px-1");
-    addFolderSpan.textContent = "+";
-    addFolderButton.appendChild(addFolderSpan);
-
-    const addFolderText = document.createTextNode("Add folder");
-    addFolderButton.appendChild(addFolderText);
-
-    this._folders = document.createElement("ul");
-    this._folders.setAttribute("class", "sections");
-    section.appendChild(this._folders);
-
-    const savedSearchHeader = document.createElement("div");
-    savedSearchHeader.setAttribute(
-      "class",
-      "d-flex flex-justify-between flex-items-center py-4"
-    );
-    section.appendChild(savedSearchHeader);
-
-    const savedSearchText = document.createElement("h2");
-    savedSearchText.setAttribute("class", "h3 text-semibold");
-    savedSearchText.textContent = "Saved Searches";
-    savedSearchHeader.appendChild(savedSearchText);
-
-    this._addSavedSearchButton = document.createElement("button");
-    this._addSavedSearchButton.setAttribute(
-      "class",
-      "px-0 f2 btn-clear text-gray hover-text-white"
-    );
-    this._addSavedSearchButton.style.opacity = 0.5;
-    this._addSavedSearchButton.style.cursor = "not-allowed";
-    savedSearchHeader.appendChild(this._addSavedSearchButton);
-
-    const addSavedSearchSpan = document.createElement("span");
-    addSavedSearchSpan.setAttribute("class", "f1 px-1");
-    addSavedSearchSpan.textContent = "+";
-    this._addSavedSearchButton.appendChild(addSavedSearchSpan);
-
-    const addSavedSearchText = document.createTextNode("Add current search");
-    this._addSavedSearchButton.appendChild(addSavedSearchText);
-
-    this._savedSearches = document.createElement("ul");
-    this._savedSearches.setAttribute("class", "sections");
-    section.appendChild(this._savedSearches);
-
-    const bookmarkHeader = document.createElement("div");
-    bookmarkHeader.setAttribute(
-      "class",
-      "d-flex flex-justify-between flex-items-center py-4"
-    );
-    section.appendChild(bookmarkHeader);
-
-    const bookmarkText = document.createElement("h2");
-    bookmarkText.setAttribute("class", "h3 text-semibold");
-    bookmarkText.textContent = "Bookmarks";
-    bookmarkHeader.appendChild(bookmarkText);
-
-    this._bookmarks = document.createElement("ul");
-    this._bookmarks.setAttribute("class", "sections");
-    section.appendChild(this._bookmarks);
-
-    const archivedFoldersButton = document.createElement("button");
-    archivedFoldersButton.setAttribute(
-      "class",
-      "collapsible px-0 f2 btn-clear text-gray hover-text-white py-4"
-    );
-    section.appendChild(archivedFoldersButton);
-
-    this.archivedFolderText = document.createElement("h2");
-    this.archivedFolderText.setAttribute("class", "h3 text-semibold");
-    this.archivedFolderText.textContent = "+ Archived Folders";
-    archivedFoldersButton.appendChild(this.archivedFolderText);
-
-    this._archivedFolders = document.createElement("ul");
-    this._archivedFolders.setAttribute("class", "content sections");
-    this._archivedFolders.style.display = "none";
-    section.appendChild(this._archivedFolders);
+    // Central area of the page
+    //
+    this.main = document.createElement("main");
+    this.main.setAttribute("class", "d-flex flex-grow col-12 mr-5");
+    this.mainWrapper.appendChild(this.main);
 
     this._mainSection = document.createElement("section");
-    this._mainSection.setAttribute("class", "py-3 px-6 flex-grow"); //project__main
+    this._mainSection.setAttribute("class", "py-3 px-3 ml-3 flex-grow");
     this.main.appendChild(this._mainSection);
 
     this.gallery = {};
     this.gallery._main = this._mainSection;
 
     const div = document.createElement("div");
-    div.setAttribute("class", "py-6");
     this.gallery._main.appendChild(div);
 
     const header = document.createElement("div");
@@ -221,9 +1084,6 @@ export class ProjectDetail extends TatorPage {
     const subheader = document.createElement("div");
     subheader.setAttribute("class", "d-flex flex-justify-right");
     this._mainSection.appendChild(subheader);
-
-    // Hidden search input
-    this._search = document.createElement("project-search");
 
     const filterdiv = document.createElement("div");
     filterdiv.setAttribute("class", "mt-3");
@@ -317,8 +1177,17 @@ export class ProjectDetail extends TatorPage {
     this.moveFile = document.createElement("media-move-dialog");
     this._shadow.appendChild(this.moveFile);
 
-    const newSectionDialog = document.createElement("name-dialog");
-    this._projects.appendChild(newSectionDialog);
+    this._modalError = document.createElement("modal-dialog");
+    this._shadow.appendChild(this._modalError);
+
+    this._folderDialog = document.createElement("folder-dialog");
+    this._projects.appendChild(this._folderDialog);
+
+    this._bookmarkEditDialog = document.createElement("bookmark-edit-dialog");
+    this._projects.appendChild(this._bookmarkEditDialog);
+
+    this._bookmarkDeleteDialog = document.createElement("bookmark-delete-dialog");
+    this._projects.appendChild(this._bookmarkDeleteDialog);
 
     this._uploadDialog = document.createElement("upload-dialog");
     this._projects.appendChild(this._uploadDialog);
@@ -358,167 +1227,134 @@ export class ProjectDetail extends TatorPage {
       this._bulkEdit._clearSelection();
     });
 
-    addFolderButton.addEventListener("click", (evt) => {
-      newSectionDialog.init("Add Folder", "folder");
-      newSectionDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    });
-
-    archivedFoldersButton.addEventListener("click", (evt) => {
-      this.classList.toggle("active");
-      const content = this._archivedFolders;
-      if (content.style.display === "block") {
-        content.style.display = "none";
-        this.archivedFolderText.textContent = "+ Archived Folders";
-      } else {
-        content.style.display = "block";
-        this.archivedFolderText.textContent = "- Archived Folders";
-      }
-    });
-
-    this._addSavedSearchButton.addEventListener("click", (evt) => {
-      if (this._addSavedSearchButton.style.cursor == "pointer") {
-        newSectionDialog.init("Save current search", "savedSearch");
-        newSectionDialog.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-      }
-    });
-
-    newSectionDialog.addEventListener("close", async (evt) => {
-      if (newSectionDialog._confirm) {
-        let spec;
-        if (newSectionDialog._sectionType == "folder") {
-          spec = {
-            name: newSectionDialog._input.value,
-            tator_user_sections: uuidv1(),
-            visible: true,
-          };
-        } else if (newSectionDialog._sectionType == "savedSearch") {
-          spec = { visible: true };
-
-          // Check if an existing section is selected.
-          const params = new URLSearchParams(
-            document.location.search.substring(1)
-          );
-          if (params.has("section")) {
-            const sectionId = Number(params.get("section"));
-            await fetchCredentials(`/rest/Section/${sectionId}`)
-              .then((response) => response.json())
-              .then((section) => {
-                spec = section;
-              });
-          }
-          spec.name = newSectionDialog._input.value;
-          delete spec.path; // clear path to allow saved searches of saved searches
-
-          if (params.has("encoded_search")) {
-            let object_search = JSON.parse(atob(params.get("encoded_search")));
-            if (spec.object_search) {
-              let union_operation = {
-                method: "and",
-                operations: [spec.object_search, object_search],
-              };
-              spec.object_search = union_operation;
-            } else {
-              spec.object_search = object_search;
-            }
-          }
-
-          if (params.has("encoded_related_search")) {
-            let related_search = JSON.parse(
-              atob(params.get("encoded_related_search"))
-            );
-            if (spec.related_search) {
-              let union_operation = {
-                method: "and",
-                operations: [spec.object_search, related_search],
-              };
-              spec.related_search = union_operation;
-            } else {
-              spec.related_search = related_search;
-            }
-          }
-
-          delete spec.id;
-          if (spec.tator_user_sections === null) {
-            delete spec.tator_user_sections;
-          }
-        } else if (newSectionDialog._sectionType == "playlist") {
-          //TODO: Handle adding playlist
-        }
-        const projectId = Number(this.getAttribute("project-id"));
-        fetchCredentials(`/rest/Sections/${projectId}`, {
-          method: "POST",
-          body: JSON.stringify(spec),
-        }).then(async (response) => {
-          let section = await response.json();
-          if (response.status != 201) {
-            if (this._modalError == undefined) {
-              this._modalError = document.createElement("modal-dialog");
-              this._shadow.appendChild(this._modalError);
-            }
-            this._modalError._error(
-              `Unable to create section '${spec.name}'. ${section.message}`,
-              "Error"
-            );
-            return;
-          }
-          const card = document.createElement("entity-card");
-          const sectionObj = {
-            id: section.id,
-            project: projectId,
-            ...spec,
-          };
-          if (newSectionDialog._sectionType == "folder") {
-            card.sectionInit(sectionObj, "folder");
-            if (sectionObj.visible) {
-              this._folders.appendChild(card);
-            } else {
-              this._archivedFolders.appendChild(card);
-            }
-            //
-            card.addEventListener("click", () => {
-              const clearPage = true;
-              this._selectSection(sectionObj, projectId, clearPage);
-              for (const child of this._allSections()) {
-                child.active = false;
-              }
-              card.active = true;
-            });
-
-            card.addEventListener(
-              "visibilityChange",
-              this._sectionVisibilityEL.bind(this)
-            );
-          } else if (newSectionDialog._sectionType == "savedSearch") {
-            card.sectionInit(sectionObj, "savedSearch");
-            this._savedSearches.appendChild(card);
-
-            // Notifiy media section about section renames
-            card.addEventListener("renameSection", (evt) => {
-              // console.log(evt);
-              this._mediaSection.dispatchEvent(
-                new CustomEvent("renameSection", { detail: evt.detail })
-              );
-            });
-            card.addEventListener("deleteSection", (evt) => {
-              this._mediaSection.dispatchEvent(
-                new CustomEvent("deleteSection", evt.detail)
-              );
-            });
-
-            card.addEventListener("click", () => {
-              const clearPage = true;
-              this._selectSection(sectionObj, projectId, clearPage);
-              for (const child of this._allSections()) {
-                child.active = false;
-              }
-              card.active = true;
-            });
-          }
-        });
-      }
+    this._modalError.addEventListener("close", () => {
+      this._modalError.removeAttribute("is-open");
       this.removeAttribute("has-open-modal");
+    });
+
+    this._bookmarkDeleteDialog.addEventListener("close", () => {
+      this._bookmarkDeleteDialog.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal");
+    });
+
+    this._bookmarkDeleteDialog.addEventListener("delete", async (evt) => {
+
+      this._bookmarkDeleteDialog.removeAttribute("is-open");
+
+      var response = await fetchCredentials(`/rest/Bookmark/${evt.detail.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.status == 200) {
+        var data = await response.json();
+        var response = await fetchCredentials(`/rest/Bookmarks/${this._projectId}`, {
+          method: "GET"
+        });
+        this._bookmarks = await response.json();
+        this.makeBookmarks(this._bookmarks);
+        this.removeAttribute("has-open-modal");
+      }
+      else {
+        this._modalError._error(
+          `Unable to patch bookmark. Error: ${response.message}`,
+          "Error");
+      }
+
+
+    });
+
+    this._bookmarkEditDialog.addEventListener("close", () => {
+      this._bookmarkEditDialog.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal");
+    })
+
+    this._bookmarkEditDialog.addEventListener("edit", async (evt) => {
+
+      this._bookmarkEditDialog.removeAttribute("is-open");
+
+      var response = await fetchCredentials(`/rest/Bookmark/${evt.detail.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(evt.detail.spec),
+      });
+
+      if (response.status == 200) {
+        var data = await response.json();
+        var response = await fetchCredentials(`/rest/Bookmarks/${this._projectId}`, {
+          method: "GET"
+        });
+        this._bookmarks = await response.json();
+        this.makeBookmarks(this._bookmarks);
+        this.removeAttribute("has-open-modal");
+      }
+      else {
+        this._modalError._error(
+          `Unable to patch bookmark. Error: ${response.message}`,
+          "Error");
+      }
+    })
+
+    this._folderDialog.addEventListener("close", () => {
+      this._folderDialog.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal");
+    });
+
+    this._folderDialog.addEventListener("edit", async (evt) => {
+
+      this._folderDialog.removeAttribute("is-open");
+
+      var response = await fetchCredentials(`/rest/Section/${evt.detail.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(evt.detail.spec),
+      });
+
+      if (response.status == 200) {
+        var data = await response.json();
+        var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
+          method: "GET"
+        });
+        this._sections = await response.json();
+        this.makeFolders(this._sections);
+        this.selectSection(evt.detail.id);
+        this.removeAttribute("has-open-modal");
+      }
+      else {
+        this._modalError._error(
+          `Unable to patch section. Error: ${response.message}`,
+          "Error");
+      }
+    });
+
+    this._folderDialog.addEventListener("add", async (evt) => {
+
+      this._folderDialog.removeAttribute("is-open");
+
+      var spec = {
+        name: evt.detail.name,
+        path: evt.detail.path,
+        tator_user_sections: uuidv1(),
+        visible: true,
+      };
+
+      var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
+        method: "POST",
+        body: JSON.stringify(spec),
+      });
+
+      if (response.status == 201) {
+        var data = await response.json();
+        var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
+          method: "GET"
+        });
+        this._sections = await response.json();
+        this.makeFolders(this._sections);
+        this.selectSection(data.id);
+        this.removeAttribute("has-open-modal");
+      }
+      else {
+        this._modalError._error(
+          `Unable to create section '${spec.name}'. Error: ${response.message}`,
+          "Error");
+      }
     });
 
     this._mediaSection.addEventListener("filesadded", (evt) => {
@@ -643,19 +1479,6 @@ export class ProjectDetail extends TatorPage {
 
     this._lastQuery = null;
 
-    /* Init after modal is defined */
-    // Init panel side behavior
-    this._panelContainer.init({
-      main: this.main,
-      aside: this.aside,
-      pageModal: this.modal,
-      modelData: null,
-      gallery: this.gallery,
-      contents: section,
-      position: "left",
-      isMediaSection: true,
-    });
-
     //
     this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
     this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
@@ -685,52 +1508,6 @@ export class ProjectDetail extends TatorPage {
     this._bulkEdit.startEditMode();
   }
 
-  _sectionVisibilityEL(evt) {
-    const section = evt.detail.section;
-    const id = section.id;
-    const visible = section.visible;
-
-    // Remove section from current list
-    for (const child of this._allSections()) {
-      if (child._section) {
-        if (child._section.id == id) {
-          child.parentNode.removeChild(child);
-          break;
-        }
-      }
-    }
-
-    // Create new section card and add to new list
-    const card = document.createElement("entity-card");
-    card.sectionInit(section, "folder");
-    if (visible) {
-      this._folders.appendChild(card);
-    } else {
-      this._archivedFolders.appendChild(card);
-    }
-    card.addEventListener("visibilityChange", (evt) => {
-      this._sectionVisibilityEL(evt);
-    });
-    // Notifiy media section about section renames
-    card.addEventListener("renameSection", (evt) => {
-      this._mediaSection.dispatchEvent(
-        new CustomEvent("renameSection", { detail: evt.detail })
-      );
-    });
-    card.addEventListener("deleteSection", (evt) => {
-      this._mediaSection.dispatchEvent(
-        new CustomEvent("deleteSection", evt.detail)
-      );
-    });
-    card.addEventListener("click", () => {
-      const clearPage = true;
-      this._selectSection(section, section.project, clearPage);
-      for (const child of this._allSections()) {
-        child.active = false;
-      }
-      card.active = true;
-    });
-  }
 
   _allSections() {
     const folders = Array.from(this._folders.children);
@@ -746,10 +1523,13 @@ export class ProjectDetail extends TatorPage {
   }
 
   _init() {
-    this.showDimmer();
-    this.loading.showSpinner();
+
+    //this.showDimmer();
+    //this.loading.showSpinner();
+    //#TODO
+
     const projectId = this.getAttribute("project-id");
-    this.projectId = projectId;
+    this._projectId = projectId;
     this._settingsButton.setAttribute("href", `/${projectId}/project-settings`);
     this._activityNav.init(projectId);
 
@@ -805,6 +1585,7 @@ export class ProjectDetail extends TatorPage {
 
               this._cardAttributeLabels.init(projectId);
               this._sections = sections;
+              this._bookmarks = bookmarks;
 
               //
               // Set up attributes for bulk edit
@@ -903,6 +1684,7 @@ export class ProjectDetail extends TatorPage {
               if (!hasPermission(project.permission, "Full Control")) {
                 this._settingsButton.style.display = "none";
               }
+              this._project = project;
               this._algorithms = parsedAlgos;
               this._mediaSection.project = project;
               this._mediaSection.algorithms = this._algorithms;
@@ -914,99 +1696,17 @@ export class ProjectDetail extends TatorPage {
 
               let projectParams = null;
 
-              // Home folder
-              const home = document.createElement("entity-card");
-              home.sectionInit(null, false);
-              home.addEventListener("click", () => {
-                this._selectSection(null, projectId, true);
-                for (const child of this._allSections()) {
-                  child.active = false;
-                }
-                home.active = true;
-              });
-              this._folders.appendChild(home);
+              this.makeFolders(sections);
+              this.makeBookmarks(bookmarks);
+              this.displayPanel("library");
 
               // Model data & filter setup
               try {
                 this._modelData = new TatorData(projectId);
                 this._modelData.init().then(() => {
-                  // Sorts sections into Folder (archive/not), and Saved Search
-                  this._makeFolders(sections, projectId);
-
-                  // Put "Last visited" bookmark on top
-                  const first = "Last visited";
-                  bookmarks.sort((a, b) => {
-                    return a.name == first ? -1 : b.name == first ? 1 : 0;
-                  });
-                  for (const bookmark of bookmarks) {
-                    const card = document.createElement("entity-card");
-                    card.sectionInit(bookmark, "bookmark");
-                    this._bookmarks.appendChild(card);
-                  }
-
-                  // If there is a selected section click that otherwise
-                  const params = new URLSearchParams(
-                    document.location.search.substring(1)
-                  );
-                  if (params.has("section")) {
-                    const sectionId = Number(params.get("section"));
-                    for (const child of this._allSections()) {
-                      if (child._section) {
-                        if (child._section.id == sectionId) {
-                          for (const other of this._allSections()) {
-                            other.active = false;
-                          }
-                          child.active = true;
-                          try {
-                            this._selectSection(
-                              child._section,
-                              child._section.project
-                            ).then(() => {
-                              this.loading.hideSpinner();
-                              this.hideDimmer();
-                            });
-                          } catch (err) {
-                            console.error("Error getting section.", err);
-                            child.click();
-                            this.loading.hideSpinner();
-                            this.hideDimmer();
-                          }
-
-                          break;
-                        }
-                      }
-                    }
-                  } else {
-                    //
-                    try {
-                      home.active = true;
-                      this._selectSection(null, projectId).then(async () => {
-                        this.loading.hideSpinner();
-                        this.hideDimmer();
-                      });
-                    } catch (err) {
-                      console.error("Error getting home section.", err);
-                      home.click();
-                      this.loading.hideSpinner();
-                      this.hideDimmer();
-                    }
-                  }
-
-                  // Is there a search to apply?
-                  if (params.has("encoded_search")) {
-                    // console.log(params.get("search"));
-                    this._mediaSection.searchString =
-                      params.get("encoded_search");
-                    this._addSavedSearchButton.style.opacity = 1.0;
-                    this._addSavedSearchButton.style.cursor = "pointer";
-                  }
 
                   // used to setup filter options & string utils
                   this._mediaSection._modelData = this._modelData;
-                  this._mediaSection._sort.init(
-                    "Media",
-                    this._modelData._mediaTypes
-                  );
                   this._mediaSection._files.memberships =
                     this._modelData._memberships;
 
@@ -1038,6 +1738,13 @@ export class ProjectDetail extends TatorPage {
                     "filterParameters",
                     this._updateFilterResults.bind(this)
                   );
+
+                  //
+                  // Select the section
+                  //
+                  this.selectSection(); // #TODO Defaulting to All Media right now
+
+
                 });
               } catch (err) {
                 console.error("Could not initialize filter interface.", err);
@@ -1267,8 +1974,9 @@ export class ProjectDetail extends TatorPage {
     this._filterConditions = evt.detail.conditions;
     this._filterView.setFilterConditions(this._filterConditions);
     this._bulkEdit.checkForFilters(this._filterConditions);
-    this.showDimmer();
-    this.loading.showSpinner();
+
+    //this.showDimmer();
+    //this.loading.showSpinner(); #TODO
 
     try {
       const query = await this._mediaSection.updateFilterResults(
@@ -1298,7 +2006,7 @@ export class ProjectDetail extends TatorPage {
 
     if (list && list.length > 0) {
       this.deleteFileForm.setAttribute("media-id", list);
-      this.deleteFileForm.setAttribute("project-id", this.projectId);
+      this.deleteFileForm.setAttribute("project-id", this._projectId);
       this.deleteFileForm.setAttribute("media-name", "Selected files");
       this.deleteFileForm.setAttribute("media-id", String(list));
       this.deleteFileForm.setAttribute("is-open", "");
@@ -1312,79 +2020,845 @@ export class ProjectDetail extends TatorPage {
     }
   }
 
-  // Modal for this page, and handlers
+  /**
+   * Displays the background dimmer. Call when a modal is open.
+   */
   showDimmer() {
     return this.setAttribute("has-open-modal", "");
   }
 
+  /**
+   * Hides the background dimmer. Call when a modal is closed..
+   */
   hideDimmer() {
     return this.removeAttribute("has-open-modal");
   }
 
-  _makeFolders(sections, projectId) {
-    for (const section of sections) {
-      const hasSection = Boolean(section.tator_user_sections);
-      const hasSearch =
-        Boolean(section.lucene_search) ||
-        Boolean(section.media_bools) ||
-        Boolean(section.annotation_bools);
-      let sectionType;
-      if (hasSection && !hasSearch) {
-        sectionType = "folder";
-      } else {
-        sectionType = "savedSearch";
+  //
+  // Section data functions
+  //
+
+  async getSections() {
+    var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
+      method: "GET"
+    });
+    this._sections = await response.json();
+    this.makeFolders(this._sections);
+  }
+
+  /**
+   * @param {integer} id - Section ID to hide / set visible = false
+   * No checking is done to see if we're just patching the same value
+   */
+  async hideSection(id) {
+    var response = await fetchCredentials(`/rest/Section/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ visible: false }),
+    });
+    if (response.status == 200) {
+      return;
+    }
+    else {
+      this._modalError._error(
+        `Unable to hide section. Error: ${response.message}`,
+        "Error");
+    }
+  }
+
+  /**
+   * @param {integer} id - Section ID to restore / set visible = true
+   * No checking is done to see if we're just patching the same value.
+   */
+  async restoreSection(id) {
+    var response = await fetchCredentials(`/rest/Section/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ visible: true }),
+    });
+    if (response.status == 200) {
+      return;
+    }
+    else {
+      this._modalError._error(
+        `Unable to restore section. Error: ${response.message}`,
+        "Error");
+    }
+  }
+
+  //
+  // Folder tree functions
+  //
+
+  /**
+   * @param {Tator.Section} section
+   *    Section to get the path of (specifically the path key used in this UI)
+   * @return string
+   *    Path of the section in the UI
+   */
+  getSectionPath(section) {
+    var thisPath = section.path;
+    if (thisPath == null) {
+      thisPath = section.name;
+    }
+    thisPath = thisPath.replace(/[^A-Za-z0-9_.]/g, "_");
+    return thisPath;
+  }
+
+  /**
+   * @param {Tator.Section} section
+   *    Section to get the children of
+   * @returns {array}
+   *    Array of sections that are children of the given section
+   *    Only the children are obtained, not the grandchildren and so on
+   */
+  getChildSections(section) {
+
+    const thisPath = this.getSectionPath(section);
+    var that = this;
+    var children = [];
+
+    function traverseAlphabetically(node, parentPath) {
+
+      var appendedPath = parentPath;
+      if (appendedPath != "") {
+        appendedPath += ".";
       }
-      const card = document.createElement("entity-card");
-      // Notifiy media section about section renames
-      card.addEventListener("renameSection", (evt) => {
-        console.log("HEARD RENAME SECTION!");
-        const clearPage = true;
-        this._selectSection(
-          evt.detail.section,
-          evt.detail.section.project,
-          clearPage
-        );
-        for (const child of this._allSections()) {
-          child.active = false;
+
+      if (parentPath == thisPath) {
+        Object.keys(node).sort().forEach(subpath => {
+          var childSection = that._sectionPathMap[appendedPath + subpath];
+          children.push(childSection);
+          return;
+        });
+      }
+      else {
+        Object.keys(node).sort().forEach(subpath => {
+          traverseAlphabetically(node[subpath], appendedPath + subpath);
+        });
+      }
+    }
+
+    traverseAlphabetically(this._sectionTree, "");
+
+    return children;
+  }
+
+  /**
+   * @param {Tator.Section} section
+   *    Section to get the parent section of
+   * @returns {array}
+   *    Array of sections that are parents of the given section
+   */
+  getParentSections(section) {
+
+    var parentSections = [];
+
+    // Keep removing the "." until we're left with the root
+    var currentPath = this.getSectionPath(section);
+    while (currentPath != "") {
+      let parts = thisPath.split(".");
+      parts.pop();
+      let parentPath = parts.join(".");
+      var parentSection = this._sectionPathMap[parentPath];
+      parentSections.push(parentSection);
+    }
+
+    return parentSections;
+  }
+
+  /**
+   * Loops through the folders and sees if they are visible or not (either via expanding) or
+   * using the section visibility flag.
+   *
+   * If a folder/section visibility flag is false, but the this._viewAllHiddenFolders == true, then
+   *   it is visible to the user. Hidden otherwise.
+   * If a parent folder is hidden, then all of its children are hidden.
+   * If a parent folder is not expanded, then all of its children are hidden.
+   */
+  updateVisibility() {
+
+    var that = this;
+    function traverseAlphabetically(node, parentPath) {
+
+      var appendedPath = parentPath;
+      var parentExpanded = null;
+
+      if (appendedPath != "") {
+        var parentSection = that._sectionPathMap[parentPath];
+        for (const folder of that._folders.children) {
+          if (folder._section.id == parentSection.id) {
+            parentExpanded = folder._expanded;
+            break;
+          }
         }
-        card.active = true;
-        this._mediaSection.dispatchEvent(
-          new CustomEvent("renameSection", { detail: evt.detail })
-        );
+
+        appendedPath += ".";
+      }
+
+      Object.keys(node).sort().forEach(subpath => {
+
+        var childSectionListItem = null;
+        var childSection = that._sectionPathMap[appendedPath + subpath];
+        for (const folder of that._folders.children) {
+          if (folder._section.id == childSection.id) {
+            childSectionListItem = folder;
+          }
+        }
+
+        var section = that._sectionPathMap[appendedPath + subpath];
+        childSectionListItem.style.display = "block";
+        if (!section.visible) {
+          if (!that._viewAllHiddenFolders) {
+            childSectionListItem.collapse();
+            childSectionListItem.style.display = "none";
+          }
+        }
+        if (parentExpanded != null && parentExpanded == false) {
+          childSectionListItem.collapse();
+          childSectionListItem.style.display = "none";
+        }
+
+        traverseAlphabetically(node[subpath], appendedPath + subpath);
       });
-      card.addEventListener("deleteSection", (evt) => {
-        this._mediaSection.dispatchEvent(
-          new CustomEvent("deleteSection", evt.detail)
-        );
+    }
+    traverseAlphabetically(this._sectionTree, "");
+
+  }
+
+  /**
+   * @param {array} sections
+   *    Array of Tator.Section objects to make the folder listing
+   * @postcondition Section edit dialog is updated with the list of sections
+   */
+  makeFolders(sections) {
+
+    // Clear out the existing folder lists
+    while (this._folders.firstChild) {
+      this._folders.removeChild(this._folders.firstChild);
+    }
+    while (this._savedSearches.firstChild) {
+      this._savedSearches.removeChild(this._savedSearches.firstChild);
+    }
+
+    // Create the list of sections
+    // Need to organize the list of sections in the tree format
+    // Everything in the same subfolder is organized alphabetically
+    // It is possible that folders may not have a path (mostly legacy). In this case, use the name as the path.
+    this._sectionTree = {}; // Key is path, value is a dict of its children's paths
+    this._sectionPathMap = {}; // Key is section.path, value is section object
+    this._sectionIdPathMap = {}; // Key is section ID, value is path used in the UI
+    this._sectionIdParentIdMap = {}; // Key is section ID, value is parent section ID
+    for (const section of sections) {
+      var thisPath = section.path;
+      if (thisPath == null) {
+        thisPath = section.name;
+      }
+      thisPath = thisPath.replace(/[^A-Za-z0-9_.]/g, "_");
+      this._sectionPathMap[thisPath] = section;
+      this._sectionIdPathMap[section.id] = thisPath;
+
+      let currentNode = this._sectionTree;
+      let parts = thisPath.split(".");
+      parts.forEach(part => {
+        if (!currentNode[part]) {
+          currentNode[part] = {};
+        }
+        currentNode = currentNode[part];
+      });
+    }
+
+    for (const section of sections) {
+      var thisPath = this._sectionIdPathMap[section.id];
+      let parts = thisPath.split(".");
+      parts.pop();
+      let parentPath = parts.join(".");
+      this._sectionIdParentIdMap[section.id] = parentPath
+    }
+
+    const that = this;
+    function createSectionItem(path) {
+
+      const section = that._sectionPathMap[path];
+      const childSections = that.getChildSections(section);
+
+      const sectionItem = document.createElement("section-list-item");
+      sectionItem.init(section, childSections);
+
+      sectionItem.addEventListener("selected", (evt) => {
+        that.selectSection(evt.detail.id);
       });
 
-      card.sectionInit(section, sectionType);
-      if (sectionType == "folder") {
-        if (section.visible) {
-          this._folders.appendChild(card);
-        } else {
-          this._archivedFolders.appendChild(card);
+      sectionItem.addEventListener("collapse", () => {
+        that.updateVisibility();
+      });
+
+      sectionItem.addEventListener("expand", () => {
+        that.updateVisibility();
+      });
+
+      sectionItem.addEventListener("hideSection", async (evt) => {
+        that.showDimmer();
+
+        await that.hideSection(evt.detail.id);
+
+        // Get children of the section. If there are any, we need to hide all of them.
+        const children = that.getChildSections(section);
+        for (const childSection of children) {
+          await that.hideSection(childSection.id);
         }
-        card.addEventListener("visibilityChange", (evt) => {
-          this._sectionVisibilityEL(evt);
-        });
-      } else {
-        this._savedSearches.appendChild(card);
+
+        // Reset the UI
+        await that.getSections();
+        that.hideDimmer();
+      });
+
+      sectionItem.addEventListener("restoreSection", async (evt) => {
+        that.showDimmer();
+        await that.restoreSection(evt.detail.id);
+
+        // Get children of the section. If there are any, we need to restore all of them.
+        const children = that.getChildSections(section);
+        for (const childSection of children) {
+          await that.restoreSection(childSection.id);
+        }
+
+        await that.getSections();
+        that.selectSection(evt.detail.id);
+        that.hideDimmer();
+      });
+
+      sectionItem.addEventListener("editSection", (evt) => {
+        that.showDimmer();
+        that._folderDialog.setMode("editFolder", section.id);
+        that._folderDialog.setAttribute("is-open", "");
+      });
+
+      that._folders.appendChild(sectionItem);
+    }
+
+    function traverseAlphabetically(node, parentPath) {
+
+      var appendedPath = parentPath;
+      if (appendedPath != "") {
+        appendedPath += ".";
       }
-      card.addEventListener("click", () => {
-        const clearPage = true;
-        this._selectSection(section, projectId, clearPage);
-        for (const child of this._allSections()) {
-          child.active = false;
+
+      Object.keys(node).sort().forEach(subpath => {
+        createSectionItem(appendedPath + subpath);
+        traverseAlphabetically(node[subpath], appendedPath + subpath);
+      });
+    }
+    traverseAlphabetically(this._sectionTree, "");
+
+    this._folderDialog.init(sections);
+    this.updateVisibility();
+  }
+
+  /**
+   * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
+   */
+  selectSection(sectionId) {
+
+    // Make all folders inactive
+    const allFolders = [...this._folders.children]
+    for (const folder of allFolders) {
+      folder.setInactive();
+    }
+
+    this._allMediaButton.setInactive();
+
+    // Set the active folder and the mainSection portion of the page
+    if (sectionId == null) {
+      this._allMediaButton.setActive();
+      this._mediaSection.init(this._projectId, null);
+      this._activeSection = null;
+    }
+    else {
+      for (const folder of allFolders) {
+        const section = folder.getSection();
+        if (section.id == sectionId) {
+          folder.setActive();
+          this._mediaSection.init(this._projectId, section);
+          this._activeSection = section;
+          break;
         }
-        card.active = true;
+      }
+    }
+
+  }
+
+  /**
+   * @param {array} bookmarks
+   *    Array of Tator.Bookmark objects to make the bookmarks listing
+   */
+  makeBookmarks(bookmarks) {
+
+    // Clear out the existing bookmarks
+    while (this._bookmarkListItems.firstChild) {
+      this._bookmarkListItems.removeChild(this._bookmarkListItems.firstChild);
+    }
+
+    const first = "Last visited";
+    bookmarks.sort((a, b) => {
+      return a.name == first ? -1 : b.name == first ? 1 : 0;
+    });
+
+    for (const bookmark of bookmarks) {
+      const listItem = document.createElement("bookmark-list-item");
+      listItem.init(bookmark);
+      this._bookmarkListItems.appendChild(listItem);
+
+      listItem.addEventListener("renameBookmark", () => {
+        this._bookmarkEditDialog.init(bookmark);
+        this._bookmarkEditDialog.setAttribute("is-open", "");
+        this.setAttribute("has-open-modal", "");
+      });
+
+      listItem.addEventListener("deleteBookmark", () => {
+        this._bookmarkDeleteDialog.init(bookmark);
+        this._bookmarkDeleteDialog.setAttribute("is-open", "");
+        this.setAttribute("has-open-modal", "");
       });
     }
   }
 
-  reloadSections() {
-    // Get sections
-    const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
+  //
+  // Section Panel
+  //
+
+  /**
+   * @param {string} panel
+   *   "library" | "saved searches" | "bookmarks"
+   */
+  displayPanel(panel) {
+
+    if (panel == "library") {
+
+      if (this._panelLibrary.style.display == "block" && this._leftPanel.style.display == "flex") {
+        this._leftPanel.style.display = "none";
+      }
+      else {
+        this._leftPanel.style.display = "flex";
+      }
+
+      this._sidebarLibraryButton.classList.add("btn-purple50");
+      this._sidebarSavedSearchesButton.classList.remove("btn-purple50");
+      this._sidebarBookmarksButton.classList.remove("btn-purple50");
+
+      this._sidebarLibraryText.classList.add("text-white");
+      this._sidebarSavedSearchesText.classList.remove("text-white");
+      this._sidebarBookmarksText.classList.remove("text-white");
+
+      this._sidebarLibraryText.classList.remove("text-gray");
+      this._sidebarSavedSearchesText.classList.add("text-gray");
+      this._sidebarBookmarksText.classList.add("text-gray");
+
+      this._panelLibrary.style.display = "block";
+      this._panelSavedSearches.style.display = "none";
+      this._panelBookmarks.style.display = "none";
+    }
+    else if (panel == "saved searches") {
+
+      if (this._panelSavedSearches.style.display == "block" && this._leftPanel.style.display == "flex") {
+        this._leftPanel.style.display = "none";
+      }
+      else {
+        this._leftPanel.style.display = "flex";
+      }
+
+      this._sidebarLibraryButton.classList.remove("btn-purple50");
+      this._sidebarSavedSearchesButton.classList.add("btn-purple50");
+      this._sidebarBookmarksButton.classList.remove("btn-purple50");
+
+      this._sidebarLibraryText.classList.remove("text-white");
+      this._sidebarSavedSearchesText.classList.add("text-white");
+      this._sidebarBookmarksText.classList.remove("text-white");
+
+      this._sidebarLibraryText.classList.add("text-gray");
+      this._sidebarSavedSearchesText.classList.remove("text-gray");
+      this._sidebarBookmarksText.classList.add("text-gray");
+
+      this._panelLibrary.style.display = "none";
+      this._panelSavedSearches.style.display = "block";
+      this._panelBookmarks.style.display = "none";
+    }
+    else if (panel == "bookmarks") {
+
+      if (this._panelBookmarks.style.display == "block" && this._leftPanel.style.display == "flex") {
+        this._leftPanel.style.display = "none";
+      }
+      else {
+        this._leftPanel.style.display = "flex";
+      }
+
+      this._sidebarLibraryButton.classList.remove("btn-purple50");
+      this._sidebarSavedSearchesButton.classList.remove("btn-purple50");
+      this._sidebarBookmarksButton.classList.add("btn-purple50");
+
+      this._sidebarLibraryText.classList.remove("text-white");
+      this._sidebarSavedSearchesText.classList.remove("text-white");
+      this._sidebarBookmarksText.classList.add("text-white");
+
+      this._sidebarLibraryText.classList.add("text-gray");
+      this._sidebarSavedSearchesText.classList.add("text-gray");
+      this._sidebarBookmarksText.classList.remove("text-gray");
+
+      this._panelLibrary.style.display = "none";
+      this._panelSavedSearches.style.display = "none";
+      this._panelBookmarks.style.display = "block";
+    }
+  }
+
+  /**
+   * Setup the left side navigation bar
+   * Execute only at initialization.
+   */
+  createSidebarNav() {
+
+    var sidebarDiv = document.createElement("div");
+    sidebarDiv.setAttribute("class", "sidebar d-flex flex-items-center flex-column");
+    this.mainWrapper.appendChild(sidebarDiv);
+
+    this._sidebarLibraryButton = document.createElement("button");
+    this._sidebarLibraryButton.setAttribute("class", "mt-2 btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button sidebar-button tooltip-right")
+    this._sidebarLibraryButton.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 4h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M17 17v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2" />
+      </svg>
+    `;
+    sidebarDiv.appendChild(this._sidebarLibraryButton);
+
+    this._sidebarLibraryText = document.createElement("div");
+    this._sidebarLibraryText.setAttribute("class", "f3 text-gray pb-2 pt-1 text-center mb-2 clickable");
+    this._sidebarLibraryText.textContent = "Library";
+    sidebarDiv.appendChild(this._sidebarLibraryText);
+
+    this._sidebarSavedSearchesButton = document.createElement("button");
+    this._sidebarSavedSearchesButton.setAttribute("class", "btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button sidebar-button tooltip-right")
+    this._sidebarSavedSearchesButton.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />
+      </svg>
+    `;
+    sidebarDiv.appendChild(this._sidebarSavedSearchesButton);
+
+    this._sidebarSavedSearchesText = document.createElement("div");
+    this._sidebarSavedSearchesText.setAttribute("class", "f3 text-gray pb-2 pt-1 text-center mb-2 clickable");
+    this._sidebarSavedSearchesText.textContent = "Searches";
+    sidebarDiv.appendChild(this._sidebarSavedSearchesText);
+
+    this._sidebarBookmarksButton = document.createElement("button");
+    this._sidebarBookmarksButton.setAttribute("class", "btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button sidebar-button tooltip-right")
+    this._sidebarBookmarksButton.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 10v11l-5 -3l-5 3v-11a3 3 0 0 1 3 -3h4a3 3 0 0 1 3 3z" /><path d="M11 3h5a3 3 0 0 1 3 3v11" />
+      </svg>
+    `;
+    sidebarDiv.appendChild(this._sidebarBookmarksButton);
+
+    this._sidebarBookmarksText = document.createElement("div");
+    this._sidebarBookmarksText.setAttribute("class", "f3 text-gray pb-2 pt-1 text-center mb-2 clickable");
+    this._sidebarBookmarksText.textContent = "Bookmarks";
+    sidebarDiv.appendChild(this._sidebarBookmarksText);
+
+    this._sidebarLibraryButton.addEventListener("click", () => {
+      this._sidebarLibraryButton.blur();
+      this.displayPanel("library");
+    });
+    this._sidebarLibraryText.addEventListener("click", () => {
+      this._sidebarLibraryText.blur();
+      this.displayPanel("library");
+    });
+    this._sidebarSavedSearchesButton.addEventListener("click", () => {
+      this._sidebarSavedSearchesButton.blur();
+      this.displayPanel("saved searches");
+    });
+    this._sidebarSavedSearchesText.addEventListener("click", () => {
+      this._sidebarSavedSearchesText.blur();
+      this.displayPanel("saved searches");
+    });
+    this._sidebarBookmarksButton.addEventListener("click", () => {
+      this._sidebarBookmarksButton.blur();
+      this.displayPanel("bookmarks");
+    });
+    this._sidebarBookmarksText.addEventListener("click", () => {
+      this._sidebarBookmarksText.blur();
+      this.displayPanel("bookmarks");
+    });
+  }
+
+  /**
+   * Setup the left side panel for the library components
+   * Execute only at initialization.
+   */
+  setupLibraryPanel() {
+
+    this._viewAllHiddenFolders = false;
+
+    const libraryHeader = document.createElement("div");
+    libraryHeader.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center pt-2 pb-3 ml-2"
+    );
+    this._panelLibrary.appendChild(libraryHeader);
+
+    const libraryText = document.createElement("div");
+    libraryText.setAttribute("class", "h2 mb-2");
+    libraryText.textContent = "Library";
+    libraryHeader.appendChild(libraryText);
+
+    this._allMediaButton = document.createElement("all-media-item");
+    this._panelLibrary.appendChild(this._allMediaButton);
+
+    this._allMediaButton.addEventListener("selected", (evt) => {
+      this.selectSection(evt.detail.id);
+    })
+
+    const folderHeader = document.createElement("div");
+    folderHeader.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center py-2 mt-3"
+    );
+    this._panelLibrary.appendChild(folderHeader);
+
+    const folderText = document.createElement("h2");
+    folderText.setAttribute("class", "h3 ml-2");
+    folderText.textContent = "Folders";
+    folderHeader.appendChild(folderText);
+
+    const folderButtons = document.createElement("div");
+    folderButtons.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
+    folderHeader.appendChild(folderButtons);
+
+    const viewHiddenFolders = document.createElement("div");
+    viewHiddenFolders.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    viewHiddenFolders.setAttribute("tooltip", "View Hidden Folders");
+    viewHiddenFolders.style.minHeight = "28px";
+    folderButtons.appendChild(viewHiddenFolders);
+    viewHiddenFolders.innerHTML = `
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+   `;
+
+    const collapseFolders = document.createElement("div");
+    collapseFolders.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    collapseFolders.setAttribute("tooltip", "Collapse All Folders");
+    collapseFolders.style.minHeight = "28px";
+    folderButtons.appendChild(collapseFolders);
+    collapseFolders.innerHTML = `
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 7.26a2.005 2.005 0 0 0 -1.012 1.737v10c0 1.1 .9 2 2 2h10c.75 0 1.158 -.385 1.5 -1" /><path d="M11 10h6" />
+    </svg>
+    `;
+
+    const expandFolders = document.createElement("div");
+    expandFolders.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    expandFolders.setAttribute("tooltip", "Expand All Folders");
+    expandFolders.style.minHeight = "28px";
+    folderButtons.appendChild(expandFolders);
+    expandFolders.innerHTML = `
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 7.26a2.005 2.005 0 0 0 -1.012 1.737v10c0 1.1 .9 2 2 2h10c.75 0 1.158 -.385 1.5 -1" /><path d="M11 10h6" /><path d="M14 7v6" />
+    </svg>
+    `;
+
+    const addFolders = document.createElement("div");
+    addFolders.setAttribute("class", "d-flex d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    addFolders.setAttribute("tooltip", "Add Folder");
+    addFolders.style.minHeight = "28px";
+    folderButtons.appendChild(addFolders);
+    addFolders.innerHTML = `
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" />
+    </svg>
+    `;
+
+    this._folders = document.createElement("ul");
+    this._folders.setAttribute("class", "sections");
+    this._panelLibrary.appendChild(this._folders);
+
+    viewHiddenFolders.addEventListener("click", () => {
+      viewHiddenFolders.blur();
+      this._viewAllHiddenFolders = !this._viewAllHiddenFolders;
+
+      if (this._viewAllHiddenFolders) {
+        viewHiddenFolders.setAttribute("tooltip", "Stash Hidden Folders");
+        viewHiddenFolders.innerHTML = `
+        <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+        `;
+      }
+      else {
+        viewHiddenFolders.setAttribute("tooltip", "View Hidden Folders");
+        viewHiddenFolders.innerHTML = `
+        <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+       `;
+      }
+
+      this.updateVisibility();
+    });
+
+    collapseFolders.addEventListener("click", () => {
+      collapseFolders.blur();
+      const allFolders = [...this._folders.children]
+      for (const folder of allFolders) {
+        folder.collapse();
+      }
+      this.updateVisibility();
+    });
+
+    expandFolders.addEventListener("click", () => {
+      expandFolders.blur();
+      const allFolders = [...this._folders.children]
+      for (const folder of allFolders) {
+        folder.expand();
+      }
+      this.updateVisibility();
+    });
+
+    addFolders.addEventListener("click", () => {
+      addFolders.blur();
+      this._folderDialog.setMode("newFolder", this._selectedSection);
+      this._folderDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+  }
+
+  /**
+   * Setup the left side panel for the saved searches components
+   * Execute only at initialization.
+   */
+  setupSearchesPanel() {
+
+    const savedSearchesHeader = document.createElement("div");
+    savedSearchesHeader.setAttribute(
+      "class",
+      "d-flex flex-justify-between flex-items-center pt-2 pb-3 ml-2"
+    );
+    this._panelSavedSearches.appendChild(savedSearchesHeader);
+
+    const savedSearchText = document.createElement("div");
+    savedSearchText.setAttribute("class", "h2 mb-2");
+    savedSearchText.textContent = "Saved Searches";
+    savedSearchesHeader.appendChild(savedSearchText);
+
+    const headerButtons = document.createElement("div");
+    headerButtons.setAttribute(
+      "class",
+      "f3 btn-clear text-gray hover-text-white"
+    );
+    savedSearchesHeader.appendChild(headerButtons);
+
+    this._addSavedSearchButton = document.createElement("div");
+    this._addSavedSearchButton.setAttribute("class", "d-flex d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-clear btn-charcoal-medium text-gray");
+    this._addSavedSearchButton.setAttribute("tooltip", "Save Search");
+    this._addSavedSearchButton.style.maxHeight = "28px";
+    this._addSavedSearchButton.style.opacity = 0.5;
+    this._addSavedSearchButton.style.cursor = "not-allowed";
+    headerButtons.appendChild(this._addSavedSearchButton);
+    this._addSavedSearchButton.innerHTML = `
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" />
+    </svg>
+    `;
+
+    this._savedSearches = document.createElement("ul");
+    this._savedSearches.setAttribute("class", "sections");
+    this._panelSavedSearches.appendChild(this._savedSearches);
+  }
+
+  /**
+   * Setup the left side panel for the bookmarks components
+   * Execute only at initialization
+   */
+  setupBookmarksPanel() {
+
+    const bookmarkHeader = document.createElement("div");
+    bookmarkHeader.setAttribute(
+      "class",
+      "d-flex pt-2 pb-2 ml-2 flex-column"
+    );
+    this._panelBookmarks.appendChild(bookmarkHeader);
+
+    const bookmarkHeaderDiv = document.createElement("div");
+    bookmarkHeaderDiv.setAttribute("class", "d-flex flex-justify-between flex-items-center mb-2");
+    bookmarkHeader.appendChild(bookmarkHeaderDiv);
+
+    const bookmarkText = document.createElement("div");
+    bookmarkText.setAttribute("class", "h2");
+    bookmarkText.textContent = "Bookmarks";
+    bookmarkHeaderDiv.appendChild(bookmarkText);
+
+    const bookmarkHelpIcon = document.createElement("div");
+    bookmarkHelpIcon.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    bookmarkHelpIcon.setAttribute("tooltip", "Bookmarks Help");
+    bookmarkHelpIcon.style.minHeight = "28px";
+    bookmarkHelpIcon.style.maxWidth = "28px";
+    bookmarkHeaderDiv.appendChild(bookmarkHelpIcon);
+    bookmarkHelpIcon.innerHTML = `
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+   `;
+
+    const bookmarkHelpText = document.createElement("div");
+    bookmarkHelpText.setAttribute("class", "f2 py-2 text-dark-gray");
+    bookmarkHelpText.textContent = "Click on a bookmark to view the media at the specific frame and version. Bookmarks are created within the annotator and are specific to the user.";
+    bookmarkHeader.appendChild(bookmarkHelpText);
+    bookmarkHelpText.style.display = "none";
+
+    bookmarkHelpIcon.addEventListener("click", () =>{
+      bookmarkHelpIcon.blur();
+      if (bookmarkHelpText.style.display == "none") {
+        bookmarkHelpText.style.display = "block";
+      }
+      else {
+        bookmarkHelpText.style.display = "none";
+      }
+    });
+
+    this._bookmarkListItems = document.createElement("ul");
+    this._bookmarkListItems.setAttribute("class", "sections");
+    this._panelBookmarks.appendChild(this._bookmarkListItems);
+
+  }
+
+  /**
+   * Create the left panels for the:
+   * - Library
+   * - Saved searches
+   * - Bookmarks
+   *
+   * Execute only at initialization
+   */
+  createLeftPanel() {
+
+    this._leftPanel = document.createElement("div");
+    this._leftPanel.setAttribute("class", "d-flex flex-grow flex-column");
+    this._leftPanel.style.minWidth = "400px";
+    this._leftPanel.style.maxWidth = "400px";
+    this._leftPanel.style.backgroundColor = "#0d1320";
+    this.mainWrapper.appendChild(this._leftPanel);
+
+    this._panelLibrary = document.createElement("section");
+    this._panelLibrary.setAttribute("class", "py-3 mr-3 ml-3 text-gray flex-grow");
+    this._leftPanel.appendChild(this._panelLibrary);
+
+    this._panelSavedSearches = document.createElement("section");
+    this._panelSavedSearches.setAttribute("class", "py-3 mr-3 ml-3 text-gray flex-grow");
+    this._leftPanel.appendChild(this._panelSavedSearches);
+
+    this._panelBookmarks = document.createElement("section");
+    this._panelBookmarks.setAttribute("class", "py-3 mr-3 ml-3 text-gray flex-grow");
+    this._leftPanel.appendChild(this._panelBookmarks);
+
+    this.setupLibraryPanel();
+    this.setupSearchesPanel();
+    this.setupBookmarksPanel();
+
   }
 }
 

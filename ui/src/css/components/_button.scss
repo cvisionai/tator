@@ -81,6 +81,14 @@
   }
 }
 
+.btn-charcoal-medium {
+  background-color: $color-charcoal--medium;
+  &:hover,
+  &:focus {
+    color: $color-charcoal--light;
+  }
+}
+
 .btn-outline {
   background-color: transparent;
   border: 1px solid $color-gray--dark50;
