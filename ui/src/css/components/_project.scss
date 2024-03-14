@@ -279,3 +279,14 @@
   -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
 }
+
+.sidebar {
+  background-color: #151e33; //#0f1624;
+  padding: 8px;
+  max-width: 64px;
+}
+
+.sidebar-button {
+  width: 40px;
+  height: 40px;
+}

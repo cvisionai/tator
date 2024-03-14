@@ -1,7 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
 import { downloadFileList } from "../util/download-file-list.js";
@@ -23,12 +22,12 @@ export class MediaSection extends TatorElement {
     section.appendChild(header);
 
     this._name = document.createElement("h2");
-    this._name.setAttribute("class", "h3 px-2 py-2"); //not a typo
+    this._name.setAttribute("class", "h3 py-2"); //not a typo
     header.appendChild(this._name);
 
     this._nameText = document.createTextNode("");
     this._nameIdText = document.createElement("span");
-    this._nameIdText.setAttribute("class", "text-dark-gray px-1");
+    this._nameIdText.setAttribute("class", "text-dark-gray50 px-1 f1");
     this._name.appendChild(this._nameText);
     this._name.appendChild(this._nameIdText);
 
@@ -40,7 +39,7 @@ export class MediaSection extends TatorElement {
     numFiles.appendChild(this._numFiles);
 
     const pagePosition = document.createElement("div");
-    pagePosition.setAttribute("class", "py-3 f1 text-normal text-gray");
+    pagePosition.setAttribute("class", "py-2 f1 text-normal text-gray");
     this._name.appendChild(pagePosition);
 
     this._pagePosition = document.createTextNode("");
@@ -260,11 +259,18 @@ export class MediaSection extends TatorElement {
       };
       this._paginator_top.init(numFiles, this._paginationState);
       this._paginator_bottom.init(numFiles, this._paginationState);
-      this._pagePosition.nodeValue = `Page ${
-        typeof this._paginationState.page == "undefined"
-          ? 1
-          : this._paginationState.page
-      } of ${this._paginator_top._numPages}`;
+
+      if (this._paginator_top._numPages == 0) {
+        this._pagePosition.nodeValue = ``;
+      }
+      else {
+        this._pagePosition.nodeValue = `Page ${
+          typeof this._paginationState.page == "undefined"
+            ? 1
+            : this._paginationState.page
+        } of ${this._paginator_top._numPages}`;
+
+      }
     }
   }
 
