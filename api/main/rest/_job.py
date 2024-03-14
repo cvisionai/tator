@@ -27,6 +27,10 @@ def workflow_to_job(workflow):
     job["gid"] = workflow["metadata"]["labels"]["gid"]
     job["project"] = workflow["metadata"]["labels"]["project"]
     job["user"] = workflow["metadata"]["labels"]["user"]
+    media_ids_str = workflow['metadata']['annotations'].get('media_ids',"")
+    media_ids  =  [int(x)  for x in  media_ids_str.split(',')]
+    if media_ids:
+        job["media_ids"] = media_ids
     if "status" in workflow:
         status = workflow["status"]
         job["status"] = status["phase"]

@@ -128,5 +128,12 @@ job = {
             "nullable": True,
             "format": "date-time",
         },
+        "media_ids": {
+            "type": "array",
+            "items": {
+                "description": "ID of child node.",
+                "type": "integer",
+            },
+        },
     },
 }
