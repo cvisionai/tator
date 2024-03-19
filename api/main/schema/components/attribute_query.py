@@ -13,9 +13,18 @@ table_of_builtins = """
     | archive_state     | The current archive state of the media |               |        |   X    |        |       |
     | x, y, u, or v     | Geometric coordinates                  |               |        |        |        |       |
     | width or height   | Geometric sizes                        |               |        |        |        |       |
-    | incident          | Available when doing a related search  |               |        |   X    |        |       |   
 """
 
+table_of_specials = """
+    | Name              | Description                            | Localizations | States | Medias | Leaves | Files |
+    | incident          | Available when doing a related search  |               |        |   X    |        |       |
+    | coincident_states | Allows for searching for returning     |      X        |   X    |        |        |       |
+    |                   | metadata that is coincident with       |      X        |   X    |        |        |       |
+    |                   |  state(s) (same frame/media)           |      X        |   X    |        |        |       |
+    | coincident_localizations | Allows for searching for  on    |      X        |   X    |        |        |       |
+    |                   |  metadata that is coincident with a    |      X        |   X    |        |        |       |
+    |                   |  localization(s) (same frame/media)    |      X        |   X    |        |        |       |
+"""
 attribute_filter_schema = {
     "type": "object",
     "description": "Object to query on attribute",
@@ -37,7 +46,9 @@ attribute_filter_schema = {
               
               '$' must precede these names in search attempts. E.g. `created_by` is supplied as `$created_by`.
               """
-            + table_of_builtins,
+            + table_of_builtins
+            + "The following special columns are available for searching on related data. Also must be preceded with a '$'."
+            + table_of_specials,
         },
         "operation": {
             "type": "string",
