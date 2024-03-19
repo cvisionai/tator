@@ -1,7 +1,7 @@
 boto3==1.28.32
 cryptography==42.0.4
 datadog==0.43.0
-django==3.2.24
+django==3.2.25
 django_admin_json_editor==0.2.3
 django-cognito-jwt==0.0.4
 django-enumfields==2.1.1
