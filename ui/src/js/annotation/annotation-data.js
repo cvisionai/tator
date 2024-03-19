@@ -287,7 +287,7 @@ export class AnnotationData extends HTMLElement {
 
     let url = new URL(
       this._updateUrls.get(typeId),
-      location.protocol + "//" + location.host
+      window.BACKEND ? window.BACKEND : window.location.origin
     );
     let searchParams = new URLSearchParams(url.search.slice(1));
     if (query) {

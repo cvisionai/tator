@@ -10,6 +10,12 @@ const fetch = require('fetch-retry')(originalFetch);
 const dns = require('dns');
 const yargs = require('yargs/yargs');
 
+const loginPath = "/auth/realms/tator/protocol/openid-connect/auth";
+const loginQuery = "scope=openid&client_id=tator&response_type=code";
+const logoutPath = "/auth/realms/tator/protocol/openid-connect/logout";
+const redirect_uri_default = `http://localhost:3000/callback`;
+const redirect_uri_logout = `http://localhost:3000/login`; 
+
 dns.setServers([
   '8.8.8.8',
   '1.1.1.1',
@@ -24,6 +30,8 @@ const argv = yargs(process.argv.slice(2))
   .alias('e', 'email_enabled')
   .alias('o', 'okta_enabled')
   .alias('k', 'keycloak_enabled')
+  .alias("r", "redirect_uri")
+  .alias("l", "redirect_uri_logout")
   .boolean('e')
   .boolean('o')
   .boolean('k')
@@ -33,10 +41,17 @@ const argv = yargs(process.argv.slice(2))
   .describe('e', 'Include this argument if email is enabled in the backend.')
   .describe('o', 'Include this argument if Okta is enabled for authentication.')
   .describe('k', 'Include this argument if Keycloak is enabled for authentication.')
+  .describe(
+    "r",
+    `Redirect URI for auth code callback. Default is ${redirect_uri_default}.`
+  )
+  .describe("l", `Redirect URI for logout. Default is ${redirect_uri_logout}.`)
   .default('h', 'localhost')
   .default('p', 3000)
   .default('b', '')
   .default('k', false)
+  .default("r", redirect_uri_default)
+  .default("l", redirect_uri_logout)
   .argv
 
 const params = { 
@@ -60,11 +75,16 @@ app.use(cookieParser());
 if (params.backend) {
   let opts = {};
   if (params.keycloak_enabled) {
-    opts.proxyReqPathResolver = function(req) {
-      return `/auth/realms/tator/protocol/openid-connect/auth?scope=openid&client_id=tator&response_type=code&redirect_uri=http://localhost:${port}/callback`;
-    };
+    app.use("/accounts/login", (req, res) => {
+      res.redirect(
+        `${argv.backend}${loginPath}?${loginQuery}&redirect_uri=${argv.redirect_uri}`
+      );
+    });
+
+    app.get("/account/logout", (req, res) => {
+      res.render("logout/index", params);
+    });
   }
-  app.use('/accounts/login', proxy(params.backend, opts));
 }
 
 app.get('/', (req, res) => {

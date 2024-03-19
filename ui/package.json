@@ -8,7 +8,8 @@
     "serve": "nodemon -e js,html,json server/server.js",
     "watch": "python3 make_index_files.py && webpack --config webpack.dev.js --watch",
     "buildDev": "python3 make_index_files.py && webpack --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js"
+    "build": "webpack --config webpack.prod.js",
+    "codegen": "cd ../scripts/packages/tator-js && make all && cd ../../.. && ln -sf scripts/packages/tator-js/pkg/node_modules node_modules"
   },
   "keywords": [],
   "author": "CVision AI, Inc.",
