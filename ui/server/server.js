@@ -10,11 +10,16 @@ const fetch = require('fetch-retry')(originalFetch);
 const dns = require('dns');
 const yargs = require('yargs/yargs');
 
+function addHeaders(res, path, stat) {
+  res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  return res;
+}
+
 const loginPath = "/auth/realms/tator/protocol/openid-connect/auth";
 const loginQuery = "scope=openid&client_id=tator&response_type=code";
 const logoutPath = "/auth/realms/tator/protocol/openid-connect/logout";
 const redirect_uri_default = `http://localhost:3000/callback`;
-const redirect_uri_logout = `http://localhost:3000/login`; 
 
 dns.setServers([
   '8.8.8.8',
@@ -31,7 +36,6 @@ const argv = yargs(process.argv.slice(2))
   .alias('o', 'okta_enabled')
   .alias('k', 'keycloak_enabled')
   .alias("r", "redirect_uri")
-  .alias("l", "redirect_uri_logout")
   .boolean('e')
   .boolean('o')
   .boolean('k')
@@ -45,13 +49,11 @@ const argv = yargs(process.argv.slice(2))
     "r",
     `Redirect URI for auth code callback. Default is ${redirect_uri_default}.`
   )
-  .describe("l", `Redirect URI for logout. Default is ${redirect_uri_logout}.`)
   .default('h', 'localhost')
   .default('p', 3000)
   .default('b', '')
   .default('k', false)
   .default("r", redirect_uri_default)
-  .default("l", redirect_uri_logout)
   .argv
 
 const params = { 
@@ -66,8 +68,17 @@ nunjucks.configure('server/views', {
   autoescape: true
 });
 app.set('view engine', 'html');
-app.use('/static', express.static('./dist'));
-app.use('/static', express.static('./server/static'));
+app.use("/static", express.static("./dist", { setHeaders: addHeaders }));
+app.use(
+  "/static",
+  express.static("./server/static", { setHeaders: addHeaders })
+);
+app.use(
+  "/static",
+  express.static("../scripts/packages/tator-js/src/annotator", {
+    setHeaders: addHeaders,
+  })
+);
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
@@ -79,10 +90,6 @@ if (params.backend) {
       res.redirect(
         `${argv.backend}${loginPath}?${loginQuery}&redirect_uri=${argv.redirect_uri}`
       );
-    });
-
-    app.get("/accounts/logout", (req, res) => {
-      res.render("logout", params);
     });
   }
 }
@@ -141,6 +148,7 @@ app.get('/:projectId/project-settings', (req, res) => {
 
 app.get('/:projectId/annotation/:id', (req, res) => {
   res.render('annotation', params);
+  res = addHeaders(res);
 });
 
 app.get('/token', (req, res) => {
