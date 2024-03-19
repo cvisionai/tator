@@ -81,8 +81,8 @@ if (params.backend) {
       );
     });
 
-    app.get("/account/logout", (req, res) => {
-      res.render("logout/index", params);
+    app.get("/accounts/logout", (req, res) => {
+      res.render("logout", params);
     });
   }
 }
