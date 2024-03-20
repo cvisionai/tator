@@ -7,7 +7,7 @@ services:
   ###################################################################
 
   nginx:
-    image: nginx:1.23.3
+    image: nginx:1.25.4
     container_name: nginx
     depends_on:
       - gunicorn
@@ -39,7 +39,7 @@ services:
       - ${DATA_DIR}/objects:/data
 
   redis:
-    image: redis:6
+    image: redis:7
     container_name: redis
     restart: always
     healthcheck:
