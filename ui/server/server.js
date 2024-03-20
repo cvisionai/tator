@@ -10,12 +10,6 @@ const fetch = require('fetch-retry')(originalFetch);
 const dns = require('dns');
 const yargs = require('yargs/yargs');
 
-function addHeaders(res, path, stat) {
-  res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  return res;
-}
-
 const loginPath = "/auth/realms/tator/protocol/openid-connect/auth";
 const loginQuery = "scope=openid&client_id=tator&response_type=code";
 const logoutPath = "/auth/realms/tator/protocol/openid-connect/logout";
@@ -54,7 +48,15 @@ const argv = yargs(process.argv.slice(2))
   .default('b', '')
   .default('k', false)
   .default("r", redirect_uri_default)
-  .argv
+  .argv;
+
+function addHeaders(res, path, stat) {
+  if (argv.keycloak_enabled) {
+    res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  }
+  return res;
+}
 
 const params = { 
   backend: argv.backend,
