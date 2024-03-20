@@ -2255,7 +2255,35 @@ class VideoTestCase(
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
 
         response = self.client.put(
+            f"/rest/Localizations/{self.project.pk}",
+            {
+                "object_search": {
+                    "attribute": "$coincident_states",
+                    "operation": "search",
+                    "value": {"attribute": "$id", "operation": "in", "value": [state.id]},
+                }
+            },
+            format="json",
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
+        self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
+
+        response = self.client.put(
             f"/rest/Localizations/{self.project.pk}", {"frame_state_ids": [state_2.id]}, format="json"
+        )
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.put(
+            f"/rest/Localizations/{self.project.pk}",
+            {
+                "object_search": {
+                    "attribute": "$coincident_states",
+                    "operation": "search",
+                    "value": {"attribute": "$id", "operation": "in", "value": [state_2.id]},
+                }
+            },
+            format="json",
         )
         self.assertEqual(len(response.data), 0)
 
