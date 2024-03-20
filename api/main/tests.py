@@ -2119,7 +2119,6 @@ class VideoTestCase(
         response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
         assert response.data[0].get("incident", None) == None
 
-        print("About to create a bunch of boxes")
         # Make a whole bunch of boxes to make sure indices get utilized
         boxes = []
         foo_val = {
@@ -2307,6 +2306,8 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
+            matches = len(response.data)
+            self.assertEqual(matches, 2)
 
             first_hit = response.data[0]
             second_hit = response.data[1]
@@ -2326,6 +2327,21 @@ class VideoTestCase(
             self.assertEqual(second_hit["id"], self.entities[0].pk)
             self.assertEqual(first_hit.get("incident", None), 1)
             self.assertEqual(first_hit["id"], self.entities[1].pk)
+
+            # Test the same thing with related_search in  object_search
+            response = self.client.put(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "object_search": {
+                        "attribute": "$related_localizations",
+                        "operation": "search",
+                        "value": {"attribute": key, "operation": "eq", "value": value},
+                    }
+                },
+                format="json",
+            )
+            matches = len(response.data)
+            self.assertEqual(matches, 2)
 
     def test_author_change(self):
         test_video = create_test_video(self.user, f"asdf_0", self.entity_type, self.project)

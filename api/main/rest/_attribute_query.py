@@ -337,6 +337,8 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 raise ValueError(
                     f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
                 )
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
             #  Find matching states  from the
             proj_states = State.objects.filter(project=project)
             proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
@@ -353,6 +355,8 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 raise ValueError(
                     f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
                 )
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
             proj_locals = Localization.objects.filter(project=project)
             proj_locals = get_attribute_psql_queryset_from_query_obj(proj_locals, value)
 
@@ -363,6 +367,36 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             query = Q(media_frame__in=proj_locals.values("media_frame"))
 
             all_casts.add("$coincident")
+        elif attr_name == "$related_localizations":
+            if is_media is False:
+                raise ValueError(f"'{attr_name}' not valid on metadata!")
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            proj_locals = Localization.objects.filter(project=project)
+            proj_locals = get_attribute_psql_queryset_from_query_obj(proj_locals, value)
+            query = Q(pk__in=proj_locals.values("media").distinct())
+        elif attr_name == "$related_states":
+            if is_media is False:
+                raise ValueError(f"'{attr_name}' not valid on metadata!")
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            proj_states = State.objects.filter(project=project)
+            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+            query = Q(pk__in=proj_states.values("media").distinct())
+        elif attr_name == "$related_media":
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            proj_media = Media.objects.filter(project=project)
+            proj_media = get_attribute_psql_queryset_from_query_obj(proj_media, value)
+            query = Q(media__in=proj_media.values("id").distinct())
         else:
             if attr_name.startswith("$"):
                 db_lookup = attr_name[1:]
