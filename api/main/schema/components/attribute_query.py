@@ -141,8 +141,35 @@ table_of_specials = """
         <th>Files</th>
     </tr>
     <tr>
+        <td>related_localizations</td>
+        <td>Returns media that contain localizations that match this subquery</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>related_states</td>
+        <td>Returns media that contain states that match this subquery</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>related_media</td>
+        <td>Returns metadata that is associated with media matching this subquery</td>
+        <td>X</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
         <td>coincident_states</td>
-        <td>Allows for searching for returning metadata that is coincident with state(s) (same frame/media)</td>
+        <td>Returns metadata that is coincident with state(s) (same frame/media)</td>
         <td>X</td>
         <td>X</td>
         <td></td>
@@ -151,7 +178,7 @@ table_of_specials = """
     </tr>
     <tr>
         <td>coincident_localizations</td>
-        <td>Allows for searching for on metadata that is coincident with a localization(s) (same frame/media)</td>
+        <td>Returns metadata that is coincident with a localization(s) (same frame/media)</td>
         <td>X</td>
         <td>X</td>
         <td></td>
