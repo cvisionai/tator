@@ -72,6 +72,8 @@ attribute_filter_schema = {
                 "date_lte",
                 "date_range",
                 "distance_lte",
+                # special operation
+                "search",  # only valid operation for $coincident searches
             ],
         },
         "inverse": {
