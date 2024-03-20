@@ -157,7 +157,7 @@ jobs:
           ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr python3-pip ffmpeg wget unzip';
           ssh lightsail 'pip3 install pytest pytest-xdist pandas playwright==1.37.0 pytest-playwright==0.4.2 pytesseract==0.3.9 opencv-python pytest-rerunfailures==10.2';
           ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && playwright install';
-          ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
+          ssh lightsail 'wget https://tator-ci.s3.us-east-1.amazonaws.com/Bento4-SDK-1-6-0-641.x86_64-unknown-linux.zip';
           ssh lightsail 'unzip Bento4-SDK-1-6-0-641.x86_64-unknown-linux.zip';
           ssh lightsail 'sudo cp Bento4-SDK-1-6-0-641.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
           ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
