@@ -6,7 +6,7 @@ RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sour
 
 WORKDIR /work
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        build-essential git ca-certificates postgresql-server-dev-14 cron && rm -rf /var/lib/apt/lists
+        build-essential git ca-certificates postgresql-server-dev-14 clang-11 llvm-11 cron && rm -rf /var/lib/apt/lists
 RUN git clone --branch v0.4.4 https://github.com/pgvector/pgvector.git
 WORKDIR /work/pgvector
 RUN make
