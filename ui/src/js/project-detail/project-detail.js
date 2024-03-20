@@ -12,6 +12,317 @@ import Gear from "../../images/svg/gear.svg";
 import { ModalDialog } from "../components/modal-dialog.js";
 
 /**
+ * Class to handle the list of sections in a project.
+ * Helper functions are available to get the parent and children of a section, etc.
+ */
+export class SectionData {
+
+  /**
+   * Initialize this object. Expected to be run whenever the UI has a set of sections to use.
+   * Needs to be executed prior to using other functions of this class.
+   *
+   * @param {array} sections
+   *   List of Tator.Section objects to process
+   *
+   * @postcondition this._section is set with sections
+   * @postcondition this._sectionTree is set with the tree structure of the sections (key is section.path)
+   *                Each node is a dictionary with the key being the subfolder name and the value being the children
+   * @postcondition this._sectionPathMap is set with the sections (key is section.path)
+   * @postcondition this._sectionIdPathMap is set with the section pathss (key is section.id)
+   * @postcondition this._sectionIdMap is set with the section objects (key is section.id)
+   */
+  init(sections) {
+
+    // Create the list of sections
+    // Need to organize the list of sections in the tree format
+    // Everything in the same subfolder is organized alphabetically
+    // It is possible that folders may not have a path (mostly legacy). In this case, use the name as the path.
+    this._sections = sections;
+    this._sectionTree = {}; // Tree structure of the sections. Key is the section name using the path.
+    this._sectionPathMap = {}; // Key is section.path, value is section object
+    this._sectionIdPathMap = {}; // Key is section ID, value is path used in the UI
+    this._sectionIdMap = {}; // Key is section ID, value is section object
+    for (const section of sections) {
+
+      // Get corresponding section path, this is based on either the path or the name
+      var thisPath = this.getSectionPath(section);
+
+      // Save mappings to for easier access later.
+      this._sectionPathMap[thisPath] = section;
+      this._sectionIdPathMap[section.id] = thisPath;
+      this._sectionIdMap[section.id] = section;
+
+      // Add to the section tree
+      let currentNode = this._sectionTree;
+      let parts = thisPath.split(".");
+      parts.forEach(part => {
+        if (!currentNode[part]) {
+          currentNode[part] = {};
+        }
+        currentNode = currentNode[part];
+      });
+    }
+  }
+
+  /**
+   * @param {string} path
+   */
+  static cleanPathString(path) {
+    return path.replace(/[^A-Za-z0-9_.]/g, "_");
+  }
+
+  /**
+   * @precondition init() has been called
+   * @param {Tator.Section} section
+   *    Section to get the path of (specifically the path key used in this UI)
+   * @return string
+   *    Path of the section in the UI
+   */
+  getSectionPath(section) {
+
+    var thisPath = section.path;
+    if (thisPath == null) {
+      thisPath = section.name;
+      // This is required for scenarios where there is no path set, but the name is set.
+      // This assumes that this is in the top level. This replicates the string substitution
+      // that occurs in the section REST endpoint.
+      thisPath = SectionData.cleanPathString(thisPath);
+    }
+
+    return thisPath;
+  }
+
+  /**
+   * @precondition init() has been called
+   * @param {Tator.Section} section
+   *    Section to get the children of
+   * @returns {array}
+   *    Array of sections that are children of the given section
+   *    Only the children are obtained, not the grandchildren and so on
+   */
+  getChildSections(section) {
+
+    const thisPath = this.getSectionPath(section);
+    var that = this;
+    var children = [];
+
+    function traverseAlphabetically(node, parentPath) {
+
+      var appendedPath = parentPath;
+      if (appendedPath != "") {
+        appendedPath += ".";
+      }
+
+      if (parentPath == thisPath) {
+        Object.keys(node).sort().forEach(subpath => {
+          var childSection = that._sectionPathMap[appendedPath + subpath];
+          children.push(childSection);
+          return;
+        });
+      }
+      else {
+        Object.keys(node).sort().forEach(subpath => {
+          traverseAlphabetically(node[subpath], appendedPath + subpath);
+        });
+      }
+    }
+
+    traverseAlphabetically(this._sectionTree, "");
+
+    return children;
+  }
+
+  /**
+   * Parent sections are obtained using the path attribute of the section object.
+   *
+   * @precondition init() has been called
+   * @param {Tator.Section} section
+   *    Section to get the parent sections of
+   * @returns {array}
+   *    Array of sections that are parents of the given section
+   *    The order is from the immediate parent to the root
+   */
+  getParentSections(section) {
+
+    var parentSections = [];
+
+    // Keep removing the "." until we're left with the root
+    var currentPath = this.getSectionPath(section);
+    while (currentPath.includes(".")) {
+      let parts = currentPath.split(".");
+      parts.pop();
+      currentPath = parts.join(".");
+      var parentSection = this._sectionPathMap[currentPath];
+      parentSections.push(parentSection);
+    }
+
+    return parentSections;
+  }
+
+  /**
+   * @param {string} path
+   *   Path of the section to get
+   * @returns Tator.Section
+   */
+  getSectionFromPath(path) {
+    return this._sectionPathMap[path];
+  }
+
+  /**
+   * @param {integer} id
+   *    Section ID of section to get
+   * @returns Tator.Section
+   */
+  getSectionFromID(id) {
+    return this._sectionIdMap[id];
+  }
+
+  /**
+   * @returns array
+   *    Array of Tator.Section objects associated with this project that are media folders
+   *    and not search related.
+   */
+  getFolderList() {
+    var folderList = [];
+    for (const section of this._sections) {
+      if (section.object_search == null && section.related_search == null) {
+        folderList.push(section);
+      }
+    }
+    return this._sections;
+  }
+
+  /**
+   * @returns array
+   *   Array of Tator.Section objects associated with this project that are saved searches.
+   */
+  getSavedSearchesList() {
+    var savedSearchesList = [];
+    for (const section of this._sections) {
+      if (section.object_search != null || section.related_search != null) {
+        savedSearchesList.push(section);
+      }
+    }
+    return savedSearchesList;
+  }
+
+  /**
+   * Return the name and path for the given name and parent
+   * Emulates the constraints of the section REST endpoint
+   *
+   * @param {string} name
+   *    Needs to be trimmed
+   * @param {integer} parentSectionId
+   *    Parent section ID if applicable. null if not.
+   * @return Object
+   *    .name {string} - name to use for the associated section
+   *    .path {string} - path to use for the associated section
+   */
+  makeFolderNameAndPath(name, parentSectionId) {
+
+    let sectionName = name.trim();
+    let pathFolderName = SectionData.cleanPathString(sectionName);
+    if (parentSectionId == null) {
+      sectionPath = pathFolderName;
+    }
+    else {
+      var parentSection = this._sectionIdMap[parentSectionId]
+      var sectionPath = this.getSectionPath(parentSection);
+      sectionPath += ".";
+      sectionPath += pathFolderName;
+      sectionName = parentSection.name + "." + sectionName;
+    }
+
+    return {
+      name: sectionName,
+      path: sectionPath};
+  }
+
+  /**
+   * Verify if the proposed name is valid
+   * @param {string} proposedName
+   *    Proposed name of the new folder (not including any of the children, i.e. what's
+   *    displayed in the UI)
+   * @param {integer} parentSectionId
+   *    Can be null if there is no parent to the folder.
+   * @return {bool} True if the section rename is valid. False otherwise.
+   */
+  verifySectionRename(proposedName, parentSectionId) {
+
+    if (proposedName === "") {
+      return false;
+    }
+
+    if (proposedName.includes(".")) {
+      return false;
+    }
+
+    if (proposedName.includes(">")) {
+      return false;
+    }
+
+    // Find the adjusted path which we will use to compare against other sections
+    let info = this.makeFolderNameAndPath(proposedName, parentSectionId);
+
+    // See if the adjusted path/name matches any of the provided sections
+    for (const section of this._sections) {
+      const sectionPath = this.getSectionPath(section);
+      if (sectionPath == info.path || (section.name == info.name)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Get a list of folder choices for the enum input
+   * Does not include a no-parent option
+   * Output is sorted by breadcrumb path
+   *
+   * @return {array}
+   *   Each element is {value: sectionID, label: label to display}
+   *   The label is a breadcrumb based version of the name
+   */
+  getFolderEnumChoices() {
+
+    var choices = [];
+    for (const section of this.getFolderList()) {
+      if (section.visible == true) {
+        var parentSections = this.getParentSections(section);
+
+        // If any of the parentSections are not visible, don't add this section to the list
+        var visible = true;
+        var label = "";
+        for (const parentSection of parentSections) {
+          if (parentSection.visible == false) {
+            visible = false;
+            break;
+          }
+        }
+        if (!visible) {
+          continue;
+        }
+
+        choices.push({value: section.id, label: section.name.replace(/\./g, " > ")});
+      }
+    }
+
+    // Sort the choices by path
+    choices.sort((a, b) => {
+      if (a.label < b.label) {
+        return -1;
+      }
+      if (a.label > b.label) {
+        return 1;
+      }
+      return 0;
+    });
+
+    return choices;
+  }
+}
+
+/**
  * Dialog for creating a new section.
  * There will be two components:
  *
@@ -61,13 +372,16 @@ export class FolderDialog extends ModalDialog {
 
     // Data initialization
     this._noParentName = "-- None --";
+    this._sectionData = null;
 
     // Event handlers
     this._name.addEventListener("change", () => {
       var proposedName = this._name.getValue();
-      var parentFolder = this._parentFolders.getValue();
-
-      if (this.verifySectionRename(proposedName, parentFolder, this._sections)) {
+      var parentSectionId = this._parentFolders.getValue();
+      if (parentSectionId == this._noParentName) {
+        parentSectionId = null;
+      }
+      if (this._sectionData.verifySectionRename(proposedName, parentSectionId)) {
         this.enableSave();
       }
       else {
@@ -92,8 +406,11 @@ export class FolderDialog extends ModalDialog {
     this._save.addEventListener("click", () => {
 
       var proposedName = this._name.getValue();
-      var parentFolder = this._parentFolders.getValue();
-      var info = this.makeFolderNameAndPath(proposedName, parentFolder);
+      var parentSectionId = this._parentFolders.getValue();
+      if (parentSectionId == this._noParentName) {
+        parentSectionId = null;
+      }
+      var info = this._sectionData.makeFolderNameAndPath(proposedName, parentSectionId);
 
       if (this._mode == "newFolder") {
         this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
@@ -112,9 +429,6 @@ export class FolderDialog extends ModalDialog {
         }
         if (info.path != this._selectedSection.path) {
           patchSpec.path = info.path;
-        }
-        if (info.visible != this._selectedSection.visible) {
-          patchSpec.visible = info.visible;
         }
 
         this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
@@ -142,113 +456,49 @@ export class FolderDialog extends ModalDialog {
    */
   invalidName() {
     this._save.setAttribute("disabled", "");
-    this._errorMessage.innerHTML = "Invalid name provided. Cannot share the same name as another folder in the same sub-directory or have '.' in it.";
+    this._errorMessage.innerHTML = "Invalid name provided. Name cannot be blank, share the same name as another folder in the same sub-directory or have '.' or '>' in the name.";
     this._errorMessage.style.display = "block";
   }
 
   /**
-   * @param {array} sections
-   *   Array of Tator.Section objects
-   *   Only sections that are not saved searches and are visible will be selectable
+   * Can be called multiple times to reset the dialog (e.g. whenever there's a new section list)
+   * @param {SectionData} sectionData
+   *    SectionData object to use for the dialog
+   * @postcondition Name and Parent Folders fields are reset
    */
-  init(sections) {
+  init(sectionData) {
 
-    this._sections = sections;
     this._parentFolders.clear();
     this._name.reset();
+
+    this._sectionData = sectionData;
     this._selectedSection = null;
 
-    var choices = [];
-    choices.push({ value: this._noParentName, label: this._noParentName });
-    for (const section of sections) {
-
-      if (section.visible == true) {
-        let parsedSectionName = section.name;
-
-        let sectionPath = section.path;
-        if (sectionPath == null || sectionPath == "") {
-          sectionPath = parsedSectionName.replace(/[^A-Za-z0-9_.]/g, "_");
-        }
-        choices.push({ value: sectionPath, label: sectionPath });
-      }
-    }
+    var choices = this._sectionData.getFolderEnumChoices();
+    choices.unshift({ value: this._noParentName, label: this._noParentName });
 
     this._parentFolders.choices = choices;
   }
 
   /**
-   * @param {string} name
-   *    Needs to be trimmed
-   * @param {string} parentPath
-   *    Needs to not have "." at the end
-   * @return Object
-   *    .name {string} - name to use for the associated section
-   *    .path {string} - path to use for the associated section
-   */
-  makeFolderNameAndPath(name, parentPath) {
-
-    let sectionName = name.trim();
-
-    let pathFolderName = sectionName.replace(/[^A-Za-z0-9_.]/g, "_");
-    let sectionPath = parentPath.replace(/[^A-Za-z0-9_.]/g, "_");
-
-    if (parentPath == "" || parentPath == this._noParentName) {
-      sectionPath = pathFolderName;
-    }
-    else {
-      sectionPath += ".";
-      sectionPath += pathFolderName;
-      sectionName = parentPath + "." + sectionName;
-    }
-
-    return {name: sectionName, path: sectionPath};
-
-  }
-
-  /**
-   * @param {string} proposedName
-   *    Needs to be trimmed
-   * @param {string} proposedPath
-   *    Needs to not have "." at the end
-   * @param {array} sections
-   *    array of Tator.Section elements to check to see if the proposed name / path is unique
-   * @return {bool} True if the section rename is valid. False otherwise.
-   */
-  verifySectionRename(proposedName, sectionPath, sections) {
-
-    if (proposedName.includes(".")) {
-      return false;
-    }
-
-    // Find the adjusted path which we will use to compare against other sections
-    let info = this.makeFolderNameAndPath(proposedName, sectionPath);
-
-    // See if the adjusted path matches any of the provided sections'
-    for (const section of sections) {
-      if ((section.path == info["path"]) || (section.name == info["name"])) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
    * @param {string} mode
    *   "newFolder" | "editFolder"
-   * @param {integer} selectedSectionId
-   *   ID of selected section
+   * @param {Tator.Section} selectedSection
+   *   Selected section in the UI
    */
-  setMode(mode, selectedSectionId) {
+  setMode(mode, selectedSection) {
 
     this._originalName.style.display = "none";
+    this._errorMessage.style.display = "none";
+    this._save.setAttribute("disabled", "");
 
     if (mode == "newFolder") {
-      this._title.nodeValue = "New Folder";
+      this._title.nodeValue = "Add Folder";
       this._mode = mode;
       this._save.textContent = "Add";
       this._saveClickEvent = "add";
-      this._selectedSection = null;
       this._name.setValue("");
+      this._parentFolders.setValue(selectedSection?.id);
     }
     else if (mode == "editFolder") {
       this._title.nodeValue = "Edit Folder";
@@ -256,12 +506,8 @@ export class FolderDialog extends ModalDialog {
       this._save.textContent = "Edit";
       this._saveClickEvent = "edit";
 
-      for (const section of this._sections) {
-        if (section.id == selectedSectionId) {
-          this._selectedSection = section;
-          this._name.setValue(section.name.split(".")[0]);
-        }
-      }
+      let nameParts = selectedSection.name.split(".");
+      this._name.setValue(nameParts[nameParts.length - 1]);
     }
     else {
       throw new Error(`Invalid mode: ${mode}`);
@@ -270,7 +516,6 @@ export class FolderDialog extends ModalDialog {
   }
 }
 customElements.define("folder-dialog", FolderDialog);
-
 
 /**
  * Dialog for editing an existing bookmark
@@ -378,20 +623,20 @@ export class BookmarkEditDialog extends ModalDialog {
 }
 customElements.define("bookmark-edit-dialog", BookmarkEditDialog);
 
-export class BookmarkDeleteModal extends ModalDialog {
+export class DeleteModal extends ModalDialog {
   constructor() {
     super();
 
-    this._title.nodeValue = "Delete Bookmark";
+    this._title.nodeValue = "Delete";
     this._main.classList.remove("py-4");
     this._main.classList.add("pt-3");
 
     const icon = document.createElement("modal-warning");
     this._header.insertBefore(icon, this._titleDiv);
 
-    this._bookmarkText = document.createElement("div");
-    this._bookmarkText.setAttribute("class", "f2 text-gray px-3 py-3 text-center");
-    this._main.appendChild(this._bookmarkText);
+    this._dataText = document.createElement("div");
+    this._dataText.setAttribute("class", "f2 text-gray px-3 py-3 text-center");
+    this._main.appendChild(this._dataText);
 
     this._warning = document.createElement("div");
     this._warning.setAttribute("class", "py-3 text-center f2 text-red");
@@ -400,7 +645,7 @@ export class BookmarkDeleteModal extends ModalDialog {
 
     this._accept = document.createElement("button");
     this._accept.setAttribute("class", "btn btn-clear btn-red");
-    this._accept.textContent = "Delete Bookmark";
+    this._accept.textContent = "Delete";
     this._footer.appendChild(this._accept);
 
     const cancel = document.createElement("button");
@@ -415,18 +660,100 @@ export class BookmarkDeleteModal extends ModalDialog {
     this._accept.addEventListener("click", async (evt) => {
       this.dispatchEvent(new CustomEvent("delete", {
         detail: {
-          id: this._bookmark.id,
+          data: this._data,
        }
      }));
     });
+
+    this.updateUI();
   }
 
-  init(bookmark) {
-    this._bookmark = bookmark;
-    this._bookmarkText.innerHTML = `<span>Are you sure you want to delete the bookmark:</span><br /><span class="text-semibold">${bookmark.name}</span>?`;
+  /**
+   * @param {Object} data
+   *   Object to pass via the delete event
+   */
+  init(data) {
+    this._data = data;
+  }
+
+  /**
+   * Called during construction
+   */
+  updateUI() {
+    this._title.nodeValue = "Delete";
+    this._accept.textContent = "Delete";
   }
 }
-customElements.define("bookmark-delete-dialog", BookmarkDeleteModal);
+customElements.define("delete-modal", DeleteModal);
+
+/**
+ * Modal specifically for deleting a bookmark
+ */
+export class BookmarkDeleteModal extends DeleteModal {
+
+  /**
+   * @param {Tator.Bookmark} data
+   */
+  init(data) {
+    super.init(data);
+    this._bookmarkText.innerHTML = `<span>Are you sure you want to delete the bookmark:</span><br /><span class="text-semibold">${bookmark.name}</span>?`;
+  }
+
+  /**
+   * @override
+   */
+  updateUI() {
+    this._title.nodeValue = "Delete Bookmark";
+    this._accept.textContent = "Delete";
+  }
+}
+customElements.define("bookmark-delete-modal", BookmarkDeleteModal);
+
+/**
+ * Modal specifically for deleting a folder
+ */
+export class FolderDeleteModal extends DeleteModal {
+
+  /**
+   * @param {Tator.Section} data
+   */
+  init(data) {
+    super.init(data);
+    this._dataText.innerHTML = `<span>Are you sure you want to delete the folder:</span><br /><span class="text-semibold">${data.name}</span>?`;
+  }
+
+  /**
+   * @override
+   */
+  updateUI() {
+    this._title.nodeValue = "Delete Folder";
+    this._accept.textContent = "Delete";
+  }
+}
+customElements.define("folder-delete-modal", FolderDeleteModal);
+
+/**
+ * Modal specifically for deleting a saved search
+ */
+export class SearchDeleteModal extends DeleteModal {
+
+  /**
+   * @param {Tator.Section} data
+   */
+  init(data) {
+    super.init(data);
+    this._dataText.innerHTML = `<span>Are you sure you want to delete the saved search:</span><br /><span class="text-semibold">${data.name}</span>? Note: Media will not be deleted`;
+  }
+
+  /**
+   * @override
+   */
+  updateUI() {
+    this._title.nodeValue = "Delete Search";
+    this._accept.textContent = "Delete";
+  }
+}
+customElements.define("search-delete-modal", SearchDeleteModal);
 
 /**
  * Button used for the "All Media" / home in the section list
@@ -570,6 +897,14 @@ export class SectionListItem extends TatorElement {
     this._moreMenu.style.marginTop = "5px";
     this._moreMenu.style.marginLeft = "200px";
     this._shadow.appendChild(this._moreMenu);
+
+    //
+    // Details section
+    //
+    this._detailsDiv = document.createElement("div");
+    this._detailsDiv.setAttribute("class", "pl-2 pt-1 pb-2 d-flex flex-column f3 text-dark-gray");
+    this._shadow.appendChild(this._detailsDiv);
+    this._detailsDiv.style.display = "none";
   }
 
   setupEventListeners() {
@@ -751,6 +1086,13 @@ export class SectionListItem extends TatorElement {
     this._moreMenu.appendChild(editToggleButton);
     this._moreMenu.appendChild(deleteToggleButton);
     this._moreMenu.appendChild(hideToggleButton);
+
+    this._detailsDiv.innerHTML = `
+      <div><span class="text-semibold text-gray">id:</span> ${section.id}</div>
+      <div><span class="text-semibold text-gray">name:</span> ${section.name}</div>
+      <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
+      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
+    `;
   }
 
   /**
@@ -801,6 +1143,14 @@ export class SectionListItem extends TatorElement {
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" />
       </svg>
     `;
+  }
+
+  hideAdvancedDetails() {
+    this._detailsDiv.style.display = "none";
+  }
+
+  showAdvancedDetails() {
+    this._detailsDiv.style.display = "block";
   }
 }
 customElements.define("section-list-item", SectionListItem);
@@ -1183,10 +1533,16 @@ export class ProjectDetail extends TatorPage {
     this._folderDialog = document.createElement("folder-dialog");
     this._projects.appendChild(this._folderDialog);
 
+    this._folderDeleteDialog = document.createElement("folder-delete-modal");
+    this._projects.appendChild(this._folderDeleteDialog);
+
+    this._searchDeleteDialog = document.createElement("search-delete-modal");
+    this._projects.appendChild(this._searchDeleteDialog);
+
     this._bookmarkEditDialog = document.createElement("bookmark-edit-dialog");
     this._projects.appendChild(this._bookmarkEditDialog);
 
-    this._bookmarkDeleteDialog = document.createElement("bookmark-delete-dialog");
+    this._bookmarkDeleteDialog = document.createElement("bookmark-delete-modal");
     this._projects.appendChild(this._bookmarkDeleteDialog);
 
     this._uploadDialog = document.createElement("upload-dialog");
@@ -1202,6 +1558,8 @@ export class ProjectDetail extends TatorPage {
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
+
+    this._sectionData = new SectionData();
 
     // Create store subscriptions
     store.subscribe((state) => state.user, this._setUser.bind(this));
@@ -1241,7 +1599,7 @@ export class ProjectDetail extends TatorPage {
 
       this._bookmarkDeleteDialog.removeAttribute("is-open");
 
-      var response = await fetchCredentials(`/rest/Bookmark/${evt.detail.id}`, {
+      var response = await fetchCredentials(`/rest/Bookmark/${evt.detail.data.id}`, {
         method: "DELETE",
       });
 
@@ -1259,8 +1617,6 @@ export class ProjectDetail extends TatorPage {
           `Unable to patch bookmark. Error: ${response.message}`,
           "Error");
       }
-
-
     });
 
     this._bookmarkEditDialog.addEventListener("close", () => {
@@ -1278,7 +1634,6 @@ export class ProjectDetail extends TatorPage {
       });
 
       if (response.status == 200) {
-        var data = await response.json();
         var response = await fetchCredentials(`/rest/Bookmarks/${this._projectId}`, {
           method: "GET"
         });
@@ -1293,69 +1648,7 @@ export class ProjectDetail extends TatorPage {
       }
     })
 
-    this._folderDialog.addEventListener("close", () => {
-      this._folderDialog.removeAttribute("is-open");
-      this.removeAttribute("has-open-modal");
-    });
-
-    this._folderDialog.addEventListener("edit", async (evt) => {
-
-      this._folderDialog.removeAttribute("is-open");
-
-      var response = await fetchCredentials(`/rest/Section/${evt.detail.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(evt.detail.spec),
-      });
-
-      if (response.status == 200) {
-        var data = await response.json();
-        var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
-          method: "GET"
-        });
-        this._sections = await response.json();
-        this.makeFolders(this._sections);
-        this.selectSection(evt.detail.id);
-        this.removeAttribute("has-open-modal");
-      }
-      else {
-        this._modalError._error(
-          `Unable to patch section. Error: ${response.message}`,
-          "Error");
-      }
-    });
-
-    this._folderDialog.addEventListener("add", async (evt) => {
-
-      this._folderDialog.removeAttribute("is-open");
-
-      var spec = {
-        name: evt.detail.name,
-        path: evt.detail.path,
-        tator_user_sections: uuidv1(),
-        visible: true,
-      };
-
-      var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
-        method: "POST",
-        body: JSON.stringify(spec),
-      });
-
-      if (response.status == 201) {
-        var data = await response.json();
-        var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
-          method: "GET"
-        });
-        this._sections = await response.json();
-        this.makeFolders(this._sections);
-        this.selectSection(data.id);
-        this.removeAttribute("has-open-modal");
-      }
-      else {
-        this._modalError._error(
-          `Unable to create section '${spec.name}'. Error: ${response.message}`,
-          "Error");
-      }
-    });
+    this.setFolderDialogCallbacks();
 
     this._mediaSection.addEventListener("filesadded", (evt) => {
       this._uploadDialog.setAttribute("is-open", "");
@@ -1490,6 +1783,91 @@ export class ProjectDetail extends TatorPage {
     this.mediaTypesMap = new Map();
   }
 
+  /**
+   * Expected to be run once in the constructor
+   */
+  setDeleteFolderCallbacks() {
+
+    // Close without any modifications
+    deleteSection.addEventListener("close", (evt) => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    // Delete current folder
+    deleteSection.addEventListener("confirmDelete", (evt) => {
+      this._bulkEdit._clearSelection();
+      deleteSection.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal", "");
+    });
+  }
+
+  /**
+   * Expected to be run once in the constructor
+   */
+  setFolderDialogCallbacks() {
+
+    // Close without any modifications
+    this._folderDialog.addEventListener("close", () => {
+      this._folderDialog.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal");
+    });
+
+    // Edit current folder
+    // May need to update child folders too, so loop over specs
+    this._folderDialog.addEventListener("edit", async (evt) => {
+
+      this._folderDialog.removeAttribute("is-open");
+
+      var response = await fetchCredentials(`/rest/Section/${evt.detail.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(evt.detail.spec),
+      });
+
+      if (response.status == 200) {
+        await this.getSections();
+        this.selectSection(evt.detail.id);
+        this.removeAttribute("has-open-modal");
+        this._bulkEdit._clearSelection();
+      }
+      else {
+        this._modalError._error(
+          `Unable to patch section. Error: ${response.message}`,
+          "Error");
+      }
+    });
+
+    // Add new folder
+    this._folderDialog.addEventListener("add", async (evt) => {
+
+      this._folderDialog.removeAttribute("is-open");
+
+      var spec = {
+        name: evt.detail.name,
+        path: evt.detail.path,
+        tator_user_sections: uuidv1(),
+        visible: true,
+      };
+
+      var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
+        method: "POST",
+        body: JSON.stringify(spec),
+      });
+
+      if (response.status == 201) {
+        var data = await response.json();
+        await this.getSections();
+        this.selectSection(data.id);
+        this.removeAttribute("has-open-modal");
+        this._bulkEdit._clearSelection();
+      }
+      else {
+        this._modalError._error(
+          `Unable to create section '${spec.name}'. Error: ${response.message}`,
+          "Error");
+      }
+    });
+  }
+
   connectedCallback() {
     this.setAttribute(
       "project-id",
@@ -1585,6 +1963,7 @@ export class ProjectDetail extends TatorPage {
 
               this._cardAttributeLabels.init(projectId);
               this._sections = sections;
+              this._sectionData.init(this._sections);
               this._bookmarks = bookmarks;
 
               //
@@ -1696,7 +2075,7 @@ export class ProjectDetail extends TatorPage {
 
               let projectParams = null;
 
-              this.makeFolders(sections);
+              this.makeFolders();
               this.makeBookmarks(bookmarks);
               this.displayPanel("library");
 
@@ -2043,7 +2422,8 @@ export class ProjectDetail extends TatorPage {
       method: "GET"
     });
     this._sections = await response.json();
-    this.makeFolders(this._sections);
+    this._sectionData.init(this._sections);
+    this.makeFolders();
   }
 
   /**
@@ -2089,83 +2469,6 @@ export class ProjectDetail extends TatorPage {
   //
 
   /**
-   * @param {Tator.Section} section
-   *    Section to get the path of (specifically the path key used in this UI)
-   * @return string
-   *    Path of the section in the UI
-   */
-  getSectionPath(section) {
-    var thisPath = section.path;
-    if (thisPath == null) {
-      thisPath = section.name;
-    }
-    thisPath = thisPath.replace(/[^A-Za-z0-9_.]/g, "_");
-    return thisPath;
-  }
-
-  /**
-   * @param {Tator.Section} section
-   *    Section to get the children of
-   * @returns {array}
-   *    Array of sections that are children of the given section
-   *    Only the children are obtained, not the grandchildren and so on
-   */
-  getChildSections(section) {
-
-    const thisPath = this.getSectionPath(section);
-    var that = this;
-    var children = [];
-
-    function traverseAlphabetically(node, parentPath) {
-
-      var appendedPath = parentPath;
-      if (appendedPath != "") {
-        appendedPath += ".";
-      }
-
-      if (parentPath == thisPath) {
-        Object.keys(node).sort().forEach(subpath => {
-          var childSection = that._sectionPathMap[appendedPath + subpath];
-          children.push(childSection);
-          return;
-        });
-      }
-      else {
-        Object.keys(node).sort().forEach(subpath => {
-          traverseAlphabetically(node[subpath], appendedPath + subpath);
-        });
-      }
-    }
-
-    traverseAlphabetically(this._sectionTree, "");
-
-    return children;
-  }
-
-  /**
-   * @param {Tator.Section} section
-   *    Section to get the parent section of
-   * @returns {array}
-   *    Array of sections that are parents of the given section
-   */
-  getParentSections(section) {
-
-    var parentSections = [];
-
-    // Keep removing the "." until we're left with the root
-    var currentPath = this.getSectionPath(section);
-    while (currentPath != "") {
-      let parts = thisPath.split(".");
-      parts.pop();
-      let parentPath = parts.join(".");
-      var parentSection = this._sectionPathMap[parentPath];
-      parentSections.push(parentSection);
-    }
-
-    return parentSections;
-  }
-
-  /**
    * Loops through the folders and sees if they are visible or not (either via expanding) or
    * using the section visibility flag.
    *
@@ -2177,13 +2480,21 @@ export class ProjectDetail extends TatorPage {
   updateVisibility() {
 
     var that = this;
+
+    if (this._viewAdvancedFolderDetails) {
+      this.setLeftPanelWidth("500px");
+    }
+    else {
+      this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+    }
+
     function traverseAlphabetically(node, parentPath) {
 
       var appendedPath = parentPath;
       var parentExpanded = null;
 
       if (appendedPath != "") {
-        var parentSection = that._sectionPathMap[parentPath];
+        var parentSection = that._sectionData._sectionPathMap[parentPath];
         for (const folder of that._folders.children) {
           if (folder._section.id == parentSection.id) {
             parentExpanded = folder._expanded;
@@ -2197,14 +2508,21 @@ export class ProjectDetail extends TatorPage {
       Object.keys(node).sort().forEach(subpath => {
 
         var childSectionListItem = null;
-        var childSection = that._sectionPathMap[appendedPath + subpath];
+        var childSection = that._sectionData.getSectionFromPath(appendedPath + subpath);
         for (const folder of that._folders.children) {
           if (folder._section.id == childSection.id) {
             childSectionListItem = folder;
           }
         }
 
-        var section = that._sectionPathMap[appendedPath + subpath];
+        if (that._viewAdvancedFolderDetails) {
+          childSectionListItem.showAdvancedDetails();
+        }
+        else {
+          childSectionListItem.hideAdvancedDetails();
+        }
+
+        var section = that._sectionData.getSectionFromPath(appendedPath + subpath);
         childSectionListItem.style.display = "block";
         if (!section.visible) {
           if (!that._viewAllHiddenFolders) {
@@ -2220,16 +2538,14 @@ export class ProjectDetail extends TatorPage {
         traverseAlphabetically(node[subpath], appendedPath + subpath);
       });
     }
-    traverseAlphabetically(this._sectionTree, "");
+    traverseAlphabetically(this._sectionData._sectionTree, "");
 
   }
 
   /**
-   * @param {array} sections
-   *    Array of Tator.Section objects to make the folder listing
    * @postcondition Section edit dialog is updated with the list of sections
    */
-  makeFolders(sections) {
+  makeFolders() {
 
     // Clear out the existing folder lists
     while (this._folders.firstChild) {
@@ -2239,46 +2555,11 @@ export class ProjectDetail extends TatorPage {
       this._savedSearches.removeChild(this._savedSearches.firstChild);
     }
 
-    // Create the list of sections
-    // Need to organize the list of sections in the tree format
-    // Everything in the same subfolder is organized alphabetically
-    // It is possible that folders may not have a path (mostly legacy). In this case, use the name as the path.
-    this._sectionTree = {}; // Key is path, value is a dict of its children's paths
-    this._sectionPathMap = {}; // Key is section.path, value is section object
-    this._sectionIdPathMap = {}; // Key is section ID, value is path used in the UI
-    this._sectionIdParentIdMap = {}; // Key is section ID, value is parent section ID
-    for (const section of sections) {
-      var thisPath = section.path;
-      if (thisPath == null) {
-        thisPath = section.name;
-      }
-      thisPath = thisPath.replace(/[^A-Za-z0-9_.]/g, "_");
-      this._sectionPathMap[thisPath] = section;
-      this._sectionIdPathMap[section.id] = thisPath;
-
-      let currentNode = this._sectionTree;
-      let parts = thisPath.split(".");
-      parts.forEach(part => {
-        if (!currentNode[part]) {
-          currentNode[part] = {};
-        }
-        currentNode = currentNode[part];
-      });
-    }
-
-    for (const section of sections) {
-      var thisPath = this._sectionIdPathMap[section.id];
-      let parts = thisPath.split(".");
-      parts.pop();
-      let parentPath = parts.join(".");
-      this._sectionIdParentIdMap[section.id] = parentPath
-    }
-
     const that = this;
     function createSectionItem(path) {
 
-      const section = that._sectionPathMap[path];
-      const childSections = that.getChildSections(section);
+      const section = that._sectionData.getSectionFromPath(path);
+      const childSections = that._sectionData.getChildSections(section);
 
       const sectionItem = document.createElement("section-list-item");
       sectionItem.init(section, childSections);
@@ -2301,7 +2582,7 @@ export class ProjectDetail extends TatorPage {
         await that.hideSection(evt.detail.id);
 
         // Get children of the section. If there are any, we need to hide all of them.
-        const children = that.getChildSections(section);
+        const children = that._sectionData.getChildSections(section);
         for (const childSection of children) {
           await that.hideSection(childSection.id);
         }
@@ -2316,7 +2597,7 @@ export class ProjectDetail extends TatorPage {
         await that.restoreSection(evt.detail.id);
 
         // Get children of the section. If there are any, we need to restore all of them.
-        const children = that.getChildSections(section);
+        const children = that._sectionData.getChildSections(section);
         for (const childSection of children) {
           await that.restoreSection(childSection.id);
         }
@@ -2328,7 +2609,7 @@ export class ProjectDetail extends TatorPage {
 
       sectionItem.addEventListener("editSection", (evt) => {
         that.showDimmer();
-        that._folderDialog.setMode("editFolder", section.id);
+        that._folderDialog.setMode("editFolder", section);
         that._folderDialog.setAttribute("is-open", "");
       });
 
@@ -2347,9 +2628,9 @@ export class ProjectDetail extends TatorPage {
         traverseAlphabetically(node[subpath], appendedPath + subpath);
       });
     }
-    traverseAlphabetically(this._sectionTree, "");
+    traverseAlphabetically(this._sectionData._sectionTree, "");
 
-    this._folderDialog.init(sections);
+    this._folderDialog.init(this._sectionData);
     this.updateVisibility();
   }
 
@@ -2370,7 +2651,7 @@ export class ProjectDetail extends TatorPage {
     if (sectionId == null) {
       this._allMediaButton.setActive();
       this._mediaSection.init(this._projectId, null);
-      this._activeSection = null;
+      this._selectedSection = null;
     }
     else {
       for (const folder of allFolders) {
@@ -2378,13 +2659,46 @@ export class ProjectDetail extends TatorPage {
         if (section.id == sectionId) {
           folder.setActive();
           this._mediaSection.init(this._projectId, section);
-          this._activeSection = section;
+          this._selectedSection = section;
           break;
         }
       }
     }
 
+    if (this._selectedSection != null) {
+      var parentSections = this._sectionData.getParentSections(this._selectedSection);
+      var parentSectionIds = parentSections.map((section) => section.id);
+      var activeFolder = null;
+      for (const folder of allFolders) {
+        const section = folder.getSection();
+        if (parentSectionIds.includes(section.id)) {
+          folder.expand();
+        }
+        if (section.id == this._selectedSection.id) {
+          activeFolder = folder;
+        }
+      }
+      this.updateVisibility();
+
+      function isInViewport(element) {
+        var rect = element.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+      }
+      if (!isInViewport(activeFolder)) {
+        activeFolder.scrollIntoView();
+      }
+    }
+
   }
+
+  //
+  // Bookmark management
+  //
 
   /**
    * @param {array} bookmarks
@@ -2435,10 +2749,22 @@ export class ProjectDetail extends TatorPage {
 
       if (this._panelLibrary.style.display == "block" && this._leftPanel.style.display == "flex") {
         this._leftPanel.style.display = "none";
+        this._sidebarLibraryButton.setAttribute("tooltip", "Expand Library Panel");
       }
       else {
         this._leftPanel.style.display = "flex";
+        this._sidebarLibraryButton.setAttribute("tooltip", "Hide Library Panel");
       }
+
+      if (this._viewAdvancedFolderDetails) {
+        this.setLeftPanelWidth("500px");
+      }
+      else {
+        this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+      }
+
+      this._sidebarSavedSearchesButton.setAttribute("tooltip", "Open Saved Searches Panel");
+      this._sidebarBookmarksButton.setAttribute("tooltip", "Open Bookmarks Panel");
 
       this._sidebarLibraryButton.classList.add("btn-purple50");
       this._sidebarSavedSearchesButton.classList.remove("btn-purple50");
@@ -2455,15 +2781,23 @@ export class ProjectDetail extends TatorPage {
       this._panelLibrary.style.display = "block";
       this._panelSavedSearches.style.display = "none";
       this._panelBookmarks.style.display = "none";
+
     }
     else if (panel == "saved searches") {
 
       if (this._panelSavedSearches.style.display == "block" && this._leftPanel.style.display == "flex") {
         this._leftPanel.style.display = "none";
+        this._sidebarSavedSearchesButton.setAttribute("tooltip", "Expand Saved Searches Panel");
       }
       else {
         this._leftPanel.style.display = "flex";
+        this._sidebarSavedSearchesButton.setAttribute("tooltip", "Hide Saved Searches Panel");
       }
+
+      this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+
+      this._sidebarLibraryButton.setAttribute("tooltip", "Open Library Panel");
+      this._sidebarBookmarksButton.setAttribute("tooltip", "Open Bookmarks Panel");
 
       this._sidebarLibraryButton.classList.remove("btn-purple50");
       this._sidebarSavedSearchesButton.classList.add("btn-purple50");
@@ -2485,10 +2819,17 @@ export class ProjectDetail extends TatorPage {
 
       if (this._panelBookmarks.style.display == "block" && this._leftPanel.style.display == "flex") {
         this._leftPanel.style.display = "none";
+        this._sidebarBookmarksButton.setAttribute("tooltip", "Expand Bookmarks Panel");
       }
       else {
         this._leftPanel.style.display = "flex";
+        this._sidebarBookmarksButton.setAttribute("tooltip", "Hide Bookmarks Panel");
       }
+
+      this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+
+      this._sidebarLibraryButton.setAttribute("tooltip", "Open Library Panel");
+      this._sidebarSavedSearchesButton.setAttribute("tooltip", "Open Saved Searches Panel");
 
       this._sidebarLibraryButton.classList.remove("btn-purple50");
       this._sidebarSavedSearchesButton.classList.remove("btn-purple50");
@@ -2593,6 +2934,7 @@ export class ProjectDetail extends TatorPage {
   setupLibraryPanel() {
 
     this._viewAllHiddenFolders = false;
+    this._viewAdvancedFolderDetails = false;
 
     const libraryHeader = document.createElement("div");
     libraryHeader.setAttribute(
@@ -2628,6 +2970,21 @@ export class ProjectDetail extends TatorPage {
     const folderButtons = document.createElement("div");
     folderButtons.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
     folderHeader.appendChild(folderButtons);
+
+    const advancedDetails = document.createElement("div");
+    advancedDetails.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    advancedDetails.setAttribute("tooltip", "View Advanced Details");
+    advancedDetails.style.minHeight = "28px";
+    folderButtons.appendChild(advancedDetails);
+    advancedDetails.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 100 100" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M81.41,56.24l-11.47-6.86c-1.88-1.12-1.92-3.83-0.07-5.01c5.71-3.64,5.33-11.31,0.19-14.6
+      L33.17,6.23c-5.71-3.65-13.21,0.46-13.21,7.24v15.38c0,1.83-2.02,2.94-3.56,1.95C10.69,27.15,3.2,31.24,3.2,38.03v47.11
+      c0,6.78,7.49,10.89,13.21,7.24l12.76-8.24c1.2-0.78,2.78,0.09,2.78,1.52c0,8.74,7.95,11.39,13.04,8.14l36.42-23.26
+      C86.63,67.2,86.63,59.58,81.41,56.24z M65.64,60.57c-5.92,3.78-33.23,21.44-33.83,21.69c-5.47,2.28-11.84-1.69-11.84-7.95
+      c0-2.21,0-38.64,0-40.88c0-6.78,7.49-10.89,13.21-7.24c5.1,3.26,32.56,20.62,32.47,20.62C70.86,50.15,70.86,57.24,65.64,60.57z">
+    </svg>
+   `;
 
     const viewHiddenFolders = document.createElement("div");
     viewHiddenFolders.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
@@ -2676,6 +3033,20 @@ export class ProjectDetail extends TatorPage {
     this._folders = document.createElement("ul");
     this._folders.setAttribute("class", "sections");
     this._panelLibrary.appendChild(this._folders);
+
+    advancedDetails.addEventListener("click", () => {
+      advancedDetails.blur();
+      this._viewAdvancedFolderDetails = !this._viewAdvancedFolderDetails;
+
+      if (this._viewAdvancedFolderDetails) {
+        advancedDetails.setAttribute("tooltip", "Hide Advanced Details");
+      }
+      else {
+        advancedDetails.setAttribute("tooltip", "View Advanced Details");
+      }
+
+      this.updateVisibility();
+    });
 
     viewHiddenFolders.addEventListener("click", () => {
       viewHiddenFolders.blur();
@@ -2827,6 +3198,15 @@ export class ProjectDetail extends TatorPage {
   }
 
   /**
+   * @param {string} width
+   *  e.g. "400px";
+   */
+  setLeftPanelWidth(width) {
+    this._leftPanel.style.minWidth = width;
+    this._leftPanel.style.maxWidth = width;
+  }
+
+  /**
    * Create the left panels for the:
    * - Library
    * - Saved searches
@@ -2859,6 +3239,8 @@ export class ProjectDetail extends TatorPage {
     this.setupSearchesPanel();
     this.setupBookmarksPanel();
 
+    this._leftPanelDefaultWidth = "400px";
+    this.setLeftPanelWidth(this._leftPanelDefaultWidth);
   }
 }
 
