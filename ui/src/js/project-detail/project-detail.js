@@ -360,6 +360,11 @@ export class FolderDialog extends ModalDialog {
     this._parentFolders.setAttribute("name", "Parent Folder:");
     this._main.appendChild(this._parentFolders);
 
+    this._originalParent = document.createElement("div");
+    this._originalParent.setAttribute("class", "text-purple f3 mt-1 mb-3");
+    this._main.appendChild(this._originalParent);
+    this._originalParent.style.display = "none";
+
     this._save = document.createElement("button");
     this._save.setAttribute("class", "btn btn-clear btn-purple disabled");
     this._footer.appendChild(this._save);
@@ -390,11 +395,47 @@ export class FolderDialog extends ModalDialog {
 
       if (this._mode == "editFolder") {
         if (proposedName != this._selectedSection.name) {
+          var parts = this._selectedSection.name.split(".");
           this._originalName.style.display = "block";
-          this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${this._selectedSection.name}</span>`;
+          this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${parts[parts.length - 1]}</span>`;
         }
         else {
           this._originalName.style.display = "none";
+        }
+      }
+    });
+
+    this._parentFolders.addEventListener("change", () => {
+      var proposedName = this._name.getValue();
+      var parentSectionId = this._parentFolders.getValue();
+      if (parentSectionId == this._noParentName) {
+        parentSectionId = null;
+      }
+      if (this._sectionData.verifySectionRename(proposedName, parentSectionId)) {
+        this.enableSave();
+      }
+      else {
+        this.invalidName();
+      }
+
+      if (this._mode == "editFolder") {
+        var parentSections = this._sectionData.getParentSections(this._selectedSection);
+        if (parentSections.length == 0 && parentSectionId != null) {
+          var parts = this._selectedSection.name.split(".");
+          parts.pop();
+          var pathToShow = parts.join(" > ");
+          this._originalParent.style.display = "block";
+          this._originalParent.innerHTML = `Changing parent folder from: <span class="text-semibold">${pathToShow}</span>`;
+        }
+        if (parentSections.length > 0 && parentSections[0].id != this._parentFolders.getValue()) {
+          var parts = this._selectedSection.name.split(".");
+          parts.pop();
+          var pathToShow = parts.join(" > ");
+          this._originalParent.style.display = "block";
+          this._originalParent.innerHTML = `Changing parent folder from: <span class="text-semibold">${pathToShow}</span>`;
+        }
+        else {
+          this._originalParent.style.display = "none";
         }
       }
     });
@@ -422,6 +463,7 @@ export class FolderDialog extends ModalDialog {
       }
       else if (this._mode == "editFolder") {
 
+        var patchSpecs = [];
         var patchSpec = {}
 
         if (info.name != this._selectedSection.name) {
@@ -430,11 +472,30 @@ export class FolderDialog extends ModalDialog {
         if (info.path != this._selectedSection.path) {
           patchSpec.path = info.path;
         }
+        // If patchSpec has nothing, then don't send a patch request
+        if (Object.keys(patchSpec).length == 0) {
+          return;
+        }
+
+        // If the path or name has changed, we need to update the children
+        var childSections = this._sectionData.getChildSections(this._selectedSection);
+        for (const childSection of childSections) {
+          patchSpecs.push({
+            id: childSection.id,
+            spec: {
+              path: childSection.path.replace(this._selectedSection.path, info.path),
+              name: childSection.name.replace(this._selectedSection.name, info.name)
+            }
+          })
+        }
+        patchSpecs.push({
+          id: this._selectedSection.id,
+          spec: patchSpec
+        });
 
         this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
           detail: {
-            id: this._selectedSection.id,
-            spec: patchSpec
+            specs: patchSpecs
          }
        }));
       }
@@ -489,8 +550,10 @@ export class FolderDialog extends ModalDialog {
   setMode(mode, selectedSection) {
 
     this._originalName.style.display = "none";
+    this._originalParent.style.display = "none";
     this._errorMessage.style.display = "none";
     this._save.setAttribute("disabled", "");
+    this._selectedSection = selectedSection;
 
     if (mode == "newFolder") {
       this._title.nodeValue = "Add Folder";
@@ -508,6 +571,7 @@ export class FolderDialog extends ModalDialog {
 
       let nameParts = selectedSection.name.split(".");
       this._name.setValue(nameParts[nameParts.length - 1]);
+      this._parentFolders.setValue(selectedSection?.id);
     }
     else {
       throw new Error(`Invalid mode: ${mode}`);
@@ -1818,22 +1882,24 @@ export class ProjectDetail extends TatorPage {
 
       this._folderDialog.removeAttribute("is-open");
 
-      var response = await fetchCredentials(`/rest/Section/${evt.detail.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(evt.detail.spec),
-      });
+      for (const spec of evt.detail.specs) {
+        var response = await fetchCredentials(`/rest/Section/${spec.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(spec.spec),
+        });
 
-      if (response.status == 200) {
-        await this.getSections();
-        this.selectSection(evt.detail.id);
-        this.removeAttribute("has-open-modal");
-        this._bulkEdit._clearSelection();
+        if (response.status != 200) {
+          this._modalError._error(
+            `Unable to patch section ${spec}. Error: ${response.message}`,
+            "Error");
+          return;
+        }
       }
-      else {
-        this._modalError._error(
-          `Unable to patch section. Error: ${response.message}`,
-          "Error");
-      }
+
+      await this.getSections();
+      this.selectSection(evt.detail.id);
+      this.removeAttribute("has-open-modal");
+      this._bulkEdit._clearSelection();
     });
 
     // Add new folder
