@@ -29,10 +29,18 @@ export class FilterData {
     algorithmCategories,
     excludeTypesList,
     skipTypeIds,
-    squashMetadata
+    squashMetadata,
+    category_lookup
   ) {
     this._modelData = modelData;
-
+    if (category_lookup)
+    {
+      this._category_lookup = category_lookup;
+    }
+    else
+    {
+      this._category_lookup = {};
+    }
     if (algorithmCategories != null) {
       this.algorithmCategories = algorithmCategories;
     }
@@ -156,7 +164,7 @@ export class FilterData {
     // Create the filter options
     this._allTypes = [];
 
-    let category_lookup = {};
+    let category_lookup = this._category_lookup;
     if (this._squashMetadata) {
       category_lookup = {
         Localizations: "Metadata",
