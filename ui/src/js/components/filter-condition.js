@@ -124,7 +124,7 @@ export class FilterCondition extends TatorElement {
           if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
             if (attribute.label) {
               if (
-                ["_x", "_y", "_width", "_height"].indexOf(attribute.name) >= 0
+                ["$x", "$y", "$width", "$height"].indexOf(attribute.name) >= 0
               ) {
                 geoChoices.push({
                   value: attribute.name,
