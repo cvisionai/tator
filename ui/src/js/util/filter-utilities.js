@@ -72,7 +72,7 @@ export class FilterUtilities {
       choices.push({ value: "Starts with" });
       choices.push({ value: "Ends with" });
       choices.push({ value: "NOT ==", label: "Does Not Equal" });
-      choices.push({ value: "in",  label: "Is one of  (Comma-separated)"});
+      //  TODO:  Need fancier  inputs choices.push({ value: "in",  label: "Is one of  (Comma-separated)"});
     } else if (dtype == "geopos") {
       choices.push({
         value: "Distance <=",
