@@ -30,9 +30,11 @@ export class FilterData {
     excludeTypesList,
     skipTypeIds,
     squashMetadata,
-    category_lookup
+    category_lookup,
+    include_coincident_localizations
   ) {
     this._modelData = modelData;
+    this._include_coincident_localizations = include_coincident_localizations;
     if (category_lookup)
     {
       this._category_lookup = category_lookup;
@@ -373,6 +375,12 @@ export class FilterData {
           entityType.attribute_types.push(modifiedDatetimeAttribute);
 
           this._allTypes.push(entityType);
+          if (this._include_coincident_localizations)
+          {
+            let copy = {...entityType};
+            copy.typeGroupName = "Localizations (Coincident)";
+            this._allTypes.push(copy);
+          }
         }
       }
     }
@@ -488,6 +496,11 @@ export class FilterData {
         }
       }
     }
+
+    //  Alphabetize this._allTypes
+    this._allTypes.sort((a, b) => {
+      return a.name.localeCompare(b.name);
+    });
   }
 
   /**
