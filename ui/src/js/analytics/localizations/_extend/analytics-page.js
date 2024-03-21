@@ -214,7 +214,10 @@ export class AnalyticsPage extends TatorPage {
     this._filterDataView = new FilterData(
       this._modelData,
       ["annotation-analytics-view"],
-      ["MediaStates", "LocalizationStates", "FrameStates"]
+      ["MediaStates", "LocalizationStates"],
+      [],
+      false,
+      {"FrameStates": "States (Coincident)"}
     );
 
     // Init panel side behavior
