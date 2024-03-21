@@ -645,11 +645,45 @@ export class TatorData {
     var mediaFilters = [];
     var localizationFilters = [];
     var mediaIds = [];
+    var coincidentStateFilters = [];
+    var coincidentLocalizationFilters = [];
 
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
       filters.forEach((filter) => {
-        if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
+        if (filter.categoryGroup == "States (Coincident)")
+        {
+          if (
+            filter.field.includes("$") &&
+            typeof filter.value === "string" &&
+            filter.value.includes("(ID:")
+          ) {
+            var newFilter = Object.assign({}, filter);
+            newFilter.value = Number(
+              filter.value.split("(ID:")[1].replace(")", "")
+            );
+            coincidentStateFilters.push(newFilter);
+          } else {
+            coincidentStateFilters.push(filter);
+          }
+        }
+        else if (filter.categoryGroup == "Localizations (Coincident)")
+        {
+          if (
+            filter.field.includes("$") &&
+            typeof filter.value === "string" &&
+            filter.value.includes("(ID:")
+          ) {
+            var newFilter = Object.assign({}, filter);
+            newFilter.value = Number(
+              filter.value.split("(ID:")[1].replace(")", "")
+            );
+            coincidentLocalizationFilters.push(newFilter);
+          } else {
+            coincidentLocalizationFilters.push(filter);
+          }
+        }
+        else if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "$id") {
             for  (let value of filter.value.split(","))
             {
