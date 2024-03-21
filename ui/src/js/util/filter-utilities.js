@@ -60,7 +60,7 @@ export class FilterUtilities {
       choices.push({ value: ">=" });
       choices.push({ value: "<" });
       choices.push({ value: "<=" });
-      choices.push({ value: "in",  label: "Is one of"});
+      choices.push({ value: "in",  label: "Is one of  (Comma-separated)"});
     } else if (dtype == "bool") {
       choices.push({ value: "==" });
     } else if (dtype == "datetime") {
@@ -72,6 +72,7 @@ export class FilterUtilities {
       choices.push({ value: "Starts with" });
       choices.push({ value: "Ends with" });
       choices.push({ value: "NOT ==", label: "Does Not Equal" });
+      choices.push({ value: "in",  label: "Is one of  (Comma-separated)"});
     } else if (dtype == "geopos") {
       choices.push({
         value: "Distance <=",
