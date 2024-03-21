@@ -60,6 +60,7 @@ export class FilterUtilities {
       choices.push({ value: ">=" });
       choices.push({ value: "<" });
       choices.push({ value: "<=" });
+      choices.push({ value: "in",  label: "Is one of"});
     } else if (dtype == "bool") {
       choices.push({ value: "==" });
     } else if (dtype == "datetime") {

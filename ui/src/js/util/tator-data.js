@@ -442,6 +442,7 @@ export class TatorData {
       "<=": "lte",
       After: "gt",
       Before: "lt",
+      "in": "in",
       Includes: "icontains",
       "Starts with": "istartswith",
       "Ends with": "iendswith",
