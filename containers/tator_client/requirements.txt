@@ -1,6 +1,6 @@
-boto3==1.28.32
-imageio==2.14.0
-pandas==1.4.0
+boto3==1.34.66
+imageio==2.34.0
+pandas==2.2.1
 pillow==10.2.0
-progressbar2==4.0.0
-rq==1.11.1
+progressbar2==4.4.2
+rq==1.16.1
