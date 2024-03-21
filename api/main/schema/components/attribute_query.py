@@ -168,6 +168,15 @@ table_of_specials = """
         <td></td>
     </tr>
     <tr>
+        <td>track_membership</td>
+        <td>Returns localizations that are in a matching track (localization-state)</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
         <td>coincident_states</td>
         <td>Returns metadata that is coincident with state(s) (same frame/media)</td>
         <td>X</td>

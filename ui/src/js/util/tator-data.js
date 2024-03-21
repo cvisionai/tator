@@ -498,6 +498,7 @@ export class TatorData {
     mediaFilterData,
     coincidentStatesFilterData,
     coincidentLocalizationsFilterData,
+    trackMembershipFilterData,
     listStart,
     listStop,
     mediaIds,
@@ -534,6 +535,18 @@ export class TatorData {
         operations: [...coincident_filters],
       };
       finalAnnotationFilters.push({'attribute': '$coincident_localizations', 'value': top_coincident_filter, 'operation': 'search'});
+    }
+
+    if (trackMembershipFilterData.length  > 0) {
+      let coincident_filters = [];
+      for (const filter of coincidentLocalizationsFilterData) {
+        coincident_filters.push(this._convertFilterForTator(filter));
+      }
+      let top_coincident_filter = {
+        method: "and",
+        operations: [...coincident_filters],
+      };
+      finalAnnotationFilters.push({'attribute': '$track_membership', 'value': top_coincident_filter, 'operation': 'search'});
     }
 
     // Annotation Search
@@ -676,6 +689,7 @@ export class TatorData {
     var mediaIds = [];
     var coincidentStateFilters = [];
     var coincidentLocalizationFilters = [];
+    var trackMembershipFilters = [];
 
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
@@ -710,6 +724,22 @@ export class TatorData {
             coincidentLocalizationFilters.push(newFilter);
           } else {
             coincidentLocalizationFilters.push(filter);
+          }
+        }
+        else if (filter.categoryGroup == "States (Track Membership)")
+        {
+          if (
+            filter.field.includes("$") &&
+            typeof filter.value === "string" &&
+            filter.value.includes("(ID:")
+          ) {
+            var newFilter = Object.assign({}, filter);
+            newFilter.value = Number(
+              filter.value.split("(ID:")[1].replace(")", "")
+            );
+            trackMembershipFilters.push(newFilter);
+          } else {
+            trackMembershipFilters.push(filter);
           }
         }
         else if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
@@ -756,6 +786,7 @@ export class TatorData {
       mediaFilters,
       coincidentStateFilters,
       coincidentLocalizationFilters,
+      trackMembershipFilters,
       listStart,
       listStop,
       mediaIds,
@@ -839,6 +870,7 @@ export class TatorData {
       "States",
       stateFilters,
       mediaFilters,
+      [],
       [],
       [],
       listStart,
@@ -931,6 +963,7 @@ export class TatorData {
       "Medias",
       localizationFilters,
       mediaFilters,
+      [],
       [],
       [],
       listStart,

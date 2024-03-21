@@ -367,6 +367,18 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             query = Q(media_frame__in=proj_locals.values("media_frame"))
 
             all_casts.add("$coincident")
+        elif attr_name == "$track_membership":
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
+            #  Find matching states  from the
+            proj_states = State.objects.filter(project=project)
+            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+
+            query = Q(pk__in=proj_states.values("localizations"))
         elif attr_name == "$related_localizations":
             if is_media is False:
                 raise ValueError(f"'{attr_name}' not valid on metadata!")
