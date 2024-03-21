@@ -461,6 +461,16 @@ export class TatorData {
       value = Number(value.split("(ID:")[1].replace(")", ""));
     }
 
+    if (modifier == 'in')
+    {
+      let list_of_values = [];
+      for (let elem of value.split(","))
+      {
+        list_of_values.push(Number(elem) || elem);
+      }
+      value = list_of_values;
+    }
+
     var filter_object = {};
     filter_object.attribute = field;
     filter_object.value = value;
@@ -641,7 +651,10 @@ export class TatorData {
       filters.forEach((filter) => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "$id") {
-            mediaIds.push(Number(filter.value));
+            for  (let value of filter.value.split(","))
+            {
+              mediaIds.push(Number(value));
+            }
           } else if (
             filter.field.includes("$") &&
             typeof filter.value === "string" &&
