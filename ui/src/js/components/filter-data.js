@@ -89,20 +89,30 @@ export class FilterData {
     }
 
     // Allow filtering by dtype for the media, state, and localization types
-    var stateTypeOptions = [];
+    var frameStateTypeOptions = [];
+    var localizationStateTypeOptions = [];
+    var mediaStateTypeOptions = [];
     for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
       let stateType = this.mediaStateTypes[idx];
-      stateTypeOptions.push({
+      mediaStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
         value: `${stateType.name} (ID:${stateType.id})`,
       });
     }
     for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
       let stateType = this.localizationStateTypes[idx];
-      stateTypeOptions.push({
+      localizationStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
         value: `${stateType.name} (ID:${stateType.id})`,
       });
+    }
+    for (let idx = 0;  idx < this.frameStateTypes.length; idx++) {
+      let stateType = this.frameStateTypes[idx];
+      const choice = {
+        label: `${stateType.name} (ID:${stateType.id})`,
+        value: `${stateType.name} (ID:${stateType.id})`,
+      };
+      frameStateTypeOptions.push(choice);
     }
 
     var localizationTypeOptions = [];
@@ -384,7 +394,7 @@ export class FilterData {
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
-            choices: stateTypeOptions,
+            choices: mediaStateTypeOptions,
             name: "$type",
             label: "Data type",
             dtype: "enum",
@@ -415,7 +425,7 @@ export class FilterData {
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
-            choices: stateTypeOptions,
+            choices: localizationStateTypeOptions,
             name: "$type",
             label: "Data Type",
             dtype: "enum",
@@ -459,7 +469,7 @@ export class FilterData {
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
-            choices: stateTypeOptions,
+            choices: frameStateTypeOptions,
             name: "$type",
             label: "Data Type",
             dtype: "enum",
