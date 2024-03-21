@@ -509,6 +509,33 @@ export class TatorData {
       finalAnnotationFilters.push(this._convertFilterForTator(filter));
     }
 
+    // Build up coincident filters based on the supplied  values
+    // If there are any, they should be top-level $coincident_XYZ  that ultimately get
+    // AND'd  with any other filters.
+    if (coincidentStatesFilterData.length  > 0) {
+      let coincident_filters = [];
+      for (const filter of coincidentStatesFilterData) {
+        coincident_filters.push(this._convertFilterForTator(filter));
+      }
+      let top_coincident_filter = {
+        method: "and",
+        operations: [...coincident_filters],
+      };
+      finalAnnotationFilters.push({'attribute': '$coincident_states', 'value': top_coincident_filter, 'operation': 'search'});
+    }
+
+    if (coincidentLocalizationsFilterData.length  > 0) {
+      let coincident_filters = [];
+      for (const filter of coincidentLocalizationsFilterData) {
+        coincident_filters.push(this._convertFilterForTator(filter));
+      }
+      let top_coincident_filter = {
+        method: "and",
+        operations: [...coincident_filters],
+      };
+      finalAnnotationFilters.push({'attribute': '$coincident_localizations', 'value': top_coincident_filter, 'operation': 'search'});
+    }
+
     // Annotation Search
     var paramString = "";
     var annotationSearchObject = {
