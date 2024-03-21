@@ -98,21 +98,21 @@ export class FilterData {
       let stateType = this.mediaStateTypes[idx];
       mediaStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: `${stateType.name} (ID:${stateType.id})`,
+        value: stateType.id
       });
     }
     for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
       let stateType = this.localizationStateTypes[idx];
       localizationStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: `${stateType.name} (ID:${stateType.id})`,
+        value: stateType.id
       });
     }
     for (let idx = 0;  idx < this.frameStateTypes.length; idx++) {
       let stateType = this.frameStateTypes[idx];
       const choice = {
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: `${stateType.name} (ID:${stateType.id})`,
+        value: stateType.id
       };
       frameStateTypeOptions.push(choice);
     }
@@ -122,7 +122,7 @@ export class FilterData {
       let locType = this.localizationTypes[idx];
       localizationTypeOptions.push({
         label: `${locType.dtype}/${locType.name} (ID:${locType.id})`,
-        value: `${locType.dtype}/${locType.name} (ID:${locType.id})`,
+        value: locType.id,
       });
     }
 
@@ -131,7 +131,7 @@ export class FilterData {
       let mediaType = this.mediaTypes[idx];
       mediaTypeOptions.push({
         label: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`,
-        value: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`,
+        value: mediaType.id,
       });
     }
 
@@ -143,7 +143,7 @@ export class FilterData {
       userNames.push(`${user.username} (ID:${user.user})`);
       userFirstLastNames.push({
         label: `${user.username} (ID: ${user.user})`,
-        value: `${user.username} (ID: ${user.user})`,
+        value: user.user,
       });
     }
     userNames.sort();
@@ -157,7 +157,7 @@ export class FilterData {
       let version = this.versions[idx];
       versionNames.push({
         label: `${version.name} (ID:${version.id})`,
-        value: `${version.name} (ID:${version.id})`,
+        value: version.id,
       });
     }
 
@@ -169,7 +169,7 @@ export class FilterData {
       let section = this.sections[idx];
       sectionNames.push({
         label: `${section.name} (ID:${section.id})`,
-        value: `${section.name} (ID:${section.id})`,
+        value: section.id,
       });
     }
 

@@ -696,51 +696,15 @@ export class TatorData {
       filters.forEach((filter) => {
         if (filter.categoryGroup == "States (Coincident)")
         {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            coincidentStateFilters.push(newFilter);
-          } else {
             coincidentStateFilters.push(filter);
-          }
         }
         else if (filter.categoryGroup == "Localizations (Coincident)")
         {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            coincidentLocalizationFilters.push(newFilter);
-          } else {
             coincidentLocalizationFilters.push(filter);
-          }
         }
         else if (filter.categoryGroup == "States (Track Membership)")
         {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            trackMembershipFilters.push(newFilter);
-          } else {
             trackMembershipFilters.push(filter);
-          }
         }
         else if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "$id") {
@@ -748,33 +712,11 @@ export class TatorData {
             {
               mediaIds.push(Number(value));
             }
-          } else if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
           } else {
             mediaFilters.push(filter);
           }
         } else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            localizationFilters.push(newFilter);
-          } else {
             localizationFilters.push(filter);
-          }
         }
       });
     }
@@ -832,35 +774,13 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "$id") {
             mediaIds.push(Number(filter.value));
-          } else if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
           } else {
             mediaFilters.push(filter);
           }
         } else if (filter.category == "State") {
           stateFilters.push(filter);
         } else if (this._stateTypeNames.indexOf(filter.category) >= 0) {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            stateFilters.push(newFilter);
-          } else {
             stateFilters.push(filter);
-          }
         }
       });
     }
@@ -927,33 +847,11 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field.includes("$id")) {
             mediaIds.push(Number(filter.value));
-          } else if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
           } else {
             mediaFilters.push(filter);
           }
         } else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
-          } else {
             localizationFilters.push(filter);
-          }
         }
       });
     }
