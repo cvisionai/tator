@@ -217,8 +217,10 @@ export class AnalyticsPage extends TatorPage {
       ["MediaStates"],
       [],
       false,
-      {"FrameStates": "States (Coincident)",
-       "LocalizationStates": "States (Track Membership)"},
+      {
+        FrameStates: "States (Coincident)",
+        LocalizationStates: "States (Track Membership)",
+      },
       true
     );
 

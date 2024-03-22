@@ -71,8 +71,8 @@ class TatorCache:
         else:
             self.rds.set(gid, uid, ex=EXPIRE_TIME)
 
-        media_id_str = job.get("media_ids","")
-        media_ids = [int(x) for x in media_id_str.split(',') if x != '']
+        media_id_str = job.get("media_ids", "")
+        media_ids = [int(x) for x in media_id_str.split(",") if x != ""]
         for media_id in media_ids:
             media_key = f"{hkey}_{project}_{media_id}"
             if self.rds.exists(media_key):
@@ -121,9 +121,9 @@ class TatorCache:
             jobs = []
         return jobs
 
-    def get_jobs_by_media_id(self, project, media_ids,  hkey):
+    def get_jobs_by_media_id(self, project, media_ids, hkey):
         """Retrieves jobs using project ID. Set first_only=True to only retrieve first job."""
-        jobs =  []
+        jobs = []
         for media_id in media_ids:
             media_key = f"{hkey}_{project}_{media_id}"
             logger.info(f"media_key={media_key}")

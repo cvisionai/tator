@@ -442,7 +442,7 @@ export class TatorData {
       "<=": "lte",
       After: "gt",
       Before: "lt",
-      "in": "in",
+      in: "in",
       Includes: "icontains",
       "Starts with": "istartswith",
       "Ends with": "iendswith",
@@ -461,11 +461,9 @@ export class TatorData {
       value = Number(value.split("(ID:")[1].replace(")", ""));
     }
 
-    if (modifier == 'in')
-    {
+    if (modifier == "in") {
       let list_of_values = [];
-      for (let elem of value.split(","))
-      {
+      for (let elem of value.split(",")) {
         list_of_values.push(Number(elem) || elem);
       }
       value = list_of_values;
@@ -513,7 +511,7 @@ export class TatorData {
     // Build up coincident filters based on the supplied  values
     // If there are any, they should be top-level $coincident_XYZ  that ultimately get
     // AND'd  with any other filters.
-    if (coincidentStatesFilterData.length  > 0) {
+    if (coincidentStatesFilterData.length > 0) {
       let coincident_filters = [];
       for (const filter of coincidentStatesFilterData) {
         coincident_filters.push(this._convertFilterForTator(filter));
@@ -522,10 +520,14 @@ export class TatorData {
         method: "and",
         operations: [...coincident_filters],
       };
-      finalAnnotationFilters.push({'attribute': '$coincident_states', 'value': top_coincident_filter, 'operation': 'search'});
+      finalAnnotationFilters.push({
+        attribute: "$coincident_states",
+        value: top_coincident_filter,
+        operation: "search",
+      });
     }
 
-    if (coincidentLocalizationsFilterData.length  > 0) {
+    if (coincidentLocalizationsFilterData.length > 0) {
       let coincident_filters = [];
       for (const filter of coincidentLocalizationsFilterData) {
         coincident_filters.push(this._convertFilterForTator(filter));
@@ -534,10 +536,14 @@ export class TatorData {
         method: "and",
         operations: [...coincident_filters],
       };
-      finalAnnotationFilters.push({'attribute': '$coincident_localizations', 'value': top_coincident_filter, 'operation': 'search'});
+      finalAnnotationFilters.push({
+        attribute: "$coincident_localizations",
+        value: top_coincident_filter,
+        operation: "search",
+      });
     }
 
-    if (trackMembershipFilterData.length  > 0) {
+    if (trackMembershipFilterData.length > 0) {
       let coincident_filters = [];
       for (const filter of coincidentLocalizationsFilterData) {
         coincident_filters.push(this._convertFilterForTator(filter));
@@ -546,7 +552,11 @@ export class TatorData {
         method: "and",
         operations: [...coincident_filters],
       };
-      finalAnnotationFilters.push({'attribute': '$track_membership', 'value': top_coincident_filter, 'operation': 'search'});
+      finalAnnotationFilters.push({
+        attribute: "$track_membership",
+        value: top_coincident_filter,
+        operation: "search",
+      });
     }
 
     // Annotation Search
@@ -694,29 +704,22 @@ export class TatorData {
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
       filters.forEach((filter) => {
-        if (filter.categoryGroup == "States (Coincident)")
-        {
-            coincidentStateFilters.push(filter);
-        }
-        else if (filter.categoryGroup == "Localizations (Coincident)")
-        {
-            coincidentLocalizationFilters.push(filter);
-        }
-        else if (filter.categoryGroup == "States (Track Membership)")
-        {
-            trackMembershipFilters.push(filter);
-        }
-        else if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
+        if (filter.categoryGroup == "States (Coincident)") {
+          coincidentStateFilters.push(filter);
+        } else if (filter.categoryGroup == "Localizations (Coincident)") {
+          coincidentLocalizationFilters.push(filter);
+        } else if (filter.categoryGroup == "States (Track Membership)") {
+          trackMembershipFilters.push(filter);
+        } else if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "$id") {
-            for  (let value of filter.value.split(","))
-            {
+            for (let value of filter.value.split(",")) {
               mediaIds.push(Number(value));
             }
           } else {
             mediaFilters.push(filter);
           }
         } else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-            localizationFilters.push(filter);
+          localizationFilters.push(filter);
         }
       });
     }
@@ -780,7 +783,7 @@ export class TatorData {
         } else if (filter.category == "State") {
           stateFilters.push(filter);
         } else if (this._stateTypeNames.indexOf(filter.category) >= 0) {
-            stateFilters.push(filter);
+          stateFilters.push(filter);
         }
       });
     }
@@ -851,7 +854,7 @@ export class TatorData {
             mediaFilters.push(filter);
           }
         } else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-            localizationFilters.push(filter);
+          localizationFilters.push(filter);
         }
       });
     }

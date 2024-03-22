@@ -289,7 +289,10 @@ export class FilterCondition extends TatorElement {
         uniqueCategories.push(attributeType.typeGroupName);
       }
       //  @TODO:  This category map seems like a  really bad idea.
-      if  (attributeType.typeGroupName.indexOf("(Coincident)") <  0  && attributeType.typeGroupName.indexOf("(Track Membership)")) {
+      if (
+        attributeType.typeGroupName.indexOf("(Coincident)") < 0 &&
+        attributeType.typeGroupName.indexOf("(Track Membership)")
+      ) {
         this._categoryMap[attributeType.name] = attributeType.typeGroupName;
       }
     }

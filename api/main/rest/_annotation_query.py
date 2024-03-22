@@ -98,9 +98,18 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     if frame_state_ids and (annotation_type == "localization"):
         # Combine media and frame from states then find localizations that match
-        expression = ExpressionWrapper(Cast('media', output_field=BigIntegerField()).bitleftshift(32).bitor(F('frame')), output_field=BigIntegerField())
-        media_frames = State.objects.filter(pk__in=frame_state_ids, media__isnull=False, frame__isnull=False, variant_deleted=False).values_list(expression, flat=True)
-        qs = qs.filter(media__isnull=False, frame__isnull=False).alias(media_frame=expression).filter(media_frame__in=media_frames)
+        expression = ExpressionWrapper(
+            Cast("media", output_field=BigIntegerField()).bitleftshift(32).bitor(F("frame")),
+            output_field=BigIntegerField(),
+        )
+        media_frames = State.objects.filter(
+            pk__in=frame_state_ids, media__isnull=False, frame__isnull=False, variant_deleted=False
+        ).values_list(expression, flat=True)
+        qs = (
+            qs.filter(media__isnull=False, frame__isnull=False)
+            .alias(media_frame=expression)
+            .filter(media_frame__in=media_frames)
+        )
 
     if elemental_ids:
         qs = qs.filter(elemental_id__in=elemental_ids)
@@ -288,4 +297,3 @@ def get_annotation_queryset(project, params, annotation_type):
 
 def get_annotation_count(project, params, annotation_type):
     return get_annotation_queryset(project, params, annotation_type).count()
-

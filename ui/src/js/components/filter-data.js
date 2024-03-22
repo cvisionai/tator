@@ -35,12 +35,9 @@ export class FilterData {
   ) {
     this._modelData = modelData;
     this._include_coincident_localizations = include_coincident_localizations;
-    if (category_lookup)
-    {
+    if (category_lookup) {
       this._category_lookup = category_lookup;
-    }
-    else
-    {
+    } else {
       this._category_lookup = {};
     }
     if (algorithmCategories != null) {
@@ -98,21 +95,21 @@ export class FilterData {
       let stateType = this.mediaStateTypes[idx];
       mediaStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: stateType.id
+        value: stateType.id,
       });
     }
     for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
       let stateType = this.localizationStateTypes[idx];
       localizationStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: stateType.id
+        value: stateType.id,
       });
     }
-    for (let idx = 0;  idx < this.frameStateTypes.length; idx++) {
+    for (let idx = 0; idx < this.frameStateTypes.length; idx++) {
       let stateType = this.frameStateTypes[idx];
       const choice = {
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: stateType.id
+        value: stateType.id,
       };
       frameStateTypeOptions.push(choice);
     }
@@ -375,9 +372,8 @@ export class FilterData {
           entityType.attribute_types.push(modifiedDatetimeAttribute);
 
           this._allTypes.push(entityType);
-          if (this._include_coincident_localizations)
-          {
-            let copy = {...entityType};
+          if (this._include_coincident_localizations) {
+            let copy = { ...entityType };
             copy.typeGroupName = "Localizations (Coincident)";
             this._allTypes.push(copy);
           }

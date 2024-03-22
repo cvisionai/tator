@@ -11,6 +11,7 @@ from ._attributes import (
     related_attribute_filter_parameter_schema,
 )
 from ._safety import safety_parameter_schema
+
 boilerplate = dedent(
     """\
 A media may be an image or a video. Media are a type of entity in Tator,
