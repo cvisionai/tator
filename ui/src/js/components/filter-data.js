@@ -492,11 +492,6 @@ export class FilterData {
         }
       }
     }
-
-    //  Alphabetize this._allTypes
-    this._allTypes.sort((a, b) => {
-      return a.name.localeCompare(b.name);
-    });
   }
 
   /**
