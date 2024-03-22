@@ -2104,12 +2104,21 @@ class VideoTestCase(
         )
         box_type.media.add(self.entity_type)
         box_type.save()
+
+        state_type = StateType.objects.create(
+            name="states",
+            dtype="state",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        state_type.media.add(self.entity_type)
+        state_type.save()
+
         wait_for_indices(box_type)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
         assert response.data[0].get("incident", None) == None
 
-        print("About to create a bunch of boxes")
         # Make a whole bunch of boxes to make sure indices get utilized
         boxes = []
         foo_val = {
@@ -2199,7 +2208,7 @@ class VideoTestCase(
                 box_type,
                 self.project,
                 self.entities[1],
-                0,
+                10,
                 {
                     "String Test": "Zoo",
                     "Enum Test": "enum_val4",
@@ -2210,6 +2219,76 @@ class VideoTestCase(
             )
         )
         Localization.objects.bulk_create(boxes)
+
+        # Make a state object at frame 10 to make sure
+        # we find Zoo/enum_val4 above.
+        state = State.objects.create(
+            created_by=self.user,
+            modified_by=self.user,
+            type=state_type,
+            project=self.project,
+            frame=10,
+            version=self.project.version_set.all()[0],
+        )
+        state.media.add(self.entities[1])
+        state.save()
+
+        state_2 = State.objects.create(
+            created_by=self.user,
+            modified_by=self.user,
+            type=state_type,
+            project=self.project,
+            frame=100,
+            version=self.project.version_set.all()[0],
+        )
+        state_2.media.add(self.entities[1])
+        state_2.save()
+
+        # Do a frame_state lookup and find the localization at
+        # frame 10
+        response = self.client.put(
+            f"/rest/Localizations/{self.project.pk}", {"frame_state_ids": [state.id]}, format="json"
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
+        self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
+
+        response = self.client.put(
+            f"/rest/Localizations/{self.project.pk}",
+            {
+                "object_search": {
+                    "attribute": "$coincident_states",
+                    "operation": "search",
+                    "value": {"attribute": "$id", "operation": "in", "value": [state.id]},
+                }
+            },
+            format="json",
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
+        self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
+
+        response = self.client.put(
+            f"/rest/Localizations/{self.project.pk}",
+            {"frame_state_ids": [state_2.id]},
+            format="json",
+        )
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.put(
+            f"/rest/Localizations/{self.project.pk}",
+            {
+                "object_search": {
+                    "attribute": "$coincident_states",
+                    "operation": "search",
+                    "value": {"attribute": "$id", "operation": "in", "value": [state_2.id]},
+                }
+            },
+            format="json",
+        )
+        self.assertEqual(len(response.data), 0)
+
+        # Do attribute searches on localization data
 
         searches = [
             ["String Test", "Foo"],
@@ -2229,6 +2308,8 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
+            matches = len(response.data)
+            self.assertEqual(matches, 2)
 
             first_hit = response.data[0]
             second_hit = response.data[1]
@@ -2248,6 +2329,21 @@ class VideoTestCase(
             self.assertEqual(second_hit["id"], self.entities[0].pk)
             self.assertEqual(first_hit.get("incident", None), 1)
             self.assertEqual(first_hit["id"], self.entities[1].pk)
+
+            # Test the same thing with related_search in  object_search
+            response = self.client.put(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "object_search": {
+                        "attribute": "$related_localizations",
+                        "operation": "search",
+                        "value": {"attribute": key, "operation": "eq", "value": value},
+                    }
+                },
+                format="json",
+            )
+            matches = len(response.data)
+            self.assertEqual(matches, 2)
 
     def test_author_change(self):
         test_video = create_test_video(self.user, f"asdf_0", self.entity_type, self.project)

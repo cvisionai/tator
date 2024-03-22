@@ -92,8 +92,8 @@ class JobListSchema(AutoSchema):
                     "schema": {
                         "type": "array",
                         "items": {"type": "integer"},
+                    },
                 },
-    }
             ]
         return params
 

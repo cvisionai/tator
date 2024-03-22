@@ -29,10 +29,17 @@ export class FilterData {
     algorithmCategories,
     excludeTypesList,
     skipTypeIds,
-    squashMetadata
+    squashMetadata,
+    category_lookup,
+    include_coincident_localizations
   ) {
     this._modelData = modelData;
-
+    this._include_coincident_localizations = include_coincident_localizations;
+    if (category_lookup) {
+      this._category_lookup = category_lookup;
+    } else {
+      this._category_lookup = {};
+    }
     if (algorithmCategories != null) {
       this.algorithmCategories = algorithmCategories;
     }
@@ -81,20 +88,30 @@ export class FilterData {
     }
 
     // Allow filtering by dtype for the media, state, and localization types
-    var stateTypeOptions = [];
+    var frameStateTypeOptions = [];
+    var localizationStateTypeOptions = [];
+    var mediaStateTypeOptions = [];
     for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
       let stateType = this.mediaStateTypes[idx];
-      stateTypeOptions.push({
+      mediaStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: `${stateType.name} (ID:${stateType.id})`,
+        value: stateType.id,
       });
     }
     for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
       let stateType = this.localizationStateTypes[idx];
-      stateTypeOptions.push({
+      localizationStateTypeOptions.push({
         label: `${stateType.name} (ID:${stateType.id})`,
-        value: `${stateType.name} (ID:${stateType.id})`,
+        value: stateType.id,
       });
+    }
+    for (let idx = 0; idx < this.frameStateTypes.length; idx++) {
+      let stateType = this.frameStateTypes[idx];
+      const choice = {
+        label: `${stateType.name} (ID:${stateType.id})`,
+        value: stateType.id,
+      };
+      frameStateTypeOptions.push(choice);
     }
 
     var localizationTypeOptions = [];
@@ -102,7 +119,7 @@ export class FilterData {
       let locType = this.localizationTypes[idx];
       localizationTypeOptions.push({
         label: `${locType.dtype}/${locType.name} (ID:${locType.id})`,
-        value: `${locType.dtype}/${locType.name} (ID:${locType.id})`,
+        value: locType.id,
       });
     }
 
@@ -111,7 +128,7 @@ export class FilterData {
       let mediaType = this.mediaTypes[idx];
       mediaTypeOptions.push({
         label: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`,
-        value: `${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`,
+        value: mediaType.id,
       });
     }
 
@@ -123,7 +140,7 @@ export class FilterData {
       userNames.push(`${user.username} (ID:${user.user})`);
       userFirstLastNames.push({
         label: `${user.username} (ID: ${user.user})`,
-        value: `${user.username} (ID: ${user.user})`,
+        value: user.user,
       });
     }
     userNames.sort();
@@ -137,7 +154,7 @@ export class FilterData {
       let version = this.versions[idx];
       versionNames.push({
         label: `${version.name} (ID:${version.id})`,
-        value: `${version.name} (ID:${version.id})`,
+        value: version.id,
       });
     }
 
@@ -149,14 +166,14 @@ export class FilterData {
       let section = this.sections[idx];
       sectionNames.push({
         label: `${section.name} (ID:${section.id})`,
-        value: `${section.name} (ID:${section.id})`,
+        value: section.id,
       });
     }
 
     // Create the filter options
     this._allTypes = [];
 
-    let category_lookup = {};
+    let category_lookup = this._category_lookup;
     if (this._squashMetadata) {
       category_lookup = {
         Localizations: "Metadata",
@@ -355,6 +372,11 @@ export class FilterData {
           entityType.attribute_types.push(modifiedDatetimeAttribute);
 
           this._allTypes.push(entityType);
+          if (this._include_coincident_localizations) {
+            let copy = { ...entityType };
+            copy.typeGroupName = "Localizations (Coincident)";
+            this._allTypes.push(copy);
+          }
         }
       }
     }
@@ -376,7 +398,7 @@ export class FilterData {
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
-            choices: stateTypeOptions,
+            choices: mediaStateTypeOptions,
             name: "$type",
             label: "Data type",
             dtype: "enum",
@@ -407,7 +429,7 @@ export class FilterData {
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
-            choices: stateTypeOptions,
+            choices: localizationStateTypeOptions,
             name: "$type",
             label: "Data Type",
             dtype: "enum",
@@ -451,7 +473,7 @@ export class FilterData {
           entityType.attribute_types.push(versionAttribute);
 
           var typeAttribute = {
-            choices: stateTypeOptions,
+            choices: frameStateTypeOptions,
             name: "$type",
             label: "Data Type",
             dtype: "enum",

@@ -106,7 +106,7 @@ class JobListAPI(BaseListView):
     def _get(self, params):
         gid = params.get("gid", None)
         project = params["project"]
-        media_ids = params.get("media_id",None)
+        media_ids = params.get("media_id", None)
 
         selector = f"project={project},job_type=algorithm"
         if gid is not None:
@@ -122,7 +122,7 @@ class JobListAPI(BaseListView):
             cache = TatorCache().get_jobs_by_project(project, "algorithm")
         jobs = []
         for elem in cache:
-            uid_selector = selector +  f",uid={elem['uid']}"
+            uid_selector = selector + f",uid={elem['uid']}"
             jobs.extend(get_jobs(uid_selector, cache))
         return [workflow_to_job(job) for job in jobs]
 

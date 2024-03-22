@@ -341,7 +341,9 @@ class StateListAPI(BaseListView):
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
-            raise ValueError(f"Safety check failed - expected {expected_count} but would delete {count}")
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would delete {count}"
+            )
         if count > 0:
             if params["prune"] == 1:
                 # Delete states.
@@ -375,7 +377,9 @@ class StateListAPI(BaseListView):
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
-            raise ValueError(f"Safety check failed - expected {expected_count} but would update {count}")
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would update {count}"
+            )
         if count > 0:
             if qs.values("type").distinct().count() != 1:
                 raise ValueError(

@@ -124,7 +124,7 @@ export class FilterCondition extends TatorElement {
           if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
             if (attribute.label) {
               if (
-                ["_x", "_y", "_width", "_height"].indexOf(attribute.name) >= 0
+                ["$x", "$y", "$width", "$height"].indexOf(attribute.name) >= 0
               ) {
                 geoChoices.push({
                   value: attribute.name,
@@ -288,7 +288,13 @@ export class FilterCondition extends TatorElement {
         choices.push({ value: attributeType.typeGroupName });
         uniqueCategories.push(attributeType.typeGroupName);
       }
-      this._categoryMap[attributeType.name] = attributeType.typeGroupName;
+      //  @TODO:  This category map seems like a  really bad idea.
+      if (
+        attributeType.typeGroupName.indexOf("(Coincident)") < 0 &&
+        attributeType.typeGroupName.indexOf("(Track Membership)")
+      ) {
+        this._categoryMap[attributeType.name] = attributeType.typeGroupName;
+      }
     }
     this._category.choices = choices;
     this._category.selectedIndex = -1;

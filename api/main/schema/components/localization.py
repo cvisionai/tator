@@ -252,7 +252,15 @@ localization_id_query = {
             },
         },
         "state_ids": {
-            "description": "Array of parent state IDs for which localizations should be retrieved.",
+            "description": "Array of parent localization state (track) IDs for which localizations should be retrieved.",
+            "type": "array",
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+            },
+        },
+        "frame_state_ids": {
+            "description": "Array of frame state IDs for which localizations present in the same media/frame will be retrieved.",
             "type": "array",
             "items": {
                 "type": "integer",
