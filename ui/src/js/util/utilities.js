@@ -58,19 +58,19 @@ export class Utilities {
       if (media_files.layout) {
         return { request: null, size: -1 };
       }
-      if (media_files.image) {
+      if (media_files.image && media_files.image.length > 0) {
         media_files.image.sort(byRes);
         path = media_files.image[0].path;
         size = media_files.image[0].size;
         http_authorization = media_files.image[0].http_auth;
         hostname = media_files.image[0].host;
-      } else if (media_files.archival) {
+      } else if (media_files.archival && media_files.archival.length > 0) {
         media_files.archival.sort(byRes);
         path = media_files.archival[0].path;
         size = media_files.archival[0].size;
         http_authorization = media_files.archival[0].http_auth;
         hostname = media_files.archival[0].host;
-      } else if (media_files.streaming) {
+      } else if (media_files.streaming && media_files.streaming.length > 0) {
         media_files.streaming.sort(byRes);
         path = media_files.streaming[0].path;
         size = media_files.streaming[0].size;
