@@ -91,13 +91,6 @@ MIDDLEWARE = (
             "django.middleware.csrf.CsrfViewMiddleware",
         ]
     )
-    + (
-        [
-            "tator_online.StatsdMiddleware",
-        ]
-        if STATSD_ENABLED
-        else []
-    )
     + [
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
