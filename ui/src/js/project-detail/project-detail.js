@@ -495,6 +495,7 @@ export class FolderDialog extends ModalDialog {
 
         this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
           detail: {
+            mainSectionId: this._selectedSection.id,
             specs: patchSpecs
          }
        }));
@@ -594,7 +595,7 @@ export class BookmarkEditDialog extends ModalDialog {
 
     super();
 
-    this._title.nodeValue = "Edit Bookmark";
+    this._title.nodeValue = "Rename Bookmark";
     this._main.classList.remove("py-4");
     this._main.classList.add("pt-3");
 
@@ -615,7 +616,7 @@ export class BookmarkEditDialog extends ModalDialog {
 
     this._save = document.createElement("button");
     this._save.setAttribute("class", "btn btn-clear btn-purple disabled");
-    this._save.textContent = "Edit";
+    this._save.textContent = "Rename";
     this._footer.appendChild(this._save);
     this._save.setAttribute("disabled", "");
 
@@ -760,7 +761,7 @@ export class BookmarkDeleteModal extends DeleteModal {
    */
   init(data) {
     super.init(data);
-    this._bookmarkText.innerHTML = `<span>Are you sure you want to delete the bookmark:</span><br /><span class="text-semibold">${bookmark.name}</span>?`;
+    this._dataText.innerHTML = `<span>Are you sure you want to delete the bookmark:</span><br /><span class="text-semibold">${data.name}</span>?`;
   }
 
   /**
@@ -1573,8 +1574,8 @@ export class ProjectDetail extends TatorPage {
       this._closeConfirmRunAlgoModal.bind(this)
     );
 
-    const deleteSection = document.createElement("delete-section-form");
-    this._projects.appendChild(deleteSection);
+    this._deleteSectionDialog = document.createElement("delete-section-form");
+    this._projects.appendChild(this._deleteSectionDialog);
 
     this.deleteFileForm = document.createElement("delete-file-form");
     this._projects.appendChild(this.deleteFileForm);
@@ -1777,21 +1778,21 @@ export class ProjectDetail extends TatorPage {
     };
 
     this._removeCallback = (evt) => {
-      deleteSection.init(
+      this._deleteSectionDialog.init(
         evt.detail.projectId,
         evt.detail.section,
         evt.detail.sectionParams,
         evt.detail.deleteMedia
       );
-      deleteSection.setAttribute("is-open", "");
+      this._deleteSectionDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
 
-    deleteSection.addEventListener("close", (evt) => {
+    this._deleteSectionDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    deleteSection.addEventListener("confirmDelete", (evt) => {
+    this._deleteSectionDialog.addEventListener("confirmDelete", (evt) => {
       for (const child of this._allSections()) {
         if (child._section) {
           if (child._section.id == evt.detail.id) {
@@ -1802,7 +1803,7 @@ export class ProjectDetail extends TatorPage {
       }
       this._bulkEdit._clearSelection();
 
-      deleteSection.removeAttribute("is-open");
+      this._deleteSectionDialog.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
     });
 
@@ -1897,7 +1898,7 @@ export class ProjectDetail extends TatorPage {
       }
 
       await this.getSections();
-      this.selectSection(evt.detail.id);
+      this.selectSection(evt.detail.mainSectionId);
       this.removeAttribute("has-open-modal");
       this._bulkEdit._clearSelection();
     });
@@ -2134,10 +2135,8 @@ export class ProjectDetail extends TatorPage {
               this._mediaSection.project = project;
               this._mediaSection.algorithms = this._algorithms;
               this._projectText.nodeValue = project.name;
-              // this._search.setAttribute("project-name", project.name);
               this._description.setAttribute("text", project.summary);
               this._collaborators.usernames = project.usernames;
-              // this._search.autocomplete = project.filter_autocomplete;
 
               let projectParams = null;
 
@@ -2187,9 +2186,14 @@ export class ProjectDetail extends TatorPage {
                   //
                   // Select the section
                   //
-                  this.selectSection(); // #TODO Defaulting to All Media right now
-
-
+                  const params = new URLSearchParams(document.location.search.substring(1));
+                  if (params.has("section")) {
+                    const sectionId = Number(params.get("section"));
+                    this.selectSection(sectionId);
+                  }
+                  else {
+                    this.selectSection();
+                  }
                 });
               } catch (err) {
                 console.error("Could not initialize filter interface.", err);
@@ -2309,7 +2313,6 @@ export class ProjectDetail extends TatorPage {
 
   /**
    * Callback from confirm run algorithm modal choice
-   * @async
    */
   async _closeConfirmRunAlgoModal(evt) {
     console.log(evt);
@@ -2483,6 +2486,9 @@ export class ProjectDetail extends TatorPage {
   // Section data functions
   //
 
+  /**
+   * Get the sections for the project and set the UI
+   */
   async getSections() {
     var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
       method: "GET"
@@ -2658,6 +2664,19 @@ export class ProjectDetail extends TatorPage {
         that.hideDimmer();
       });
 
+      sectionItem.addEventListener("deleteSection", async (evt) => {
+        
+        const sectionToDelete = that._sectionData.getSectionFromID(evt.detail.id)
+        that._deleteSectionDialog.init(
+          that._project.id,
+          sectionToDelete,
+          null,
+          false
+        );
+        that._deleteSectionDialog.setAttribute("is-open", "");
+        that.setAttribute("has-open-modal", "");
+      });
+
       sectionItem.addEventListener("restoreSection", async (evt) => {
         that.showDimmer();
         await that.restoreSection(evt.detail.id);
@@ -2731,6 +2750,7 @@ export class ProjectDetail extends TatorPage {
       }
     }
 
+    // Expand the folders in the library panel until the active folder is selected and in view
     if (this._selectedSection != null) {
       var parentSections = this._sectionData.getParentSections(this._selectedSection);
       var parentSectionIds = parentSections.map((section) => section.id);
@@ -2760,6 +2780,27 @@ export class ProjectDetail extends TatorPage {
       }
     }
 
+    // Update media section center page
+    this._mediaSection.init(this._project.id, this._selectedSection);
+
+    // Update the URL
+    this.updateURL();
+  }
+
+  /**
+   * Updates the URL with the current page's state
+   */
+  updateURL() {
+
+    let url = new URL(window.location.href);
+
+    if (this._selectedSection !== null) {
+      url.searchParams.set("section", this._selectedSection.id);
+    }
+    else {
+      url.searchParams.delete("section");
+    }
+    window.history.replaceState({}, '', url.toString());
   }
 
   //
