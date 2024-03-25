@@ -21,29 +21,24 @@ export class MediaSection extends TatorElement {
     );
     section.appendChild(header);
 
-    this._name = document.createElement("h2");
-    this._name.setAttribute("class", "h3 py-2"); //not a typo
+    this._name = document.createElement("div");
+    this._name.setAttribute("class", "d-flex flex-column h3 py-2");
     header.appendChild(this._name);
 
-    this._nameText = document.createTextNode("");
-    this._nameIdText = document.createElement("span");
-    this._nameIdText.setAttribute("class", "text-dark-gray50 px-1 f1");
+    this._nameText = document.createElement("div");
     this._name.appendChild(this._nameText);
-    this._name.appendChild(this._nameIdText);
 
-    const numFiles = document.createElement("span");
-    numFiles.setAttribute("class", "text-gray px-2");
-    this._name.appendChild(numFiles);
+    const pageWrapper = document.createElement("div");
+    pageWrapper.setAttribute("class", "d-flex text-gray f1 py-2");
+    this._name.appendChild(pageWrapper);
 
-    this._numFiles = document.createTextNode("");
-    numFiles.appendChild(this._numFiles);
+    this._numFiles = document.createElement("div");
+    this._numFiles.setAttribute("class", "text-gray mr-2");
+    pageWrapper.appendChild(this._numFiles);
 
-    const pagePosition = document.createElement("div");
-    pagePosition.setAttribute("class", "py-2 f1 text-normal text-gray");
-    this._name.appendChild(pagePosition);
-
-    this._pagePosition = document.createTextNode("");
-    pagePosition.appendChild(this._pagePosition);
+    this._pagePosition = document.createElement("div");
+    this._pagePosition.setAttribute("class", "text-normal");
+    pageWrapper.appendChild(this._pagePosition);
 
     const actions = document.createElement("div");
     actions.setAttribute("class", "d-flex flex-items-center");
@@ -110,17 +105,24 @@ export class MediaSection extends TatorElement {
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
-      this._nameText.nodeValue = "All Media";
-      this._nameIdText.textContent = "";
+      this._nameText.innerHTML = `<span class="text-white">${this._sectionName}</span>`;
     } else {
       this._sectionName = section.name;
       this._upload.setAttribute("section", section.name);
-      this._nameText.nodeValue = `${section.name}`;
-      this._nameIdText.textContent = `(ID: ${section.id})`;
+      let parts = section.name.split(".");
+      var nameTextHTML = `<span class="text-white">${section.name}</span>`;
+      if (parts.length > 1) {
+        let mainSectionName = parts[parts.length - 1];
+        parts.pop();
+        nameTextHTML = `<span class="text-dark-gray">`;
+        nameTextHTML += parts.join(" > ");
+        nameTextHTML += ` > </span>`;
+        nameTextHTML += `<span class="text-white">${mainSectionName}</span>`;
+      }
+      this._nameText.innerHTML = nameTextHTML;
     }
     this._project = project;
     this._section = section;
-    this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
 
     this._upload.setAttribute("project-id", project);
@@ -245,7 +247,7 @@ export class MediaSection extends TatorElement {
     if (numFiles == 1) {
       fileText = "File";
     }
-    this._numFiles.nodeValue = `${numFiles} ${fileText}`;
+    this._numFiles.innerHTML = `${numFiles} ${fileText}`;
     this._numFilesCount = Number(numFiles);
 
     if (numFiles != this._paginator_top._numFiles) {
@@ -261,14 +263,14 @@ export class MediaSection extends TatorElement {
       this._paginator_bottom.init(numFiles, this._paginationState);
 
       if (this._paginator_top._numPages == 0) {
-        this._pagePosition.nodeValue = ``;
+        this._pagePosition.innerHTML = ``;
       }
       else {
-        this._pagePosition.nodeValue = `Page ${
+        this._pagePosition.innerHTML = `(Page ${
           typeof this._paginationState.page == "undefined"
             ? 1
             : this._paginationState.page
-        } of ${this._paginator_top._numPages}`;
+        } of ${this._paginator_top._numPages})`;
 
       }
     }
@@ -646,68 +648,6 @@ export class MediaSection extends TatorElement {
     }
   }
 
-  _rename(evt) {
-    // console.log(this._section);
-    if (this._name.contains(this._nameText)) {
-      const input = document.createElement("input");
-      input.style.borderWidth = "3px";
-      input.setAttribute(
-        "class",
-        "form-control input-sm f1 text-white text-bold"
-      );
-      input.setAttribute("value", this._section.name);
-      this._name.replaceChild(input, this._nameText);
-      input.addEventListener("focus", (evt) => {
-        evt.target.select();
-      });
-      input.addEventListener("keydown", (evt) => {
-        if (evt.keyCode == 13) {
-          evt.preventDefault();
-          input.blur();
-        }
-      });
-      input.addEventListener("blur", (evt) => {
-        if (evt.target.value !== "") {
-          //this._worker.postMessage({
-          //  command: "renameSection",
-          //  fromName: this._sectionName,
-          //  toName: evt.target.value,
-          //});
-          this._sectionName = evt.target.value;
-        }
-        // console.log(this._section);
-        fetchCredentials("/rest/Section/" + this._section.id, {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: this._sectionName,
-          }),
-        });
-        this._nameText.textContent = this._sectionName;
-        this._section.name = this._sectionName;
-        this._name.replaceChild(this._nameText, evt.target);
-
-        this._name.classList.add("text-green");
-        setTimeout(() => {
-          this._name.classList.remove("text-green");
-        }, 800);
-
-        this.dispatchEvent(
-          new CustomEvent("newName", {
-            detail: {
-              id: this._section.id,
-              sectionName: this._sectionName,
-            },
-          })
-        );
-      });
-      input.focus();
-    }
-  }
-
-  _findAfters() {
-    // Find the media for each batch of 10000 medias.
-  }
-
   _setCallbacks() {
     this._more.addEventListener("bulk-edit", () => {
       this.dispatchEvent(new Event("bulk-edit"));
@@ -729,8 +669,6 @@ export class MediaSection extends TatorElement {
       "downloadAnnotations",
       this._downloadAnnotations.bind(this)
     );
-
-    this._more.addEventListener("rename", this._rename.bind(this));
 
     // New right click options
     this.addEventListener("renameSection", this._reloadAndRename.bind(this));
