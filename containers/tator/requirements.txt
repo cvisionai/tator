@@ -10,7 +10,6 @@ django-ltree==0.5.3
 django-pgtrigger==4.11.0
 djangorestframework==3.14.0
 elasticsearch==7.10.1
-gevent==24.2.1
 google-auth==2.3.3
 google-cloud-storage==2.1.0
 grafana-django-saml2-auth==3.9.0
