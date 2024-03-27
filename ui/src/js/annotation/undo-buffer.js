@@ -260,9 +260,18 @@ export class UndoBuffer extends HTMLElement {
   undo() {
     if (this._index > 0) {
       this._index--;
+      let  promises  =[];
+      let functors=[];
+
       for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
         const [method, uri, id, body,  dataType] = op;
+        if (method ==  "FUNCTOR")
+        {
+          functors.push(uri);
+          continue;
+        }
         const promise = this._fetch(op, dataType);
+        promises.push(promise);
         if (method == "POST") {
           promise
             .then((response) => response.json())
@@ -284,6 +293,14 @@ export class UndoBuffer extends HTMLElement {
           this._emitUpdate(method, id, body, dataType);
         }
       }
+
+      //  After  all the fetches complete run the functors
+      Promise.all(promises).then(()=>{
+        for (let functor of functors)
+        {
+          functor();
+        }
+      });
     }
   }
 
