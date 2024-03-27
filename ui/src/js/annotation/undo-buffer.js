@@ -7,7 +7,6 @@ export class UndoBuffer extends HTMLElement {
 
     this._forwardOps = [];
     this._backwardOps = [];
-    this._dataTypes = [];
     this._index = 0;
     this._editsMade = false;
     this._sessionStart = new Date();
@@ -98,9 +97,8 @@ export class UndoBuffer extends HTMLElement {
     const projectId = this.getAttribute("project-id");
     const detailUri = UndoBuffer.listToDetail[listUri];
     this._resetFromNow();
-    this._forwardOps.push([["POST", listUri, projectId, body]]);
-    this._backwardOps.push([["DELETE", detailUri, null, null]]);
-    this._dataTypes.push(dataType);
+    this._forwardOps.push([["POST", listUri, projectId, body, dataType]]);
+    this._backwardOps.push([["DELETE", detailUri, null, null, dataType]]);
     return this.redo();
   }
 
@@ -138,9 +136,8 @@ export class UndoBuffer extends HTMLElement {
             }
           }
           this._resetFromNow();
-          this._forwardOps.push([["PATCH", detailUri, id, body]]);
-          this._backwardOps.push([["PATCH", detailUri, id, original]]);
-          this._dataTypes.push(dataType);
+          this._forwardOps.push([["PATCH", detailUri, id, body, dataType]]);
+          this._backwardOps.push([["PATCH", detailUri, id, original, dataType]]);
           return this.redo();
         })
         .catch(() => {
@@ -196,9 +193,8 @@ export class UndoBuffer extends HTMLElement {
           const projectId = this.getAttribute("project-id");
           const listUri = UndoBuffer.detailToList[detailUri];
           this._resetFromNow();
-          this._forwardOps.push([["DELETE", detailUri, id, null]]);
-          this._backwardOps.push([["POST", listUri, projectId, body]]);
-          this._dataTypes.push(dataType);
+          this._forwardOps.push([["DELETE", detailUri, id, null,  dataType]]);
+          this._backwardOps.push([["POST", listUri, projectId, body, dataType]]);
           return this.redo();
         })
         .catch(() => {
@@ -215,8 +211,7 @@ export class UndoBuffer extends HTMLElement {
     if (this._index > 0) {
       this._index--;
       for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
-        const [method, uri, id, body] = op;
-        const dataType = this._dataTypes[this._index];
+        const [method, uri, id, body,  dataType] = op;
         const promise = this._fetch(op, dataType);
         if (method == "POST") {
           promise
@@ -248,8 +243,7 @@ export class UndoBuffer extends HTMLElement {
     let p = new Promise((resolve) => {
       if (this._index < this._forwardOps.length) {
         for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
-          const [method, uri, id, body] = op;
-          const dataType = this._dataTypes[this._index];
+          const [method, uri, id, body,  dataType] = op;
           let promise = this._fetch(op, dataType);
           if (method == "POST") {
             promise = promise
@@ -384,10 +378,9 @@ export class UndoBuffer extends HTMLElement {
   }
 
   _resetFromNow() {
-    if (this._index < this._dataTypes.length) {
+    if (this._index < this._forwardOps.length) {
       this._forwardOps.splice(this._index);
       this._backwardOps.splice(this._index);
-      this._dataTypes.splice(this._index);
     }
   }
 }
