@@ -102,7 +102,7 @@ export class UndoBuffer extends HTMLElement {
     return this.redo();
   }
 
-  async patch(detailUri, id, body, dataType, extra_fw_ops,  extra_bw_ops) {
+  async patch(detailUri, id, body, dataType, extra_fw_ops,  extra_bw_ops, replace_bw_ops) {
     const projectId = this.getAttribute("project-id");
     const promise = await this._get(detailUri, id);
     if (promise) {
@@ -157,21 +157,32 @@ export class UndoBuffer extends HTMLElement {
           }
           for (const op of extra_bw_ops)
           {
-            let  [ep,uri,id,body,dataType] =  op;
+            let  [method,uri,id,body,dataType] =  op;
             if  ('localization_ids_remove'  in body)
             {
               body['localization_ids_remove'] = [new_id];
             }
-            fixed_bw_ops.push([ep,uri,id,body,dataType]);
+            if (method == 'DELETE'  && id ==  '$NEW_ID')
+            {
+              id =  new_id;
+            }
+            fixed_bw_ops.push([method,uri,id,body,dataType]);
           }
 
+          // Run the forward ops atomically in  this function call
           if (extra_fw_ops && extra_fw_ops.length > 0)
           {
             await this._fetch(fixed_fw_ops[0]);
           }
+
+          //  Update / Replace backward ops as appropriate
           if (fixed_bw_ops && fixed_bw_ops.length > 0)
           {
-            this._backwardOps[index].push(...fixed_fw_ops);
+            if (replace_bw_ops)
+            {
+              this._backwardOps[index] =  [];
+            }
+            this._backwardOps[index].push(...fixed_bw_ops);
           }
         }
         else
