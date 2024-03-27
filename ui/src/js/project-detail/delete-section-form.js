@@ -53,6 +53,7 @@ export class DeleteSectionForm extends ModalDialog {
     this._accept.addEventListener("click", async (evt) => {
       const projectId = this._project;
       const params = this._sectionParams;
+      /*
       let promise = Promise.resolve();
       if (this._deleteMedia) {
         promise = promise
@@ -70,6 +71,10 @@ export class DeleteSectionForm extends ModalDialog {
           })
         )
         .catch((err) => console.log(err));
+      */
+
+      // #TODO
+
       this.dispatchEvent(
         new CustomEvent("confirmDelete", {
           detail: { id: this._section.id },
