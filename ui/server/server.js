@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const tracer = require('dd-trace').init();
 const express = require('express');
 const nunjucks = require('nunjucks');
 const favicon = require('serve-favicon');
