@@ -62,7 +62,7 @@ export class MediaMoveDialog extends ModalDialog {
     this._single = true;
   }
 
-  async open(mediaId, mediaName, projectId, single = true) {
+  open(mediaId, mediaName, projectId, single = true) {
     // Values
     this._projectId = projectId;
     this._mediaId = mediaId;
@@ -82,25 +82,6 @@ export class MediaMoveDialog extends ModalDialog {
     this._moveEnum.hidden = false;
     this._newNameInput.hidden = true;
     this._footer.classList.add("hidden");
-
-    // get sections
-    try {
-      const sectionResp = await fetchCredentials(
-        `/rest/Sections/${this._projectId}`,
-        {},
-        true
-      );
-
-      if (sectionResp.status !== 200) {
-        const respObj = await sectionResp.json();
-        this._message.textContent = `Error: ${respObj.message}`;
-      } else {
-        this._moveEnum.sections = await sectionResp.json();
-      }
-    } catch (err) {
-      this._message.textContent = `Error getting section list.`;
-      console.error("Error getting section list.", err);
-    }
 
     this.setAttribute("is-open", "true");
   }
