@@ -1784,6 +1784,13 @@ class Localization(Model, ModelDiffMixin):
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC,
             ),
+            pgtrigger.Trigger(
+                name="post_localization_mark_trigger_update",
+                operation=pgtrigger.Update,
+                when=pgtrigger.After,
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC,
+            ),
         ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
@@ -1877,6 +1884,13 @@ class State(Model, ModelDiffMixin):
             pgtrigger.Trigger(
                 name="post_state_mark_trigger",
                 operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC,
+            ),
+            pgtrigger.Trigger(
+                name="post_state_mark_trigger_update",
+                operation=pgtrigger.Update,
                 when=pgtrigger.After,
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC,
