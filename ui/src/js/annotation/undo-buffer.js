@@ -102,49 +102,88 @@ export class UndoBuffer extends HTMLElement {
     return this.redo();
   }
 
-  patch(detailUri, id, body, dataType) {
+  async patch(detailUri, id, body, dataType, extra_fw_ops,  extra_bw_ops) {
     const projectId = this.getAttribute("project-id");
-    const promise = this._get(detailUri, id);
+    const promise = await this._get(detailUri, id);
     if (promise) {
-      return promise
-        .then((data) => {
-          let other;
-          if (detailUri == "Localization") {
-            other = {
-              media_id: data.media,
-              frame: data.frame,
-              type: data.type,
-            };
-          } else if (detailUri == "State") {
-            other = {
-              media_ids: data.media,
-              frame: data.frame,
-              type: data.type,
-              localization_ids: data.localizations,
-            };
+      try {
+        const data = await promise;
+        let other;
+        if (detailUri == "Localization") {
+          other = {
+            media_id: data.media,
+            frame: data.frame,
+            type: data.type,
+          };
+        } else if (detailUri == "State") {
+          other = {
+            media_ids: data.media,
+            frame: data.frame,
+            type: data.type,
+            localization_ids: data.localizations,
+          };
+        }
+        const original = {};
+        for (const key in body) {
+          if (key in data) {
+            original[key] = data[key];
           }
-          const original = {};
-          for (const key in body) {
-            if (key in data) {
-              original[key] = data[key];
+        }
+        if ("attributes" in data) {
+          original.attributes = {};
+          for (const key in data.attributes) {
+            original.attributes[key] = data.attributes[key];
+          }
+        }
+        this._resetFromNow();
+        this._forwardOps.push([["PATCH", detailUri, id, body, dataType]]);
+        this._backwardOps.push([["PATCH", detailUri, id, original, dataType]]);
+        let patch_response  =  await this.redo();
+        if  (patch_response[0].status ==  200)
+        {
+          let patch_response_json = await patch_response[0].json();
+          const new_id = patch_response_json.id;
+          const index  = this._forwardOps.length - 1;
+          let fixed_fw_ops =  [];
+          let fixed_bw_ops  =  [];
+          for (const op of extra_fw_ops)
+          {
+            let  [ep,uri,id,body,dataType] =  op;
+            if ('localization_ids_add' in body)
+            {
+              body['localization_ids_add'] = [new_id];
             }
+            fixed_fw_ops.push([ep,uri,id,body,dataType]);
           }
-          if ("attributes" in data) {
-            original.attributes = {};
-            for (const key in data.attributes) {
-              original.attributes[key] = data.attributes[key];
+          for (const op of extra_bw_ops)
+          {
+            let  [ep,uri,id,body,dataType] =  op;
+            if  ('localization_ids_remove'  in body)
+            {
+              body['localization_ids_remove'] = [new_id];
             }
+            fixed_bw_ops.push([ep,uri,id,body,dataType]);
           }
-          this._resetFromNow();
-          this._forwardOps.push([["PATCH", detailUri, id, body, dataType]]);
-          this._backwardOps.push([["PATCH", detailUri, id, original, dataType]]);
-          return this.redo();
-        })
-        .catch(() => {
-          const msg = dataType.name + " was not updated";
-          Utilities.warningAlert(msg, "#ff3e1d", false);
-          console.error("Error during patch!");
-        });
+
+          if (extra_fw_ops && extra_fw_ops.length > 0)
+          {
+            await this._fetch(fixed_fw_ops[0]);
+          }
+          if (fixed_bw_ops && fixed_bw_ops.length > 0)
+          {
+            this._backwardOps[index].push(...fixed_fw_ops);
+          }
+        }
+        else
+        {
+          throw  new Error(`Error during patch! ${e.message}`);
+        }
+        return  patch_response;
+      } catch (error) {
+        const msg = dataType.name + " was not updated";
+        Utilities.warningAlert(msg, "#ff3e1d", false);
+        console.error("Error during patch!");
+      }
     } else {
       return null;
     }
@@ -244,7 +283,7 @@ export class UndoBuffer extends HTMLElement {
       if (this._index < this._forwardOps.length) {
         for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
           const [method, uri, id, body,  dataType] = op;
-          let promise = this._fetch(op, dataType);
+          let promise = this._fetch(op);
           if (method == "POST") {
             promise = promise
               .then((response) => response.json())
@@ -292,9 +331,9 @@ export class UndoBuffer extends HTMLElement {
     });
   }
 
-  _fetch(op, dataType) {
+  _fetch(op) {
     this._editsMade = true;
-    const [method, uri, id, body] = op;
+    const [method, uri, id, body, dataType] = op;
     const url = "/rest/" + uri + "/" + id;
     const obj = {
       method: method,
