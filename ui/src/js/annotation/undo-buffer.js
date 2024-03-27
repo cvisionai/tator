@@ -172,7 +172,17 @@ export class UndoBuffer extends HTMLElement {
           // Run the forward ops atomically in  this function call
           if (extra_fw_ops && extra_fw_ops.length > 0)
           {
-            await this._fetch(fixed_fw_ops[0]);
+            for  (let  op of fixed_fw_ops)
+            {
+              if  (op[0] ==  'FUNCTOR')
+              {
+                op[1]();
+              }
+              else
+              {
+                await this._fetch(op);
+              }
+            }
           }
 
           //  Update / Replace backward ops as appropriate
