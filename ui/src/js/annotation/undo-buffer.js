@@ -102,7 +102,15 @@ export class UndoBuffer extends HTMLElement {
     return this.redo();
   }
 
-  async patch(detailUri, id, body, dataType, extra_fw_ops,  extra_bw_ops, replace_bw_ops) {
+  async patch(
+    detailUri,
+    id,
+    body,
+    dataType,
+    extra_fw_ops,
+    extra_bw_ops,
+    replace_bw_ops
+  ) {
     const projectId = this.getAttribute("project-id");
     const promise = await this._get(detailUri, id);
     if (promise) {
@@ -138,68 +146,53 @@ export class UndoBuffer extends HTMLElement {
         this._resetFromNow();
         this._forwardOps.push([["PATCH", detailUri, id, body, dataType]]);
         this._backwardOps.push([["PATCH", detailUri, id, original, dataType]]);
-        let patch_response  =  await this.redo();
-        if  (patch_response[0].status ==  200)
-        {
+        let patch_response = await this.redo();
+        if (patch_response[0].status == 200) {
           let patch_response_json = await patch_response[0].json();
           const new_id = patch_response_json.id;
-          const index  = this._forwardOps.length - 1;
-          let fixed_fw_ops =  [];
-          let fixed_bw_ops  =  [];
-          for (const op of extra_fw_ops)
-          {
-            let  [ep,uri,id,body,dataType] =  op;
-            if ('localization_ids_add' in body)
-            {
-              body['localization_ids_add'] = [new_id];
+          const index = this._forwardOps.length - 1;
+          let fixed_fw_ops = [];
+          let fixed_bw_ops = [];
+          for (const op of extra_fw_ops) {
+            let [ep, uri, id, body, dataType] = op;
+            if ("localization_ids_add" in body) {
+              body["localization_ids_add"] = [new_id];
             }
-            fixed_fw_ops.push([ep,uri,id,body,dataType]);
+            fixed_fw_ops.push([ep, uri, id, body, dataType]);
           }
-          for (const op of extra_bw_ops)
-          {
-            let  [method,uri,id,body,dataType] =  op;
-            if  ('localization_ids_remove'  in body)
-            {
-              body['localization_ids_remove'] = [new_id];
+          for (const op of extra_bw_ops) {
+            let [method, uri, id, body, dataType] = op;
+            if ("localization_ids_remove" in body) {
+              body["localization_ids_remove"] = [new_id];
             }
-            if (method == 'DELETE'  && id ==  '$NEW_ID')
-            {
-              id =  new_id;
+            if (method == "DELETE" && id == "$NEW_ID") {
+              id = new_id;
             }
-            fixed_bw_ops.push([method,uri,id,body,dataType]);
+            fixed_bw_ops.push([method, uri, id, body, dataType]);
           }
 
           // Run the forward ops atomically in  this function call
-          if (extra_fw_ops && extra_fw_ops.length > 0)
-          {
-            for  (let  op of fixed_fw_ops)
-            {
-              if  (op[0] ==  'FUNCTOR')
-              {
+          if (extra_fw_ops && extra_fw_ops.length > 0) {
+            for (let op of fixed_fw_ops) {
+              if (op[0] == "FUNCTOR") {
                 op[1]();
-              }
-              else
-              {
+              } else {
                 await this._fetch(op);
               }
             }
           }
 
           //  Update / Replace backward ops as appropriate
-          if (fixed_bw_ops && fixed_bw_ops.length > 0)
-          {
-            if (replace_bw_ops)
-            {
-              this._backwardOps[index] =  [];
+          if (fixed_bw_ops && fixed_bw_ops.length > 0) {
+            if (replace_bw_ops) {
+              this._backwardOps[index] = [];
             }
             this._backwardOps[index].push(...fixed_bw_ops);
           }
+        } else {
+          throw new Error(`Error during patch! ${e.message}`);
         }
-        else
-        {
-          throw  new Error(`Error during patch! ${e.message}`);
-        }
-        return  patch_response;
+        return patch_response;
       } catch (error) {
         const msg = dataType.name + " was not updated";
         Utilities.warningAlert(msg, "#ff3e1d", false);
@@ -253,8 +246,10 @@ export class UndoBuffer extends HTMLElement {
           const projectId = this.getAttribute("project-id");
           const listUri = UndoBuffer.detailToList[detailUri];
           this._resetFromNow();
-          this._forwardOps.push([["DELETE", detailUri, id, null,  dataType]]);
-          this._backwardOps.push([["POST", listUri, projectId, body, dataType]]);
+          this._forwardOps.push([["DELETE", detailUri, id, null, dataType]]);
+          this._backwardOps.push([
+            ["POST", listUri, projectId, body, dataType],
+          ]);
           return this.redo();
         })
         .catch(() => {
@@ -270,13 +265,12 @@ export class UndoBuffer extends HTMLElement {
   undo() {
     if (this._index > 0) {
       this._index--;
-      let  promises  =[];
-      let functors=[];
+      let promises = [];
+      let functors = [];
 
       for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
-        const [method, uri, id, body,  dataType] = op;
-        if (method ==  "FUNCTOR")
-        {
+        const [method, uri, id, body, dataType] = op;
+        if (method == "FUNCTOR") {
           functors.push(uri);
           continue;
         }
@@ -305,9 +299,8 @@ export class UndoBuffer extends HTMLElement {
       }
 
       //  After  all the fetches complete run the functors
-      Promise.all(promises).then(()=>{
-        for (let functor of functors)
-        {
+      Promise.all(promises).then(() => {
+        for (let functor of functors) {
           functor();
         }
       });
@@ -320,7 +313,7 @@ export class UndoBuffer extends HTMLElement {
     let p = new Promise((resolve) => {
       if (this._index < this._forwardOps.length) {
         for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
-          const [method, uri, id, body,  dataType] = op;
+          const [method, uri, id, body, dataType] = op;
           let promise = this._fetch(op);
           if (method == "POST") {
             promise = promise
