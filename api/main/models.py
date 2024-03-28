@@ -82,13 +82,15 @@ END IF;
 IF NEW.version IS NULL THEN
             RAISE EXCEPTION 'version cannot be null';
 END IF;
-EXECUTE format('SELECT COALESCE(MAX(mark)+1,0) FROM %I.%I WHERE elemental_id=%L AND version=%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+
+EXECUTE format('SELECT COALESCE(MAX(mark)+1,0) FROM %I.%I WHERE elemental_id=%L AND version=%s AND deleted=FALSE', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
 NEW.mark = _var;
 RETURN NEW;
 """
 
+
 AFTER_MARK_TRIGGER_FUNC = """
-EXECUTE format('SELECT COALESCE(MAX(mark),0) FROM %I.%I WHERE elemental_id=%L AND version=%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+EXECUTE format('SELECT COALESCE(MAX(mark),0) FROM %I.%I WHERE elemental_id=%L AND version=%s AND deleted=FALSE', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
 EXECUTE format('UPDATE %I.%I SET latest_mark=%s WHERE elemental_id=%L AND version=%s',TG_TABLE_SCHEMA, TG_TABLE_NAME, _var, NEW.elemental_id, NEW.version);
 RETURN NEW;
 """
@@ -1783,6 +1785,14 @@ class Localization(Model, ModelDiffMixin):
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC,
             ),
+            pgtrigger.Trigger(
+                name="post_localization_mark_trigger_update",
+                operation=pgtrigger.Update,
+                when=pgtrigger.After,
+                condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC,
+            ),
         ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
@@ -1877,6 +1887,14 @@ class State(Model, ModelDiffMixin):
                 name="post_state_mark_trigger",
                 operation=pgtrigger.Insert,
                 when=pgtrigger.After,
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC,
+            ),
+            pgtrigger.Trigger(
+                name="post_state_mark_trigger_update",
+                operation=pgtrigger.Update,
+                when=pgtrigger.After,
+                condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC,
             ),
