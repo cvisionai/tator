@@ -549,7 +549,8 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.localizations.set(old_localizations)
 
         return {
-            "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!"
+            "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
+            "id": obj.id,
         }
 
     def delete_qs(self, params, qs):

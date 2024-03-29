@@ -254,7 +254,7 @@ export class AnnotationData extends HTMLElement {
       const index = ids.indexOf(id);
       const elem = this._dataByType.get(typeId)[index];
       for (const key in body) {
-        if (key in elem) {
+        if (elem && key in elem) {
           elem[key] = body[key];
         }
       }

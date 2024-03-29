@@ -440,7 +440,8 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             obj.save()
 
         return {
-            "message": f"Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!"
+            "message": f"Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
+            "id": obj.id,
         }
 
     def delete_qs(self, params, qs):
