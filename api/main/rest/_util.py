@@ -426,6 +426,7 @@ def _use_internal_host(request, url):
                 url = url.replace(external_host, minio_host)
     return url
 
+
 def format_multiline(message):
-    """ Formats multi-line message for single log entry """
-    return str(message).replace('\n', ' \\n ').replace('\t', '    ')
+    """Formats multi-line message for single log entry"""
+    return str(message).replace("\n", " \\n ").replace("\t", "    ")

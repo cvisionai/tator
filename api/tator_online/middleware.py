@@ -10,6 +10,7 @@ from .authentication import KeycloakAuthenticationMixin
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
 
+
 class KeycloakMiddleware(KeycloakAuthenticationMixin):
     def __init__(self, get_response):
         self.get_response = get_response

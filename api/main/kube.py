@@ -402,7 +402,9 @@ class TatorAlgorithm(JobManagerMixin):
                 labels = {
                     "tags.datadoghq.com/env": os.getenv("MAIN_HOST"),
                     "tags.datadoghq.com/version": Git.sha,
-                    "tags.datadoghq.com/service": _algo_name(self.alg.id, project, user, self.alg.name),
+                    "tags.datadoghq.com/service": _algo_name(
+                        self.alg.id, project, user, self.alg.name
+                    ),
                     **labels,
                 }
                 metadata = {
@@ -411,17 +413,23 @@ class TatorAlgorithm(JobManagerMixin):
                 }
                 manifest["spec"]["templates"][tidx]["metadata"] = metadata
                 env = manifest["spec"]["templates"][tidx]["container"].get("env", [])
-                manifest["spec"]["templates"][tidx]["container"]["env"] = env + [{
-                    "name": "DD_ENV",
-                    "value": os.getenv("MAIN_HOST"),
-                  }, {
-                    "name": "DD_VERSION",
-                    "value": Git.sha,
-                  }, {
-                    "name": "DD_SERVICE",
-                    "value": _algo_name(self.alg.id, project, user, self.alg.name),
-                  },
-                ],
+                manifest["spec"]["templates"][tidx]["container"]["env"] = (
+                    env
+                    + [
+                        {
+                            "name": "DD_ENV",
+                            "value": os.getenv("MAIN_HOST"),
+                        },
+                        {
+                            "name": "DD_VERSION",
+                            "value": Git.sha,
+                        },
+                        {
+                            "name": "DD_SERVICE",
+                            "value": _algo_name(self.alg.id, project, user, self.alg.name),
+                        },
+                    ],
+                )
 
         # Set exit handler that sends an email if email specs are given
         if success_email_spec is not None or failure_email_spec is not None:
