@@ -30,6 +30,7 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
+    format_multiline,
 )
 from ._permissions import ProjectViewOnlyPermission
 from ._permissions import ProjectFullControlPermission
@@ -108,7 +109,7 @@ class LeafSuggestionAPI(BaseDetailView):
             return elem["group"]
 
         suggestions.sort(key=functor)
-        logger.info(queryset.explain())
+        logger.info(format_multiline(queryset.explain()))
         return suggestions
 
 

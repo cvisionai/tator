@@ -425,3 +425,7 @@ def _use_internal_host(request, url):
                 minio_host = os.getenv("DEFAULT_LIVE_ENDPOINT_URL")
                 url = url.replace(external_host, minio_host)
     return url
+
+def format_multiline(message):
+    """ Formats multi-line message for single log entry """
+    return str(message).replace('\n', ' \\n ').replace('\t', '    ')

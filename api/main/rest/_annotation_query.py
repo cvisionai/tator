@@ -23,6 +23,7 @@ from ._attribute_query import (
     supplied_name_to_field,
     _look_for_section_uuid,
 )
+from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
@@ -275,8 +276,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs[:stop]
 
     # Useful for profiling / checking out query complexity
-    logger.info(f"QUERY={qs.query}")
-    logger.info(f"EXPLAIN={qs.explain()}")
+    logger.info(f"QUERY={format_multiline(qs.query)}")
+    logger.info(f"EXPLAIN={format_multiline(qs.explain())}")
 
     return qs
 
