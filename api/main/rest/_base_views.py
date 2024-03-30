@@ -39,7 +39,7 @@ def process_exception(exc):
         single_line_traceback = formatted_traceback.replace("\n", " \\n ")
         logger.error(single_line_traceback)
         resp = Response(
-            {"message": str(exc), "details": single_line_traceback},
+            {"message": str(exc), "details": ""},
             status=status.HTTP_400_BAD_REQUEST,
         )
     return resp
