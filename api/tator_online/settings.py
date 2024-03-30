@@ -14,7 +14,6 @@ import os
 from django.contrib.messages import constants as messages
 import yaml
 import sys
-import ddtrace.auto
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -195,6 +194,7 @@ ASGI_APPLICATION = "tator_online.routing.application"
 
 # Turn on logging
 if os.getenv("DD_LOGS_INJECTION"):
+    import ddtrace.auto
     FORMAT = (
         "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] "
         "[dd.service=%(dd.service)s dd.env=%(dd.env)s "
