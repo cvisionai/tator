@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
+from django.conf import settings
 
 from ..schema import parse
 
@@ -39,7 +40,7 @@ def process_exception(exc):
         single_line_traceback = formatted_traceback.replace("\n", " \\n ")
         logger.error(single_line_traceback)
         resp = Response(
-            {"message": str(exc), "details": ""},
+            {"message": str(exc), "details": single_line_traceback if settings.DEBUG else ""},
             status=status.HTTP_400_BAD_REQUEST,
         )
     return resp
