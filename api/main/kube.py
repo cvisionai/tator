@@ -413,8 +413,7 @@ class TatorAlgorithm(JobManagerMixin):
                 }
                 manifest["spec"]["templates"][tidx]["metadata"] = metadata
                 env = manifest["spec"]["templates"][tidx]["container"].get("env", [])
-                manifest["spec"]["templates"][tidx]["container"]["env"] = (
-                    env
+                manifest["spec"]["templates"][tidx]["container"]["env"] = env \
                     + [
                         {
                             "name": "DD_ENV",
@@ -428,8 +427,7 @@ class TatorAlgorithm(JobManagerMixin):
                             "name": "DD_SERVICE",
                             "value": _algo_name(self.alg.id, project, user, self.alg.name),
                         },
-                    ],
-                )
+                    ]
 
         # Set exit handler that sends an email if email specs are given
         if success_email_spec is not None or failure_email_spec is not None:
