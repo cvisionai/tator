@@ -78,7 +78,7 @@ services:
   gunicorn:
     image: ${REGISTRY}/tator_online:${GIT_VERSION}
     container_name: gunicorn
-    entrypoint: gunicorn --workers 3 --worker-connections 100 --worker-class=gevent --timeout 600 --reload -b :80 tator_online.wsgi
+    entrypoint: gunicorn --workers 3 --worker-connections 100 --worker-class=gthread --threads=10 --timeout 600 --reload -b :80 tator_online.wsgi
     depends_on:
       - postgis
       - redis

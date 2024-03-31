@@ -22,6 +22,7 @@ from ._attribute_query import (
     supplied_name_to_field,
     _look_for_section_uuid,
 )
+from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
@@ -267,8 +268,8 @@ def _get_media_psql_queryset(project, filter_ops, params):
     if start is not None:
         qs = qs[start:]
 
-    logger.info(qs.query)
-    logger.info(qs.explain())
+    logger.info(format_multiline(qs.query))
+    logger.info(format_multiline(qs.explain()))
 
     return qs
 

@@ -52,17 +52,6 @@ def _rfc1123_name_converter(workflow_name, min_length):
     return out
 
 
-def _transcode_name(project, user, media_name, media_id=None):
-    """Generates name of transcode workflow."""
-    slug_name = re.sub("[^0-9a-zA-Z.]+", "-", media_name).lower()
-    if media_id:
-        out = f"transcode-proj-{project}-usr-{user}-media-{media_id}-name-{slug_name}-"
-    else:
-        out = f"transcode-proj-{project}-usr-{user}-name-{slug_name}-"
-
-    return _rfc1123_name_converter(out, 29)
-
-
 def _algo_name(algorithm_id, project, user, name):
     """Reformats an algorithm name to ensure it conforms to kube's rigid requirements."""
     slug_name = re.sub("[^0-9a-zA-Z.]+", "-", name).lower()
@@ -409,11 +398,38 @@ class TatorAlgorithm(JobManagerMixin):
                     "cluster-autoscaler.kubernetes.io/safe-to-evict": "false",
                     **annotations,
                 }
+                labels = metadata.get("labels", {})
+                labels = {
+                    "tags.datadoghq.com/env": os.getenv("MAIN_HOST"),
+                    "tags.datadoghq.com/version": Git.sha,
+                    "tags.datadoghq.com/service": _algo_name(
+                        self.alg.id, project, user, self.alg.name
+                    ),
+                    **labels,
+                }
                 metadata = {
                     **metadata,
                     "annotations": annotations,
                 }
                 manifest["spec"]["templates"][tidx]["metadata"] = metadata
+                env = manifest["spec"]["templates"][tidx]["container"].get("env", [])
+                manifest["spec"]["templates"][tidx]["container"]["env"] = (
+                    env
+                    + [
+                        {
+                            "name": "DD_ENV",
+                            "value": os.getenv("MAIN_HOST"),
+                        },
+                        {
+                            "name": "DD_VERSION",
+                            "value": Git.sha,
+                        },
+                        {
+                            "name": "DD_SERVICE",
+                            "value": _algo_name(self.alg.id, project, user, self.alg.name),
+                        },
+                    ],
+                )
 
         # Set exit handler that sends an email if email specs are given
         if success_email_spec is not None or failure_email_spec is not None:

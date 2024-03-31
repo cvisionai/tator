@@ -1,5 +1,6 @@
 """ TODO: add documentation for this """
 import traceback
+import sys
 import logging
 
 from rest_framework.views import APIView
@@ -8,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
+from django.conf import settings
 
 from ..schema import parse
 
@@ -31,9 +33,14 @@ def process_exception(exc):
         logger.error(f"Permission denied error: {str(exc)}")
         resp = Response({"message": str(exc)}, status=status.HTTP_403_FORBIDDEN)
     else:
-        logger.error(f"Exception in request: {traceback.format_exc()}")
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        formatted_traceback = "".join(
+            traceback.format_exception(exc_type, exc_value, exc_traceback)
+        )
+        single_line_traceback = formatted_traceback.replace("\n", " \\n ")
+        logger.error(single_line_traceback)
         resp = Response(
-            {"message": str(exc), "details": traceback.format_exc()},
+            {"message": str(exc), "details": single_line_traceback if settings.DEBUG else ""},
             status=status.HTTP_400_BAD_REQUEST,
         )
     return resp

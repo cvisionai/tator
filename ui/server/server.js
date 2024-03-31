@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const tracer = require('dd-trace').init();
 const express = require('express');
 const nunjucks = require('nunjucks');
 const favicon = require('serve-favicon');
@@ -9,6 +10,7 @@ const originalFetch = require('node-fetch');
 const fetch = require('fetch-retry')(originalFetch);
 const dns = require('dns');
 const yargs = require('yargs/yargs');
+const logger = require('pino-http');
 
 const loginPath = "/auth/realms/tator/protocol/openid-connect/auth";
 const loginQuery = "scope=openid&client_id=tator&response_type=code";
@@ -20,6 +22,7 @@ dns.setServers([
   '1.1.1.1',
 ]);
 const app = express();
+app.use(logger());
 
 const argv = yargs(process.argv.slice(2))
   .usage('Usage: $0 -b https://cloud.tator.io -o -e')
@@ -204,7 +207,7 @@ app.post('/exchange', async (req, res) => {
     })
     .then(response => {
       if (!response.ok) {
-        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+        req.log.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
         throw new Error("Response from keycloak failed!");
       }
       return response.json();
@@ -233,15 +236,15 @@ app.post('/exchange', async (req, res) => {
       });
     })
     .catch((error) => {
-      console.error(`Error in fetch for exchange: ${error}`);
-      console.error(error.message);
-      console.error(error.stack);
+      req.log.error(`Error in fetch for exchange: ${error}`);
+      req.log.error(error.message);
+      req.log.error(error.stack);
       return Promise.reject(error);
     });
   } catch (error) {
-    console.error(`Error in exchange endpoint: ${error}`);
-    console.error(error.message);
-    console.error(error.stack);
+    req.log.error(`Error in exchange endpoint: ${error}`);
+    req.log.error(error.message);
+    req.log.error(error.stack);
     res.status(403).send({message: "Failed to retrieve access token!"});
   }
 });
@@ -267,7 +270,7 @@ app.get('/refresh', async (req, res) => {
       })
       .then(response => {
         if (!response.ok) {
-          console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+          req.log.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
           throw new Error("Response from keycloak failed!");
         }
         return response.json();
@@ -295,15 +298,15 @@ app.get('/refresh', async (req, res) => {
         });
       })
       .catch((error) => {
-        console.error(`Error in fetch for refresh: ${error}`);
-        console.error(error.message);
-        console.error(error.stack);
+        req.log.error(`Error in fetch for refresh: ${error}`);
+        req.log.error(error.message);
+        req.log.error(error.stack);
         return Promise.reject(error);
       });
     } catch (error) {
-      console.error(`Error in refresh endpoint: ${error}`);
-      console.error(error.message);
-      console.error(error.stack);
+      req.log.error(`Error in refresh endpoint: ${error}`);
+      req.log.error(error.message);
+      req.log.error(error.stack);
       res.status(403).send({message: "Failed to refresh access token!"});
     }
   }
@@ -318,21 +321,21 @@ app.get('/dnstest', async (req, res) => {
     })
     .then(response => {
       if (!response.ok) {
-        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+        req.log.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
         throw new Error("Response from backend failed!");
       }
       res.status(200).send({message: "DNS was resolved!"});
     })
     .catch((error) => {
-      console.error(`Error in fetch to backend: ${error}`);
-      console.error(error.message);
-      console.error(error.stack);
+      req.log.error(`Error in fetch to backend: ${error}`);
+      req.log.error(error.message);
+      req.log.error(error.stack);
       return Promise.reject(error);
     });
   } catch (error) {
-    console.error(`Error in DNS test: ${error}`);
-    console.error(error.message);
-    console.error(error.stack);
+    req.log.error(`Error in DNS test: ${error}`);
+    req.log.error(error.message);
+    req.log.error(error.stack);
     res.status(400).send({message: "DNS test failed!"});
   }
 });

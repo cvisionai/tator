@@ -91,13 +91,6 @@ MIDDLEWARE = (
             "django.middleware.csrf.CsrfViewMiddleware",
         ]
     )
-    + (
-        [
-            "tator_online.StatsdMiddleware",
-        ]
-        if STATSD_ENABLED
-        else []
-    )
     + [
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -200,48 +193,43 @@ ASGI_APPLICATION = "tator_online.routing.application"
 
 
 # Turn on logging
+if os.getenv("DD_LOGS_INJECTION"):
+    import ddtrace.auto
+    FORMAT = (
+        "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] "
+        "[dd.service=%(dd.service)s dd.env=%(dd.env)s "
+        "dd.version=%(dd.version)s "
+        "dd.trace_id=%(dd.trace_id)s dd.span_id=%(dd.span_id)s] "
+        "- %(message)s"
+    )
+else:
+    FORMAT = "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] " "- %(message)s"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": '{levelname} {asctime} {module} {process:d} {thread:d} "{message}"',
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
-            "style": "{",
+            "format": FORMAT,
         },
     },
     "handlers": {
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": "/debug.log" if os.getenv("PYLINT_RUNNING") is None else "debug.log",
-            "formatter": "verbose",
-        },
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
     },
     "loggers": {
-        # this is for django internals
-        "django": {
-            "handlers": [
-                "file",
-                "console",
-            ],
+        "ddtrace": {
+            "handlers": ["console"],
             "level": "INFO",
-            "propagate": True,
         },
-        # This is for our application
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "main": {
-            "handlers": [
-                "file",
-                "console",
-            ],
-            "level": "DEBUG",
-            "propagate": True,
+            "handlers": ["console"],
+            "level": "INFO",
         },
     },
 }
