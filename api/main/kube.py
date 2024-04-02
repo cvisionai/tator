@@ -431,6 +431,10 @@ class TatorAlgorithm(JobManagerMixin):
                             "name": "DD_AGENT_HOST",
                             "value": "tator-datadog.default.svc.cluster.local",
                         },
+                        {
+                            "name": "DD_LOGS_INJECTION",
+                            "value": "true",
+                        },
                     ]
 
         # Set exit handler that sends an email if email specs are given
