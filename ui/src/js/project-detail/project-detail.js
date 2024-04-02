@@ -7,10 +7,90 @@ import { LoadingSpinner } from "../components/loading-spinner.js";
 import { FilterData } from "../components/filter-data.js";
 import { v1 as uuidv1 } from "uuid";
 import { store } from "./store.js";
-import { FilterConditionData } from "../util/filter-utilities.js";
+import { FilterConditionData, processAttributeCombinatorSpec } from "../util/filter-utilities.js";
 import Gear from "../../images/svg/gear.svg";
 import { ModalDialog } from "../components/modal-dialog.js";
 import { SectionData } from "../util/section-utilities.js";
+
+/**
+ * Displays the AttributeOperationSpec in a human readable format
+ */
+export class SectionObjectSearchDisplay extends TatorElement {
+
+  /**
+   * Class constructor
+   */
+  constructor() {
+    super();
+
+    this._mainDiv = document.createElement("div");
+    this._mainDiv.setAttribute("class", "d-flex flex-grow flex-column px-2 py-2 rounded-2");
+    this._mainDiv.style.border = "1px solid #262e3d";
+    this._shadow.appendChild(this._mainDiv);
+
+    var titleDiv = document.createElement("div");
+    titleDiv.setAttribute("class", "f2 text-white text-semibold px-2 py-1");
+    titleDiv.textContent = "Saved Search Conditions";
+    titleDiv.style.minWidth = "110px";
+    this._mainDiv.appendChild(titleDiv);
+
+    this._objectDiv = document.createElement("div");
+    this._objectDiv.setAttribute("class", "d-flex flex-items-center flex-grow py-1");
+    this._mainDiv.appendChild(this._objectDiv);
+
+    var titleDiv = document.createElement("div");
+    titleDiv.setAttribute("class", "f2 text-gray text-semibold px-2");
+    titleDiv.textContent = "Object Search:";
+    titleDiv.style.minWidth = "110px";
+    this._objectDiv.appendChild(titleDiv);
+
+    this._objectOperationDiv = document.createElement("div");
+    this._objectOperationDiv.setAttribute("class", "f2 text-dark-gray px-2");
+    this._objectDiv.appendChild(this._objectOperationDiv);
+
+    this._relatedDiv = document.createElement("div");
+    this._relatedDiv.setAttribute("class", "d-flex flex-items-center flex-grow py-1");
+    this._mainDiv.appendChild(this._relatedDiv);
+
+    var titleDiv = document.createElement("div");
+    titleDiv.setAttribute("class", "f2 text-gray text-semibold px-2");
+    titleDiv.textContent = "Related Search:";
+    titleDiv.style.minWidth = "110px";
+    this._relatedDiv.appendChild(titleDiv);
+
+    this._relatedOperationDiv = document.createElement("div");
+    this._relatedOperationDiv.setAttribute("class", "f2 text-dark-gray px-2");
+    this._relatedDiv.appendChild(this._relatedOperationDiv);
+  }
+
+  /**
+   * @param {Tator.AttributeCombinatorSpec} objectSearch
+   * @param {Tator.AttributeCombinatorSpec} relatedSearch
+   * @postcondition UI is updated to display the object search and related search
+   */
+  setDisplay(objectSearch, relatedSearch) {
+
+    if (objectSearch == null) {
+      this._objectOperationDiv.innerHTML = "None";
+    }
+    else {
+      var stringTokens = processAttributeCombinatorSpec(objectSearch);
+      var operationString = stringTokens.join(" ");
+      this._objectOperationDiv.innerHTML = operationString;
+    }
+
+    if (relatedSearch == null) {
+      this._relatedOperationDiv.innerHTML = "None";
+    }
+    else {
+      var stringTokens = processAttributeCombinatorSpec(relatedSearch);
+      var operationString = stringTokens.join(" ");
+      this._relatedOperationDiv.innerHTML = operationString;
+    }
+  }
+}
+customElements.define("section-object-search-display", SectionObjectSearchDisplay);
+
 
 /**
  * Dialog for creating a new section.
@@ -346,11 +426,44 @@ export class MediaSearchDialog extends ModalDialog {
       var info = this._sectionData.makeFolderNameAndPath(proposedName);
 
       if (this._mode == "newSearch") {
-        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
-           detail: {
-             name: info.name,
-             path: info.path
+
+        var spec = {
+          name: info.name,
+          path: info.path,
+          visible: true
+        };
+
+        // Utilize the URL to get the encoded search and encoded related search information
+        const params = new URLSearchParams(document.location.search.substring(1));
+
+        if (params.has("encoded_search")) {
+          let object_search = JSON.parse(atob(params.get("encoded_search")));
+          if (this._selectedSection?.object_search) {
+            let union_operation = {
+              method: "and",
+              operations: [this._selectedSection.object_search, object_search],
+            };
+            spec.object_search = union_operation;
+          } else {
+            spec.object_search = object_search;
           }
+        }
+
+        if (params.has("encoded_related_search")) {
+          let related_search = JSON.parse(atob(params.get("encoded_related_search")));
+          if (this._selectedSection?.related_search) {
+            let union_operation = {
+              method: "and",
+              operations: [this._selectedSection.related_search, related_search],
+            };
+            spec.related_search = union_operation;
+          } else {
+            spec.related_search = related_search;
+          }
+        }
+
+        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
+           detail: {spec: spec}
         }));
       }
       else if (this._mode == "editSearch") {
@@ -448,7 +561,7 @@ export class MediaSearchDialog extends ModalDialog {
     }
 
   }
-  
+
 }
 customElements.define("media-search-dialog", MediaSearchDialog);
 
@@ -981,6 +1094,8 @@ export class SectionListItem extends TatorElement {
       <div><span class="text-semibold text-gray">name:</span> ${section.name}</div>
       <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
       <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
+      <div><span class="text-semibold text-gray">object_search:</span> ${section.object_search}</div>
+      <div><span class="text-semibold text-gray">related_search:</span> ${section.related_search}</div>
     `;
   }
 
@@ -1034,10 +1149,16 @@ export class SectionListItem extends TatorElement {
     `;
   }
 
+  /**
+   * Hide the advanced details panel showing information about the section
+   */
   hideAdvancedDetails() {
     this._detailsDiv.style.display = "none";
   }
 
+  /**
+   * Show the advanced details panel showing information about the section
+   */
   showAdvancedDetails() {
     this._detailsDiv.style.display = "block";
   }
@@ -1237,8 +1358,8 @@ export class MediaSearchListItem extends TatorElement {
     this._icon.setAttribute("class", "d-flex py-1");
     this._mainDiv.appendChild(this._icon);
     this._icon.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />
+      <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="no-fill" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />
       </svg>
     `;
 
@@ -1269,6 +1390,11 @@ export class MediaSearchListItem extends TatorElement {
     this._moreMenu.style.marginTop = "5px";
     this._moreMenu.style.marginLeft = "200px";
     this._shadow.appendChild(this._moreMenu);
+
+    this._detailsDiv = document.createElement("div");
+    this._detailsDiv.setAttribute("class", "pl-2 pt-1 pb-2 d-flex flex-column f3 text-dark-gray");
+    this._shadow.appendChild(this._detailsDiv);
+    this._detailsDiv.style.display = "none";
   }
 
   /**
@@ -1298,6 +1424,8 @@ export class MediaSearchListItem extends TatorElement {
     this._name.addEventListener("click", () => {
       this._mainDiv.blur();
       this._moreMenu.style.display = "none";
+      this.setActive();
+      this.dispatchEvent(new CustomEvent("selected", { detail: { id: this._section.id } }));
     });
 
     this._more.addEventListener("mouseover", () => {
@@ -1360,6 +1488,61 @@ export class MediaSearchListItem extends TatorElement {
 
     this._moreMenu.appendChild(renameToggleButton);
     this._moreMenu.appendChild(deleteToggleButton);
+
+    this._detailsDiv.innerHTML = `
+      <div><span class="text-semibold text-gray">id:</span> ${section.id}</div>
+      <div><span class="text-semibold text-gray">name:</span> ${section.name}</div>
+      <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
+      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
+      <div><span class="text-semibold text-gray">object_search:</span> ${JSON.stringify(section.object_search)}</div>
+      <div><span class="text-semibold text-gray">related_search:</span> ${JSON.stringify(section.related_search)}</div>
+    `;
+  }
+
+  /**
+   * Display this list item as active
+   */
+  setActive() {
+    this._active = true;
+    this._mainDiv.style.backgroundColor = "#202543";
+    this._mainDiv.style.color = "#ffffff";
+    this._name.classList.remove("text-gray");
+    this._name.classList.add("text-white");
+    this._name.classList.add("text-semibold");
+  }
+
+  /**
+   * Display this list item as inactive
+   */
+  setInactive() {
+    this._active = false;
+    this._mainDiv.style.backgroundColor = "";
+    this._mainDiv.style.color = "";
+    this._name.classList.add("text-gray");
+    this._name.classList.remove("text-white");
+    this._name.classList.remove("text-semibold");
+    this._moreMenu.style.display = "none";
+  }
+
+  /**
+   * @returns {Tator.Section} section object associated with this list item
+   */
+  getSection() {
+    return this._section;
+  }
+
+  /**
+   * Hide the advanced details panel showing information about the section
+   */
+  hideAdvancedDetails() {
+    this._detailsDiv.style.display = "none";
+  }
+
+  /**
+   * Show the advanced details panel showing information about the section
+   */
+  showAdvancedDetails() {
+    this._detailsDiv.style.display = "block";
   }
 }
 customElements.define("media-search-list-item", MediaSearchListItem);
@@ -1412,7 +1595,7 @@ export class ProjectDetail extends TatorPage {
     // Central area of the page
     //
     this.main = document.createElement("main");
-    this.main.setAttribute("class", "d-flex flex-grow col-12 mr-5");
+    this.main.setAttribute("class", "d-flex flex-grow col-12 mr-3");
     this.mainWrapper.appendChild(this.main);
 
     this._mainSection = document.createElement("section");
@@ -1482,6 +1665,10 @@ export class ProjectDetail extends TatorPage {
 
     this._filterView = document.createElement("filter-interface");
     filterdiv.appendChild(this._filterView);
+
+    this._sectionObjectSearch = document.createElement("section-object-search-display");
+    this._sectionObjectSearch.setAttribute("class", "mt-2");
+    filterdiv.appendChild(this._sectionObjectSearch);
 
     this._collaborators = document.createElement("project-collaborators");
     subheader.appendChild(this._collaborators);
@@ -1741,6 +1928,9 @@ export class ProjectDetail extends TatorPage {
       cancelJob.setAttribute("is-open", "");
     });
 
+    /**
+     * Called when a media file needs to be moved from one folder to another
+     */
     this._moveFileCallback = (evt) => {
       this._moveFileDialog.open(
         evt.detail.mediaId,
@@ -1954,16 +2144,9 @@ export class ProjectDetail extends TatorPage {
 
       this._mediaSearchDialog.removeAttribute("is-open");
 
-      var spec = {
-        name: evt.detail.name,
-        path: evt.detail.path,
-        tator_user_sections: uuidv1(),
-        visible: true,
-      };
-
       var response = await fetchCredentials(`/rest/Sections/${this._projectId}`, {
         method: "POST",
-        body: JSON.stringify(spec),
+        body: JSON.stringify(evt.detail.spec),
       });
 
       if (response.status == 201) {
@@ -2474,9 +2657,6 @@ export class ProjectDetail extends TatorPage {
     this._filterView.setFilterConditions(this._filterConditions);
     this._bulkEdit.checkForFilters(this._filterConditions);
 
-    //this.showDimmer();
-    //this.loading.showSpinner(); #TODO
-
     try {
       const query = await this._mediaSection.updateFilterResults(
         this._filterConditions
@@ -2484,14 +2664,13 @@ export class ProjectDetail extends TatorPage {
       if (typeof query != "undefined" && query != this._lastQuery) {
         if (query !== "") {
           this._lastQuery = query;
-          this._addSavedSearchButton.style.opacity = 1.0;
+          this._addSavedSearchButton.removeAttribute("disabled");
           this._addSavedSearchButton.style.cursor = "pointer";
-          this._addSavedSearchButton.classList.add("purple-box-border");
+          this._addSavedSearchButton.setAttribute("tooltip", "Save current media search.");
         } else {
-          this._lastQuery = null;
-          this._addSavedSearchButton.style.opacity = 0.5;
+          this._addSavedSearchButton.setAttribute("disabled", "");
           this._addSavedSearchButton.style.cursor = "not-allowed";
-          this._addSavedSearchButton.classList.remove("purple-box-border");
+          this._addSavedSearchButton.setAttribute("tooltip", "No media search to save.");
         }
       }
     } catch (err) {
@@ -2635,6 +2814,10 @@ export class ProjectDetail extends TatorPage {
 
         var childSectionListItem = null;
         var childSection = that._sectionData.getSectionFromPath(appendedPath + subpath);
+        if (SectionData.isSavedSearch(childSection)) {
+          return;
+        }
+
         for (const folder of that._folders.children) {
           if (folder._section.id == childSection.id) {
             childSectionListItem = folder;
@@ -2649,6 +2832,10 @@ export class ProjectDetail extends TatorPage {
         }
 
         var section = that._sectionData.getSectionFromPath(appendedPath + subpath);
+        if (SectionData.isSavedSearch(section)) {
+          return;
+        }
+
         childSectionListItem.style.display = "block";
         if (!section.visible) {
           if (!that._viewAllHiddenFolders) {
@@ -2682,6 +2869,10 @@ export class ProjectDetail extends TatorPage {
     function createSectionItem(path) {
 
       const section = that._sectionData.getSectionFromPath(path);
+      if (SectionData.isSavedSearch(section)) {
+        return;
+      }
+
       const childSections = that._sectionData.getChildSections(section);
 
       const sectionItem = document.createElement("section-list-item");
@@ -2716,7 +2907,7 @@ export class ProjectDetail extends TatorPage {
       });
 
       sectionItem.addEventListener("deleteSection", async (evt) => {
-        
+
         const sectionToDelete = that._sectionData.getSectionFromID(evt.detail.id)
         that._deleteSectionDialog.init(
           that._project.id,
@@ -2775,6 +2966,24 @@ export class ProjectDetail extends TatorPage {
   //
 
   /**
+   * Update the search list elements in the UI
+   */
+  updateSearchesVisibility() {
+    if (this._viewAdvancedSearchDetails) {
+      this.setLeftPanelWidth("500px");
+      for (const search of this._savedSearches.children) {
+        search.showAdvancedDetails();
+      }
+    }
+    else {
+      this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+      for (const search of this._savedSearches.children) {
+        search.hideAdvancedDetails();
+      }
+    }
+  }
+
+  /**
    * @precondition this._sectionData has been initialized
    */
   makeMediaSearches() {
@@ -2788,7 +2997,7 @@ export class ProjectDetail extends TatorPage {
 
       const childSections = that._sectionData.getChildSections(section);
 
-      const sectionItem = document.createElement("section-list-item");
+      const sectionItem = document.createElement("media-search-list-item");
       sectionItem.init(section, childSections);
 
       sectionItem.addEventListener("selected", (evt) => {
@@ -2796,7 +3005,7 @@ export class ProjectDetail extends TatorPage {
       });
 
       sectionItem.addEventListener("deleteSection", async (evt) => {
-        
+
         const sectionToDelete = that._sectionData.getSectionFromID(evt.detail.id)
         that._deleteSectionDialog.init(
           that._project.id,
@@ -2808,20 +3017,21 @@ export class ProjectDetail extends TatorPage {
         that.setAttribute("has-open-modal", "");
       });
 
-      sectionItem.addEventListener("editSection", () => {
-        that.showDimmer();
-        that._mediaSearchDialog.setMode("editFolder", section);
+      sectionItem.addEventListener("renameSection", () => {
+        that._mediaSearchDialog.setMode("editSearch", section);
         that._mediaSearchDialog.setAttribute("is-open", "");
+        that.setAttribute("has-open-modal", "");
       });
 
-      that._folders.appendChild(sectionItem);
+      that._savedSearches.appendChild(sectionItem);
     }
 
     for (const section of this._sectionData.getSavedSearchesList()) {
       createSectionItem(section);
     }
 
-
+    this._mediaSearchDialog.init(this._sectionData);
+    this.updateSearchesVisibility();
   }
 
   /**
@@ -2829,30 +3039,54 @@ export class ProjectDetail extends TatorPage {
    */
   selectSection(sectionId) {
 
-    // Make all folders inactive
+    // Make all folders and searhes inactive
     const allFolders = [...this._folders.children]
     for (const folder of allFolders) {
       folder.setInactive();
     }
 
+    const allSearches = [...this._savedSearches.children]
+    for (const search of allSearches) {
+      search.setInactive();
+    }
+
     this._allMediaButton.setInactive();
 
-    // Set the active folder and the mainSection portion of the page
-    if (sectionId == null) {
-      this._allMediaButton.setActive();
-      this._mediaSection.init(this._projectId, null);
-      this._selectedSection = null;
-    }
-    else {
+    // Set the active folder or search and the mainSection portion of the page
+    this._selectedSection = null;
+    if (sectionId != null) {
       for (const folder of allFolders) {
         const section = folder.getSection();
         if (section.id == sectionId) {
           folder.setActive();
           this._mediaSection.init(this._projectId, section);
           this._selectedSection = section;
+          this._sectionObjectSearch.style.display = "none";
           break;
         }
       }
+
+      if (this._selectedSection == null) {
+        for (const search of allSearches) {
+          const section = search.getSection();
+          if (section.id == sectionId) {
+            search.setActive();
+            this._mediaSection.init(this._projectId, section);
+            this._selectedSection = section;
+            this._sectionObjectSearch.style.display = "flex";
+            this._sectionObjectSearch.setDisplay(
+              this._selectedSection.object_search,
+              this._selectedSection.related_search);
+            break;
+          }
+        }
+      }
+    }
+
+    if (this._selectedSection == null) {
+      this._allMediaButton.setActive();
+      this._mediaSection.init(this._projectId, null);
+      this._sectionObjectSearch.style.display = "none";
     }
 
     // Expand the folders in the library panel until the active folder is selected and in view
@@ -2871,6 +3105,13 @@ export class ProjectDetail extends TatorPage {
       }
       this.updateLibraryVisibility();
 
+      if (activeFolder != null) {
+        this.displayPanel("library");
+      }
+      else {
+        this.displayPanel("saved searches");
+      }
+
       function isInViewport(element) {
         var rect = element.getBoundingClientRect();
         return (
@@ -2880,7 +3121,7 @@ export class ProjectDetail extends TatorPage {
             rect.right <= (window.innerWidth || document.documentElement.clientWidth)
         );
       }
-      if (!isInViewport(activeFolder)) {
+      if (activeFolder != null && !isInViewport(activeFolder)) {
         activeFolder.scrollIntoView();
       }
     }
@@ -2907,6 +3148,7 @@ export class ProjectDetail extends TatorPage {
     }
     window.history.replaceState({}, '', url.toString());
   }
+
   //
   // Bookmark management
   //
@@ -2947,8 +3189,23 @@ export class ProjectDetail extends TatorPage {
   }
 
   //
-  // Section Panel
+  // Side Left Panel
   //
+
+  leftPanelHidden() {
+    return this._leftPanel.style.display == "none";
+  }
+
+  expandLeftPanel() {
+    this._leftPanel.style.display = "flex";
+  }
+
+  hideLeftPanel() {
+    this._leftPanel.style.display = "none";
+    this._sidebarLibraryButton.setAttribute("tooltip", "Open Library Panel");
+    this._sidebarSavedSearchesButton.setAttribute("tooltip", "Open Saved Searches Panel");
+    this._sidebarBookmarksButton.setAttribute("tooltip", "Open Bookmarks Panel");
+  }
 
   /**
    * @param {string} panel
@@ -2958,14 +3215,7 @@ export class ProjectDetail extends TatorPage {
 
     if (panel == "library") {
 
-      if (this._panelLibrary.style.display == "block" && this._leftPanel.style.display == "flex") {
-        this._leftPanel.style.display = "none";
-        this._sidebarLibraryButton.setAttribute("tooltip", "Expand Library Panel");
-      }
-      else {
-        this._leftPanel.style.display = "flex";
-        this._sidebarLibraryButton.setAttribute("tooltip", "Hide Library Panel");
-      }
+      this._currentPanel = "library";
 
       if (this._viewAdvancedFolderDetails) {
         this.setLeftPanelWidth("500px");
@@ -2974,12 +3224,13 @@ export class ProjectDetail extends TatorPage {
         this.setLeftPanelWidth(this._leftPanelDefaultWidth);
       }
 
+      this._sidebarLibraryButton.setAttribute("tooltip", "Hide Library Panel");
       this._sidebarSavedSearchesButton.setAttribute("tooltip", "Open Saved Searches Panel");
       this._sidebarBookmarksButton.setAttribute("tooltip", "Open Bookmarks Panel");
 
-      this._sidebarLibraryButton.classList.add("btn-purple50");
-      this._sidebarSavedSearchesButton.classList.remove("btn-purple50");
-      this._sidebarBookmarksButton.classList.remove("btn-purple50");
+      this._sidebarLibraryButton.classList.add("btn-purple");
+      this._sidebarSavedSearchesButton.classList.remove("btn-purple");
+      this._sidebarBookmarksButton.classList.remove("btn-purple");
 
       this._sidebarLibraryText.classList.add("text-white");
       this._sidebarSavedSearchesText.classList.remove("text-white");
@@ -2996,23 +3247,22 @@ export class ProjectDetail extends TatorPage {
     }
     else if (panel == "saved searches") {
 
-      if (this._panelSavedSearches.style.display == "block" && this._leftPanel.style.display == "flex") {
-        this._leftPanel.style.display = "none";
-        this._sidebarSavedSearchesButton.setAttribute("tooltip", "Expand Saved Searches Panel");
+      this._currentPanel = "saved searches";
+
+      if (this._viewAdvancedSearchDetails) {
+        this.setLeftPanelWidth("500px");
       }
       else {
-        this._leftPanel.style.display = "flex";
-        this._sidebarSavedSearchesButton.setAttribute("tooltip", "Hide Saved Searches Panel");
+        this.setLeftPanelWidth(this._leftPanelDefaultWidth);
       }
 
-      this.setLeftPanelWidth(this._leftPanelDefaultWidth);
-
+      this._sidebarSavedSearchesButton.setAttribute("tooltip", "Hide Saved Searches Panel");
       this._sidebarLibraryButton.setAttribute("tooltip", "Open Library Panel");
       this._sidebarBookmarksButton.setAttribute("tooltip", "Open Bookmarks Panel");
 
-      this._sidebarLibraryButton.classList.remove("btn-purple50");
-      this._sidebarSavedSearchesButton.classList.add("btn-purple50");
-      this._sidebarBookmarksButton.classList.remove("btn-purple50");
+      this._sidebarLibraryButton.classList.remove("btn-purple");
+      this._sidebarSavedSearchesButton.classList.add("btn-purple");
+      this._sidebarBookmarksButton.classList.remove("btn-purple");
 
       this._sidebarLibraryText.classList.remove("text-white");
       this._sidebarSavedSearchesText.classList.add("text-white");
@@ -3028,23 +3278,17 @@ export class ProjectDetail extends TatorPage {
     }
     else if (panel == "bookmarks") {
 
-      if (this._panelBookmarks.style.display == "block" && this._leftPanel.style.display == "flex") {
-        this._leftPanel.style.display = "none";
-        this._sidebarBookmarksButton.setAttribute("tooltip", "Expand Bookmarks Panel");
-      }
-      else {
-        this._leftPanel.style.display = "flex";
-        this._sidebarBookmarksButton.setAttribute("tooltip", "Hide Bookmarks Panel");
-      }
+      this._currentPanel = "bookmarks";
 
       this.setLeftPanelWidth(this._leftPanelDefaultWidth);
 
+      this._sidebarBookmarksButton.setAttribute("tooltip", "Hide Bookmarks Panel");
       this._sidebarLibraryButton.setAttribute("tooltip", "Open Library Panel");
       this._sidebarSavedSearchesButton.setAttribute("tooltip", "Open Saved Searches Panel");
 
-      this._sidebarLibraryButton.classList.remove("btn-purple50");
-      this._sidebarSavedSearchesButton.classList.remove("btn-purple50");
-      this._sidebarBookmarksButton.classList.add("btn-purple50");
+      this._sidebarLibraryButton.classList.remove("btn-purple");
+      this._sidebarSavedSearchesButton.classList.remove("btn-purple");
+      this._sidebarBookmarksButton.classList.add("btn-purple");
 
       this._sidebarLibraryText.classList.remove("text-white");
       this._sidebarSavedSearchesText.classList.remove("text-white");
@@ -3060,6 +3304,16 @@ export class ProjectDetail extends TatorPage {
     }
   }
 
+
+  /**
+   * @param {string} width
+   *  e.g. "400px";
+   */
+  setLeftPanelWidth(width) {
+    this._leftPanel.style.minWidth = width;
+    this._leftPanel.style.maxWidth = width;
+  }
+
   /**
    * Setup the left side navigation bar
    * Execute only at initialization.
@@ -3067,11 +3321,11 @@ export class ProjectDetail extends TatorPage {
   createSidebarNav() {
 
     var sidebarDiv = document.createElement("div");
-    sidebarDiv.setAttribute("class", "sidebar d-flex flex-items-center flex-column");
+    sidebarDiv.setAttribute("class", "project-sidebar d-flex flex-items-center flex-column");
     this.mainWrapper.appendChild(sidebarDiv);
 
     this._sidebarLibraryButton = document.createElement("button");
-    this._sidebarLibraryButton.setAttribute("class", "mt-2 btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button sidebar-button tooltip-right")
+    this._sidebarLibraryButton.setAttribute("class", "mt-2 btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button project-sidebar-button tooltip-right")
     this._sidebarLibraryButton.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 4h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M17 17v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2" />
@@ -3085,7 +3339,7 @@ export class ProjectDetail extends TatorPage {
     sidebarDiv.appendChild(this._sidebarLibraryText);
 
     this._sidebarSavedSearchesButton = document.createElement("button");
-    this._sidebarSavedSearchesButton.setAttribute("class", "btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button sidebar-button tooltip-right")
+    this._sidebarSavedSearchesButton.setAttribute("class", "btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button project-sidebar-button tooltip-right")
     this._sidebarSavedSearchesButton.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />
@@ -3099,7 +3353,7 @@ export class ProjectDetail extends TatorPage {
     sidebarDiv.appendChild(this._sidebarSavedSearchesText);
 
     this._sidebarBookmarksButton = document.createElement("button");
-    this._sidebarBookmarksButton.setAttribute("class", "btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button sidebar-button tooltip-right")
+    this._sidebarBookmarksButton.setAttribute("class", "btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button project-sidebar-button tooltip-right")
     this._sidebarBookmarksButton.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 10v11l-5 -3l-5 3v-11a3 3 0 0 1 3 -3h4a3 3 0 0 1 3 3z" /><path d="M11 3h5a3 3 0 0 1 3 3v11" />
@@ -3114,26 +3368,62 @@ export class ProjectDetail extends TatorPage {
 
     this._sidebarLibraryButton.addEventListener("click", () => {
       this._sidebarLibraryButton.blur();
+      if (this.leftPanelHidden() && this._currentPanel == "library") {
+        this.hideLeftPanel();
+      }
+      else {
+        this.expandLeftPanel();
+      }
       this.displayPanel("library");
     });
     this._sidebarLibraryText.addEventListener("click", () => {
       this._sidebarLibraryText.blur();
+      if (!this.leftPanelHidden() && this._currentPanel == "library") {
+        this.hideLeftPanel();
+      }
+      else {
+        this.expandLeftPanel();
+      }
       this.displayPanel("library");
     });
     this._sidebarSavedSearchesButton.addEventListener("click", () => {
       this._sidebarSavedSearchesButton.blur();
+      if (this.leftPanelHidden() && this._currentPanel == "saved searches") {
+        this.hideLeftPanel();
+      }
+      else {
+        this.expandLeftPanel();
+      }
       this.displayPanel("saved searches");
     });
     this._sidebarSavedSearchesText.addEventListener("click", () => {
       this._sidebarSavedSearchesText.blur();
+      if (this.leftPanelHidden() && this._currentPanel == "saved searches") {
+        this.hideLeftPanel();
+      }
+      else {
+        this.expandLeftPanel();
+      }
       this.displayPanel("saved searches");
     });
     this._sidebarBookmarksButton.addEventListener("click", () => {
       this._sidebarBookmarksButton.blur();
+      if (this.leftPanelHidden() && this._currentPanel == "bookmarks") {
+        this.hideLeftPanel();
+      }
+      else {
+        this.expandLeftPanel();
+      }
       this.displayPanel("bookmarks");
     });
     this._sidebarBookmarksText.addEventListener("click", () => {
       this._sidebarBookmarksText.blur();
+      if (this.leftPanelHidden() && this._currentPanel == "bookmarks") {
+        this.hideLeftPanel();
+      }
+      else {
+        this.expandLeftPanel();
+      }
       this.displayPanel("bookmarks");
     });
   }
@@ -3315,35 +3605,101 @@ export class ProjectDetail extends TatorPage {
    */
   setupSearchesPanel() {
 
+    this._viewAdvancedSearchDetails = false;
+
+    const topHeader = document.createElement("div");
+    topHeader.setAttribute(
+      "class",
+      "d-flex pt-2 pb-2 ml-2 flex-column"
+    );
+    this._panelSavedSearches.appendChild(topHeader);
+
     const savedSearchesHeader = document.createElement("div");
     savedSearchesHeader.setAttribute(
       "class",
-      "d-flex flex-justify-between flex-items-center pt-2 pb-3 ml-2"
+      "d-flex flex-justify-between flex-items-center"
     );
-    this._panelSavedSearches.appendChild(savedSearchesHeader);
+    topHeader.appendChild(savedSearchesHeader);
 
-    const savedSearchText = document.createElement("div");
-    savedSearchText.setAttribute("class", "h2 mb-2");
-    savedSearchText.textContent = "Media Searches";
+    var savedSearchText = document.createElement("div");
+    savedSearchText.setAttribute("class", "h2");
+    savedSearchText.textContent = "Searches";
     savedSearchesHeader.appendChild(savedSearchText);
 
-    const headerButtons = document.createElement("div");
-    headerButtons.setAttribute(
+    const helpDiv = document.createElement("div");
+    helpDiv.setAttribute("class", "d-flex flex-justify-between flex-items-center mb-2");
+    topHeader.appendChild(helpDiv);
+
+    const searchHelpIcon = document.createElement("div");
+    searchHelpIcon.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    searchHelpIcon.setAttribute("tooltip", "Searches Help");
+    searchHelpIcon.style.minHeight = "28px";
+    searchHelpIcon.style.maxWidth = "28px";
+    savedSearchesHeader.appendChild(searchHelpIcon);
+    searchHelpIcon.innerHTML = `
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+   `;
+
+    const searchHelpText = document.createElement("div");
+    searchHelpText.setAttribute("class", "f2 py-2 text-dark-gray");
+    searchHelpText.textContent = "Apply a filter to an existing folder or search and save it as a Media Search. Media Searches are visible to all project users.";
+    helpDiv.appendChild(searchHelpText);
+    searchHelpText.style.display = "none";
+
+    searchHelpIcon.addEventListener("click", () =>{
+      searchHelpIcon.blur();
+      if (searchHelpText.style.display == "none") {
+        searchHelpText.style.display = "block";
+      }
+      else {
+        searchHelpText.style.display = "none";
+      }
+    });
+
+    const mediaSearchHeader = document.createElement("div");
+    mediaSearchHeader.setAttribute(
       "class",
-      "f3 btn-clear text-gray hover-text-white"
+      "d-flex flex-justify-between flex-items-center py-2"
     );
-    savedSearchesHeader.appendChild(headerButtons);
+    this._panelSavedSearches.appendChild(mediaSearchHeader);
+
+    var headerText = document.createElement("h2");
+    headerText.setAttribute("class", "h3 ml-2");
+    headerText.textContent = "Media Searches";
+    mediaSearchHeader.appendChild(headerText);
+
+    var headerButtons = document.createElement("div");
+    headerButtons.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
+    mediaSearchHeader.appendChild(headerButtons);
+
+    const advancedDetails = document.createElement("div");
+    advancedDetails.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    advancedDetails.setAttribute("tooltip", "View Advanced Details");
+    advancedDetails.style.minHeight = "28px";
+    headerButtons.appendChild(advancedDetails);
+    advancedDetails.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 100 100" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M81.41,56.24l-11.47-6.86c-1.88-1.12-1.92-3.83-0.07-5.01c5.71-3.64,5.33-11.31,0.19-14.6
+      L33.17,6.23c-5.71-3.65-13.21,0.46-13.21,7.24v15.38c0,1.83-2.02,2.94-3.56,1.95C10.69,27.15,3.2,31.24,3.2,38.03v47.11
+      c0,6.78,7.49,10.89,13.21,7.24l12.76-8.24c1.2-0.78,2.78,0.09,2.78,1.52c0,8.74,7.95,11.39,13.04,8.14l36.42-23.26
+      C86.63,67.2,86.63,59.58,81.41,56.24z M65.64,60.57c-5.92,3.78-33.23,21.44-33.83,21.69c-5.47,2.28-11.84-1.69-11.84-7.95
+      c0-2.21,0-38.64,0-40.88c0-6.78,7.49-10.89,13.21-7.24c5.1,3.26,32.56,20.62,32.47,20.62C70.86,50.15,70.86,57.24,65.64,60.57z">
+    </svg>
+   `;
 
     this._addSavedSearchButton = document.createElement("div");
-    this._addSavedSearchButton.setAttribute("class", "d-flex d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-clear btn-charcoal-medium text-gray");
-    this._addSavedSearchButton.setAttribute("tooltip", "Save Current Search");
-    this._addSavedSearchButton.style.maxHeight = "28px";
-    this._addSavedSearchButton.style.opacity = 0.5;
+    this._addSavedSearchButton.setAttribute("class", "d-flex mr-2 d-flex flex-items-center clickable rounded-2 px-1 btn btn-fit-content btn-small-height btn-clear btn-charcoal-medium text-gray");
+    this._addSavedSearchButton.setAttribute("tooltip", "Save Current Media Search");
+    this._addSavedSearchButton.setAttribute("disabled", "");
     this._addSavedSearchButton.style.cursor = "not-allowed";
+    this._addSavedSearchButton.setAttribute("tooltip", "No media search to save.");
+    this._addSavedSearchButton.style.minHeight = "28px";
     headerButtons.appendChild(this._addSavedSearchButton);
     this._addSavedSearchButton.innerHTML = `
-    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" />
+    <svg class="no-fill" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" /><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M14 4l0 4l-6 0l0 -4" />
     </svg>
     `;
 
@@ -3351,8 +3707,27 @@ export class ProjectDetail extends TatorPage {
     this._savedSearches.setAttribute("class", "sections");
     this._panelSavedSearches.appendChild(this._savedSearches);
 
+
+    advancedDetails.addEventListener("click", () => {
+      advancedDetails.blur();
+      this._viewAdvancedSearchDetails = !this._viewAdvancedSearchDetails;
+
+      if (this._viewAdvancedSearchDetails) {
+        advancedDetails.setAttribute("tooltip", "Hide Advanced Details");
+      }
+      else {
+        advancedDetails.setAttribute("tooltip", "View Advanced Details");
+      }
+
+      this.updateSearchesVisibility();
+    });
+
     this._addSavedSearchButton.addEventListener("click", () => {
       this._addSavedSearchButton.blur();
+      if (this._addSavedSearchButton.hasAttribute("disabled")) {
+        return;
+      }
+      this.setAttribute("has-open-modal", "");
       this._mediaSearchDialog.setMode("newSearch");
       this._mediaSearchDialog.setAttribute("is-open", "");
     });
@@ -3387,7 +3762,7 @@ export class ProjectDetail extends TatorPage {
     bookmarkHelpIcon.style.maxWidth = "28px";
     bookmarkHeaderDiv.appendChild(bookmarkHelpIcon);
     bookmarkHelpIcon.innerHTML = `
-    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <svg class="no-fill" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
     </svg>
    `;
@@ -3412,15 +3787,6 @@ export class ProjectDetail extends TatorPage {
     this._bookmarkListItems.setAttribute("class", "sections");
     this._panelBookmarks.appendChild(this._bookmarkListItems);
 
-  }
-
-  /**
-   * @param {string} width
-   *  e.g. "400px";
-   */
-  setLeftPanelWidth(width) {
-    this._leftPanel.style.minWidth = width;
-    this._leftPanel.style.maxWidth = width;
   }
 
   /**
@@ -3458,6 +3824,9 @@ export class ProjectDetail extends TatorPage {
 
     this._leftPanelDefaultWidth = "400px";
     this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+
+    this._currentPanel = "library";
+    this.displayPanel("library");
   }
 }
 

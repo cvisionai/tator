@@ -60,6 +60,16 @@
   }
 }
 
+.btn-purple {
+  background-color: $color-purple;
+  color: $color-white;
+  &:hover,
+  &:focus {
+    background-color: $color-charcoal--light;
+    color: $color-white;
+  }
+}
+
 .btn-red {
   background-color: $color-red;
   &:hover,

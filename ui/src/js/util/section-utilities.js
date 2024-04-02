@@ -59,6 +59,15 @@ export class SectionData {
   }
 
   /**
+   * @param {Tator.Section} section
+   * @returns boolean
+   *    True if the section is a saved search. False if it's  a media folder
+   */
+  static isSavedSearch(section) {
+    return section.object_search != null || section.related_search != null;
+  }
+
+  /**
    * @precondition init() has been called
    * @param {Tator.Section} section
    *    Section to get the path of (specifically the path key used in this UI)
@@ -176,7 +185,7 @@ export class SectionData {
         folderList.push(section);
       }
     }
-    return this._sections;
+    return folderList;
   }
 
   /**
@@ -228,7 +237,7 @@ export class SectionData {
   /**
    * Verify if the proposed name is valid
    * Note: This loops through all section objects (searches, hidden, etc)
-   * 
+   *
    * @param {string} proposedName
    *    Proposed name of the new folder (not including any of the children, i.e. what's
    *    displayed in the UI)
@@ -316,14 +325,14 @@ export class SectionData {
    *       Saved searches are expected to be only in the top level.
    */
   getSavedSearchEnumChoices() {
-      
+
       var choices = [];
       for (const section of this.getSavedSearchesList()) {
         if (section.visible == true) {
           choices.push({value: section.id, label: section.name});
         }
       }
-  
+
       return choices;
   }
 }

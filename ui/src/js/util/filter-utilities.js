@@ -1,4 +1,4 @@
-import { Utilities } from "./utilities.js";
+import { TatorApi } from "../../../../scripts/packages/tator-js/pkg/src";
 
 /**
  * Class used to encapsulate a condition for the data filtering interface
@@ -84,4 +84,49 @@ export class FilterUtilities {
 
     return choices;
   }
+}
+
+/**
+ *
+ * @param {Tator.AttributeCombinatorSpec} attributeCombinatorSpec
+ * @returns HTML string representing the spec
+ */
+export function processAttributeCombinatorSpec(
+      attributeCombinatorSpec,
+      attributeSpanClass = "text-dark-gray",
+      inverseSpanClass = "text-gray",
+      operationSpanClass = "text-gray",
+      valueSpanClass = "text-dark-gray",
+      methodSpanClass = "text-semibold text-gray px-1") {
+  var operationStringTokens = [];
+  for (let index = 0; index < attributeCombinatorSpec.operations.length; index++) {
+
+    const operation = attributeCombinatorSpec.operations[index];
+
+    if (operation.hasOwnProperty("attribute")) {
+      operationStringTokens.push("(");
+      operationStringTokens.push(`<span class="${attributeSpanClass}">${operation.attribute}</span>`);
+      if (operation.inverse) {
+        operationStringTokens.push(`<span class="${inverseSpanClass}">NOT</span>`);
+      }
+      operationStringTokens.push(`<span class="${operationSpanClass}">${operation.operation}</span>`);
+      if (operation.value == "" || operation.value == null) {
+        operationStringTokens.push(`<span class="${valueSpanClass}">""<span>`);
+      } else {
+        operationStringTokens.push(`<span class="${valueSpanClass}">${operation.value}<span>`);
+      }
+      operationStringTokens.push(")");
+    }
+    else {
+      operationStringTokens.push("(");
+      var groupTokens = processAttributeCombinatorSpec(operation);
+      operationStringTokens = operationStringTokens.concat(groupTokens);
+      operationStringTokens.push(")");
+    }
+
+    if (index < attributeCombinatorSpec.operations.length - 1) {
+      operationStringTokens.push(`<span class="${methodSpanClass}">${attributeCombinatorSpec.method}</span>`);
+    }
+  }
+  return operationStringTokens;
 }
