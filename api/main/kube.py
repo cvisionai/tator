@@ -427,6 +427,10 @@ class TatorAlgorithm(JobManagerMixin):
                             "name": "DD_SERVICE",
                             "value": _algo_name(self.alg.id, project, user, self.alg.name),
                         },
+                        {
+                            "name": "DD_AGENT_HOST",
+                            "value": "tator-datadog.default.svc.cluster.local",
+                        },
                     ]
 
         # Set exit handler that sends an email if email specs are given
