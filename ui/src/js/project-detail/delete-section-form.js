@@ -51,60 +51,42 @@ export class DeleteSectionForm extends ModalDialog {
     });
 
     this._accept.addEventListener("click", async (evt) => {
-      const projectId = this._project;
-      const params = this._sectionParams;
-      /*
-      let promise = Promise.resolve();
-      if (this._deleteMedia) {
-        promise = promise
-          .then(
-            fetchCredentials(`/rest/Medias/${projectId}?${params.toString()}`, {
-              method: "DELETE",
-            })
-          )
-          .catch((err) => console.log(err));
-      }
-      promise
-        .then(
-          fetchCredentials(`/rest/Section/${this._section.id}`, {
-            method: "DELETE",
-          })
-        )
-        .catch((err) => console.log(err));
-      */
-
-      // #TODO
-
       this.dispatchEvent(
         new CustomEvent("confirmDelete", {
-          detail: { id: this._section.id },
+          detail: { id: this._section.id, deleteMedia: this._deleteMedia},
         })
       );
     });
   }
 
-  init(project, section, sectionParams, deleteMedia) {
-    this._project = project;
+  /**
+   * @param {bool} deleteMedia
+   *    True if the media is also to be deleted along with the section.
+   *    False if it's only the section.
+   *    The UI shows different messages based on this.
+   */
+  init(section, deleteMedia) {
     this._section = section;
-    this._sectionParams = sectionParams;
     this._deleteMedia = deleteMedia;
     if (deleteMedia) {
-      this._title.nodeValue = `Delete "${section.name}" Media`;
+      this._title.nodeValue = `Delete "${section.name}" section and its media`;
       this._checks[0].setAttribute(
         "text",
-        "Section files and annotations will be deleted"
+        "Section, its media, and their annotations will be deleted"
       );
       this._checks[1].setAttribute(
         "text",
         "Section shared links will be inaccessible"
       );
+      this._accept.textContent = "Delete Section & Media";
     } else {
-      this._title.nodeValue = `Delete "${section.name}"`;
+      this._title.nodeValue = `Delete "${section.name}" section (retain media)`;
       this._checks[0].setAttribute("text", "Section only will be deleted");
       this._checks[1].setAttribute(
         "text",
         'Media will still be accessible from "All Media"'
       );
+      this._accept.textContent = "Delete Section";
     }
     this._checks.forEach((item, index, array) => {
       item.checked = false;

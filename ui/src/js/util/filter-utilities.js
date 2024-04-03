@@ -93,6 +93,9 @@ export class FilterUtilities {
  */
 export function processAttributeCombinatorSpec(
       attributeCombinatorSpec,
+      memberships = [],
+      sections = [],
+      versions = [],
       attributeSpanClass = "text-dark-gray",
       inverseSpanClass = "text-gray",
       operationSpanClass = "text-gray",
@@ -101,7 +104,31 @@ export function processAttributeCombinatorSpec(
   var operationStringTokens = [];
   for (let index = 0; index < attributeCombinatorSpec.operations.length; index++) {
 
-    const operation = attributeCombinatorSpec.operations[index];
+    var operation = attributeCombinatorSpec.operations[index];
+    if (operation?.attribute == "$created_by" || operation?.attribute == "$modified_by" || operation?.attribute == "$user") {
+      for (const membership of memberships) {
+        if (membership.user == parseInt(operation.value)) {
+          operation.value = `${membership.username} (ID: ${membership.id})`;
+          break;
+        }
+      }
+    }
+    else if (operation?.attribute == "$section") {
+      for (const section of sections) {
+        if (section.id == parseInt(operation.value)) {
+          operation.value = `${section.name} (ID: ${section.id})`;
+          break;
+        }
+      }
+    }
+    else if (operation?.attribute == "$version") {
+      for (const version of versions) {
+        if (version.id == parseInt(operation.value)) {
+          operation.value = `${version.name} (ID: ${version.id})`;
+          break;
+        }
+      }
+    }
 
     if (operation.hasOwnProperty("attribute")) {
       operationStringTokens.push("(");
@@ -119,7 +146,7 @@ export function processAttributeCombinatorSpec(
     }
     else {
       operationStringTokens.push("(");
-      var groupTokens = processAttributeCombinatorSpec(operation);
+      var groupTokens = processAttributeCombinatorSpec(operation, memberships, sections, versions, attributeSpanClass, inverseSpanClass, operationSpanClass, valueSpanClass, methodSpanClass);
       operationStringTokens = operationStringTokens.concat(groupTokens);
       operationStringTokens.push(")");
     }

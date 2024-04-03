@@ -263,9 +263,10 @@ export class SectionData {
     let info = this.makeFolderNameAndPath(proposedName, parentSectionId);
 
     // See if the adjusted path/name matches any of the provided sections
+    // Use the lowercase version of the name and path for comparison
     for (const section of this._sections) {
       const sectionPath = this.getSectionPath(section);
-      if (sectionPath == info.path || (section.name == info.name)) {
+      if (sectionPath.toLowerCase() === info.path.toLowerCase() || section.name.toLowerCase() === info.name.toLowerCase()) {
         return false;
       }
     }
@@ -290,7 +291,6 @@ export class SectionData {
 
         // If any of the parentSections are not visible, don't add this section to the list
         var visible = true;
-        var label = "";
         for (const parentSection of parentSections) {
           if (parentSection.visible == false) {
             visible = false;

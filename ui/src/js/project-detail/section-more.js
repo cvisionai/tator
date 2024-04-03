@@ -54,14 +54,6 @@ export class SectionMore extends TatorElement {
     this._annotations.setAttribute("text", "Download metadata");
     this._otherButtons.appendChild(this._annotations);
 
-    this._rename = document.createElement("rename-button");
-    this._rename.setAttribute("text", "Rename folder");
-    this._otherButtons.appendChild(this._rename);
-
-    this._deleteSection = document.createElement("delete-button");
-    this._deleteSection.init("Delete folder");
-    this._otherButtons.appendChild(this._deleteSection);
-
     this._deleteMedia = document.createElement("delete-button");
     this._deleteMedia.init("Delete media files", "text-red");
     this._otherButtons.appendChild(this._deleteMedia);
@@ -97,16 +89,6 @@ export class SectionMore extends TatorElement {
       this.dispatchEvent(new Event("downloadAnnotations"));
     });
 
-    this._rename.addEventListener("click", (evt) => {
-      details.removeAttribute("open");
-      this.dispatchEvent(new Event("rename", { composed: true }));
-    });
-
-    this._deleteSection.addEventListener("click", (evt) => {
-      details.removeAttribute("open");
-      this.dispatchEvent(new Event("deleteSection", { composed: true }));
-    });
-
     this._deleteMedia.addEventListener("click", (evt) => {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("deleteMedia", { composed: true }));
@@ -115,24 +97,8 @@ export class SectionMore extends TatorElement {
 
   set section(val) {
     if (val === null) {
-      this._rename.style.display = "none";
-      this._deleteSection.style.display = "none";
       this._deleteMedia.style.display = "none";
     } else {
-      // console.log(val);
-
-      if (val.lucene_search == null) {
-        // not a saved search
-        this._rename.setAttribute("text", "Rename folder");
-        this._deleteSection.init("Delete folder");
-      } else {
-        // is a saved search
-        this._rename.setAttribute("text", "Rename saved search");
-        this._deleteSection.init("Delete saved search");
-      }
-
-      this._rename.style.display = "block";
-      this._deleteSection.style.display = "block";
       this._deleteMedia.style.display = "block";
     }
     // End of day permission makes the call...
@@ -155,13 +121,10 @@ export class SectionMore extends TatorElement {
     if (!(hasPermission(permission, "Can Transfer") && enableDownloads)) {
       this._download.style.display = "none";
       this._annotations.style.display = "none";
-      this._deleteSection.style.display = "none";
       this._deleteMedia.style.display = "none";
     }
 
     if (permission === "View Only") {
-      this._rename.style.display = "none";
-      this._deleteSection.style.display = "none";
       this._deleteMedia.style.display = "none";
       this._bulkEditMedia.style.display = "none";
       this._download.style.display = "block";

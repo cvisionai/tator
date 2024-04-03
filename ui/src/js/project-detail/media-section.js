@@ -135,9 +135,18 @@ export class MediaSection extends TatorElement {
     await this.reload();
   }
 
-  set mediaTypesMap(val) {
-    this._mediaTypesMap = val;
-    this._files.mediaTypesMap = val;
+  /**
+   * @param {array} mediaTypes
+   *    Array of media types to display in the UI
+   */
+  set mediaTypes(mediaTypes) {
+    this._mediaTypes = mediaTypes;
+    this._mediaTypesMap = new Map();
+    for (let mediaTypeData of mediaTypes) {
+      this._mediaTypesMap.set(mediaTypeData.id, mediaTypeData);
+    }
+    this._files.mediaTypesMap = this._mediaTypesMap;
+    this._sort.init("Media", mediaTypes);
   }
 
   set project(val) {
@@ -198,6 +207,7 @@ export class MediaSection extends TatorElement {
   }
 
   set mediaIds(val) {
+    console.log("test !!!!!!!!!!!!!!!!!!!!!!!!!!!");
     this._updateNumFiles(val.length);
     this._files.mediaIds = val;
   }
@@ -281,9 +291,6 @@ export class MediaSection extends TatorElement {
     if (this._section !== null) {
       sectionParams.append("section", this._section.id);
     }
-    if (this._filterSection != null) {
-      sectionParams.append("section", this._filterSection);
-    }
     const filterAndSearchParams = this._getFilterQueryParams();
     const sortParam = new URLSearchParams(this._sort.getQueryParam());
     let params = joinParams(sectionParams, filterAndSearchParams);
@@ -317,6 +324,7 @@ export class MediaSection extends TatorElement {
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
+    console.log(`Section query: ${sectionQuery.toString()}`);
     const response = await fetchCredentials(
       `/rest/MediaCount/${this._project}?${sectionQuery.toString()}`
     );
@@ -699,17 +707,10 @@ export class MediaSection extends TatorElement {
       );
     });
 
+    // Callback for when user selects Delete Media option in the section more menu
+    // Dispatch back to the project detail page which executes the delete
     this._more.addEventListener("deleteMedia", (evt) => {
-      this.dispatchEvent(
-        new CustomEvent("remove", {
-          detail: {
-            sectionParams: this._sectionParams(),
-            section: this._section,
-            projectId: this._project,
-            deleteMedia: true,
-          },
-        })
-      );
+      this.dispatchEvent(new Event("deleteMedia"));
     });
 
     this._paginator_top.addEventListener("selectPage", (evt) => {
@@ -852,7 +853,6 @@ export class MediaSection extends TatorElement {
   _getFilterQueryParams() {
     const params = new URLSearchParams(window.location.search);
 
-    // remove page references when new query is made
     params.delete("page");
     params.delete("pagesize");
 
@@ -872,7 +872,6 @@ export class MediaSection extends TatorElement {
       searchString != null &&
       searchString !== "undefined"
     ) {
-      // let params = this._sectionParams();
       params.set("encoded_search", searchString);
     } else {
       params.delete("encoded_search");
@@ -886,7 +885,6 @@ export class MediaSection extends TatorElement {
       relatedSearchString != null &&
       relatedSearchString !== "undefined"
     ) {
-      // let params = this._sectionParams();
       params.set("encoded_related_search", relatedSearchString);
     } else {
       params.delete("encoded_related_search");

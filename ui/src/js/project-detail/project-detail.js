@@ -3,1549 +3,13 @@ import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { TatorData } from "../util/tator-data.js";
 import { TatorElement, svgNamespace } from "../components/tator-element.js";
-import { LoadingSpinner } from "../components/loading-spinner.js";
 import { FilterData } from "../components/filter-data.js";
 import { v1 as uuidv1 } from "uuid";
 import { store } from "./store.js";
-import { FilterConditionData, processAttributeCombinatorSpec } from "../util/filter-utilities.js";
+import { FilterConditionData } from "../util/filter-utilities.js";
 import Gear from "../../images/svg/gear.svg";
 import { ModalDialog } from "../components/modal-dialog.js";
 import { SectionData } from "../util/section-utilities.js";
-
-/**
- * Displays the AttributeOperationSpec in a human readable format
- */
-export class SectionObjectSearchDisplay extends TatorElement {
-
-  /**
-   * Class constructor
-   */
-  constructor() {
-    super();
-
-    this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "d-flex flex-grow flex-column px-2 py-2 rounded-2");
-    this._mainDiv.style.border = "1px solid #262e3d";
-    this._shadow.appendChild(this._mainDiv);
-
-    var titleDiv = document.createElement("div");
-    titleDiv.setAttribute("class", "f2 text-white text-semibold px-2 py-1");
-    titleDiv.textContent = "Saved Search Conditions";
-    titleDiv.style.minWidth = "110px";
-    this._mainDiv.appendChild(titleDiv);
-
-    this._objectDiv = document.createElement("div");
-    this._objectDiv.setAttribute("class", "d-flex flex-items-center flex-grow py-1");
-    this._mainDiv.appendChild(this._objectDiv);
-
-    var titleDiv = document.createElement("div");
-    titleDiv.setAttribute("class", "f2 text-gray text-semibold px-2");
-    titleDiv.textContent = "Object Search:";
-    titleDiv.style.minWidth = "110px";
-    this._objectDiv.appendChild(titleDiv);
-
-    this._objectOperationDiv = document.createElement("div");
-    this._objectOperationDiv.setAttribute("class", "f2 text-dark-gray px-2");
-    this._objectDiv.appendChild(this._objectOperationDiv);
-
-    this._relatedDiv = document.createElement("div");
-    this._relatedDiv.setAttribute("class", "d-flex flex-items-center flex-grow py-1");
-    this._mainDiv.appendChild(this._relatedDiv);
-
-    var titleDiv = document.createElement("div");
-    titleDiv.setAttribute("class", "f2 text-gray text-semibold px-2");
-    titleDiv.textContent = "Related Search:";
-    titleDiv.style.minWidth = "110px";
-    this._relatedDiv.appendChild(titleDiv);
-
-    this._relatedOperationDiv = document.createElement("div");
-    this._relatedOperationDiv.setAttribute("class", "f2 text-dark-gray px-2");
-    this._relatedDiv.appendChild(this._relatedOperationDiv);
-  }
-
-  /**
-   * @param {Tator.AttributeCombinatorSpec} objectSearch
-   * @param {Tator.AttributeCombinatorSpec} relatedSearch
-   * @postcondition UI is updated to display the object search and related search
-   */
-  setDisplay(objectSearch, relatedSearch) {
-
-    if (objectSearch == null) {
-      this._objectOperationDiv.innerHTML = "None";
-    }
-    else {
-      var stringTokens = processAttributeCombinatorSpec(objectSearch);
-      var operationString = stringTokens.join(" ");
-      this._objectOperationDiv.innerHTML = operationString;
-    }
-
-    if (relatedSearch == null) {
-      this._relatedOperationDiv.innerHTML = "None";
-    }
-    else {
-      var stringTokens = processAttributeCombinatorSpec(relatedSearch);
-      var operationString = stringTokens.join(" ");
-      this._relatedOperationDiv.innerHTML = operationString;
-    }
-  }
-}
-customElements.define("section-object-search-display", SectionObjectSearchDisplay);
-
-
-/**
- * Dialog for creating a new section.
- * There will be two components:
- *
- * - Name of the folder
- * - A dropdown for nesting
- *   This dropdown consist of each section and each level is padded out
- */
-export class FolderDialog extends ModalDialog {
-
-  /**
-   * Constructor
-   */
-  constructor() {
-
-    super();
-
-    // UI elements
-    this._errorMessage = document.createElement("div");
-    this._errorMessage.setAttribute("class", "f2 text-semibold text-red px-3 py-3 text-center");
-    this._errorMessage.style.display = "none";
-    this._main.appendChild(this._errorMessage);
-
-    this._name = document.createElement("text-input");
-    this._name.setAttribute("class", "text-gray f2");
-    this._name.setAttribute("name", "Folder Name:");
-    this._main.appendChild(this._name);
-
-    this._originalName = document.createElement("div");
-    this._originalName.setAttribute("class", "text-purple f3 mt-1 mb-3");
-    this._main.appendChild(this._originalName);
-    this._originalName.style.display = "none";
-
-    this._parentFolders = document.createElement("enum-input");
-    this._parentFolders.setAttribute("class", "text-gray f2");
-    this._parentFolders.setAttribute("name", "Parent Folder:");
-    this._main.appendChild(this._parentFolders);
-
-    this._originalParent = document.createElement("div");
-    this._originalParent.setAttribute("class", "text-purple f3 mt-1 mb-3");
-    this._main.appendChild(this._originalParent);
-    this._originalParent.style.display = "none";
-
-    this._save = document.createElement("button");
-    this._save.setAttribute("class", "btn btn-clear btn-purple disabled");
-    this._footer.appendChild(this._save);
-    this._save.setAttribute("disabled", "");
-
-    const cancel = document.createElement("button");
-    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
-    cancel.textContent = "Cancel";
-    this._footer.appendChild(cancel);
-
-    // Data initialization
-    this._noParentName = "-- None --";
-    this._sectionData = null;
-
-    // Event handlers
-    this._name.addEventListener("change", () => {
-      var proposedName = this._name.getValue();
-      var parentSectionId = this._parentFolders.getValue();
-      if (parentSectionId == this._noParentName) {
-        parentSectionId = null;
-      }
-      if (this._sectionData.verifySectionRename(proposedName, parentSectionId)) {
-        this.enableSave();
-      }
-      else {
-        this.invalidName();
-      }
-
-      if (this._mode == "editFolder") {
-        if (proposedName != this._selectedSection.name) {
-          var parts = this._selectedSection.name.split(".");
-          this._originalName.style.display = "block";
-          this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${parts[parts.length - 1]}</span>`;
-        }
-        else {
-          this._originalName.style.display = "none";
-        }
-      }
-    });
-
-    this._parentFolders.addEventListener("change", () => {
-      var proposedName = this._name.getValue();
-      var parentSectionId = this._parentFolders.getValue();
-      if (parentSectionId == this._noParentName) {
-        parentSectionId = null;
-      }
-      if (this._sectionData.verifySectionRename(proposedName, parentSectionId)) {
-        this.enableSave();
-      }
-      else {
-        this.invalidName();
-      }
-
-      if (this._mode == "editFolder") {
-        var parentSections = this._sectionData.getParentSections(this._selectedSection);
-        if (parentSections.length == 0 && parentSectionId != null) {
-          var parts = this._selectedSection.name.split(".");
-          parts.pop();
-          var pathToShow = parts.join(" > ");
-          this._originalParent.style.display = "block";
-          this._originalParent.innerHTML = `Changing parent folder from: <span class="text-semibold">${pathToShow}</span>`;
-        }
-        if (parentSections.length > 0 && parentSections[0].id != this._parentFolders.getValue()) {
-          var parts = this._selectedSection.name.split(".");
-          parts.pop();
-          var pathToShow = parts.join(" > ");
-          this._originalParent.style.display = "block";
-          this._originalParent.innerHTML = `Changing parent folder from: <span class="text-semibold">${pathToShow}</span>`;
-        }
-        else {
-          this._originalParent.style.display = "none";
-        }
-      }
-    });
-
-    cancel.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("close"));
-    });
-
-    this._save.addEventListener("click", () => {
-
-      var proposedName = this._name.getValue();
-      var parentSectionId = this._parentFolders.getValue();
-      if (parentSectionId == this._noParentName) {
-        parentSectionId = null;
-      }
-      var info = this._sectionData.makeFolderNameAndPath(proposedName, parentSectionId);
-
-      if (this._mode == "newFolder") {
-        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
-           detail: {
-             name: info.name,
-             path: info.path
-          }
-        }));
-      }
-      else if (this._mode == "editFolder") {
-
-        var patchSpecs = [];
-        var patchSpec = {}
-
-        if (info.name != this._selectedSection.name) {
-          patchSpec.name = info.name;
-        }
-        if (info.path != this._selectedSection.path) {
-          patchSpec.path = info.path;
-        }
-        // If patchSpec has nothing, then don't send a patch request
-        if (Object.keys(patchSpec).length == 0) {
-          return;
-        }
-
-        // If the path or name has changed, we need to update the children
-        var childSections = this._sectionData.getChildSections(this._selectedSection);
-        for (const childSection of childSections) {
-          patchSpecs.push({
-            id: childSection.id,
-            spec: {
-              path: childSection.path.replace(this._selectedSection.path, info.path),
-              name: childSection.name.replace(this._selectedSection.name, info.name)
-            }
-          })
-        }
-        patchSpecs.push({
-          id: this._selectedSection.id,
-          spec: patchSpec
-        });
-
-        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
-          detail: {
-            mainSectionId: this._selectedSection.id,
-            specs: patchSpecs
-         }
-       }));
-      }
-    });
-  }
-
-  /**
-   * Call to enable the save button and hide the error message
-   * Typically called after the fields have been verified
-   */
-  enableSave() {
-    this._save.removeAttribute("disabled");
-    this._errorMessage.style.display = "none";
-  }
-
-  /**
-   * Call to set the modal to an invalid name state
-   * Typically called after the fields have been verified
-   */
-  invalidName() {
-    this._save.setAttribute("disabled", "");
-    this._errorMessage.innerHTML = "Invalid name provided. Name cannot be blank, share the same name as another folder in the same sub-directory or have '.' or '>' in the name.";
-    this._errorMessage.style.display = "block";
-  }
-
-  /**
-   * Can be called multiple times to reset the dialog (e.g. whenever there's a new section list)
-   * @param {SectionData} sectionData
-   *    SectionData object to use for the dialog
-   * @postcondition Name and Parent Folders fields are reset
-   */
-  init(sectionData) {
-
-    this._parentFolders.clear();
-    this._name.reset();
-
-    this._sectionData = sectionData;
-    this._selectedSection = null;
-
-    var choices = this._sectionData.getFolderEnumChoices();
-    choices.unshift({ value: this._noParentName, label: this._noParentName });
-
-    this._parentFolders.choices = choices;
-  }
-
-  /**
-   * @param {string} mode
-   *   "newFolder" | "editFolder"
-   * @param {Tator.Section} selectedSection
-   *   Selected section in the UI
-   */
-  setMode(mode, selectedSection) {
-
-    this._originalName.style.display = "none";
-    this._originalParent.style.display = "none";
-    this._errorMessage.style.display = "none";
-    this._save.setAttribute("disabled", "");
-    this._selectedSection = selectedSection;
-
-    if (mode == "newFolder") {
-      this._title.nodeValue = "Add Folder";
-      this._mode = mode;
-      this._save.textContent = "Add";
-      this._saveClickEvent = "add";
-      this._name.setValue("");
-      this._parentFolders.setValue(selectedSection?.id);
-    }
-    else if (mode == "editFolder") {
-      this._title.nodeValue = "Edit Folder";
-      this._mode = mode;
-      this._save.textContent = "Edit";
-      this._saveClickEvent = "edit";
-
-      let nameParts = selectedSection.name.split(".");
-      this._name.setValue(nameParts[nameParts.length - 1]);
-      this._parentFolders.setValue(selectedSection?.id);
-    }
-    else {
-      throw new Error(`Invalid mode: ${mode}`);
-    }
-
-  }
-}
-customElements.define("folder-dialog", FolderDialog);
-
-/**
- * Dialog for creating new and editing media search sections
- */
-export class MediaSearchDialog extends ModalDialog {
-
-
-  /**
-   * Constructor
-   */
-  constructor() {
-
-    super();
-
-    // UI elements
-    this._errorMessage = document.createElement("div");
-    this._errorMessage.setAttribute("class", "f2 text-semibold text-red px-3 py-3 text-center");
-    this._errorMessage.style.display = "none";
-    this._main.appendChild(this._errorMessage);
-
-    this._name = document.createElement("text-input");
-    this._name.setAttribute("class", "text-gray f2");
-    this._name.setAttribute("name", "Media Search Name:");
-    this._main.appendChild(this._name);
-
-    this._originalName = document.createElement("div");
-    this._originalName.setAttribute("class", "text-purple f3 mt-1 mb-3");
-    this._main.appendChild(this._originalName);
-    this._originalName.style.display = "none";
-
-    this._save = document.createElement("button");
-    this._save.setAttribute("class", "btn btn-clear btn-purple disabled");
-    this._footer.appendChild(this._save);
-    this._save.setAttribute("disabled", "");
-
-    const cancel = document.createElement("button");
-    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
-    cancel.textContent = "Cancel";
-    this._footer.appendChild(cancel);
-
-    // Data initialization
-    this._sectionData = null;
-
-    // Event handlers
-    this._name.addEventListener("change", () => {
-      var proposedName = this._name.getValue();
-      if (this._sectionData.verifySectionRename(proposedName)) {
-        this.enableSave();
-      }
-      else {
-        this.invalidName();
-      }
-
-      if (this._mode == "editSearch") {
-        if (proposedName != this._selectedSection.name) {
-          var parts = this._selectedSection.name.split(".");
-          this._originalName.style.display = "block";
-          this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${parts[parts.length - 1]}</span>`;
-        }
-        else {
-          this._originalName.style.display = "none";
-        }
-      }
-    });
-
-    cancel.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("close"));
-    });
-
-    this._save.addEventListener("click", () => {
-
-      var proposedName = this._name.getValue();
-      var info = this._sectionData.makeFolderNameAndPath(proposedName);
-
-      if (this._mode == "newSearch") {
-
-        var spec = {
-          name: info.name,
-          path: info.path,
-          visible: true
-        };
-
-        // Utilize the URL to get the encoded search and encoded related search information
-        const params = new URLSearchParams(document.location.search.substring(1));
-
-        if (params.has("encoded_search")) {
-          let object_search = JSON.parse(atob(params.get("encoded_search")));
-          if (this._selectedSection?.object_search) {
-            let union_operation = {
-              method: "and",
-              operations: [this._selectedSection.object_search, object_search],
-            };
-            spec.object_search = union_operation;
-          } else {
-            spec.object_search = object_search;
-          }
-        }
-
-        if (params.has("encoded_related_search")) {
-          let related_search = JSON.parse(atob(params.get("encoded_related_search")));
-          if (this._selectedSection?.related_search) {
-            let union_operation = {
-              method: "and",
-              operations: [this._selectedSection.related_search, related_search],
-            };
-            spec.related_search = union_operation;
-          } else {
-            spec.related_search = related_search;
-          }
-        }
-
-        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
-           detail: {spec: spec}
-        }));
-      }
-      else if (this._mode == "editSearch") {
-
-        var patchSpecs = [];
-        var patchSpec = {}
-
-        if (info.name != this._selectedSection.name) {
-          patchSpec.name = info.name;
-        }
-        if (info.path != this._selectedSection.path) {
-          patchSpec.path = info.path;
-        }
-        // If patchSpec has nothing, then don't send a patch request
-        if (Object.keys(patchSpec).length == 0) {
-          return;
-        }
-        patchSpecs.push({
-          id: this._selectedSection.id,
-          spec: patchSpec
-        });
-
-        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
-          detail: {
-            mainSectionId: this._selectedSection.id,
-            specs: patchSpecs
-         }
-       }));
-      }
-    });
-  }
-
-  /**
-   * Call to enable the save button and hide the error message
-   * Typically called after the fields have been verified
-   */
-  enableSave() {
-    this._save.removeAttribute("disabled");
-    this._errorMessage.style.display = "none";
-  }
-
-  /**
-   * Call to set the modal to an invalid name state
-   * Typically called after the fields have been verified
-   */
-  invalidName() {
-    this._save.setAttribute("disabled", "");
-    this._errorMessage.innerHTML = "Invalid name provided. Name cannot be blank, share the same name as another folder in the top-level directory or have '.' or '>' in the name.";
-    this._errorMessage.style.display = "block";
-  }
-
-  /**
-   * Can be called multiple times to reset the dialog (e.g. whenever there's a new section list)
-   * @param {SectionData} sectionData
-   *    SectionData object to use for the dialog
-   * @postcondition Name and Parent Folders fields are reset
-   */
-  init(sectionData) {
-    this._name.reset();
-    this._sectionData = sectionData;
-    this._selectedSection = null;
-  }
-
-  /**
-   * @param {string} mode
-   *   "newSearch" | "editSearch"
-   * @param {Tator.Section} selectedSection
-   *   Selected section in the UI
-   */
-  setMode(mode, selectedSection) {
-
-    this._originalName.style.display = "none";
-    this._errorMessage.style.display = "none";
-    this._save.setAttribute("disabled", "");
-    this._selectedSection = selectedSection;
-
-    if (mode == "newSearch") {
-      this._title.nodeValue = "Add Media Search";
-      this._mode = mode;
-      this._save.textContent = "Add";
-      this._saveClickEvent = "add";
-      this._name.setValue("");
-    }
-    else if (mode == "editSearch") {
-      this._title.nodeValue = "Edit Media Search";
-      this._mode = mode;
-      this._save.textContent = "Edit";
-      this._saveClickEvent = "edit";
-
-      let nameParts = selectedSection.name.split(".");
-      this._name.setValue(nameParts[nameParts.length - 1]);
-    }
-    else {
-      throw new Error(`Invalid mode: ${mode}`);
-    }
-
-  }
-
-}
-customElements.define("media-search-dialog", MediaSearchDialog);
-
-/**
- * Dialog for editing an existing bookmark
- * - Currently only capability is to rename it
- */
-export class BookmarkEditDialog extends ModalDialog {
-
-  /**
-   * Constructor
-   */
-  constructor() {
-
-    super();
-
-    this._title.nodeValue = "Rename Bookmark";
-    this._main.classList.remove("py-4");
-    this._main.classList.add("pt-3");
-
-    this._errorMessage = document.createElement("div");
-    this._errorMessage.setAttribute("class", "f2 text-semibold text-red px-3 py-3 text-center");
-    this._errorMessage.style.display = "none";
-    this._main.appendChild(this._errorMessage);
-
-    this._name = document.createElement("text-input");
-    this._name.setAttribute("class", "text-gray f2");
-    this._name.setAttribute("name", "Bookmark Name:");
-    this._main.appendChild(this._name);
-
-    this._originalName = document.createElement("div");
-    this._originalName.setAttribute("class", "text-purple f3 mt-1 mb-3");
-    this._main.appendChild(this._originalName);
-    this._originalName.style.display = "none";
-
-    this._save = document.createElement("button");
-    this._save.setAttribute("class", "btn btn-clear btn-purple disabled");
-    this._save.textContent = "Rename";
-    this._footer.appendChild(this._save);
-    this._save.setAttribute("disabled", "");
-
-    const cancel = document.createElement("button");
-    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
-    cancel.textContent = "Cancel";
-    this._footer.appendChild(cancel);
-
-    // Event handlers
-    this._name.addEventListener("change", () => {
-      var proposedName = this._name.getValue();
-
-      if (proposedName != "") {
-        this.enableSave();
-        if (proposedName != this._bookmark.name) {
-          this._originalName.style.display = "block";
-          this._originalName.innerHTML = `Changing bookmark name from: <span class="text-semibold">${this._bookmark.name}</span>`;
-        }
-      }
-      else {
-        this._originalName.style.display = "none";
-        this.invalidName();
-      }
-    });
-
-    cancel.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("close"));
-    });
-
-    this._save.addEventListener("click", () => {
-        var newName = this._name.getValue();
-        newName = newName.trim();
-        this.dispatchEvent(new CustomEvent("edit", {
-          detail: {
-            id: this._bookmark.id,
-            spec: {name: newName}
-         }
-       }));
-    });
-  }
-
-  /**
-   * Call to enable the save button and hide the error message
-   * Typically called after the fields have been verified
-   */
-  enableSave() {
-    this._save.removeAttribute("disabled");
-    this._errorMessage.style.display = "none";
-  }
-
-  /**
-   * Call to set the modal to an invalid name state
-   * Typically called after the fields have been verified
-   */
-  invalidName() {
-    this._save.setAttribute("disabled", "");
-    this._errorMessage.innerHTML = "Invalid bookmark name provided. Cannot be blank.";
-    this._errorMessage.style.display = "block";
-  }
-
-  /**
-   * @param {Tator.Bookmark} bookmark
-   */
-  init(bookmark) {
-    this._bookmark = bookmark;
-    this._name.setValue(bookmark.name);
-    this._originalName.style.display = "none";
-  }
-}
-customElements.define("bookmark-edit-dialog", BookmarkEditDialog);
-
-export class DeleteModal extends ModalDialog {
-  constructor() {
-    super();
-
-    this._title.nodeValue = "Delete";
-    this._main.classList.remove("py-4");
-    this._main.classList.add("pt-3");
-
-    const icon = document.createElement("modal-warning");
-    this._header.insertBefore(icon, this._titleDiv);
-
-    this._dataText = document.createElement("div");
-    this._dataText.setAttribute("class", "f2 text-gray px-3 py-3 text-center");
-    this._main.appendChild(this._dataText);
-
-    this._warning = document.createElement("div");
-    this._warning.setAttribute("class", "py-3 text-center f2 text-red");
-    this._warning.innerHTML = `<span class="text-semibold">Warning: </span>This cannot be undone`;
-    this._main.appendChild(this._warning);
-
-    this._accept = document.createElement("button");
-    this._accept.setAttribute("class", "btn btn-clear btn-red");
-    this._accept.textContent = "Delete";
-    this._footer.appendChild(this._accept);
-
-    const cancel = document.createElement("button");
-    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
-    cancel.textContent = "Cancel";
-    this._footer.appendChild(cancel);
-
-    cancel.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("close"));
-    });
-
-    this._accept.addEventListener("click", async (evt) => {
-      this.dispatchEvent(new CustomEvent("delete", {
-        detail: {
-          data: this._data,
-       }
-     }));
-    });
-
-    this.updateUI();
-  }
-
-  /**
-   * @param {Object} data
-   *   Object to pass via the delete event
-   */
-  init(data) {
-    this._data = data;
-  }
-
-  /**
-   * Called during construction
-   */
-  updateUI() {
-    this._title.nodeValue = "Delete";
-    this._accept.textContent = "Delete";
-  }
-}
-customElements.define("delete-modal", DeleteModal);
-
-/**
- * Modal specifically for deleting a bookmark
- */
-export class BookmarkDeleteModal extends DeleteModal {
-
-  /**
-   * @param {Tator.Bookmark} data
-   */
-  init(data) {
-    super.init(data);
-    this._dataText.innerHTML = `<span>Are you sure you want to delete the bookmark:</span><br /><span class="text-semibold">${data.name}</span>?`;
-  }
-
-  /**
-   * @override
-   */
-  updateUI() {
-    this._title.nodeValue = "Delete Bookmark";
-    this._accept.textContent = "Delete";
-  }
-}
-customElements.define("bookmark-delete-modal", BookmarkDeleteModal);
-
-/**
- * Button used for the "All Media" / home in the section list
- */
-export class AllMediaItem extends TatorElement {
-
-  constructor() {
-
-    super();
-
-    this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "rounded-2 px-1 py-1 d-flex flex-items-center clickable");
-    this._shadow.appendChild(this._mainDiv);
-
-    this._icon = document.createElement("div");
-    this._icon.setAttribute("class", "d-flex ml-3");
-    this._mainDiv.appendChild(this._icon);
-    this._icon.innerHTML = `
-    <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
-    </svg>
-    `;
-
-    this._name = document.createElement("div");
-    this._name.setAttribute("class", "f2 text-gray ml-3 flex-grow");
-    this._name.innerHTML = "All Media";
-    this._mainDiv.appendChild(this._name);
-
-    this._mainDiv.addEventListener("mouseover", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "#262e3d";
-        this._mainDiv.style.color = "#ffffff";
-        this._name.classList.remove("text-gray");
-        this._name.classList.add("text-white");
-      }
-    });
-
-    this._mainDiv.addEventListener("mouseout", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "";
-        this._mainDiv.style.color = "";
-        this._name.classList.add("text-gray");
-        this._name.classList.remove("text-white");
-      }
-    });
-
-    this._mainDiv.addEventListener("click", () => {
-      this._mainDiv.blur();
-      this.setActive();
-      this.dispatchEvent(new CustomEvent("selected", { detail: { id: null } }));
-    });
-  }
-
-  setActive() {
-    this._active = true;
-    this._mainDiv.style.backgroundColor = "#202543";
-    this._mainDiv.style.color = "#ffffff";
-    this._name.classList.remove("text-gray");
-    this._name.classList.add("text-white");
-    this._name.classList.add("text-semibold");
-    this._mainDiv.classList.remove("box-border");
-  }
-
-  setInactive() {
-    this._active = false;
-    this._mainDiv.style.backgroundColor = "";
-    this._mainDiv.style.color = "";
-    this._name.classList.add("text-gray");
-    this._name.classList.remove("text-white");
-    this._name.classList.remove("text-semibold");
-    this._mainDiv.classList.add("box-border");
-  }
-}
-customElements.define("all-media-item", AllMediaItem);
-
-/**
- * Button thats used as part of the section list
- */
-export class SectionListItem extends TatorElement {
-
-  /**
-   * Constructor
-   */
-  constructor() {
-    super();
-
-    this.setupUIElements();
-    this.setupEventListeners();
-    this.setInactive();
-    this.collapse();
-  }
-
-  setupUIElements() {
-
-    this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
-    this._shadow.appendChild(this._mainDiv);
-
-    this._expand = document.createElement("div");
-    this._expand.setAttribute("class", "d-flex mr-1 d-flex flex-items-center clickable rounded-2");
-    this._mainDiv.appendChild(this._expand);
-    this._expand.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" />
-      </svg>
-    `;
-
-    this._icon = document.createElement("div");
-    this._icon.setAttribute("class", "d-flex py-1");
-    this._mainDiv.appendChild(this._icon);
-    this._icon.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
-      </svg>
-    `;
-
-    this._name = document.createElement("div");
-    this._name.setAttribute("class", "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate");
-    this._mainDiv.appendChild(this._name);
-
-    var moreWrapper = document.createElement("div");
-    moreWrapper.setAttribute("class", "d-flex flex-justify-right");
-    this._mainDiv.appendChild(moreWrapper);
-
-    this._more = document.createElement("div");
-    this._more.setAttribute("class", "d-flex mr-2 clickable rounded-2");
-    moreWrapper.appendChild(this._more);
-    this._more.innerHTML = `
-      <svg transform="rotate(90)" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-      </svg>
-    `;
-    this._more.style.display = "none";
-
-    this._moreMenu = document.createElement("div");
-    this._moreMenu.setAttribute(
-      "class",
-      "more d-flex flex-column f2 px-3 py-2 lh-condensed"
-    );
-    this._moreMenu.style.display = "none";
-    this._moreMenu.style.marginTop = "5px";
-    this._moreMenu.style.marginLeft = "200px";
-    this._shadow.appendChild(this._moreMenu);
-
-    //
-    // Details section
-    //
-    this._detailsDiv = document.createElement("div");
-    this._detailsDiv.setAttribute("class", "pl-2 pt-1 pb-2 d-flex flex-column f3 text-dark-gray");
-    this._shadow.appendChild(this._detailsDiv);
-    this._detailsDiv.style.display = "none";
-  }
-
-  setupEventListeners() {
-    this._mainDiv.addEventListener("mouseover", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "#262e3d";
-        this._mainDiv.style.color = "#ffffff";
-        this._name.classList.remove("text-gray");
-        this._name.classList.add("text-white");
-      }
-      this._more.style.display = "flex";
-    });
-
-    this._mainDiv.addEventListener("mouseout", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "";
-        this._mainDiv.style.color = "";
-        this._name.classList.add("text-gray");
-        this._name.classList.remove("text-white");
-      }
-      this._more.style.display = "none";
-    });
-
-    this._name.addEventListener("click", () => {
-      this._mainDiv.blur();
-      this._moreMenu.style.display = "none";
-      this.setActive();
-      this.dispatchEvent(new CustomEvent("selected", { detail: { id: this._section.id } }));
-    });
-
-    this._expand.addEventListener("mouseover", () => {
-      this._expand.style.backgroundColor = "#3b4250";
-    });
-
-    this._expand.addEventListener("mouseout", () => {
-      this._expand.style.backgroundColor = "";
-    });
-
-    this._expand.addEventListener("click", () => {
-      this._mainDiv.blur();
-      this._moreMenu.style.display = "none";
-      if (this._expanded) {
-        this.collapse();
-        this.dispatchEvent(new Event("expand"));
-      }
-      else {
-        this.expand();
-        this.dispatchEvent(new Event("collapse"));
-      }
-    });
-
-    this._more.addEventListener("mouseover", () => {
-      this._more.style.backgroundColor = "#3b4250";
-    });
-
-    this._more.addEventListener("mouseout", () => {
-      this._more.style.backgroundColor = "";
-    });
-
-    this._more.addEventListener("click", () => {
-      if (this._moreMenu.style.display == "none") {
-        this._moreMenu.style.display = "block";
-      }
-      else {
-        this._moreMenu.style.display = "none";
-      }
-    });
-  }
-
-  /**
-   * @param {Tator.Section} section
-   *    Section object to initialize the button with
-   * @param {array} childSections
-   *    Array of child sections (Tator.Section objects)
-   */
-  init(section, childSections) {
-
-    this._section = section;
-    this._childSections = childSections;
-
-    // If section.path exists, use it. Otherwise, use section.name
-    // section.path is ParentName.ChildName - we want to just use ChildName
-    var sectionName = section.name;
-    var padding = 0;
-    if (section.path) {
-      var pathParts = sectionName.split(".");
-      padding = 10 * (sectionName.split(".").length - 1);
-      if (pathParts.length > 1) {
-        sectionName = pathParts[pathParts.length - 1];
-      }
-    }
-    this._name.innerHTML = sectionName;
-
-    // Add the appropriate padding based on how many parents this section has
-    // 10px margin left for each parent
-    if (childSections.length > 0) {
-      // There are child sections, show the expand icon
-      this._expand.style.marginLeft = `${padding}px`;
-    } else {
-      // If no children, remove the expand icon
-      this._expand.style.visibility = "hidden";
-      this._icon.style.marginLeft = `${padding}px`;
-    }
-
-    if (!section.visible) {
-      this._name.classList.add("text-dark-gray");
-      this._icon.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
-          <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
-        </svg>
-      `;
-    }
-
-    // Update the more menu
-    const hideToggleButton = document.createElement("button");
-    hideToggleButton.setAttribute(
-      "class",
-      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
-    );
-    if (section.visible) {
-      hideToggleButton.innerHTML = `
-      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
-      </svg>
-      Hide folder`;
-      hideToggleButton.addEventListener("click", () => {
-        this._moreMenu.style.display = "none";
-        this.dispatchEvent(new CustomEvent("hideSection", { detail: { id: section.id } }));
-      });
-    }
-    else {
-      hideToggleButton.innerHTML = `
-      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
-      </svg>
-      Restore folder`;
-      hideToggleButton.addEventListener("click", () => {
-        this._moreMenu.style.display = "none";
-        this.dispatchEvent(new CustomEvent("restoreSection", { detail: { id: section.id } }));
-      });
-    }
-    const deleteToggleButton = document.createElement("button");
-    deleteToggleButton.setAttribute(
-      "class",
-      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
-    );
-    deleteToggleButton.innerHTML = `
-    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-    </svg>
-    Delete folder`;
-    if (childSections.length > 0) {
-      deleteToggleButton.setAttribute("disabled", "");
-      deleteToggleButton.style.cursor = "not-allowed";
-      deleteToggleButton.setAttribute("tooltip", "Cannot delete folder when it has subfolders.");
-    }
-    else {
-      deleteToggleButton.addEventListener("click", () => {
-        this._moreMenu.style.display = "none";
-        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { id: section.id } }));
-      });
-    }
-
-    const editToggleButton = document.createElement("button");
-    editToggleButton.setAttribute(
-      "class",
-      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
-    );
-    editToggleButton.innerHTML = `
-    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-    </svg>
-    Edit folder`;
-    editToggleButton.addEventListener("click", () => {
-      this._moreMenu.style.display = "none";
-      this.dispatchEvent(new CustomEvent("editSection", { detail: { id: section.id } }));
-    });
-
-    this._moreMenu.appendChild(editToggleButton);
-    this._moreMenu.appendChild(deleteToggleButton);
-    this._moreMenu.appendChild(hideToggleButton);
-
-    this._detailsDiv.innerHTML = `
-      <div><span class="text-semibold text-gray">id:</span> ${section.id}</div>
-      <div><span class="text-semibold text-gray">name:</span> ${section.name}</div>
-      <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
-      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
-      <div><span class="text-semibold text-gray">object_search:</span> ${section.object_search}</div>
-      <div><span class="text-semibold text-gray">related_search:</span> ${section.related_search}</div>
-    `;
-  }
-
-  /**
-   * Display this list item as active
-   */
-  setActive() {
-    this._active = true;
-    this._mainDiv.style.backgroundColor = "#202543";
-    this._mainDiv.style.color = "#ffffff";
-    this._name.classList.remove("text-gray");
-    this._name.classList.add("text-white");
-    this._name.classList.add("text-semibold");
-  }
-
-  /**
-   * Display this list item as inactive
-   */
-  setInactive() {
-    this._active = false;
-    this._mainDiv.style.backgroundColor = "";
-    this._mainDiv.style.color = "";
-    this._name.classList.add("text-gray");
-    this._name.classList.remove("text-white");
-    this._name.classList.remove("text-semibold");
-    this._moreMenu.style.display = "none";
-  }
-
-  /**
-   * @returns {Tator.Section} section object associated with this list item
-   */
-  getSection() {
-    return this._section;
-  }
-
-  collapse() {
-    this._expanded = false;
-    this._expand.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" />
-      </svg>
-    `;
-  }
-
-  expand() {
-    this._expanded = true;
-    this._expand.innerHTML = `
-      <svg transform="rotate(90)" width="14" height="14" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" />
-      </svg>
-    `;
-  }
-
-  /**
-   * Hide the advanced details panel showing information about the section
-   */
-  hideAdvancedDetails() {
-    this._detailsDiv.style.display = "none";
-  }
-
-  /**
-   * Show the advanced details panel showing information about the section
-   */
-  showAdvancedDetails() {
-    this._detailsDiv.style.display = "block";
-  }
-}
-customElements.define("section-list-item", SectionListItem);
-
-/**
- * Button that used to add a bookmark
- */
-export class BookmarkListItem extends TatorElement {
-
-  constructor() {
-    super();
-
-    this.setupUIElements();
-    this.setupEventListeners();
-  }
-
-  /**
-   * Executed by constructor only
-   */
-  setupUIElements() {
-
-    this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
-    this._shadow.appendChild(this._mainDiv);
-
-    this._icon = document.createElement("div");
-    this._icon.setAttribute("class", "d-flex py-1");
-    this._mainDiv.appendChild(this._icon);
-    this._icon.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4z" />
-      </svg>
-    `;
-
-    this._name = document.createElement("div");
-    this._name.setAttribute("class", "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate");
-    this._mainDiv.appendChild(this._name);
-
-    var moreWrapper = document.createElement("div");
-    moreWrapper.setAttribute("class", "d-flex flex-justify-right");
-    this._mainDiv.appendChild(moreWrapper);
-
-    this._more = document.createElement("div");
-    this._more.setAttribute("class", "d-flex mr-2 clickable rounded-2");
-    moreWrapper.appendChild(this._more);
-    this._more.innerHTML = `
-      <svg transform="rotate(90)" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-      </svg>
-    `;
-    this._more.style.display = "none";
-
-    this._moreMenu = document.createElement("div");
-    this._moreMenu.setAttribute(
-      "class",
-      "more d-flex flex-column f2 px-3 py-2 lh-condensed"
-    );
-    this._moreMenu.style.display = "none";
-    this._moreMenu.style.marginTop = "5px";
-    this._moreMenu.style.marginLeft = "200px";
-    this._shadow.appendChild(this._moreMenu);
-
-    this._link = document.createElement("a");
-    this._link.style.display = "none";
-    this._shadow.appendChild(this._moreMenu);
-  }
-
-  /**
-   * Executed by constructor only
-   */
-  setupEventListeners() {
-    this._mainDiv.addEventListener("mouseover", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "#262e3d";
-        this._mainDiv.style.color = "#ffffff";
-        this._name.classList.remove("text-gray");
-        this._name.classList.add("text-white");
-      }
-      this._more.style.display = "flex";
-    });
-
-    this._mainDiv.addEventListener("mouseout", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "";
-        this._mainDiv.style.color = "";
-        this._name.classList.add("text-gray");
-        this._name.classList.remove("text-white");
-      }
-      this._more.style.display = "none";
-    });
-
-    this._name.addEventListener("click", () => {
-      this._mainDiv.blur();
-      this._moreMenu.style.display = "none";
-      this._link.click();
-    });
-
-    this._more.addEventListener("mouseover", () => {
-      this._more.style.backgroundColor = "#3b4250";
-    });
-
-    this._more.addEventListener("mouseout", () => {
-      this._more.style.backgroundColor = "";
-    });
-
-    this._more.addEventListener("click", () => {
-      if (this._moreMenu.style.display == "none") {
-        this._moreMenu.style.display = "block";
-      }
-      else {
-        this._moreMenu.style.display = "none";
-      }
-    });
-  }
-
-
-  /**
-   * @param {Tator.Bookmark} bookmark
-   */
-  init(bookmark) {
-
-    this._bookmark = bookmark;
-    this._name.textContent = bookmark.name;
-
-    this._link.setAttribute("target", "_blank");
-    this._link.setAttribute("href", bookmark.uri);
-
-    if (bookmark.name == "Last visited") {
-      this._mainDiv.classList.add("box-border");
-      this._mainDiv.classList.add("py-1");
-      this._mainDiv.classList.add("mb-2");
-      this._more.classList.add("hidden");
-    }
-    else {
-      const deleteToggleButton = document.createElement("button");
-      deleteToggleButton.setAttribute(
-        "class",
-        "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
-      );
-      deleteToggleButton.innerHTML = `
-      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-      </svg>
-      Delete bookmark`;
-      deleteToggleButton.addEventListener("click", () => {
-        this._moreMenu.style.display = "none";
-        this.dispatchEvent(new CustomEvent("deleteBookmark", { detail: { id: bookmark.id } }));
-      });
-
-      const renameToggleButton = document.createElement("button");
-      renameToggleButton.setAttribute(
-        "class",
-        "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
-      );
-      renameToggleButton.innerHTML = `
-      <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-      </svg>
-      Rename bookmark`;
-      renameToggleButton.addEventListener("click", () => {
-        this._moreMenu.style.display = "none";
-        this.dispatchEvent(new CustomEvent("renameBookmark", { detail: { id: bookmark.id } }));
-      });
-
-      this._moreMenu.appendChild(renameToggleButton);
-      this._moreMenu.appendChild(deleteToggleButton);
-    }
-  }
-}
-customElements.define("bookmark-list-item", BookmarkListItem);
-
-
-/**
- * Button that used to add a bookmark
- */
-export class MediaSearchListItem extends TatorElement {
-
-  constructor() {
-    super();
-
-    this.setupUIElements();
-    this.setupEventListeners();
-  }
-
-  /**
-   * Executed by constructor only
-   */
-  setupUIElements() {
-
-    this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
-    this._shadow.appendChild(this._mainDiv);
-
-    this._icon = document.createElement("div");
-    this._icon.setAttribute("class", "d-flex py-1");
-    this._mainDiv.appendChild(this._icon);
-    this._icon.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="no-fill" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />
-      </svg>
-    `;
-
-    this._name = document.createElement("div");
-    this._name.setAttribute("class", "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate");
-    this._mainDiv.appendChild(this._name);
-
-    var moreWrapper = document.createElement("div");
-    moreWrapper.setAttribute("class", "d-flex flex-justify-right");
-    this._mainDiv.appendChild(moreWrapper);
-
-    this._more = document.createElement("div");
-    this._more.setAttribute("class", "d-flex mr-2 clickable rounded-2");
-    moreWrapper.appendChild(this._more);
-    this._more.innerHTML = `
-      <svg transform="rotate(90)" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-      </svg>
-    `;
-    this._more.style.display = "none";
-
-    this._moreMenu = document.createElement("div");
-    this._moreMenu.setAttribute(
-      "class",
-      "more d-flex flex-column f2 px-3 py-2 lh-condensed"
-    );
-    this._moreMenu.style.display = "none";
-    this._moreMenu.style.marginTop = "5px";
-    this._moreMenu.style.marginLeft = "200px";
-    this._shadow.appendChild(this._moreMenu);
-
-    this._detailsDiv = document.createElement("div");
-    this._detailsDiv.setAttribute("class", "pl-2 pt-1 pb-2 d-flex flex-column f3 text-dark-gray");
-    this._shadow.appendChild(this._detailsDiv);
-    this._detailsDiv.style.display = "none";
-  }
-
-  /**
-   * Executed by constructor only
-   */
-  setupEventListeners() {
-    this._mainDiv.addEventListener("mouseover", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "#262e3d";
-        this._mainDiv.style.color = "#ffffff";
-        this._name.classList.remove("text-gray");
-        this._name.classList.add("text-white");
-      }
-      this._more.style.display = "flex";
-    });
-
-    this._mainDiv.addEventListener("mouseout", () => {
-      if (!this._active) {
-        this._mainDiv.style.backgroundColor = "";
-        this._mainDiv.style.color = "";
-        this._name.classList.add("text-gray");
-        this._name.classList.remove("text-white");
-      }
-      this._more.style.display = "none";
-    });
-
-    this._name.addEventListener("click", () => {
-      this._mainDiv.blur();
-      this._moreMenu.style.display = "none";
-      this.setActive();
-      this.dispatchEvent(new CustomEvent("selected", { detail: { id: this._section.id } }));
-    });
-
-    this._more.addEventListener("mouseover", () => {
-      this._more.style.backgroundColor = "#3b4250";
-    });
-
-    this._more.addEventListener("mouseout", () => {
-      this._more.style.backgroundColor = "";
-    });
-
-    this._more.addEventListener("click", () => {
-      if (this._moreMenu.style.display == "none") {
-        this._moreMenu.style.display = "block";
-      }
-      else {
-        this._moreMenu.style.display = "none";
-      }
-    });
-  }
-
-
-  /**
-   * @param {Tator.Section} section
-   *   Saved search as a section
-   */
-  init(section) {
-
-    this._section = section;
-    this._name.textContent = section.name;
-
-    const deleteToggleButton = document.createElement("button");
-    deleteToggleButton.setAttribute(
-      "class",
-      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
-    );
-    deleteToggleButton.innerHTML = `
-    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-    </svg>
-    Delete Search`;
-    deleteToggleButton.addEventListener("click", () => {
-      this._moreMenu.style.display = "none";
-      this.dispatchEvent(new CustomEvent("deleteSection", { detail: { id: this._section.id } }));
-    });
-
-    const renameToggleButton = document.createElement("button");
-    renameToggleButton.setAttribute(
-      "class",
-      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
-    );
-    renameToggleButton.innerHTML = `
-    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-    </svg>
-    Rename Search`;
-    renameToggleButton.addEventListener("click", () => {
-      this._moreMenu.style.display = "none";
-      this.dispatchEvent(new CustomEvent("renameSection", { detail: { id: this._section.id } }));
-    });
-
-    this._moreMenu.appendChild(renameToggleButton);
-    this._moreMenu.appendChild(deleteToggleButton);
-
-    this._detailsDiv.innerHTML = `
-      <div><span class="text-semibold text-gray">id:</span> ${section.id}</div>
-      <div><span class="text-semibold text-gray">name:</span> ${section.name}</div>
-      <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
-      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
-      <div><span class="text-semibold text-gray">object_search:</span> ${JSON.stringify(section.object_search)}</div>
-      <div><span class="text-semibold text-gray">related_search:</span> ${JSON.stringify(section.related_search)}</div>
-    `;
-  }
-
-  /**
-   * Display this list item as active
-   */
-  setActive() {
-    this._active = true;
-    this._mainDiv.style.backgroundColor = "#202543";
-    this._mainDiv.style.color = "#ffffff";
-    this._name.classList.remove("text-gray");
-    this._name.classList.add("text-white");
-    this._name.classList.add("text-semibold");
-  }
-
-  /**
-   * Display this list item as inactive
-   */
-  setInactive() {
-    this._active = false;
-    this._mainDiv.style.backgroundColor = "";
-    this._mainDiv.style.color = "";
-    this._name.classList.add("text-gray");
-    this._name.classList.remove("text-white");
-    this._name.classList.remove("text-semibold");
-    this._moreMenu.style.display = "none";
-  }
-
-  /**
-   * @returns {Tator.Section} section object associated with this list item
-   */
-  getSection() {
-    return this._section;
-  }
-
-  /**
-   * Hide the advanced details panel showing information about the section
-   */
-  hideAdvancedDetails() {
-    this._detailsDiv.style.display = "none";
-  }
-
-  /**
-   * Show the advanced details panel showing information about the section
-   */
-  showAdvancedDetails() {
-    this._detailsDiv.style.display = "block";
-  }
-}
-customElements.define("media-search-list-item", MediaSearchListItem);
 
 /**
  * Main project detail page
@@ -1666,9 +130,9 @@ export class ProjectDetail extends TatorPage {
     this._filterView = document.createElement("filter-interface");
     filterdiv.appendChild(this._filterView);
 
-    this._sectionObjectSearch = document.createElement("section-object-search-display");
-    this._sectionObjectSearch.setAttribute("class", "mt-2");
-    filterdiv.appendChild(this._sectionObjectSearch);
+    this._sectionSearchDisplay = document.createElement("section-search-display");
+    this._sectionSearchDisplay.setAttribute("class", "mt-2");
+    filterdiv.appendChild(this._sectionSearchDisplay);
 
     this._collaborators = document.createElement("project-collaborators");
     subheader.appendChild(this._collaborators);
@@ -1721,8 +185,6 @@ export class ProjectDetail extends TatorPage {
         typeId: evt.detail.typeId,
         values: evt.detail.value,
       });
-      this._mediaSection._files.cardLabelsChosenByType[evt.detail.typeId] =
-        evt.detail.value;
     });
 
     // references inner for card setup and pagination checkbox clear
@@ -1749,11 +211,11 @@ export class ProjectDetail extends TatorPage {
     this.modal = document.createElement("modal-dialog");
     this._projects.appendChild(this.modal);
 
-    const cancelJob = document.createElement("cancel-confirm");
-    this._shadow.appendChild(cancelJob);
+    this._cancelJob = document.createElement("cancel-confirm");
+    this._shadow.appendChild(this._cancelJob);
 
-    this._moveFileDialog = document.createElement("media-move-dialog");
-    this._shadow.appendChild(this._moveFileDialog);
+    this._mediaMoveDialog = document.createElement("media-move-dialog");
+    this._shadow.appendChild(this._mediaMoveDialog);
 
     this._modalError = document.createElement("modal-dialog");
     this._shadow.appendChild(this._modalError);
@@ -1770,7 +232,7 @@ export class ProjectDetail extends TatorPage {
     this._bookmarkEditDialog = document.createElement("bookmark-edit-dialog");
     this._projects.appendChild(this._bookmarkEditDialog);
 
-    this._bookmarkDeleteDialog = document.createElement("bookmark-delete-modal");
+    this._bookmarkDeleteDialog = document.createElement("bookmark-delete-dialog");
     this._projects.appendChild(this._bookmarkDeleteDialog);
 
     this._uploadDialog = document.createElement("upload-dialog");
@@ -1782,10 +244,6 @@ export class ProjectDetail extends TatorPage {
 
     this._activityNav = document.createElement("activity-nav");
     this.main.appendChild(this._activityNav);
-
-    // Class to hide and showing loading spinner
-    this.loading = new LoadingSpinner();
-    this._shadow.appendChild(this.loading.getImg());
 
     this._sectionData = new SectionData();
 
@@ -1804,7 +262,7 @@ export class ProjectDetail extends TatorPage {
       }
     });
 
-    this._moveFileDialog.addEventListener("reload", () => {
+    this._mediaMoveDialog.addEventListener("reload", () => {
       this._mediaSection.reload();
       this._bulkEdit._clearSelection();
     });
@@ -1814,6 +272,116 @@ export class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
+    this.setFolderDialogCallbacks();
+    this.setMediaSearchDialogCallbacks();
+    this.setBookmarkDialogCallbacks();
+    this.setDeleteSectionDialogCallbacks();
+    this.setActivityPanelCallbacks();
+
+    this._mediaSection.addEventListener("deleteMedia", async (evt) => {
+      this._deleteSectionDialog.init(this._selectedSection, true);
+      this._deleteSectionDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._mediaSection.addEventListener("filesadded", (evt) => {
+      this._uploadDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._uploadDialog.addEventListener("cancel", (evt) => {
+      store.getState().uploadCancel();
+      this.removeAttribute("has-open-modal");
+    });
+
+    this._uploadDialog.addEventListener("close", (evt) => {
+      this.removeAttribute("has-open-modal");
+    });
+
+    this._mediaSection.addEventListener("attachments", (evt) => {
+      attachmentDialog.init(evt.detail);
+      attachmentDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    attachmentDialog.addEventListener("close", (evt) => {
+      this.removeAttribute("has-open-modal");
+    });
+
+    // Called when a media file needs to be moved from one folder to another
+    this._moveFileCallback = (evt) => {
+      this._mediaMoveDialog.open(
+        evt.detail.mediaId,
+        evt.detail.mediaName,
+        this.getAttribute("project-id")
+      );
+    };
+
+    this._deleteFileCallback = (evt) => {
+      this.deleteFileForm.setAttribute("media-id", evt.detail.mediaId);
+      this.deleteFileForm.setAttribute("media-name", evt.detail.mediaName);
+      this.deleteFileForm.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    };
+
+    this.deleteFileForm.addEventListener("close", (evt) => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    this.deleteFileForm.addEventListener("confirmFileDelete", (evt) => {
+      this._mediaSection.removeMedia(evt.detail.mediaId);
+      this.deleteFileForm.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    this._cancelJob.addEventListener("confirmGroupCancel", () => {
+      this._cancelJob.removeAttribute("is-open");
+    });
+
+    this._cancelJob.addEventListener("close", () => {
+      this.removeAttribute("has-open-modal");
+    });
+
+
+    this._lastQuery = null;
+
+    //
+    this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
+    this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
+    this.modal.addEventListener("open", this.showDimmer.bind(this));
+    this.modal.addEventListener("close", this.hideDimmer.bind(this));
+  }
+
+  /**
+   * Expected to be run once in the constructor
+   */
+  setActivityPanelCallbacks() {
+
+    this._activityButton.addEventListener("click", () => {
+      this._activityNav.open();
+      this._activityNav.reload();
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._activityNav.addEventListener("close", (evt) => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    this._activityNav.addEventListener("deleteJobs", (evt) => {
+      this._cancelJob.init(
+        evt.detail.uid,
+        evt.detail.gid,
+        this.getAttribute("project-id")
+      );
+      this._cancelJob.setAttribute("is-open", "");
+    });
+
+  }
+
+  /**
+   * Expected to be run once in the constructor
+   */
+  setBookmarkDialogCallbacks() {
     this._bookmarkDeleteDialog.addEventListener("close", () => {
       this._bookmarkDeleteDialog.removeAttribute("is-open");
       this.removeAttribute("has-open-modal");
@@ -1870,85 +438,13 @@ export class ProjectDetail extends TatorPage {
           `Unable to patch bookmark. Error: ${response.message}`,
           "Error");
       }
-    })
-
-    this.setFolderDialogCallbacks();
-    this.setMediaSearchDialogCallbacks();
-
-    this._mediaSection.addEventListener("filesadded", (evt) => {
-      this._uploadDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
     });
+  }
 
-    this._uploadDialog.addEventListener("cancel", (evt) => {
-      store.getState().uploadCancel();
-      this.removeAttribute("has-open-modal");
-    });
-
-    this._uploadDialog.addEventListener("close", (evt) => {
-      this.removeAttribute("has-open-modal");
-    });
-
-    this._mediaSection.addEventListener("attachments", (evt) => {
-      attachmentDialog.init(evt.detail);
-      attachmentDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    });
-
-    attachmentDialog.addEventListener("close", (evt) => {
-      this.removeAttribute("has-open-modal");
-    });
-
-    this._mediaSection.addEventListener("newName", (evt) => {
-      for (const child of this._allSections()) {
-        if (child._section) {
-          if (child._section.id == evt.detail.id) {
-            child.rename(evt.detail.sectionName);
-          }
-        }
-      }
-    });
-
-    this._activityButton.addEventListener("click", () => {
-      this._activityNav.open();
-      this._activityNav.reload();
-      this.setAttribute("has-open-modal", "");
-    });
-
-    this._activityNav.addEventListener("close", (evt) => {
-      this.removeAttribute("has-open-modal", "");
-    });
-
-    this._activityNav.addEventListener("deleteJobs", (evt) => {
-      cancelJob.init(
-        evt.detail.uid,
-        evt.detail.gid,
-        this.getAttribute("project-id")
-      );
-      cancelJob.setAttribute("is-open", "");
-    });
-
-    /**
-     * Called when a media file needs to be moved from one folder to another
-     */
-    this._moveFileCallback = (evt) => {
-      this._moveFileDialog.open(
-        evt.detail.mediaId,
-        evt.detail.mediaName,
-        this.getAttribute("project-id")
-      );
-    };
-
-    this._removeCallback = (evt) => {
-      this._deleteSectionDialog.init(
-        evt.detail.projectId,
-        evt.detail.section,
-        evt.detail.sectionParams,
-        evt.detail.deleteMedia
-      );
-      this._deleteSectionDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    };
+  /**
+   * Expected to be run once in the constructor
+   */
+  setDeleteSectionDialogCallbacks() {
 
     this._deleteSectionDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal", "");
@@ -1960,6 +456,19 @@ export class ProjectDetail extends TatorPage {
       // the modal + finishing up the UI updates
       this._deleteSectionDialog.removeAttribute("is-open");
 
+      // If the media needed to also be deleted, delete it too. Use the section parameter.
+      if (evt.detail.deleteMedia) {
+        var response = await fetchCredentials(`/rest/Medias/${this._projectId}?section=${evt.detail.id}`, {method: "DELETE"});
+
+        if (response.status != 200) {
+          this._modalError._error(
+            `Unable to delete media. Section retained. Error: ${response.message}`,
+            "Error");
+          return;
+        }
+      }
+
+      // Delete the section
       var response = await fetchCredentials(`/rest/Section/${evt.detail.id}`, {
         method: "DELETE",
       });
@@ -1969,66 +478,14 @@ export class ProjectDetail extends TatorPage {
           `Unable to delete section. Error: ${response.message}`,
           "Error");
       }
+      else {
 
-      this._bulkEdit._clearSelection();
-      this.removeAttribute("has-open-modal", "");
-    });
+        // Refresh the UI
+        await this.getSections();
+        this._bulkEdit._clearSelection();
+        this.selectSection();
+      }
 
-    this._deleteFileCallback = (evt) => {
-      this.deleteFileForm.setAttribute("media-id", evt.detail.mediaId);
-      this.deleteFileForm.setAttribute("media-name", evt.detail.mediaName);
-      this.deleteFileForm.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    };
-
-    this.deleteFileForm.addEventListener("close", (evt) => {
-      this.removeAttribute("has-open-modal", "");
-    });
-
-    this.deleteFileForm.addEventListener("confirmFileDelete", (evt) => {
-      this._mediaSection.removeMedia(evt.detail.mediaId);
-      this.deleteFileForm.removeAttribute("is-open");
-      this.removeAttribute("has-open-modal", "");
-    });
-
-    cancelJob.addEventListener("confirmGroupCancel", () => {
-      cancelJob.removeAttribute("is-open");
-    });
-
-    cancelJob.addEventListener("close", () => {
-      this.removeAttribute("has-open-modal");
-    });
-
-    this._loaded = 0;
-    this._needScroll = true;
-
-    this._lastQuery = null;
-
-    //
-    this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
-    this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
-    this.modal.addEventListener("open", this.showDimmer.bind(this));
-    this.modal.addEventListener("close", this.hideDimmer.bind(this));
-
-    // State of chosen labels for gallery
-    this.cardLabelsChosenByType = {};
-    this.mediaTypesMap = new Map();
-  }
-
-  /**
-   * Expected to be run once in the constructor
-   */
-  setDeleteFolderCallbacks() {
-
-    // Close without any modifications
-    deleteSection.addEventListener("close", (evt) => {
-      this.removeAttribute("has-open-modal", "");
-    });
-
-    // Delete current folder
-    deleteSection.addEventListener("confirmDelete", (evt) => {
-      this._bulkEdit._clearSelection();
-      deleteSection.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
     });
   }
@@ -2198,10 +655,6 @@ export class ProjectDetail extends TatorPage {
 
   _init() {
 
-    //this.showDimmer();
-    //this.loading.showSpinner();
-    //#TODO Maybe show a loading status in the header?
-
     const projectId = this.getAttribute("project-id");
     this._projectId = projectId;
     this._settingsButton.setAttribute("href", `/${projectId}/project-settings`);
@@ -2209,18 +662,12 @@ export class ProjectDetail extends TatorPage {
 
     // Get info about the project.
     const projectPromise = fetchCredentials("/rest/Project/" + projectId);
-
-    // Get sections
     const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
-
-    // Get project bookmarks
     const bookmarkPromise = fetchCredentials("/rest/Bookmarks/" + projectId);
-
-    // Get Algorithms
     const algoPromise = fetchCredentials("/rest/Algorithms/" + projectId);
-
-    // Get MediaType data for attributes
     const mediaTypePromise = fetchCredentials("/rest/MediaTypes/" + projectId);
+    const membershipPromise = fetchCredentials("/rest/Memberships/" + projectId);
+    const versionPromise = fetchCredentials("/rest/Versions/" + projectId);
 
     // Run all above promises
     Promise.all([
@@ -2229,6 +676,8 @@ export class ProjectDetail extends TatorPage {
       bookmarkPromise,
       algoPromise,
       mediaTypePromise,
+      membershipPromise,
+      versionPromise
     ])
       .then(
         ([
@@ -2237,12 +686,16 @@ export class ProjectDetail extends TatorPage {
           bookmarkResponse,
           algoResponse,
           mediaTypeResponse,
+          membershipResponse,
+          versionResponse
         ]) => {
           const projectData = projectResponse.json();
           const sectionData = sectionResponse.json();
           const bookmarkData = bookmarkResponse.json();
           const algoData = algoResponse.json();
           const mediaTypeData = mediaTypeResponse.json();
+          const membershipData = membershipResponse.json();
+          const versionData = versionResponse.json();
 
           Promise.all([
             projectData,
@@ -2250,85 +703,40 @@ export class ProjectDetail extends TatorPage {
             bookmarkData,
             algoData,
             mediaTypeData,
+            membershipData,
+            versionData
           ])
-            .then(([project, sections, bookmarks, algos, mediaTypes]) => {
+            .then(([project, sections, bookmarks, algos, mediaTypes, memberships, versions]) => {
               // First hide algorithms if needed. These are not appropriate to be
               // run at the project/this._section/media level.
               var hiddenAlgos = ["tator_extend_track", "tator_fill_track_gaps"];
               const hiddenAlgoCategories = ["annotator-view", "disabled"];
 
               this._cardAttributeLabels.init(projectId);
+
+              // Initialize folder/search/bookmark data
               this._sections = sections;
               this._sectionData.init(this._sections);
               this._bookmarks = bookmarks;
 
-              //
+              // Initialize the search section object/related search display
+              this._memberships = memberships;
+              this._versions = versions;
+              this._sectionSearchDisplay.init(this._memberships, this._sections, this._versions);
+
               // Set up attributes for bulk edit
+              this._mediaTypes = mediaTypes;
               for (let mediaTypeData of mediaTypes) {
-                //init card labels with localization entity type definitions
                 this._cardAttributeLabels.add({
                   typeData: mediaTypeData,
                   checkedFirst: false,
                 });
-
-                //init panel with localization entity type definitions
-                // console.log("ADDING MEDIA TYPE")
                 this._bulkEdit._editPanel.addLocType(mediaTypeData);
-                this.mediaTypesMap.set(mediaTypeData.id, mediaTypeData);
               }
 
-              this._mediaSection.mediaTypesMap = this.mediaTypesMap;
+              this._mediaSection.mediaTypes = this._mediaTypes;
 
-              //
-              const moveSelectedButton =
-                document.createElement("media-move-button");
-              moveSelectedButton.setAttribute(
-                "name",
-                "Move selected files to folder"
-              );
-              moveSelectedButton._span.textContent =
-                "Move selected files to folder";
-              // this._bulkEdit._otherTools.appendChild(moveSelectedButton);
-              this._bulkEdit._editPanel._otherTools.appendChild(
-                moveSelectedButton
-              );
-
-              moveSelectedButton.addEventListener("click", () => {
-                const list = Array.from(this._bulkEdit._currentMultiSelection);
-                if (list && list.length > 0) {
-                  const listString = String(list);
-                  this._moveFileDialog.open(
-                    list,
-                    null,
-                    this.getAttribute("project-id"),
-                    false
-                  );
-                } else {
-                  this._notify(
-                    "Make a selection",
-                    "Nothing to move! Make a selection first.",
-                    "error"
-                  );
-                }
-              });
-
-              //
-              const deleteSelectedButton =
-                document.createElement("delete-button");
-              deleteSelectedButton.setAttribute(
-                "name",
-                "Delete selected files"
-              );
-              deleteSelectedButton._span.textContent = "Delete selected files";
-              // this._bulkEdit._otherTools.appendChild(deleteSelectedButton);
-              this._bulkEdit._editPanel._otherTools.appendChild(
-                deleteSelectedButton
-              );
-
-              deleteSelectedButton.addEventListener(
-                "click",
-                this._deleteSelection.bind(this)
-              );
+              this.initBulkEdit();
 
               //
               this._mediaSection._files._cardAttributeLabels =
@@ -2427,22 +835,70 @@ export class ProjectDetail extends TatorPage {
                 });
               } catch (err) {
                 console.error("Could not initialize filter interface.", err);
-                this.loading.hideSpinner();
                 this.hideDimmer();
               }
             })
             .catch((err) => {
               console.error("Error setting up page with all promises", err);
-              this.loading.hideSpinner();
               this.hideDimmer();
             });
         }
       )
       .catch((err) => {
         console.error("Error setting up page with all promises", err);
-        this.loading.hideSpinner();
         this.hideDimmer();
       });
+  }
+
+  /**
+   * Initialize the media bulk edit portion of the page
+   */
+  initBulkEdit() {
+
+    const moveSelectedButton = document.createElement("media-move-button");
+    moveSelectedButton.setAttribute(
+      "name",
+      "Move selected media to folder"
+    );
+    moveSelectedButton._span.textContent =
+      "Move selected media to folder";
+    this._bulkEdit._editPanel._otherTools.appendChild(
+      moveSelectedButton
+    );
+
+    moveSelectedButton.addEventListener("click", () => {
+      const list = Array.from(this._bulkEdit._currentMultiSelection);
+      if (list && list.length > 0) {
+        this._mediaMoveDialog.open(
+          list,
+          null,
+          this.getAttribute("project-id"),
+          false
+        );
+      } else {
+        this._notify(
+          "Make a selection",
+          "Nothing to move! Make a selection first.",
+          "error"
+        );
+      }
+    });
+
+    const deleteSelectedButton = document.createElement("delete-button");
+    deleteSelectedButton.setAttribute(
+      "name",
+      "Delete selected media"
+    );
+    deleteSelectedButton._span.textContent = "Delete selected media";
+    this._bulkEdit._editPanel._otherTools.appendChild(
+      deleteSelectedButton
+    );
+
+    deleteSelectedButton.addEventListener(
+      "click",
+      this._deleteSelection.bind(this)
+    );
+
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -2469,10 +925,6 @@ export class ProjectDetail extends TatorPage {
       params.delete("page");
       params.delete("pagesize");
     }
-
-    this._mediaSection.addEventListener("remove", this._removeCallback);
-    this._mediaSection.addEventListener("moveFile", this._moveFileCallback);
-    this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
 
     params.delete("section");
     if (section !== null) {
@@ -2562,7 +1014,6 @@ export class ProjectDetail extends TatorPage {
       // Retrieve media IDs first (if needed)
       if (evt.detail.mediaIds == null) {
         this.showDimmer();
-        this.loading.showSpinner();
 
         var filterConditions = [];
         var mediaTypes = this._modelData.getStoredMediaTypes();
@@ -2609,7 +1060,6 @@ export class ProjectDetail extends TatorPage {
           jobMediaIdSet.add(media.id);
         }
 
-        this.loading.hideSpinner();
         this.hideDimmer();
       } else {
         jobMediaIds = evt.detail.mediaIds;
@@ -2677,7 +1127,6 @@ export class ProjectDetail extends TatorPage {
       console.error("Couldn't update results with current filter.", err);
     }
 
-    this.loading.hideSpinner();
     this.hideDimmer();
   }
 
@@ -2727,6 +1176,7 @@ export class ProjectDetail extends TatorPage {
     });
     this._sections = await response.json();
     this._sectionData.init(this._sections);
+    this._sectionSearchDisplay.init(this._memberships, this._sections, this._versions);
     this.makeFolders();
     this.makeMediaSearches();
   }
@@ -2907,14 +1357,8 @@ export class ProjectDetail extends TatorPage {
       });
 
       sectionItem.addEventListener("deleteSection", async (evt) => {
-
         const sectionToDelete = that._sectionData.getSectionFromID(evt.detail.id)
-        that._deleteSectionDialog.init(
-          that._project.id,
-          sectionToDelete,
-          null,
-          false
-        );
+        that._deleteSectionDialog.init(sectionToDelete, false);
         that._deleteSectionDialog.setAttribute("is-open", "");
         that.setAttribute("has-open-modal", "");
       });
@@ -2929,6 +1373,7 @@ export class ProjectDetail extends TatorPage {
           await that.restoreSection(childSection.id);
         }
 
+        // Reset the UI
         await that.getSections();
         that.selectSection(evt.detail.id);
         that.hideDimmer();
@@ -3005,14 +1450,8 @@ export class ProjectDetail extends TatorPage {
       });
 
       sectionItem.addEventListener("deleteSection", async (evt) => {
-
         const sectionToDelete = that._sectionData.getSectionFromID(evt.detail.id)
-        that._deleteSectionDialog.init(
-          that._project.id,
-          sectionToDelete,
-          null,
-          false
-        );
+        that._deleteSectionDialog.init(sectionToDelete, false);
         that._deleteSectionDialog.setAttribute("is-open", "");
         that.setAttribute("has-open-modal", "");
       });
@@ -3061,7 +1500,7 @@ export class ProjectDetail extends TatorPage {
           folder.setActive();
           this._mediaSection.init(this._projectId, section);
           this._selectedSection = section;
-          this._sectionObjectSearch.style.display = "none";
+          this._sectionSearchDisplay.style.display = "none";
           break;
         }
       }
@@ -3073,8 +1512,8 @@ export class ProjectDetail extends TatorPage {
             search.setActive();
             this._mediaSection.init(this._projectId, section);
             this._selectedSection = section;
-            this._sectionObjectSearch.style.display = "flex";
-            this._sectionObjectSearch.setDisplay(
+            this._sectionSearchDisplay.style.display = "flex";
+            this._sectionSearchDisplay.setDisplay(
               this._selectedSection.object_search,
               this._selectedSection.related_search);
             break;
@@ -3086,7 +1525,7 @@ export class ProjectDetail extends TatorPage {
     if (this._selectedSection == null) {
       this._allMediaButton.setActive();
       this._mediaSection.init(this._projectId, null);
-      this._sectionObjectSearch.style.display = "none";
+      this._sectionSearchDisplay.style.display = "none";
     }
 
     // Expand the folders in the library panel until the active folder is selected and in view
@@ -3154,16 +1593,17 @@ export class ProjectDetail extends TatorPage {
   //
 
   /**
-   * @param {array} bookmarks
-   *    Array of Tator.Bookmark objects to make the bookmarks listing
+   * @precondition this._bookmarks is filled with the bookmark objects to display
    */
-  makeBookmarks(bookmarks) {
+  makeBookmarks() {
 
     // Clear out the existing bookmarks
     while (this._bookmarkListItems.firstChild) {
       this._bookmarkListItems.removeChild(this._bookmarkListItems.firstChild);
     }
 
+    // Build bookmark list, and sort by name.
+    // Put the standard Last visited at the top.
     const first = "Last visited";
     this._bookmarks.sort((a, b) => {
       return a.name == first ? -1 : b.name == first ? 1 : 0;
@@ -3215,7 +1655,7 @@ export class ProjectDetail extends TatorPage {
 
     if (panel == "library") {
 
-      this._currentPanel = "library";
+      this._currentPanel = panel;
 
       if (this._viewAdvancedFolderDetails) {
         this.setLeftPanelWidth("500px");
@@ -3247,7 +1687,7 @@ export class ProjectDetail extends TatorPage {
     }
     else if (panel == "saved searches") {
 
-      this._currentPanel = "saved searches";
+      this._currentPanel = panel;
 
       if (this._viewAdvancedSearchDetails) {
         this.setLeftPanelWidth("500px");
@@ -3278,7 +1718,7 @@ export class ProjectDetail extends TatorPage {
     }
     else if (panel == "bookmarks") {
 
-      this._currentPanel = "bookmarks";
+      this._currentPanel = panel;
 
       this.setLeftPanelWidth(this._leftPanelDefaultWidth);
 
@@ -3368,13 +1808,13 @@ export class ProjectDetail extends TatorPage {
 
     this._sidebarLibraryButton.addEventListener("click", () => {
       this._sidebarLibraryButton.blur();
-      if (this.leftPanelHidden() && this._currentPanel == "library") {
+      if (!this.leftPanelHidden() && this._currentPanel == "library") {
         this.hideLeftPanel();
       }
       else {
         this.expandLeftPanel();
+        this.displayPanel("library");
       }
-      this.displayPanel("library");
     });
     this._sidebarLibraryText.addEventListener("click", () => {
       this._sidebarLibraryText.blur();
@@ -3383,48 +1823,48 @@ export class ProjectDetail extends TatorPage {
       }
       else {
         this.expandLeftPanel();
+        this.displayPanel("library");
       }
-      this.displayPanel("library");
     });
     this._sidebarSavedSearchesButton.addEventListener("click", () => {
       this._sidebarSavedSearchesButton.blur();
-      if (this.leftPanelHidden() && this._currentPanel == "saved searches") {
+      if (!this.leftPanelHidden() && this._currentPanel == "saved searches") {
         this.hideLeftPanel();
       }
       else {
         this.expandLeftPanel();
+        this.displayPanel("saved searches");
       }
-      this.displayPanel("saved searches");
     });
     this._sidebarSavedSearchesText.addEventListener("click", () => {
       this._sidebarSavedSearchesText.blur();
-      if (this.leftPanelHidden() && this._currentPanel == "saved searches") {
+      if (!this.leftPanelHidden() && this._currentPanel == "saved searches") {
         this.hideLeftPanel();
       }
       else {
         this.expandLeftPanel();
+        this.displayPanel("saved searches");
       }
-      this.displayPanel("saved searches");
     });
     this._sidebarBookmarksButton.addEventListener("click", () => {
       this._sidebarBookmarksButton.blur();
-      if (this.leftPanelHidden() && this._currentPanel == "bookmarks") {
+      if (!this.leftPanelHidden() && this._currentPanel == "bookmarks") {
         this.hideLeftPanel();
       }
       else {
         this.expandLeftPanel();
+        this.displayPanel("bookmarks");
       }
-      this.displayPanel("bookmarks");
     });
     this._sidebarBookmarksText.addEventListener("click", () => {
       this._sidebarBookmarksText.blur();
-      if (this.leftPanelHidden() && this._currentPanel == "bookmarks") {
+      if (!this.leftPanelHidden() && this._currentPanel == "bookmarks") {
         this.hideLeftPanel();
       }
       else {
         this.expandLeftPanel();
+        this.displayPanel("bookmarks");
       }
-      this.displayPanel("bookmarks");
     });
   }
 
@@ -3728,7 +2168,7 @@ export class ProjectDetail extends TatorPage {
         return;
       }
       this.setAttribute("has-open-modal", "");
-      this._mediaSearchDialog.setMode("newSearch");
+      this._mediaSearchDialog.setMode("newSearch", this._selectedSection);
       this._mediaSearchDialog.setAttribute("is-open", "");
     });
   }
