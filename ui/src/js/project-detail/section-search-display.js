@@ -5,7 +5,6 @@ import { processAttributeCombinatorSpec } from "../util/filter-utilities.js";
  * Displays the AttributeOperationSpec in a human readable format
  */
 export class SectionSearchDisplay extends TatorElement {
-
   /**
    * Class constructor
    */
@@ -22,7 +21,10 @@ export class SectionSearchDisplay extends TatorElement {
    */
   setupUI() {
     this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "d-flex flex-grow flex-column px-2 py-2 rounded-2");
+    this._mainDiv.setAttribute(
+      "class",
+      "d-flex flex-grow flex-column px-2 py-2 rounded-2"
+    );
     this._mainDiv.style.border = "1px solid #262e3d";
     this._shadow.appendChild(this._mainDiv);
 
@@ -33,7 +35,10 @@ export class SectionSearchDisplay extends TatorElement {
     this._mainDiv.appendChild(titleDiv);
 
     this._objectDiv = document.createElement("div");
-    this._objectDiv.setAttribute("class", "d-flex flex-items-center flex-grow py-1");
+    this._objectDiv.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-grow py-1"
+    );
     this._mainDiv.appendChild(this._objectDiv);
 
     var titleDiv = document.createElement("div");
@@ -47,7 +52,10 @@ export class SectionSearchDisplay extends TatorElement {
     this._objectDiv.appendChild(this._objectOperationDiv);
 
     this._relatedDiv = document.createElement("div");
-    this._relatedDiv.setAttribute("class", "d-flex flex-items-center flex-grow py-1");
+    this._relatedDiv.setAttribute(
+      "class",
+      "d-flex flex-items-center flex-grow py-1"
+    );
     this._mainDiv.appendChild(this._relatedDiv);
 
     var titleDiv = document.createElement("div");
@@ -63,9 +71,9 @@ export class SectionSearchDisplay extends TatorElement {
 
   /**
    * Initialize the lookup to translate the ID in the saerch to their logical names
-   * @param {array} memberships 
-   * @param {array} sections 
-   * @param {array} versions 
+   * @param {array} memberships
+   * @param {array} sections
+   * @param {array} versions
    */
   init(memberships, sections, versions) {
     this._memberships = memberships;
@@ -79,21 +87,28 @@ export class SectionSearchDisplay extends TatorElement {
    * @postcondition UI is updated to display the object search and related search
    */
   setDisplay(objectSearch, relatedSearch) {
-
     if (objectSearch == null) {
       this._objectOperationDiv.innerHTML = "None";
-    }
-    else {
-      var stringTokens = processAttributeCombinatorSpec(objectSearch, this._memberships, this._sections, this._versions);
+    } else {
+      var stringTokens = processAttributeCombinatorSpec(
+        objectSearch,
+        this._memberships,
+        this._sections,
+        this._versions
+      );
       var operationString = stringTokens.join(" ");
       this._objectOperationDiv.innerHTML = operationString;
     }
 
     if (relatedSearch == null) {
       this._relatedOperationDiv.innerHTML = "None";
-    }
-    else {
-      var stringTokens = processAttributeCombinatorSpec(relatedSearch, this._memberships, this._sections, this._versions);
+    } else {
+      var stringTokens = processAttributeCombinatorSpec(
+        relatedSearch,
+        this._memberships,
+        this._sections,
+        this._versions
+      );
       var operationString = stringTokens.join(" ");
       this._relatedOperationDiv.innerHTML = operationString;
     }

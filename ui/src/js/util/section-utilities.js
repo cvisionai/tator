@@ -3,7 +3,6 @@
  * Helper functions are available to get the parent and children of a section, etc.
  */
 export class SectionData {
-
   /**
    * Initialize this object. Expected to be run whenever the UI has a set of sections to use.
    * Needs to be executed prior to using other functions of this class.
@@ -19,7 +18,6 @@ export class SectionData {
    * @postcondition this._sectionIdMap is set with the section objects (key is section.id)
    */
   init(sections) {
-
     // Create the list of sections
     // Need to organize the list of sections in the tree format
     // Everything in the same subfolder is organized alphabetically
@@ -30,7 +28,6 @@ export class SectionData {
     this._sectionIdPathMap = {}; // Key is section ID, value is path used in the UI
     this._sectionIdMap = {}; // Key is section ID, value is section object
     for (const section of sections) {
-
       // Get corresponding section path, this is based on either the path or the name
       var thisPath = this.getSectionPath(section);
 
@@ -42,7 +39,7 @@ export class SectionData {
       // Add to the section tree
       let currentNode = this._sectionTree;
       let parts = thisPath.split(".");
-      parts.forEach(part => {
+      parts.forEach((part) => {
         if (!currentNode[part]) {
           currentNode[part] = {};
         }
@@ -75,7 +72,6 @@ export class SectionData {
    *    Path of the section in the UI
    */
   getSectionPath(section) {
-
     var thisPath = section.path;
     if (thisPath == null || thisPath == "None") {
       thisPath = section.name;
@@ -97,29 +93,30 @@ export class SectionData {
    *    Only the children are obtained, not the grandchildren and so on
    */
   getChildSections(section) {
-
     const thisPath = this.getSectionPath(section);
     var that = this;
     var children = [];
 
     function traverseAlphabetically(node, parentPath) {
-
       var appendedPath = parentPath;
       if (appendedPath != "") {
         appendedPath += ".";
       }
 
       if (parentPath == thisPath) {
-        Object.keys(node).sort().forEach(subpath => {
-          var childSection = that._sectionPathMap[appendedPath + subpath];
-          children.push(childSection);
-          return;
-        });
-      }
-      else {
-        Object.keys(node).sort().forEach(subpath => {
-          traverseAlphabetically(node[subpath], appendedPath + subpath);
-        });
+        Object.keys(node)
+          .sort()
+          .forEach((subpath) => {
+            var childSection = that._sectionPathMap[appendedPath + subpath];
+            children.push(childSection);
+            return;
+          });
+      } else {
+        Object.keys(node)
+          .sort()
+          .forEach((subpath) => {
+            traverseAlphabetically(node[subpath], appendedPath + subpath);
+          });
       }
     }
 
@@ -139,7 +136,6 @@ export class SectionData {
    *    The order is from the immediate parent to the root
    */
   getParentSections(section) {
-
     var parentSections = [];
 
     // Keep removing the "." until we're left with the root
@@ -215,14 +211,12 @@ export class SectionData {
    *    .path {string} - path to use for the associated section
    */
   makeFolderNameAndPath(name, parentSectionId) {
-
     let sectionName = name.trim();
     let pathFolderName = SectionData.cleanPathString(sectionName);
     if (parentSectionId == null) {
       sectionPath = pathFolderName;
-    }
-    else {
-      var parentSection = this._sectionIdMap[parentSectionId]
+    } else {
+      var parentSection = this._sectionIdMap[parentSectionId];
       var sectionPath = this.getSectionPath(parentSection);
       sectionPath += ".";
       sectionPath += pathFolderName;
@@ -231,7 +225,8 @@ export class SectionData {
 
     return {
       name: sectionName,
-      path: sectionPath};
+      path: sectionPath,
+    };
   }
 
   /**
@@ -246,7 +241,6 @@ export class SectionData {
    * @return {bool} True if the section rename is valid. False otherwise.
    */
   verifySectionRename(proposedName, parentSectionId) {
-
     if (proposedName === "") {
       return false;
     }
@@ -266,7 +260,10 @@ export class SectionData {
     // Use the lowercase version of the name and path for comparison
     for (const section of this._sections) {
       const sectionPath = this.getSectionPath(section);
-      if (sectionPath.toLowerCase() === info.path.toLowerCase() || section.name.toLowerCase() === info.name.toLowerCase()) {
+      if (
+        sectionPath.toLowerCase() === info.path.toLowerCase() ||
+        section.name.toLowerCase() === info.name.toLowerCase()
+      ) {
         return false;
       }
     }
@@ -283,7 +280,6 @@ export class SectionData {
    *   The label is a breadcrumb based version of the name
    */
   getFolderEnumChoices() {
-
     var choices = [];
     for (const section of this.getFolderList()) {
       if (section.visible == true) {
@@ -301,7 +297,10 @@ export class SectionData {
           continue;
         }
 
-        choices.push({value: section.id, label: section.name.replace(/\./g, " > ")});
+        choices.push({
+          value: section.id,
+          label: section.name.replace(/\./g, " > "),
+        });
       }
     }
 
@@ -325,14 +324,13 @@ export class SectionData {
    *       Saved searches are expected to be only in the top level.
    */
   getSavedSearchEnumChoices() {
-
-      var choices = [];
-      for (const section of this.getSavedSearchesList()) {
-        if (section.visible == true) {
-          choices.push({value: section.id, label: section.name});
-        }
+    var choices = [];
+    for (const section of this.getSavedSearchesList()) {
+      if (section.visible == true) {
+        choices.push({ value: section.id, label: section.name });
       }
+    }
 
-      return choices;
+    return choices;
   }
 }

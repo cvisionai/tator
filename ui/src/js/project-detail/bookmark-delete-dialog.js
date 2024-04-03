@@ -4,7 +4,6 @@ import { ModalDialog } from "../components/modal-dialog.js";
  * Modal specifically for deleting a bookmark
  */
 export class BookmarkDeleteDialog extends ModalDialog {
-
   constructor() {
     super();
 
@@ -39,11 +38,13 @@ export class BookmarkDeleteDialog extends ModalDialog {
     });
 
     this._accept.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("delete", {
-        detail: {
-          data: this._data,
-       }
-      }));
+      this.dispatchEvent(
+        new CustomEvent("delete", {
+          detail: {
+            data: this._data,
+          },
+        })
+      );
     });
   }
 

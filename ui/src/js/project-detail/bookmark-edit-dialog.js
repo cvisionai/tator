@@ -5,12 +5,10 @@ import { ModalDialog } from "../components/modal-dialog.js";
  * - Currently only capability is to rename it
  */
 export class BookmarkEditDialog extends ModalDialog {
-
   /**
    * Constructor
    */
   constructor() {
-
     super();
 
     this._title.nodeValue = "Rename Bookmark";
@@ -18,7 +16,10 @@ export class BookmarkEditDialog extends ModalDialog {
     this._main.classList.add("pt-3");
 
     this._errorMessage = document.createElement("div");
-    this._errorMessage.setAttribute("class", "f2 text-semibold text-red px-3 py-3 text-center");
+    this._errorMessage.setAttribute(
+      "class",
+      "f2 text-semibold text-red px-3 py-3 text-center"
+    );
     this._errorMessage.style.display = "none";
     this._main.appendChild(this._errorMessage);
 
@@ -53,8 +54,7 @@ export class BookmarkEditDialog extends ModalDialog {
           this._originalName.style.display = "block";
           this._originalName.innerHTML = `Changing bookmark name from: <span class="text-semibold">${this._bookmark.name}</span>`;
         }
-      }
-      else {
+      } else {
         this._originalName.style.display = "none";
         this.invalidName();
       }
@@ -65,14 +65,16 @@ export class BookmarkEditDialog extends ModalDialog {
     });
 
     this._save.addEventListener("click", () => {
-        var newName = this._name.getValue();
-        newName = newName.trim();
-        this.dispatchEvent(new CustomEvent("edit", {
+      var newName = this._name.getValue();
+      newName = newName.trim();
+      this.dispatchEvent(
+        new CustomEvent("edit", {
           detail: {
             id: this._bookmark.id,
-            spec: {name: newName}
-         }
-       }));
+            spec: { name: newName },
+          },
+        })
+      );
     });
   }
 
@@ -91,7 +93,8 @@ export class BookmarkEditDialog extends ModalDialog {
    */
   invalidName() {
     this._save.setAttribute("disabled", "");
-    this._errorMessage.innerHTML = "Invalid bookmark name provided. Cannot be blank.";
+    this._errorMessage.innerHTML =
+      "Invalid bookmark name provided. Cannot be blank.";
     this._errorMessage.style.display = "block";
   }
 

@@ -4,7 +4,6 @@ import { TatorElement } from "../components/tator-element.js";
  * Button that used to add a bookmark
  */
 export class MediaSearchListItem extends TatorElement {
-
   constructor() {
     super();
 
@@ -16,9 +15,11 @@ export class MediaSearchListItem extends TatorElement {
    * Executed by constructor only
    */
   setupUIElements() {
-
     this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
+    this._mainDiv.setAttribute(
+      "class",
+      "rounded-2 px-1 d-flex flex-items-center"
+    );
     this._shadow.appendChild(this._mainDiv);
 
     this._icon = document.createElement("div");
@@ -31,7 +32,10 @@ export class MediaSearchListItem extends TatorElement {
     `;
 
     this._name = document.createElement("div");
-    this._name.setAttribute("class", "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate");
+    this._name.setAttribute(
+      "class",
+      "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate"
+    );
     this._mainDiv.appendChild(this._name);
 
     var moreWrapper = document.createElement("div");
@@ -59,7 +63,10 @@ export class MediaSearchListItem extends TatorElement {
     this._shadow.appendChild(this._moreMenu);
 
     this._detailsDiv = document.createElement("div");
-    this._detailsDiv.setAttribute("class", "pl-2 pt-1 pb-2 d-flex flex-column f3 text-dark-gray");
+    this._detailsDiv.setAttribute(
+      "class",
+      "pl-2 pt-1 pb-2 d-flex flex-column f3 text-dark-gray"
+    );
     this._shadow.appendChild(this._detailsDiv);
     this._detailsDiv.style.display = "none";
   }
@@ -92,7 +99,9 @@ export class MediaSearchListItem extends TatorElement {
       this._mainDiv.blur();
       this._moreMenu.style.display = "none";
       this.setActive();
-      this.dispatchEvent(new CustomEvent("selected", { detail: { id: this._section.id } }));
+      this.dispatchEvent(
+        new CustomEvent("selected", { detail: { id: this._section.id } })
+      );
     });
 
     this._more.addEventListener("mouseover", () => {
@@ -106,20 +115,17 @@ export class MediaSearchListItem extends TatorElement {
     this._more.addEventListener("click", () => {
       if (this._moreMenu.style.display == "none") {
         this._moreMenu.style.display = "block";
-      }
-      else {
+      } else {
         this._moreMenu.style.display = "none";
       }
     });
   }
-
 
   /**
    * @param {Tator.Section} section
    *   Saved search as a section
    */
   init(section) {
-
     this._section = section;
     this._name.textContent = section.name;
 
@@ -135,7 +141,9 @@ export class MediaSearchListItem extends TatorElement {
     Delete Search`;
     deleteToggleButton.addEventListener("click", () => {
       this._moreMenu.style.display = "none";
-      this.dispatchEvent(new CustomEvent("deleteSection", { detail: { id: this._section.id } }));
+      this.dispatchEvent(
+        new CustomEvent("deleteSection", { detail: { id: this._section.id } })
+      );
     });
 
     const renameToggleButton = document.createElement("button");
@@ -150,7 +158,9 @@ export class MediaSearchListItem extends TatorElement {
     Rename Search`;
     renameToggleButton.addEventListener("click", () => {
       this._moreMenu.style.display = "none";
-      this.dispatchEvent(new CustomEvent("renameSection", { detail: { id: this._section.id } }));
+      this.dispatchEvent(
+        new CustomEvent("renameSection", { detail: { id: this._section.id } })
+      );
     });
 
     this._moreMenu.appendChild(renameToggleButton);
@@ -158,11 +168,21 @@ export class MediaSearchListItem extends TatorElement {
 
     this._detailsDiv.innerHTML = `
       <div><span class="text-semibold text-gray">id:</span> ${section.id}</div>
-      <div><span class="text-semibold text-gray">name:</span> ${section.name}</div>
-      <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
-      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
-      <div><span class="text-semibold text-gray">object_search:</span> ${JSON.stringify(section.object_search)}</div>
-      <div><span class="text-semibold text-gray">related_search:</span> ${JSON.stringify(section.related_search)}</div>
+      <div><span class="text-semibold text-gray">name:</span> ${
+        section.name
+      }</div>
+      <div><span class="text-semibold text-gray">path:</span> ${
+        section.path
+      }</div>
+      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${
+        section.tator_user_sections
+      }</div>
+      <div><span class="text-semibold text-gray">object_search:</span> ${JSON.stringify(
+        section.object_search
+      )}</div>
+      <div><span class="text-semibold text-gray">related_search:</span> ${JSON.stringify(
+        section.related_search
+      )}</div>
     `;
   }
 

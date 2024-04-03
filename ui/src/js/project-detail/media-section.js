@@ -274,14 +274,12 @@ export class MediaSection extends TatorElement {
 
       if (this._paginator_top._numPages == 0) {
         this._pagePosition.innerHTML = ``;
-      }
-      else {
+      } else {
         this._pagePosition.innerHTML = `(Page ${
           typeof this._paginationState.page == "undefined"
             ? 1
             : this._paginationState.page
         } of ${this._paginator_top._numPages})`;
-
       }
     }
   }

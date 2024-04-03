@@ -4,18 +4,18 @@ import { ModalDialog } from "../components/modal-dialog.js";
  * Dialog for creating new and editing media search sections
  */
 export class MediaSearchDialog extends ModalDialog {
-
-
   /**
    * Constructor
    */
   constructor() {
-
     super();
 
     // UI elements
     this._errorMessage = document.createElement("div");
-    this._errorMessage.setAttribute("class", "f2 text-semibold text-red px-3 py-3 text-center");
+    this._errorMessage.setAttribute(
+      "class",
+      "f2 text-semibold text-red px-3 py-3 text-center"
+    );
     this._errorMessage.style.display = "none";
     this._main.appendChild(this._errorMessage);
 
@@ -47,8 +47,7 @@ export class MediaSearchDialog extends ModalDialog {
       var proposedName = this._name.getValue();
       if (this._sectionData.verifySectionRename(proposedName)) {
         this.enableSave();
-      }
-      else {
+      } else {
         this.invalidName();
       }
 
@@ -56,9 +55,10 @@ export class MediaSearchDialog extends ModalDialog {
         if (proposedName != this._selectedSection.name) {
           var parts = this._selectedSection.name.split(".");
           this._originalName.style.display = "block";
-          this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${parts[parts.length - 1]}</span>`;
-        }
-        else {
+          this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${
+            parts[parts.length - 1]
+          }</span>`;
+        } else {
           this._originalName.style.display = "none";
         }
       }
@@ -69,63 +69,68 @@ export class MediaSearchDialog extends ModalDialog {
     });
 
     this._save.addEventListener("click", () => {
-
       var proposedName = this._name.getValue();
       var info = this._sectionData.makeFolderNameAndPath(proposedName);
 
       if (this._mode == "newSearch") {
-
         var spec = {
           name: info.name,
           path: info.path,
-          visible: true
+          visible: true,
         };
 
         // Utilize the URL to get the encoded search and encoded related search information
-        const params = new URLSearchParams(document.location.search.substring(1));
+        const params = new URLSearchParams(
+          document.location.search.substring(1)
+        );
 
         if (params.has("encoded_search")) {
           let object_search = JSON.parse(atob(params.get("encoded_search")));
           if (this._selectedSection == null) {
             spec.object_search = object_search;
-          }
-          else if (this._selectedSection?.object_search) {
+          } else if (this._selectedSection?.object_search) {
             let union_operation = {
               method: "and",
               operations: [this._selectedSection.object_search, object_search],
             };
             spec.object_search = union_operation;
-          } 
-          else {
+          } else {
             let sectionOperation = {
               attribute: "$section",
               operation: "eq",
-              value: this._selectedSection.id
-            }
+              value: this._selectedSection.id,
+            };
             let union_operation = {
               method: "and",
               operations: [sectionOperation, object_search],
             };
             spec.object_search = union_operation;
           }
-        }
-        else if (this._selectedSection != null) {
+        } else if (this._selectedSection != null) {
           let sectionOperation = {
             method: "and",
-            operations: [{
-              attribute: "$section",
-              operation: "eq",
-              value: this._selectedSection.id}]
-            };
+            operations: [
+              {
+                attribute: "$section",
+                operation: "eq",
+                value: this._selectedSection.id,
+              },
+            ],
+          };
           spec.object_search = sectionOperation;
         }
 
         if (params.has("encoded_related_search")) {
-          let related_search = JSON.parse(atob(params.get("encoded_related_search")));
+          let related_search = JSON.parse(
+            atob(params.get("encoded_related_search"))
+          );
           if (this._selectedSection?.related_search) {
             let union_operation = {
               method: "and",
-              operations: [this._selectedSection.related_search, related_search],
+              operations: [
+                this._selectedSection.related_search,
+                related_search,
+              ],
             };
             spec.related_search = union_operation;
           } else {
@@ -133,14 +138,14 @@ export class MediaSearchDialog extends ModalDialog {
           }
         }
 
-        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
-           detail: {spec: spec}
-        }));
-      }
-      else if (this._mode == "editSearch") {
-
+        this.dispatchEvent(
+          new CustomEvent(this._saveClickEvent, {
+            detail: { spec: spec },
+          })
+        );
+      } else if (this._mode == "editSearch") {
         var patchSpecs = [];
-        var patchSpec = {}
+        var patchSpec = {};
 
         if (info.name != this._selectedSection.name) {
           patchSpec.name = info.name;
@@ -154,15 +159,17 @@ export class MediaSearchDialog extends ModalDialog {
         }
         patchSpecs.push({
           id: this._selectedSection.id,
-          spec: patchSpec
+          spec: patchSpec,
         });
 
-        this.dispatchEvent(new CustomEvent(this._saveClickEvent, {
-          detail: {
-            mainSectionId: this._selectedSection.id,
-            specs: patchSpecs
-         }
-       }));
+        this.dispatchEvent(
+          new CustomEvent(this._saveClickEvent, {
+            detail: {
+              mainSectionId: this._selectedSection.id,
+              specs: patchSpecs,
+            },
+          })
+        );
       }
     });
   }
@@ -182,7 +189,8 @@ export class MediaSearchDialog extends ModalDialog {
    */
   invalidName() {
     this._save.setAttribute("disabled", "");
-    this._errorMessage.innerHTML = "Invalid name provided. Name cannot be blank, share the same name as another folder in the top-level directory or have '.' or '>' in the name.";
+    this._errorMessage.innerHTML =
+      "Invalid name provided. Name cannot be blank, share the same name as another folder in the top-level directory or have '.' or '>' in the name.";
     this._errorMessage.style.display = "block";
   }
 
@@ -205,7 +213,6 @@ export class MediaSearchDialog extends ModalDialog {
    *   Selected section in the UI
    */
   setMode(mode, selectedSection) {
-
     this._originalName.style.display = "none";
     this._errorMessage.style.display = "none";
     this._save.setAttribute("disabled", "");
@@ -217,8 +224,7 @@ export class MediaSearchDialog extends ModalDialog {
       this._save.textContent = "Add";
       this._saveClickEvent = "add";
       this._name.setValue("");
-    }
-    else if (mode == "editSearch") {
+    } else if (mode == "editSearch") {
       this._title.nodeValue = "Edit Media Search";
       this._mode = mode;
       this._save.textContent = "Edit";
@@ -226,12 +232,9 @@ export class MediaSearchDialog extends ModalDialog {
 
       let nameParts = selectedSection.name.split(".");
       this._name.setValue(nameParts[nameParts.length - 1]);
-    }
-    else {
+    } else {
       throw new Error(`Invalid mode: ${mode}`);
     }
-
   }
-
 }
 customElements.define("media-search-dialog", MediaSearchDialog);

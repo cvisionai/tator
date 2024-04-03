@@ -53,7 +53,7 @@ export class DeleteSectionForm extends ModalDialog {
     this._accept.addEventListener("click", async (evt) => {
       this.dispatchEvent(
         new CustomEvent("confirmDelete", {
-          detail: { id: this._section.id, deleteMedia: this._deleteMedia},
+          detail: { id: this._section.id, deleteMedia: this._deleteMedia },
         })
       );
     });

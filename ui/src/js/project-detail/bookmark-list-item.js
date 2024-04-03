@@ -4,7 +4,6 @@ import { TatorElement } from "../components/tator-element.js";
  * Button that used to add a bookmark
  */
 export class BookmarkListItem extends TatorElement {
-
   constructor() {
     super();
 
@@ -16,9 +15,11 @@ export class BookmarkListItem extends TatorElement {
    * Executed by constructor only
    */
   setupUIElements() {
-
     this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "rounded-2 px-1 d-flex flex-items-center");
+    this._mainDiv.setAttribute(
+      "class",
+      "rounded-2 px-1 d-flex flex-items-center"
+    );
     this._shadow.appendChild(this._mainDiv);
 
     this._icon = document.createElement("div");
@@ -31,7 +32,10 @@ export class BookmarkListItem extends TatorElement {
     `;
 
     this._name = document.createElement("div");
-    this._name.setAttribute("class", "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate");
+    this._name.setAttribute(
+      "class",
+      "f2 text-gray ml-3 py-1 clickable flex-grow css-truncate"
+    );
     this._mainDiv.appendChild(this._name);
 
     var moreWrapper = document.createElement("div");
@@ -104,19 +108,16 @@ export class BookmarkListItem extends TatorElement {
     this._more.addEventListener("click", () => {
       if (this._moreMenu.style.display == "none") {
         this._moreMenu.style.display = "block";
-      }
-      else {
+      } else {
         this._moreMenu.style.display = "none";
       }
     });
   }
 
-
   /**
    * @param {Tator.Bookmark} bookmark
    */
   init(bookmark) {
-
     this._bookmark = bookmark;
     this._name.textContent = bookmark.name;
 
@@ -128,8 +129,7 @@ export class BookmarkListItem extends TatorElement {
       this._mainDiv.classList.add("py-1");
       this._mainDiv.classList.add("mb-2");
       this._more.classList.add("hidden");
-    }
-    else {
+    } else {
       const deleteToggleButton = document.createElement("button");
       deleteToggleButton.setAttribute(
         "class",
@@ -142,7 +142,9 @@ export class BookmarkListItem extends TatorElement {
       Delete bookmark`;
       deleteToggleButton.addEventListener("click", () => {
         this._moreMenu.style.display = "none";
-        this.dispatchEvent(new CustomEvent("deleteBookmark", { detail: { id: bookmark.id } }));
+        this.dispatchEvent(
+          new CustomEvent("deleteBookmark", { detail: { id: bookmark.id } })
+        );
       });
 
       const renameToggleButton = document.createElement("button");
@@ -157,7 +159,9 @@ export class BookmarkListItem extends TatorElement {
       Rename bookmark`;
       renameToggleButton.addEventListener("click", () => {
         this._moreMenu.style.display = "none";
-        this.dispatchEvent(new CustomEvent("renameBookmark", { detail: { id: bookmark.id } }));
+        this.dispatchEvent(
+          new CustomEvent("renameBookmark", { detail: { id: bookmark.id } })
+        );
       });
 
       this._moreMenu.appendChild(renameToggleButton);

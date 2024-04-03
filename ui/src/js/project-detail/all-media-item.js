@@ -4,13 +4,14 @@ import { TatorElement } from "../components/tator-element.js";
  * Button used for the "All Media" / home in the section list
  */
 export class AllMediaItem extends TatorElement {
-
   constructor() {
-
     super();
 
     this._mainDiv = document.createElement("div");
-    this._mainDiv.setAttribute("class", "rounded-2 px-1 py-1 d-flex flex-items-center clickable");
+    this._mainDiv.setAttribute(
+      "class",
+      "rounded-2 px-1 py-1 d-flex flex-items-center clickable"
+    );
     this._shadow.appendChild(this._mainDiv);
 
     this._icon = document.createElement("div");
