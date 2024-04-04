@@ -26,6 +26,7 @@ export class MediaSection extends TatorElement {
     header.appendChild(this._name);
 
     this._nameText = document.createElement("div");
+    this._nameText.setAttribute("class", "d-flex flex-items-center");
     this._name.appendChild(this._nameText);
 
     const pageWrapper = document.createElement("div");
@@ -65,11 +66,12 @@ export class MediaSection extends TatorElement {
     const paginatorTopDiv = document.createElement("div");
     paginatorTopDiv.setAttribute(
       "class",
-      "d-flex flex-items-center flex-justify-center"
+      "d-flex flex-items-center flex-justify-center mt-2"
     );
     section.appendChild(paginatorTopDiv);
 
     this._paginator_top = document.createElement("entity-gallery-paginator");
+    this._paginator_top._showIndexLength = 3;
     this._paginator_top._pageSize = this._defaultPageSize;
     this._paginator_top._pageMax = this._maxPageSizeDefault;
     this._paginator_top.setupElements();
@@ -89,6 +91,7 @@ export class MediaSection extends TatorElement {
     div.appendChild(this._files);
 
     this._paginator_bottom = document.createElement("entity-gallery-paginator");
+    this._paginator_top._showIndexLength = 3;
     this._paginator_bottom._pageSize = this._defaultPageSize;
     this._paginator_bottom._pageMax = this._maxPageSizeDefault;
     this._paginator_bottom.setupElements();
@@ -105,19 +108,25 @@ export class MediaSection extends TatorElement {
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
-      this._nameText.innerHTML = `<span class="text-white">${this._sectionName}</span>`;
+      this._nameText.innerHTML = `<span class="text-white d-flex flex-items-center">${this._sectionName}</span>`;
     } else {
       this._sectionName = section.name;
       this._upload.setAttribute("section", section.name);
       let parts = section.name.split(".");
-      var nameTextHTML = `<span class="text-white">${section.name}</span>`;
+      var nameTextHTML = `<span class="text-white d-flex flex-items-center">${section.name}</span>`;
       if (parts.length > 1) {
         let mainSectionName = parts[parts.length - 1];
         parts.pop();
-        nameTextHTML = `<span class="text-dark-gray">`;
-        nameTextHTML += parts.join(" > ");
-        nameTextHTML += ` > </span>`;
-        nameTextHTML += `<span class="text-white">${mainSectionName}</span>`;
+        var chevronSpacer = `
+        <svg width="20" height="20" viewBox="0 0 24 24" class="no-fill px-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        `;
+        nameTextHTML = `<span class="text-dark-gray d-flex flex-items-center">`;
+        nameTextHTML += parts.join(chevronSpacer);
+        nameTextHTML += chevronSpacer;
+        nameTextHTML += `</span>`;
+        nameTextHTML += `<span class="text-white d-flex flex-items-center">${mainSectionName}</span>`;
       }
       this._nameText.innerHTML = nameTextHTML;
     }
@@ -207,7 +216,6 @@ export class MediaSection extends TatorElement {
   }
 
   set mediaIds(val) {
-    console.log("test !!!!!!!!!!!!!!!!!!!!!!!!!!!");
     this._updateNumFiles(val.length);
     this._files.mediaIds = val;
   }
@@ -655,6 +663,8 @@ export class MediaSection extends TatorElement {
   }
 
   _setCallbacks() {
+
+    // User entering bulk edit mode
     this._more.addEventListener("bulk-edit", () => {
       this.dispatchEvent(new Event("bulk-edit"));
     });
@@ -665,32 +675,19 @@ export class MediaSection extends TatorElement {
       this._launchAlgorithm.bind(this)
     );
 
+    // Download all media files
     this._more.addEventListener("download", this._downloadFiles.bind(this));
 
+    // Download all annotations
     this._more.addEventListener(
       "downloadAnnotations",
       this._downloadAnnotations.bind(this)
     );
+
     this._files.addEventListener(
       "downloadAnnotations",
       this._downloadAnnotations.bind(this)
     );
-
-    // New right click options
-    this.addEventListener("renameSection", this._reloadAndRename.bind(this));
-    this.addEventListener("deleteSection", (evt) => {
-      // console.log(evt);
-      this.dispatchEvent(
-        new CustomEvent("remove", {
-          detail: {
-            sectionParams: this._sectionParams(),
-            section: this._section,
-            projectId: this._project,
-            deleteMedia: false,
-          },
-        })
-      );
-    });
 
     this._more.addEventListener("deleteSection", (evt) => {
       this.dispatchEvent(

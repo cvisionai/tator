@@ -1,3 +1,7 @@
+export function getVisibleFolders() {
+
+}
+
 /**
  * Class to handle the list of sections in a project.
  * Helper functions are available to get the parent and children of a section, etc.
@@ -253,6 +257,10 @@ export class SectionData {
       return false;
     }
 
+    if (proposedName.toLowerCase() === "all media") {
+      return false;
+    }
+
     // Find the adjusted path which we will use to compare against other sections
     let info = this.makeFolderNameAndPath(proposedName, parentSectionId);
 
@@ -271,7 +279,7 @@ export class SectionData {
   }
 
   /**
-   * Get a list of folder choices for am enum input
+   * Get a list of folder choices for an enum input
    * Does not include a no-parent option
    * Output is sorted by breadcrumb path
    *
@@ -297,6 +305,39 @@ export class SectionData {
           continue;
         }
 
+        choices.push({
+          value: section.id,
+          label: section.name.replace(/\./g, " > "),
+        });
+      }
+    }
+
+    // Sort the choices by path
+    choices.sort((a, b) => {
+      if (a.label < b.label) {
+        return -1;
+      }
+      if (a.label > b.label) {
+        return 1;
+      }
+      return 0;
+    });
+
+    return choices;
+  }
+
+  /**
+   * Get a list of hidden folder choices for an enum input
+   * Output is sorted by breadcrumb path
+   *
+   * @return {array}
+   *   Each element is {value: sectionID, label: label to display}
+   *   The label is a breadcrumb based version of the name
+   */
+  getHiddenFolderEnumChoices() {
+    var choices = [];
+    for (const section of this.getFolderList()) {
+      if (section.visible == false) {
         choices.push({
           value: section.id,
           label: section.name.replace(/\./g, " > "),

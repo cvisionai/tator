@@ -2,13 +2,12 @@ import { TatorPage } from "../components/tator-page.js";
 import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { TatorData } from "../util/tator-data.js";
-import { TatorElement, svgNamespace } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
 import { FilterData } from "../components/filter-data.js";
 import { v1 as uuidv1 } from "uuid";
 import { store } from "./store.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
 import Gear from "../../images/svg/gear.svg";
-import { ModalDialog } from "../components/modal-dialog.js";
 import { SectionData } from "../util/section-utilities.js";
 
 /**
@@ -263,11 +262,6 @@ export class ProjectDetail extends TatorPage {
       }
     });
 
-    this._mediaMoveDialog.addEventListener("reload", () => {
-      this._mediaSection.reload();
-      this._bulkEdit._clearSelection();
-    });
-
     this._modalError.addEventListener("close", () => {
       this._modalError.removeAttribute("is-open");
       this.removeAttribute("has-open-modal");
@@ -278,8 +272,15 @@ export class ProjectDetail extends TatorPage {
     this.setBookmarkDialogCallbacks();
     this.setDeleteSectionDialogCallbacks();
     this.setActivityPanelCallbacks();
+    this.setMediaMoveDialogCallbacks();
 
-    this._mediaSection.addEventListener("deleteMedia", async (evt) => {
+    this._mediaSection.addEventListener("moveMedia", (evt) => {
+      this._mediaMoveDialog.updateUI(evt.detail.mediaIds);
+      this._mediaMoveDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._mediaSection.addEventListener("deleteMedia", () => {
       this._deleteSectionDialog.init(this._selectedSection, true);
       this._deleteSectionDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
@@ -308,15 +309,6 @@ export class ProjectDetail extends TatorPage {
     attachmentDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal");
     });
-
-    // Called when a media file needs to be moved from one folder to another
-    this._moveFileCallback = (evt) => {
-      this._mediaMoveDialog.open(
-        evt.detail.mediaId,
-        evt.detail.mediaName,
-        this.getAttribute("project-id")
-      );
-    };
 
     this._deleteFileCallback = (evt) => {
       this.deleteFileForm.setAttribute("media-id", evt.detail.mediaId);
@@ -598,8 +590,8 @@ export class ProjectDetail extends TatorPage {
 
       await this.getSections();
       this.selectSection(evt.detail.mainSectionId);
-      this.removeAttribute("has-open-modal");
       this._bulkEdit._clearSelection();
+      this.removeAttribute("has-open-modal");
     });
 
     // Add new folder
@@ -618,14 +610,68 @@ export class ProjectDetail extends TatorPage {
         var data = await response.json();
         await this.getSections();
         this.selectSection(data.id);
-        this.removeAttribute("has-open-modal");
         this._bulkEdit._clearSelection();
+        this.removeAttribute("has-open-modal");
       } else {
         this._modalError._error(
           `Unable to create section '${spec.name}'. Error: ${response.message}`,
           "Error"
         );
       }
+    });
+  }
+
+  /**
+   * Expected o be run once in the constructor
+   */
+  setMediaMoveDialogCallbacks() {
+    
+    // Close without any modifications
+    this._mediaMoveDialog.addEventListener("close", () => {
+      this._mediaMoveDialog.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal");
+    });
+
+    // Move media to a new folder
+    this._mediaMoveDialog.addEventListener("move", async (evt) => {
+      this._mediaMoveDialog.removeAttribute("is-open");
+
+      var destTatorUserSections = "";
+      var section = null;
+      if (evt.detail.destSectionId != null) {
+        section = this._sectionData.getSectionFromID(evt.detail.destSectionId);
+        destTatorUserSections = section.tator_user_sections;
+      }
+      
+      var response = await fetchCredentials(
+        `/rest/Medias/${this._projectId}?media_id=${evt.detail.mediaIds}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            attributes: {
+              tator_user_sections: destTatorUserSections,
+            },
+          }),
+        });
+
+      if (response.status == 200) {
+        if (section != null) {
+          this.selectSection(section.id);
+        }
+        else {
+          this.selectSection();
+        }
+        this._bulkEdit._clearSelection();
+        this.removeAttribute("has-open-modal");
+      }
+      else {
+        this._modalError._error(
+          `Unable to move media. Error: ${response.message}`,
+          "Error"
+        );
+      }
+
+      this.removeAttribute("has-open-modal");
     });
   }
 
@@ -645,13 +691,6 @@ export class ProjectDetail extends TatorPage {
 
   _openBulkEdit() {
     this._bulkEdit.startEditMode();
-  }
-
-  _allSections() {
-    const folders = Array.from(this._folders.children);
-    const hiddenFolders = Array.from(this._archivedFolders.children);
-    const savedSearches = Array.from(this._savedSearches.children);
-    return folders.concat(savedSearches).concat(hiddenFolders);
   }
 
   _notify(title, message, error_or_ok) {
@@ -715,7 +754,7 @@ export class ProjectDetail extends TatorPage {
             versionData,
           ])
             .then(
-              ([
+              async ([
                 project,
                 sections,
                 bookmarks,
@@ -724,58 +763,22 @@ export class ProjectDetail extends TatorPage {
                 memberships,
                 versions,
               ]) => {
-                // First hide algorithms if needed. These are not appropriate to be
-                // run at the project/this._section/media level.
+
+                // Save retrieved REST data
+                this._project = project;
+                this._sections = sections;
+                this._bookmarks = bookmarks;
+                this._mediaTypes = mediaTypes;
+                this._memberships = memberships;
+                this._versions = versions;
+
+                // Hide algorithms if needed from the project detail page.
+                // There are a standard list of algorithm names to hide as well as categories
                 var hiddenAlgos = [
                   "tator_extend_track",
                   "tator_fill_track_gaps",
                 ];
                 const hiddenAlgoCategories = ["annotator-view", "disabled"];
-
-                this._cardAttributeLabels.init(projectId);
-
-                // Initialize folder/search/bookmark data
-                this._sections = sections;
-                this._sectionData.init(this._sections);
-                this._bookmarks = bookmarks;
-
-                // Initialize the search section object/related search display
-                this._memberships = memberships;
-                this._versions = versions;
-                this._sectionSearchDisplay.init(
-                  this._memberships,
-                  this._sections,
-                  this._versions
-                );
-
-                // Set up attributes for bulk edit
-                this._mediaTypes = mediaTypes;
-                for (let mediaTypeData of mediaTypes) {
-                  this._cardAttributeLabels.add({
-                    typeData: mediaTypeData,
-                    checkedFirst: false,
-                  });
-                  this._bulkEdit._editPanel.addLocType(mediaTypeData);
-                }
-
-                this._mediaSection.mediaTypes = this._mediaTypes;
-
-                this.initBulkEdit();
-
-                //
-                this._mediaSection._files._cardAttributeLabels =
-                  this._cardAttributeLabels;
-                this._mediaSection._bulkEdit = this._bulkEdit;
-
-                this._bulkEdit.init({
-                  page: this,
-                  gallery: this._mediaSection._files,
-                  type: "media",
-                  projectId,
-                  additionalTools: true,
-                  permission: project.permission,
-                });
-
                 var parsedAlgos = algos.filter(function (alg) {
                   if (Array.isArray(alg.categories)) {
                     for (const category of alg.categories) {
@@ -787,79 +790,103 @@ export class ProjectDetail extends TatorPage {
                   return !hiddenAlgos.includes(alg.name);
                 });
                 parsedAlgos.sort((a, b) => a.name.localeCompare(b.name));
+                this._algorithms = parsedAlgos;
+                
+                // Set page header and title
+                this._projectText.nodeValue = this._project.name;
+                this._description.setAttribute("text", this._project.summary);
+                this._collaborators.usernames = this._project.usernames;
 
-                if (!hasPermission(project.permission, "Full Control")) {
+                // Initialize bulk edit
+                for (let mediaTypeData of this._mediaTypes) {
+                  this._cardAttributeLabels.add({
+                    typeData: mediaTypeData,
+                    checkedFirst: false,
+                  });
+                  this._bulkEdit._editPanel.addLocType(mediaTypeData);
+                }
+
+                this.initBulkEdit();
+
+                // Hide the settings button if the user does not have full control
+                if (!hasPermission(this._project.permission, "Full Control")) {
                   this._settingsButton.style.display = "none";
                 }
-                this._project = project;
-                this._algorithms = parsedAlgos;
-                this._mediaSection.project = project;
+
+                // Update the media section with the project data
+                this._mediaSection.mediaTypes = this._mediaTypes;
+                this._mediaSection.project = this._project;
+                this._mediaSection._files._cardAttributeLabels =
+                  this._cardAttributeLabels;
+                this._mediaSection._bulkEdit = this._bulkEdit;
                 this._mediaSection.algorithms = this._algorithms;
-                this._projectText.nodeValue = project.name;
-                this._description.setAttribute("text", project.summary);
-                this._collaborators.usernames = project.usernames;
+                this._cardAttributeLabels.init(project.id);
 
-                let projectParams = null;
+                // Initialize folder/search/bookmark data
+                this._sectionData.init(this._sections);
 
+                // Initialize the search section object/related search display
+                this._sectionSearchDisplay.init(
+                  this._memberships,
+                  this._sections,
+                  this._versions
+                );
+
+                // Initialize media move dialog with current section information
+                this._mediaMoveDialog.initSectionOptions(this._sectionData);
+
+                // Fill in the left panel area with section information
                 this.makeFolders();
                 this.makeMediaSearches();
                 this.makeBookmarks();
                 this.displayPanel("library");
 
-                // Model data & filter setup
-                try {
-                  this._modelData = new TatorData(projectId);
-                  this._modelData.init().then(() => {
-                    // used to setup filter options & string utils
-                    this._mediaSection._modelData = this._modelData;
-                    this._mediaSection._files.memberships =
-                      this._modelData._memberships;
+                // Setup the filter UI
+                this._modelData = new TatorData(projectId);
+                await this._modelData.init();
 
-                    this._filterDataView = new FilterData(
-                      this._modelData,
-                      null,
-                      [],
-                      null
-                    );
-                    this._filterDataView.init();
-                    this._filterView.dataView = this._filterDataView;
+                this._filterDataView = new FilterData(
+                  this._modelData,
+                  null,
+                  [],
+                  null
+                );
+                this._filterDataView.init();
+                this._filterView.dataView = this._filterDataView;
 
-                    // Set UI and results to any url param conditions that exist (from URL)
-                    this._mediaSection._filterConditions =
-                      this._mediaSection.getFilterConditionsObject();
-                    this._bulkEdit.checkForFilters(
-                      this._mediaSection._filterConditions
-                    );
-                    if (this._mediaSection._filterConditions.length > 0) {
-                      this._updateFilterResults({
-                        detail: {
-                          conditions: this._mediaSection._filterConditions,
-                        },
-                      });
-                    }
 
-                    // Listen for filter events
-                    this._filterView.addEventListener(
-                      "filterParameters",
-                      this._updateFilterResults.bind(this)
-                    );
+                this._mediaSection._modelData = this._modelData;
+                this._mediaSection._files.memberships = this._memberships;
+                this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
 
-                    //
-                    // Select the section
-                    //
-                    const params = new URLSearchParams(
-                      document.location.search.substring(1)
-                    );
-                    if (params.has("section")) {
-                      const sectionId = Number(params.get("section"));
-                      this.selectSection(sectionId);
-                    } else {
-                      this.selectSection();
-                    }
+                this._bulkEdit.checkForFilters(
+                  this._mediaSection._filterConditions
+                );
+                if (this._mediaSection._filterConditions.length > 0) {
+                  this._updateFilterResults({
+                    detail: {
+                      conditions: this._mediaSection._filterConditions,
+                    },
                   });
-                } catch (err) {
-                  console.error("Could not initialize filter interface.", err);
-                  this.hideDimmer();
+                }
+
+                // Listen for filter events
+                this._filterView.addEventListener(
+                  "filterParameters",
+                  this._updateFilterResults.bind(this)
+                );
+
+                //
+                // Select the section
+                //
+                const params = new URLSearchParams(
+                  document.location.search.substring(1)
+                );
+                if (params.has("section")) {
+                  const sectionId = Number(params.get("section"));
+                  this.selectSection(sectionId);
+                } else {
+                  this.selectSection();
                 }
               }
             )
@@ -885,14 +912,11 @@ export class ProjectDetail extends TatorPage {
     this._bulkEdit._editPanel._otherTools.appendChild(moveSelectedButton);
 
     moveSelectedButton.addEventListener("click", () => {
-      const list = Array.from(this._bulkEdit._currentMultiSelection);
-      if (list && list.length > 0) {
-        this._mediaMoveDialog.open(
-          list,
-          null,
-          this.getAttribute("project-id"),
-          false
-        );
+      const mediaIds = Array.from(this._bulkEdit._currentMultiSelection);
+      if (mediaIds && mediaIds.length > 0) {
+        this._mediaMoveDialog.updateUI(mediaIds);
+        this._mediaMoveDialog.setAttribute("is-open", "");
+        this.setAttribute("has-open-modal", "");
       } else {
         this._notify(
           "Make a selection",
@@ -911,6 +935,14 @@ export class ProjectDetail extends TatorPage {
       "click",
       this._deleteSelection.bind(this)
     );
+
+    this._bulkEdit.init({
+      page: this,
+      gallery: this._mediaSection._files,
+      type: "media",
+      additionalTools: true,
+      permission: this._project.permission,
+    });
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -1201,6 +1233,7 @@ export class ProjectDetail extends TatorPage {
     );
     this.makeFolders();
     this.makeMediaSearches();
+    this._mediaMoveDialog.initSectionOptions(this._sectionData);
   }
 
   /**
