@@ -663,7 +663,6 @@ export class MediaSection extends TatorElement {
   }
 
   _setCallbacks() {
-
     // User entering bulk edit mode
     this._more.addEventListener("bulk-edit", () => {
       this.dispatchEvent(new Event("bulk-edit"));

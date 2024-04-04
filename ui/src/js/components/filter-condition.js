@@ -216,8 +216,7 @@ export class FilterCondition extends TatorElement {
                 }
               }
               this._valueEnum.choices = enumChoices;
-            }
-            else {
+            } else {
               let enumChoices = {};
               let groups = Object.keys(attribute.choices);
               for (const group of groups) {

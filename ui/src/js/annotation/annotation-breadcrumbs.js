@@ -91,7 +91,9 @@ export class AnnotationBreadcrumbs extends TatorElement {
         .then((section) => {
           let innerHTML = `<div class="d-flex flex-items-center">`;
           let parts = section.name.split(".");
-          innerHTML += parts.join(` <chevron-right class="px-1"></chevron-right> `);
+          innerHTML += parts.join(
+            ` <chevron-right class="px-1"></chevron-right> `
+          );
           innerHTML += `</div>`;
           this._sectionText.innerHTML = innerHTML;
         });

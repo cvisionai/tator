@@ -38,9 +38,10 @@ export class MediaMoveDialog extends ModalDialog {
         new CustomEvent("move", {
           detail: {
             destSectionId: destSectionId,
-            mediaIds: this._mediaIds
+            mediaIds: this._mediaIds,
           },
-        }));
+        })
+      );
     });
   }
 
@@ -57,7 +58,6 @@ export class MediaMoveDialog extends ModalDialog {
 
     this._folderOptions.clear();
     this._folderOptions.choices = choices;
-
   }
 
   /**
@@ -66,7 +66,10 @@ export class MediaMoveDialog extends ModalDialog {
    */
   updateUI(mediaIds) {
     this._mediaIds = mediaIds;
-    this._folderOptions.setAttribute("name", `Move ${mediaIds.length} media to:`);
+    this._folderOptions.setAttribute(
+      "name",
+      `Move ${mediaIds.length} media to:`
+    );
   }
 }
 

@@ -625,7 +625,6 @@ export class ProjectDetail extends TatorPage {
    * Expected o be run once in the constructor
    */
   setMediaMoveDialogCallbacks() {
-    
     // Close without any modifications
     this._mediaMoveDialog.addEventListener("close", () => {
       this._mediaMoveDialog.removeAttribute("is-open");
@@ -642,7 +641,7 @@ export class ProjectDetail extends TatorPage {
         section = this._sectionData.getSectionFromID(evt.detail.destSectionId);
         destTatorUserSections = section.tator_user_sections;
       }
-      
+
       var response = await fetchCredentials(
         `/rest/Medias/${this._projectId}?media_id=${evt.detail.mediaIds}`,
         {
@@ -652,19 +651,18 @@ export class ProjectDetail extends TatorPage {
               tator_user_sections: destTatorUserSections,
             },
           }),
-        });
+        }
+      );
 
       if (response.status == 200) {
         if (section != null) {
           this.selectSection(section.id);
-        }
-        else {
+        } else {
           this.selectSection();
         }
         this._bulkEdit._clearSelection();
         this.removeAttribute("has-open-modal");
-      }
-      else {
+      } else {
         this._modalError._error(
           `Unable to move media. Error: ${response.message}`,
           "Error"
@@ -763,7 +761,6 @@ export class ProjectDetail extends TatorPage {
                 memberships,
                 versions,
               ]) => {
-
                 // Save retrieved REST data
                 this._project = project;
                 this._sections = sections;
@@ -791,7 +788,7 @@ export class ProjectDetail extends TatorPage {
                 });
                 parsedAlgos.sort((a, b) => a.name.localeCompare(b.name));
                 this._algorithms = parsedAlgos;
-                
+
                 // Set page header and title
                 this._projectText.nodeValue = this._project.name;
                 this._description.setAttribute("text", this._project.summary);
@@ -854,10 +851,10 @@ export class ProjectDetail extends TatorPage {
                 this._filterDataView.init();
                 this._filterView.dataView = this._filterDataView;
 
-
                 this._mediaSection._modelData = this._modelData;
                 this._mediaSection._files.memberships = this._memberships;
-                this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
+                this._mediaSection._filterConditions =
+                  this._mediaSection.getFilterConditionsObject();
 
                 this._bulkEdit.checkForFilters(
                   this._mediaSection._filterConditions

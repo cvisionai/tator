@@ -1,6 +1,4 @@
-export function getVisibleFolders() {
-
-}
+export function getVisibleFolders() {}
 
 /**
  * Class to handle the list of sections in a project.
