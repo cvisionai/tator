@@ -143,8 +143,7 @@ export class GalleryBulkEdit extends TatorElement {
     this._page = page;
     if (projectId == null) {
       this._projectId = this._page.projectId;
-    }
-    else {
+    } else {
       this._projectId = projectId;
     }
     this._editType = type;
