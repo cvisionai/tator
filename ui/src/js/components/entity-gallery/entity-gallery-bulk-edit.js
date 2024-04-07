@@ -370,7 +370,9 @@ export class GalleryBulkEdit extends TatorElement {
 
     // revert page elements
     this._page._header.classList.remove("hidden");
-    this._page.aside.classList.remove("hidden");
+    if (this._page.aside != null) {
+      this._page.aside.classList.remove("hidden");
+    }
     this._page.main.style.marginTop = "0";
     this._gallery._ul.classList.remove("multi-select-mode");
 

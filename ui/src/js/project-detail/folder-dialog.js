@@ -228,15 +228,14 @@ export class FolderDialog extends ModalDialog {
    * @postcondition Name and Parent Folders fields are reset
    */
   init(sectionData) {
-    this._parentFolders.clear();
     this._name.reset();
 
     this._sectionData = sectionData;
     this._selectedSection = null;
 
+    this._parentFolders.clear();
     var choices = this._sectionData.getFolderEnumChoices();
     choices.unshift({ value: this._noParentName, label: this._noParentName });
-
     this._parentFolders.choices = choices;
   }
 
@@ -265,6 +264,22 @@ export class FolderDialog extends ModalDialog {
       this._mode = mode;
       this._save.textContent = "Edit";
       this._saveClickEvent = "edit";
+
+      // Remove the current section and its children from the parent folder choices
+      this._parentFolders.clear();
+      var choices = this._sectionData.getFolderEnumChoices();
+      var newChoices = [];
+      if (selectedSection != null) {
+        for (const choice of choices) {
+          let choiceID = choice.value;
+          let choiceSection = this._sectionData.getSectionFromID(choiceID);
+          if (!choiceSection.path.startsWith(selectedSection.path)) {
+            newChoices.push(choice);
+          }
+        }
+      }
+      choices.unshift({ value: this._noParentName, label: this._noParentName });
+      this._parentFolders.choices = newChoices;
 
       let nameParts = selectedSection.name.split(".");
       this._name.setValue(nameParts[nameParts.length - 1]);

@@ -100,11 +100,13 @@ export class MediaSection extends TatorElement {
     this._searchParams = new URLSearchParams();
     this._numFilesCount = 0;
     this._searchString = "";
+    this._relatedSearchString = "";
+    this._filterConditions = [];
 
     this._setCallbacks();
   }
 
-  async init(project, section) {
+  async init(project, section, page, pageSize) {
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
@@ -137,9 +139,22 @@ export class MediaSection extends TatorElement {
     this._upload.setAttribute("project-id", project);
     this._more.section = section;
 
-    this._start = 0;
-    this._stop = this._paginator_top._pageSize;
-    this._after = new Map();
+    if (page != null && pageSize != null) {
+      this._start = (page - 1) * pageSize;
+      this._stop = this._start + pageSize;
+      this._paginator_top.pageSize = pageSize;
+      this._paginator_bottom.pageSize = pageSize;
+      this._page = page;
+    }
+    else {
+      this._start = 0;
+      this._stop = this._paginator_top._pageSize;
+      this._page = 1;
+    }
+    this._paginator_top._setPage(page - 1);
+    this._paginator_bottom._setPage(page - 1);
+
+    this._updatePageArgs();
 
     await this.reload();
   }
@@ -268,50 +283,69 @@ export class MediaSection extends TatorElement {
     this._numFiles.innerHTML = `${numFiles} ${fileText}`;
     this._numFilesCount = Number(numFiles);
 
-    if (numFiles != this._paginator_top._numFiles) {
-      this._start = 0;
-      this._stop = this._paginator_top._pageSize;
-      this._paginationState = {
-        start: this._start,
-        stop: this._stop,
-        page: 1,
-        pageSize: this._paginator_top._pageSize,
-      };
-      this._paginator_top.init(numFiles, this._paginationState);
-      this._paginator_bottom.init(numFiles, this._paginationState);
+    this._paginationState = {
+      start: this._start,
+      stop: this._stop,
+      page: this._page,
+      pageSize: this._paginator_top._pageSize,
+    };
+    this._paginator_top.init(numFiles, this._paginationState);
+    this._paginator_bottom.init(numFiles, this._paginationState);
 
-      if (this._paginator_top._numPages == 0) {
-        this._pagePosition.innerHTML = ``;
-      } else {
-        this._pagePosition.innerHTML = `(Page ${
-          typeof this._paginationState.page == "undefined"
-            ? 1
-            : this._paginationState.page
-        } of ${this._paginator_top._numPages})`;
-      }
+    if (numFiles == 0) {
+      this._paginator_top.style.display = "none";
+      this._paginator_bottom.style.display = "none";
+      this._sort.style.display = "none";
+    }
+    else {
+      this._paginator_top.style.display = "block";
+      this._paginator_bottom.style.display = "block";
+      this._sort.style.display = "block";
+    }
+
+    if (this._paginator_top._numPages == 0) {
+      this._pagePosition.innerHTML = ``;
+    } else {
+      this._pagePosition.innerHTML = `(Page ${
+        typeof this._paginationState.page == "undefined"
+          ? 1
+          : this._paginationState.page
+      } of ${this._paginator_top._numPages})`;
     }
   }
 
+  /**
+   * Call this when the section has been changed or the media list has been changed.
+   * The page parameters are removed.
+   *
+   * @precondition this._section has been set to the section to be displayed in the UI
+   * @returns {URLSearchParams}
+   */
   _sectionParams() {
-    const sectionParams = new URLSearchParams();
-    if (this._section !== null) {
-      sectionParams.append("section", this._section.id);
-    }
+    var searchParams = new URLSearchParams();
     const filterAndSearchParams = this._getFilterQueryParams();
     const sortParam = new URLSearchParams(this._sort.getQueryParam());
-    let params = joinParams(sectionParams, filterAndSearchParams);
+    let params = joinParams(searchParams, filterAndSearchParams);
     params = joinParams(params, sortParam);
+    searchParams.delete("section");
+    if (this._section != null) {
+      searchParams.set("section", this._section.id);
+    }
     return params;
   }
 
+  /**
+   * @postcondition Media cards are updated with the URL parameters
+   * @postcondition
+   */
   async _loadMedia() {
     var sectionQuery = this._sectionParams();
     if (Number.isNaN(this._start) || Number.isNaN(this._stop)) {
       console.log(`Load media... ignoring due to NaN start/stop`);
       return; // This may happen if it's called too soon and the pagination has not been set.
     }
-    sectionQuery.append("start", this._start);
-    sectionQuery.append("stop", this._stop);
+    sectionQuery.set("start", this._start);
+    sectionQuery.set("stop", this._stop);
 
     console.log(`Load media... sectionQuery: ${sectionQuery}`);
     var response = await fetchCredentials(
@@ -325,12 +359,14 @@ export class MediaSection extends TatorElement {
     this._reload.ready();
   }
 
+  /**
+   * Reload the UI with the section query parameters in the URL
+   */
   async reload() {
-    console.log("Reload media section...");
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
-    console.log(`Section query: ${sectionQuery.toString()}`);
+    console.log(`Get media count... sectionQuery: ${sectionQuery.toString()}`);
     const response = await fetchCredentials(
       `/rest/MediaCount/${this._project}?${sectionQuery.toString()}`
     );
@@ -735,56 +771,47 @@ export class MediaSection extends TatorElement {
 
   _updatePageArgs() {
     // update the URL
-    const searchArgs = new URLSearchParams(window.location.search);
+    const searchParams = new URLSearchParams(window.location.search);
     var newUrl = `${document.location.origin}${document.location.pathname}`;
-    let firstParm = true;
 
-    if (searchArgs.toString !== "") {
-      searchArgs.delete("page");
-      searchArgs.delete("pagesize");
+    searchParams.delete("page");
+    searchParams.delete("pagesize");
 
-      for (const [key, value] of searchArgs) {
-        if (!firstParm) {
-          newUrl += "&";
-        } else {
-          newUrl += "?";
-        }
-        newUrl += `${key}=${value}`;
-        firstParm = false;
-      }
-    }
-
-    // Only add back params if we're not on default page 1, and pageSize 10
     if (
       this._start !== 0 ||
       this._paginator_top._pageSize !== this._defaultPageSize
     ) {
-      if (!firstParm) {
-        newUrl += "&";
-      } else {
-        newUrl += "?";
-      }
-      newUrl += `page=${Number(this._paginator_top._page) + 1}&pagesize=${
-        this._paginator_top._pageSize
-      }`;
+      searchParams.set("page", `${Number(this._paginator_top._page) + 1}`);
+      searchParams.set("pagesize", this._paginator_top._pageSize);
     }
 
-    window.history.pushState({}, "", newUrl);
-    this._pagePosition.nodeValue = `Page ${
-      typeof this._paginator_top._page == "undefined"
-        ? 1
-        : this._paginator_top._page + 1
-    } of ${this._paginator_top._numPages}`;
+    newUrl += "?" + searchParams.toString();
+
+    // #TODO Remove console
+    console.log(`_updatePageArgs - New URL: ${newUrl}`)
+    window.history.replaceState({}, "", newUrl);
+
+    this._pagePosition.innerHTML = `(Page ${this._paginator_top._page + 1} of ${this._paginator_top._numPages})`;
   }
 
+  /**
+   * Expected to be called whenever filters are applied that affect which media should be displayed
+   *
+   * @param {array} conditions
+   *   Array of FilterConditionData objects
+   * @returns {string}
+   *   Search and related search strings that are encoded in base64
+   *   These are the filter UI, not the object_search and related_search of the REST endpoints
+   * @postcondition URL updated with latest filter components.
+   */
   async updateFilterResults(conditions) {
     this._filterConditions = conditions;
     this._filterURIString = encodeURIComponent(
       JSON.stringify(this._filterConditions)
     );
 
-    if (conditions !== []) {
-      // Media Filters
+    // Figure out the filter UI media search and metadata search strings
+    if (Array.isArray(this._filterConditions)) {
       var finalMediaFilters = [];
       var finalMetadataFilters = [];
       for (var filter of this._filterConditions) {
@@ -823,6 +850,13 @@ export class MediaSection extends TatorElement {
         this.relatedSearchString = "";
       }
 
+      // Reset the page back to the first page before reloading the media
+      this._start = 0;
+      this._stop = this._paginator_top._pageSize;
+      this._page = 1;
+      this._updatePageArgs();
+
+      // Reload media with the new filter conditions at the first page
       await this.reload();
     } else {
       this.searchString = "";
@@ -834,21 +868,28 @@ export class MediaSection extends TatorElement {
       window.history.replaceState({}, "Filter", newUrl);
     }
 
-    return this._searchString + this.relatedSearchString;
+    return this._searchString + this._relatedSearchString;
   }
 
+  /**
+   * @returns {string}
+   *   URL with the filter conditions applied (retaining the current parameters)
+   */
   getFilterURL() {
-    const searchParams = new URLSearchParams(window.location.search);
     var url = window.location.origin + window.location.pathname;
     url += "?" + this._getFilterQueryParams().toString();
+    console.log(`Filter URL: ${url}`);
     return url;
   }
 
+  /**
+   * Utilizes this._filterURIString
+   *
+   * @returns {URLSearchParams}
+   *   filterConditions is provided using this._filterURIString
+   */
   _getFilterQueryParams() {
     const params = new URLSearchParams(window.location.search);
-
-    params.delete("page");
-    params.delete("pagesize");
 
     if (
       typeof this._filterURIString !== "undefined" &&
@@ -860,57 +901,17 @@ export class MediaSection extends TatorElement {
       params.delete("filterConditions");
     }
 
-    const searchString = this._searchParams.get("encoded_search");
-    if (
-      typeof searchString !== "undefined" &&
-      searchString != null &&
-      searchString !== "undefined"
-    ) {
-      params.set("encoded_search", searchString);
-    } else {
-      params.delete("encoded_search");
+    params.delete("encoded_search");
+    if (this._searchString != "" && this._searchString != null) {
+      params.set("encoded_search", this._searchString);
     }
 
-    const relatedSearchString = this._searchParams.get(
-      "encoded_related_search"
-    );
-    if (
-      typeof relatedSearchString !== "undefined" &&
-      relatedSearchString != null &&
-      relatedSearchString !== "undefined"
-    ) {
-      params.set("encoded_related_search", relatedSearchString);
-    } else {
-      params.delete("encoded_related_search");
+    params.delete("related_search");
+    if (this._relatedSearchString != "" && this._relatedSearchString != null) {
+      params.set("related_search", this._relatedSearchString);
     }
 
     return params;
-  }
-
-  // Used in project-detail to get any existing conditions
-  // Distill back out filter conditions from param
-  getFilterConditionsObject() {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has("filterConditions")) {
-      this._filterURIString = searchParams.get("filterConditions");
-      this._filterConditions = JSON.parse(
-        decodeURIComponent(this._filterURIString)
-      );
-    }
-    if (
-      typeof this._filterConditions !== "undefined" &&
-      this._filterConditions != ""
-    ) {
-      return this._filterConditions;
-    } else {
-      return [];
-    }
-  }
-  async _reloadAndRename(evt) {
-    // console.log(evt);
-    // this.section = evt.detail.section;
-    // await this.reload();
-    this._rename();
   }
 }
 

@@ -1,5 +1,3 @@
-export function getVisibleFolders() {}
-
 /**
  * Class to handle the list of sections in a project.
  * Helper functions are available to get the parent and children of a section, etc.
@@ -64,6 +62,16 @@ export class SectionData {
    */
   static isSavedSearch(section) {
     return section.object_search != null || section.related_search != null;
+  }
+
+  /**
+   * @param {Tator.Section} section 
+   * @returns string
+   *    Returns the name of the section (removing the path components)
+   */
+  static getMainName(section) {
+    var parts = section.name.split(".");
+    return parts[parts.length - 1];
   }
 
   /**

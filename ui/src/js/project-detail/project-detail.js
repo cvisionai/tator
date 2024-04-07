@@ -147,10 +147,6 @@ export class ProjectDetail extends TatorPage {
     // Media section
     this._mediaSection = document.createElement("media-section");
     this._projects.appendChild(this._mediaSection);
-    this._mediaSection.addEventListener(
-      "runAlgorithm",
-      this._openConfirmRunAlgoModal.bind(this)
-    );
 
     // Card attribute stuff related to mediaSection
     /**
@@ -273,23 +269,12 @@ export class ProjectDetail extends TatorPage {
     this.setDeleteSectionDialogCallbacks();
     this.setActivityPanelCallbacks();
     this.setMediaMoveDialogCallbacks();
+    this.setMediaSectionCallbacks();
 
-    this._mediaSection.addEventListener("moveMedia", (evt) => {
-      this._mediaMoveDialog.updateUI(evt.detail.mediaIds);
-      this._mediaMoveDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    });
-
-    this._mediaSection.addEventListener("deleteMedia", () => {
-      this._deleteSectionDialog.init(this._selectedSection, true);
-      this._deleteSectionDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    });
-
-    this._mediaSection.addEventListener("filesadded", (evt) => {
-      this._uploadDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    });
+    this._filterView.addEventListener(
+      "filterParameters",
+      this._updateFilterResults.bind(this)
+    );
 
     this._uploadDialog.addEventListener("cancel", (evt) => {
       store.getState().uploadCancel();
@@ -298,12 +283,6 @@ export class ProjectDetail extends TatorPage {
 
     this._uploadDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal");
-    });
-
-    this._mediaSection.addEventListener("attachments", (evt) => {
-      attachmentDialog.init(evt.detail);
-      attachmentDialog.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
     });
 
     attachmentDialog.addEventListener("close", (evt) => {
@@ -337,7 +316,6 @@ export class ProjectDetail extends TatorPage {
 
     this._lastQuery = null;
 
-    //
     this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
     this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
     this.modal.addEventListener("open", this.showDimmer.bind(this));
@@ -622,7 +600,7 @@ export class ProjectDetail extends TatorPage {
   }
 
   /**
-   * Expected o be run once in the constructor
+   * Expected to be run once in the constructor
    */
   setMediaMoveDialogCallbacks() {
     // Close without any modifications
@@ -670,6 +648,53 @@ export class ProjectDetail extends TatorPage {
       }
 
       this.removeAttribute("has-open-modal");
+    });
+  }
+
+  /**
+   * Expected to be run once in the constructor
+   */
+  setMediaSectionCallbacks() {
+
+    this._mediaSection.addEventListener(
+      "runAlgorithm",
+      this._openConfirmRunAlgoModal.bind(this)
+    );
+
+    this._mediaSection.addEventListener("moveFile", (evt) => {
+      this._mediaMoveDialog.updateUI([evt.detail.mediaId]);
+      this._mediaMoveDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._mediaSection.addEventListener("deleteFile", (evt) => {
+      this.deleteFileForm.setAttribute("media-id", evt.detail.mediaId);
+      this.deleteFileForm.setAttribute("media-name", evt.detail.mediaName);
+      this.deleteFileForm.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    })
+
+    this._mediaSection.addEventListener("moveMedia", (evt) => {
+      this._mediaMoveDialog.updateUI(evt.detail.mediaIds);
+      this._mediaMoveDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._mediaSection.addEventListener("deleteMedia", () => {
+      this._deleteSectionDialog.init(this._selectedSection, true);
+      this._deleteSectionDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._mediaSection.addEventListener("filesadded", (evt) => {
+      this._uploadDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._mediaSection.addEventListener("attachments", (evt) => {
+      attachmentDialog.init(evt.detail);
+      attachmentDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
     });
   }
 
@@ -838,6 +863,20 @@ export class ProjectDetail extends TatorPage {
                 this.makeBookmarks();
                 this.displayPanel("library");
 
+                // Pull URL search parameters.
+                // If there are search parameters, apply them to the filterView
+                const searchParams = new URLSearchParams(window.location.search);
+                if (searchParams.has("filterConditions")) {
+                  this._filterURIString = searchParams.get("filterConditions");
+                  this._filterConditions = JSON.parse(
+                    decodeURIComponent(this._filterURIString)
+                  );
+                }
+                else {
+                  this._filterConditions = [];
+                  this._filterURIString = null;
+                }
+
                 // Setup the filter UI
                 this._modelData = new TatorData(projectId);
                 await this._modelData.init();
@@ -853,37 +892,31 @@ export class ProjectDetail extends TatorPage {
 
                 this._mediaSection._modelData = this._modelData;
                 this._mediaSection._files.memberships = this._memberships;
-                this._mediaSection._filterConditions =
-                  this._mediaSection.getFilterConditionsObject();
 
-                this._bulkEdit.checkForFilters(
-                  this._mediaSection._filterConditions
-                );
-                if (this._mediaSection._filterConditions.length > 0) {
-                  this._updateFilterResults({
-                    detail: {
-                      conditions: this._mediaSection._filterConditions,
-                    },
-                  });
+
+                // Select the section if provided in the URL
+                // Also get the page information for the initial setup
+                var initPage = null;
+                if (searchParams.has("page")) {
+                  initPage = Number(searchParams.get("page"));
+                }
+                var initPageSize = null;
+                if (searchParams.has("pagesize")) {
+                  initPageSize = Number(searchParams.get("pagesize"));
+                }
+                if (searchParams.has("section")) {
+                  const sectionId = Number(searchParams.get("section"));
+                  this.selectSection(sectionId, initPage, initPageSize);
+                } else {
+                  this.selectSection(null, initPage, initPageSize);
                 }
 
-                // Listen for filter events
-                this._filterView.addEventListener(
-                  "filterParameters",
-                  this._updateFilterResults.bind(this)
-                );
-
-                //
-                // Select the section
-                //
-                const params = new URLSearchParams(
-                  document.location.search.substring(1)
-                );
-                if (params.has("section")) {
-                  const sectionId = Number(params.get("section"));
-                  this.selectSection(sectionId);
-                } else {
-                  this.selectSection();
+                if (this._filterConditions.length > 0) {
+                  this._updateFilterResults({
+                    detail: {
+                      conditions: this._filterConditions
+                    },
+                  });
                 }
               }
             )
@@ -959,6 +992,7 @@ export class ProjectDetail extends TatorPage {
     }
   }
 
+  // #TODO REMOVE
   async _selectSection(section, projectId, clearPage = false) {
     const params = new URLSearchParams(document.location.search);
 
@@ -1139,18 +1173,21 @@ export class ProjectDetail extends TatorPage {
     }
   }
 
-  /*
+  /**
    * Change UI based on current filter operations
    * Expected to be called whenever the filter UI is updated.
+   *
+   * @postcondition URL is updated with latest filter conditions and resetted page/pageSize
+   * @postcondition Media section area is updated using the filter
    */
-  async _updateFilterResults(evt) {
+  async _updateFilterResults(evt, noReload) {
     this._filterConditions = evt.detail.conditions;
     this._filterView.setFilterConditions(this._filterConditions);
     this._bulkEdit.checkForFilters(this._filterConditions);
 
     try {
       const query = await this._mediaSection.updateFilterResults(
-        this._filterConditions
+        this._filterConditions, evt.detail.noReload
       );
       if (typeof query != "undefined" && query != this._lastQuery) {
         if (query !== "") {
@@ -1528,7 +1565,7 @@ export class ProjectDetail extends TatorPage {
   /**
    * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
    */
-  selectSection(sectionId) {
+  selectSection(sectionId, page, pageSize) {
     // Make all folders and searhes inactive
     const allFolders = [...this._folders.children];
     for (const folder of allFolders) {
@@ -1549,7 +1586,6 @@ export class ProjectDetail extends TatorPage {
         const section = folder.getSection();
         if (section.id == sectionId) {
           folder.setActive();
-          this._mediaSection.init(this._projectId, section);
           this._selectedSection = section;
           this._sectionSearchDisplay.style.display = "none";
           break;
@@ -1561,7 +1597,6 @@ export class ProjectDetail extends TatorPage {
           const section = search.getSection();
           if (section.id == sectionId) {
             search.setActive();
-            this._mediaSection.init(this._projectId, section);
             this._selectedSection = section;
             this._sectionSearchDisplay.style.display = "flex";
             this._sectionSearchDisplay.setDisplay(
@@ -1576,7 +1611,6 @@ export class ProjectDetail extends TatorPage {
 
     if (this._selectedSection == null) {
       this._allMediaButton.setActive();
-      this._mediaSection.init(this._projectId, null);
       this._sectionSearchDisplay.style.display = "none";
     }
 
@@ -1621,10 +1655,8 @@ export class ProjectDetail extends TatorPage {
     }
 
     // Update media section center page
-    this._mediaSection.init(this._project.id, this._selectedSection);
-
-    // Update the URL
     this.updateURL();
+    this._mediaSection.init(this._project.id, this._selectedSection, page, pageSize);
   }
 
   /**
