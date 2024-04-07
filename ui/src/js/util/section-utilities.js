@@ -65,7 +65,7 @@ export class SectionData {
   }
 
   /**
-   * @param {Tator.Section} section 
+   * @param {Tator.Section} section
    * @returns string
    *    Returns the name of the section (removing the path components)
    */

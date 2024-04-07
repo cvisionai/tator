@@ -75,7 +75,9 @@ export class DeleteSectionForm extends ModalDialog {
     }
 
     if (deleteMedia) {
-      this._title.nodeValue = `Delete ${SectionData.getMainName(section)} ${sectionText.toLowerCase()} and media`;
+      this._title.nodeValue = `Delete ${SectionData.getMainName(
+        section
+      )} ${sectionText.toLowerCase()} and media`;
       this._checks[0].setAttribute(
         "text",
         `Delete ${sectionText.toLowerCase()}`
@@ -84,24 +86,21 @@ export class DeleteSectionForm extends ModalDialog {
         "text",
         `Delete media in ${sectionText.toLowerCase()}`
       );
-      this._checks[2].setAttribute(
-        "text",
-        "Delete annotations"
-      );
+      this._checks[2].setAttribute("text", "Delete annotations");
       this._accept.textContent = "Delete";
     } else {
-      this._title.nodeValue = `Delete ${SectionData.getMainName(section)} ${sectionText.toLowerCase()} and retain media`;
+      this._title.nodeValue = `Delete ${SectionData.getMainName(
+        section
+      )} ${sectionText.toLowerCase()} and retain media`;
       this._checks[0].setAttribute(
         "text",
-        `Delete ${sectionText.toLowerCase()}`);
+        `Delete ${sectionText.toLowerCase()}`
+      );
       this._checks[1].setAttribute(
         "text",
         'Retain and access media in "All Media"'
       );
-      this._checks[2].setAttribute(
-        "text",
-        'Retain annotations'
-      );
+      this._checks[2].setAttribute("text", "Retain annotations");
       this._accept.textContent = "Delete";
     }
     this._checks.forEach((item, index, array) => {

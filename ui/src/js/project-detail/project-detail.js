@@ -655,7 +655,6 @@ export class ProjectDetail extends TatorPage {
    * Expected to be run once in the constructor
    */
   setMediaSectionCallbacks() {
-
     this._mediaSection.addEventListener(
       "runAlgorithm",
       this._openConfirmRunAlgoModal.bind(this)
@@ -672,7 +671,7 @@ export class ProjectDetail extends TatorPage {
       this.deleteFileForm.setAttribute("media-name", evt.detail.mediaName);
       this.deleteFileForm.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
-    })
+    });
 
     this._mediaSection.addEventListener("moveMedia", (evt) => {
       this._mediaMoveDialog.updateUI(evt.detail.mediaIds);
@@ -865,14 +864,15 @@ export class ProjectDetail extends TatorPage {
 
                 // Pull URL search parameters.
                 // If there are search parameters, apply them to the filterView
-                const searchParams = new URLSearchParams(window.location.search);
+                const searchParams = new URLSearchParams(
+                  window.location.search
+                );
                 if (searchParams.has("filterConditions")) {
                   this._filterURIString = searchParams.get("filterConditions");
                   this._filterConditions = JSON.parse(
                     decodeURIComponent(this._filterURIString)
                   );
-                }
-                else {
+                } else {
                   this._filterConditions = [];
                   this._filterURIString = null;
                 }
@@ -892,7 +892,6 @@ export class ProjectDetail extends TatorPage {
 
                 this._mediaSection._modelData = this._modelData;
                 this._mediaSection._files.memberships = this._memberships;
-
 
                 // Select the section if provided in the URL
                 // Also get the page information for the initial setup
@@ -914,7 +913,7 @@ export class ProjectDetail extends TatorPage {
                 if (this._filterConditions.length > 0) {
                   this._updateFilterResults({
                     detail: {
-                      conditions: this._filterConditions
+                      conditions: this._filterConditions,
                     },
                   });
                 }
@@ -1187,7 +1186,8 @@ export class ProjectDetail extends TatorPage {
 
     try {
       const query = await this._mediaSection.updateFilterResults(
-        this._filterConditions, evt.detail.noReload
+        this._filterConditions,
+        evt.detail.noReload
       );
       if (typeof query != "undefined" && query != this._lastQuery) {
         if (query !== "") {
@@ -1656,7 +1656,12 @@ export class ProjectDetail extends TatorPage {
 
     // Update media section center page
     this.updateURL();
-    this._mediaSection.init(this._project.id, this._selectedSection, page, pageSize);
+    this._mediaSection.init(
+      this._project.id,
+      this._selectedSection,
+      page,
+      pageSize
+    );
   }
 
   /**

@@ -145,8 +145,7 @@ export class MediaSection extends TatorElement {
       this._paginator_top.pageSize = pageSize;
       this._paginator_bottom.pageSize = pageSize;
       this._page = page;
-    }
-    else {
+    } else {
       this._start = 0;
       this._stop = this._paginator_top._pageSize;
       this._page = 1;
@@ -296,8 +295,7 @@ export class MediaSection extends TatorElement {
       this._paginator_top.style.display = "none";
       this._paginator_bottom.style.display = "none";
       this._sort.style.display = "none";
-    }
-    else {
+    } else {
       this._paginator_top.style.display = "block";
       this._paginator_bottom.style.display = "block";
       this._sort.style.display = "block";
@@ -788,10 +786,12 @@ export class MediaSection extends TatorElement {
     newUrl += "?" + searchParams.toString();
 
     // #TODO Remove console
-    console.log(`_updatePageArgs - New URL: ${newUrl}`)
+    console.log(`_updatePageArgs - New URL: ${newUrl}`);
     window.history.replaceState({}, "", newUrl);
 
-    this._pagePosition.innerHTML = `(Page ${this._paginator_top._page + 1} of ${this._paginator_top._numPages})`;
+    this._pagePosition.innerHTML = `(Page ${this._paginator_top._page + 1} of ${
+      this._paginator_top._numPages
+    })`;
   }
 
   /**
