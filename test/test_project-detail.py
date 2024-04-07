@@ -18,9 +18,9 @@ def test_basic(request, page_factory, project): #video
 
    print("Start: Test Pagination and image upload")  
    page.wait_for_load_state("networkidle")
-   page.select_option('.pagination select.form-select', value="100")
+   #page.select_option('.pagination select.form-select', value="100")
    # page.wait_for_selector('text="Page 1 of 1"')
-   page.wait_for_timeout(5000)
+   #page.wait_for_timeout(5000)
 
    # Initial card length
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
@@ -68,6 +68,9 @@ def test_basic(request, page_factory, project): #video
    page.wait_for_selector('section-files entity-card')
    page.wait_for_timeout(5000)
 
+   page.select_option('.pagination select.form-select', value="100")
+   page.wait_for_timeout(5000)
+
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards) # existing + new cards
 
@@ -77,7 +80,7 @@ def test_basic(request, page_factory, project): #video
    # Test selecting less cards
    page.select_option('.pagination select.form-select', value="10")
    pages = int(math.ceil(totalCards / 10))
-   page.wait_for_selector(f'text="Page 1 of {str(pages)}"')
+   page.wait_for_selector(f'text="(Page 1 of {str(pages)})"')
    page.wait_for_timeout(5000)
    
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
@@ -89,7 +92,7 @@ def test_basic(request, page_factory, project): #video
    # Test pagination
    paginationLinks = page.query_selector_all('.pagination a')
    paginationLinks[2].click()
-   page.wait_for_selector(f'text="Page 2 of {pages}"')
+   page.wait_for_selector(f'text="(Page 2 of {pages})"')
    page.wait_for_timeout(5000)
    
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
@@ -141,7 +144,7 @@ def test_basic(request, page_factory, project): #video
    filterGroupButtons = page.query_selector_all('.modal__footer button')
    filterGroupButtons[0].click()
 
-   page.wait_for_selector('text="Page 1 of 1"')
+   page.wait_for_selector('text="(Page 1 of 1)"')
    page.wait_for_timeout(5000)
 
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
@@ -150,32 +153,17 @@ def test_basic(request, page_factory, project): #video
    assert cardLength == 2
 
    print("Start: Test save search as section") 
-   saveSearch = page.query_selector('text="Add current search"')
-   saveSearch.click()
+   page.click('button[tooltip="Open Saved Searches Panel"]')
+   page.click('div[tooltip="Save current media search."]')
 
    newSectionFromSearch = "Black Holes"
-   page.wait_for_selector('.modal__main input[placeholder="Give it a name..."]')
-   page.fill('.modal__main input[placeholder="Give it a name..."]', newSectionFromSearch)
-   saveButton = page.query_selector('text="Save"')
-   saveButton.click()
-   
-
+   page.fill('media-search-dialog text-input[name="Media Search Name:"] input', newSectionFromSearch)
+   page.press('media-search-dialog text-input[name="Media Search Name:"] input', 'Enter')
+   page.click('text="Add"')
    
    page.wait_for_selector(f'text="{newSectionFromSearch}"')
    print(f'New section created named: {newSectionFromSearch}')
 
-   clearSearch = page.query_selector('removable-pill button')
-   clearSearch.click()
-
-   page.wait_for_selector(f'text="{totalCards} Files"')
-   page.wait_for_timeout(5000)
-
-   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
-   cardLength = len(cards)
-   print(f"After search cleared cardLength {cardLength} == 10")
-   assert cardLength == 10
-
-   page.query_selector(f'text="{newSectionFromSearch}"').click()
    page.wait_for_selector('text="2 Files"')
    page.wait_for_timeout(5000)
    
@@ -260,28 +248,9 @@ def test_basic(request, page_factory, project): #video
    page.locator('.save-confirmation').click()
    page.wait_for_timeout(2000)
 
-   # responseText = page.locator('modal-dialog .modal__main').all_inner_texts()
-   # print(f'responseText {responseText[0]}')
-   # assert responseText[0] == 'Successfully patched 1 medias!\n\n'
-
-   # page.locator('text="OK"').click()
-
    attributeShown = page.query_selector_all('.entity-gallery-card__attribute:not(.hidden)')
    attributeShownText = attributeShown[1].text_content()
    assert attributeShownText == f'{attribute_selected_name}: updated'
    print('Complete!')
-
-   # # test download file is working
-   # print('Testing section download from section-more...')
-   # page.on("console", lambda msg: print(f'>> {msg.text}'))
-   # section_more = page.locator("section-more")
-   # # with page.expect_download() as download_info: ## this was not being triggered
-   # section_more.dispatch_event("download")
-
-   # print('Testing file download from media-more...')
-   # page.locator("media-more >> nth=0").hover()
-   # # with page.expect_download() as download_info:  ## this was not being triggered
-   # page.locator('media-more download-button button  >> nth=0').dispatch_event("click")
-   # print('Complete!')
 
    page.close()

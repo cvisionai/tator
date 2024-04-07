@@ -968,6 +968,7 @@ export class ProjectDetail extends TatorPage {
     this._bulkEdit.init({
       page: this,
       gallery: this._mediaSection._files,
+      projectId: this._project.id,
       type: "media",
       additionalTools: true,
       permission: this._project.permission,
