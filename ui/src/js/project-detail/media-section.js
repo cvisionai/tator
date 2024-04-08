@@ -1,7 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import { fetchRetry } from "../../../../scripts/packages/tator-js/src/utils/fetch-retry.js";
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
 import { downloadFileList } from "../util/download-file-list.js";
@@ -22,29 +21,25 @@ export class MediaSection extends TatorElement {
     );
     section.appendChild(header);
 
-    this._name = document.createElement("h2");
-    this._name.setAttribute("class", "h3 px-2 py-2"); //not a typo
+    this._name = document.createElement("div");
+    this._name.setAttribute("class", "d-flex flex-column h3 py-2");
     header.appendChild(this._name);
 
-    this._nameText = document.createTextNode("");
-    this._nameIdText = document.createElement("span");
-    this._nameIdText.setAttribute("class", "text-dark-gray px-1");
+    this._nameText = document.createElement("div");
+    this._nameText.setAttribute("class", "d-flex flex-items-center");
     this._name.appendChild(this._nameText);
-    this._name.appendChild(this._nameIdText);
 
-    const numFiles = document.createElement("span");
-    numFiles.setAttribute("class", "text-gray px-2");
-    this._name.appendChild(numFiles);
+    const pageWrapper = document.createElement("div");
+    pageWrapper.setAttribute("class", "d-flex text-gray f1 py-2");
+    this._name.appendChild(pageWrapper);
 
-    this._numFiles = document.createTextNode("");
-    numFiles.appendChild(this._numFiles);
+    this._numFiles = document.createElement("div");
+    this._numFiles.setAttribute("class", "text-gray mr-2");
+    pageWrapper.appendChild(this._numFiles);
 
-    const pagePosition = document.createElement("div");
-    pagePosition.setAttribute("class", "py-3 f1 text-normal text-gray");
-    this._name.appendChild(pagePosition);
-
-    this._pagePosition = document.createTextNode("");
-    pagePosition.appendChild(this._pagePosition);
+    this._pagePosition = document.createElement("div");
+    this._pagePosition.setAttribute("class", "text-normal");
+    pageWrapper.appendChild(this._pagePosition);
 
     const actions = document.createElement("div");
     actions.setAttribute("class", "d-flex flex-items-center");
@@ -71,11 +66,12 @@ export class MediaSection extends TatorElement {
     const paginatorTopDiv = document.createElement("div");
     paginatorTopDiv.setAttribute(
       "class",
-      "d-flex flex-items-center flex-justify-center"
+      "d-flex flex-items-center flex-justify-center mt-2"
     );
     section.appendChild(paginatorTopDiv);
 
     this._paginator_top = document.createElement("entity-gallery-paginator");
+    this._paginator_top._showIndexLength = 3;
     this._paginator_top._pageSize = this._defaultPageSize;
     this._paginator_top._pageMax = this._maxPageSizeDefault;
     this._paginator_top.setupElements();
@@ -95,6 +91,7 @@ export class MediaSection extends TatorElement {
     div.appendChild(this._files);
 
     this._paginator_bottom = document.createElement("entity-gallery-paginator");
+    this._paginator_top._showIndexLength = 3;
     this._paginator_bottom._pageSize = this._defaultPageSize;
     this._paginator_bottom._pageMax = this._maxPageSizeDefault;
     this._paginator_bottom.setupElements();
@@ -103,40 +100,76 @@ export class MediaSection extends TatorElement {
     this._searchParams = new URLSearchParams();
     this._numFilesCount = 0;
     this._searchString = "";
+    this._relatedSearchString = "";
+    this._filterConditions = [];
 
     this._setCallbacks();
   }
 
-  async init(project, section) {
+  async init(project, section, page, pageSize) {
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
-      this._nameText.nodeValue = "All Media";
-      this._nameIdText.textContent = "";
+      this._nameText.innerHTML = `<span class="text-white d-flex flex-items-center">${this._sectionName}</span>`;
     } else {
       this._sectionName = section.name;
       this._upload.setAttribute("section", section.name);
-      this._nameText.nodeValue = `${section.name}`;
-      this._nameIdText.textContent = `(ID: ${section.id})`;
+      let parts = section.name.split(".");
+      var nameTextHTML = `<span class="text-white d-flex flex-items-center">${section.name}</span>`;
+      if (parts.length > 1) {
+        let mainSectionName = parts[parts.length - 1];
+        parts.pop();
+        var chevronSpacer = `
+        <svg width="20" height="20" viewBox="0 0 24 24" class="no-fill px-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        `;
+        nameTextHTML = `<span class="text-dark-gray d-flex flex-items-center">`;
+        nameTextHTML += parts.join(chevronSpacer);
+        nameTextHTML += chevronSpacer;
+        nameTextHTML += `</span>`;
+        nameTextHTML += `<span class="text-white d-flex flex-items-center">${mainSectionName}</span>`;
+      }
+      this._nameText.innerHTML = nameTextHTML;
     }
     this._project = project;
     this._section = section;
-    this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
 
     this._upload.setAttribute("project-id", project);
     this._more.section = section;
 
-    this._start = 0;
-    this._stop = this._paginator_top._pageSize;
-    this._after = new Map();
+    if (page != null && pageSize != null) {
+      this._start = (page - 1) * pageSize;
+      this._stop = this._start + pageSize;
+      this._paginator_top.pageSize = pageSize;
+      this._paginator_bottom.pageSize = pageSize;
+      this._page = page;
+    } else {
+      this._start = 0;
+      this._stop = this._paginator_top._pageSize;
+      this._page = 1;
+    }
+    this._paginator_top._setPage(page - 1);
+    this._paginator_bottom._setPage(page - 1);
+
+    this._updatePageArgs();
 
     await this.reload();
   }
 
-  set mediaTypesMap(val) {
-    this._mediaTypesMap = val;
-    this._files.mediaTypesMap = val;
+  /**
+   * @param {array} mediaTypes
+   *    Array of media types to display in the UI
+   */
+  set mediaTypes(mediaTypes) {
+    this._mediaTypes = mediaTypes;
+    this._mediaTypesMap = new Map();
+    for (let mediaTypeData of mediaTypes) {
+      this._mediaTypesMap.set(mediaTypeData.id, mediaTypeData);
+    }
+    this._files.mediaTypesMap = this._mediaTypesMap;
+    this._sort.init("Media", mediaTypes);
   }
 
   set project(val) {
@@ -246,51 +279,71 @@ export class MediaSection extends TatorElement {
     if (numFiles == 1) {
       fileText = "File";
     }
-    this._numFiles.nodeValue = `${numFiles} ${fileText}`;
+    this._numFiles.innerHTML = `${numFiles} ${fileText}`;
     this._numFilesCount = Number(numFiles);
 
-    if (numFiles != this._paginator_top._numFiles) {
-      this._start = 0;
-      this._stop = this._paginator_top._pageSize;
-      this._paginationState = {
-        start: this._start,
-        stop: this._stop,
-        page: 1,
-        pageSize: this._paginator_top._pageSize,
-      };
-      this._paginator_top.init(numFiles, this._paginationState);
-      this._paginator_bottom.init(numFiles, this._paginationState);
-      this._pagePosition.nodeValue = `Page ${
+    this._paginationState = {
+      start: this._start,
+      stop: this._stop,
+      page: this._page,
+      pageSize: this._paginator_top._pageSize,
+    };
+    this._paginator_top.init(numFiles, this._paginationState);
+    this._paginator_bottom.init(numFiles, this._paginationState);
+
+    if (numFiles == 0) {
+      this._paginator_top.style.display = "none";
+      this._paginator_bottom.style.display = "none";
+      this._sort.style.display = "none";
+    } else {
+      this._paginator_top.style.display = "block";
+      this._paginator_bottom.style.display = "block";
+      this._sort.style.display = "block";
+    }
+
+    if (this._paginator_top._numPages == 0) {
+      this._pagePosition.innerHTML = ``;
+    } else {
+      this._pagePosition.innerHTML = `(Page ${
         typeof this._paginationState.page == "undefined"
           ? 1
           : this._paginationState.page
-      } of ${this._paginator_top._numPages}`;
+      } of ${this._paginator_top._numPages})`;
     }
   }
 
+  /**
+   * Call this when the section has been changed or the media list has been changed.
+   * The page parameters are removed.
+   *
+   * @precondition this._section has been set to the section to be displayed in the UI
+   * @returns {URLSearchParams}
+   */
   _sectionParams() {
-    const sectionParams = new URLSearchParams();
-    if (this._section !== null) {
-      sectionParams.append("section", this._section.id);
-    }
-    if (this._filterSection != null) {
-      sectionParams.append("section", this._filterSection);
-    }
+    var searchParams = new URLSearchParams();
     const filterAndSearchParams = this._getFilterQueryParams();
     const sortParam = new URLSearchParams(this._sort.getQueryParam());
-    let params = joinParams(sectionParams, filterAndSearchParams);
+    let params = joinParams(searchParams, filterAndSearchParams);
     params = joinParams(params, sortParam);
+    searchParams.delete("section");
+    if (this._section != null) {
+      searchParams.set("section", this._section.id);
+    }
     return params;
   }
 
+  /**
+   * @postcondition Media cards are updated with the URL parameters
+   * @postcondition
+   */
   async _loadMedia() {
     var sectionQuery = this._sectionParams();
     if (Number.isNaN(this._start) || Number.isNaN(this._stop)) {
       console.log(`Load media... ignoring due to NaN start/stop`);
       return; // This may happen if it's called too soon and the pagination has not been set.
     }
-    sectionQuery.append("start", this._start);
-    sectionQuery.append("stop", this._stop);
+    sectionQuery.set("start", this._start);
+    sectionQuery.set("stop", this._stop);
 
     console.log(`Load media... sectionQuery: ${sectionQuery}`);
     var response = await fetchCredentials(
@@ -304,11 +357,14 @@ export class MediaSection extends TatorElement {
     this._reload.ready();
   }
 
+  /**
+   * Reload the UI with the section query parameters in the URL
+   */
   async reload() {
-    console.log("Reload media section...");
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
+    console.log(`Get media count... sectionQuery: ${sectionQuery.toString()}`);
     const response = await fetchCredentials(
       `/rest/MediaCount/${this._project}?${sectionQuery.toString()}`
     );
@@ -640,69 +696,8 @@ export class MediaSection extends TatorElement {
     }
   }
 
-  _rename(evt) {
-    // console.log(this._section);
-    if (this._name.contains(this._nameText)) {
-      const input = document.createElement("input");
-      input.style.borderWidth = "3px";
-      input.setAttribute(
-        "class",
-        "form-control input-sm f1 text-white text-bold"
-      );
-      input.setAttribute("value", this._section.name);
-      this._name.replaceChild(input, this._nameText);
-      input.addEventListener("focus", (evt) => {
-        evt.target.select();
-      });
-      input.addEventListener("keydown", (evt) => {
-        if (evt.keyCode == 13) {
-          evt.preventDefault();
-          input.blur();
-        }
-      });
-      input.addEventListener("blur", (evt) => {
-        if (evt.target.value !== "") {
-          //this._worker.postMessage({
-          //  command: "renameSection",
-          //  fromName: this._sectionName,
-          //  toName: evt.target.value,
-          //});
-          this._sectionName = evt.target.value;
-        }
-        // console.log(this._section);
-        fetchCredentials("/rest/Section/" + this._section.id, {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: this._sectionName,
-          }),
-        });
-        this._nameText.textContent = this._sectionName;
-        this._section.name = this._sectionName;
-        this._name.replaceChild(this._nameText, evt.target);
-
-        this._name.classList.add("text-green");
-        setTimeout(() => {
-          this._name.classList.remove("text-green");
-        }, 800);
-
-        this.dispatchEvent(
-          new CustomEvent("newName", {
-            detail: {
-              id: this._section.id,
-              sectionName: this._sectionName,
-            },
-          })
-        );
-      });
-      input.focus();
-    }
-  }
-
-  _findAfters() {
-    // Find the media for each batch of 10000 medias.
-  }
-
   _setCallbacks() {
+    // User entering bulk edit mode
     this._more.addEventListener("bulk-edit", () => {
       this.dispatchEvent(new Event("bulk-edit"));
     });
@@ -713,34 +708,19 @@ export class MediaSection extends TatorElement {
       this._launchAlgorithm.bind(this)
     );
 
+    // Download all media files
     this._more.addEventListener("download", this._downloadFiles.bind(this));
 
+    // Download all annotations
     this._more.addEventListener(
       "downloadAnnotations",
       this._downloadAnnotations.bind(this)
     );
+
     this._files.addEventListener(
       "downloadAnnotations",
       this._downloadAnnotations.bind(this)
     );
-
-    this._more.addEventListener("rename", this._rename.bind(this));
-
-    // New right click options
-    this.addEventListener("renameSection", this._reloadAndRename.bind(this));
-    this.addEventListener("deleteSection", (evt) => {
-      // console.log(evt);
-      this.dispatchEvent(
-        new CustomEvent("remove", {
-          detail: {
-            sectionParams: this._sectionParams(),
-            section: this._section,
-            projectId: this._project,
-            deleteMedia: false,
-          },
-        })
-      );
-    });
 
     this._more.addEventListener("deleteSection", (evt) => {
       this.dispatchEvent(
@@ -755,17 +735,10 @@ export class MediaSection extends TatorElement {
       );
     });
 
+    // Callback for when user selects Delete Media option in the section more menu
+    // Dispatch back to the project detail page which executes the delete
     this._more.addEventListener("deleteMedia", (evt) => {
-      this.dispatchEvent(
-        new CustomEvent("remove", {
-          detail: {
-            sectionParams: this._sectionParams(),
-            section: this._section,
-            projectId: this._project,
-            deleteMedia: true,
-          },
-        })
-      );
+      this.dispatchEvent(new Event("deleteMedia"));
     });
 
     this._paginator_top.addEventListener("selectPage", (evt) => {
@@ -796,56 +769,49 @@ export class MediaSection extends TatorElement {
 
   _updatePageArgs() {
     // update the URL
-    const searchArgs = new URLSearchParams(window.location.search);
+    const searchParams = new URLSearchParams(window.location.search);
     var newUrl = `${document.location.origin}${document.location.pathname}`;
-    let firstParm = true;
 
-    if (searchArgs.toString !== "") {
-      searchArgs.delete("page");
-      searchArgs.delete("pagesize");
+    searchParams.delete("page");
+    searchParams.delete("pagesize");
 
-      for (const [key, value] of searchArgs) {
-        if (!firstParm) {
-          newUrl += "&";
-        } else {
-          newUrl += "?";
-        }
-        newUrl += `${key}=${value}`;
-        firstParm = false;
-      }
-    }
-
-    // Only add back params if we're not on default page 1, and pageSize 10
     if (
       this._start !== 0 ||
       this._paginator_top._pageSize !== this._defaultPageSize
     ) {
-      if (!firstParm) {
-        newUrl += "&";
-      } else {
-        newUrl += "?";
-      }
-      newUrl += `page=${Number(this._paginator_top._page) + 1}&pagesize=${
-        this._paginator_top._pageSize
-      }`;
+      searchParams.set("page", `${Number(this._paginator_top._page) + 1}`);
+      searchParams.set("pagesize", this._paginator_top._pageSize);
     }
 
-    window.history.pushState({}, "", newUrl);
-    this._pagePosition.nodeValue = `Page ${
-      typeof this._paginator_top._page == "undefined"
-        ? 1
-        : this._paginator_top._page + 1
-    } of ${this._paginator_top._numPages}`;
+    newUrl += "?" + searchParams.toString();
+
+    // #TODO Remove console
+    console.log(`_updatePageArgs - New URL: ${newUrl}`);
+    window.history.replaceState({}, "", newUrl);
+
+    this._pagePosition.innerHTML = `(Page ${this._paginator_top._page + 1} of ${
+      this._paginator_top._numPages
+    })`;
   }
 
+  /**
+   * Expected to be called whenever filters are applied that affect which media should be displayed
+   *
+   * @param {array} conditions
+   *   Array of FilterConditionData objects
+   * @returns {string}
+   *   Search and related search strings that are encoded in base64
+   *   These are the filter UI, not the object_search and related_search of the REST endpoints
+   * @postcondition URL updated with latest filter components.
+   */
   async updateFilterResults(conditions) {
     this._filterConditions = conditions;
     this._filterURIString = encodeURIComponent(
       JSON.stringify(this._filterConditions)
     );
 
-    if (conditions !== []) {
-      // Media Filters
+    // Figure out the filter UI media search and metadata search strings
+    if (Array.isArray(this._filterConditions)) {
       var finalMediaFilters = [];
       var finalMetadataFilters = [];
       for (var filter of this._filterConditions) {
@@ -884,6 +850,13 @@ export class MediaSection extends TatorElement {
         this.relatedSearchString = "";
       }
 
+      // Reset the page back to the first page before reloading the media
+      this._start = 0;
+      this._stop = this._paginator_top._pageSize;
+      this._page = 1;
+      this._updatePageArgs();
+
+      // Reload media with the new filter conditions at the first page
       await this.reload();
     } else {
       this.searchString = "";
@@ -895,22 +868,28 @@ export class MediaSection extends TatorElement {
       window.history.replaceState({}, "Filter", newUrl);
     }
 
-    return this._searchString + this.relatedSearchString;
+    return this._searchString + this._relatedSearchString;
   }
 
+  /**
+   * @returns {string}
+   *   URL with the filter conditions applied (retaining the current parameters)
+   */
   getFilterURL() {
-    const searchParams = new URLSearchParams(window.location.search);
     var url = window.location.origin + window.location.pathname;
     url += "?" + this._getFilterQueryParams().toString();
+    console.log(`Filter URL: ${url}`);
     return url;
   }
 
+  /**
+   * Utilizes this._filterURIString
+   *
+   * @returns {URLSearchParams}
+   *   filterConditions is provided using this._filterURIString
+   */
   _getFilterQueryParams() {
     const params = new URLSearchParams(window.location.search);
-
-    // remove page references when new query is made
-    params.delete("page");
-    params.delete("pagesize");
 
     if (
       typeof this._filterURIString !== "undefined" &&
@@ -922,59 +901,17 @@ export class MediaSection extends TatorElement {
       params.delete("filterConditions");
     }
 
-    const searchString = this._searchParams.get("encoded_search");
-    if (
-      typeof searchString !== "undefined" &&
-      searchString != null &&
-      searchString !== "undefined"
-    ) {
-      // let params = this._sectionParams();
-      params.set("encoded_search", searchString);
-    } else {
-      params.delete("encoded_search");
+    params.delete("encoded_search");
+    if (this._searchString != "" && this._searchString != null) {
+      params.set("encoded_search", this._searchString);
     }
 
-    const relatedSearchString = this._searchParams.get(
-      "encoded_related_search"
-    );
-    if (
-      typeof relatedSearchString !== "undefined" &&
-      relatedSearchString != null &&
-      relatedSearchString !== "undefined"
-    ) {
-      // let params = this._sectionParams();
-      params.set("encoded_related_search", relatedSearchString);
-    } else {
-      params.delete("encoded_related_search");
+    params.delete("related_search");
+    if (this._relatedSearchString != "" && this._relatedSearchString != null) {
+      params.set("related_search", this._relatedSearchString);
     }
 
     return params;
-  }
-
-  // Used in project-detail to get any existing conditions
-  // Distill back out filter conditions from param
-  getFilterConditionsObject() {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has("filterConditions")) {
-      this._filterURIString = searchParams.get("filterConditions");
-      this._filterConditions = JSON.parse(
-        decodeURIComponent(this._filterURIString)
-      );
-    }
-    if (
-      typeof this._filterConditions !== "undefined" &&
-      this._filterConditions != ""
-    ) {
-      return this._filterConditions;
-    } else {
-      return [];
-    }
-  }
-  async _reloadAndRename(evt) {
-    // console.log(evt);
-    // this.section = evt.detail.section;
-    // await this.reload();
-    this._rename();
   }
 }
 

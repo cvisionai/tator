@@ -1,5 +1,5 @@
-import { TatorElement } from "./tator-element.js";
 import { TatorData } from "../util/tator-data.js";
+import { SectionData } from "../util/section-utilities.js";
 
 /**
  * This works in conjunction with FilterInterface. It is the backend portion
@@ -161,12 +161,37 @@ export class FilterData {
     // Media sections aren't typically part of the media type's user attribute list.
     // Pretend that it's an attribute with the name _section and apply it to each
     // media type so that it can be part of the filter parameters.
-    var sectionNames = [];
-    for (let idx = 0; idx < this.sections.length; idx++) {
-      let section = this.sections[idx];
-      sectionNames.push({
-        label: `${section.name} (ID:${section.id})`,
-        value: section.id,
+    this.sectionData = new SectionData();
+    this.sectionData.init(this.sections);
+    var sectionNames = {};
+    sectionNames["Folders"] = [];
+    sectionNames["Media Searches"] = [];
+    sectionNames["Hidden Folders"] = [];
+
+    var sectionList = this.sectionData.getFolderEnumChoices();
+    for (let idx = 0; idx < sectionList.length; idx++) {
+      let enumChoice = sectionList[idx];
+      sectionNames["Folders"].push({
+        label: `${enumChoice.label} (ID:${enumChoice.value})`,
+        value: enumChoice.value,
+      });
+    }
+
+    var sectionList = this.sectionData.getSavedSearchEnumChoices();
+    for (let idx = 0; idx < sectionList.length; idx++) {
+      let enumChoice = sectionList[idx];
+      sectionNames["Media Searches"].push({
+        label: `${enumChoice.label} (ID:${enumChoice.value})`,
+        value: enumChoice.value,
+      });
+    }
+
+    var sectionList = this.sectionData.getHiddenFolderEnumChoices();
+    for (let idx = 0; idx < sectionList.length; idx++) {
+      let enumChoice = sectionList[idx];
+      sectionNames["Hidden Folders"].push({
+        label: `${enumChoice.label} (ID:${enumChoice.value})`,
+        value: enumChoice.value,
       });
     }
 

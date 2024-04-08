@@ -141,7 +141,11 @@ export class GalleryBulkEdit extends TatorElement {
     bulkInit = false,
   }) {
     this._page = page;
-    this._projectId = this._page.projectId;
+    if (projectId == null) {
+      this._projectId = this._page.projectId;
+    } else {
+      this._projectId = projectId;
+    }
     this._editType = type;
     this._permission = permission;
 
@@ -370,7 +374,9 @@ export class GalleryBulkEdit extends TatorElement {
 
     // revert page elements
     this._page._header.classList.remove("hidden");
-    this._page.aside.classList.remove("hidden");
+    if (this._page.aside != null) {
+      this._page.aside.classList.remove("hidden");
+    }
     this._page.main.style.marginTop = "0";
     this._gallery._ul.classList.remove("multi-select-mode");
 
@@ -574,7 +580,6 @@ export class GalleryBulkEdit extends TatorElement {
   }
 
   _patchLocalizations(formData) {
-    // console.log("Bulk edit this._projectId" + this._projectId);
     return fetchCredentials(`/rest/Localizations/${this._projectId}`, {
       method: "PATCH",
       mode: "cors",
@@ -596,7 +601,6 @@ export class GalleryBulkEdit extends TatorElement {
     e.preventDefault();
     this._page.modal._closeCallback();
     this._page.showDimmer();
-    this._page.loading.showSpinner();
     let promise = Promise.resolve();
     let text = "";
     let errorText = "";
@@ -640,7 +644,6 @@ export class GalleryBulkEdit extends TatorElement {
           })
         );
         this._clearSelection();
-        this._page.loading.hideSpinner();
         this._page.hideDimmer();
 
         if (errorText === "" && text !== "") {
@@ -657,7 +660,6 @@ export class GalleryBulkEdit extends TatorElement {
       })
       .catch((err) => {
         this._clearSelection();
-        this._page.loading.hideSpinner();
         this._page.hideDimmer();
         return this._page.modal._error("Error with update: " + err);
       });
@@ -671,7 +673,6 @@ export class GalleryBulkEdit extends TatorElement {
     e.preventDefault();
     this._page.modal._closeCallback();
     this._page.showDimmer();
-    this._page.loading.showSpinner();
     let promise = Promise.resolve();
     let text = "";
     let errorText = "";
@@ -711,7 +712,6 @@ export class GalleryBulkEdit extends TatorElement {
           })
         );
         this._clearSelection();
-        this._page.loading.hideSpinner();
         this._page.hideDimmer();
 
         if (errorText === "" && text !== "") {
@@ -728,7 +728,6 @@ export class GalleryBulkEdit extends TatorElement {
       })
       .catch((err) => {
         this._clearSelection();
-        this._page.loading.hideSpinner();
         this._page.hideDimmer();
         return this._page.modal._error("Error with update: " + err);
       });

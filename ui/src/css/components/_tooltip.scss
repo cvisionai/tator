@@ -50,6 +50,9 @@
   &.tooltip-left:before {
     margin-left: -100px;
   }
+  &.tooltip-right:before {
+    margin-left: 100px;
+  }
   &:before {
     background-color: $color-charcoal--medium;
     border-radius: 3px;

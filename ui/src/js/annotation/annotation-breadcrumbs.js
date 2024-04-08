@@ -8,34 +8,38 @@ export class AnnotationBreadcrumbs extends TatorElement {
     const div = document.createElement("div");
     div.setAttribute(
       "class",
-      "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray"
+      "annotation__breadcrumbs d-flex px-3 f3 text-gray flex-column"
     );
     this._shadow.appendChild(div);
 
+    const topDiv = document.createElement("div");
+    topDiv.setAttribute("class", "d-flex flex-items-center mb-1");
+    div.appendChild(topDiv);
+
+    const bottomDiv = document.createElement("div");
+    bottomDiv.setAttribute("class", "d-flex flex-items-center");
+    div.appendChild(bottomDiv);
+
     this._projectText = document.createElement("a");
-    this._projectText.setAttribute("class", "text-gray");
-    div.appendChild(this._projectText);
+    this._projectText.setAttribute("class", "text-dark-gray");
+    bottomDiv.appendChild(this._projectText);
 
     const chevron1 = document.createElement("chevron-right");
-    chevron1.setAttribute("class", "px-2");
-    div.appendChild(chevron1);
+    chevron1.setAttribute("class", "px-1 text-dark-gray");
+    bottomDiv.appendChild(chevron1);
 
     this._sectionText = document.createElement("a");
-    this._sectionText.setAttribute("class", "text-gray");
+    this._sectionText.setAttribute("class", "text-dark-gray");
     this._sectionText.setAttribute("href", this._sectionUrl());
-    div.appendChild(this._sectionText);
-
-    const chevron2 = document.createElement("chevron-right");
-    chevron2.setAttribute("class", "px-2");
-    div.appendChild(chevron2);
+    bottomDiv.appendChild(this._sectionText);
 
     this._fileText = document.createElement("span");
     this._fileText.setAttribute("class", "text-white text-semibold");
-    div.appendChild(this._fileText);
+    topDiv.appendChild(this._fileText);
 
     this._posText = document.createElement("span");
     this._posText.setAttribute("class", "text-gray px-1");
-    div.appendChild(this._posText);
+    topDiv.appendChild(this._posText);
 
     this._sectionName();
   }
@@ -85,10 +89,16 @@ export class AnnotationBreadcrumbs extends TatorElement {
       fetchCredentials(`/rest/Section/${params.get("section")}`, {}, true)
         .then((response) => response.json())
         .then((section) => {
-          this._sectionText.textContent = section.name;
+          let innerHTML = `<div class="d-flex flex-items-center">`;
+          let parts = section.name.split(".");
+          innerHTML += parts.join(
+            ` <chevron-right class="px-1"></chevron-right> `
+          );
+          innerHTML += `</div>`;
+          this._sectionText.innerHTML = innerHTML;
         });
     } else {
-      this._sectionText.textContent = "All Media";
+      this._sectionText.innerHTML = "All Media";
     }
   }
 }

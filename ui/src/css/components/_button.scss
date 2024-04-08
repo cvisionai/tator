@@ -60,6 +60,16 @@
   }
 }
 
+.btn-purple {
+  background-color: $color-purple;
+  color: $color-white;
+  &:hover,
+  &:focus {
+    background-color: $color-charcoal--light;
+    color: $color-white;
+  }
+}
+
 .btn-red {
   background-color: $color-red;
   &:hover,
@@ -75,6 +85,14 @@
 
 .btn-charcoal {
   background-color: $color-charcoal--light;
+  &:hover,
+  &:focus {
+    color: $color-charcoal--light;
+  }
+}
+
+.btn-charcoal-medium {
+  background-color: $color-charcoal--medium;
   &:hover,
   &:focus {
     color: $color-charcoal--light;
