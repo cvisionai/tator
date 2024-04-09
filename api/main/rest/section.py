@@ -104,9 +104,6 @@ class SectionListAPI(BaseListView):
         explicit_listing = params.get("explicit_listing", False)
         media_list = params.get("media", [])
 
-        if Section.objects.filter(project=project, name__iexact=params["name"]).exists():
-            raise Exception("Section with this name already exists!")
-
         if Section.objects.filter(project=project, path__match=path).exists():
             raise Exception("Section with this path already exists!")
 
@@ -177,10 +174,6 @@ class SectionDetailAPI(BaseDetailView):
     def _patch(self, params):
         section = Section.objects.get(pk=params["id"])
         if "name" in params:
-            if Section.objects.filter(
-                project=section.project, name__iexact=params["name"]
-            ).exists():
-                raise Exception("Section with this name already exists!")
             section.name = params["name"]
         if "path" in params:
             if Section.objects.filter(project=section.project, path__match=params["path"]).exists():
