@@ -1,0 +1,67 @@
+<script src="https://www.datadoghq-browser-agent.com/us1/v5/datadog-rum.js" type="text/javascript"></script>
+<script>
+  window.DD_RUM &&
+  window.DD_RUM.init({
+    clientToken: '{{ datadog_client_token }}',
+    applicationId: '{{ datadog_application_id }}',
+    site: 'datadoghq.com',
+    service: 'frontend',
+    env: '{{ datadog_env }}',
+    version: '{{ datadog_version }}',
+    sessionSampleRate: 100,
+    sessionReplaySampleRate: 0,
+    trackResources: true,
+    trackLongTasks: false,
+    trackUserInteractions: false,
+    allowedTracingUrls: ["{{ backend }}/rest"],
+  });
+  let userData;
+  if (localStorage.id_token) {
+    const parts = localStorage.id_token.split('.');
+    const base64UrlPayload = parts[1];
+    const base64Payload = base64UrlPayload.replace(/-/g, '+').replace(/_/g, '/');
+    const userData = JSON.parse(atob(base64Payload));
+    console.log(`USER DATA: ${JSON.stringify(userData)}`);
+    window.DD_RUM.setUser({
+      id: Number(userData.sub.split(":")[2]),
+      name: userData.name,
+      username: userData.preferred_username,
+    });
+  } else {
+    function getCookie(name) {
+      let value = "; " + document.cookie;
+      let parts = value.split("; " + name + "=");
+      if (parts.length == 2) {
+        return parts.pop().split(";").shift();
+      }
+    }
+    fetch("/rest/User/GetCurrent", {
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    })
+    .then(response => response.json())
+    .then(userData => {
+      console.log(`USER DATA: ${JSON.stringify(userData)}`);
+      window.DD_RUM.setUser({
+        id: userData.id,
+        name: `${userData.first_name} ${userData.last_name}`,
+        username: userData.username,
+        email: userData.email,
+      });
+    });
+  }
+</script>
+<script type="text/javascript" src="https://www.datadoghq-browser-agent.com/us1/v5/datadog-logs.js"></script>
+<script>
+  window.DD_LOGS &&
+    window.DD_LOGS.init({
+      clientToken: "{{ datadog_client_token }}",
+      site: 'datadoghq.com',
+      forwardErrorsToLogs: true,
+      sessionSampleRate: 100,
+    })
+</script>

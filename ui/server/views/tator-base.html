@@ -2,6 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    {% if datadog_enabled %}
+    {% include "datadog.html" %}
+    {% endif %}
     <script>
       var BACKEND = '{{ backend }}';
       var KEYCLOAK_ENABLED = {{ keycloak_enabled }};
