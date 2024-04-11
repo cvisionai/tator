@@ -66,6 +66,11 @@ const params = {
   email_enabled: argv.email_enabled,
   okta_enabled: argv.okta_enabled,
   keycloak_enabled: argv.keycloak_enabled,
+  datadog_enabled: process.env.DD_LOGS_INJECTION == "true",
+  datadog_client_token: process.env.DD_CLIENT_TOKEN || "",
+  datadog_application_id: process.env.DD_APPLICATION_ID || "",
+  datadog_env: process.env.DD_ENV || "",
+  datadog_version: process.env.DD_VERSION || "",
 };
 
 nunjucks.configure('server/views', {
