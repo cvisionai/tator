@@ -32,6 +32,9 @@ ALIAS_HOSTS = os.getenv("ALIAS_HOSTS")
 if ALIAS_HOSTS:
     ALLOWED_HOSTS += ALIAS_HOSTS.split(",")
 
+# For unit tests
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8080"]
+
 # Whether keycloak is being used for authentication
 KEYCLOAK_ENABLED = os.getenv("KEYCLOAK_ENABLED") == "TRUE"
 
