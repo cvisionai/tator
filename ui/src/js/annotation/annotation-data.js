@@ -102,10 +102,12 @@ export class AnnotationData extends HTMLElement {
     const getDataUrl = (dataType) => {
       const dataEndpoint =
         dataType.dtype == "state" ? "States" : "Localizations";
-      const mediaIds =
+      let mediaIds =
         dataType.dtype == "state"
           ? this._stateMediaIds
           : this._localizationMediaIds;
+      const uniqueIds = new Set(mediaIds);
+      mediaIds = Array.from(uniqueIds);
       let dataUrl =
         "/rest/" +
         dataEndpoint +
