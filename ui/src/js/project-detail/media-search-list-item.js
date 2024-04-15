@@ -119,6 +119,11 @@ export class MediaSearchListItem extends TatorElement {
         this._moreMenu.style.display = "none";
       }
     });
+
+    this._mainDiv.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      this._moreMenu.style.display = "block";
+    });
   }
 
   /**
