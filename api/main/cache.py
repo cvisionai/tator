@@ -8,6 +8,7 @@ from cryptography.hazmat.backends import default_backend
 logger = logging.getLogger(__name__)
 
 EXPIRE_TIME = 60 * 60 * 24 * 30
+REDIS_USE_SSL = os.getenv("REDIS_USE_SSL", "FALSE").lower() == "true"
 
 
 class TatorCache:
@@ -18,6 +19,7 @@ class TatorCache:
         cls.rds = redis.Redis(
             host=os.getenv("REDIS_HOST"),
             health_check_interval=30,
+            ssl=REDIS_USE_SSL,
         )
 
     def get_cred_cache(self, user_id, project_id):

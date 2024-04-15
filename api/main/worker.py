@@ -6,6 +6,8 @@ import sys
 import argparse
 import logging
 
+REDIS_USE_SSL = os.getenv("REDIS_USE_SSL", "FALSE").lower() == "true"
+
 if os.getenv("DD_LOGS_INJECTION"):
     import ddtrace.auto
     FORMAT = (
@@ -25,7 +27,10 @@ def push_job(queue, function, *args, **kwargs):
     push_job('async_jobs', print, 'Hello')
     See [https://python-rq.org/docs/] for information on available kwargs
     """
-    redis = Redis(host=os.getenv("REDIS_HOST"))
+    redis = Redis(
+        host=os.getenv("REDIS_HOST"),
+        ssl=REDIS_USE_SSL,
+    )
     queue = Queue(queue, connection=redis)
     queue.enqueue(function, *args, **kwargs)
 
@@ -35,7 +40,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Processes a python-rq queue.")
     parser.add_argument("queue", help="Name of queue to process.")
     args = parser.parse_args()
-    redis = Redis(host=os.getenv("REDIS_HOST"))
+    redis = Redis(
+        host=os.getenv("REDIS_HOST"),
+        ssl=REDIS_USE_SSL,
+    )
     queue = Queue(args.queue, connection=redis)
 
     # Do some imports here for libraries jobs will need

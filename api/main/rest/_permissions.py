@@ -9,7 +9,6 @@ from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
-from redis import Redis
 
 from ..models import Permission
 from ..models import Project
