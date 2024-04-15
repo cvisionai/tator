@@ -2059,6 +2059,8 @@ export class ProjectDetail extends TatorPage {
 
     this._folders = document.createElement("ul");
     this._folders.setAttribute("class", "sections");
+    this._folders.style.height = "70vh";
+    this._folders.style.overflowY = "auto";
     this._panelLibrary.appendChild(this._folders);
 
     advancedDetails.addEventListener("click", () => {
@@ -2246,6 +2248,8 @@ export class ProjectDetail extends TatorPage {
 
     this._savedSearches = document.createElement("ul");
     this._savedSearches.setAttribute("class", "sections");
+    this._savedSearches.style.height = "70vh";
+    this._savedSearches.style.overflowY = "auto";
     this._panelSavedSearches.appendChild(this._savedSearches);
 
     advancedDetails.addEventListener("click", () => {
@@ -2326,6 +2330,8 @@ export class ProjectDetail extends TatorPage {
 
     this._bookmarkListItems = document.createElement("ul");
     this._bookmarkListItems.setAttribute("class", "sections");
+    this._bookmarkListItems.style.height = "70vh";
+    this._bookmarkListItems.style.overflowY = "auto";
     this._panelBookmarks.appendChild(this._bookmarkListItems);
   }
 
