@@ -366,7 +366,6 @@ export class ProjectDetail extends TatorPage {
       );
 
       if (response.status == 200) {
-        var data = await response.json();
         var response = await fetchCredentials(
           `/rest/Bookmarks/${this._projectId}`,
           {
@@ -377,8 +376,9 @@ export class ProjectDetail extends TatorPage {
         this.makeBookmarks();
         this.removeAttribute("has-open-modal");
       } else {
+        var data = await response.json();
         this._modalError._error(
-          `Unable to patch bookmark. Error: ${response.message}`,
+          `Unable to patch bookmark. Error: ${data.message}`,
           "Error"
         );
       }
@@ -408,8 +408,9 @@ export class ProjectDetail extends TatorPage {
         this.makeBookmarks();
         this.removeAttribute("has-open-modal");
       } else {
+        var data = await response.json();
         this._modalError._error(
-          `Unable to patch bookmark. Error: ${response.message}`,
+          `Unable to patch bookmark. Error: ${data.message}`,
           "Error"
         );
       }
@@ -437,8 +438,9 @@ export class ProjectDetail extends TatorPage {
         );
 
         if (response.status != 200) {
+          var data = await response.json();
           this._modalError._error(
-            `Unable to delete media. Section retained. Error: ${response.message}`,
+            `Unable to delete media. Section retained. Error: ${data.message}`,
             "Error"
           );
           return;
@@ -451,8 +453,9 @@ export class ProjectDetail extends TatorPage {
       });
 
       if (response.status != 200) {
+        var data = await response.json();
         this._modalError._error(
-          `Unable to delete section. Error: ${response.message}`,
+          `Unable to delete section. Error: ${data.message}`,
           "Error"
         );
       } else {
@@ -488,8 +491,9 @@ export class ProjectDetail extends TatorPage {
         });
 
         if (response.status != 200) {
+          var data = await response.json();
           this._modalError._error(
-            `Unable to patch section ${spec}. Error: ${response.message}`,
+            `Unable to patch section ${spec}. Error: ${data.message}`,
             "Error"
           );
           return;
@@ -528,8 +532,9 @@ export class ProjectDetail extends TatorPage {
         this.removeAttribute("has-open-modal");
         this._bulkEdit._clearSelection();
       } else {
+        var data = await response.json();
         this._modalError._error(
-          `Unable to create section '${spec.name}'. Error: ${response.message}`,
+          `Unable to create section '${spec.name}'. Error: ${data.message}`,
           "Error"
         );
       }
@@ -558,8 +563,9 @@ export class ProjectDetail extends TatorPage {
         });
 
         if (response.status != 200) {
+          var data = await response.json();
           this._modalError._error(
-            `Unable to patch section ${spec}. Error: ${response.message}`,
+            `Unable to patch section ${spec}. Error: ${data.message}`,
             "Error"
           );
           return;
@@ -591,8 +597,9 @@ export class ProjectDetail extends TatorPage {
         this._bulkEdit._clearSelection();
         this.removeAttribute("has-open-modal");
       } else {
+        var data = await response.json();
         this._modalError._error(
-          `Unable to create section '${spec.name}'. Error: ${response.message}`,
+          `Unable to create section '${spec.name}'. Error: ${data.message}`,
           "Error"
         );
       }
@@ -641,8 +648,9 @@ export class ProjectDetail extends TatorPage {
         this._bulkEdit._clearSelection();
         this.removeAttribute("has-open-modal");
       } else {
+        var data = await response.json();
         this._modalError._error(
-          `Unable to move media. Error: ${response.message}`,
+          `Unable to move media. Error: ${data.message}`,
           "Error"
         );
       }
@@ -992,66 +1000,6 @@ export class ProjectDetail extends TatorPage {
     }
   }
 
-  // #TODO REMOVE
-  async _selectSection(section, projectId, clearPage = false) {
-    const params = new URLSearchParams(document.location.search);
-
-    if (clearPage) {
-      params.delete("page");
-      params.delete("pagesize");
-    }
-
-    params.delete("section");
-    if (section !== null) {
-      params.set("section", section.id);
-    }
-
-    const path = document.location.pathname;
-    const searchArgs = params.toString();
-
-    let newUrl = path;
-    newUrl += "?" + searchArgs;
-    let sectionName = "All Media";
-    if (section !== null) {
-      sectionName = section.name;
-    }
-    window.history.replaceState(
-      `${this._projectText.textContent}|${sectionName}`,
-      "Filter",
-      newUrl
-    );
-
-    await this._mediaSection.init(projectId, section);
-
-    if (params.has("page") && params.has("pagesize") && !clearPage) {
-      let pageSize = Number(params.get("pagesize"));
-      let page = Number(params.get("page"));
-
-      const samePageSize = pageSize == this._mediaSection._defaultPageSize;
-      const samePage = page == 1;
-
-      if (!samePageSize) {
-        this._mediaSection._paginator_bottom.pageSize = pageSize;
-        this._mediaSection._paginator_top.pageSize = pageSize;
-      }
-
-      if (!samePage) {
-        this._mediaSection._paginator_bottom._setPage(page - 1);
-        this._mediaSection._paginator_top._setPage(page - 1);
-      }
-
-      if (!samePageSize || !samePage) {
-        this._mediaSection._paginator_top._emit();
-      }
-    }
-
-    // Add section filter information
-    this._filterView.sections = this._sections;
-    this._filterView.section = section;
-
-    return true;
-  }
-
   /**
    * Callback when user clicks on an algorithm button.
    * This launches the confirm run algorithm modal window.
@@ -1283,8 +1231,9 @@ export class ProjectDetail extends TatorPage {
     if (response.status == 200) {
       return;
     } else {
+      var data = await response.json();
       this._modalError._error(
-        `Unable to hide section. Error: ${response.message}`,
+        `Unable to hide section. Error: ${data.message}`,
         "Error"
       );
     }
@@ -1302,8 +1251,9 @@ export class ProjectDetail extends TatorPage {
     if (response.status == 200) {
       return;
     } else {
+      var data = await response.json();
       this._modalError._error(
-        `Unable to restore section. Error: ${response.message}`,
+        `Unable to restore section. Error: ${data.message}`,
         "Error"
       );
     }
@@ -1661,7 +1611,8 @@ export class ProjectDetail extends TatorPage {
       this._project.id,
       this._selectedSection,
       page,
-      pageSize
+      pageSize,
+      this._sections
     );
   }
 

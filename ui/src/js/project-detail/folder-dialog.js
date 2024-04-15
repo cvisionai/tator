@@ -75,7 +75,9 @@ export class FolderDialog extends ModalDialog {
 
       if (this._mode == "editFolder") {
         if (proposedName != this._selectedSection.name) {
-          var parts = this._selectedSection.name.split(".");
+          var parts = this._sectionData.getSectionNamesLineage(
+            this._selectedSection
+          );
           this._originalName.style.display = "block";
           this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${
             parts[parts.length - 1]
@@ -105,7 +107,9 @@ export class FolderDialog extends ModalDialog {
           this._selectedSection
         );
         if (parentSections.length == 0 && parentSectionId != null) {
-          var parts = this._selectedSection.name.split(".");
+          var parts = this._sectionData.getSectionNamesLineage(
+            this._selectedSection
+          );
           parts.pop();
           var pathToShow = parts.join(" > ");
           this._originalParent.style.display = "block";
@@ -115,7 +119,9 @@ export class FolderDialog extends ModalDialog {
           parentSections.length > 0 &&
           parentSections[0].id != this._parentFolders.getValue()
         ) {
-          var parts = this._selectedSection.name.split(".");
+          var parts = this._sectionData.getSectionNamesLineage(
+            this._selectedSection
+          );
           parts.pop();
           var pathToShow = parts.join(" > ");
           this._originalParent.style.display = "block";
@@ -217,7 +223,7 @@ export class FolderDialog extends ModalDialog {
   invalidName() {
     this._save.setAttribute("disabled", "");
     this._errorMessage.innerHTML =
-      "Invalid name provided. Name cannot be blank, share the same name as another folder in the same sub-directory or have '.' or '>' in the name.";
+      "Invalid name provided. Name cannot be blank or share the same name as another folder in the same sub-directory.";
     this._errorMessage.style.display = "block";
   }
 
@@ -281,8 +287,10 @@ export class FolderDialog extends ModalDialog {
       choices.unshift({ value: this._noParentName, label: this._noParentName });
       this._parentFolders.choices = newChoices;
 
-      let nameParts = selectedSection.name.split(".");
-      this._name.setValue(nameParts[nameParts.length - 1]);
+      var parts = this._sectionData.getSectionNamesLineage(
+        this._selectedSection
+      );
+      this._name.setValue(parts[parts.length - 1]);
       this._parentFolders.setValue(selectedSection?.id);
     } else {
       throw new Error(`Invalid mode: ${mode}`);

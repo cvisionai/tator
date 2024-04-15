@@ -1,5 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { SectionData } from "../util/section-utilities.js";
 
 export class AnnotationBreadcrumbs extends TatorElement {
   constructor() {
@@ -83,20 +84,44 @@ export class AnnotationBreadcrumbs extends TatorElement {
     return `${this._detailUrl()}?${sectionParams.toString()}`;
   }
 
-  _sectionName() {
+  async _sectionName() {
+    this._projectId = window.location.pathname.split("/")[1];
     const params = new URLSearchParams(document.location.search.substring(1));
+
     if (params.has("section")) {
-      fetchCredentials(`/rest/Section/${params.get("section")}`, {}, true)
-        .then((response) => response.json())
-        .then((section) => {
-          let innerHTML = `<div class="d-flex flex-items-center">`;
-          let parts = section.name.split(".");
-          innerHTML += parts.join(
-            ` <chevron-right class="px-1"></chevron-right> `
-          );
-          innerHTML += `</div>`;
-          this._sectionText.innerHTML = innerHTML;
-        });
+      var response = await fetchCredentials(
+        `/rest/Sections/${this._projectId}`,
+        {
+          method: "GET",
+        }
+      );
+      this._sections = await response.json();
+      this._sectionData = new SectionData();
+      this._sectionData.init(this._sections);
+
+      this._section = null;
+      for (let section of this._sections) {
+        if (section.id == params.get("section")) {
+          this._section = section;
+          break;
+        }
+      }
+
+      if (this._section) {
+        let innerHTML = `<div class="d-flex flex-items-center">`;
+
+        let parts = this._sectionData.getSectionNamesLineage(this._section);
+        innerHTML += parts.join(
+          ` <chevron-right class="px-1"></chevron-right> `
+        );
+        innerHTML += `</div>`;
+        this._sectionText.innerHTML = innerHTML;
+      } else {
+        console.error(
+          "Invalid section parameter provided in URL. Defaulting to All Media"
+        );
+        this._sectionText.innerHTML = "All Media";
+      }
     } else {
       this._sectionText.innerHTML = "All Media";
     }

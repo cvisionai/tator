@@ -165,18 +165,14 @@ export class SectionListItem extends TatorElement {
     this._section = section;
     this._childSections = childSections;
 
-    // If section.path exists, use it. Otherwise, use section.name
-    // section.path is ParentName.ChildName - we want to just use ChildName
-    var sectionName = section.name;
+    // If section.path exists, use it to pad.
+    // Use section.name as display
     var padding = 0;
     if (section.path) {
-      var pathParts = sectionName.split(".");
-      padding = 10 * (sectionName.split(".").length - 1);
-      if (pathParts.length > 1) {
-        sectionName = pathParts[pathParts.length - 1];
-      }
+      var pathParts = section.path.split(".");
+      padding = 10 * (pathParts.length - 1);
     }
-    this._name.innerHTML = sectionName;
+    this._name.innerHTML = section.name;
 
     // Add the appropriate padding based on how many parents this section has
     // 10px margin left for each parent

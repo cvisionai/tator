@@ -70,8 +70,27 @@ export class SectionData {
    *    Returns the name of the section (removing the path components)
    */
   static getMainName(section) {
-    var parts = section.name.split(".");
-    return parts[parts.length - 1];
+    return section.name;
+  }
+
+  /**
+   * @return array
+   *   Array of strings that are names of the section and its parents
+   *   Order is from the oldest parent to the current section
+   */
+  getSectionNamesLineage(section) {
+    var displayPath = [];
+    var parentSections = this.getParentSections(section);
+    displayPath.push(section.name);
+
+    for (const parentSection of parentSections) {
+      displayPath.push(parentSection.name);
+    }
+
+    // Reverse the displayPath so that the order is from the oldest parent to the current section
+    displayPath.reverse();
+
+    return displayPath;
   }
 
   /**
@@ -230,7 +249,6 @@ export class SectionData {
       var sectionPath = this.getSectionPath(parentSection);
       sectionPath += ".";
       sectionPath += pathFolderName;
-      sectionName = parentSection.name + "." + sectionName;
     }
 
     return {
@@ -255,14 +273,6 @@ export class SectionData {
       return false;
     }
 
-    if (proposedName.includes(".")) {
-      return false;
-    }
-
-    if (proposedName.includes(">")) {
-      return false;
-    }
-
     if (proposedName.toLowerCase() === "all media") {
       return false;
     }
@@ -274,10 +284,7 @@ export class SectionData {
     // Use the lowercase version of the name and path for comparison
     for (const section of this._sections) {
       const sectionPath = this.getSectionPath(section);
-      if (
-        sectionPath.toLowerCase() === info.path.toLowerCase() ||
-        section.name.toLowerCase() === info.name.toLowerCase()
-      ) {
+      if (sectionPath.toLowerCase() === info.path.toLowerCase()) {
         return false;
       }
     }
@@ -311,9 +318,12 @@ export class SectionData {
           continue;
         }
 
+        var parts = this.getSectionNamesLineage(section);
+        var label = parts.join(" > ");
+
         choices.push({
           value: section.id,
-          label: section.name.replace(/\./g, " > "),
+          label: label,
         });
       }
     }
@@ -344,9 +354,12 @@ export class SectionData {
     var choices = [];
     for (const section of this.getFolderList()) {
       if (section.visible == false) {
+        var parts = this.getSectionNamesLineage(section);
+        var label = parts.join(" > ");
+
         choices.push({
           value: section.id,
-          label: section.name.replace(/\./g, " > "),
+          label: label,
         });
       }
     }

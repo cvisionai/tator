@@ -5,6 +5,7 @@ import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
 import { downloadFileList } from "../util/download-file-list.js";
 import streamSaver from "../util/StreamSaver.js";
+import { SectionData } from "../util/section-utilities.js";
 
 export class MediaSection extends TatorElement {
   constructor() {
@@ -106,7 +107,18 @@ export class MediaSection extends TatorElement {
     this._setCallbacks();
   }
 
-  async init(project, section, page, pageSize) {
+  /**
+   * @param {array} sections
+   *   Array of all the sections in the project
+   */
+  updateSectionData(sections) {
+    this._sectionData = new SectionData();
+    this._sectionData.init(sections);
+  }
+
+  async init(project, section, page, pageSize, allSections) {
+    this.updateSectionData(allSections);
+
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
@@ -114,7 +126,7 @@ export class MediaSection extends TatorElement {
     } else {
       this._sectionName = section.name;
       this._upload.setAttribute("section", section.name);
-      let parts = section.name.split(".");
+      var parts = this._sectionData.getSectionNamesLineage(section);
       var nameTextHTML = `<span class="text-white d-flex flex-items-center">${section.name}</span>`;
       if (parts.length > 1) {
         let mainSectionName = parts[parts.length - 1];
