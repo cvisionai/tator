@@ -45,7 +45,7 @@ export class BookmarkEditDialog extends ModalDialog {
     this._footer.appendChild(cancel);
 
     // Event handlers
-    this._name.addEventListener("change", () => {
+    this._name.addEventListener("input", () => {
       var proposedName = this._name.getValue();
 
       if (proposedName != "") {

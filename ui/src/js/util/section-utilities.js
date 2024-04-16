@@ -70,8 +70,27 @@ export class SectionData {
    *    Returns the name of the section (removing the path components)
    */
   static getMainName(section) {
-    var parts = section.name.split(".");
-    return parts[parts.length - 1];
+    return section.name;
+  }
+
+  /**
+   * @return array
+   *   Array of strings that are names of the section and its parents
+   *   Order is from the oldest parent to the current section
+   */
+  getSectionNamesLineage(section) {
+    var displayPath = [];
+    var parentSections = this.getParentSections(section);
+    displayPath.push(section.name);
+
+    for (const parentSection of parentSections) {
+      displayPath.push(parentSection.name);
+    }
+
+    // Reverse the displayPath so that the order is from the oldest parent to the current section
+    displayPath.reverse();
+
+    return displayPath;
   }
 
   /**
@@ -133,6 +152,77 @@ export class SectionData {
     traverseAlphabetically(this._sectionTree, "");
 
     return children;
+  }
+
+  /**
+   * @param {Tator.Section} section
+   *    Section to get all the descendants of
+   * @returns {array}
+   *   Array of sections that are descendants of the given section
+   */
+  getDescendantSections(section) {
+    const thisPath = this.getSectionPath(section);
+    var thisPathTokens = thisPath.split(".");
+    var that = this;
+    var descendants = [];
+
+    function traverseAlphabetically(node, parentPath) {
+      var appendedPath = parentPath;
+      if (appendedPath != "") {
+        appendedPath += ".";
+      }
+
+      // Check to see if this part of the tree is part of the provided section
+      //
+      // Suppose there are folders with these paths:
+      //
+      // A
+      // A.B
+      // A.B.C
+      // A.B.D
+      // X
+      // X.Y
+      // X.Y.Z
+      //
+      // If the section provided was C, then the descendants would be []
+      // If the section provided was Y, then the descendants would be [Z]
+      // If the section provided was A, then the descendants would be [B, C, D]
+      var parentPathTokens = parentPath.split(".");
+      var isDescendant = true;
+      if (parentPathTokens.length >= thisPathTokens.length) {
+        for (var i = 0; i < thisPathTokens.length; i++) {
+          if (parentPathTokens[i] != thisPathTokens[i]) {
+            isDescendant = false;
+            break;
+          }
+        }
+      } else {
+        isDescendant = false;
+      }
+      if (parentPath == "") {
+        isDescendant = false;
+      }
+
+      if (isDescendant) {
+        Object.keys(node)
+          .sort()
+          .forEach((subpath) => {
+            var childSection = that._sectionPathMap[appendedPath + subpath];
+            descendants.push(childSection);
+            traverseAlphabetically(node[subpath], appendedPath + subpath);
+          });
+      } else {
+        Object.keys(node)
+          .sort()
+          .forEach((subpath) => {
+            traverseAlphabetically(node[subpath], appendedPath + subpath);
+          });
+      }
+    }
+
+    traverseAlphabetically(this._sectionTree, "");
+
+    return descendants;
   }
 
   /**
@@ -230,7 +320,6 @@ export class SectionData {
       var sectionPath = this.getSectionPath(parentSection);
       sectionPath += ".";
       sectionPath += pathFolderName;
-      sectionName = parentSection.name + "." + sectionName;
     }
 
     return {
@@ -255,14 +344,6 @@ export class SectionData {
       return false;
     }
 
-    if (proposedName.includes(".")) {
-      return false;
-    }
-
-    if (proposedName.includes(">")) {
-      return false;
-    }
-
     if (proposedName.toLowerCase() === "all media") {
       return false;
     }
@@ -274,10 +355,7 @@ export class SectionData {
     // Use the lowercase version of the name and path for comparison
     for (const section of this._sections) {
       const sectionPath = this.getSectionPath(section);
-      if (
-        sectionPath.toLowerCase() === info.path.toLowerCase() ||
-        section.name.toLowerCase() === info.name.toLowerCase()
-      ) {
+      if (sectionPath.toLowerCase() === info.path.toLowerCase()) {
         return false;
       }
     }
@@ -311,9 +389,12 @@ export class SectionData {
           continue;
         }
 
+        var parts = this.getSectionNamesLineage(section);
+        var label = parts.join(" > ");
+
         choices.push({
           value: section.id,
-          label: section.name.replace(/\./g, " > "),
+          label: label,
         });
       }
     }
@@ -344,9 +425,12 @@ export class SectionData {
     var choices = [];
     for (const section of this.getFolderList()) {
       if (section.visible == false) {
+        var parts = this.getSectionNamesLineage(section);
+        var label = parts.join(" > ");
+
         choices.push({
           value: section.id,
-          label: section.name.replace(/\./g, " > "),
+          label: label,
         });
       }
     }

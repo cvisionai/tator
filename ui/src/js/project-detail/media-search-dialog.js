@@ -43,7 +43,7 @@ export class MediaSearchDialog extends ModalDialog {
     this._sectionData = null;
 
     // Event handlers
-    this._name.addEventListener("change", () => {
+    this._name.addEventListener("input", () => {
       var proposedName = this._name.getValue();
       if (this._sectionData.verifySectionRename(proposedName)) {
         this.enableSave();
@@ -53,7 +53,9 @@ export class MediaSearchDialog extends ModalDialog {
 
       if (this._mode == "editSearch") {
         if (proposedName != this._selectedSection.name) {
-          var parts = this._selectedSection.name.split(".");
+          var parts = this._sectionData.getSectionNamesLineage(
+            this._selectedSection
+          );
           this._originalName.style.display = "block";
           this._originalName.innerHTML = `Changing folder name from: <span class="text-semibold">${
             parts[parts.length - 1]
@@ -190,7 +192,7 @@ export class MediaSearchDialog extends ModalDialog {
   invalidName() {
     this._save.setAttribute("disabled", "");
     this._errorMessage.innerHTML =
-      "Invalid name provided. Name cannot be blank, share the same name as another folder in the top-level directory or have '.' or '>' in the name.";
+      "Invalid name provided. Name cannot be blank or share the same name as another folder in the same sub-directory.";
     this._errorMessage.style.display = "block";
   }
 
@@ -225,13 +227,15 @@ export class MediaSearchDialog extends ModalDialog {
       this._saveClickEvent = "add";
       this._name.setValue("");
     } else if (mode == "editSearch") {
-      this._title.nodeValue = "Edit Media Search";
+      this._title.nodeValue = "Rename Media Search";
       this._mode = mode;
-      this._save.textContent = "Edit";
+      this._save.textContent = "Rename";
       this._saveClickEvent = "edit";
 
-      let nameParts = selectedSection.name.split(".");
-      this._name.setValue(nameParts[nameParts.length - 1]);
+      var parts = this._sectionData.getSectionNamesLineage(
+        this._selectedSection
+      );
+      this._name.setValue(parts[parts.length - 1]);
     } else {
       throw new Error(`Invalid mode: ${mode}`);
     }
