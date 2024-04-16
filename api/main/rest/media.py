@@ -426,7 +426,7 @@ class MediaListAPI(BaseListView):
             ids = []
             for media_spec in media_spec_list:
                 try:
-                    obj, _ = _create_media(project, media_spec, self.request.user, use_rq=True)
+                    obj, _, section_obj = _create_media(project, media_spec, self.request.user, use_rq=True)
                 except Exception:
                     logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
                 else:
