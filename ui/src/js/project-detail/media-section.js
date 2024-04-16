@@ -30,17 +30,27 @@ export class MediaSection extends TatorElement {
     this._nameText.setAttribute("class", "d-flex flex-items-center");
     this._name.appendChild(this._nameText);
 
-    const pageWrapper = document.createElement("div");
-    pageWrapper.setAttribute("class", "d-flex text-gray f1 py-2");
-    this._name.appendChild(pageWrapper);
+    this._loading = document.createElement("div");
+    this._loading.setAttribute(
+      "class",
+      "d-flex flex-items-center text-white f2 text-semibold py-2"
+    );
+    this._loading.innerHTML = "Loading...";
+    this._name.appendChild(this._loading);
+    this._loading.style.display = "none";
+
+    this._pageWrapper = document.createElement("div");
+    this._pageWrapper.setAttribute("class", "d-flex text-gray f1 py-2");
+    this._name.appendChild(this._pageWrapper);
+    this._pageWrapper.style.display = "none";
 
     this._numFiles = document.createElement("div");
     this._numFiles.setAttribute("class", "text-gray mr-2");
-    pageWrapper.appendChild(this._numFiles);
+    this._pageWrapper.appendChild(this._numFiles);
 
     this._pagePosition = document.createElement("div");
     this._pagePosition.setAttribute("class", "text-normal");
-    pageWrapper.appendChild(this._pagePosition);
+    this._pageWrapper.appendChild(this._pagePosition);
 
     const actions = document.createElement("div");
     actions.setAttribute("class", "d-flex flex-items-center");
@@ -117,6 +127,9 @@ export class MediaSection extends TatorElement {
   }
 
   async init(project, section, page, pageSize, allSections) {
+    this._pageWrapper.style.display = "none";
+    this._loading.style.display = "flex";
+
     this.updateSectionData(allSections);
 
     if (section === null) {
@@ -367,6 +380,9 @@ export class MediaSection extends TatorElement {
     this._files.startMediaIndex = this._start;
     this._files.cardInfo = mediaList;
     this._reload.ready();
+
+    this._pageWrapper.style.display = "flex";
+    this._loading.style.display = "none";
   }
 
   /**

@@ -130,6 +130,7 @@ export class ProjectDetail extends TatorPage {
       "section-search-display"
     );
     this._sectionSearchDisplay.setAttribute("class", "mt-2");
+    this._sectionSearchDisplay.style.display = "none";
     filterdiv.appendChild(this._sectionSearchDisplay);
 
     this._collaborators = document.createElement("project-collaborators");
