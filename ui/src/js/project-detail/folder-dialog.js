@@ -102,7 +102,7 @@ export class FolderDialog extends ModalDialog {
         this.invalidName();
       }
 
-      if (this._mode == "editFolder") {
+      if (this._mode == "moveFolder") {
         var parentSections = this._sectionData.getParentSections(
           this._selectedSection
         );
@@ -238,11 +238,6 @@ export class FolderDialog extends ModalDialog {
 
     this._sectionData = sectionData;
     this._selectedSection = null;
-
-    this._parentFolders.clear();
-    var choices = this._sectionData.getFolderEnumChoices();
-    choices.unshift({ value: this._noParentName, label: this._noParentName });
-    this._parentFolders.choices = choices;
   }
 
   /**
@@ -260,6 +255,9 @@ export class FolderDialog extends ModalDialog {
     this._parentFolders.style.display = "block";
 
     if (mode == "newFolder") {
+      //
+      // Add Folder
+      //
       this._title.nodeValue = "Add Folder";
       this._mode = mode;
       this._save.textContent = "Add";
@@ -270,6 +268,9 @@ export class FolderDialog extends ModalDialog {
       this._parentFolders.choices = choices;
       this._parentFolders.setValue(selectedSection?.id);
     } else if (mode == "moveFolder") {
+      //
+      // Move Folder
+      //
       this._title.nodeValue = "Move Folder";
       this._mode = mode;
       this._save.textContent = "Move";
@@ -294,15 +295,24 @@ export class FolderDialog extends ModalDialog {
           }
         }
       }
-      choices.unshift({ value: this._noParentName, label: this._noParentName });
+      newChoices.unshift({
+        value: this._noParentName,
+        label: this._noParentName,
+      });
       this._parentFolders.choices = newChoices;
-
-      var parts = this._sectionData.getSectionNamesLineage(
-        this._selectedSection
-      );
+      var parts = this._sectionData.getSectionNamesLineage(selectedSection);
       this._name.setValue(parts[parts.length - 1]);
-      this._parentFolders.setValue(selectedSection?.id);
+
+      var parentSections = this._sectionData.getParentSections(selectedSection);
+      if (parentSections.length == 0) {
+        this._parentFolders.setValue(this._noParentName);
+      } else {
+        this._parentFolders.setValue(parentSections[0].id);
+      }
     } else if (mode == "renameFolder") {
+      //
+      // Rename Folder
+      //
       this._title.nodeValue = "Rename Folder";
       this._mode = mode;
       this._save.textContent = "Rename";
@@ -328,14 +338,20 @@ export class FolderDialog extends ModalDialog {
           }
         }
       }
-      choices.unshift({ value: this._noParentName, label: this._noParentName });
+      newChoices.unshift({
+        value: this._noParentName,
+        label: this._noParentName,
+      });
       this._parentFolders.choices = newChoices;
-
-      var parts = this._sectionData.getSectionNamesLineage(
-        this._selectedSection
-      );
+      var parts = this._sectionData.getSectionNamesLineage(selectedSection);
       this._name.setValue(parts[parts.length - 1]);
-      this._parentFolders.setValue(selectedSection?.id);
+
+      var parentSections = this._sectionData.getParentSections(selectedSection);
+      if (parentSections.length == 0) {
+        this._parentFolders.setValue(this._noParentName);
+      } else {
+        this._parentFolders.setValue(parentSections[0].id);
+      }
     } else {
       throw new Error(`Invalid mode: ${mode}`);
     }

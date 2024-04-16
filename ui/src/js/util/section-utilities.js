@@ -173,6 +173,20 @@ export class SectionData {
       }
 
       // Check to see if this part of the tree is part of the provided section
+      //
+      // Suppose there are folders with these paths:
+      //
+      // A
+      // A.B
+      // A.B.C
+      // A.B.D
+      // X
+      // X.Y
+      // X.Y.Z
+      //
+      // If the section provided was C, then the descendants would be []
+      // If the section provided was Y, then the descendants would be [Z]
+      // If the section provided was A, then the descendants would be [B, C, D]
       var parentPathTokens = parentPath.split(".");
       var isDescendant = true;
       if (parentPathTokens.length >= thisPathTokens.length) {
@@ -182,6 +196,8 @@ export class SectionData {
             break;
           }
         }
+      } else {
+        isDescendant = false;
       }
       if (parentPath == "") {
         isDescendant = false;
