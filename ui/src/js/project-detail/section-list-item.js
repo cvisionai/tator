@@ -45,6 +45,11 @@ export class SectionListItem extends TatorElement {
       </svg>
     `;
 
+    this._id = document.createElement("div");
+    this._id.setAttribute("class", "d-flex ml-2 f2");
+    this._mainDiv.appendChild(this._id);
+    this._id.style.display = "none";
+
     this._name = document.createElement("div");
     this._name.setAttribute(
       "class",
@@ -106,7 +111,9 @@ export class SectionListItem extends TatorElement {
         this._name.classList.add("text-gray");
         this._name.classList.remove("text-white");
       }
-      this._more.style.display = "none";
+      if (this._moreMenu.style.display == "none") {
+        this._more.style.display = "none";
+      }
     });
 
     this._name.addEventListener("click", () => {
@@ -148,7 +155,7 @@ export class SectionListItem extends TatorElement {
 
     this._more.addEventListener("click", () => {
       if (this._moreMenu.style.display == "none") {
-        this._moreMenu.style.display = "block";
+        this.showMoreMenu();
       } else {
         this.hideMoreMenu();
       }
@@ -156,7 +163,7 @@ export class SectionListItem extends TatorElement {
 
     this._mainDiv.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      this._moreMenu.style.display = "block";
+      this.showMoreMenu();
     });
   }
 
@@ -256,35 +263,79 @@ export class SectionListItem extends TatorElement {
       });
     }
 
-    const editToggleButton = document.createElement("button");
-    editToggleButton.setAttribute(
+    const addToggleButton = document.createElement("button");
+    addToggleButton.setAttribute(
       "class",
       "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
     );
-    editToggleButton.innerHTML = `
+    addToggleButton.innerHTML = `
     <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 19h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v3.5" /><path d="M16 19h6" /><path d="M19 16v6" />
     </svg>
-    Edit folder`;
-    editToggleButton.addEventListener("click", () => {
+    Add subfolder`;
+    addToggleButton.addEventListener("click", () => {
       this.hideMoreMenu();
       this.dispatchEvent(
-        new CustomEvent("editSection", { detail: { id: section.id } })
+        new CustomEvent("addSection", { detail: { id: section.id } })
       );
     });
 
-    this._moreMenu.appendChild(editToggleButton);
+    const moveToggleButton = document.createElement("button");
+    moveToggleButton.setAttribute(
+      "class",
+      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+    );
+    moveToggleButton.innerHTML = `
+    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 9l3 3l-3 3" /><path d="M15 12h6" /><path d="M6 9l-3 3l3 3" /><path d="M3 12h6" /><path d="M9 18l3 3l3 -3" /><path d="M12 15v6" /><path d="M15 6l-3 -3l-3 3" /><path d="M12 3v6" />
+    </svg>
+    Move folder`;
+    moveToggleButton.addEventListener("click", () => {
+      this.hideMoreMenu();
+      this.dispatchEvent(
+        new CustomEvent("moveSection", { detail: { id: section.id } })
+      );
+    });
+
+    const renameToggleButton = document.createElement("button");
+    renameToggleButton.setAttribute(
+      "class",
+      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+    );
+    renameToggleButton.innerHTML = `
+    <svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+    Rename folder`;
+    renameToggleButton.addEventListener("click", () => {
+      this.hideMoreMenu();
+      this.dispatchEvent(
+        new CustomEvent("renameSection", { detail: { id: section.id } })
+      );
+    });
+
+    this._moreMenu.appendChild(addToggleButton);
+    this._moreMenu.appendChild(moveToggleButton);
+    this._moreMenu.appendChild(renameToggleButton);
     this._moreMenu.appendChild(deleteToggleButton);
     this._moreMenu.appendChild(hideToggleButton);
 
+    this._id.innerHTML = `<span class="text-semibold text-gray">id: </span><span class="ml-1 text-white">${section.id}</span>`;
+
     this._detailsDiv.innerHTML = `
-      <div><span class="text-semibold text-gray">id:</span> ${section.id}</div>
-      <div><span class="text-semibold text-gray">name:</span> ${section.name}</div>
-      <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
-      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
-      <div><span class="text-semibold text-gray">object_search:</span> ${section.object_search}</div>
-      <div><span class="text-semibold text-gray">related_search:</span> ${section.related_search}</div>
+    <div><span class="text-semibold text-gray col-8">path:</span> ${section.path}</div>
+    <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
     `;
+    if (section.object_search != null) {
+      this._detailsDiv.innerHTML += `
+        <div><span class="text-semibold text-gray">object_search:</span> ${section.object_search}</div>
+      `;
+    }
+    if (section.related_search != null) {
+      this._detailsDiv.innerHTML += `
+        <div><span class="text-semibold text-gray">related_search:</span> ${section.related_search}</div>
+      `;
+    }
   }
 
   /**
@@ -316,7 +367,20 @@ export class SectionListItem extends TatorElement {
    * Hide the more menu
    */
   hideMoreMenu() {
+    this._more.style.display = "none";
     this._moreMenu.style.display = "none";
+    this._mainDiv.classList.remove("purple-box-border");
+  }
+
+  /**
+   * Show the more menu
+   * Highlights the UI and dispatches a showMoreMenu event
+   */
+  showMoreMenu() {
+    this._more.style.display = "flex";
+    this._moreMenu.style.display = "block";
+    this.dispatchEvent(new Event("showMoreMenu"));
+    this._mainDiv.classList.add("purple-box-border");
   }
 
   /**
@@ -348,6 +412,7 @@ export class SectionListItem extends TatorElement {
    * Hide the advanced details panel showing information about the section
    */
   hideAdvancedDetails() {
+    this._id.style.display = "none";
     this._detailsDiv.style.display = "none";
   }
 
@@ -355,6 +420,7 @@ export class SectionListItem extends TatorElement {
    * Show the advanced details panel showing information about the section
    */
   showAdvancedDetails() {
+    this._id.style.display = "flex";
     this._detailsDiv.style.display = "block";
   }
 }

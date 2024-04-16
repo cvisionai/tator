@@ -1378,6 +1378,14 @@ export class ProjectDetail extends TatorPage {
         that.updateLibraryVisibility();
       });
 
+      sectionItem.addEventListener("showMoreMenu", () => {
+        for (const folder of that._folders.children) {
+          if (folder != sectionItem) {
+            folder.hideMoreMenu();
+          }
+        }
+      });
+
       sectionItem.addEventListener("hideSection", async (evt) => {
         that.showDimmer();
 
@@ -1398,6 +1406,7 @@ export class ProjectDetail extends TatorPage {
         const sectionToDelete = that._sectionData.getSectionFromID(
           evt.detail.id
         );
+        that.selectSection(evt.detail.id);
         that._deleteSectionDialog.init(sectionToDelete, false);
         that._deleteSectionDialog.setAttribute("is-open", "");
         that.setAttribute("has-open-modal", "");
@@ -1419,9 +1428,24 @@ export class ProjectDetail extends TatorPage {
         that.hideDimmer();
       });
 
-      sectionItem.addEventListener("editSection", (evt) => {
+      sectionItem.addEventListener("addSection", () => {
         that.showDimmer();
-        that._folderDialog.setMode("editFolder", section);
+        that.selectSection(section.id);
+        that._folderDialog.setMode("newFolder", section);
+        that._folderDialog.setAttribute("is-open", "");
+      });
+
+      sectionItem.addEventListener("moveSection", () => {
+        that.showDimmer();
+        that.selectSection(section.id);
+        that._folderDialog.setMode("moveFolder", section);
+        that._folderDialog.setAttribute("is-open", "");
+      });
+
+      sectionItem.addEventListener("renameSection", () => {
+        that.showDimmer();
+        that.selectSection(section.id);
+        that._folderDialog.setMode("renameFolder", section);
         that._folderDialog.setAttribute("is-open", "");
       });
 
@@ -1483,6 +1507,14 @@ export class ProjectDetail extends TatorPage {
       const sectionItem = document.createElement("media-search-list-item");
       sectionItem.init(section, childSections);
 
+      sectionItem.addEventListener("showMoreMenu", () => {
+        for (const search of that._savedSearches.children) {
+          if (search != sectionItem) {
+            search.hideMoreMenu();
+          }
+        }
+      });
+
       sectionItem.addEventListener("selected", (evt) => {
         that.selectSection(evt.detail.id);
       });
@@ -1491,6 +1523,7 @@ export class ProjectDetail extends TatorPage {
         const sectionToDelete = that._sectionData.getSectionFromID(
           evt.detail.id
         );
+        that.selectSection(evt.detail.id);
         that._deleteSectionDialog.init(sectionToDelete, false);
         that._deleteSectionDialog.setAttribute("is-open", "");
         that.setAttribute("has-open-modal", "");
@@ -1654,6 +1687,14 @@ export class ProjectDetail extends TatorPage {
       const listItem = document.createElement("bookmark-list-item");
       listItem.init(bookmark);
       this._bookmarkListItems.appendChild(listItem);
+
+      listItem.addEventListener("showMoreMenu", () => {
+        for (const bookmark of that._bookmarks.children) {
+          if (bookmark != listItem) {
+            bookmark.hideMoreMenu();
+          }
+        }
+      });
 
       listItem.addEventListener("renameBookmark", () => {
         this._bookmarkEditDialog.init(bookmark);

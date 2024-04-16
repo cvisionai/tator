@@ -57,7 +57,7 @@ export class BookmarkListItem extends TatorElement {
       "class",
       "more d-flex flex-column f2 px-3 py-2 lh-condensed"
     );
-    this._moreMenu.style.display = "none";
+    this.hideMoreMenu();
     this._moreMenu.style.marginTop = "5px";
     this._moreMenu.style.marginLeft = "200px";
     this._shadow.appendChild(this._moreMenu);
@@ -88,12 +88,14 @@ export class BookmarkListItem extends TatorElement {
         this._name.classList.add("text-gray");
         this._name.classList.remove("text-white");
       }
-      this._more.style.display = "none";
+      if (this._moreMenu.style.display == "none") {
+        this._more.style.display = "none";
+      }
     });
 
     this._name.addEventListener("click", () => {
       this._mainDiv.blur();
-      this._moreMenu.style.display = "none";
+      this.hideMoreMenu();
       this._link.click();
     });
 
@@ -107,15 +109,15 @@ export class BookmarkListItem extends TatorElement {
 
     this._more.addEventListener("click", () => {
       if (this._moreMenu.style.display == "none") {
-        this._moreMenu.style.display = "block";
+        this.showMoreMenu();
       } else {
-        this._moreMenu.style.display = "none";
+        this.hideMoreMenu();
       }
     });
 
     this._mainDiv.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      this._moreMenu.style.display = "block";
+      this.showMoreMenu();
     });
   }
 
@@ -146,7 +148,7 @@ export class BookmarkListItem extends TatorElement {
       </svg>
       Delete bookmark`;
       deleteToggleButton.addEventListener("click", () => {
-        this._moreMenu.style.display = "none";
+        this.hideMoreMenu();
         this.dispatchEvent(
           new CustomEvent("deleteBookmark", { detail: { id: bookmark.id } })
         );
@@ -163,7 +165,7 @@ export class BookmarkListItem extends TatorElement {
       </svg>
       Rename bookmark`;
       renameToggleButton.addEventListener("click", () => {
-        this._moreMenu.style.display = "none";
+        this.hideMoreMenu();
         this.dispatchEvent(
           new CustomEvent("renameBookmark", { detail: { id: bookmark.id } })
         );
@@ -172,6 +174,26 @@ export class BookmarkListItem extends TatorElement {
       this._moreMenu.appendChild(renameToggleButton);
       this._moreMenu.appendChild(deleteToggleButton);
     }
+  }
+
+  /**
+   * Hide the more menu
+   */
+  hideMoreMenu() {
+    this._more.style.display = "none";
+    this._moreMenu.style.display = "none";
+    this._mainDiv.classList.remove("purple-box-border");
+  }
+
+  /**
+   * Show the more menu
+   * Highlights the UI and dispatches a showMoreMenu event
+   */
+  showMoreMenu() {
+    this._more.style.display = "flex";
+    this._moreMenu.style.display = "block";
+    this.dispatchEvent(new Event("showMoreMenu"));
+    this._mainDiv.classList.add("purple-box-border");
   }
 }
 customElements.define("bookmark-list-item", BookmarkListItem);

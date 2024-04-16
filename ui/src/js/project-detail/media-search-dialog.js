@@ -227,9 +227,9 @@ export class MediaSearchDialog extends ModalDialog {
       this._saveClickEvent = "add";
       this._name.setValue("");
     } else if (mode == "editSearch") {
-      this._title.nodeValue = "Edit Media Search";
+      this._title.nodeValue = "Rename Media Search";
       this._mode = mode;
-      this._save.textContent = "Edit";
+      this._save.textContent = "Rename";
       this._saveClickEvent = "edit";
 
       var parts = this._sectionData.getSectionNamesLineage(

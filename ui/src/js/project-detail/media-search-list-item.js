@@ -31,6 +31,11 @@ export class MediaSearchListItem extends TatorElement {
       </svg>
     `;
 
+    this._id = document.createElement("div");
+    this._id.setAttribute("class", "d-flex ml-2 f2");
+    this._mainDiv.appendChild(this._id);
+    this._id.style.display = "none";
+
     this._name = document.createElement("div");
     this._name.setAttribute(
       "class",
@@ -57,7 +62,7 @@ export class MediaSearchListItem extends TatorElement {
       "class",
       "more d-flex flex-column f2 px-3 py-2 lh-condensed"
     );
-    this._moreMenu.style.display = "none";
+    this.hideMoreMenu();
     this._moreMenu.style.marginTop = "5px";
     this._moreMenu.style.marginLeft = "200px";
     this._shadow.appendChild(this._moreMenu);
@@ -92,12 +97,14 @@ export class MediaSearchListItem extends TatorElement {
         this._name.classList.add("text-gray");
         this._name.classList.remove("text-white");
       }
-      this._more.style.display = "none";
+      if (this._moreMenu.style.display == "none") {
+        this._more.style.display = "none";
+      }
     });
 
     this._name.addEventListener("click", () => {
       this._mainDiv.blur();
-      this._moreMenu.style.display = "none";
+      this.hideMoreMenu();
       this.setActive();
       this.dispatchEvent(
         new CustomEvent("selected", { detail: { id: this._section.id } })
@@ -114,15 +121,15 @@ export class MediaSearchListItem extends TatorElement {
 
     this._more.addEventListener("click", () => {
       if (this._moreMenu.style.display == "none") {
-        this._moreMenu.style.display = "block";
+        this.showMoreMenu();
       } else {
-        this._moreMenu.style.display = "none";
+        this.hideMoreMenu();
       }
     });
 
     this._mainDiv.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      this._moreMenu.style.display = "block";
+      this.showMoreMenu();
     });
   }
 
@@ -145,7 +152,7 @@ export class MediaSearchListItem extends TatorElement {
     </svg>
     Delete Search`;
     deleteToggleButton.addEventListener("click", () => {
-      this._moreMenu.style.display = "none";
+      this.hideMoreMenu();
       this.dispatchEvent(
         new CustomEvent("deleteSection", { detail: { id: this._section.id } })
       );
@@ -162,7 +169,7 @@ export class MediaSearchListItem extends TatorElement {
     </svg>
     Rename Search`;
     renameToggleButton.addEventListener("click", () => {
-      this._moreMenu.style.display = "none";
+      this.hideMoreMenu();
       this.dispatchEvent(
         new CustomEvent("renameSection", { detail: { id: this._section.id } })
       );
@@ -171,24 +178,30 @@ export class MediaSearchListItem extends TatorElement {
     this._moreMenu.appendChild(renameToggleButton);
     this._moreMenu.appendChild(deleteToggleButton);
 
+    this._id.innerHTML = `<span class="text-semibold text-gray">id: </span><span class="ml-1 text-white">${section.id}</span>`;
+
     this._detailsDiv.innerHTML = `
-      <div><span class="text-semibold text-gray">id:</span> ${section.id}</div>
-      <div><span class="text-semibold text-gray">name:</span> ${
-        section.name
-      }</div>
-      <div><span class="text-semibold text-gray">path:</span> ${
-        section.path
-      }</div>
-      <div><span class="text-semibold text-gray">tator_user_sections:</span> ${
-        section.tator_user_sections
-      }</div>
-      <div><span class="text-semibold text-gray">object_search:</span> ${JSON.stringify(
-        section.object_search
-      )}</div>
-      <div><span class="text-semibold text-gray">related_search:</span> ${JSON.stringify(
-        section.related_search
-      )}</div>
+      <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
     `;
+    if (section.tator_user_sections != null) {
+      this._detailsDiv.innerHTML += `
+        <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
+      `;
+    }
+    if (section.object_search != null) {
+      this._detailsDiv.innerHTML += `
+        <div><span class="text-semibold text-gray">object_search:</span> ${JSON.stringify(
+          section.object_search
+        )}</div>
+      `;
+    }
+    if (section.related_search != null) {
+      this._detailsDiv.innerHTML += `
+        <div><span class="text-semibold text-gray">related_search:</span> ${JSON.stringify(
+          section.related_search
+        )}</div>
+      `;
+    }
   }
 
   /**
@@ -213,7 +226,27 @@ export class MediaSearchListItem extends TatorElement {
     this._name.classList.add("text-gray");
     this._name.classList.remove("text-white");
     this._name.classList.remove("text-semibold");
+    this.hideMoreMenu();
+  }
+
+  /**
+   * Hide the more menu
+   */
+  hideMoreMenu() {
+    this._more.style.display = "none";
     this._moreMenu.style.display = "none";
+    this._mainDiv.classList.remove("purple-box-border");
+  }
+
+  /**
+   * Show the more menu
+   * Highlights the UI and dispatches a showMoreMenu event
+   */
+  showMoreMenu() {
+    this._more.style.display = "flex";
+    this._moreMenu.style.display = "block";
+    this.dispatchEvent(new Event("showMoreMenu"));
+    this._mainDiv.classList.add("purple-box-border");
   }
 
   /**
@@ -227,6 +260,7 @@ export class MediaSearchListItem extends TatorElement {
    * Hide the advanced details panel showing information about the section
    */
   hideAdvancedDetails() {
+    this._id.style.display = "none";
     this._detailsDiv.style.display = "none";
   }
 
@@ -234,6 +268,7 @@ export class MediaSearchListItem extends TatorElement {
    * Show the advanced details panel showing information about the section
    */
   showAdvancedDetails() {
+    this._id.style.display = "flex";
     this._detailsDiv.style.display = "block";
   }
 }

@@ -155,6 +155,61 @@ export class SectionData {
   }
 
   /**
+   * @param {Tator.Section} section
+   *    Section to get all the descendants of
+   * @returns {array}
+   *   Array of sections that are descendants of the given section
+   */
+  getDescendantSections(section) {
+    const thisPath = this.getSectionPath(section);
+    var thisPathTokens = thisPath.split(".");
+    var that = this;
+    var descendants = [];
+
+    function traverseAlphabetically(node, parentPath) {
+      var appendedPath = parentPath;
+      if (appendedPath != "") {
+        appendedPath += ".";
+      }
+
+      // Check to see if this part of the tree is part of the provided section
+      var parentPathTokens = parentPath.split(".");
+      var isDescendant = true;
+      if (parentPathTokens.length >= thisPathTokens.length) {
+        for (var i = 0; i < thisPathTokens.length; i++) {
+          if (parentPathTokens[i] != thisPathTokens[i]) {
+            isDescendant = false;
+            break;
+          }
+        }
+      }
+      if (parentPath == "") {
+        isDescendant = false;
+      }
+
+      if (isDescendant) {
+        Object.keys(node)
+          .sort()
+          .forEach((subpath) => {
+            var childSection = that._sectionPathMap[appendedPath + subpath];
+            descendants.push(childSection);
+            traverseAlphabetically(node[subpath], appendedPath + subpath);
+          });
+      } else {
+        Object.keys(node)
+          .sort()
+          .forEach((subpath) => {
+            traverseAlphabetically(node[subpath], appendedPath + subpath);
+          });
+      }
+    }
+
+    traverseAlphabetically(this._sectionTree, "");
+
+    return descendants;
+  }
+
+  /**
    * Parent sections are obtained using the path attribute of the section object.
    *
    * @precondition init() has been called
