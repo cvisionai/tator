@@ -852,6 +852,10 @@ export class AnnotationPage extends TatorPage {
       canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
     });
 
+    this._videoSettingsDialog.addEventListener("stretchVideo", (evt) => {
+      canvas.stretch = evt.detail.stretch;
+    });
+
     this._videoSettingsDialog.addEventListener("allowSafeMode", (evt) => {
       canvas.allowSafeMode(evt.detail.allowSafeMode);
     });
@@ -1466,10 +1470,14 @@ export class AnnotationPage extends TatorPage {
             );
 
             canvas.addEventListener("maximize", () => {
+              this._videoSettingsDialog.stretchVideo = true;
+              canvas.stretch = true;
               document.documentElement.requestFullscreen();
             });
 
             canvas.addEventListener("minimize", () => {
+              this._videoSettingsDialog.stretchVideo = false;
+              canvas.stretch = false;
               document.exitFullscreen();
             });
           }

@@ -86,14 +86,14 @@ export class VideoSettingsDialog extends ModalDialog {
     defaultButton.style.gridRow = 1;
     this._gridDiv.appendChild(defaultButton);
 
-    const overlayGridDiv = document.createElement("div");
-    overlayGridDiv.setAttribute("class", "video__settings py-4 px-4 text-gray");
-    this._controlsDiv.appendChild(overlayGridDiv);
+    const otherGridDiv = document.createElement("div");
+    otherGridDiv.setAttribute("class", "video__settings py-4 px-4 text-gray");
+    this._controlsDiv.appendChild(otherGridDiv);
 
     const overlayHeaderDiv = document.createElement("div");
     overlayHeaderDiv.style.gridColumn = 1;
     overlayHeaderDiv.style.gridRow = 1;
-    overlayGridDiv.appendChild(overlayHeaderDiv);
+    otherGridDiv.appendChild(overlayHeaderDiv);
 
     const overlayHeader = document.createElement("div");
     overlayHeader.textContent = "Diagnostics Overlay";
@@ -117,7 +117,36 @@ export class VideoSettingsDialog extends ModalDialog {
     overlayOption.setAttribute("off-text", "Off");
     overlayOption.setAttribute("on-text", "On");
     overlayOption.reset();
-    overlayGridDiv.appendChild(overlayOption);
+    otherGridDiv.appendChild(overlayOption);
+
+    const stretchHeaderDiv = document.createElement("div");
+    stretchHeaderDiv.style.gridColumn = 1;
+    stretchHeaderDiv.style.gridRow = 2;
+    otherGridDiv.appendChild(stretchHeaderDiv);
+
+    const stretchHeader = document.createElement("div");
+    stretchHeader.textContent = "Stretch Video";
+    stretchHeader.setAttribute(
+      "class",
+      "h3 d-flex flex-items-center text-uppercase"
+    );
+    stretchHeaderDiv.appendChild(stretchHeader);
+
+    const stretchSubHeader = document.createElement("div");
+    stretchSubHeader.textContent =
+      "Toggle stretching video to fill the player window or leave it in its original dimensions";
+    stretchSubHeader.setAttribute("class", "text-gray f2");
+    stretchHeaderDiv.appendChild(stretchSubHeader);
+
+    this._stretchOption = document.createElement("bool-input");
+    this._stretchOption.setAttribute("class", "col-12");
+    this._stretchOption.style.gridColumn = 2;
+    this._stretchOption.style.gridRow = 2;
+    this._stretchOption.setAttribute("name", "");
+    this._stretchOption.setAttribute("off-text", "Off");
+    this._stretchOption.setAttribute("on-text", "On");
+    this._stretchOption.reset();
+    otherGridDiv.appendChild(this._stretchOption);
 
     const apply = document.createElement("button");
     apply.setAttribute("class", "btn btn-clear");
@@ -160,6 +189,18 @@ export class VideoSettingsDialog extends ModalDialog {
           composed: true,
           detail: {
             displayDiagnostic: overlayOption.getValue(),
+          },
+        })
+      );
+    });
+
+    // Stretch video to fill player window
+    this._stretchOption.addEventListener("change", () => {
+      this.dispatchEvent(
+        new CustomEvent("stretchVideo", {
+          composed: true,
+          detail: {
+            stretch: this._stretchOption.getValue(),
           },
         })
       );
@@ -551,6 +592,15 @@ export class VideoSettingsDialog extends ModalDialog {
   set defaultSources(val) {
     this._defaultSources = val;
     this.applyDefaults();
+  }
+
+  /**
+   * @param {bool} val
+   *    True if the video canvas is already stretched to fill the window.
+   *    False if it's locked to a specific set of max dimensions.
+   */
+  set stretchVideo(val) {
+    this._stretchOption.setValue(val);
   }
 
   /**
