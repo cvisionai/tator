@@ -21,6 +21,13 @@ export class TextInput extends TatorElement {
     this._input.setAttribute("type", "text");
     this.label.appendChild(this._input);
 
+    this._input.addEventListener("input", () => {
+      // The styling does not change liked it does with the "change" event
+      // This is due to the legacy UI interactions only using the "change" event
+      // This however has been added for other components to use
+      this.dispatchEvent(new Event("input"));
+    });
+
     this._input.addEventListener("change", () => {
       if (this.getValue() === null) {
         this._input.classList.add("has-border");

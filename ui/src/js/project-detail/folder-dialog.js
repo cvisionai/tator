@@ -59,7 +59,7 @@ export class FolderDialog extends ModalDialog {
     this._sectionData = null;
 
     // Event handlers
-    this._name.addEventListener("change", () => {
+    this._name.addEventListener("input", () => {
       var proposedName = this._name.getValue();
       var parentSectionId = this._parentFolders.getValue();
       if (parentSectionId == this._noParentName) {

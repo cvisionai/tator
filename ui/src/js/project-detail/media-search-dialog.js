@@ -43,7 +43,7 @@ export class MediaSearchDialog extends ModalDialog {
     this._sectionData = null;
 
     // Event handlers
-    this._name.addEventListener("change", () => {
+    this._name.addEventListener("input", () => {
       var proposedName = this._name.getValue();
       if (this._sectionData.verifySectionRename(proposedName)) {
         this.enableSave();
