@@ -14,6 +14,7 @@ from django.conf import settings
 from ..schema import parse
 
 from ..rest import _base_views
+from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +34,9 @@ def process_exception(exc):
         logger.error(f"Permission denied error: {str(exc)}")
         resp = Response({"message": str(exc)}, status=status.HTTP_403_FORBIDDEN)
     else:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        formatted_traceback = "".join(
-            traceback.format_exception(exc_type, exc_value, exc_traceback)
-        )
-        single_line_traceback = formatted_traceback.replace("\n", " \\n ")
-        logger.error(single_line_traceback)
+        logger.error(format_multiline(traceback.format_exc()))
         resp = Response(
-            {"message": str(exc), "details": single_line_traceback if settings.DEBUG else ""},
+            {"message": str(exc), "details": ""},
             status=status.HTTP_400_BAD_REQUEST,
         )
     return resp

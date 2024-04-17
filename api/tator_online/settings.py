@@ -198,6 +198,7 @@ ASGI_APPLICATION = "tator_online.routing.application"
 # Turn on logging
 if os.getenv("DD_LOGS_INJECTION"):
     import ddtrace.auto
+
     FORMAT = (
         "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] "
         "[dd.service=%(dd.service)s dd.env=%(dd.env)s "

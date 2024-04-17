@@ -1053,7 +1053,9 @@ class TatorSearch:
                 element = {**attribute_obj}
                 found_idx = idx
         if element is None:
-            raise ValueError(f"Could not find attribute name {name} in entity type {entity_type.name}")
+            raise ValueError(
+                f"Could not find attribute name {name} in entity type {entity_type.name}"
+            )
         self.delete_index(entity_type, element)
         del entity_type.attribute_types[found_idx]
         return entity_type

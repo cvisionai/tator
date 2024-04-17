@@ -1,5 +1,7 @@
 from django.contrib.auth import login
 from django.shortcuts import redirect
+from django.http import HttpResponseRedirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from rest_framework.views import APIView
 
 from ..models import User
@@ -24,10 +26,11 @@ class AnonymousGatewayAPI(APIView):
         )
 
         # Check redirect url is relative
-        url = request.query_params.get("redirect", None)
-        if not (url and url.startswith("/")):
-            url = "/projects"
-        response = redirect(url)
+        url = request.query_params.get("redirect", "")
+        if url.startswith("/") and url_has_allowed_host_and_scheme(url, allowed_hosts=None):
+            response = HttpResponseRedirect(url)
+        else:
+            response = redirect("/projects")
 
         # Upgrade the connection to a session
         login(request, user)
