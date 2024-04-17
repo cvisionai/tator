@@ -413,29 +413,28 @@ class TatorAlgorithm(JobManagerMixin):
                 }
                 manifest["spec"]["templates"][tidx]["metadata"] = metadata
                 env = manifest["spec"]["templates"][tidx]["container"].get("env", [])
-                manifest["spec"]["templates"][tidx]["container"]["env"] = env \
-                    + [
-                        {
-                            "name": "DD_ENV",
-                            "value": os.getenv("MAIN_HOST"),
-                        },
-                        {
-                            "name": "DD_VERSION",
-                            "value": Git.sha,
-                        },
-                        {
-                            "name": "DD_SERVICE",
-                            "value": _algo_name(self.alg.id, project, user, self.alg.name),
-                        },
-                        {
-                            "name": "DD_AGENT_HOST",
-                            "value": "tator-datadog.default.svc.cluster.local",
-                        },
-                        {
-                            "name": "DD_LOGS_INJECTION",
-                            "value": "true",
-                        },
-                    ]
+                manifest["spec"]["templates"][tidx]["container"]["env"] = env + [
+                    {
+                        "name": "DD_ENV",
+                        "value": os.getenv("MAIN_HOST"),
+                    },
+                    {
+                        "name": "DD_VERSION",
+                        "value": Git.sha,
+                    },
+                    {
+                        "name": "DD_SERVICE",
+                        "value": _algo_name(self.alg.id, project, user, self.alg.name),
+                    },
+                    {
+                        "name": "DD_AGENT_HOST",
+                        "value": "tator-datadog.default.svc.cluster.local",
+                    },
+                    {
+                        "name": "DD_LOGS_INJECTION",
+                        "value": "true",
+                    },
+                ]
 
         # Set exit handler that sends an email if email specs are given
         if success_email_spec is not None or failure_email_spec is not None:
