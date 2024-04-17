@@ -334,6 +334,20 @@ export class AnnotationData extends HTMLElement {
       });
   }
 
+  updateMedia() {
+    fetchCredentials(`/rest/Media/${this._mediaId}?presigned=28800`, {}, true)
+      .then((response) => response.json())
+      .then((data) => {
+        this.dispatchEvent(
+          new CustomEvent("mediaUpdate", {
+            detail: {
+              media: data,
+            },
+          })
+        );
+      });
+  }
+
   get project() {
     return this._projectId;
   }

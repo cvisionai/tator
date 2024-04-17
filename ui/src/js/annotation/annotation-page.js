@@ -1085,6 +1085,10 @@ export class AnnotationPage extends TatorPage {
               versions,
               memberships
             );
+            this._data.addEventListener("mediaUpdate", (evt) => {
+              this._browser.mediaInfo = evt.detail.media;
+              this._browser.mediaType = this._mediaType; // Required to update the browser UI
+            });
             this._data.addEventListener("freshData", (evt) => {
               this._browser.updateData(evt);
 
@@ -1505,6 +1509,10 @@ export class AnnotationPage extends TatorPage {
    *    List of Tator.Favorites associated with the user
    */
   _setupAnnotatorApplets(canvas, canvasElement, favorites) {
+    this._appletMap = {};
+    this._canvasAppletWrappers = {};
+    this._canvasApplets = [];
+
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
@@ -1522,6 +1530,7 @@ export class AnnotationPage extends TatorPage {
       this.setAttribute("has-open-modal", "");
       document.body.classList.add("shortcuts-disabled");
     });
+
     this._menuAppletDialog.addEventListener("hideLoadingScreen", () => {
       this._loading.style.display = "none";
       this.removeAttribute("has-open-modal");
@@ -1532,10 +1541,6 @@ export class AnnotationPage extends TatorPage {
     fetchCredentials("/rest/Applets/" + projectId, {}, true)
       .then((response) => response.json())
       .then((applets) => {
-        this._appletMap = {};
-        this._canvasAppletWrappers = {};
-        this._canvasApplets = [];
-
         for (let applet of applets) {
           if (applet.categories == null) {
             continue;
@@ -2067,6 +2072,8 @@ export class AnnotationPage extends TatorPage {
         projectId: evt.detail.projectId,
         selectedTrack: evt.detail.selectedTrack,
         selectedLocalization: evt.detail.selectedLocalization,
+        data: this._data,
+        undo: this._undo,
       };
 
       if (this._player.mediaType.dtype == "multi") {
