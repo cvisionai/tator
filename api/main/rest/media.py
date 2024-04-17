@@ -95,7 +95,7 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
         "thumbnail_gif",
         "attachment",
     ]
-    media_ids = [media["id"] for media in medias]
+    media_ids = set([media["id"] for media in medias])
     resources = Resource.objects.filter(media__in=media_ids)
     store_lookup = get_storage_lookup(resources)
     cache = TatorCache()
@@ -432,7 +432,7 @@ class MediaListAPI(BaseListView):
                 else:
                     ids.append(obj.id)
 
-            qs = Media.objects.filter(id__in=ids)
+            qs = Media.objects.filter(id__in=set(ids))
             response_data = list(qs.values(*fields))
             response = {
                 "message": f"Started import of {len(ids)} images!",

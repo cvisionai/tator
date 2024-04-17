@@ -72,15 +72,15 @@ def _get_media_psql_queryset(project, filter_ops, params):
         media_ids += media_id
     if state_ids is not None:
         media_ids += list(
-            State.media.through.objects.filter(state__in=state_ids)
+            State.media.through.objects.filter(state__in=set(state_ids))
             .values_list("media_id", flat=True)
             .distinct()
         )
     if media_ids:
-        qs = qs.filter(pk__in=media_ids)
+        qs = qs.filter(pk__in=set(media_ids))
 
     if localization_ids is not None:
-        qs = qs.filter(localization__in=localization_ids).distinct()
+        qs = qs.filter(localization__in=set(localization_ids)).distinct()
 
     if name is not None:
         qs = qs.filter(name__iexact=name)
