@@ -191,6 +191,10 @@ export class MenuAppletDialog extends ModalDialog {
       this._dataInterface.updateType(typeToUpdate);
     });
 
+    this._appletElement.addEventListener("refreshMedia", () => {
+      this._dataInterface.updateMedia();
+    });
+
     this._appletElement.addEventListener("updateAcceptText", (evt) => {
       this._setAcceptButtonText(evt.detail.text);
     });

@@ -75,6 +75,7 @@ export class CanvasAppletWrapper extends TatorElement {
    *    Resolves when the applet element has been initialized
    */
   init(applet, data, favorites, undo) {
+    this._applet = applet;
     return new Promise((resolve) => {
       var appletView = document.createElement("iframe");
       appletView.setAttribute("class", "d-flex col-12");
