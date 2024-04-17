@@ -179,13 +179,13 @@ endif
 
 .PHONY: tator-image
 tator-image:
-	DOCKER_BUILDKIT=1 docker build --pull --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) --network host -t $(REGISTRY)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --pull --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DD_GIT_REPOSITORY_URL=github.com/cvisionai/tator --build-arg DD_GIT_COMMIT_SHA=$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) --network host -t $(REGISTRY)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	mkdir -p .token
 	touch .token/tator_online_$(GIT_VERSION)
 
 .PHONY: ui-image
 ui-image: webpack
-	DOCKER_BUILDKIT=1 docker build --pull --build-arg GIT_VERSION=$(GIT_VERSION) --network host -t $(REGISTRY)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --pull --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DD_GIT_REPOSITORY_URL=github.com/cvisionai/tator --build-arg DD_GIT_COMMIT_SHA=$(GIT_VERSION) --network host -t $(REGISTRY)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
 
 .PHONY: postgis-image
 postgis-image:
@@ -194,12 +194,12 @@ postgis-image:
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
 client-image: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --pull --platform linux/amd64 --network host -t $(REGISTRY)/tator_client:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/tator_client/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --pull --platform linux/amd64 --network host -t $(REGISTRY)/tator_client:$(GIT_VERSION) --build-arg DD_GIT_REPOSITORY_URL=github.com/cvisionai/tator-py --build-arg DD_GIT_COMMIT_SHA=$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/tator_client/Dockerfile . || exit 255
 	docker tag $(REGISTRY)/tator_client:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
 
 .PHONY: transcode-image
 transcode-image:
-	DOCKER_BUILDKIT=1 docker build --pull --network host -t $(REGISTRY)/tator_transcode:$(GIT_VERSION) -f containers/tator_transcode/Dockerfile containers/tator_transcode || exit 255
+	DOCKER_BUILDKIT=1 docker build --pull --network host -t $(REGISTRY)/tator_transcode:$(GIT_VERSION) --build-arg DD_GIT_REPOSITORY_URL=github.com/cvisionai/tator-transcode --build-arg DD_GIT_COMMIT_SHA=$(GIT_VERSION) -f containers/tator_transcode/Dockerfile containers/tator_transcode || exit 255
 
 
 ifeq ($(shell cat api/main/version.py), $(shell ./scripts/version.sh))
