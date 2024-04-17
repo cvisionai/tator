@@ -68,6 +68,14 @@ export class AnnotationPage extends TatorPage {
     this._settings = document.createElement("annotation-settings");
     settingsDiv.appendChild(this._settings);
 
+    this._appletShortcutBar = document.createElement("applet-shortcut-bar");
+    this._appletShortcutBar.style.display = "none";
+    settingsDiv.appendChild(this._appletShortcutBar);
+
+    this._appletShortcutBar.addEventListener("showApplet", (evt) => {
+      this.showCanvasApplet(evt.detail.appletId);
+    });
+
     this._canvasAppletHeader = document.createElement("annotation-header");
     this._canvasAppletHeader.setAttribute(
       "class",
@@ -1525,8 +1533,8 @@ export class AnnotationPage extends TatorPage {
       .then((response) => response.json())
       .then((applets) => {
         this._appletMap = {};
-        this._canvasApplets = {};
-        var canvasAppletObjects = [];
+        this._canvasAppletWrappers = {};
+        this._canvasApplets = [];
 
         for (let applet of applets) {
           if (applet.categories == null) {
@@ -1566,7 +1574,7 @@ export class AnnotationPage extends TatorPage {
             }
 
             // Add canvas applet
-            canvasAppletObjects.push(applet);
+            this._canvasApplets.push(applet);
           }
           // Init for annotator tools applets
           if (applet.categories.includes("annotator-tools")) {
@@ -1603,8 +1611,7 @@ export class AnnotationPage extends TatorPage {
         //
         // Setup the canvas applets
         //
-        this._numCanvasApplets = canvasAppletObjects.length;
-        if (this._numCanvasApplets == 0) {
+        if (this._canvasApplets.length == 0) {
           this._sidebar.disableCanvasApplet();
         }
 
@@ -1623,7 +1630,7 @@ export class AnnotationPage extends TatorPage {
         this._canvasElement = canvasElement;
 
         var canvasAppletInitPromises = [];
-        for (const applet of canvasAppletObjects) {
+        for (const applet of this._canvasApplets) {
           // Create the canvas applet
           const appletInterface = document.createElement(
             "canvas-applet-wrapper"
@@ -1634,15 +1641,29 @@ export class AnnotationPage extends TatorPage {
             appletInterface.init(applet, this._data, favorites, this._undo)
           );
           this._canvasAppletPageWrapper.appendChild(appletInterface);
-          this._canvasApplets[applet.id] = appletInterface;
+          this._canvasAppletWrappers[applet.id] = appletInterface;
         }
-
         Promise.all(canvasAppletInitPromises).then(() => {
           this._canvasAppletMenuLoading.style.display = "none";
 
-          // #TODO Add alphabetical ordering
-          for (const appletId in this._canvasApplets) {
-            const appletInterface = this._canvasApplets[appletId];
+          // Sort the applets by their title now that the elements have been loaded
+          this._canvasApplets.sort((a, b) => {
+            var aTitle = this._canvasAppletWrappers[a.id].getTitle();
+            var bTitle = this._canvasAppletWrappers[b.id].getTitle();
+            return aTitle.localeCompare(bTitle);
+          });
+
+          // Initialize the header bar
+          var sortedWrappers = [];
+          for (const applet of this._canvasApplets) {
+            sortedWrappers.push(this._canvasAppletWrappers[applet.id]);
+          }
+          this._appletShortcutBar.init(sortedWrappers);
+
+          // Initialize the menu
+          for (const applet of this._canvasApplets) {
+            const appletId = applet.id;
+            const appletInterface = this._canvasAppletWrappers[appletId];
 
             // Preload the canvas applets with the current image to speed things up
             if (this._mediaType.dtype == "image") {
@@ -2295,7 +2316,7 @@ export class AnnotationPage extends TatorPage {
     this._sidebar._canvasApplet._button.classList.add("purple-box-border");
 
     let pos = this._sidebar._canvasApplet.getBoundingClientRect();
-    let padding = 20 + this._numCanvasApplets * 60;
+    let padding = 20 + this._canvasApplets.length * 60;
     this._canvasAppletMenu.style.top = `${pos.top - padding}px`;
     this._canvasAppletMenu.style.left = `${pos.right + 18}px`;
     this._canvasAppletMenu.style.display = "block";
@@ -2318,6 +2339,17 @@ export class AnnotationPage extends TatorPage {
   showCanvasApplet(appletId) {
     this.hideCanvasAppletMenu();
 
+    if (this._currentCanvasApplet != null) {
+      if (!this._currentCanvasApplet.allowedToClose()) {
+        return;
+      }
+
+      this._currentCanvasApplet.style.display = "none";
+      this._currentCanvasApplet.close();
+      this._canvasAppletHeader.style.display = "none";
+      this._currentCanvasApplet = null;
+    }
+
     var appletData = {
       frame: this._currentFrame,
       selectedTrack: this._canvas._activeTrack,
@@ -2325,7 +2357,7 @@ export class AnnotationPage extends TatorPage {
       media: this._canvas._mediaInfo,
     };
 
-    this._currentCanvasApplet = this._canvasApplets[appletId];
+    this._currentCanvasApplet = this._canvasAppletWrappers[appletId];
 
     if (
       this._mediaType.dtype != "image" &&
@@ -2345,12 +2377,14 @@ export class AnnotationPage extends TatorPage {
       this._currentCanvasApplet.getTitle()
     );
 
-    //
-    // HIDE MAIN PAGE PARTS
-    //
+    // Hide the main annotation page and the appropriate header components
     this._versionButton.style.display = "none";
     this._settings.style.display = "none";
     this._main.style.display = "none";
+
+    // Display the shortcuts
+    this._appletShortcutBar.setActive(appletId);
+    this._appletShortcutBar.style.display = "block";
   }
 
   /**
@@ -2368,12 +2402,13 @@ export class AnnotationPage extends TatorPage {
     this._canvasAppletHeader.style.display = "none";
     this._currentCanvasApplet = null;
 
-    //
-    // SHOW MAIN PAGE PARTS
-    //
+    // Show the main page and the appropriate header components
     this._versionButton.style.display = "block";
     this._settings.style.display = "block";
     this._main.style.display = "flex";
+
+    // Hide shortcuts
+    this._appletShortcutBar.style.display = "none";
 
     // Required resize to reset the elements correctly
     window.dispatchEvent(new Event("resize"));
