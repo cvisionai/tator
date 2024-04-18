@@ -55,7 +55,7 @@ STATE_PROPERTIES.pop(STATE_PROPERTIES.index("localizations"))
 
 def _fill_m2m(response_data):
     # Get many to many fields.
-    state_ids = [state["id"] for state in response_data]
+    state_ids = set([state["id"] for state in response_data])
     localizations = {
         obj["state_id"]: obj["localizations"]
         for obj in State.localizations.through.objects.filter(state__in=state_ids)
@@ -315,9 +315,9 @@ class StateListAPI(BaseListView):
         State.localizations.through.objects.bulk_create(loc_relations, ignore_conflicts=True)
 
         # Calculate segments (this is not triggered for bulk created m2m).
-        localization_ids = itertools.chain(
+        localization_ids = set(itertools.chain(
             *[state_spec.get("localization_ids", []) for state_spec in state_specs]
-        )
+        ))
         loc_id_to_frame = {
             loc["id"]: loc["frame"]
             for loc in Localization.objects.filter(pk__in=localization_ids)

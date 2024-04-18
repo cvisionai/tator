@@ -75,7 +75,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if media_id is not None:
         media_ids += media_id
     if media_ids:
-        qs = qs.filter(media__in=media_ids)
+        qs = qs.filter(media__in=set(media_ids))
         if len(media_ids) > 1:
             qs = qs.distinct()
 
@@ -84,18 +84,18 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         localization_ids += localization_id_put
     if state_ids and (annotation_type == "localization"):
         localization_ids += list(
-            State.localizations.through.objects.filter(state__in=state_ids)
+            State.localizations.through.objects.filter(state__in=set(state_ids))
             .values_list("localization_id", flat=True)
             .distinct()
         )
     if localization_ids:
         if annotation_type == "localization":
-            qs = qs.filter(pk__in=localization_ids)
+            qs = qs.filter(pk__in=set(localization_ids))
         elif annotation_type == "state":
-            qs = qs.filter(localizations__in=localization_ids).distinct()
+            qs = qs.filter(localizations__in=set(localization_ids)).distinct()
 
     if state_ids and (annotation_type == "state"):
-        qs = qs.filter(pk__in=state_ids)
+        qs = qs.filter(pk__in=set(state_ids))
 
     if frame_state_ids and (annotation_type == "localization"):
         # Combine media and frame from states then find localizations that match
@@ -104,8 +104,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             output_field=BigIntegerField(),
         )
         media_frames = State.objects.filter(
-            pk__in=frame_state_ids, media__isnull=False, frame__isnull=False, variant_deleted=False
-        ).values_list(expression, flat=True)
+            pk__in=set(frame_state_ids), media__isnull=False, frame__isnull=False, variant_deleted=False
+        ).values_list(expression, flat=True).distinct()
         qs = (
             qs.filter(media__isnull=False, frame__isnull=False)
             .alias(media_frame=expression)
@@ -113,7 +113,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         )
 
     if elemental_ids:
-        qs = qs.filter(elemental_id__in=elemental_ids)
+        qs = qs.filter(elemental_id__in=set(elemental_ids))
     if version is not None:
         qs = qs.filter(version__in=version)
 
@@ -243,10 +243,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     qs = _do_object_search(qs, params)
     if params.get("related_id"):
         if annotation_type == "localization":
-            state_qs = State.objects.filter(pk__in=params.get("related_id"))
-            qs = qs.filter(pk__in=state_qs.values("localizations"))
+            state_qs = State.objects.filter(pk__in=set(params.get("related_id")))
+            qs = qs.filter(pk__in=state_qs.values("localizations").distinct())
         elif annotation_type == "state":
-            qs = qs.filter(localizations__in=params.get("related_id"))
+            qs = qs.filter(localizations__in=set(params.get("related_id")))
 
     if apply_merge:
         # parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())

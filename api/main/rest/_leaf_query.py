@@ -45,7 +45,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
         if leaf_ids == []:
             qs = qs.filter(pk=-1)
         else:
-            qs = qs.filter(pk__in=leaf_ids)
+            qs = qs.filter(pk__in=set(leaf_ids))
 
     if depth is not None:
         qs = qs.filter(path__depth=depth)
