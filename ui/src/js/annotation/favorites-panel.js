@@ -176,9 +176,7 @@ export class FavoritesPanel extends TatorElement {
     }
     this._favorites.forEach((arr) => {
       arr.sort((a, b) => {
-        const attrA = a.values[this._identifier.name].toString();
-        const attrB = b.values[this._identifier.name].toString();
-        return attrA.localeCompare(attrB);
+        return a.name.localeCompare(b.name);
       });
     });
     this._updatePage();
