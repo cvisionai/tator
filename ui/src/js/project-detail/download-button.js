@@ -1,6 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
 import { svgNamespace } from "../components/tator-element.js";
-import streamSaver from "../util/StreamSaver.js";
 
 export class DownloadButton extends TatorElement {
   constructor() {
@@ -33,35 +32,18 @@ export class DownloadButton extends TatorElement {
 
     this._button.addEventListener("click", () => {
       if (this.request) {
-        const fileSize = this.getAttribute("size");
-        const name = this.getAttribute("name");
-
-        console.log(`${name} is ${fileSize} bytes`);
-        const fileStream = streamSaver.createWriteStream(name, {
-          size: fileSize,
-        });
-        fetch(this.request).then((res) => {
-          // https://github.com/jimmywarting/StreamSaver.js/blob/master/examples/fetch.html
-          const readableStream = res.body;
-
-          if (window.WritableStream && readableStream.pipeTo) {
-            return readableStream
-              .pipeTo(fileStream)
-              .then(() => console.log("done writing"));
-          }
-
-          window.writer = fileStream.getWriter();
-
-          const reader = res.body.getReader();
-          const pump = () =>
-            reader
-              .read()
-              .then((res) =>
-                res.done ? writer.close() : writer.write(res.value).then(pump)
-              );
-
-          pump();
-        });
+        fetch(this.request)
+        .then(response => response.blob())
+        .then(blob => {
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = this.getAttribute("name");
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }) 
+        .catch(error => console.error(error));
       } else if (this.hasAttribute("url") && this.hasAttribute("name")) {
         const link = document.createElement("a");
         link.style.display = "none";
