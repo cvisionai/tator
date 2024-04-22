@@ -39,7 +39,6 @@ Follow these steps to test the annotation tools.
 1. Repeat steps 18-26 on a video.
 1. Perform cut and paste with a localization
 1. Verify selecting a localization with a URL highlights it with the white border
-1. Verify selecting a localization-associated track with a URL highlights it with the white border
 1. Verify deselecting and selecting a localization with mouse clicks changes the color between the colorMap and white
 1. Use the auto frame jump to select entities in the browser. Verify the localization is highlighted with white.
 1. Turn off auto frame jump in the entity browser and verify the localization select/deselect works in the canvas.
@@ -75,6 +74,7 @@ Follow these steps to test the annotation tools.
 1. Verify you can cycle between the three tracks using the entity selector.
 1. Use the jump frame button on the three tracks and verify the video frame changes and the track is selected.
 1. Use the track slider and verify the video frame changes and the track is selected.
+1. Verify selecting a localization-associated track with a URL highlights it with the white border
 
 ## Video Playback Tests
 -----------------------
