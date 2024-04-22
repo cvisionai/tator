@@ -21,7 +21,7 @@ Follow these steps to test the annotation tools.
 1. Attempt to download the video section.
 1. Attempt to download an individual video.
 1. Open an image.
-1. Draw 3 boxes.
+1. Select the Test Version version, then draw 3 boxes.
 1. Change the Enum attribute of each of the three boxes to different values. Verify that each box is a different color.
 1. Move the boxes around and resize them. Reload to verify the changes persist.
 1. Create a few lines, drawn in different directions.
