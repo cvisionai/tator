@@ -112,7 +112,7 @@ export class ProjectDetail extends TatorPage {
     this._topExportDataButton = document.createElement("button");
     this._topExportDataButton.setAttribute(
       "class",
-      "d-flex flex-column mx-1 px-2 py-2 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
+      "d-flex flex-column py-1 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
     );
     this._topExportDataButton.setAttribute("tooltip", "Download Metadata");
     buttons.appendChild(this._topExportDataButton);
@@ -120,10 +120,10 @@ export class ProjectDetail extends TatorPage {
     var buttonIcon = document.createElement("div");
     buttonIcon.setAttribute(
       "class",
-      "d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
+      "project-topbar-button-icon px-1 d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
     );
     buttonIcon.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
       </svg>
     `;
@@ -137,7 +137,7 @@ export class ProjectDetail extends TatorPage {
     this._topLocGalleryButton = document.createElement("button");
     this._topLocGalleryButton.setAttribute(
       "class",
-      "d-flex flex-column mx-1 px-2 py-2 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
+      "d-flex flex-column py-1 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
     );
     this._topLocGalleryButton.setAttribute(
       "tooltip",
@@ -148,10 +148,10 @@ export class ProjectDetail extends TatorPage {
     var buttonIcon = document.createElement("div");
     buttonIcon.setAttribute(
       "class",
-      "d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
+      "project-topbar-button-icon px-1 d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
     );
     buttonIcon.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
       </svg>
     `;
@@ -165,7 +165,7 @@ export class ProjectDetail extends TatorPage {
     this._topDashboardsButton = document.createElement("button");
     this._topDashboardsButton.setAttribute(
       "class",
-      "d-flex flex-column mx-1 px-2 py-2 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
+      "d-flex flex-column py-1 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
     );
     this._topDashboardsButton.setAttribute("tooltip", "Open Dashboards Portal");
     buttons.appendChild(this._topDashboardsButton);
@@ -173,10 +173,10 @@ export class ProjectDetail extends TatorPage {
     var buttonIcon = document.createElement("div");
     buttonIcon.setAttribute(
       "class",
-      "d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
+      "project-topbar-button-icon px-1 d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
     );
     buttonIcon.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>
       </svg>
     `;
@@ -190,7 +190,7 @@ export class ProjectDetail extends TatorPage {
     this._topFilesButton = document.createElement("button");
     this._topFilesButton.setAttribute(
       "class",
-      "d-flex flex-column mx-1 px-2 py-2 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
+      "d-flex flex-column py-1 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
     );
     this._topFilesButton.setAttribute("tooltip", "Open Data Files Portal");
     buttons.appendChild(this._topFilesButton);
@@ -198,10 +198,10 @@ export class ProjectDetail extends TatorPage {
     var buttonIcon = document.createElement("div");
     buttonIcon.setAttribute(
       "class",
-      "d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
+      "project-topbar-button-icon px-1 d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
     );
     buttonIcon.innerHTML = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
       </svg>
     `;
@@ -215,7 +215,7 @@ export class ProjectDetail extends TatorPage {
     this._topActivityButton = document.createElement("button");
     this._topActivityButton.setAttribute(
       "class",
-      "d-flex flex-column mx-1 px-2 py-2 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
+      "d-flex flex-column py-1 flex-items-center rounded-2 project-topbar-button btn-clear text-gray"
     );
     this._topActivityButton.setAttribute("tooltip", "View Active Workflows");
     buttons.appendChild(this._topActivityButton);
@@ -223,10 +223,10 @@ export class ProjectDetail extends TatorPage {
     var buttonIcon = document.createElement("div");
     buttonIcon.setAttribute(
       "class",
-      "d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
+      "project-topbar-button-icon px-1 d-flex flex-items-center flex-justify-center rounded-2 flex-grow"
     );
     buttonIcon.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
       </svg>
     `;
