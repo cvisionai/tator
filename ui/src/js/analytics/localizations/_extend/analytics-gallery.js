@@ -113,7 +113,7 @@ export class AnalyticsGallery extends EntityCardGallery {
     this.modelData = modelData;
     this._modalNotify = modalNotify;
     this._bulkEdit = bulkEdit;
-
+    this.annotationPanel = this.panelContainer._panelTop._panel;
     // Listen for attribute changes
     this.panelContainer._panelTop._panel.entityData.addEventListener(
       "save",
@@ -406,25 +406,33 @@ export class AnalyticsGallery extends EntityCardGallery {
     this.multiEnabled = false;
   }
 
-  updateCardData(newCardData) {
-    if (newCardData.id in this._currentCardIndexes) {
-      const index = this._currentCardIndexes[newCardData.id];
+  updateCardData(newCardData, oldId) {
+    if (oldId in this._currentCardIndexes) {
+      // Find data index & Add new ID lookup
+      const index = this._currentCardIndexes[oldId];
+      this._currentCardIndexes[newCardData.id] = index; 
+      
       const card = this._cardElements[index].card;
-      this.cardData.updateLocalizationAttributes(card.cardObj).then(() => {
+      // Update ID used by the following method to refetch cardObj data
+      card.cardObj.id = newCardData.id;   
+      this.cardData.updateLocalizationAttributes(card.cardObj, newCardData.id).then((obj) => {
         //card.displayAttributes();
-        card._updateAttributeValues(card.cardObj);
+        card._updateAttributeValues(obj);
+        this.annotationPanel.init({cardObj: card.cardObj});
       });
     }
   }
 
   entityFormChange(e) {
+    const oldId = e.detail.id;
     this.formChange({
-      id: e.detail.id,
+      id: oldId,
       values: { attributes: e.detail.values },
       type: "Localization",
     })
       .then((data) => {
-        this.updateCardData(data);
+        this.updateCardData(data, oldId);
+        
       })
       .then(() => {
         this._bulkEdit.updateCardData(this._cardElements);
@@ -443,8 +451,8 @@ export class AnalyticsGallery extends EntityCardGallery {
         .then(() => {
           for (let idx = 0; idx < this._cardElements.length; idx++) {
             const card = this._cardElements[idx].card.cardObj;
-            if (card.mediaId == mediaId) {
-              this._cardElements[idx].annotationPanel.setMediaData(card);
+            if (card.mediaId == mediaId && this.annotationPanel?.setMediaData) {
+              this.annotationPanel.setMediaData(card);
             }
           }
         })
@@ -455,6 +463,7 @@ export class AnalyticsGallery extends EntityCardGallery {
   }
 
   async formChange({ type, id, values } = {}) {
+    const oldId = id;
     var result = await fetchCredentials(`/rest/${type}/${id}`, {
       method: "PATCH",
       mode: "cors",
@@ -481,11 +490,6 @@ export class AnalyticsGallery extends EntityCardGallery {
       Utilities.warningAlert(msg, "#ff3e1d", false);
     }
 
-    result = await fetchCredentials(`/rest/${type}/${id}`, {
-      mode: "cors",
-      credentials: "include",
-    });
-    data = await result.json();
     return data;
   }
 
