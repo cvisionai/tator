@@ -290,3 +290,17 @@
   width: 40px;
   height: 40px;
 }
+
+.project-topbar-button {
+  width: 86px;
+  height: 76px;
+  border: 1px solid #1f2a3a;
+  background-color: transparent;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  &:hover,
+  &:focus {
+    background-color: $color-white;
+    color: $color-charcoal--dark;
+  }
+}
