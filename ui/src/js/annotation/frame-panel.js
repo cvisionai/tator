@@ -120,7 +120,12 @@ export class FramePanel extends TatorElement {
             console.info(JSON.stringify(newObject));
             this._undo.post("States", newObject, val);
           } else {
-            this._undo.patch("State", state.id, { attributes: values }, val);
+            this._undo.patch(
+              "State",
+              state.id, 
+              { attributes: values },
+              val
+            );
           }
         }
       }

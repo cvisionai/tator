@@ -221,7 +221,8 @@ export class AnnotationData extends HTMLElement {
     );
   }
 
-  updateTypeLocal(method, id, body, typeObj) {
+  updateTypeLocal(method, id, body, typeObj, newId = null) {
+    console.log("updateTypeLocal", body, id, newId);
     const typeId = typeObj.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
@@ -230,7 +231,7 @@ export class AnnotationData extends HTMLElement {
 
     const attributeNames = typeObj.attribute_types.map((column) => column.name);
     const setupObject = (obj) => {
-      obj.id = id;
+      obj.id = (newId !== null) ? newId : id;
       obj.type = typeId;
       if (typeObj.isTLState) {
         obj = {
@@ -239,7 +240,7 @@ export class AnnotationData extends HTMLElement {
           media: [Number(body.media_ids)],
         };
       }
-      return body;
+      return obj;
     };
     if (method == "POST") {
       // Only push the object if it's a localization. The state object has some other
@@ -252,15 +253,30 @@ export class AnnotationData extends HTMLElement {
         this._dataByType.get(typeId).push(setupObject(body));
       }
     } else if (method == "PATCH") {
-      const ids = this._dataByType.get(typeId).map((elem) => elem.id);
-      const index = ids.indexOf(id);
-      const elem = this._dataByType.get(typeId)[index];
-      for (const key in body) {
-        if (elem && key in elem) {
-          elem[key] = body[key];
+
+      if (newId !== null) {
+        // Setup new object from updated body
+        const newObject = setupObject(body);
+        const ids = this._dataByType.get(typeId).map((elem) => elem.id);
+        const index = ids.indexOf(id);
+
+        // It is possible for the ID to not exist if it is part of a different version/layer.
+        if (index == -1) {
+          return;
         }
+        this._dataByType.get(typeId).splice(index, 1, newObject);
+      } else {
+        const ids = this._dataByType.get(typeId).map((elem) => elem.id);
+        const index = ids.indexOf(id);
+        const elem = this._dataByType.get(typeId)[index];
+        for (const key in body) {
+          if (elem && key in elem) {
+            elem[key] = body[key];
+          }
+        }
+        this._dataByType.get(typeId)[index] = elem;
       }
-      this._dataByType.get(typeId)[index] = elem;
+      
     } else if (method == "DELETE") {
       const ids = this._dataByType.get(typeId).map((elem) => elem.id);
       const index = ids.indexOf(id);
@@ -270,6 +286,8 @@ export class AnnotationData extends HTMLElement {
       }
       this._dataByType.get(typeId).splice(index, 1);
     }
+
+    console.log("DISPATCH OF FRESH DATA", this._dataByType.get(typeId));
     this.dispatchEvent(
       new CustomEvent("freshData", {
         detail: {

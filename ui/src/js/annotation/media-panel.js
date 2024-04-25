@@ -115,7 +115,13 @@ export class MediaPanel extends TatorElement {
       if (values !== null) {
         const endpoint = "Media";
         const id = this._mediaData["id"];
-        this._undo.patch(endpoint, id, { attributes: values }, val);
+        console.log("Media panel patch");
+        this._undo.patch({
+          detailUri: endpoint,
+          id: id, 
+          body: { attributes: values },
+          dataType: val
+        });
         this.dispatchEvent(
           new CustomEvent("save", {
             detail: this._values,

@@ -41,7 +41,7 @@ export class AttributePanel extends TatorElement {
 
     this._idWidget = document.createElement("text-input");
     this._idWidget.permission = "View Only";
-    this._idWidget.setAttribute("name", "ID");
+    this._idWidget.setAttribute("name", "Reference ID");
     this._standardWidgetsDiv.appendChild(this._idWidget);
     this._widgets.push(this._idWidget);
 
@@ -285,6 +285,11 @@ export class AttributePanel extends TatorElement {
     var widget;
 
     widget = document.createElement("text-input");
+    widget.setAttribute("name", "ID");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+
+    widget = document.createElement("text-input");
     widget.setAttribute("name", "Created By");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
@@ -301,6 +306,11 @@ export class AttributePanel extends TatorElement {
 
     widget = document.createElement("text-input");
     widget.setAttribute("name", "Modified Datetime");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+
+    widget = document.createElement("text-input");
+    widget.setAttribute("name", "Modified Count");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
 
@@ -330,7 +340,21 @@ export class AttributePanel extends TatorElement {
     for (const widget of this._builtInAttrsDiv.children) {
       const name = widget.getAttribute("name");
 
-      if (name == "Created By") {
+      if (name == "Modified Count") {
+        if (values.mark == null) {
+          widget.hidden = true;
+        } else {
+          widget.setValue(values.mark);
+        }
+      }
+      else if (name == "ID") {
+        if (values.id == null) {
+          widget.hidden = true;
+        } else {
+          widget.setValue(values.id);
+        }
+      }
+      else if (name == "Created By") {
         let userKey = "created_by";
         if (values.created_by == null) {
           userKey = "user";
@@ -1156,7 +1180,7 @@ export class AttributePanel extends TatorElement {
     this._groupDiv.style.display = "none";
 
     var standardWidgets = [
-      { attrName: "ID", widget: this._idWidget },
+      { attrName: "Elemental ID", widget: this._idWidget },
       { attrName: "Frame", widget: this._frameWidget },
       { attrName: "Type", widget: this._typeWidget },
       { attrName: "Version", widget: this._versionWidget },
@@ -1206,7 +1230,8 @@ export class AttributePanel extends TatorElement {
 
   setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
-    this._idWidget.setValue(values.id);
+    const id = (values.elemental_id) ? `${values.elemental_id}` : values.id;
+    this._idWidget.setValue(id);
     this._frameWidget.setValue(values.frame);
     this._typeWidget.setValue(
       `${this._dataType.name} (ID: ${this._dataType.id})`
@@ -1290,6 +1315,7 @@ export class AttributePanel extends TatorElement {
 
     this._emitChanges = true;
     this.dispatchEvent(new Event("values-set"));
+    console.log("Values set event", values);
   }
 
   reset() {
