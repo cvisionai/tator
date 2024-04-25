@@ -421,7 +421,7 @@ export class SectionData {
   getFolderEnumChoices() {
     var choices = [];
     for (const section of this.getFolderList()) {
-      if (section.visible == true) {
+      if (typeof section !== "undefined" && section?.visible === true) {
         var parentSections = this.getParentSections(section);
 
         // If any of the parentSections are not visible, don't add this section to the list
@@ -443,6 +443,8 @@ export class SectionData {
           value: section.id,
           label: label,
         });
+      } else if (typeof section == "undefined" || section?.visible) {
+        console.warn("Skipping 'undefined', or null section from getFolderList.", section)
       }
     }
 
