@@ -137,7 +137,7 @@
   <!--
   HEADER
   -->
-  <h1 class="h1 mt-4">Export Data</h1>
+  <div class="h1 mt-6">Export Data</div>
   <div class="text-gray py-2 f1 mb-4">
     Export entities from a filtered set of localizations, states, or media in the project.
   </div>
@@ -157,7 +157,7 @@
       <div class="py-3 col-12">
         <div class="h1">1. Select Export Type</div>
         <span class="text-gray f2 py-1 mt-1 d-flex">Select the type(s) of data to be exported. Additional filters can be applied after selecting the options below.</span>
-        <div class="d-flex mt-4 col-12">
+        <div class="d-flex mt-1 col-12">
           <div class="d-flex flex-items-center flex-column px-2 py-2 mx-2 box-border rounded-2 col-4 text-left">
             <button id="pageQueryType_mediaButton" class="btn btn-clear btn-purple py-2 px-2 mx-3 my-3 d-flex flex-column" style="height: 80px; width: 280px;" disabled>
               <div class="d-flex flex-row py-1 pt-1">
@@ -262,28 +262,9 @@
         <div id="pageQueryData_resultCount" class="h1 text-gray mx-3 d-flex flex-justify-right flex-column">Querying...</div>
       </div>
 
-      <div class="d-flex mt-4">
-        <div id="exportPage_ReportTab" class="dark-page-tab px-3 d-flex flex-grow flex-justify-left py-1" style="height: 40px;">
-          <div class="d-flex flex-column flex-justify-center flex-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" />
-            </svg>
-            <span class="px-2 f3">Report</span>
-          </div>
-        </div>
-        <div id="exportPage_ImagesTab" class="dark-page-tab px-3 d-flex flex-grow flex-justify-left py-1" style="height: 40px;">
-          <div class="d-flex flex-column flex-justify-center flex-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 7.26a2.005 2.005 0 0 0 -1.012 1.737v10c0 1.1 .9 2 2 2h10c.75 0 1.158 -.385 1.5 -1" /><path d="M17 7h.01" /><path d="M7 13l3.644 -3.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644" /><path d="M15 12l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l2.644 2.644" />
-            </svg>
-            <span class="px-2 f3">Images</span>
-          </div>
-        </div>
-      </div>
+    <div class="d-flex px-2 py-2">
 
-      <div class="d-flex px-2 py-2" style="border-top: 1px solid #262e3d;">
-
-        <div id="exportReportPage" class="d-flex flex-column flex-grow">
+      <div id="exportReportPage" class="d-flex flex-column flex-grow">
           <div class="d-flex flex-justify-center flex-items-center emphasis-background rounded-2 py-3 my-6 flex-column">
             <div class="col-4 px-6">
               <button id="exportDataButton" class="col-12 btn btn-clear">
@@ -303,34 +284,36 @@
           <div class="mt-1 h3">Column Selection</div>
           <div class="f3 text-gray py-1">Select the columns to output for each type. Attributes with the same name from different entity types share the same column in the output report.</div>
           <div class="d-flex flex-row mt-3">
-            <div id="typePageSelect" class="d-flex flex-justify-center flex-column analysis__filter_main"></div>
-            <div id="typeAttributes" class="d-flex flex-wrap flex-column px-2 py-2 purple-box-border col-5"></div>
-            <div class="d-flex flex-grow flex-wrap flex-column box-border rounded-2 px-2 py-2 ml-3">
+
+            <div class="d-flex flex-column flex-grow">
+              <div class="d-flex mt-1">
+                <div id="exportPage_MainTab" class="dark-page-tab px-3 d-flex flex-grow flex-justify-left py-1 active text-uppercase" style="height: 40px;">
+                  <div class="d-flex flex-column flex-justify-center flex-items-center">
+                    <span class="px-2 f2 text-semibold">Main Data Types</span>
+                  </div>
+                </div>
+                <div id="exportPage_RelatedTab" class="dark-page-tab px-3 d-flex flex-grow flex-justify-left py-1 text-uppercase" style="height: 40px;">
+                  <div class="d-flex flex-column flex-justify-center flex-items-center">
+                    <span class="px-2 f2 text-semibold">Related Media Types</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-row py-3 flex-grow box-border rounded-2">
+                <div id="typePageSelect" class="d-flex flex-justify-center flex-column analysis__filter_main"></div>
+                <div id="typeAttributes" class="d-flex flex-column px-2 py-2 purple-box-border flex-grow mt-1 mr-2 rounded-2" style="max-height: 70vh; overflow-y: auto;"></div>
+                <div id="relatedTypePageSelect" class="d-flex flex-justify-center flex-column analysis__filter_main" style="display: none;"></div>
+                <div id="relatedTypeAttributes" class="d-flex flex-column px-2 py-2 purple-box-border flex-grow mt-1 mr-2 rounded-2" style="display: none; max-height: 70vh; overflow-y: auto;"></div>
+              </div>
+
+            </div>
+
+            <div class="d-flex flex-grow flex-column box-border rounded-2 px-2 py-2 ml-3" style="max-height: 80vh; overflow-y: auto;">
               <span id="columnCount" class="text-semibold text-dark-gray mb-2"></span>
               <div id="selectedColumns" class="f2 text-dark-gray"></div>
             </div>
           </div>
-        </div>
-
-        <div id="exportImagesPage" class="d-flex flex-column flex-grow">
-
-          <div id="exportImagesPage_error" class="f1 text-semibold text-red text-center mt-6" style="display: none;"></div>
-          <div id="exportImagesPage_success" class="f1 text-semibold text-green text-center mt-6" style="display: none;"></div>
-          <div id="exportImagesPage_estimatedTime" class="f2 text-center text-gray mt-6" style="display: none;"></div>
-
-          <div class="d-flex flex-justify-center flex-items-center emphasis-background rounded-2 py-3 my-6 flex-column">
-            <div class="col-4 px-6">
-              <button id="exportImagesButton" class="col-12 btn btn-clear">
-                <svg xmlns="http://www.w3.org/2000/svg" class="no-fill pr-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 7.26a2.005 2.005 0 0 0 -1.012 1.737v10c0 1.1 .9 2 2 2h10c.75 0 1.158 -.385 1.5 -1" /><path d="M17 7h.01" /><path d="M7 13l3.644 -3.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644" /><path d="M15 12l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l2.644 2.644" />
-                </svg>
-                Export Images
-              </button>
-            </div>
-        </div>
-
       </div>
-
 
     </div>
   </div>

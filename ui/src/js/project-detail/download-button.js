@@ -33,8 +33,8 @@ export class DownloadButton extends TatorElement {
     this._button.addEventListener("click", () => {
       if (this.request) {
         fetch(this.request)
-        .then(response => response.blob())
-        .then(blob => {
+          .then((response) => response.blob())
+          .then((blob) => {
             let url = URL.createObjectURL(blob);
             let a = document.createElement("a");
             a.href = url;
@@ -42,8 +42,8 @@ export class DownloadButton extends TatorElement {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-        }) 
-        .catch(error => console.error(error));
+          })
+          .catch((error) => console.error(error));
       } else if (this.hasAttribute("url") && this.hasAttribute("name")) {
         const link = document.createElement("a");
         link.style.display = "none";

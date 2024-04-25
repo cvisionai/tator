@@ -293,30 +293,28 @@
 
 .project-topbar-button {
   width: 86px;
-  background-color: transparent; // #0d1320; //$color-charcoal--medium70;
+  background-color: transparent;
   transition-duration: 0.25s;
   transition-property: background-color, color;
   &:hover,
   &:focus {
-    background-color: $color-white;
-    color: $color-charcoal--dark;
+    color: $color-white;
   }
 }
 .project-topbar-button-icon {
   width: 60px;
   height: 60px;
   border: 1px solid $color-charcoal--light;
-  //background-color: #0d1320;
   transition-duration: 0.25s;
   transition-property: background-color, color;
 }
 .project-topbar-button:focus .project-topbar-button-icon {
-  border: transparent;
+  border: 1px solid $color-charcoal--dark;
   background-color: $color-white;
   color: $color-charcoal--dark;
 }
 .project-topbar-button:hover .project-topbar-button-icon {
-  border: transparent;
+  border: 1px solid $color-charcoal--dark;
   background-color: $color-white;
   color: $color-charcoal--dark;
 }

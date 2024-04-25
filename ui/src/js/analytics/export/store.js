@@ -10,10 +10,7 @@ const store = create(
     announcements: [],
     init: async () => {
       const projectId = Number(window.location.pathname.split("/")[1]);
-      Promise.all([
-        api.whoami(),
-        api.getAnnouncementList(),
-      ]).then((values) => {
+      Promise.all([api.whoami(), api.getAnnouncementList()]).then((values) => {
         set({
           user: values[0],
           announcements: values[1],

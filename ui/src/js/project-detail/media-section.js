@@ -525,7 +525,9 @@ export class MediaSection extends TatorElement {
       return `/rest/${endpoint}/${this._project}?`;
     };
 
-    const redirectUrl = `/${this._project}/analytics/export?${params.toString()}`;
+    const redirectUrl = `/${
+      this._project
+    }/analytics/export?${params.toString()}`;
     window.location.href = redirectUrl;
   }
 
