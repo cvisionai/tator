@@ -1239,11 +1239,13 @@ export class AnnotationPage extends TatorPage {
             });
 
             this._undo.addEventListener("update", (evt) => {
+              
               // Force selecting this new entity in the browser if a new object was created
               // when the data is retrieved (ie freshData event)
               if (evt.detail.method == "POST" || evt.detail.method == "PATCH") {
-                this._newEntityId = evt.detail.id;
+                this._newEntityId = (evt.detail?.newId && evt.detail?.newId !== null) ? evt.detail.newId : evt.detail.id;
                 this._newEntity = null; // Updates in "freshData"
+                console.log("Undo heard update event ", evt.detail);
               } else {
                 this._newEntityId = null;
                 this._newEntity = null;
@@ -1253,9 +1255,11 @@ export class AnnotationPage extends TatorPage {
                 evt.detail.method,
                 evt.detail.id,
                 evt.detail.body,
-                evt.detail.dataType
+                evt.detail.dataType,
+                evt.detail.newId
               );
             });
+            
             this._browser.addEventListener("select", (evt) => {
               if (evt.detail.byUser) {
                 // Remove attribute here, will be reset by canvas, if appropriate.

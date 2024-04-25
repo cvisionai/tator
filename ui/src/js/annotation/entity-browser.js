@@ -367,6 +367,7 @@ export class EntityBrowser extends TatorElement {
                 document.body.classList.remove("shortcuts-disabled");
                 saved = true;
               } else if (this._data.getVersion().id == selector.data.version) {
+                console.log("Entity browser panel patch");
                 this._undo.patch(
                   endpoint,
                   id,

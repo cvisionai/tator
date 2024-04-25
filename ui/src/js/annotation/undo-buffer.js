@@ -109,8 +109,7 @@ export class UndoBuffer extends HTMLElement {
     dataType,
     extra_fw_ops,
     extra_bw_ops,
-    replace_bw_ops
-  ) {
+    replace_bw_ops) {
     const projectId = this.getAttribute("project-id");
     const promise = await this._get(detailUri, id);
     if (promise) {
@@ -147,57 +146,65 @@ export class UndoBuffer extends HTMLElement {
         this._forwardOps.push([["PATCH", detailUri, id, body, dataType]]);
         this._backwardOps.push([["PATCH", detailUri, id, original, dataType]]);
         let patch_response = await this.redo();
+        let patch_response_json = {};
 
-        if (patch_response[0].status == 200) {
-          let patch_response_json = await patch_response[0].json();
-          const new_id = patch_response_json.id;
-          const index = this._forwardOps.length - 1;
-          let fixed_fw_ops = [];
-          let fixed_bw_ops = [];
-          if (extra_fw_ops && extra_fw_ops.length > 0) {
-            for (const op of extra_fw_ops) {
-              let [ep, uri, id, body, dataType] = op;
-              if ("localization_ids_add" in body) {
-                body["localization_ids_add"] = [new_id];
-              }
-              fixed_fw_ops.push([ep, uri, id, body, dataType]);
-            }
-          }
-          if (extra_bw_ops && extra_bw_ops.length > 0) {
-            for (const op of extra_bw_ops) {
-              let [method, uri, id, body, dataType] = op;
-              if ("localization_ids_remove" in body) {
-                body["localization_ids_remove"] = [new_id];
-              }
-              if (method == "DELETE" && id == "$NEW_ID") {
-                id = new_id;
-              }
-              fixed_bw_ops.push([method, uri, id, body, dataType]);
-            }
-          }
-
-          // Run the forward ops atomically in  this function call
-          if (extra_fw_ops && extra_fw_ops.length > 0) {
-            for (let op of fixed_fw_ops) {
-              if (op[0] == "FUNCTOR") {
-                op[1]();
-              } else {
-                await this._fetch(op);
-              }
-            }
-          }
-
-          //  Update / Replace backward ops as appropriate
-          if (fixed_bw_ops && fixed_bw_ops.length > 0) {
-            if (replace_bw_ops) {
-              this._backwardOps[index] = [];
-            }
-            this._backwardOps[index].push(...fixed_bw_ops);
-          }
+        if (patch_response?.[0]?.status && patch_response?.[0]?.status == 200) {
+          patch_response_json = await patch_response[0].json();
+        } else if (patch_response?.[0]?.id && patch_response?.[0]?.message) {
+          patch_response_json = patch_response[0];
         } else {
-          throw new Error(`Error during patch! ${e.message}`);
+          return console.error("Patch response was not 200.", patch_response);
         }
-        return patch_response;
+
+        console.log("patch_response_json",patch_response_json);
+        const new_id = patch_response_json.id;
+        const index = this._forwardOps.length - 1;
+
+        let fixed_fw_ops = [];
+        let fixed_bw_ops = [];
+        if (extra_fw_ops && extra_fw_ops.length > 0) {
+          for (const op of extra_fw_ops) {
+            let [ep, uri, id, body, dataType] = op;
+            if ("localization_ids_add" in body) {
+              body["localization_ids_add"] = [new_id];
+            }
+            fixed_fw_ops.push([ep, uri, id, body, dataType]);
+          }
+        }
+        if (extra_bw_ops && extra_bw_ops.length > 0) {
+          for (const op of extra_bw_ops) {
+            let [method, uri, id, body, dataType] = op;
+            if ("localization_ids_remove" in body) {
+              body["localization_ids_remove"] = [new_id];
+            }
+            if (method == "DELETE" && id == "$NEW_ID") {
+              id = new_id;
+            }
+            fixed_bw_ops.push([method, uri, id, body, dataType]);
+          }
+        }
+
+        // Run the forward ops atomically in  this function call
+        if (extra_fw_ops && extra_fw_ops.length > 0) {
+          for (let op of fixed_fw_ops) {
+            if (op[0] == "FUNCTOR") {
+              op[1]();
+            } else {
+              await this._fetch(op);
+            }
+          }
+        }
+
+        //  Update / Replace backward ops as appropriate
+        if (fixed_bw_ops && fixed_bw_ops.length > 0) {
+          if (replace_bw_ops) {
+            this._backwardOps[index] = [];
+          }
+          this._backwardOps[index].push(...fixed_bw_ops);
+        }
+
+        return patch_response_json;
+
       } catch (error) {
         const msg = dataType.name + " was not updated";
         Utilities.warningAlert(msg, "#ff3e1d", false);
@@ -338,6 +345,40 @@ export class UndoBuffer extends HTMLElement {
                 this._backwardOps.forEach(replace);
                 return data;
               });
+          } else if (method == "PATCH") {
+            promise = promise
+              .then((response) => {
+                return response.json();
+              })
+              .then((data) => {
+                if (data.id) {
+                  const url = "/rest/" + uri + "/" + data.id;
+                  return fetchCredentials(url)
+                } else {
+                  return null;
+                }
+              })
+              .then((response) => {
+                return response.json();
+              }).then((body) => {         
+                const newId = body.id;
+                this._emitUpdate(method, id, body, dataType, newId);
+
+                // Replaces ID in the operation entries
+                //TODO what is delId?
+                const delId = this._backwardOps[this._index - 1][opIndex][2];
+                const replace = (ops) => {
+                  for (const [opIndex, op] of ops.entries()) {
+                    if (op[2] == delId || op[2] == null) {
+                      ops[opIndex][2] = newId;
+                    }
+                  }
+                };
+                this._forwardOps.forEach(replace);
+                this._backwardOps.forEach(replace);
+                return body;
+              });
+
           } else {
             this._emitUpdate(method, id, body, dataType);
           }
@@ -422,7 +463,7 @@ export class UndoBuffer extends HTMLElement {
       });
   }
 
-  _emitUpdate(method, id, body, dataType) {
+  _emitUpdate(method, id, body, dataType, newId = null) {
     var msg = "";
     if (method == "PATCH") {
       msg = " updated!";
@@ -439,6 +480,7 @@ export class UndoBuffer extends HTMLElement {
         detail: {
           method: method,
           id: id,
+          newId: newId,
           body: body,
           dataType: dataType,
         },
