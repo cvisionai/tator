@@ -11,17 +11,17 @@ Follow these steps to test the annotation tools.
 1. Create a new folder named "Folder A" and upload some videos into the project
 1. Create a new folder named "Folder B" and upload some images into the project
 1. Rename the section containing images to "Images" and videos to "Videos". Reload to verify that the name of these sections remains.
-1. Right-click on the "Images" section and select "Archive folder"
-1. Click on "Archived Folders" and verify the "Images" section shows up there. Reload to verify that it remains there.
-1. Right-click on the "Images section and select "Restore folder"
-1. Verify the "Images" section shows up in "Library". Reload to verify that it remains there.
+1. Right-click on the "Images" section and select "Hide folder"
+1. Click on eye icon to "View hidden folders" and verify the "Images" section shows up as hidden. Reload to verify that it remains there.
+1. Right-click on the "Images" section and select "Restore folder"
+1. Verify the "Images" section shows up in "Folders". Reload to verify that it remains there.
 1. Upon reload, verify the number of images and videos is correct in the section summaries.
 1. Attempt to download the image section.
 1. Attempt to download an individual image.
 1. Attempt to download the video section.
 1. Attempt to download an individual video.
 1. Open an image.
-1. Draw 3 boxes.
+1. Select the Test Version version, then draw 3 boxes.
 1. Change the Enum attribute of each of the three boxes to different values. Verify that each box is a different color.
 1. Move the boxes around and resize them. Reload to verify the changes persist.
 1. Create a few lines, drawn in different directions.
@@ -39,7 +39,6 @@ Follow these steps to test the annotation tools.
 1. Repeat steps 18-26 on a video.
 1. Perform cut and paste with a localization
 1. Verify selecting a localization with a URL highlights it with the white border
-1. Verify selecting a localization-associated track with a URL highlights it with the white border
 1. Verify deselecting and selecting a localization with mouse clicks changes the color between the colorMap and white
 1. Use the auto frame jump to select entities in the browser. Verify the localization is highlighted with white.
 1. Turn off auto frame jump in the entity browser and verify the localization select/deselect works in the canvas.
@@ -75,6 +74,7 @@ Follow these steps to test the annotation tools.
 1. Verify you can cycle between the three tracks using the entity selector.
 1. Use the jump frame button on the three tracks and verify the video frame changes and the track is selected.
 1. Use the track slider and verify the video frame changes and the track is selected.
+1. Verify selecting a localization-associated track with a URL highlights it with the white border
 
 ## Video Playback Tests
 -----------------------
