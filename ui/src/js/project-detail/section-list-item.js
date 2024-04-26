@@ -14,6 +14,8 @@ export class SectionListItem extends TatorElement {
     this.setupEventListeners();
     this.setInactive();
     this.collapse();
+
+    this._errorSection = false;
   }
 
   setupUIElements() {
@@ -23,6 +25,16 @@ export class SectionListItem extends TatorElement {
       "rounded-2 px-1 d-flex flex-items-center"
     );
     this._shadow.appendChild(this._mainDiv);
+
+    this._errorIcon = document.createElement("div");
+    this._errorIcon.setAttribute("class", "d-flex text-red pr-2");
+    this._mainDiv.appendChild(this._errorIcon);
+    this._errorIcon.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" class="no-fill" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" />
+    </svg>
+    `;
+    this._errorIcon.style.display = "none";
 
     this._expand = document.createElement("div");
     this._expand.setAttribute(
@@ -95,6 +107,9 @@ export class SectionListItem extends TatorElement {
 
   setupEventListeners() {
     this._mainDiv.addEventListener("mouseover", () => {
+      if (this._errorSection) {
+        return;
+      }
       if (!this._active) {
         this._mainDiv.style.backgroundColor = "#262e3d";
         this._mainDiv.style.color = "#ffffff";
@@ -105,6 +120,9 @@ export class SectionListItem extends TatorElement {
     });
 
     this._mainDiv.addEventListener("mouseout", () => {
+      if (this._errorSection) {
+        return;
+      }
       if (!this._active) {
         this._mainDiv.style.backgroundColor = "";
         this._mainDiv.style.color = "";
@@ -117,6 +135,9 @@ export class SectionListItem extends TatorElement {
     });
 
     this._name.addEventListener("click", () => {
+      if (this._errorSection) {
+        return;
+      }
       this._mainDiv.blur();
       this.hideMoreMenu();
       this.setActive();
@@ -146,10 +167,16 @@ export class SectionListItem extends TatorElement {
     });
 
     this._more.addEventListener("mouseover", () => {
+      if (this._errorSection) {
+        return;
+      }
       this._more.style.backgroundColor = "#3b4250";
     });
 
     this._more.addEventListener("mouseout", () => {
+      if (this._errorSection) {
+        return;
+      }
       this._more.style.backgroundColor = "";
     });
 
@@ -163,6 +190,9 @@ export class SectionListItem extends TatorElement {
 
     this._mainDiv.addEventListener("contextmenu", (e) => {
       e.preventDefault();
+      if (this._errorSection) {
+        return;
+      }
       this.showMoreMenu();
     });
   }
@@ -172,10 +202,14 @@ export class SectionListItem extends TatorElement {
    *    Section object to initialize the button with
    * @param {array} childSections
    *    Array of child sections (Tator.Section objects)
+   * @param {bool} errorSection
+   *    True if the provided section has an error in it.
+   *    Will be displayed with the error icon and will not pad
    */
-  init(section, childSections) {
+  init(section, childSections, errorSection) {
     this._section = section;
     this._childSections = childSections;
+    this._errorSection = errorSection;
 
     // If section.path exists, use it to pad.
     // Use section.name as display
@@ -186,24 +220,38 @@ export class SectionListItem extends TatorElement {
     }
     this._name.innerHTML = section.name;
 
-    // Add the appropriate padding based on how many parents this section has
-    // 10px margin left for each parent
-    if (childSections.length > 0) {
-      // There are child sections, show the expand icon
-      this._expand.style.marginLeft = `${padding}px`;
-    } else {
-      // If no children, remove the expand icon
-      this._expand.style.visibility = "hidden";
-      this._icon.style.marginLeft = `${padding}px`;
-    }
+    if (this._errorSection) {
+      this._errorIcon.style.display = "flex";
+      this._expand.style.display = "none";
 
-    if (!section.visible) {
-      this._name.classList.add("text-dark-gray");
-      this._icon.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
-          <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
-        </svg>
-      `;
+      if (!section.visible) {
+        this._name.classList.add("text-dark-gray");
+        this._icon.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
+          </svg>
+        `;
+      }
+    } else {
+      // Add the appropriate padding based on how many parents this section has
+      // 10px margin left for each parent
+      if (childSections.length > 0) {
+        // There are child sections, show the expand icon
+        this._expand.style.marginLeft = `${padding}px`;
+      } else {
+        // If no children, remove the expand icon
+        this._expand.style.visibility = "hidden";
+        this._icon.style.marginLeft = `${padding}px`;
+      }
+
+      if (!section.visible) {
+        this._name.classList.add("text-dark-gray");
+        this._icon.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
+          </svg>
+        `;
+      }
     }
 
     // Update the more menu

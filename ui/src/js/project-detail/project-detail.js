@@ -1495,6 +1495,14 @@ export class ProjectDetail extends TatorPage {
         });
     }
     traverseAlphabetically(this._sectionData._sectionTree, "");
+
+    for (const folder of this._errorFolders) {
+      if (this._viewAdvancedFolderDetails) {
+        folder.showAdvancedDetails();
+      } else {
+        folder.hideAdvancedDetails();
+      }
+    }
   }
 
   /**
@@ -1506,102 +1514,111 @@ export class ProjectDetail extends TatorPage {
       this._folders.removeChild(this._folders.firstChild);
     }
 
+    this._errorFolders = [];
+
     const that = this;
-    function createSectionItem(path) {
-      const section = that._sectionData.getSectionFromPath(path);
-      if (SectionData.isSavedSearch(section)) {
-        return;
-      }
+    function createSectionItem(path, errorSection) {
+      if (errorSection != null) {
+        const sectionItem = document.createElement("section-list-item");
+        sectionItem.init(errorSection, [], true);
+        that._folders.appendChild(sectionItem);
+        that._errorFolders.push(sectionItem);
+      } else {
+        const section = that._sectionData.getSectionFromPath(path);
+        if (SectionData.isSavedSearch(section)) {
+          return;
+        }
 
-      const childSections = that._sectionData.getChildSections(section);
+        const childSections = that._sectionData.getChildSections(section);
 
-      const sectionItem = document.createElement("section-list-item");
-      sectionItem.init(section, childSections);
+        const sectionItem = document.createElement("section-list-item");
+        sectionItem.init(section, childSections);
 
-      sectionItem.addEventListener("selected", (evt) => {
-        that.selectSection(evt.detail.id);
-      });
+        sectionItem.addEventListener("selected", (evt) => {
+          that.selectSection(evt.detail.id);
+        });
 
-      sectionItem.addEventListener("collapse", () => {
-        that.updateLibraryVisibility();
-      });
+        sectionItem.addEventListener("collapse", () => {
+          that.updateLibraryVisibility();
+        });
 
-      sectionItem.addEventListener("expand", () => {
-        that.updateLibraryVisibility();
-      });
+        sectionItem.addEventListener("expand", () => {
+          that.updateLibraryVisibility();
+        });
 
-      sectionItem.addEventListener("showMoreMenu", () => {
-        for (const folder of that._folders.children) {
-          if (folder != sectionItem) {
-            folder.hideMoreMenu();
+        sectionItem.addEventListener("showMoreMenu", () => {
+          for (const folder of that._folders.children) {
+            if (folder != sectionItem) {
+              folder.hideMoreMenu();
+            }
           }
-        }
-      });
+        });
 
-      sectionItem.addEventListener("hideSection", async (evt) => {
-        that.showDimmer();
+        sectionItem.addEventListener("hideSection", async (evt) => {
+          that.showDimmer();
 
-        await that.hideSection(evt.detail.id);
+          await that.hideSection(evt.detail.id);
 
-        // Get children of the section. If there are any, we need to hide all of them.
-        const children = that._sectionData.getChildSections(section);
-        for (const childSection of children) {
-          await that.hideSection(childSection.id);
-        }
+          // Get children of the section. If there are any, we need to hide all of them.
+          const children = that._sectionData.getChildSections(section);
+          for (const childSection of children) {
+            await that.hideSection(childSection.id);
+          }
 
-        // Reset the UI
-        await that.getSections();
-        that.hideDimmer();
-      });
+          // Reset the UI
+          await that.getSections();
+          that.hideDimmer();
+        });
 
-      sectionItem.addEventListener("deleteSection", async (evt) => {
-        const sectionToDelete = that._sectionData.getSectionFromID(
-          evt.detail.id
-        );
-        that.selectSection(evt.detail.id);
-        that._deleteSectionDialog.init(sectionToDelete, false);
-        that._deleteSectionDialog.setAttribute("is-open", "");
-        that.setAttribute("has-open-modal", "");
-      });
+        sectionItem.addEventListener("deleteSection", async (evt) => {
+          const sectionToDelete = that._sectionData.getSectionFromID(
+            evt.detail.id
+          );
+          that.selectSection(evt.detail.id);
+          that._deleteSectionDialog.init(sectionToDelete, false);
+          that._deleteSectionDialog.setAttribute("is-open", "");
+          that.setAttribute("has-open-modal", "");
+        });
 
-      sectionItem.addEventListener("restoreSection", async (evt) => {
-        that.showDimmer();
-        await that.restoreSection(evt.detail.id);
+        sectionItem.addEventListener("restoreSection", async (evt) => {
+          that.showDimmer();
+          await that.restoreSection(evt.detail.id);
 
-        // Get children of the section. If there are any, we need to restore all of them.
-        const children = that._sectionData.getChildSections(section);
-        for (const childSection of children) {
-          await that.restoreSection(childSection.id);
-        }
+          // Get children of the section. If there are any, we need to restore all of them.
+          const children = that._sectionData.getChildSections(section);
+          for (const childSection of children) {
+            await that.restoreSection(childSection.id);
+          }
 
-        // Reset the UI
-        await that.getSections();
-        that.selectSection(evt.detail.id);
-        that.hideDimmer();
-      });
+          // Reset the UI
+          await that.getSections();
+          that.selectSection(evt.detail.id);
+          that.hideDimmer();
+        });
 
-      sectionItem.addEventListener("addSection", () => {
-        that.showDimmer();
-        that.selectSection(section.id);
-        that._folderDialog.setMode("newFolder", section);
-        that._folderDialog.setAttribute("is-open", "");
-      });
+        sectionItem.addEventListener("addSection", () => {
+          that.showDimmer();
+          that.selectSection(section.id);
+          that._folderDialog.setMode("newFolder", section);
+          that._folderDialog.setAttribute("is-open", "");
+        });
 
-      sectionItem.addEventListener("moveSection", () => {
-        that.showDimmer();
-        that.selectSection(section.id);
-        that._folderDialog.setMode("moveFolder", section);
-        that._folderDialog.setAttribute("is-open", "");
-      });
+        sectionItem.addEventListener("moveSection", () => {
+          that.showDimmer();
+          that.selectSection(section.id);
+          that._folderDialog.setMode("moveFolder", section);
+          that._folderDialog.setAttribute("is-open", "");
+        });
 
-      sectionItem.addEventListener("renameSection", () => {
-        that.showDimmer();
-        that.selectSection(section.id);
-        that._folderDialog.setMode("renameFolder", section);
-        that._folderDialog.setAttribute("is-open", "");
-      });
+        sectionItem.addEventListener("renameSection", () => {
+          that.showDimmer();
+          that.selectSection(section.id);
+          that._folderDialog.setMode("renameFolder", section);
+          that._folderDialog.setAttribute("is-open", "");
+        });
 
-      that._folders.appendChild(sectionItem);
+        that._folders.appendChild(sectionItem);
+      }
     }
 
     function traverseAlphabetically(node, parentPath) {
@@ -1618,6 +1635,11 @@ export class ProjectDetail extends TatorPage {
         });
     }
     traverseAlphabetically(this._sectionData._sectionTree, "");
+
+    const errorSections = this._sectionData.getErrorSections();
+    for (const section of errorSections) {
+      createSectionItem(null, section);
+    }
 
     this._folderDialog.init(this._sectionData);
     this.updateLibraryVisibility();

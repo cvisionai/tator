@@ -8,7 +8,9 @@ export class SectionData {
    * Needs to be executed prior to using other functions of this class.
    *
    * @param {array} sections
-   *   List of Tator.Section objects to process
+   *   List of Tator.Section objects to process. May or may not contain invalid sections.
+   * @param {array} invalidSections
+   *   List of Tator.Section objects that are considered invalid
    *
    * @postcondition this._section is set with sections
    * @postcondition this._sectionTree is set with the tree structure of the sections (key is section.path)
@@ -17,7 +19,7 @@ export class SectionData {
    * @postcondition this._sectionIdPathMap is set with the section pathss (key is section.id)
    * @postcondition this._sectionIdMap is set with the section objects (key is section.id)
    */
-  init(sections) {
+  init(sections, invalidSections) {
     // Create the list of sections
     // Need to organize the list of sections in the tree format
     // Everything in the same subfolder is organized alphabetically
@@ -27,6 +29,7 @@ export class SectionData {
     this._sectionPathMap = {}; // Key is section.path, value is section object
     this._sectionIdPathMap = {}; // Key is section ID, value is path used in the UI
     this._sectionIdMap = {}; // Key is section ID, value is section object
+
     for (const section of sections) {
       // Get corresponding section path, this is based on either the path or the name
       var thisPath = this.getSectionPath(section);
@@ -45,6 +48,41 @@ export class SectionData {
         }
         currentNode = currentNode[part];
       });
+    }
+
+    // Need to loop through the provided sections.
+    // It's possible that there are sections with erroneous paths, we need to detect them and
+    // not include them in this._sections and into a separate list. This requires building
+    // the section tree, and then checking if the section has a parent that is not in the tree.
+    var validSections = [];
+    this._invalidSections = [];
+    var foundInvalidSectionsCount = 0;
+    if (Array.isArray(invalidSections)) {
+      this._invalidSections = invalidSections;
+    }
+    for (const section of sections) {
+      var parentSections = this.getParentSections(section);
+      var valid = true;
+      for (const parentSection of parentSections) {
+        if (parentSection == null) {
+          valid = false;
+          break;
+        }
+      }
+
+      if (valid) {
+        validSections.push(section);
+      } else {
+        this._invalidSections.push(section);
+        foundInvalidSectionsCount += 1;
+      }
+    }
+
+    if (foundInvalidSectionsCount > 0) {
+      console.warn(
+        `${this._invalidSections.length} invalid sections detected. Reinitializing with valid sections.`
+      );
+      this.init(validSections, this._invalidSections);
     }
   }
 
@@ -71,6 +109,15 @@ export class SectionData {
    */
   static getMainName(section) {
     return section.name;
+  }
+
+  /**
+   * @return array
+   *   Array of section objects that have an error in it and are not included as part of the
+   *   nominal section tree.
+   */
+  getErrorSections() {
+    return this._invalidSections;
   }
 
   /**
