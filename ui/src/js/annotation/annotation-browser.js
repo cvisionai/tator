@@ -215,6 +215,8 @@ export class AnnotationBrowser extends TatorElement {
   }
 
   selectEntityOnUpdate(entityId, entityTypeId) {
+      // DEBUG
+      console.log("Annotation browser, selectEntityOnUpdate", entityId, entityTypeId);
     for (const typeId in this._entityPanels) {
       if (typeId == entityTypeId) {
         this._entityPanels[typeId].selectEntityOnUpdate(entityId);
