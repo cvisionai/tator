@@ -67,16 +67,26 @@ export class AnnotationSettings extends TatorElement {
     if (params == undefined) {
       params = new URLSearchParams(window.location.search);
     }
+    
     if (this.hasAttribute("entity-id")) {
       params.set("selected_entity", this.getAttribute("entity-id"));
     } else {
       params.delete("selected_entity");
     }
+    
+    if (this.hasAttribute("entity-elemental-id")) {
+      params.set("selected_elem", this.getAttribute("entity-elemental-id"));
+    } else {
+      params.delete("entity-elemental-id");
+    }
+    
     if (this._typeParams()) {
       params.set("selected_type", this._typeParams());
     } else {
       params.delete("selected_type");
     }
+
+
     if (this.hasAttribute("frame")) {
       params.set("frame", this.getAttribute("frame"));
     }

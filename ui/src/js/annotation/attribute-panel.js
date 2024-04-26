@@ -41,7 +41,7 @@ export class AttributePanel extends TatorElement {
 
     this._idWidget = document.createElement("text-input");
     this._idWidget.permission = "View Only";
-    this._idWidget.setAttribute("name", "Reference ID");
+    this._idWidget.setAttribute("name", "Elemental ID");
     this._standardWidgetsDiv.appendChild(this._idWidget);
     this._widgets.push(this._idWidget);
 

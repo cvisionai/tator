@@ -452,6 +452,7 @@ export class AnnotationPage extends TatorPage {
                     var searchParams = this._settings._queryParams();
                     searchParams.delete("selected_type");
                     searchParams.delete("selected_entity");
+                    searchParams.delete("selected_elem");
                     searchParams.delete("frame");
                     const typeParams = this._settings._typeParams();
                     if (typeParams) {
@@ -488,6 +489,7 @@ export class AnnotationPage extends TatorPage {
                     var searchParams = this._settings._queryParams();
                     searchParams.delete("selected_type");
                     searchParams.delete("selected_entity");
+                    searchParams.delete("selected_elem");
                     searchParams.delete("frame");
                     const typeParams = this._settings._typeParams();
                     if (typeParams) {
@@ -602,6 +604,7 @@ export class AnnotationPage extends TatorPage {
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
         const haveEntity = searchParams.has("selected_entity");
+        const haveElem = searchParams.has("selected_elem");
         const haveType = searchParams.has("selected_type");
         const haveFrame = searchParams.has("frame");
         const haveVersion = searchParams.has("version");
@@ -609,11 +612,16 @@ export class AnnotationPage extends TatorPage {
         const haveFillBoxes = searchParams.has("fill_boxes");
         const haveToggleText = searchParams.has("toggle_text");
         const haveTimelineDisplayMode = searchParams.has("timeline-display");
+
+        console.log("Handling query params", searchParams);
+        // DEBUG
+        console.log(`Have entity = ${haveEntity} and type = ${haveType} ?`);
         if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
-          const entityId = Number(searchParams.get("selected_entity"));
+          const entityId = searchParams.get("selected_entity");
+          
           this._settings.setAttribute("type-id", typeId);
-          this._settings.setAttribute("entity-id", entityId);
+          this._settings.setAttribute("entity-id", entityId);   
           this._browser.selectEntityOnUpdate(entityId, typeId);
         } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
@@ -625,6 +633,12 @@ export class AnnotationPage extends TatorPage {
             }
           }
         }
+
+        if (haveElem) {
+          const elemId = searchParams.get("selected_elem");
+          this._settings.setAttribute("entity-elemental-id", elemId);
+        }
+
         if (haveVersion) {
           let version_id = searchParams.get("version");
           let evt = { detail: { version: this._versionLookup[version_id] } };
@@ -1221,6 +1235,10 @@ export class AnnotationPage extends TatorPage {
               this._settings.setAttribute("entity-type", evt.detail.type);
               this._settings.setAttribute("type-id", evt.detail.type);
 
+              if (evt.detail.elemental_id) {
+                this._settings.setAttribute("entity-elemental-id", evt.detail.elemental_id);
+              }
+
               //Update the URL
               this._updateURL();
             });
@@ -1229,6 +1247,7 @@ export class AnnotationPage extends TatorPage {
               this._settings.removeAttribute("entity-id");
               this._settings.removeAttribute("entity-type");
               this._settings.removeAttribute("type-id");
+              this._settings.removeAttribute("entity-elemental-id");
 
               //Update the URL
               this._updateURL();
@@ -1267,6 +1286,7 @@ export class AnnotationPage extends TatorPage {
                 this._settings.removeAttribute("entity-id");
                 this._settings.removeAttribute("entity-type");
                 this._settings.removeAttribute("type-id");
+                this._settings.removeAttribute("entity-elemental-id");
 
                 if (evt.detail.dataType.isLocalization) {
                   canvas.selectLocalization(
@@ -1304,6 +1324,11 @@ export class AnnotationPage extends TatorPage {
               this._settings.setAttribute("entity-id", evt.detail.data.id);
               this._settings.setAttribute("entity-type", evt.detail.data.type);
               this._settings.setAttribute("type-id", evt.detail.data.type);
+
+              if (evt.detail.data.elemental_id) {
+                this._settings.setAttribute("entity-elemental-id", evt.detail.data.elemental_id);
+              }
+              
             });
             this._browser.addEventListener("capture", (evt) => {
               if ("_video" in canvas) {

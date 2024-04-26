@@ -446,7 +446,8 @@ export class EntitySelector extends TatorElement {
     console.log("Entity selector, selectEntity", obj);
     var foundObject = false;
     for (const [index, data] of this._data.entries()) {
-      if (data.id == obj.id) {
+      console.log(data);
+      if (data.elemental_id == obj.elemental_id) {
         this._div.classList.add("is-open");
         this.dispatchEvent(new Event("open"));
         this._current.textContent = String(index + 1);
