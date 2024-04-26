@@ -57,10 +57,12 @@ export class EntityTimeline extends BaseTimeline {
   set annotationData(val) {
     this._data = val;
 
-    this._data.addEventListener("freshData", () => {
+    this._data.addEventListener("freshData", (evt) => {
       this.updateData();
 
-      if (this._selectedData) {
+      // Do not change selection with freshdata
+      console.log("DEBUG: annotationData... ", this._selectedData, evt.detail);
+      if (this._selectedData && this._selectedData?.select !== false) {
         this.selectEntity(this._selectedData);
       }
     });
@@ -548,13 +550,17 @@ export class EntityTimeline extends BaseTimeline {
 
     var triangle = d3.symbol().type(d3.symbolTriangle).size(50);
 
+    
     gLocalizations
       .append("g")
       .attr("stroke-width", 1)
       .selectAll("path")
       .data(this._pointsData)
       .join("path")
-      .attr("transform", (d) => `translate(${this._mainX(d.frame)}, ${2})`)
+      .attr("transform", (d) => {
+        console.log("_updateSvgData: What is d", d);
+        return `translate(${this._mainX(d.frame)}, ${2})`;
+      })
       .attr("fill", (d) => d.color)
       .attr("d", (d) => triangle(d.species));
 
@@ -843,7 +849,7 @@ export class EntityTimeline extends BaseTimeline {
           datasetIdx++
         ) {
           let d = mainLineDataset[datasetIdx];
-
+          console.log("timeline: What is d?", d);
           for (let idx = 0; idx < d.graphData.length; idx++) {
             if (d.graphData[idx].frame > pointerFrame) {
               if (idx > 0) {
@@ -1599,6 +1605,7 @@ export class EntityTimeline extends BaseTimeline {
    * @param {Tator.Localization | Tator.State | null} data
    */
   selectEntity(data) {
+    console.log("DEBUG: data in entity timeline", data);
     this._selectedData = data;
     this._selectedStateGraphData = [];
 

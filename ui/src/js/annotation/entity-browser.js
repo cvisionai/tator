@@ -157,14 +157,23 @@ export class EntityBrowser extends TatorElement {
    *    event emitted from annotation-data "freshData"
    */
   updateData(evt) {
-    // DEBUG
-    console.log("Entity browser, updateData", evt.detail);
     if (evt.detail.typeObj.id === this._dataType.id) {
+      console.log("DEBUG: Entity browser, updateData this._dataType", evt.detail, this._dataType, this._selectEntityElementalId);
       if (!this._initialized) {
         this._initialized = true;
       }
       this._evt = evt;
       this._drawControls();
+
+
+      // Give preference to elemental ID if set
+      if (this._selectEntityElementalId != null) {
+        for (let group in this._selectors) {
+          console.log("Telling a group to select something this._selectEntityElementalId", this._selectEntityElementalId);
+          this._selectors[group].selectEntityWithElementalId(this._selectEntityElementalId, true);
+        }
+        return this._selectEntityElementalId = null;
+      }
 
       if (this._selectEntityId != null) {
         for (let group in this._selectors) {
@@ -417,10 +426,11 @@ export class EntityBrowser extends TatorElement {
     }
   }
 
-  selectEntityOnUpdate(entityId) {
+  selectEntityOnUpdate(entityId, elemId) {
     this._selectEntityId = entityId;
-    // DEBUG
-    console.log("Entity browser, selectEntityOnUpdate", entityId);
+    this._selectEntityElementalId = elemId;
+
+    console.log("DEBUG: Entity browser, selectEntityOnUpdate", entityId, elemId);
   }
 
   selectEntity(obj) {
@@ -444,8 +454,8 @@ export class EntityBrowser extends TatorElement {
     } else {
       // It's possible the group has not been created yet with the update, so stage the update
       // This may need to be revisited if there's an asynchronous problem
-      console.log("Selector does not exists, select entity", obj);
-      this.selectEntityOnUpdate(obj.id);
+      // console.log("Selector does not exists, select entity", obj);
+      this.selectEntityOnUpdate(obj.id, obj.elemental_id);
     }
   }
 

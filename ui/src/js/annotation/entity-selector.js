@@ -375,8 +375,11 @@ export class EntitySelector extends TatorElement {
     this._undo = val;
 
     this._undo.addEventListener("update", (evt) => {
-      this.updateLocInRelatedStates();
-    })
+      // When updating localizations, check for related states
+      if (evt.detail?.method === "PATCH" && evt.detail?.body?.id && evt.detail.id !== evt.detail.body.id) {
+        this.updateLocInRelatedStates(evt.detail.id, evt.detail.body.id);
+      }
+    });
   }
 
   set noFrames(val) {
@@ -411,11 +414,12 @@ export class EntitySelector extends TatorElement {
       this._slider.value = data.length - 1;
     }
 
-    if (this._selectedObject) {
+    if (this._selectedObject && (!data?.select || data?.select !== false)) {
       this.selectEntity(this._selectedObject);
+      this._emitSelection(false, true, false);
     }
 
-    this._emitSelection(false, true, false);
+    // this._emitSelection(false, true, false); // todo
   }
 
   /**
@@ -427,6 +431,27 @@ export class EntitySelector extends TatorElement {
     var selectedObject = false;
     for (const [index, data] of this._data.entries()) {
       if (data.id == id) {
+        this._div.classList.add("is-open");
+        this.dispatchEvent(new Event("open"));
+        this._current.textContent = String(index + 1);
+        this._slider.value = index;
+        selectedObject = true;
+        break;
+      }
+    }
+
+    if (emitSelectEvent && selectedObject) {
+      this._emitSelection(true, true, true);
+    }
+  }
+
+  selectEntityWithElementalId(elementalId, emitSelectEvent) {
+    // DEBUG
+    console.log("Entity selecter, selectEntityWithElementalId", elementalId, emitSelectEvent);
+    var selectedObject = false;
+    for (const [index, data] of this._data.entries()) {
+      console.log("Checking "+data.elemental_id)
+      if (data.elemental_id == elementalId) {
         this._div.classList.add("is-open");
         this.dispatchEvent(new Event("open"));
         this._current.textContent = String(index + 1);

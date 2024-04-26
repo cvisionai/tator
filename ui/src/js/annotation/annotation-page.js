@@ -613,10 +613,20 @@ export class AnnotationPage extends TatorPage {
         const haveToggleText = searchParams.has("toggle_text");
         const haveTimelineDisplayMode = searchParams.has("timeline-display");
 
-        console.log("Handling query params", searchParams);
-        // DEBUG
-        console.log(`Have entity = ${haveEntity} and type = ${haveType} ?`);
-        if (haveEntity && haveType) {
+        if (haveElem) {
+          const typeId = haveType ? searchParams.get("selected_type") : null;
+          const elemId = searchParams.get("selected_elem");
+
+          if (typeId !== null) {
+            this._settings.setAttribute("type-id", typeId);
+          } else {
+            this._settings.removeAttribute("type-id");
+          }
+          
+          this._settings.setAttribute("entity-elemental-id", elemId);
+          console.log("Selecting entity from elem_id", elemId, typeId);
+          this._browser.selectEntityOnUpdate(null, typeId, elemId); // TODO
+        } else if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
           const entityId = searchParams.get("selected_entity");
           
@@ -634,10 +644,7 @@ export class AnnotationPage extends TatorPage {
           }
         }
 
-        if (haveElem) {
-          const elemId = searchParams.get("selected_elem");
-          this._settings.setAttribute("entity-elemental-id", elemId);
-        }
+        
 
         if (haveVersion) {
           let version_id = searchParams.get("version");
@@ -1105,8 +1112,7 @@ export class AnnotationPage extends TatorPage {
             });
             this._data.addEventListener("freshData", (evt) => {
               this._browser.updateData(evt);
-
-              if (this._newEntityId) {
+              if (this._newEntityId && evt.detail?.select !== false) {
                 for (const elem of evt.detail.data) {
                   if (elem.id == this._newEntityId) {
                     this._newEntity = elem;
@@ -1229,6 +1235,7 @@ export class AnnotationPage extends TatorPage {
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
             canvas.addEventListener("select", (evt) => {
+              console.log("DEBUG: selection heard", evt.detail);
               this._browser.selectEntity(evt.detail);
               canvas.selectTimelineData(evt.detail);
               this._settings.setAttribute("entity-id", evt.detail.id);
