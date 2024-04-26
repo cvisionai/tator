@@ -157,6 +157,8 @@ export class EntityBrowser extends TatorElement {
    *    event emitted from annotation-data "freshData"
    */
   updateData(evt) {
+    // DEBUG
+    console.log("Entity browser, updateData", evt.detail);
     if (evt.detail.typeObj.id === this._dataType.id) {
       if (!this._initialized) {
         this._initialized = true;
@@ -417,9 +419,13 @@ export class EntityBrowser extends TatorElement {
 
   selectEntityOnUpdate(entityId) {
     this._selectEntityId = entityId;
+    // DEBUG
+    console.log("Entity browser, selectEntityOnUpdate", entityId);
   }
 
   selectEntity(obj) {
+    // DEBUG
+    console.log("Entity browser, selectEntity", obj);
     let group;
     if (
       this._identifier &&
@@ -433,10 +439,12 @@ export class EntityBrowser extends TatorElement {
     const selector = this._selectors[group];
     if (selector) {
       // Selector may not exist if element was deleted.
+      console.log("Selector exists, select entity", selector, obj);
       selector.selectEntity(obj);
     } else {
       // It's possible the group has not been created yet with the update, so stage the update
       // This may need to be revisited if there's an asynchronous problem
+      console.log("Selector does not exists, select entity", obj);
       this.selectEntityOnUpdate(obj.id);
     }
   }
@@ -470,6 +478,8 @@ export class EntityBrowser extends TatorElement {
   }
 
   _closeBesides(selector) {
+    // DEBUG
+    console.log("Entity browser, _closeBesides", selector);
     for (const other in this._selectors) {
       if (selector.getAttribute("name") != other) {
         if (this._selectors[other]._div.classList.contains("is-open")) {
@@ -480,6 +490,8 @@ export class EntityBrowser extends TatorElement {
   }
 
   _closeAll() {
+    // DEBUG
+    console.log("Entity browser, _closeAll");
     for (const name in this._selectors) {
       if (this._selectors[name]._div.classList.contains("is-open")) {
         this._selectors[name]._expand.click();
