@@ -274,11 +274,50 @@ export class EntitySelector extends TatorElement {
       var response = await fetchCredentials(`/rest/State/${state.id}`, {
         method: "PATCH",
         body: JSON.stringify({
-          localization_ids_remove: [loc.id],
+          localization_ids_remove: [loc.id]
         }),
       });
       var msg = await response.json();
       console.log(`removeLocFromRelatedStates: ${msg}`);
+    }
+
+    if (relatedStates.length > 0) {
+      this._canvas._data.updateAllTypes(
+        this._canvas.refresh.bind(this._canvas),
+        null
+      );
+    }
+  }
+
+  async updateLocInRelatedStates(oldId, newId) {
+    // Find if there are any related states/tracks associated with this localization
+    var response = await fetchCredentials(
+      `/rest/States/${this._project}?related_id=${oldId}`
+    );
+    var relatedList = await response.json();
+    var relatedStates = [];
+    for (const entry of relatedList) {
+      if (entry.hasOwnProperty("localizations")) {
+        for (const trackLocId of entry.localizations) {
+          if (oldId == trackLocId) {
+            relatedStates.push(entry);
+            break;
+          }
+        }
+      }
+    }
+
+    // Update the id from the states
+    for (const state of relatedStates) {
+      var response = await fetchCredentials(`/rest/State/${state.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          localization_ids_remove: [oldId],
+          localization_ids_add: [newId]
+        }),
+      });
+      var msg = await response.json();
+      console.log(`updateLocInRelatedStates: ${msg}`);
     }
 
     if (relatedStates.length > 0) {
@@ -334,6 +373,10 @@ export class EntitySelector extends TatorElement {
 
   set undoBuffer(val) {
     this._undo = val;
+
+    this._undo.addEventListener("update", (evt) => {
+      this.updateLocInRelatedStates();
+    })
   }
 
   set noFrames(val) {
@@ -379,6 +422,8 @@ export class EntitySelector extends TatorElement {
    * Potentially could condense with selectEntity
    */
   selectEntityWithId(id, emitSelectEvent) {
+    // DEBUG
+    console.log("Entity selecter, selectEntityWithId", id, emitSelectEvent);
     var selectedObject = false;
     for (const [index, data] of this._data.entries()) {
       if (data.id == id) {
@@ -397,6 +442,8 @@ export class EntitySelector extends TatorElement {
   }
 
   selectEntity(obj) {
+    // DEBUG
+    console.log("Entity selector, selectEntity", obj);
     var foundObject = false;
     for (const [index, data] of this._data.entries()) {
       if (data.id == obj.id) {
@@ -417,6 +464,8 @@ export class EntitySelector extends TatorElement {
   }
 
   _emitSelection(byUser, composed, goToEntityFrame) {
+    // DEBUG
+    console.log("Entity selector, _emitSelection", byUser, composed, goToEntityFrame);
     var index = parseInt(this._current.textContent) - 1;
     index = Math.max(index, 0);
 

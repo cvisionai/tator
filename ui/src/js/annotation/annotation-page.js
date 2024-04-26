@@ -1239,7 +1239,8 @@ export class AnnotationPage extends TatorPage {
             });
 
             this._undo.addEventListener("update", (evt) => {
-              
+              // DEBUG
+              console.log("Annotation page, undo heard 'update'", evt.detail);
               // Force selecting this new entity in the browser if a new object was created
               // when the data is retrieved (ie freshData event)
               if (evt.detail.method == "POST" || evt.detail.method == "PATCH") {
