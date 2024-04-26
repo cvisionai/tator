@@ -133,6 +133,7 @@ export class FramePanel extends TatorElement {
     this._data.addEventListener("freshData", (evt) => {
       const typeObj = evt.detail.typeObj;
       if (typeObj.id === val.id && this._frame !== null) {
+        console.log("DEBUG: OK updating attributes!", typeObj)
         this._updateAttributes(evt.detail.data);
       }
     });

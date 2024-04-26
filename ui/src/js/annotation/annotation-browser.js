@@ -214,12 +214,13 @@ export class AnnotationBrowser extends TatorElement {
     }
   }
 
-  selectEntityOnUpdate(entityId, entityTypeId) {
-      // DEBUG
-      console.log("Annotation browser, selectEntityOnUpdate", entityId, entityTypeId);
+  selectEntityOnUpdate(entityId, entityTypeId, elemId = null) {
     for (const typeId in this._entityPanels) {
       if (typeId == entityTypeId) {
-        this._entityPanels[typeId].selectEntityOnUpdate(entityId);
+        console.log("DEBUG: Found matching typeId : Annotation browser, selectEntityOnUpdate", entityId, entityTypeId, elemId)
+        this._entityPanels[typeId].selectEntityOnUpdate(entityId, elemId, entityTypeId);
+      } else {
+        console.warn("No matching typeId found", entityId, entityTypeId, elemId);
       }
     }
   }
@@ -327,7 +328,10 @@ export class AnnotationBrowser extends TatorElement {
     // Find the associated track if the given object is a localization
     var associatedState = null;
     if (objDataType.isLocalization && this._data._trackDb.has(obj.id)) {
+      console.log("DEBUG: Select entity found associatedState",associatedState,forceOpen);
       associatedState = this._data._trackDb.get(obj.id);
+    } else {
+      console.log("DEBUG: No associatedState",obj,forceOpen);
     }
 
     // This variable can be changed in the future if there's a project setting to

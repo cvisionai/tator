@@ -286,8 +286,6 @@ export class AnnotationData extends HTMLElement {
       }
       this._dataByType.get(typeId).splice(index, 1);
     }
-
-    console.log("DISPATCH OF FRESH DATA", this._dataByType.get(typeId));
     this.dispatchEvent(
       new CustomEvent("freshData", {
         detail: {
@@ -338,11 +336,14 @@ export class AnnotationData extends HTMLElement {
           obj.type = typeId;
         });
         this._dataByType.set(typeId, json);
+
+        // Initial fresh data has flag to not change selection as data loads downstream
         this.dispatchEvent(
           new CustomEvent("freshData", {
             detail: {
               typeObj: typeObj,
               data: json,
+              select: false
             },
           })
         );
