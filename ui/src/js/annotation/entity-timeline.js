@@ -558,8 +558,13 @@ export class EntityTimeline extends BaseTimeline {
       .data(this._pointsData)
       .join("path")
       .attr("transform", (d) => {
-        console.log("_updateSvgData: What is d", d);
-        return `translate(${this._mainX(d.frame)}, ${2})`;
+        console.log("DEBUG: _updateSvgData: What is d", d);
+
+        if (d && d.frame) {
+          return `translate(${this._mainX(d.frame)}, ${2})`;
+        } else {
+          return `translate(${this._mainX(0)}, ${2})`;
+        }
       })
       .attr("fill", (d) => d.color)
       .attr("d", (d) => triangle(d.species));
