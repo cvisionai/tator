@@ -1,4 +1,4 @@
-import create from "zustand/vanilla";
+import { createStore } from "zustand/vanilla";
 import { subscribeWithSelector } from "zustand/middleware";
 import { getApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 
@@ -6,7 +6,7 @@ const api = getApi();
 const projectId = window.location.pathname.split("/")[1];
 const mediaId = window.location.pathname.split("/")[3];
 
-const store = create(
+const store = createStore(
   subscribeWithSelector((set, get) => ({
     user: null,
     announcements: [],
@@ -24,6 +24,8 @@ const store = create(
           project: values[2],
           mediaId: window.location.pathname.split("/")[3],
         });
+      }).catch((err) => {
+        console.error("Could not init annotations page",err);
       });
     },
   }))

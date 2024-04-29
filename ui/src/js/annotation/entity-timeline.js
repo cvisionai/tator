@@ -558,11 +558,12 @@ export class EntityTimeline extends BaseTimeline {
       .data(this._pointsData)
       .join("path")
       .attr("transform", (d) => {
-        console.log("DEBUG: _updateSvgData: What is d", d);
+        
 
         if (d && d.frame) {
           return `translate(${this._mainX(d.frame)}, ${2})`;
         } else {
+          console.warn("DEBUG: _updateSvgData: Has no frame, defaulted to 0.", d);
           return `translate(${this._mainX(0)}, ${2})`;
         }
       })
@@ -1610,7 +1611,7 @@ export class EntityTimeline extends BaseTimeline {
    * @param {Tator.Localization | Tator.State | null} data
    */
   selectEntity(data) {
-    console.log("DEBUG: data in entity timeline", data);
+    console.log("DEBUG: selectEntity - data in entity timeline", data);
     this._selectedData = data;
     this._selectedStateGraphData = [];
 
@@ -1624,6 +1625,7 @@ export class EntityTimeline extends BaseTimeline {
         (dataType.interpolation == "latest" ||
           dataType.interpolation == "attr_style_range")
       ) {
+        console.log("DEBUG: selectEntity -  attr_style_range ... setSelectedStateGraphData", data);
         this.setSelectedStateGraphData();
       } else if (
         dataType.id.includes("state") &&
@@ -1631,6 +1633,8 @@ export class EntityTimeline extends BaseTimeline {
       ) {
         // #TODO Do we want to show anything for media associated states?
       } else {
+        console.log("DEBUG: selectEntity -  Data", data);
+
         this._pointsData.push({
           name: `Selected ${dataType.name}`,
           frame: data.frame,

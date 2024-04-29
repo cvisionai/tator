@@ -1443,9 +1443,9 @@ export class AnnotationPlayer extends TatorElement {
 
       const now = performance.now();
       timeoutCounter += now - last_check;
-      console.info(
-        `${now}: Timeout Counter ${timeoutCounter} LAST=${last_check}`
-      );
+      // console.info(
+      //   `${now}: Timeout Counter ${timeoutCounter} LAST=${last_check}`
+      // );
       last_check = now;
 
       let not_ready = false;

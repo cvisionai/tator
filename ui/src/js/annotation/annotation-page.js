@@ -16,6 +16,9 @@ export class AnnotationPage extends TatorPage {
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
 
+    this._dataInitialized = false;
+    this._canvasInitialized = false;
+
     document.body.setAttribute("class", "no-padding-bottom");
 
     const header = document.createElement("div");
@@ -529,13 +532,11 @@ export class AnnotationPage extends TatorPage {
                   this._settings._lock.viewOnly();
                 this.enableEditing(true);
               });
-            const countUrl = `/rest/MediaCount/${
-              data.project
-            }?${searchParams.toString()}`;
+            const countUrl = `/rest/MediaCount/${data.project
+              }?${searchParams.toString()}`;
             searchParams.set("after_name", data.name);
-            const afterUrl = `/rest/MediaCount/${
-              data.project
-            }?${searchParams.toString()}`;
+            const afterUrl = `/rest/MediaCount/${data.project
+              }?${searchParams.toString()}`;
             const countPromise = fetchCredentials(countUrl, {}, true);
             const afterPromise = fetchCredentials(afterUrl, {}, true);
             Promise.all([countPromise, afterPromise]).then(
@@ -622,16 +623,16 @@ export class AnnotationPage extends TatorPage {
           } else {
             this._settings.removeAttribute("type-id");
           }
-          
+
           this._settings.setAttribute("entity-elemental-id", elemId);
           console.log("Selecting entity from elem_id", elemId, typeId);
           this._browser.selectEntityOnUpdate(null, typeId, elemId); // TODO
         } else if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
           const entityId = searchParams.get("selected_entity");
-          
+
           this._settings.setAttribute("type-id", typeId);
-          this._settings.setAttribute("entity-id", entityId);   
+          this._settings.setAttribute("entity-id", entityId);
           this._browser.selectEntityOnUpdate(entityId, typeId);
         } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
@@ -644,7 +645,7 @@ export class AnnotationPage extends TatorPage {
           }
         }
 
-        
+
 
         if (haveVersion) {
           let version_id = searchParams.get("version");
@@ -1234,6 +1235,7 @@ export class AnnotationPage extends TatorPage {
 
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
+
             canvas.addEventListener("select", (evt) => {
               console.log("DEBUG: selection heard", evt.detail);
               this._browser.selectEntity(evt.detail);
@@ -1286,57 +1288,12 @@ export class AnnotationPage extends TatorPage {
                 evt.detail.newId
               );
             });
-            
-            this._browser.addEventListener("select", (evt) => {
-              if (evt.detail.byUser) {
-                // Remove attribute here, will be reset by canvas, if appropriate.
-                this._settings.removeAttribute("entity-id");
-                this._settings.removeAttribute("entity-type");
-                this._settings.removeAttribute("type-id");
-                this._settings.removeAttribute("entity-elemental-id");
 
-                if (evt.detail.dataType.isLocalization) {
-                  canvas.selectLocalization(
-                    evt.detail.data,
-                    false,
-                    false,
-                    !evt.detail.goToEntityFrame
-                  );
-                } else if (evt.detail.dataType.isTrack) {
-                  // select track takes care of frame jump
-                  canvas.selectTrack(
-                    evt.detail.data,
-                    undefined,
-                    !evt.detail.goToEntityFrame
-                  );
-                } else if ("frame" in evt.detail.data) {
-                  if (evt.detail.goToEntityFrame) {
-                    canvas.goToFrame(parseInt(evt.detail.data.frame));
-                    this._browser.selectEntity(evt.detail.data);
-                  }
-                }
+            window.addEventListener("entity-selected", this._handleNewSelection.bind(this));
+            this._browser.addEventListener("select", this._handleNewSelection.bind(this));
 
-                if (this._player.selectTimelineData) {
-                  this._player.selectTimelineData(evt.detail.data);
-                }
 
-                if (this._player.mediaType.dtype == "multi") {
-                  if (evt.detail.goToEntityFrame) {
-                    this._player.goToFrame(evt.detail.data.frame);
-                  }
-                }
 
-                this._updateURL();
-              }
-              this._settings.setAttribute("entity-id", evt.detail.data.id);
-              this._settings.setAttribute("entity-type", evt.detail.data.type);
-              this._settings.setAttribute("type-id", evt.detail.data.type);
-
-              if (evt.detail.data.elemental_id) {
-                this._settings.setAttribute("entity-elemental-id", evt.detail.data.elemental_id);
-              }
-              
-            });
             this._browser.addEventListener("capture", (evt) => {
               if ("_video" in canvas) {
                 canvas._video.makeDownloadableLocalization(evt.detail.data);
@@ -2018,8 +1975,9 @@ export class AnnotationPage extends TatorPage {
         });
     });
 
-    this._addDetectionToTrack = (evt) => {
-      const promise = fetchCredentials(
+    this._addDetectionToTrack = async (evt) => {
+      console.log("Add detection track", evt.detail);
+      const response = await fetchCredentials(
         "/rest/State/" + evt.detail.mainTrackId,
         {
           method: "PATCH",
@@ -2029,26 +1987,28 @@ export class AnnotationPage extends TatorPage {
         },
         true
       )
-        .then((response) => response.json())
-        .then(() => {
-          this._data.updateType(
-            this._data._dataTypes[evt.detail.localizationType]
-          );
-          this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          Utilities.showSuccessIcon(
-            `Added detection to track ${evt.detail.mainTrackId}`
-          );
-          var track = this.getDataElement(
-            evt.detail.mainTrackId,
-            evt.detail.trackType
-          );
-          this._browser.selectEntity(track);
-          canvas.selectTrackUsingId(
-            evt.detail.mainTrackId,
-            evt.detail.trackType,
-            evt.detail.frame
-          );
-        });
+      const data = await response.json();
+
+      console.log("Added detection track, resp data.", data);
+      this._data.updateType(
+        this._data._dataTypes[evt.detail.localizationType]
+      );
+      this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+      Utilities.showSuccessIcon(
+        `Detection added to track ${evt.detail.mainTrackId}`
+      );
+      var track = this.getDataElement(
+        evt.detail.mainTrackId,
+        evt.detail.trackType
+      );
+      console.log("Did we find track?", track);
+      this._browser.selectEntity(track);
+      canvas.selectTrackUsingId(
+        evt.detail.mainTrackId,
+        evt.detail.trackType,
+        evt.detail.frame
+      );
+
     };
 
     for (const save of Object.values(this._saves)) {
@@ -2125,6 +2085,7 @@ export class AnnotationPage extends TatorPage {
 
     // Handle replacing the URL when the canvas emits a signal
     canvas.addEventListener("updateURL", (evt) => {
+      console.log("Canvas event update heard.");
       this._updateURL();
     });
 
@@ -2237,19 +2198,26 @@ export class AnnotationPage extends TatorPage {
   }
 
   _updateURL() {
+    
     if (!this._dataInitialized || !this._canvasInitialized) {
       return;
     }
 
     let existingSearchParams = new URLSearchParams(window.location.search);
+    var newSearchParams = this._settings._queryParams(existingSearchParams);
+
     if (this._canvas._rate) {
       // annotation-player or annotation-image
-      existingSearchParams.set("playbackRate", this._canvas._rate);
+      newSearchParams.set("playbackRate", this._canvas._rate);
     }
-    var newSearchParams = this._settings._queryParams(existingSearchParams);
+
+    console.log("_updateURL.........", newSearchParams.toString());
+
     const path = document.location.pathname;
     const searchArgs = newSearchParams.toString();
     var newUrl = path + "?" + searchArgs;
+
+    console.log("DEBUG: _updateURL - replacing with newUrl", newUrl);
     if (this._annotationPageHistoryState) {
       window.history.replaceState(this._annotationPageHistoryState, "", newUrl);
     } else {
@@ -2257,6 +2225,7 @@ export class AnnotationPage extends TatorPage {
       window.history.pushState(this._annotationPageHistoryState, "", newUrl);
     }
   }
+
   _getSave(objDescription) {
     let save;
     if (["poly", "box", "line", "dot"].includes(objDescription.dtype)) {
@@ -2456,6 +2425,61 @@ export class AnnotationPage extends TatorPage {
 
     // Required resize to reset the elements correctly
     window.dispatchEvent(new Event("resize"));
+  }
+
+  _handleNewSelection(evt) {
+    console.log("DEBUG: _handleNewSelection", evt.detail);
+    if (evt.detail.byUser && evt.detail.byUser == true) {
+      // Remove attribute here, will be reset by canvas, if appropriate.
+      this._settings.removeAttribute("entity-id");
+      this._settings.removeAttribute("entity-type");
+      this._settings.removeAttribute("type-id");
+      this._settings.removeAttribute("entity-elemental-id");
+
+      if (evt.detail.dataType.isLocalization) {
+        this._canvas.selectLocalization(
+          evt.detail.data,
+          false,
+          false,
+          !evt.detail.goToEntityFrame
+        );
+      } else if (evt.detail.dataType.isTrack) {
+        // select track takes care of frame jump
+        this._canvas.selectTrack(
+          evt.detail.data,
+          undefined,
+          !evt.detail.goToEntityFrame
+        );
+      } else if ("frame" in evt.detail.data) {
+        if (evt.detail.goToEntityFrame) {
+          this._canvas.goToFrame(parseInt(evt.detail.data.frame));
+          this._browser.selectEntity(evt.detail.data);
+        }
+      }
+
+      if (this._player.selectTimelineData) {
+        this._player.selectTimelineData(evt.detail.data);
+      }
+
+      if (this._player.mediaType.dtype == "multi") {
+        if (evt.detail.goToEntityFrame) {
+          this._player.goToFrame(evt.detail.data.frame);
+        }
+      }
+
+      // return;
+    }
+
+    this._settings.setAttribute("entity-id", evt.detail.data.id);
+    this._settings.setAttribute("entity-type", evt.detail.data.type);
+    this._settings.setAttribute("type-id", evt.detail.data.type);
+
+    if (evt.detail.data.elemental_id) {
+      this._settings.setAttribute("entity-elemental-id", evt.detail.data.elemental_id);
+    }
+
+    this._updateURL();
+
   }
 }
 

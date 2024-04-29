@@ -1231,6 +1231,8 @@ export class AttributePanel extends TatorElement {
   setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
     const id = (values.elemental_id) ? `${values.elemental_id}` : values.id;
+    // After save it might only have regular ID
+    console.log("Trying to set the value with elemental id from this object",values, id);
     this._idWidget.setValue(id);
     this._frameWidget.setValue(values.frame);
     this._typeWidget.setValue(

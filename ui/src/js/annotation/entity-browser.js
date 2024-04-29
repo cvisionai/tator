@@ -398,6 +398,7 @@ export class EntityBrowser extends TatorElement {
           });
 
           selector.addEventListener("select", (evt) => {
+            console.log("Selector chosen", selector);
             attributes.setValues(
               evt.detail.data,
               evt.detail.associatedState,
@@ -416,6 +417,7 @@ export class EntityBrowser extends TatorElement {
         });
       }
     }
+    
     for (const group in this._selectors) {
       if (!(group in groups)) {
         const li = this._selectors[group].parentNode;

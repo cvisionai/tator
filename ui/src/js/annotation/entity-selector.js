@@ -490,8 +490,7 @@ export class EntitySelector extends TatorElement {
   }
 
   _emitSelection(byUser, composed, goToEntityFrame) {
-    // DEBUG
-    console.log("Entity selector, _emitSelection", byUser, composed, goToEntityFrame);
+    console.log("DEBUG _emitSelection: Entity selector, _emitSelection", byUser, composed, goToEntityFrame);
     var index = parseInt(this._current.textContent) - 1;
     index = Math.max(index, 0);
 
@@ -562,8 +561,22 @@ export class EntitySelector extends TatorElement {
 
     this._selectedObject = this._data[index];
 
+    console.log("Selection event emitted.", this._data[index], associatedState);
     this.dispatchEvent(
       new CustomEvent("select", {
+        detail: {
+          data: this._data[index],
+          dataType: this._dataType,
+          byUser: byUser,
+          goToEntityFrame: goToEntityFrame,
+          associatedState: associatedState,
+          associatedStateType: associatedStateType,
+        },
+        composed: composed,
+      })
+    );
+    window.dispatchEvent(
+      new CustomEvent("entity-selected", {
         detail: {
           data: this._data[index],
           dataType: this._dataType,
