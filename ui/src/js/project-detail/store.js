@@ -1,10 +1,10 @@
-import create from "zustand/vanilla";
+import { createStore } from "zustand/vanilla";
 import { subscribeWithSelector } from "zustand/middleware";
 import { getApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
-
+import { Utilities } from '../util/utilities.js'
 const api = getApi();
 
-const store = create(
+const store = createStore(
   subscribeWithSelector((set, get) => ({
     user: null,
     announcements: [],
@@ -40,6 +40,16 @@ const store = create(
           project: values[2],
           mediaTypes: values[3],
         });
+      }).catch((err) => {
+        if (err?.body?.message) {
+          Utilities.warningAlert(err.body.message, "red", true);
+        } else {
+          Utilities.warningAlert("Error initializing data.", "red", true);
+        }
+
+        setTimeout(() => {
+          window.location.href = "/projects";
+        }, 1500);
       });
     },
   }))
