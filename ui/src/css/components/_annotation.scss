@@ -80,6 +80,7 @@
     + zoom-in-button
     + zoom-out-button
     + pan-button
+    + canvas-applet-button
     + & {
     transform: translateY(62px);
   }
@@ -91,6 +92,7 @@
     + zoom-in-button
     + zoom-out-button
     + pan-button
+    + canvas-applet-button
     + & {
     transform: translateY(124px);
   }
@@ -101,6 +103,7 @@
     + zoom-in-button
     + zoom-out-button
     + pan-button
+    + canvas-applet-button
     + & {
     transform: translateY(186px);
   }
@@ -110,19 +113,20 @@
     + zoom-in-button
     + zoom-out-button
     + pan-button
+    + canvas-applet-button
     + & {
     transform: translateY(248px);
   }
 
-  track-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
+  track-button.is-selected + zoom-in-button + zoom-out-button + pan-button + canvas-applet-button + & {
     transform: translateY(310px);
   }
 
-  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
+  zoom-in-button.is-selected + zoom-out-button + pan-button + canvas-applet-button + & {
     transform: translateY(372px);
   }
 
-  pan-button.is-selected + & {
+  pan-button.is-selected + canvas-applet-button + & {
     transform: translateY(496px);
   }
 }
