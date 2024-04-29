@@ -115,6 +115,8 @@ export class MediaSection extends TatorElement {
     this._filterConditions = [];
 
     this._setCallbacks();
+
+    window.addEventListener("upload-complete", this.reload.bind(this));
   }
 
   /**

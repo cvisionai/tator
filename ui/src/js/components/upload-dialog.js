@@ -163,6 +163,7 @@ export class UploadDialog extends ModalDialog {
         this._uploadText.textContent =
           'Upload complete! Monitor video transcodes with the "Activity" button.';
         this._title.nodeValue = "Upload Complete!";
+        window.dispatchEvent(new Event("upload-complete"));
       } else {
         this._uploadText.textContent = "Upload failure! See errors below.";
         this._title.nodeValue = "Upload Failure!";
