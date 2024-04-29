@@ -21,6 +21,8 @@ const store = createStore(
           announcements: values[1],
           project: values[2],
         });
+      }).catch((err) => {
+        console.error("Could not init from store.",err);
       });
     },
   }))

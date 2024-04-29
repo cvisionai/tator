@@ -25,6 +25,8 @@ const store = createStore(
           project: values[2],
           dashboard: values[3],
         });
+      }).catch((err) => {
+        console.error("Could not init from store.",err);
       });
     },
   }))
