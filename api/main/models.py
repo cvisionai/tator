@@ -106,13 +106,21 @@ def on_connection_created(sender, connection, **kwargs):
     # These prepared statements get reused for each row in a bulk insert, greatly improving performance
     cursor = connection.cursor()
 
-    # Check for existance of `main_localization` table
-    cursor.execute("SELECT 1 FROM pg_tables WHERE tablename = 'main_localization';")
-    if cursor.fetchone():
-        create_prepared_statements(cursor)
+    create_prepared_statements(cursor)
 
 
 def create_prepared_statements(cursor):
+    # We need the db migrated first
+    cursor.execute("SELECT 1 FROM pg_tables WHERE tablename = 'main_localization';")
+    if cursor.fetchone() is None:
+        return
+
+    # Bomb out if we already made the prepared statements on this connection (unit test check only)
+    cursor.execute(
+        "SELECT COUNT(name) FROM pg_prepared_statements WHERE name='get_next_mark_localization';"
+    )
+    if cursor.fetchone()[0] > 0:
+        return
     cursor.execute(
         "PREPARE get_next_mark_localization(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
     )
