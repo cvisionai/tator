@@ -118,11 +118,20 @@
     transform: translateY(248px);
   }
 
-  track-button.is-selected + zoom-in-button + zoom-out-button + pan-button + canvas-applet-button + & {
+  track-button.is-selected
+    + zoom-in-button
+    + zoom-out-button
+    + pan-button
+    + canvas-applet-button
+    + & {
     transform: translateY(310px);
   }
 
-  zoom-in-button.is-selected + zoom-out-button + pan-button + canvas-applet-button + & {
+  zoom-in-button.is-selected
+    + zoom-out-button
+    + pan-button
+    + canvas-applet-button
+    + & {
     transform: translateY(372px);
   }
 

@@ -17,10 +17,12 @@ from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
+
 class JSONBSum(Func):
     function = "SUM"
     template = "(SELECT SUM((elements->>'size')::bigint) FROM jsonb_array_elements(%(expressions)s) AS elements)"
     output_field = BigIntegerField()
+
 
 class MediaStatsAPI(BaseDetailView):
     """Count, download size, and total size of a media list.
@@ -61,8 +63,8 @@ class MediaStatsAPI(BaseDetailView):
             thumbnail_gif_size=Sum("thumbnail_gif"),
             thumbnail_size=Sum("thumbnail"),
             archival_size=Sum("archival"),
-            attachment_size=Sum("attachment")
-        )  
+            attachment_size=Sum("attachment"),
+        )
         logger.info(type_agg)
         for k in type_agg.keys():
             if type_agg[k]:
