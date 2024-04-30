@@ -1815,7 +1815,7 @@ class Localization(Model, ModelDiffMixin):
                 name="localization_mark_trigger",
                 operation=pgtrigger.Insert,
                 when=pgtrigger.Before,
-                declare=[("_var", "integer"), ("stmt", "RECORD")],
+                declare=[("_var", "integer")],
                 func=BEFORE_MARK_TRIGGER_FUNC.format("localization"),
             ),
             pgtrigger.Trigger(
@@ -1920,7 +1920,7 @@ class State(Model, ModelDiffMixin):
                 name="state_mark_trigger",
                 operation=pgtrigger.Insert,
                 when=pgtrigger.Before,
-                declare=[("_var", "integer"), ("stmt", "RECORD")],
+                declare=[("_var", "integer")],
                 func=BEFORE_MARK_TRIGGER_FUNC.format("state"),
             ),
             pgtrigger.Trigger(
