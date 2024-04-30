@@ -84,16 +84,18 @@ END IF;
 IF NEW.version IS NULL THEN
             RAISE EXCEPTION 'version cannot be null';
 END IF;
-
-EXECUTE format('SELECT COALESCE(MAX(mark)+1,0) FROM %I.%I WHERE elemental_id=%L AND version=%s AND deleted=FALSE', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+SET plan_cache_mode=force_generic_plan;
+EXECUTE get_next_mark_{0} INTO _var USING NEW.elemental_id::uuid, NEW.version::integer;
+SET plan_cache_mode=auto;
 NEW.mark = _var;
 RETURN NEW;
 """
 
 
 AFTER_MARK_TRIGGER_FUNC = """
-EXECUTE format('SELECT COALESCE(MAX(mark),0) FROM %I.%I WHERE elemental_id=%L AND version=%s AND deleted=FALSE', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
-EXECUTE format('UPDATE %I.%I SET latest_mark=%s WHERE elemental_id=%L AND version=%s',TG_TABLE_SCHEMA, TG_TABLE_NAME, _var, NEW.elemental_id, NEW.version);
+SET plan_cache_mode=force_generic_plan;
+EXECUTE update_latest_mark_{0} USING NEW.elemental_id::uuid, NEW.version::integer;
+SET plan_cache_mode=auto;
 RETURN NEW;
 """
 
@@ -1800,15 +1802,15 @@ class Localization(Model, ModelDiffMixin):
                 name="localization_mark_trigger",
                 operation=pgtrigger.Insert,
                 when=pgtrigger.Before,
-                declare=[("_var", "integer")],
-                func=BEFORE_MARK_TRIGGER_FUNC,
+                declare=[("_var", "integer"), ("stmt", "RECORD")],
+                func=BEFORE_MARK_TRIGGER_FUNC.format("localization"),
             ),
             pgtrigger.Trigger(
                 name="post_localization_mark_trigger",
                 operation=pgtrigger.Insert,
                 when=pgtrigger.After,
                 declare=[("_var", "integer")],
-                func=AFTER_MARK_TRIGGER_FUNC,
+                func=AFTER_MARK_TRIGGER_FUNC.format("localization"),
             ),
             pgtrigger.Trigger(
                 name="post_localization_mark_trigger_update",
@@ -1816,7 +1818,7 @@ class Localization(Model, ModelDiffMixin):
                 when=pgtrigger.After,
                 condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
                 declare=[("_var", "integer")],
-                func=AFTER_MARK_TRIGGER_FUNC,
+                func=AFTER_MARK_TRIGGER_FUNC.format("localization"),
             ),
         ]
 
@@ -1905,15 +1907,15 @@ class State(Model, ModelDiffMixin):
                 name="state_mark_trigger",
                 operation=pgtrigger.Insert,
                 when=pgtrigger.Before,
-                declare=[("_var", "integer")],
-                func=BEFORE_MARK_TRIGGER_FUNC,
+                declare=[("_var", "integer"), ("stmt", "RECORD")],
+                func=BEFORE_MARK_TRIGGER_FUNC.format("state"),
             ),
             pgtrigger.Trigger(
                 name="post_state_mark_trigger",
                 operation=pgtrigger.Insert,
                 when=pgtrigger.After,
                 declare=[("_var", "integer")],
-                func=AFTER_MARK_TRIGGER_FUNC,
+                func=AFTER_MARK_TRIGGER_FUNC.format("state"),
             ),
             pgtrigger.Trigger(
                 name="post_state_mark_trigger_update",
@@ -1921,7 +1923,7 @@ class State(Model, ModelDiffMixin):
                 when=pgtrigger.After,
                 condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
                 declare=[("_var", "integer")],
-                func=AFTER_MARK_TRIGGER_FUNC,
+                func=AFTER_MARK_TRIGGER_FUNC.format("state"),
             ),
         ]
 
