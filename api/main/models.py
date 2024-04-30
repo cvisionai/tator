@@ -109,23 +109,23 @@ def on_connection_created(sender, connection, **kwargs):
     # Check for existance of `main_localization` table
     cursor.execute("SELECT 1 FROM pg_tables WHERE tablename = 'main_localization';")
     if cursor.fetchone():
-        # Localization table prepared statements
-        cursor.execute(
-            "PREPARE get_next_mark_localization(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
-        )
-        cursor.execute(
-            "PREPARE update_latest_mark_localization(UUID, INT) AS UPDATE main_localization SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
-        )
+        create_prepared_statements(cursor)
 
-    cursor.execute("SELECT 1 FROM pg_tables WHERE tablename = 'main_state';")
-    if cursor.fetchone():
-        # State table prepared statements
-        cursor.execute(
-            "PREPARE get_next_mark_state(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
-        )
-        cursor.execute(
-            "PREPARE update_latest_mark_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
-        )
+
+def create_prepared_statements(cursor):
+    cursor.execute(
+        "PREPARE get_next_mark_localization(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
+    )
+    cursor.execute(
+        "PREPARE update_latest_mark_localization(UUID, INT) AS UPDATE main_localization SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
+    # State table prepared statements
+    cursor.execute(
+        "PREPARE get_next_mark_state(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
+    )
+    cursor.execute(
+        "PREPARE update_latest_mark_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
 
 
 class ModelDiffMixin(object):
