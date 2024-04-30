@@ -22,28 +22,37 @@ if __name__ == "__main__":
     project = localization_type_obj.project
     print(f"Testing {localization_type_obj.name} of project {project}")
 
-    #  make a  bunch  of random  boxes
-    boxes = []
-    for i in range(1000):
-        box = {
-            "media_id": args.media_id,
-            "frame": 0,
-            "type": args.localization_type_id,
-            "x": 0.5,
-            "y": 0.5,
-            "height": 0.2,
-            "width": 0.2,
-            "attributes": {"Label": "Trash"},
-        }
-        boxes.append(box)
-
-    start = time.time()
     deltas = []
-    for resp in tator.util.chunked_create(
-        api.create_localization_list, project, body=boxes, chunk_size=args.chunk_size
-    ):
-        deltas.append(time.time() - start)
+
+    def upload_it(api):
+        #  make a  bunch  of random  boxes
+        boxes = []
+        for i in range(1000):
+            box = {
+                "media_id": args.media_id,
+                "frame": 0,
+                "type": args.localization_type_id,
+                "x": 0.5,
+                "y": 0.5,
+                "height": 0.2,
+                "width": 0.2,
+                "attributes": {"Label": "Trash"},
+            }
+            boxes.append(box)
+
         start = time.time()
+        for resp in tator.util.chunked_create(
+            api.create_localization_list, project, body=boxes, chunk_size=args.chunk_size
+        ):
+            deltas.append(time.time() - start)
+            start = time.time()
+
+    with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+        for i in range(args.max_workers * 2):
+            executor.submit(upload_it, api)
+
+    # wait for all threads to finish
+    executor.shutdown()
 
     print(f"Average time per chunk ({args.chunk_size}): {round(np.mean(deltas),2)} seconds")
     print(f"Max time per chunk: {round(np.max(deltas),2)} seconds")
