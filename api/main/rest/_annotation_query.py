@@ -103,9 +103,16 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             Cast("media", output_field=BigIntegerField()).bitleftshift(32).bitor(F("frame")),
             output_field=BigIntegerField(),
         )
-        media_frames = State.objects.filter(
-            pk__in=set(frame_state_ids), media__isnull=False, frame__isnull=False, variant_deleted=False
-        ).values_list(expression, flat=True).distinct()
+        media_frames = (
+            State.objects.filter(
+                pk__in=set(frame_state_ids),
+                media__isnull=False,
+                frame__isnull=False,
+                variant_deleted=False,
+            )
+            .values_list(expression, flat=True)
+            .distinct()
+        )
         qs = (
             qs.filter(media__isnull=False, frame__isnull=False)
             .alias(media_frame=expression)
