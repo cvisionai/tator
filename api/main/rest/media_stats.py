@@ -17,6 +17,10 @@ from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
+class JSONBSum(Func):
+    function = "SUM"
+    template = "(SELECT SUM((elements->>'size')::bigint) FROM jsonb_array_elements(%(expressions)s) AS elements)"
+    output_field = BigIntegerField()
 
 class MediaStatsAPI(BaseDetailView):
     """Count, download size, and total size of a media list.
@@ -44,21 +48,21 @@ class MediaStatsAPI(BaseDetailView):
         )
 
         extracted = qs.annotate(
-            image=Func(F("media_files__image"), function="jsonb_array_elements"),
-            streaming=Func(F("media_files__streaming"), function="jsonb_array_elements"),
-            thumbnail_gif=Func(F("media_files__thumbnail_gif"), function="jsonb_array_elements"),
-            thumbnail=Func(F("media_files__thumbnail"), function="jsonb_array_elements"),
-            archival=Func(F("media_files__archival"), function="jsonb_array_elements"),
-            attachment=Func(F("media_files__attachment"), function="jsonb_array_elements"),
+            image=JSONBSum("media_files__image"),
+            streaming=JSONBSum("media_files__streaming"),
+            thumbnail_gif=JSONBSum("media_files__thumbnail_gif"),
+            thumbnail=JSONBSum("media_files__thumbnail"),
+            archival=JSONBSum("media_files__archival"),
+            attachment=JSONBSum("media_files__attachment"),
         )
         type_agg = extracted.aggregate(
-            image_size=Sum(Cast("image__size", BigIntegerField())),
-            streaming_size=Sum(Cast("streaming__size", BigIntegerField())),
-            thumbnail_gif_size=Sum(Cast("thumbnail_gif__size", BigIntegerField())),
-            thumbnail_size=Sum(Cast("thumbnail__size", BigIntegerField())),
-            archival_size=Sum(Cast("archival__size", BigIntegerField())),
-            attachment_size=Sum(Cast("attachment__size", BigIntegerField())),
-        )
+            image_size=Sum("image"),
+            streaming_size=Sum("streaming"),
+            thumbnail_gif_size=Sum("thumbnail_gif"),
+            thumbnail_size=Sum("thumbnail"),
+            archival_size=Sum("archival"),
+            attachment_size=Sum("attachment")
+        )  
         logger.info(type_agg)
         for k in type_agg.keys():
             if type_agg[k]:
