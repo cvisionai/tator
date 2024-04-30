@@ -85,7 +85,7 @@ IF NEW.version IS NULL THEN
             RAISE EXCEPTION 'version cannot be null';
 END IF;
 SET plan_cache_mode=force_generic_plan;
-EXECUTE get_next_mark_{0} INTO _var USING NEW.elemental_id::uuid, NEW.version::integer;
+EXECUTE format('EXECUTE get_next_mark_{0}(%L,%s)', NEW.elemental_id::uuid, NEW.version::integer) INTO _var;
 SET plan_cache_mode=auto;
 NEW.mark = _var;
 RETURN NEW;
@@ -94,7 +94,7 @@ RETURN NEW;
 
 AFTER_MARK_TRIGGER_FUNC = """
 SET plan_cache_mode=force_generic_plan;
-EXECUTE update_latest_mark_{0} USING NEW.elemental_id::uuid, NEW.version::integer;
+EXECUTE format('EXECUTE update_latest_mark_{0}(%L,%s)',NEW.elemental_id::uuid, NEW.version::integer);
 SET plan_cache_mode=auto;
 RETURN NEW;
 """
