@@ -43,7 +43,9 @@ from django.forms.models import model_to_dict
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
-from django.db import transaction
+from django.db import transaction, connection
+from django.db.backends.signals import connection_created
+from django.dispatch import receiver
 from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
@@ -94,6 +96,29 @@ EXECUTE format('SELECT COALESCE(MAX(mark),0) FROM %I.%I WHERE elemental_id=%L AN
 EXECUTE format('UPDATE %I.%I SET latest_mark=%s WHERE elemental_id=%L AND version=%s',TG_TABLE_SCHEMA, TG_TABLE_NAME, _var, NEW.elemental_id, NEW.version);
 RETURN NEW;
 """
+
+
+# Register prepared statements for the triggers to optimize performance on creation of a database  connection
+@receiver(connection_created)
+def on_connection_created(sender, connection, **kwargs):
+    # These prepared statements get reused for each row in a bulk insert, greatly improving performance
+    cursor = connection.cursor()
+
+    # Localization table prepared statements
+    cursor.execute(
+        "PREPARE get_next_mark_localization(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
+    )
+    cursor.execute(
+        "PREPARE update_latest_localization(UUID, INT) AS UPDATE main_localization SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
+
+    # State table prepared statements
+    cursor.execute(
+        "PREPARE get_next_mark_state(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
+    )
+    cursor.execute(
+        "PREPARE update_latest_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
 
 
 class ModelDiffMixin(object):
