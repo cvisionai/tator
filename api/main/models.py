@@ -111,7 +111,7 @@ def on_connection_created(sender, connection, **kwargs):
         "PREPARE get_next_mark_localization(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
     )
     cursor.execute(
-        "PREPARE update_latest_localization(UUID, INT) AS UPDATE main_localization SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+        "PREPARE update_latest_mark_localization(UUID, INT) AS UPDATE main_localization SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
     )
 
     # State table prepared statements
@@ -119,7 +119,7 @@ def on_connection_created(sender, connection, **kwargs):
         "PREPARE get_next_mark_state(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
     )
     cursor.execute(
-        "PREPARE update_latest_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+        "PREPARE update_latest_mark_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
     )
 
 
