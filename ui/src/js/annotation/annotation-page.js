@@ -1283,7 +1283,10 @@ export class AnnotationPage extends TatorPage {
             });
 
             canvas.addEventListener("select", (evt) => {
-              console.log("DEBUG: Canvas emitted selection 'select' event", evt.detail);
+              console.log(
+                "DEBUG: Canvas emitted selection 'select' event",
+                evt.detail
+              );
               this._browser.selectEntity(evt.detail);
               canvas.selectTimelineData(evt.detail);
               this._settings.setAttribute("entity-id", evt.detail.id);
@@ -2496,10 +2499,12 @@ export class AnnotationPage extends TatorPage {
     window.dispatchEvent(new Event("resize"));
   }
 
-
   // moved out of evt listener into function
   _handleNewSelection(evt) {
-    console.log("DEBUG: _handleNewSelection page heard 'select' event", evt.detail);
+    console.log(
+      "DEBUG: _handleNewSelection page heard 'select' event",
+      evt.detail
+    );
     if (evt.detail.byUser && evt.detail.byUser == true) {
       // Remove attribute here, will be reset by canvas, if appropriate.
       this._settings.removeAttribute("entity-id");

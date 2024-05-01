@@ -574,7 +574,11 @@ export class EntitySelector extends TatorElement {
 
     this._selectedObject = this._data[index];
 
-    console.log("DEBUG: Entity selector emitted selection 'select' event this._selectedObject and associated state",this._selectedObject, associatedState);
+    console.log(
+      "DEBUG: Entity selector emitted selection 'select' event this._selectedObject and associated state",
+      this._selectedObject,
+      associatedState
+    );
     this.dispatchEvent(
       new CustomEvent("select", {
         detail: {

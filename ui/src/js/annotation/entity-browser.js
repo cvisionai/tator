@@ -404,7 +404,11 @@ export class EntityBrowser extends TatorElement {
           });
 
           selector.addEventListener("select", (evt) => {
-            console.log("DEBUG: Entity browser heard 'select' event - data and assoc state", evt.detail.data, evt.detail.associatedState);
+            console.log(
+              "DEBUG: Entity browser heard 'select' event - data and assoc state",
+              evt.detail.data,
+              evt.detail.associatedState
+            );
             attributes.setValues(
               evt.detail.data,
               evt.detail.associatedState,
