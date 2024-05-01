@@ -16,8 +16,13 @@ export class AnnotationPage extends TatorPage {
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
 
+    // Initializes class variables
     this._dataInitialized = false;
     this._canvasInitialized = false;
+    this._currentFrame = 0;
+    this._mediaIds = [];
+    this._numberOfMedia = 1;
+    this._mediaDataCount = 0;
 
     document.body.setAttribute("class", "no-padding-bottom");
 
@@ -213,11 +218,12 @@ export class AnnotationPage extends TatorPage {
   _updateProject(project) {
     this.setAttribute("project-name", project.name);
     this.setAttribute("project-id", project.id);
+    this._permission = project.permission;
   }
 
-  _updateMedia(mediaId) {
-    this.setAttribute("media-id", mediaId);
-  }
+  // _updateMedia(mediaId) {
+    // this.setAttribute("media-id", mediaId);
+  // }
 
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(
@@ -235,323 +241,360 @@ export class AnnotationPage extends TatorPage {
         this._updateLastVisitedBookmark();
         break;
       case "media-id":
-        const searchParams = new URLSearchParams(window.location.search);
-        fetchCredentials(`/rest/Media/${newValue}?presigned=28800`, {}, true)
-          .then((response) => response.json())
-          .then((data) => {
-            this._archive_state = data.archive_state;
-            if (this._archive_state == "archived") {
-              this._loading.style.display = "none";
-              window.alert(
-                "Media has been archived and cannot be viewed in the annotator."
-              );
-              Utilities.warningAlert(
-                "Media has been archived.",
-                "#ff3e1d",
-                true
-              );
-              return;
-            } else if (this._archive_state == "to_live") {
-              this._loading.style.display = "none";
-              window.alert(
-                "Archived media is not live yet and cannot be viewed in the annotator."
-              );
-              Utilities.warningAlert(
-                "Media has been archived.",
-                "#ff3e1d",
-                true
-              );
-              return;
-            } else if (
-              data.media_files == null ||
-              (data.media_files &&
-                !("streaming" in data.media_files) &&
-                !("layout" in data.media_files) &&
-                !("image" in data.media_files) &&
-                !("concat" in data.media_files) &&
-                !("live" in data.media_files))
-            ) {
-              this._loading.style.display = "none";
-              Utilities.sendNotification(`Unplayable file ${data.id}`);
-              window.alert(
-                "Video can not be played. Please contact the system administrator."
-              );
-              return;
-            } else if (data.media_files && "streaming" in data.media_files) {
-              data.media_files.streaming.sort((a, b) => {
-                return b.resolution[0] - a.resolution[0];
-              });
-            }
-
-            // Update Title Bar to show media information
-            // Usability guidance from mozilla specifies order should go fine -> coarser
-            // e.g. filename | tool name | org name
-            // We have tator before tool name, but having file name first is probably helpful enough.
-            document.title = `${data.name} | ${document.title}`;
-            this._breadcrumbs.setAttribute("media-name", data.name);
-            this._browser.mediaInfo = data;
-            this._undo.mediaInfo = data;
-            this._currentFrame = 0;
-
-            fetchCredentials("/rest/MediaType/" + data.type, {}, true)
-              .then((response) => response.json())
-              .then((type_data) => {
-                this._mediaType = type_data;
-                this._browser.mediaType = type_data;
-                this._undo.mediaType = type_data;
-                let player;
-                this._mediaIds = [];
-                this._numberOfMedia = 1;
-                this._mediaDataCount = 0;
-                if (type_data.dtype == "video") {
-                  player = document.createElement("annotation-player");
-                  this._player = player;
-                  this._player.parent = this;
-                  this._player.mediaType = type_data;
-                  this._videoSettingsDialog.mode("single", data);
-                  player.mediaInfo = data;
-                  this._main.insertBefore(player, this._browser);
-                  this._setupInitHandlers(player);
-                  this._getMetadataTypes(player, player._video._canvas);
-                  this._browser.canvas = player._video;
-                  this._settings._capture.addEventListener(
-                    "captureFrame",
-                    (e) => {
-                      player._video.captureFrame(e.detail.localizations);
-                    }
-                  );
-                  this._videoSettingsDialog.addEventListener("apply", (evt) => {
-                    player.apply;
-                  });
-                } else if (type_data.dtype == "image") {
-                  player = document.createElement("annotation-image");
-                  this._player = player;
-                  this._player.parent = this;
-                  this._player.mediaType = type_data;
-                  player.mediaInfo = data;
-                  this._main.insertBefore(player, this._browser);
-                  this._setupInitHandlers(player);
-                  this._getMetadataTypes(player, player._image._canvas);
-                  this._browser.canvas = player._image;
-                  this._settings._capture.addEventListener(
-                    "captureFrame",
-                    (e) => {
-                      player._image.captureFrame(e.detail.localizations);
-                    }
-                  );
-                } else if (type_data.dtype == "multi") {
-                  player = document.createElement("annotation-multi");
-                  this._player = player;
-                  this._player.parent = this;
-                  this._player.mediaType = type_data;
-                  player.addDomParent({
-                    object: this._headerDiv,
-                    alignTo: this._browser,
-                  });
-
-                  // Note: The player itself will set the metadatatypes and canvas info with this
-                  player.mediaInfo = data;
-                  var mediaIdCount = 0;
-                  for (const index of data.media_files.ids.keys()) {
-                    this._mediaIds.push(data.media_files.ids[index]);
-                    mediaIdCount += 1;
-                  }
-                  this._numberOfMedia = mediaIdCount;
-                  this._main.insertBefore(player, this._browser);
-                  this._setupInitHandlers(player);
-                  this._player.addEventListener("primaryVideoLoaded", (evt) => {
-                    /* #TODO Figure out a capture frame capability for multiview
-                  this._settings._capture.addEventListener(
-                    'captureFrame',
-                    (e) =>
-                      {
-                        player._video.captureFrame(e.detail.localizations);
-                      });
-                  */
-                    this._settings._capture.setAttribute("disabled", "");
-
-                    var primeMediaData = evt.detail.media;
-                    this._videoSettingsDialog.mode("multi", data);
-                    this._settings.mediaInfo = primeMediaData;
-                    var playbackQuality = data.media_files.quality;
-                    if (playbackQuality == undefined) {
-                      playbackQuality = 360; // Default to something sensible
-                    }
-                    if (searchParams.has("playQuality")) {
-                      playbackQuality = Number(searchParams.get("playQuality"));
-                    }
-                    this._settings.quality = playbackQuality;
-                    this._player.setAvailableQualities(primeMediaData);
-                  });
-                } else if (type_data.dtype == "live") {
-                  player = document.createElement("annotation-live");
-                  this._player = player;
-                  this._player.mediaType = type_data;
-                  player.addDomParent({
-                    object: this._headerDiv,
-                    alignTo: this._browser,
-                  });
-                  this._setupInitHandlers(player);
-                  player.mediaInfo = data;
-                  this._main.insertBefore(player, this._browser);
-
-                  for (let live of player._videos) {
-                    this._getMetadataTypes(player, live._canvas);
-                  }
-                  //this._browser.canvas = player._video;
-                  this._videoSettingsDialog.mode("live", data);
-                  this._settings._capture.addEventListener(
-                    "captureFrame",
-                    (e) => {
-                      player._video.captureFrame(e.detail.localizations);
-                    }
-                  );
-                  this._videoSettingsDialog.addEventListener("apply", (evt) => {
-                    player.apply;
-                  });
-                } else {
-                  window.alert(`Unknown media type ${type_data.dtype}`);
-                }
-                player.addEventListener("playing", () => {
-                  this._sidebar.videoIsPlaying = true;
-                  playerControlManagement(player, true);
-                });
-                player.addEventListener("paused", () => {
-                  this._sidebar.videoIsPlaying = false;
-                  playerControlManagement(player, false);
-                });
-              });
-            const nextPromise = fetchCredentials(
-              `/rest/MediaNext/${newValue}${window.location.search}`,
-              {},
-              true
-            );
-            const prevPromise = fetchCredentials(
-              `/rest/MediaPrev/${newValue}${window.location.search}`,
-              {},
-              true
-            );
-            Promise.all([nextPromise, prevPromise])
-              .then((responses) =>
-                Promise.all(responses.map((resp) => resp.json()))
-              )
-              .then(([nextData, prevData]) => {
-                const baseUrl = `/${data.project}/annotation/`;
-                const searchParams = this._settings._queryParams();
-                const media_id = parseInt(newValue);
-
-                this.nextData = nextData;
-                this.prevData = prevData;
-
-                // Turn disable selected_type.
-                searchParams.delete("selected_type");
-
-                // Only enable next/prev if there is a next/prev
-                if (prevData.prev == -1) {
-                  this._prev.disabled = true;
-                } else {
-                  this._prev.addEventListener("click", (evt) => {
-                    let url = baseUrl + prevData.prev;
-                    var searchParams = this._settings._queryParams();
-                    searchParams.delete("selected_type");
-                    searchParams.delete("selected_entity");
-                    searchParams.delete("selected_elem");
-                    searchParams.delete("frame");
-                    const typeParams = this._settings._typeParams();
-                    if (typeParams) {
-                      searchParams.append("selected_type", typeParams);
-                    }
-                    searchParams =
-                      this._videoSettingsDialog.queryParams(searchParams);
-                    url += "?" + searchParams.toString();
-                    // If the control key is pressed jump to a new tab.
-                    if (evt.ctrlKey) {
-                      let a = document.createElement("a");
-                      a.target = "_blank";
-                      a.href = url;
-                      a.click();
-                    } else {
-                      window.location.href = url;
-                    }
-                  });
-                  this._prev.addEventListener(
-                    "mouseenter",
-                    this.showPrevPreview.bind(this)
-                  );
-                  this._prev.addEventListener(
-                    "mouseout",
-                    this.removeNextPrevPreview.bind(this)
-                  );
-                }
-
-                if (nextData.next == -1) {
-                  this._next.disabled = true;
-                } else {
-                  this._next.addEventListener("click", (evt) => {
-                    let url = baseUrl + nextData.next;
-                    var searchParams = this._settings._queryParams();
-                    searchParams.delete("selected_type");
-                    searchParams.delete("selected_entity");
-                    searchParams.delete("selected_elem");
-                    searchParams.delete("frame");
-                    const typeParams = this._settings._typeParams();
-                    if (typeParams) {
-                      searchParams.append("selected_type", typeParams);
-                    }
-                    searchParams =
-                      this._videoSettingsDialog.queryParams(searchParams);
-                    url += "?" + searchParams.toString();
-                    // If the control key is pressed jump to a new tab.
-                    if (evt.ctrlKey) {
-                      let a = document.createElement("a");
-                      a.target = "_blank";
-                      a.href = url;
-                      a.click();
-                    } else {
-                      window.location.href = url;
-                    }
-                  });
-                  this._next.addEventListener(
-                    "mouseenter",
-                    this.showNextPreview.bind(this)
-                  );
-                  this._next.addEventListener(
-                    "mouseout",
-                    this.removeNextPrevPreview.bind(this)
-                  );
-                }
-              })
-              .catch((err) =>
-                console.log("Failed to fetch adjacent media! " + err)
-              );
-            fetchCredentials("/rest/Project/" + data.project, {}, true)
-              .then((response) => response.json())
-              .then((data) => {
-                this._permission = data.permission;
-                if (this._permission === "View Only")
-                  this._settings._lock.viewOnly();
-                this.enableEditing(true);
-              });
-            const countUrl = `/rest/MediaCount/${data.project
-              }?${searchParams.toString()}`;
-            searchParams.set("after_name", data.name);
-            const afterUrl = `/rest/MediaCount/${data.project
-              }?${searchParams.toString()}`;
-            const countPromise = fetchCredentials(countUrl, {}, true);
-            const afterPromise = fetchCredentials(afterUrl, {}, true);
-            Promise.all([countPromise, afterPromise]).then(
-              ([countResponse, afterResponse]) => {
-                const countData = countResponse.json();
-                const afterData = afterResponse.json();
-                Promise.all([countData, afterData]).then(([count, after]) => {
-                  this._breadcrumbs.setPosition(count - after, count);
-                });
-              }
-            );
-          });
+        this._updateMedia(newValue);
         break;
     }
   }
+
+  checkArchiveState(archiveState) {
+    if (archiveState == "archived") {
+      this._loading.style.display = "none";
+      window.alert(
+        "Media has been archived and cannot be viewed in the annotator."
+      );
+      Utilities.warningAlert(
+        "Media has been archived.",
+        "#ff3e1d",
+        true
+      );
+      return null;
+    } else if (archiveState == "to_live") {
+      this._loading.style.display = "none";
+      window.alert(
+        "Archived media is not live yet and cannot be viewed in the annotator."
+      );
+      Utilities.warningAlert(
+        "Media has been archived.",
+        "#ff3e1d",
+        true
+      );
+      return null;
+    }
+
+
+    return true;
+  }
+
+  async _updateMedia(mediaId) {
+    const searchParams = new URLSearchParams(window.location.search);
+    try {
+      const response = await fetchCredentials(`/rest/Media/${mediaId}?presigned=28800`, {}, true);
+      
+      if (response.ok) {
+        this._media = await response.json();
+      } else {
+        Utilities.warningAlert("Failed to fetch media.", "red", true)
+        this._loading.style.display = "none";
+        this.removeAttribute("has-open-modal");
+        window.dispatchEvent(new Event("resize"));
+      }
+      
+    } catch (err) {
+      Utilities.warningAlert("Failed to fetch media.", "red", true)
+      this._loading.style.display = "none";
+      this.removeAttribute("has-open-modal");
+      window.dispatchEvent(new Event("resize"));
+    }
+    
+
+    // Is media in an archive state or should we check streaming?
+    if (this.checkArchiveState(this._media.archive_state) == null) return;
+
+    // sort streaming files for the media by resolution
+    // this also indicates its a video
+    if (this._media.media_files && "streaming" in this._media.media_files) {
+      this._media.media_files.streaming.sort((a, b) => {
+        return b.resolution[0] - a.resolution[0];
+      });
+    }
+
+    // Update Title Bar to show media information
+    // Usability guidance from mozilla specifies order should go fine -> coarser
+    // e.g. filename | tool name | org name
+    // We have tator before tool name, but having file name first is probably helpful enough.
+    document.title = `${this._media.name} | ${document.title}`;
+    this._breadcrumbs.setAttribute("media-name", this._media.name);
+
+    // Media info is drilled down through related components with set mediaInfo
+    this._browser.mediaInfo = this._media;
+    this._undo.mediaInfo = this._media;
+
+
+    const mtResp = await fetchCredentials("/rest/MediaType/" + this._media.type, {}, true);
+    const type_data = await mtResp.json();
+
+    this._mediaType = type_data;
+    this._browser.mediaType = type_data;
+    this._undo.mediaType = type_data;
+
+    console.log("Made it here.....", this._media, type_data);
+    this.createPlayerFor(type_data);
+    await this.setupNextPrev();
+
+    // Is this used?
+    searchParams.set("after_name", this._media.name);
+    await this.getCounts();
+
+    if (this._permission === "View Only") {
+      this._settings._lock.viewOnly();
+    }
+    this.enableEditing(true);
+  }
+
+  async getCounts() {
+    const searchParams = new URLSearchParams(window.location.search);
+    // Get counts
+    const countUrl = `/rest/MediaCount/${this._media.project}?${searchParams.toString()}`;
+    const afterUrl = `/rest/MediaCount/${this._media.project}?${searchParams.toString()}`;
+
+    // Not dependent on above
+    const countPromise = fetchCredentials(countUrl, {}, true);
+    const afterPromise = fetchCredentials(afterUrl, {}, true);
+    try {
+      const [countResponse, afterResponse] = await Promise.all([countPromise, afterPromise]);
+      const count = await countResponse.json();
+      const after = await  afterResponse.json();
+      this._breadcrumbs.setPosition(count - after, count);
+    } catch (err) {
+      console.error("Problem getting count response");
+    }
+    
+  }
+
+  createPlayerFor(data) {
+    this._playerMap = new Map();
+    this._playerMap.set("video", "annotation-player")
+      .set("image", "annotation-image")
+      .set("multi", "annotation-multi")
+      .set("live", "annotation-live");
+
+
+    if (!this._playerMap.has(data.dtype)) {
+      return;
+    }
+
+    const playerElement = this._playerMap.get(data.dtype);
+    const player = document.createElement(playerElement);
+    this._main.insertBefore(player, this._browser);
+
+    console.log("DEBUG: createPlayerFor "+data.dtype, player)
+    this._player = player;
+    this._player.parent = this;
+    this._player.mediaType = data;
+
+    if (data.dtype == "video") {
+      this._videoSettingsDialog.mode("single", this._media);
+    }
+
+    if (data.dtype == "video" || data.dtype == "multi") {
+      player.addDomParent({
+        object: this._headerDiv,
+        alignTo: this._browser,
+      });
+    }
+
+    
+    this._setupInitHandlers(player);
+
+    // Note: The player itself will set the metadatatypes and canvas info with this
+    player.mediaInfo = this._media;
+
+    if (data.dtype == "video") {
+      this._getMetadataTypes(player, player._video._canvas);
+      this._browser.canvas = player._video;
+
+      this._settings._capture.addEventListener(
+        "captureFrame",
+        (e) => {
+          player._video.captureFrame(e.detail.localizations);
+        }
+      );
+      this._videoSettingsDialog.addEventListener("apply", (evt) => {
+        player.apply;
+      });
+    } else if (data.dtype == "image") {
+      this._getMetadataTypes(player, player._image._canvas);
+      this._browser.canvas = player._image;
+
+      this._settings._capture.addEventListener(
+        "captureFrame",
+        (e) => {
+          player._image.captureFrame(e.detail.localizations);
+        }
+      );
+    } else if (type_data.dtype == "multi") {
+      var mediaIdCount = 0;
+      for (const index of data.media_files.ids.keys()) {
+        this._mediaIds.push(data.media_files.ids[index]);
+        mediaIdCount += 1;
+      }
+      this._numberOfMedia = mediaIdCount;
+      this._player.addEventListener("primaryVideoLoaded", this._primeVideoLoaded.bind(this));
+
+    } else if (type_data.dtype == "live") {
+      for (let live of player._videos) {
+        this._getMetadataTypes(player, live._canvas);
+      }
+      //this._browser.canvas = player._video;
+      this._videoSettingsDialog.mode("live", data);
+      this._settings._capture.addEventListener(
+        "captureFrame",
+        (e) => {
+          player._video.captureFrame(e.detail.localizations);
+        }
+      );
+      this._videoSettingsDialog.addEventListener("apply", (evt) => {
+        player.apply;
+      });
+    } else {
+      console.error("Unknown media type");
+      // window.alert(`Unknown media type ${type_data.dtype}`);
+    }
+
+    player.addEventListener("playing", () => {
+      this._sidebar.videoIsPlaying = true;
+      playerControlManagement(player, true);
+    });
+    player.addEventListener("paused", () => {
+      this._sidebar.videoIsPlaying = false;
+      playerControlManagement(player, false);
+    });
+  }
+
+  _primeVideoLoaded(evt) {
+    const searchParams = new URLSearchParams(window.location.search);
+    /* #TODO Figure out a capture frame capability for multiview
+  this._settings._capture.addEventListener(
+    'captureFrame',
+    (e) =>
+      {
+        player._video.captureFrame(e.detail.localizations);
+      });
+  */
+    this._settings._capture.setAttribute("disabled", "");
+
+    var primeMediaData = evt.detail.media;
+    this._videoSettingsDialog.mode("multi", this._media);
+    this._settings.mediaInfo = primeMediaData;
+
+    var playbackQuality = this._media.media_files.quality;
+    if (playbackQuality == undefined) {
+      playbackQuality = 360; // Default to something sensible
+    }
+    if (searchParams.has("playQuality")) {
+      playbackQuality = Number(searchParams.get("playQuality"));
+    }
+    this._settings.quality = playbackQuality;
+    this._player.setAvailableQualities(primeMediaData);
+
+  }
+
+  async setupNextPrev() {
+    const nextPromise = fetchCredentials(
+      `/rest/MediaNext/${this._media.id}${window.location.search}`,
+      {},
+      true
+    );
+    const prevPromise = fetchCredentials(
+      `/rest/MediaPrev/${this._media.id}${window.location.search}`,
+      {},
+      true
+    );
+
+    try {
+      const responses = await Promise.all([nextPromise, prevPromise])
+      const [nextData, prevData] = await Promise.all(responses.map((resp) => resp.json()));
+
+      const baseUrl = `/${this._media.project}/annotation/`;
+      const searchParams = this._settings._queryParams();
+
+
+      this.nextData = nextData;
+      this.prevData = prevData;
+
+      // Turn disable selected_type.
+      searchParams.delete("selected_type");
+
+      // Only enable next/prev if there is a next/prev
+      if (prevData.prev == -1) {
+        this._prev.disabled = true;
+      } else {
+        this._prev.addEventListener("click", (evt) => {
+          let url = baseUrl + prevData.prev;
+          var searchParams = this._settings._queryParams();
+          searchParams.delete("selected_type");
+          searchParams.delete("selected_entity");
+          searchParams.delete("selected_elem");
+          searchParams.delete("frame");
+          const typeParams = this._settings._typeParams();
+          if (typeParams) {
+            searchParams.append("selected_type", typeParams);
+          }
+          searchParams =
+            this._videoSettingsDialog.queryParams(searchParams);
+          url += "?" + searchParams.toString();
+          // If the control key is pressed jump to a new tab.
+          if (evt.ctrlKey) {
+            let a = document.createElement("a");
+            a.target = "_blank";
+            a.href = url;
+            a.click();
+          } else {
+            window.location.href = url;
+          }
+        });
+        this._prev.addEventListener(
+          "mouseenter",
+          this.showPrevPreview.bind(this)
+        );
+        this._prev.addEventListener(
+          "mouseout",
+          this.removeNextPrevPreview.bind(this)
+        );
+      }
+
+      if (nextData.next == -1) {
+        this._next.disabled = true;
+      } else {
+        this._next.addEventListener("click", (evt) => {
+          let url = baseUrl + nextData.next;
+          var searchParams = this._settings._queryParams();
+          searchParams.delete("selected_type");
+          searchParams.delete("selected_entity");
+          searchParams.delete("selected_elem");
+          searchParams.delete("frame");
+          const typeParams = this._settings._typeParams();
+          if (typeParams) {
+            searchParams.append("selected_type", typeParams);
+          }
+          searchParams =
+            this._videoSettingsDialog.queryParams(searchParams);
+          url += "?" + searchParams.toString();
+          // If the control key is pressed jump to a new tab.
+          if (evt.ctrlKey) {
+            let a = document.createElement("a");
+            a.target = "_blank";
+            a.href = url;
+            a.click();
+          } else {
+            window.location.href = url;
+          }
+        });
+        this._next.addEventListener(
+          "mouseenter",
+          this.showNextPreview.bind(this)
+        );
+        this._next.addEventListener(
+          "mouseout",
+          this.removeNextPrevPreview.bind(this)
+        );
+      }
+
+    } catch (err) {
+      console.log("Failed to setup setupNextPrev" + err, err);
+    }
+  }
+
 
   showPrevPreview(e) {
     if (this.prevData.prev == -1) return;
@@ -616,6 +659,7 @@ export class AnnotationPage extends TatorPage {
 
         if (haveElem) {
           const typeId = haveType ? searchParams.get("selected_type") : null;
+          const entityId = haveEntity ? searchParams.get("selected_entity") : null;
           const elemId = searchParams.get("selected_elem");
 
           if (typeId !== null) {
@@ -624,19 +668,26 @@ export class AnnotationPage extends TatorPage {
             this._settings.removeAttribute("type-id");
           }
 
+          if (entityId !== null) {
+            this._settings.setAttribute("entity-id", entityId);
+          } else {
+            this._settings.removeAttribute("entity-id");
+          }
+
           this._settings.setAttribute("entity-elemental-id", elemId);
           console.log("Selecting entity from elem_id", elemId, typeId);
-          this._browser.selectEntityOnUpdate(null, typeId, elemId); // TODO
+          this._browser.selectEntityOnUpdate(entityId, typeId, elemId); // TODO
         } else if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
           const entityId = searchParams.get("selected_entity");
 
           this._settings.setAttribute("type-id", typeId);
           this._settings.setAttribute("entity-id", entityId);
-          this._browser.selectEntityOnUpdate(entityId, typeId);
+          this._browser.selectEntityOnUpdate(entityId, typeId, null);
         } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
+
           for (const dtype of ["state", "box", "line", "dot"]) {
             let modifiedTypeId = dtype + "_" + typeId;
             if (this._data._dataByType.has(modifiedTypeId)) {
@@ -652,12 +703,14 @@ export class AnnotationPage extends TatorPage {
           let evt = { detail: { version: this._versionLookup[version_id] } };
           this._versionDialog._handleSelect(evt);
         }
+
         if (haveLock) {
           const lock = Number(searchParams.get("lock"));
           if (lock) {
             this._settings._lock.lock();
           }
         }
+
         if (haveFillBoxes) {
           const fill_boxes = Number(searchParams.get("fill_boxes"));
           if (fill_boxes) {
@@ -669,6 +722,7 @@ export class AnnotationPage extends TatorPage {
             this._settings._fill_boxes.get_fill_boxes_status()
           );
         }
+
         if (haveToggleText) {
           const toggle_text = Number(searchParams.get("toggle_text"));
           if (toggle_text) {
@@ -941,8 +995,9 @@ export class AnnotationPage extends TatorPage {
     subelement_id,
     update
   ) {
-    const projectId = Number(this.getAttribute("project-id"));
-    let mediaId = Number(this.getAttribute("media-id"));
+    const projectId = store.getState().project.id;
+    let mediaId = store.getState().mediaId;
+
     if (subelement_id) {
       mediaId = subelement_id;
     }
@@ -2198,31 +2253,37 @@ export class AnnotationPage extends TatorPage {
   }
 
   _updateURL() {
-    
+    // Edge case: if user changes selection during init, changes aren't reflected in URL
+    // Impact: if they select during init, and refresh it won't show where they were
     if (!this._dataInitialized || !this._canvasInitialized) {
       return;
     }
 
-    let existingSearchParams = new URLSearchParams(window.location.search);
-    var newSearchParams = this._settings._queryParams(existingSearchParams);
-
     if (this._canvas._rate) {
       // annotation-player or annotation-image
-      newSearchParams.set("playbackRate", this._canvas._rate);
+      this._settings.setAttribute("playback-rate", this._canvas._rate);
     }
 
-    console.log("_updateURL.........", newSearchParams.toString());
+    const existingSearchParamsSize = new URLSearchParams(window.location.search).size;
+    const existingSearchParamsString = new URLSearchParams(window.location.search).toString();
 
-    const path = document.location.pathname;
-    const searchArgs = newSearchParams.toString();
-    var newUrl = path + "?" + searchArgs;
+    // Get new params
+    const newSearchParams = this._settings._queryParams();
+  
+    // Reduce replace state if there was no change
+    // console.log("DEBUG::: _updateURL Is it unique --> " + (existingSearchParamsSize !== newSearchParams.size || existingSearchParamsString !== newSearchParams.toString()));
+    if ((existingSearchParamsSize == newSearchParams.size && existingSearchParamsString !== newSearchParams.toString())) {
+      console.log("DEBUG: _updateURL");
+      const path = document.location.pathname;
+      const searchArgs = newSearchParams.toString();
+      var newUrl = path + "?" + searchArgs;
 
-    console.log("DEBUG: _updateURL - replacing with newUrl", newUrl);
-    if (this._annotationPageHistoryState) {
-      window.history.replaceState(this._annotationPageHistoryState, "", newUrl);
-    } else {
-      this._annotationPageHistoryState = { state: 1 };
-      window.history.pushState(this._annotationPageHistoryState, "", newUrl);
+      if (this._annotationPageHistoryState) {
+        window.history.replaceState(this._annotationPageHistoryState, "", newUrl);
+      } else {
+        this._annotationPageHistoryState = { state: 1 };
+        window.history.pushState(this._annotationPageHistoryState, "", newUrl);
+      }
     }
   }
 
@@ -2467,7 +2528,7 @@ export class AnnotationPage extends TatorPage {
         }
       }
 
-      // return;
+      // return; ?
     }
 
     this._settings.setAttribute("entity-id", evt.detail.data.id);

@@ -86,6 +86,7 @@ export class QualityControl extends TatorElement {
     var newUrl = path;
     newUrl += "?" + searchArgs;
 
+    console.log("Quality control updated URL", newUrl);
     window.history.replaceState(quality, "playQuality", newUrl);
     this.dispatchEvent(
       new CustomEvent("setQuality", {

@@ -222,7 +222,7 @@ export class AnnotationData extends HTMLElement {
   }
 
   updateTypeLocal(method, id, body, typeObj, newId = null) {
-    console.log("updateTypeLocal", body, id, newId);
+    console.log("DEBUG: updateTypeLocal : body, id, newId", body, id, newId);
     const typeId = typeObj.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
@@ -253,29 +253,29 @@ export class AnnotationData extends HTMLElement {
         this._dataByType.get(typeId).push(setupObject(body));
       }
     } else if (method == "PATCH") {
+      // Find index of pre-patch ID
+      const index = this._dataByType.get(typeId).map((elem) => elem.id).indexOf(id);
+      // It is possible for the ID to not exist if it is part of a different version/layer.
+      if (index == -1) {
+        return;
+      }
 
+      let newObject = {};
       if (newId !== null) {
-        // Setup new object from updated body
-        const newObject = setupObject(body);
-        const ids = this._dataByType.get(typeId).map((elem) => elem.id);
-        const index = ids.indexOf(id);
-
-        // It is possible for the ID to not exist if it is part of a different version/layer.
-        if (index == -1) {
-          return;
-        }
-        this._dataByType.get(typeId).splice(index, 1, newObject);
+        // start from new object from new body data
+        newObject = setupObject(body);
       } else {
-        const ids = this._dataByType.get(typeId).map((elem) => elem.id);
-        const index = ids.indexOf(id);
-        const elem = this._dataByType.get(typeId)[index];
+        // start from old object, and replace keys
+        newObject = this._dataByType.get(typeId)[index];
         for (const key in body) {
-          if (elem && key in elem) {
-            elem[key] = body[key];
+          if (newObject && key in newObject) {
+            newObject[key] = body[key];
           }
         }
-        this._dataByType.get(typeId)[index] = elem;
       }
+
+      // Replace index with newObject
+      this._dataByType.get(typeId).splice(index, 1, newObject);
       
     } else if (method == "DELETE") {
       const ids = this._dataByType.get(typeId).map((elem) => elem.id);
@@ -286,6 +286,7 @@ export class AnnotationData extends HTMLElement {
       }
       this._dataByType.get(typeId).splice(index, 1);
     }
+    
     this.dispatchEvent(
       new CustomEvent("freshData", {
         detail: {

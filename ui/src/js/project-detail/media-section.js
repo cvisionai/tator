@@ -621,9 +621,6 @@ export class MediaSection extends TatorElement {
     }
 
     newUrl += "?" + searchParams.toString();
-
-    // #TODO Remove console
-    console.log(`_updatePageArgs - New URL: ${newUrl}`);
     window.history.replaceState({}, "", newUrl);
 
     this._pagePosition.innerHTML = `(Page ${this._paginator_top._page + 1} of ${

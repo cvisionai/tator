@@ -150,7 +150,7 @@ export class UndoBuffer extends HTMLElement {
 
         if (patch_response?.[0]?.status && patch_response?.[0]?.status == 200) {
           patch_response_json = await patch_response[0].json();
-        } else if (patch_response?.[0]?.id && patch_response?.[0]?.message) {
+        } else if (patch_response?.[0]?.id) {
           patch_response_json = patch_response[0];
         } else {
           return console.error("Patch response was not 200.", patch_response);

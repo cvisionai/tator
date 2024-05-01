@@ -174,6 +174,7 @@ export class VideoSettingsDialog extends ModalDialog {
       const path = document.location.pathname;
       const searchArgs = searchParams.toString();
       var newUrl = path + "?" + searchArgs;
+      console.log("VideoSettings updated URL", newUrl);
       window.history.replaceState(null, "VideoSettings", newUrl);
     });
 

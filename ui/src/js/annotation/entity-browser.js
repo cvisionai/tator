@@ -169,7 +169,6 @@ export class EntityBrowser extends TatorElement {
       // Give preference to elemental ID if set
       if (this._selectEntityElementalId != null) {
         for (let group in this._selectors) {
-          console.log("Telling a group to select something this._selectEntityElementalId", this._selectEntityElementalId);
           this._selectors[group].selectEntityWithElementalId(this._selectEntityElementalId, true);
         }
         return this._selectEntityElementalId = null;
@@ -432,7 +431,7 @@ export class EntityBrowser extends TatorElement {
     this._selectEntityId = entityId;
     this._selectEntityElementalId = elemId;
 
-    console.log("DEBUG: Entity browser, selectEntityOnUpdate", entityId, elemId);
+    console.log("DEBUG: selectEntityOnUpdate set to values: entityId, elemId", entityId, elemId);
   }
 
   selectEntity(obj) {

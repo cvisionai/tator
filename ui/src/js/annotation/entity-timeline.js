@@ -264,6 +264,7 @@ export class EntityTimeline extends BaseTimeline {
                 prevId = entry.id;
               }
 
+              console.log("Pushing state data", attrType.name)
               this._stateData.push({
                 type: dataType.id,
                 name: attrType.name,
@@ -1633,11 +1634,12 @@ export class EntityTimeline extends BaseTimeline {
       ) {
         // #TODO Do we want to show anything for media associated states?
       } else {
-        console.log("DEBUG: selectEntity -  Data", data);
-
+        const existingSearchParams = new URLSearchParams(window.location.search);
+        console.log("DEBUG: selectEntity -  Data", data, `existingSearchParams.get("frame") ${existingSearchParams.get("frame")}`);
+        // Go to the state in entity selector, and keep the frame they are at from URL params
         this._pointsData.push({
           name: `Selected ${dataType.name}`,
-          frame: data.frame,
+          frame: existingSearchParams.has("frame") ? existingSearchParams.get("frame") : data.frame,
           color: this._timelineSettings.getSelectedColor(),
         });
       }

@@ -218,12 +218,11 @@ export class AnnotationBrowser extends TatorElement {
 
   selectEntityOnUpdate(entityId, entityTypeId, elemId = null) {
     for (const typeId in this._entityPanels) {
+      console.log(`DEBUG: selectEntityOnUpdate - Found matching typeId? Matches = ${typeId == entityTypeId} : args`, entityId, entityTypeId, elemId)
       if (typeId == entityTypeId) {
-        console.log("DEBUG: selectEntityOnUpdate - Found matching typeId : Annotation browser, selectEntityOnUpdate", entityId, entityTypeId, elemId)
         this._entityPanels[typeId].selectEntityOnUpdate(entityId, elemId, entityTypeId);
       } else if (entityTypeId && this._entityPanels?.[entityTypeId]) {
         this._entityPanels[entityTypeId].selectEntityOnUpdate(entityTypeId, elemId, entityTypeId);
-        console.warn("DEBUG: selectEntityOnUpdate - No matching typeId found", `entityId=${entityId}, elemId=${elemId}, entityTypeId=${entityTypeId}`, this._entityPanels);
       }
     }
   }
@@ -323,7 +322,7 @@ export class AnnotationBrowser extends TatorElement {
    * @param {bool} forceOpen
    * @param {bool} forceLocalization - only valid if forceOpen is true
    */
-  selectEntity(obj, forceOpen = true, forceLocalization = false) {
+  selectEntity(obj, forceOpen = false, forceLocalization = false) {
     var typeId = obj.type;
     var objDataType = this._data._dataTypes[typeId];
     var selectObj = obj;
@@ -333,8 +332,6 @@ export class AnnotationBrowser extends TatorElement {
     if (objDataType.isLocalization && this._data._trackDb.has(obj.id)) {
       associatedState = this._data._trackDb.get(obj.id);
       console.log("DEBUG: associatedState - Select entity found associatedState",associatedState,forceOpen);
-    } else {
-      console.log("DEBUG: associatedState - +No associatedState",obj,forceOpen);
     }
 
     // This variable can be changed in the future if there's a project setting to
@@ -363,7 +360,7 @@ export class AnnotationBrowser extends TatorElement {
           panel.style.display == "block" &&
           associatedState != null
         ) {
-          selectTrackInstead = true;
+          selectTrackInstead = false;
           break;
         }
       }
