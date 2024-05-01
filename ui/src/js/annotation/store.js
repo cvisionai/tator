@@ -17,16 +17,18 @@ const store = createStore(
         api.whoami(),
         api.getAnnouncementList(),
         api.getProject(projectId),
-      ]).then((values) => {
-        set({
-          user: values[0],
-          announcements: values[1],
-          project: values[2],
-          mediaId: window.location.pathname.split("/")[3],
+      ])
+        .then((values) => {
+          set({
+            user: values[0],
+            announcements: values[1],
+            project: values[2],
+            mediaId: window.location.pathname.split("/")[3],
+          });
+        })
+        .catch((err) => {
+          console.error("Could not init annotations page", err);
         });
-      }).catch((err) => {
-        console.error("Could not init annotations page",err);
-      });
     },
   }))
 );

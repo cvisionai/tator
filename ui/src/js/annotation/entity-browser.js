@@ -158,20 +158,27 @@ export class EntityBrowser extends TatorElement {
    */
   updateData(evt) {
     if (evt.detail.typeObj.id === this._dataType.id) {
-      console.log("DEBUG: Entity browser, updateData this._dataType", evt.detail, this._dataType, this._selectEntityElementalId);
+      console.log(
+        "DEBUG: Entity browser, updateData this._dataType",
+        evt.detail,
+        this._dataType,
+        this._selectEntityElementalId
+      );
       if (!this._initialized) {
         this._initialized = true;
       }
       this._evt = evt;
       this._drawControls();
 
-
       // Give preference to elemental ID if set
       if (this._selectEntityElementalId != null) {
         for (let group in this._selectors) {
-          this._selectors[group].selectEntityWithElementalId(this._selectEntityElementalId, true);
+          this._selectors[group].selectEntityWithElementalId(
+            this._selectEntityElementalId,
+            true
+          );
         }
-        return this._selectEntityElementalId = null;
+        return (this._selectEntityElementalId = null);
       }
 
       if (this._selectEntityId != null) {
@@ -397,7 +404,7 @@ export class EntityBrowser extends TatorElement {
           });
 
           selector.addEventListener("select", (evt) => {
-            console.log("Selector chosen", selector);
+            console.log("DEBUG: Entity browser heard 'select' event - data and assoc state", evt.detail.data, evt.detail.associatedState);
             attributes.setValues(
               evt.detail.data,
               evt.detail.associatedState,
@@ -416,7 +423,7 @@ export class EntityBrowser extends TatorElement {
         });
       }
     }
-    
+
     for (const group in this._selectors) {
       if (!(group in groups)) {
         const li = this._selectors[group].parentNode;
@@ -431,7 +438,11 @@ export class EntityBrowser extends TatorElement {
     this._selectEntityId = entityId;
     this._selectEntityElementalId = elemId;
 
-    console.log("DEBUG: selectEntityOnUpdate set to values: entityId, elemId", entityId, elemId);
+    console.log(
+      "DEBUG: selectEntityOnUpdate set to values: entityId, elemId",
+      entityId,
+      elemId
+    );
   }
 
   selectEntity(obj) {

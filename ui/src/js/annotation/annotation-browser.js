@@ -169,7 +169,6 @@ export class AnnotationBrowser extends TatorElement {
         entity.addEventListener("goToLocalization", (evt) => {
           this.selectLocalizationFromTrack(evt.detail.track, evt.detail.frame);
         });
-        
       }
     }
 
@@ -218,11 +217,26 @@ export class AnnotationBrowser extends TatorElement {
 
   selectEntityOnUpdate(entityId, entityTypeId, elemId = null) {
     for (const typeId in this._entityPanels) {
-      console.log(`DEBUG: selectEntityOnUpdate - Found matching typeId? Matches = ${typeId == entityTypeId} : args`, entityId, entityTypeId, elemId)
+      console.log(
+        `DEBUG: selectEntityOnUpdate - Found matching typeId? Matches = ${
+          typeId == entityTypeId
+        } : args`,
+        entityId,
+        entityTypeId,
+        elemId
+      );
       if (typeId == entityTypeId) {
-        this._entityPanels[typeId].selectEntityOnUpdate(entityId, elemId, entityTypeId);
+        this._entityPanels[typeId].selectEntityOnUpdate(
+          entityId,
+          elemId,
+          entityTypeId
+        );
       } else if (entityTypeId && this._entityPanels?.[entityTypeId]) {
-        this._entityPanels[entityTypeId].selectEntityOnUpdate(entityTypeId, elemId, entityTypeId);
+        this._entityPanels[entityTypeId].selectEntityOnUpdate(
+          entityTypeId,
+          elemId,
+          entityTypeId
+        );
       }
     }
   }
@@ -331,7 +345,11 @@ export class AnnotationBrowser extends TatorElement {
     var associatedState = null;
     if (objDataType.isLocalization && this._data._trackDb.has(obj.id)) {
       associatedState = this._data._trackDb.get(obj.id);
-      console.log("DEBUG: associatedState - Select entity found associatedState",associatedState,forceOpen);
+      console.log(
+        "DEBUG: associatedState - Select entity found associatedState",
+        associatedState,
+        forceOpen
+      );
     }
 
     // This variable can be changed in the future if there's a project setting to

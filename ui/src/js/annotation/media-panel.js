@@ -118,9 +118,9 @@ export class MediaPanel extends TatorElement {
         console.log("Media panel patch");
         this._undo.patch({
           detailUri: endpoint,
-          id: id, 
+          id: id,
           body: { attributes: values },
-          dataType: val
+          dataType: val,
         });
         this.dispatchEvent(
           new CustomEvent("save", {

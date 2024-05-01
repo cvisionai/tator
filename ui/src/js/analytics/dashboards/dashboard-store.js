@@ -18,16 +18,18 @@ const store = createStore(
         api.getAnnouncementList(),
         api.getProject(projectId),
         api.getApplet(dashboardId),
-      ]).then((values) => {
-        set({
-          user: values[0],
-          announcements: values[1],
-          project: values[2],
-          dashboard: values[3],
+      ])
+        .then((values) => {
+          set({
+            user: values[0],
+            announcements: values[1],
+            project: values[2],
+            dashboard: values[3],
+          });
+        })
+        .catch((err) => {
+          console.error("Could not init from store.", err);
         });
-      }).catch((err) => {
-        console.error("Could not init from store.",err);
-      });
     },
   }))
 );

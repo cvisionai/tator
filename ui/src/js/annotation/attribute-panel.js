@@ -346,15 +346,13 @@ export class AttributePanel extends TatorElement {
         } else {
           widget.setValue(values.mark);
         }
-      }
-      else if (name == "ID") {
+      } else if (name == "ID") {
         if (values.id == null) {
           widget.hidden = true;
         } else {
           widget.setValue(values.id);
         }
-      }
-      else if (name == "Created By") {
+      } else if (name == "Created By") {
         let userKey = "created_by";
         if (values.created_by == null) {
           userKey = "user";
@@ -1230,9 +1228,13 @@ export class AttributePanel extends TatorElement {
 
   setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
-    const id = (values.elemental_id) ? `${values.elemental_id}` : values.id;
+    const id = values.elemental_id ? `${values.elemental_id}` : values.id;
     // After save it might only have regular ID
-    console.log("Trying to set the value with elemental id from this object",values, id);
+    console.log(
+      "Trying to set the value with elemental id from this object",
+      values,
+      id
+    );
     this._idWidget.setValue(id);
     this._frameWidget.setValue(values.frame);
     this._typeWidget.setValue(

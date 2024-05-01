@@ -109,7 +109,8 @@ export class UndoBuffer extends HTMLElement {
     dataType,
     extra_fw_ops,
     extra_bw_ops,
-    replace_bw_ops) {
+    replace_bw_ops
+  ) {
     const projectId = this.getAttribute("project-id");
     const promise = await this._get(detailUri, id);
     if (promise) {
@@ -156,7 +157,7 @@ export class UndoBuffer extends HTMLElement {
           return console.error("Patch response was not 200.", patch_response);
         }
 
-        console.log("patch_response_json",patch_response_json);
+        console.log("patch_response_json", patch_response_json);
         const new_id = patch_response_json.id;
         const index = this._forwardOps.length - 1;
 
@@ -204,7 +205,6 @@ export class UndoBuffer extends HTMLElement {
         }
 
         return patch_response_json;
-
       } catch (error) {
         const msg = dataType.name + " was not updated";
         Utilities.warningAlert(msg, "#ff3e1d", false);
@@ -353,14 +353,15 @@ export class UndoBuffer extends HTMLElement {
               .then((data) => {
                 if (data.id) {
                   const url = "/rest/" + uri + "/" + data.id;
-                  return fetchCredentials(url)
+                  return fetchCredentials(url);
                 } else {
                   return null;
                 }
               })
               .then((response) => {
                 return response.json();
-              }).then((body) => {         
+              })
+              .then((body) => {
                 const newId = body.id;
                 this._emitUpdate(method, id, body, dataType, newId);
 
@@ -378,7 +379,6 @@ export class UndoBuffer extends HTMLElement {
                 this._backwardOps.forEach(replace);
                 return body;
               });
-
           } else {
             this._emitUpdate(method, id, body, dataType);
           }

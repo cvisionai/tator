@@ -222,7 +222,7 @@ export class AnnotationPage extends TatorPage {
   }
 
   // _updateMedia(mediaId) {
-    // this.setAttribute("media-id", mediaId);
+  // this.setAttribute("media-id", mediaId);
   // }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -252,25 +252,16 @@ export class AnnotationPage extends TatorPage {
       window.alert(
         "Media has been archived and cannot be viewed in the annotator."
       );
-      Utilities.warningAlert(
-        "Media has been archived.",
-        "#ff3e1d",
-        true
-      );
+      Utilities.warningAlert("Media has been archived.", "#ff3e1d", true);
       return null;
     } else if (archiveState == "to_live") {
       this._loading.style.display = "none";
       window.alert(
         "Archived media is not live yet and cannot be viewed in the annotator."
       );
-      Utilities.warningAlert(
-        "Media has been archived.",
-        "#ff3e1d",
-        true
-      );
+      Utilities.warningAlert("Media has been archived.", "#ff3e1d", true);
       return null;
     }
-
 
     return true;
   }
@@ -278,24 +269,26 @@ export class AnnotationPage extends TatorPage {
   async _updateMedia(mediaId) {
     const searchParams = new URLSearchParams(window.location.search);
     try {
-      const response = await fetchCredentials(`/rest/Media/${mediaId}?presigned=28800`, {}, true);
-      
+      const response = await fetchCredentials(
+        `/rest/Media/${mediaId}?presigned=28800`,
+        {},
+        true
+      );
+
       if (response.ok) {
         this._media = await response.json();
       } else {
-        Utilities.warningAlert("Failed to fetch media.", "red", true)
+        Utilities.warningAlert("Failed to fetch media.", "red", true);
         this._loading.style.display = "none";
         this.removeAttribute("has-open-modal");
         window.dispatchEvent(new Event("resize"));
       }
-      
     } catch (err) {
-      Utilities.warningAlert("Failed to fetch media.", "red", true)
+      Utilities.warningAlert("Failed to fetch media.", "red", true);
       this._loading.style.display = "none";
       this.removeAttribute("has-open-modal");
       window.dispatchEvent(new Event("resize"));
     }
-    
 
     // Is media in an archive state or should we check streaming?
     if (this.checkArchiveState(this._media.archive_state) == null) return;
@@ -319,8 +312,11 @@ export class AnnotationPage extends TatorPage {
     this._browser.mediaInfo = this._media;
     this._undo.mediaInfo = this._media;
 
-
-    const mtResp = await fetchCredentials("/rest/MediaType/" + this._media.type, {}, true);
+    const mtResp = await fetchCredentials(
+      "/rest/MediaType/" + this._media.type,
+      {},
+      true
+    );
     const type_data = await mtResp.json();
 
     this._mediaType = type_data;
@@ -344,30 +340,36 @@ export class AnnotationPage extends TatorPage {
   async getCounts() {
     const searchParams = new URLSearchParams(window.location.search);
     // Get counts
-    const countUrl = `/rest/MediaCount/${this._media.project}?${searchParams.toString()}`;
-    const afterUrl = `/rest/MediaCount/${this._media.project}?${searchParams.toString()}`;
+    const countUrl = `/rest/MediaCount/${
+      this._media.project
+    }?${searchParams.toString()}`;
+    const afterUrl = `/rest/MediaCount/${
+      this._media.project
+    }?${searchParams.toString()}`;
 
     // Not dependent on above
     const countPromise = fetchCredentials(countUrl, {}, true);
     const afterPromise = fetchCredentials(afterUrl, {}, true);
     try {
-      const [countResponse, afterResponse] = await Promise.all([countPromise, afterPromise]);
+      const [countResponse, afterResponse] = await Promise.all([
+        countPromise,
+        afterPromise,
+      ]);
       const count = await countResponse.json();
-      const after = await  afterResponse.json();
+      const after = await afterResponse.json();
       this._breadcrumbs.setPosition(count - after, count);
     } catch (err) {
       console.error("Problem getting count response");
     }
-    
   }
 
   createPlayerFor(data) {
     this._playerMap = new Map();
-    this._playerMap.set("video", "annotation-player")
+    this._playerMap
+      .set("video", "annotation-player")
       .set("image", "annotation-image")
       .set("multi", "annotation-multi")
       .set("live", "annotation-live");
-
 
     if (!this._playerMap.has(data.dtype)) {
       return;
@@ -377,7 +379,7 @@ export class AnnotationPage extends TatorPage {
     const player = document.createElement(playerElement);
     this._main.insertBefore(player, this._browser);
 
-    console.log("DEBUG: createPlayerFor "+data.dtype, player)
+    console.log("DEBUG: createPlayerFor " + data.dtype, player);
     this._player = player;
     this._player.parent = this;
     this._player.mediaType = data;
@@ -393,7 +395,6 @@ export class AnnotationPage extends TatorPage {
       });
     }
 
-    
     this._setupInitHandlers(player);
 
     // Note: The player itself will set the metadatatypes and canvas info with this
@@ -403,12 +404,9 @@ export class AnnotationPage extends TatorPage {
       this._getMetadataTypes(player, player._video._canvas);
       this._browser.canvas = player._video;
 
-      this._settings._capture.addEventListener(
-        "captureFrame",
-        (e) => {
-          player._video.captureFrame(e.detail.localizations);
-        }
-      );
+      this._settings._capture.addEventListener("captureFrame", (e) => {
+        player._video.captureFrame(e.detail.localizations);
+      });
       this._videoSettingsDialog.addEventListener("apply", (evt) => {
         player.apply;
       });
@@ -416,12 +414,9 @@ export class AnnotationPage extends TatorPage {
       this._getMetadataTypes(player, player._image._canvas);
       this._browser.canvas = player._image;
 
-      this._settings._capture.addEventListener(
-        "captureFrame",
-        (e) => {
-          player._image.captureFrame(e.detail.localizations);
-        }
-      );
+      this._settings._capture.addEventListener("captureFrame", (e) => {
+        player._image.captureFrame(e.detail.localizations);
+      });
     } else if (type_data.dtype == "multi") {
       var mediaIdCount = 0;
       for (const index of data.media_files.ids.keys()) {
@@ -429,20 +424,19 @@ export class AnnotationPage extends TatorPage {
         mediaIdCount += 1;
       }
       this._numberOfMedia = mediaIdCount;
-      this._player.addEventListener("primaryVideoLoaded", this._primeVideoLoaded.bind(this));
-
+      this._player.addEventListener(
+        "primaryVideoLoaded",
+        this._primeVideoLoaded.bind(this)
+      );
     } else if (type_data.dtype == "live") {
       for (let live of player._videos) {
         this._getMetadataTypes(player, live._canvas);
       }
       //this._browser.canvas = player._video;
       this._videoSettingsDialog.mode("live", data);
-      this._settings._capture.addEventListener(
-        "captureFrame",
-        (e) => {
-          player._video.captureFrame(e.detail.localizations);
-        }
-      );
+      this._settings._capture.addEventListener("captureFrame", (e) => {
+        player._video.captureFrame(e.detail.localizations);
+      });
       this._videoSettingsDialog.addEventListener("apply", (evt) => {
         player.apply;
       });
@@ -486,7 +480,6 @@ export class AnnotationPage extends TatorPage {
     }
     this._settings.quality = playbackQuality;
     this._player.setAvailableQualities(primeMediaData);
-
   }
 
   async setupNextPrev() {
@@ -502,12 +495,13 @@ export class AnnotationPage extends TatorPage {
     );
 
     try {
-      const responses = await Promise.all([nextPromise, prevPromise])
-      const [nextData, prevData] = await Promise.all(responses.map((resp) => resp.json()));
+      const responses = await Promise.all([nextPromise, prevPromise]);
+      const [nextData, prevData] = await Promise.all(
+        responses.map((resp) => resp.json())
+      );
 
       const baseUrl = `/${this._media.project}/annotation/`;
       const searchParams = this._settings._queryParams();
-
 
       this.nextData = nextData;
       this.prevData = prevData;
@@ -530,8 +524,7 @@ export class AnnotationPage extends TatorPage {
           if (typeParams) {
             searchParams.append("selected_type", typeParams);
           }
-          searchParams =
-            this._videoSettingsDialog.queryParams(searchParams);
+          searchParams = this._videoSettingsDialog.queryParams(searchParams);
           url += "?" + searchParams.toString();
           // If the control key is pressed jump to a new tab.
           if (evt.ctrlKey) {
@@ -567,8 +560,7 @@ export class AnnotationPage extends TatorPage {
           if (typeParams) {
             searchParams.append("selected_type", typeParams);
           }
-          searchParams =
-            this._videoSettingsDialog.queryParams(searchParams);
+          searchParams = this._videoSettingsDialog.queryParams(searchParams);
           url += "?" + searchParams.toString();
           // If the control key is pressed jump to a new tab.
           if (evt.ctrlKey) {
@@ -589,12 +581,10 @@ export class AnnotationPage extends TatorPage {
           this.removeNextPrevPreview.bind(this)
         );
       }
-
     } catch (err) {
       console.log("Failed to setup setupNextPrev" + err, err);
     }
   }
-
 
   showPrevPreview(e) {
     if (this.prevData.prev == -1) return;
@@ -659,7 +649,9 @@ export class AnnotationPage extends TatorPage {
 
         if (haveElem) {
           const typeId = haveType ? searchParams.get("selected_type") : null;
-          const entityId = haveEntity ? searchParams.get("selected_entity") : null;
+          const entityId = haveEntity
+            ? searchParams.get("selected_entity")
+            : null;
           const elemId = searchParams.get("selected_elem");
 
           if (typeId !== null) {
@@ -695,8 +687,6 @@ export class AnnotationPage extends TatorPage {
             }
           }
         }
-
-
 
         if (haveVersion) {
           let version_id = searchParams.get("version");
@@ -996,12 +986,13 @@ export class AnnotationPage extends TatorPage {
     update
   ) {
     const projectId = store.getState().project.id;
-    let mediaId = store.getState().mediaId;
+    const mediaId = store.getState().mediaId;
 
     if (subelement_id) {
       mediaId = subelement_id;
     }
     const query = "?media_id=" + mediaId;
+
     const favoritePromise = fetchCredentials(
       "/rest/Favorites/" + projectId,
       {},
@@ -1292,7 +1283,7 @@ export class AnnotationPage extends TatorPage {
             });
 
             canvas.addEventListener("select", (evt) => {
-              console.log("DEBUG: selection heard", evt.detail);
+              console.log("DEBUG: Canvas emitted selection 'select' event", evt.detail);
               this._browser.selectEntity(evt.detail);
               canvas.selectTimelineData(evt.detail);
               this._settings.setAttribute("entity-id", evt.detail.id);
@@ -1300,7 +1291,10 @@ export class AnnotationPage extends TatorPage {
               this._settings.setAttribute("type-id", evt.detail.type);
 
               if (evt.detail.elemental_id) {
-                this._settings.setAttribute("entity-elemental-id", evt.detail.elemental_id);
+                this._settings.setAttribute(
+                  "entity-elemental-id",
+                  evt.detail.elemental_id
+                );
               }
 
               //Update the URL
@@ -1327,7 +1321,10 @@ export class AnnotationPage extends TatorPage {
               // Force selecting this new entity in the browser if a new object was created
               // when the data is retrieved (ie freshData event)
               if (evt.detail.method == "POST" || evt.detail.method == "PATCH") {
-                this._newEntityId = (evt.detail?.newId && evt.detail?.newId !== null) ? evt.detail.newId : evt.detail.id;
+                this._newEntityId =
+                  evt.detail?.newId && evt.detail?.newId !== null
+                    ? evt.detail.newId
+                    : evt.detail.id;
                 this._newEntity = null; // Updates in "freshData"
                 console.log("Undo heard update event ", evt.detail);
               } else {
@@ -1344,10 +1341,14 @@ export class AnnotationPage extends TatorPage {
               );
             });
 
-            window.addEventListener("entity-selected", this._handleNewSelection.bind(this));
-            this._browser.addEventListener("select", this._handleNewSelection.bind(this));
-
-
+            window.addEventListener(
+              "entity-selected",
+              this._handleNewSelection.bind(this)
+            );
+            this._browser.addEventListener(
+              "select",
+              this._handleNewSelection.bind(this)
+            );
 
             this._browser.addEventListener("capture", (evt) => {
               if ("_video" in canvas) {
@@ -2041,13 +2042,11 @@ export class AnnotationPage extends TatorPage {
           }),
         },
         true
-      )
+      );
       const data = await response.json();
 
       console.log("Added detection track, resp data.", data);
-      this._data.updateType(
-        this._data._dataTypes[evt.detail.localizationType]
-      );
+      this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
       this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
       Utilities.showSuccessIcon(
         `Detection added to track ${evt.detail.mainTrackId}`
@@ -2063,7 +2062,6 @@ export class AnnotationPage extends TatorPage {
         evt.detail.trackType,
         evt.detail.frame
       );
-
     };
 
     for (const save of Object.values(this._saves)) {
@@ -2264,22 +2262,32 @@ export class AnnotationPage extends TatorPage {
       this._settings.setAttribute("playback-rate", this._canvas._rate);
     }
 
-    const existingSearchParamsSize = new URLSearchParams(window.location.search).size;
-    const existingSearchParamsString = new URLSearchParams(window.location.search).toString();
+    const existingSearchParamsSize = new URLSearchParams(window.location.search)
+      .size;
+    const existingSearchParamsString = new URLSearchParams(
+      window.location.search
+    ).toString();
 
     // Get new params
     const newSearchParams = this._settings._queryParams();
-  
+
     // Reduce replace state if there was no change
     // console.log("DEBUG::: _updateURL Is it unique --> " + (existingSearchParamsSize !== newSearchParams.size || existingSearchParamsString !== newSearchParams.toString()));
-    if ((existingSearchParamsSize == newSearchParams.size && existingSearchParamsString !== newSearchParams.toString())) {
+    if (
+      existingSearchParamsSize == newSearchParams.size &&
+      existingSearchParamsString !== newSearchParams.toString()
+    ) {
       console.log("DEBUG: _updateURL");
       const path = document.location.pathname;
       const searchArgs = newSearchParams.toString();
       var newUrl = path + "?" + searchArgs;
 
       if (this._annotationPageHistoryState) {
-        window.history.replaceState(this._annotationPageHistoryState, "", newUrl);
+        window.history.replaceState(
+          this._annotationPageHistoryState,
+          "",
+          newUrl
+        );
       } else {
         this._annotationPageHistoryState = { state: 1 };
         window.history.pushState(this._annotationPageHistoryState, "", newUrl);
@@ -2488,8 +2496,10 @@ export class AnnotationPage extends TatorPage {
     window.dispatchEvent(new Event("resize"));
   }
 
+
+  // moved out of evt listener into function
   _handleNewSelection(evt) {
-    console.log("DEBUG: _handleNewSelection", evt.detail);
+    console.log("DEBUG: _handleNewSelection page heard 'select' event", evt.detail);
     if (evt.detail.byUser && evt.detail.byUser == true) {
       // Remove attribute here, will be reset by canvas, if appropriate.
       this._settings.removeAttribute("entity-id");
@@ -2536,11 +2546,13 @@ export class AnnotationPage extends TatorPage {
     this._settings.setAttribute("type-id", evt.detail.data.type);
 
     if (evt.detail.data.elemental_id) {
-      this._settings.setAttribute("entity-elemental-id", evt.detail.data.elemental_id);
+      this._settings.setAttribute(
+        "entity-elemental-id",
+        evt.detail.data.elemental_id
+      );
     }
 
     this._updateURL();
-
   }
 }
 

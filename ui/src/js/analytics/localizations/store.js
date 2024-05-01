@@ -17,20 +17,22 @@ const store = createStore(
         api.whoami(),
         api.getAnnouncementList(),
         api.getProject(projectId),
-      ]).then((values) => {
-        set({
-          user: values[0],
-          announcements: values[1],
-          project: values[2],
+      ])
+        .then((values) => {
+          set({
+            user: values[0],
+            announcements: values[1],
+            project: values[2],
+          });
+          return {
+            user: values[0],
+            announcements: values[1],
+            project: values[2],
+          };
+        })
+        .catch((err) => {
+          console.error("Could not init from store.", err);
         });
-        return {
-          user: values[0],
-          announcements: values[1],
-          project: values[2],
-        };
-      }).catch((err) => {
-        console.error("Could not init from store.",err);
-      });
     },
   }))
 );

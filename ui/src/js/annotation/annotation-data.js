@@ -231,7 +231,7 @@ export class AnnotationData extends HTMLElement {
 
     const attributeNames = typeObj.attribute_types.map((column) => column.name);
     const setupObject = (obj) => {
-      obj.id = (newId !== null) ? newId : id;
+      obj.id = newId !== null ? newId : id;
       obj.type = typeId;
       if (typeObj.isTLState) {
         obj = {
@@ -254,7 +254,10 @@ export class AnnotationData extends HTMLElement {
       }
     } else if (method == "PATCH") {
       // Find index of pre-patch ID
-      const index = this._dataByType.get(typeId).map((elem) => elem.id).indexOf(id);
+      const index = this._dataByType
+        .get(typeId)
+        .map((elem) => elem.id)
+        .indexOf(id);
       // It is possible for the ID to not exist if it is part of a different version/layer.
       if (index == -1) {
         return;
@@ -276,7 +279,6 @@ export class AnnotationData extends HTMLElement {
 
       // Replace index with newObject
       this._dataByType.get(typeId).splice(index, 1, newObject);
-      
     } else if (method == "DELETE") {
       const ids = this._dataByType.get(typeId).map((elem) => elem.id);
       const index = ids.indexOf(id);
@@ -286,7 +288,7 @@ export class AnnotationData extends HTMLElement {
       }
       this._dataByType.get(typeId).splice(index, 1);
     }
-    
+
     this.dispatchEvent(
       new CustomEvent("freshData", {
         detail: {
@@ -344,7 +346,7 @@ export class AnnotationData extends HTMLElement {
             detail: {
               typeObj: typeObj,
               data: json,
-              select: false
+              select: false,
             },
           })
         );

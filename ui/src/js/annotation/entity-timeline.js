@@ -264,7 +264,7 @@ export class EntityTimeline extends BaseTimeline {
                 prevId = entry.id;
               }
 
-              console.log("Pushing state data", attrType.name)
+              console.log("Pushing state data", attrType.name);
               this._stateData.push({
                 type: dataType.id,
                 name: attrType.name,
@@ -551,7 +551,6 @@ export class EntityTimeline extends BaseTimeline {
 
     var triangle = d3.symbol().type(d3.symbolTriangle).size(50);
 
-    
     gLocalizations
       .append("g")
       .attr("stroke-width", 1)
@@ -559,12 +558,13 @@ export class EntityTimeline extends BaseTimeline {
       .data(this._pointsData)
       .join("path")
       .attr("transform", (d) => {
-        
-
         if (d && d.frame) {
           return `translate(${this._mainX(d.frame)}, ${2})`;
         } else {
-          console.warn("DEBUG: _updateSvgData: Has no frame, defaulted to 0.", d);
+          console.warn(
+            "DEBUG: _updateSvgData: Has no frame, defaulted to 0.",
+            d
+          );
           return `translate(${this._mainX(0)}, ${2})`;
         }
       })
@@ -1626,7 +1626,10 @@ export class EntityTimeline extends BaseTimeline {
         (dataType.interpolation == "latest" ||
           dataType.interpolation == "attr_style_range")
       ) {
-        console.log("DEBUG: selectEntity -  attr_style_range ... setSelectedStateGraphData", data);
+        console.log(
+          "DEBUG: selectEntity -  attr_style_range ... setSelectedStateGraphData",
+          data
+        );
         this.setSelectedStateGraphData();
       } else if (
         dataType.id.includes("state") &&
@@ -1634,12 +1637,22 @@ export class EntityTimeline extends BaseTimeline {
       ) {
         // #TODO Do we want to show anything for media associated states?
       } else {
-        const existingSearchParams = new URLSearchParams(window.location.search);
-        console.log("DEBUG: selectEntity -  Data", data, `existingSearchParams.get("frame") ${existingSearchParams.get("frame")}`);
+        const existingSearchParams = new URLSearchParams(
+          window.location.search
+        );
+        console.log(
+          "DEBUG: selectEntity -  Data",
+          data,
+          `existingSearchParams.get("frame") ${existingSearchParams.get(
+            "frame"
+          )}`
+        );
         // Go to the state in entity selector, and keep the frame they are at from URL params
         this._pointsData.push({
           name: `Selected ${dataType.name}`,
-          frame: existingSearchParams.has("frame") ? existingSearchParams.get("frame") : data.frame,
+          frame: existingSearchParams.has("frame")
+            ? existingSearchParams.get("frame")
+            : data.frame,
           color: this._timelineSettings.getSelectedColor(),
         });
       }

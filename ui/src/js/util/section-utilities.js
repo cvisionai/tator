@@ -397,7 +397,10 @@ export class SectionData {
           label: label,
         });
       } else if (typeof section == "undefined" || section?.visible) {
-        console.warn("Skipping 'undefined', or null section from getFolderList.", section)
+        console.warn(
+          "Skipping 'undefined', or null section from getFolderList.",
+          section
+        );
       }
     }
 

@@ -120,12 +120,7 @@ export class FramePanel extends TatorElement {
             console.info(JSON.stringify(newObject));
             this._undo.post("States", newObject, val);
           } else {
-            this._undo.patch(
-              "State",
-              state.id, 
-              { attributes: values },
-              val
-            );
+            this._undo.patch("State", state.id, { attributes: values }, val);
           }
         }
       }
@@ -133,7 +128,7 @@ export class FramePanel extends TatorElement {
     this._data.addEventListener("freshData", (evt) => {
       const typeObj = evt.detail.typeObj;
       if (typeObj.id === val.id && this._frame !== null) {
-        console.log("DEBUG: OK updating attributes!", typeObj)
+        console.log("DEBUG: OK updating attributes!", typeObj);
         this._updateAttributes(evt.detail.data);
       }
     });
