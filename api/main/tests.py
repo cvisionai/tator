@@ -41,9 +41,12 @@ TEST_IMAGE = (
     "https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png"
 )
 
-
 class TatorTransactionTest(APITransactionTestCase):
     """Handle cases when test runner flushes DB and indices are still being made."""
+    def setUp(self):
+        # Need to do this for first test in a test db instance
+        with connection.cursor() as cursor:
+            create_prepared_statements(cursor)
 
     def _fixture_teardown(self):
         for x in range(30):
@@ -2583,6 +2586,7 @@ class LocalizationBoxTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
