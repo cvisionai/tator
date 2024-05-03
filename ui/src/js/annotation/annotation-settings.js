@@ -118,7 +118,7 @@ export class AnnotationSettings extends TatorElement {
     } else {
       params.delete("playbackRate");
     }
-    
+
     return params;
   }
 }
