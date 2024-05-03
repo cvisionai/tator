@@ -88,6 +88,10 @@ export class TextInput extends TatorElement {
             this.getValue = this._validateEmail;
             this._input.setAttribute("type", "email");
             break;
+          case "float_array":
+            this.getValue = this._validateFloatArray;
+            this._input.setAttribute("type", "float_array");
+            this._input.setAttribute("placeholder", "e.g. [0.0, 1.0, 2.0]");
           default:
             this._input.setAttribute("type", newValue);
             break;
@@ -221,6 +225,17 @@ export class TextInput extends TatorElement {
 
   _validateEmail() {
     return this._input.value;
+  }
+
+  _validateFloatArray() {
+    let val;
+    try {
+      let array = JSON.parse(this._input.value);
+      val = array.map(item => parseFloat(item));
+    } catch {
+      val = null;
+    }
+    return val;
   }
 
   setValue(val) {
