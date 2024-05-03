@@ -204,12 +204,15 @@ export class AnnotationCardData extends HTMLElement {
    * Updates the provided localization card's attributes
    * @param {} cardObj Modified by this function
    */
-  async updateLocalizationAttributes(cardObj) {
-    var locData = await this._modelData.getLocalization(cardObj.id);
+  async updateLocalizationAttributes(cardObj, newId) {
+    var locData = await this._modelData.getLocalization(newId);
+    cardObj.id = newId;
     cardObj.localization = locData;
     cardObj.attributes = locData.attributes;
     cardObj.created = new Date(locData.created_datetime);
     cardObj.modified = new Date(locData.modified_datetime);
+
+    return cardObj;
   }
 
   /**

@@ -603,6 +603,7 @@ export class EntityCard extends TatorElement {
    */
   _updateAttributeValues(data) {
     if (data.entityType.id == this.cardObj.entityType.id) {
+      this._id_text.innerHTML = `ID: ${data.id}`;
       for (let [attr, value] of Object.entries(data.attributes)) {
         if (typeof this.attributeDivs[attr] !== "undefined") {
           if (this.attributeDivs[attr] != null) {

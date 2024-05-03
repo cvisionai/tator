@@ -104,7 +104,7 @@ class MediaListSchema(AutoSchema):
                     "replaced with presigned URLs that can be downloaded without "
                     "authentication. The value is the expiration time of the URLs "
                     "in seconds.",
-                    "schema": {"type": "integer", "minimum": 1, "maximum": 86400},
+                    "schema": {"type": "integer", "minimum": 1, "maximum": 604800},
                 },
                 {
                     "name": "no_cache",
@@ -266,7 +266,7 @@ class MediaDetailSchema(AutoSchema):
                     "replaced with presigned URLs that can be downloaded without "
                     "authentication. The value is the expiration time of the URLs "
                     "in seconds.",
-                    "schema": {"type": "integer", "minimum": 1, "maximum": 86400},
+                    "schema": {"type": "integer", "minimum": 1, "maximum": 604800},
                 },
                 {
                     "name": "no_cache",

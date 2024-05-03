@@ -315,9 +315,9 @@ class StateListAPI(BaseListView):
         State.localizations.through.objects.bulk_create(loc_relations, ignore_conflicts=True)
 
         # Calculate segments (this is not triggered for bulk created m2m).
-        localization_ids = set(itertools.chain(
-            *[state_spec.get("localization_ids", []) for state_spec in state_specs]
-        ))
+        localization_ids = set(
+            itertools.chain(*[state_spec.get("localization_ids", []) for state_spec in state_specs])
+        )
         loc_id_to_frame = {
             loc["id"]: loc["frame"]
             for loc in Localization.objects.filter(pk__in=localization_ids)

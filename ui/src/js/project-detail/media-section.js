@@ -4,7 +4,6 @@ import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/util
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
 import { downloadFileList } from "../util/download-file-list.js";
-import streamSaver from "../util/StreamSaver.js";
 import { SectionData } from "../util/section-utilities.js";
 
 export class MediaSection extends TatorElement {
