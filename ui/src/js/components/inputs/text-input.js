@@ -231,7 +231,7 @@ export class TextInput extends TatorElement {
     let val;
     try {
       let array = JSON.parse(this._input.value);
-      val = array.map(item => parseFloat(item));
+      val = array.map((item) => parseFloat(item));
     } catch {
       val = null;
     }
