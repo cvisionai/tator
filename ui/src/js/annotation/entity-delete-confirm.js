@@ -57,10 +57,10 @@ export class EntityDeleteConfirm extends ModalDialog {
   }
 
   confirm() {
-    console.log(
-      "Checking session var... allowSessionDelete: " +
-        sessionStorage.getItem("allowSessionDelete")
-    );
+    // console.log(
+    //   "Checking session var... allowSessionDelete: " +
+    //     sessionStorage.getItem("allowSessionDelete")
+    // );
     // Check for stored item and dispatch event to delete; or open confirm
     if (
       typeof sessionStorage.getItem("allowSessionDelete") !== "undefined" &&

@@ -61,7 +61,7 @@ export class EntityTimeline extends BaseTimeline {
       this.updateData();
 
       // Do not change selection with freshdata
-      console.log("DEBUG: annotationData... ", this._selectedData, evt.detail);
+      // console.log("DEBUG: annotationData... ", this._selectedData, evt.detail);
       if (this._selectedData && this._selectedData?.select !== false) {
         this.selectEntity(this._selectedData);
       }
@@ -264,7 +264,7 @@ export class EntityTimeline extends BaseTimeline {
                 prevId = entry.id;
               }
 
-              console.log("Pushing state data", attrType.name);
+              // console.log("Pushing state data", attrType.name);
               this._stateData.push({
                 type: dataType.id,
                 name: attrType.name,
@@ -856,7 +856,7 @@ export class EntityTimeline extends BaseTimeline {
           datasetIdx++
         ) {
           let d = mainLineDataset[datasetIdx];
-          console.log("timeline: What is d?", d);
+          // console.log("timeline: What is d?", d);
           for (let idx = 0; idx < d.graphData.length; idx++) {
             if (d.graphData[idx].frame > pointerFrame) {
               if (idx > 0) {
@@ -1612,7 +1612,7 @@ export class EntityTimeline extends BaseTimeline {
    * @param {Tator.Localization | Tator.State | null} data
    */
   selectEntity(data) {
-    console.log("DEBUG: selectEntity - data in entity timeline", data);
+    // console.log("DEBUG: selectEntity - data in entity timeline", data);
     this._selectedData = data;
     this._selectedStateGraphData = [];
 
@@ -1626,10 +1626,10 @@ export class EntityTimeline extends BaseTimeline {
         (dataType.interpolation == "latest" ||
           dataType.interpolation == "attr_style_range")
       ) {
-        console.log(
-          "DEBUG: selectEntity -  attr_style_range ... setSelectedStateGraphData",
-          data
-        );
+        // console.log(
+        //   "DEBUG: selectEntity -  attr_style_range ... setSelectedStateGraphData",
+        //   data
+        // );
         this.setSelectedStateGraphData();
       } else if (
         dataType.id.includes("state") &&
@@ -1640,13 +1640,13 @@ export class EntityTimeline extends BaseTimeline {
         const existingSearchParams = new URLSearchParams(
           window.location.search
         );
-        console.log(
-          "DEBUG: selectEntity -  Data",
-          data,
-          `existingSearchParams.get("frame") ${existingSearchParams.get(
-            "frame"
-          )}`
-        );
+        // console.log(
+        //   "DEBUG: selectEntity -  Data",
+        //   data,
+        //   `existingSearchParams.get("frame") ${existingSearchParams.get(
+        //     "frame"
+        //   )}`
+        // );
         // Go to the state in entity selector, and keep the frame they are at from URL params
         this._pointsData.push({
           name: `Selected ${dataType.name}`,

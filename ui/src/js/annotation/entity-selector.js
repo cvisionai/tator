@@ -278,7 +278,7 @@ export class EntitySelector extends TatorElement {
         }),
       });
       var msg = await response.json();
-      console.log(`removeLocFromRelatedStates: ${msg}`);
+      // console.log(`removeLocFromRelatedStates: ${msg}`);
     }
 
     if (relatedStates.length > 0) {
@@ -431,7 +431,7 @@ export class EntitySelector extends TatorElement {
    */
   selectEntityWithId(id, emitSelectEvent) {
     // DEBUG
-    console.log("Entity selecter, selectEntityWithId", id, emitSelectEvent);
+    // console.log("Entity selecter, selectEntityWithId", id, emitSelectEvent);
     var selectedObject = false;
     for (const [index, data] of this._data.entries()) {
       if (data.id == id) {
@@ -451,14 +451,14 @@ export class EntitySelector extends TatorElement {
 
   selectEntityWithElementalId(elementalId, emitSelectEvent) {
     // DEBUG
-    console.log(
-      "Entity selecter, selectEntityWithElementalId",
-      elementalId,
-      emitSelectEvent
-    );
+    // console.log(
+    //   "Entity selecter, selectEntityWithElementalId",
+    //   elementalId,
+    //   emitSelectEvent
+    // );
     var selectedObject = false;
     for (const [index, data] of this._data.entries()) {
-      console.log("Checking " + data.elemental_id);
+      // console.log("Checking " + data.elemental_id);
       if (data.elemental_id == elementalId) {
         this._div.classList.add("is-open");
         this.dispatchEvent(new Event("open"));
@@ -476,10 +476,10 @@ export class EntitySelector extends TatorElement {
 
   selectEntity(obj) {
     // DEBUG
-    console.log("Entity selector, selectEntity", obj);
+    // console.log("Entity selector, selectEntity", obj);
     var foundObject = false;
     for (const [index, data] of this._data.entries()) {
-      console.log(data);
+      // console.log(data);
       if (data.elemental_id == obj.elemental_id) {
         this._div.classList.add("is-open");
         this.dispatchEvent(new Event("open"));
@@ -498,12 +498,12 @@ export class EntitySelector extends TatorElement {
   }
 
   _emitSelection(byUser, composed, goToEntityFrame) {
-    console.log(
-      "DEBUG _emitSelection: Entity selector, _emitSelection",
-      byUser,
-      composed,
-      goToEntityFrame
-    );
+    // console.log(
+    //   "DEBUG _emitSelection: Entity selector, _emitSelection",
+    //   byUser,
+    //   composed,
+    //   goToEntityFrame
+    // );
     var index = parseInt(this._current.textContent) - 1;
     index = Math.max(index, 0);
 
@@ -574,11 +574,11 @@ export class EntitySelector extends TatorElement {
 
     this._selectedObject = this._data[index];
 
-    console.log(
-      "DEBUG: Entity selector emitted selection 'select' event this._selectedObject and associated state",
-      this._selectedObject,
-      associatedState
-    );
+    // console.log(
+    //   "DEBUG: Entity selector emitted selection 'select' event this._selectedObject and associated state",
+    //   this._selectedObject,
+    //   associatedState
+    // );
     this.dispatchEvent(
       new CustomEvent("select", {
         detail: {

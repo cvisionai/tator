@@ -68,8 +68,6 @@ export class AnnotationSettings extends TatorElement {
       params = new URLSearchParams(window.location.search);
     }
 
-    console.log("DEBUG: query params call", params.size, params);
-
     if (this.hasAttribute("entity-id")) {
       params.set("selected_entity", this.getAttribute("entity-id"));
     } else {
@@ -120,7 +118,7 @@ export class AnnotationSettings extends TatorElement {
     } else {
       params.delete("playbackRate");
     }
-    console.log("DEBUG: query params call END", params.size, params);
+    
     return params;
   }
 }

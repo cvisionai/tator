@@ -65,11 +65,11 @@ export class EntityButton extends TatorElement {
 
   set annotationData(val) {
     val.addEventListener("freshData", (evt) => {
-      console.log(
-        "DEBUG: Fresh data in annotationData entity button",
-        evt.detail.typeObj,
-        this._dataType.id
-      );
+      // console.log(
+      //   "DEBUG: Fresh data in annotationData entity button",
+      //   evt.detail.typeObj,
+      //   this._dataType.id
+      // );
       if (evt.detail.typeObj.id === this._dataType.id) {
         const name = this._dataType.name;
         const count = evt.detail.data.length;

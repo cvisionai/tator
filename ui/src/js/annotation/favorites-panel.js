@@ -137,7 +137,7 @@ export class FavoritesPanel extends TatorElement {
   }
 
   init(dataType, favorites) {
-    console.log(`dataType: ${dataType}`);
+    // console.log(`dataType: ${dataType}`);
 
     this._identifier = identifyingAttribute(dataType);
     this._dataType = dataType;

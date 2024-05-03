@@ -667,7 +667,7 @@ export class AnnotationPage extends TatorPage {
           }
 
           this._settings.setAttribute("entity-elemental-id", elemId);
-          console.log("Selecting entity from elem_id", elemId, typeId);
+          // console.log("Selecting entity from elem_id", elemId, typeId);
           this._browser.selectEntityOnUpdate(entityId, typeId, elemId); // TODO
         } else if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
@@ -2280,7 +2280,7 @@ export class AnnotationPage extends TatorPage {
       existingSearchParamsSize == newSearchParams.size &&
       existingSearchParamsString !== newSearchParams.toString()
     ) {
-      console.log("DEBUG: _updateURL");
+      // console.log("DEBUG: _updateURL");
       const path = document.location.pathname;
       const searchArgs = newSearchParams.toString();
       var newUrl = path + "?" + searchArgs;
