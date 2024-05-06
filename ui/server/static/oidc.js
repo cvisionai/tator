@@ -27,7 +27,10 @@ function exchangeAuthToken () {
     localStorage.setItem("id_token", data.id_token);
     localStorage.setItem("token_type", data.token_type);
     localStorage.setItem("issue_time", issueTime.toISOString());
-    window.location.href = "/projects";
+    const postLoginPath = localStorage.getItem("postLoginPath") || "/projects";
+    console.log(`Login successful, going to post login path ${window.location.pathname}`);
+    localStorage.removeItem("postLoginPath");
+    window.location.href = postLoginPath;
   })
   .catch((error) => {
     console.error("Error exchanging token!");

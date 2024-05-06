@@ -8,6 +8,8 @@ function getCookie(name) {
 
 function goToLogin() {
   if (KEYCLOAK_ENABLED) {
+    console.log(`Storing post login path as ${window.location.pathname}`);
+    localStorage.setItem("postLoginPath", window.location.pathname);
     window.location.href = `/accounts/login`;
   } else {
     window.location.href = `/accounts/login?next=${window.location.pathname}`;
