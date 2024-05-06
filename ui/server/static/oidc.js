@@ -27,9 +27,17 @@ function exchangeAuthToken () {
     localStorage.setItem("id_token", data.id_token);
     localStorage.setItem("token_type", data.token_type);
     localStorage.setItem("issue_time", issueTime.toISOString());
-    const postLoginPath = localStorage.getItem("postLoginPath") || "/projects";
-    console.log(`Login successful, going to post login path ${window.location.pathname}`);
+    let postLoginPath = localStorage.getItem("postLoginPath") || "/projects";
+    const expiresAtString = localStorage.getItem("postLoginPathExpiresAt");
+    const expiresAt = new Date(expiresAtString);
+    const currentDate = new Date();
+    if (expiresAt < currentDate) {
+      console.log("Post login path is expired, ignoring.");
+      postLoginPath = "/projects";
+    }
+    console.log(`Login successful, going to post login path ${postLoginPath}`);
     localStorage.removeItem("postLoginPath");
+    localStorage.removeItem("postLoginPathExpiresAt");
     window.location.href = postLoginPath;
   })
   .catch((error) => {
