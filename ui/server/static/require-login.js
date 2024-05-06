@@ -8,8 +8,12 @@ function getCookie(name) {
 
 function goToLogin() {
   if (KEYCLOAK_ENABLED) {
-    console.log(`Storing post login path as ${window.location.pathname}`);
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+    const expiresAtString = expiresAt.toString();
+    console.log(`Storing post login path as ${window.location.pathname}, expires at ${expiresAtString}`);
     localStorage.setItem("postLoginPath", window.location.pathname);
+    localStorage.setItem("postLoginPathExpiresAt", expiresAtString);
     window.location.href = `/accounts/login`;
   } else {
     window.location.href = `/accounts/login?next=${window.location.pathname}`;
