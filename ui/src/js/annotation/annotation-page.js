@@ -294,7 +294,6 @@ export class AnnotationPage extends TatorPage {
     if (this.checkArchiveState(this._media.archive_state) == null) return;
 
     // sort streaming files for the media by resolution
-    // this also indicates its a video
     if (this._media.media_files && "streaming" in this._media.media_files) {
       this._media.media_files.streaming.sort((a, b) => {
         return b.resolution[0] - a.resolution[0];
@@ -312,40 +311,56 @@ export class AnnotationPage extends TatorPage {
     this._browser.mediaInfo = this._media;
     this._undo.mediaInfo = this._media;
 
-    const mtResp = await fetchCredentials(
-      "/rest/MediaType/" + this._media.type,
-      {},
-      true
-    );
-    const type_data = await mtResp.json();
+    try {
+      const mtResp = await fetchCredentials(
+        "/rest/MediaType/" + this._media.type,
+        {},
+        true
+      );
+      if (mtResp.ok) {
+        const type_data = await mtResp.json();
 
-    this._mediaType = type_data;
-    this._browser.mediaType = type_data;
-    this._undo.mediaType = type_data;
+        this._mediaType = type_data;
+        this._browser.mediaType = type_data;
+        this._undo.mediaType = type_data;
 
-    console.log("Made it here.....", this._media, type_data);
-    this.createPlayerFor(type_data);
-    await this.setupNextPrev();
+        console.log("Made it here.....", this._media, type_data);
+        this.createPlayerFor(type_data);
+        await this.setupNextPrev();
 
-    // Is this used?
-    searchParams.set("after_name", this._media.name);
-    await this.getCounts();
+        // Is this used?
+        searchParams.set("after_name", this._media.name);
+        await this.getCounts();
 
-    if (this._permission === "View Only") {
-      this._settings._lock.viewOnly();
+        if (this._permission === "View Only") {
+          this._settings._lock.viewOnly();
+        }
+        this.enableEditing(true);
+
+      } else {
+        console.error("Error fetching media type.", mtResp);
+        Utilities.warningAlert("Failed getting related media info.", "red", true);
+        this._loading.style.display = "none";
+        this.removeAttribute("has-open-modal");
+        window.dispatchEvent(new Event("resize"));
+      }
+    } catch (err) {
+      console.error("Error fetching media type.", err);
+      Utilities.warningAlert("Failed getting related media info.", "red", true);
+        this._loading.style.display = "none";
+        this.removeAttribute("has-open-modal");
+        window.dispatchEvent(new Event("resize"));
     }
-    this.enableEditing(true);
+
   }
 
   async getCounts() {
     const searchParams = new URLSearchParams(window.location.search);
     // Get counts
-    const countUrl = `/rest/MediaCount/${
-      this._media.project
-    }?${searchParams.toString()}`;
-    const afterUrl = `/rest/MediaCount/${
-      this._media.project
-    }?${searchParams.toString()}`;
+    const countUrl = `/rest/MediaCount/${this._media.project
+      }?${searchParams.toString()}`;
+    const afterUrl = `/rest/MediaCount/${this._media.project
+      }?${searchParams.toString()}`;
 
     // Not dependent on above
     const countPromise = fetchCredentials(countUrl, {}, true);
@@ -364,6 +379,9 @@ export class AnnotationPage extends TatorPage {
   }
 
   createPlayerFor(data) {
+    const dataType = (data && data?.dtype) ? data.dtype : null;
+    console.log("DEBUG: createPlayerFor - dataType", dataType, data);
+    if (dataType === null) return console.error("Problem making player from data.", data);
     this._playerMap = new Map();
     this._playerMap
       .set("video", "annotation-player")
@@ -371,24 +389,24 @@ export class AnnotationPage extends TatorPage {
       .set("multi", "annotation-multi")
       .set("live", "annotation-live");
 
-    if (!this._playerMap.has(data.dtype)) {
+    if (!this._playerMap.has(dataType)) {
       return;
     }
 
-    const playerElement = this._playerMap.get(data.dtype);
+    const playerElement = this._playerMap.get(dataType);
     const player = document.createElement(playerElement);
     this._main.insertBefore(player, this._browser);
 
-    console.log("DEBUG: createPlayerFor " + data.dtype, player);
+    console.log("DEBUG: createPlayerFor " + dataType, player);
     this._player = player;
     this._player.parent = this;
     this._player.mediaType = data;
 
-    if (data.dtype == "video") {
+    if (dataType == "video") {
       this._videoSettingsDialog.mode("single", this._media);
     }
 
-    if (data.dtype == "video" || data.dtype == "multi") {
+    if (dataType == "video" || dataType == "multi") {
       player.addDomParent({
         object: this._headerDiv,
         alignTo: this._browser,
@@ -400,7 +418,7 @@ export class AnnotationPage extends TatorPage {
     // Note: The player itself will set the metadatatypes and canvas info with this
     player.mediaInfo = this._media;
 
-    if (data.dtype == "video") {
+    if (dataType == "video") {
       this._getMetadataTypes(player, player._video._canvas);
       this._browser.canvas = player._video;
 
@@ -410,14 +428,14 @@ export class AnnotationPage extends TatorPage {
       this._videoSettingsDialog.addEventListener("apply", (evt) => {
         player.apply;
       });
-    } else if (data.dtype == "image") {
+    } else if (dataType == "image") {
       this._getMetadataTypes(player, player._image._canvas);
       this._browser.canvas = player._image;
 
       this._settings._capture.addEventListener("captureFrame", (e) => {
         player._image.captureFrame(e.detail.localizations);
       });
-    } else if (type_data.dtype == "multi") {
+    } else if (dataType == "multi") {
       var mediaIdCount = 0;
       for (const index of data.media_files.ids.keys()) {
         this._mediaIds.push(data.media_files.ids[index]);
@@ -428,7 +446,7 @@ export class AnnotationPage extends TatorPage {
         "primaryVideoLoaded",
         this._primeVideoLoaded.bind(this)
       );
-    } else if (type_data.dtype == "live") {
+    } else if (dataType == "live") {
       for (let live of player._videos) {
         this._getMetadataTypes(player, live._canvas);
       }
@@ -441,7 +459,7 @@ export class AnnotationPage extends TatorPage {
         player.apply;
       });
     } else {
-      console.error("Unknown media type");
+      console.error("Unknown media type", data);
       // window.alert(`Unknown media type ${type_data.dtype}`);
     }
 
@@ -986,7 +1004,7 @@ export class AnnotationPage extends TatorPage {
     update
   ) {
     const projectId = store.getState().project.id;
-    const mediaId = store.getState().mediaId;
+    let mediaId = store.getState().mediaId;
 
     if (subelement_id) {
       mediaId = subelement_id;
