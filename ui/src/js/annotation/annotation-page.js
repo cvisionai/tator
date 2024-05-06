@@ -336,10 +336,13 @@ export class AnnotationPage extends TatorPage {
           this._settings._lock.viewOnly();
         }
         this.enableEditing(true);
-
       } else {
         console.error("Error fetching media type.", mtResp);
-        Utilities.warningAlert("Failed getting related media info.", "red", true);
+        Utilities.warningAlert(
+          "Failed getting related media info.",
+          "red",
+          true
+        );
         this._loading.style.display = "none";
         this.removeAttribute("has-open-modal");
         window.dispatchEvent(new Event("resize"));
@@ -347,20 +350,21 @@ export class AnnotationPage extends TatorPage {
     } catch (err) {
       console.error("Error fetching media type.", err);
       Utilities.warningAlert("Failed getting related media info.", "red", true);
-        this._loading.style.display = "none";
-        this.removeAttribute("has-open-modal");
-        window.dispatchEvent(new Event("resize"));
+      this._loading.style.display = "none";
+      this.removeAttribute("has-open-modal");
+      window.dispatchEvent(new Event("resize"));
     }
-
   }
 
   async getCounts() {
     const searchParams = new URLSearchParams(window.location.search);
     // Get counts
-    const countUrl = `/rest/MediaCount/${this._media.project
-      }?${searchParams.toString()}`;
-    const afterUrl = `/rest/MediaCount/${this._media.project
-      }?${searchParams.toString()}`;
+    const countUrl = `/rest/MediaCount/${
+      this._media.project
+    }?${searchParams.toString()}`;
+    const afterUrl = `/rest/MediaCount/${
+      this._media.project
+    }?${searchParams.toString()}`;
 
     // Not dependent on above
     const countPromise = fetchCredentials(countUrl, {}, true);
@@ -379,9 +383,10 @@ export class AnnotationPage extends TatorPage {
   }
 
   createPlayerFor(data) {
-    const dataType = (data && data?.dtype) ? data.dtype : null;
+    const dataType = data && data?.dtype ? data.dtype : null;
     console.log("DEBUG: createPlayerFor - dataType", dataType, data);
-    if (dataType === null) return console.error("Problem making player from data.", data);
+    if (dataType === null)
+      return console.error("Problem making player from data.", data);
     this._playerMap = new Map();
     this._playerMap
       .set("video", "annotation-player")
