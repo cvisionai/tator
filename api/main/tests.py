@@ -19,8 +19,6 @@ from main.models import *
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import Point
-from minio import Minio
-from minio.deleteobjects import DeleteObject
 from rest_framework import status
 from rest_framework.test import APITestCase, APITransactionTestCase
 from dateutil.parser import parse as dateutil_parse
@@ -2032,8 +2030,7 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         response = self.client.get(f"/rest/Permalink/{self.public_video.pk}")
         assert response.status_code == 301
         response = self.client.get(f"/rest/Permalink/{self.private_video.pk}")
-        # Unauthenticated access gets 400 vs. 403 because of django
-        assert response.status_code == 400
+        assert response.status_code == 403
 
     def test_authenticated_anonymous_user(self):
         """Users logged in as guest should get access to public, but not private"""
