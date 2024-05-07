@@ -64,7 +64,7 @@ class DrfOpenAPIRequest:
     @property
     def body(self):
         try:
-            assert(isinstance(self.request.body, bytes))
+            assert isinstance(self.request.body, bytes)
             return self.request.body
         except django.http.response.RawPostDataException:
             return json.dumps(self.request.data)
