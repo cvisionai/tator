@@ -70,8 +70,43 @@ import os
 import shutil
 import uuid
 
+import pgtrigger
+
 # Load the main.view logger
 logger = logging.getLogger(__name__)
+
+BEFORE_MARK_TRIGGER_FUNC = """
+IF NEW.elemental_id IS NULL THEN
+            RAISE EXCEPTION 'elemental_id cannot be null';
+END IF;
+IF NEW.version IS NULL THEN
+            RAISE EXCEPTION 'version cannot be null';
+END IF;
+IF (SELECT COUNT(name) FROM pg_prepared_statements WHERE name='get_next_mark_localization')  THEN
+    SET plan_cache_mode=force_generic_plan;
+    EXECUTE format('EXECUTE get_next_mark_{0}(%L,%s)', NEW.elemental_id::uuid, NEW.version::integer) INTO _var;
+    SET plan_cache_mode=auto;
+ELSE
+    EXECUTE format('SELECT COALESCE(MAX(mark)+1,0) FROM %I.%I WHERE elemental_id=%L AND version=%s AND deleted=FALSE', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+END  IF;
+
+NEW.mark = _var;
+RETURN NEW;
+"""
+
+
+AFTER_MARK_TRIGGER_FUNC = """
+
+IF (SELECT COUNT(name) FROM pg_prepared_statements WHERE name='get_next_mark_localization')  THEN
+    SET plan_cache_mode=force_generic_plan;
+    EXECUTE format('EXECUTE update_latest_mark_{0}(%L,%s)',NEW.elemental_id::uuid, NEW.version::integer);
+    SET plan_cache_mode=auto;
+ELSE
+    EXECUTE format('SELECT COALESCE(MAX(mark),0) FROM %I.%I WHERE elemental_id=%L AND version=%s AND deleted=FALSE', TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version) INTO _var;
+    EXECUTE format('UPDATE %I.%I SET latest_mark=%s WHERE elemental_id=%L AND version=%s',TG_TABLE_SCHEMA, TG_TABLE_NAME, _var, NEW.elemental_id, NEW.version);
+END  IF; 
+RETURN NEW;
+"""
 
 
 class ModelDiffMixin(object):
@@ -190,8 +225,8 @@ ImageFileFormat = [("jpg", "jpg"), ("png", "png"), ("bmp", "bmp"), ("raw", "raw"
 AssociationTypes = [
     ("Media", "Relates to one or more media items"),
     ("Frame", "Relates to a specific frame in a video"),  # Relates to one or more frames in a video
-    ("Localization", "Relates to localization(s)"),  # Relates to one-to-many localizations
-]
+    ("Localization", "Relates to localization(s)"),
+]  # Relates to one-to-many localizations
 
 
 class MediaAccess(Enum):
@@ -693,6 +728,10 @@ class Project(Model):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ Defines the attribute types that can be used to filter sections for this project
+    """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
@@ -883,6 +922,23 @@ class JobCluster(Model):
 # Algorithm models
 
 
+class HostedTemplate(Model):
+    name = CharField(max_length=128)
+    """ Name of the template. """
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
+    """ Pointer to the organization this permission/rule refers to """
+    url = CharField(max_length=2048)
+    """ URL where jinja2 template is hosted, must be retrievable with a GET
+        using supplied headers."""
+    headers = JSONField(default=list, null=True)
+    """ Headers to be used in the GET request. """
+    tparams = JSONField(default=list, null=True)
+    """ Template parameters used to substitute values in the jinja2 template. """
+
+    def __str__(self):
+        return self.name
+
+
 class Algorithm(Model):
     name = CharField(max_length=128)
     project = ForeignKey(Project, on_delete=CASCADE, db_column="project")
@@ -898,6 +954,16 @@ class Algorithm(Model):
     )
     categories = ArrayField(CharField(max_length=128), default=list, null=True)
     parameters = JSONField(default=list, null=True, blank=True)
+    template = ForeignKey(HostedTemplate, on_delete=SET_NULL, null=True)
+    """ Hosted template, if given then `manifest` is ignored. """
+    tparams = JSONField(default=list, null=True)
+    """ Template parameters, any values set here override default values in
+        the HostedTemplate object.
+    """
+    headers = JSONField(default=list, null=True)
+    """ Request headers for hosted template, any values set here override 
+        default values in the HostedTemplate object.
+    """
 
     def __str__(self):
         return self.name
@@ -1716,6 +1782,33 @@ def file_post_delete(sender, instance, **kwargs):
 
 
 class Localization(Model, ModelDiffMixin):
+
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name="localization_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.Before,
+                declare=[("_var", "integer")],
+                func=BEFORE_MARK_TRIGGER_FUNC.format("localization"),
+            ),
+            pgtrigger.Trigger(
+                name="post_localization_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC.format("localization"),
+            ),
+            pgtrigger.Trigger(
+                name="post_localization_mark_trigger_update",
+                operation=pgtrigger.Update,
+                when=pgtrigger.After,
+                condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC.format("localization"),
+            ),
+        ]
+
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
     type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column="meta")
     """ Meta points to the definition of the attribute field. That is
@@ -1753,7 +1846,7 @@ class Localization(Model, ModelDiffMixin):
         related_name="localization_thumbnail_image",
         db_column="thumbnail_image",
     )
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column="version")
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column="version")
     x = FloatField(null=True, blank=True)
     """ Horizontal position."""
     y = FloatField(null=True, blank=True)
@@ -1778,6 +1871,8 @@ class Localization(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
+    latest_mark = PositiveIntegerField(default=0, blank=True, null=True)
+    """ Mark represents the latest revision number of the element  """
 
 
 @receiver(pre_delete, sender=Localization)
@@ -1792,6 +1887,32 @@ class State(Model, ModelDiffMixin):
     a media element. It is associated with 0 (1 to be useful) or more media
     elements. If a frame is supplied it was collected at that time point.
     """
+
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name="state_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.Before,
+                declare=[("_var", "integer")],
+                func=BEFORE_MARK_TRIGGER_FUNC.format("state"),
+            ),
+            pgtrigger.Trigger(
+                name="post_state_mark_trigger",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC.format("state"),
+            ),
+            pgtrigger.Trigger(
+                name="post_state_mark_trigger_update",
+                operation=pgtrigger.Update,
+                when=pgtrigger.After,
+                condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
+                declare=[("_var", "integer")],
+                func=AFTER_MARK_TRIGGER_FUNC.format("state"),
+            ),
+        ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
     type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column="meta")
@@ -1819,7 +1940,7 @@ class State(Model, ModelDiffMixin):
         related_name="state_modified_by",
         db_column="modified_by",
     )
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column="version")
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column="version")
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True, db_column="parent")
     """ Pointer to localization in which this one was generated from """
     media = ManyToManyField(Media, related_name="media")
@@ -1843,6 +1964,8 @@ class State(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     mark = PositiveIntegerField(default=0, blank=True)
     """ Mark represents the revision number of the element  """
+    latest_mark = PositiveIntegerField(default=0, blank=True, null=True)
+    """ Mark represents the latest revision number of the element  """
 
     @staticmethod
     def selectOnMedia(media_id):
@@ -1986,6 +2109,16 @@ class Section(Model):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    """ Time in which the section was created """
+
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, db_column="created_by")
+
+    attributes = JSONField(null=True, blank=True, default=dict)
+
+    explicit_listing = BooleanField(default=False, null=True, blank=True)
+    media = ManyToManyField(Media)
+
 
 class Favorite(Model):
     """Stores an annotation saved by a user."""
@@ -2089,6 +2222,16 @@ class Dashboard(Model):
     """ Name of the applet """
     project = ForeignKey(Project, on_delete=CASCADE, db_column="project")
     """ Project associated with the applet """
+    template = ForeignKey(HostedTemplate, on_delete=SET_NULL, null=True)
+    """ Hosted template, if given then `html_file` is ignored. """
+    tparams = JSONField(default=list, null=True)
+    """ Template parameters, any values set here override default values in
+        the HostedTemplate object.
+    """
+    headers = JSONField(default=list, null=True)
+    """ Request headers for hosted template, any values set here override 
+        default values in the HostedTemplate object.
+    """
 
 
 def type_to_obj(typeObj):
@@ -2177,6 +2320,7 @@ class RowProtection(Model):
     localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
     state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
     file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
+    section = ForeignKey(Section, on_delete=CASCADE, null=True, blank=True)
 
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
