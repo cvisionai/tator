@@ -7,6 +7,7 @@ from openapi_core.contrib.django import DjangoOpenAPIRequest
 from openapi_core.datatypes import RequestParameters
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import ImmutableMultiDict
+import django
 from ._generator import CustomGenerator
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,11 @@ class DrfOpenAPIRequest:
 
     @property
     def body(self):
-        return json.dumps(self.request.data)
+        try:
+            assert(isinstance(self.request.body, bytes))
+            return self.request.body
+        except django.http.response.RawPostDataException:
+            return json.dumps(self.request.data)
 
     @property
     def content_type(self) -> str:
