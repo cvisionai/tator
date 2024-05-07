@@ -225,7 +225,7 @@ class LocalizationListAPI(BaseListView):
                 f"Safety check failed - expected {expected_count} but would delete {count}"
             )
         if count > 0:
-            if params["prune"] == 1:
+            if params.get("prune") == 1:
                 # Delete the localizations.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
@@ -428,7 +428,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             log_changes(obj, model_dict, obj.project, self.request.user)
         else:
             # Only allow iterative changes, this has to be changing off the last mark in the version
-            if params["pedantic"] and (obj.mark != obj.latest_mark):
+            if params.get("pedantic") and (obj.mark != obj.latest_mark):
                 raise ValueError(
                     f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
                     f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
@@ -454,10 +454,10 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         elemental_id = obj.elemental_id
         version_id = obj.version.id
         mark = obj.mark
-        if params["prune"] == 1:
+        if params.get("prune") == 1:
             delete_and_log_changes(obj, obj.project, self.request.user)
         else:
-            if params["pedantic"] and (obj.mark != obj.latest_mark):
+            if params.get("pedantic") and (obj.mark != obj.latest_mark):
                 raise ValueError(
                     f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
                     f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
