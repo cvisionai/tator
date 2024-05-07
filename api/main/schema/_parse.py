@@ -14,10 +14,8 @@ def parse(request):
         generator = CustomGenerator(title="Tator REST API")
         spec = generator.get_schema(parser=True)
         parse.validator = OpenAPI.from_dict(spec)
-    openapi_request = DjangoOpenAPIRequest(request)
-    if openapi_request.mimetype.startswith("application/json") or (not openapi_request.mimetype):
-        openapi_request.mimetype = "application/json"
-    result = parse.validator.validate_request(openapi_request)
+    openapi_request = DjangoOpenAPIRequest(request._request)
+    result = parse.validator.unmarshal_request(openapi_request)
     result.raise_for_errors()
     out = {
         **result.parameters.path,
