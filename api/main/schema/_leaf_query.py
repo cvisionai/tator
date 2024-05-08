@@ -36,5 +36,6 @@ leaf_filter_parameter_schema = [
             "type": "array",
             "items": {"type": "integer"},
         },
+        "explode": False,
     },
 ]
