@@ -3,7 +3,6 @@ import json
 import re
 
 from openapi_core import OpenAPI
-from openapi_core.contrib.django import DjangoOpenAPIRequest
 from openapi_core.datatypes import RequestParameters
 from openapi_core.protocols import Request
 from werkzeug.datastructures import Headers
