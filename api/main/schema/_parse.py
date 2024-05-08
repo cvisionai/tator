@@ -5,6 +5,7 @@ import re
 from openapi_core import OpenAPI
 from openapi_core.contrib.django import DjangoOpenAPIRequest
 from openapi_core.datatypes import RequestParameters
+from openapi_core.protocols import Request
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import ImmutableMultiDict
 import django
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 PATH_PARAMETER_PATTERN = r"(?:[^/]*?)<(?:(?:.*?:))*?(\w+)>(?:(?:[^/]*?\[\^[^/]*/)?[^/]*)"
 
 
-class DrfOpenAPIRequest:
+class DrfOpenAPIRequest(Request):
 
     path_regex = re.compile(PATH_PARAMETER_PATTERN)
 
@@ -64,10 +65,11 @@ class DrfOpenAPIRequest:
     @property
     def body(self):
         try:
-            assert isinstance(self.request.body, bytes)
-            return self.request.body
-        except django.http.response.RawPostDataException:
-            return json.dumps(self.request.data)
+            assert isinstance(self.request._request.body, bytes)
+            body = self.request._request.body
+        except django.http.request.RawPostDataException as exc:
+            body = json.dumps(self.request.data)
+        return body
 
     @property
     def content_type(self) -> str:
