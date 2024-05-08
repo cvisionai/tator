@@ -12,7 +12,7 @@ from ._generator import CustomGenerator
 
 logger = logging.getLogger(__name__)
 
-PATH_PARAMETER_PATTERN = r"(?:[^/]*?)<(?:(?:.*?:))*?(\w+)>(?:(?:[^/]*?\[\^[^/]*/)?[^/]*)"
+PATH_PARAMETER_PATTERN = r"(?:[^/<>]*)<(\w+)>([^/\[\]]*(?:\[\^[^/\]]*\][^/\[\]]*)*)"
 
 
 class DrfOpenAPIRequest(Request):
