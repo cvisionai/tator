@@ -19,8 +19,6 @@ from main.models import *
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import Point
-from minio import Minio
-from minio.deleteobjects import DeleteObject
 from rest_framework import status
 from rest_framework.test import APITestCase, APITransactionTestCase
 from dateutil.parser import parse as dateutil_parse
