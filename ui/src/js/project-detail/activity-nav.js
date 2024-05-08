@@ -63,7 +63,7 @@ export class ActivityNav extends TatorElement {
 
   async reload() {
     this._reloadButton.classList.add("is-rotating");
-    const jobsResp = await fetchCredentials(`/rest/Jobs/${this._project}`)
+    const jobsResp = await fetchCredentials(`/rest/Jobs/${this._project}`);
     const jobs = await jobsResp.json();
 
     // Clear out the panel
@@ -100,7 +100,9 @@ export class ActivityNav extends TatorElement {
       }
     }
 
-    const transcodesResp = await fetchCredentials(`/rest/Transcodes/${this._project}`)
+    const transcodesResp = await fetchCredentials(
+      `/rest/Transcodes/${this._project}`
+    );
     const transcodes = await transcodesResp.json();
 
     console.log("transcodes", transcodes);
@@ -151,8 +153,9 @@ export class ActivityNav extends TatorElement {
 
     const header = document.createElement("h3");
     header.setAttribute("class", "text-semibold css-truncate");
-    header.textContent = `${type} launched ${new Date(gid.launched).toString().split("(")[0]
-      }`;
+    header.textContent = `${type} launched ${
+      new Date(gid.launched).toString().split("(")[0]
+    }`;
     div.appendChild(header);
 
     const cancel = document.createElement("cancel-button");
@@ -188,7 +191,7 @@ export class ActivityNav extends TatorElement {
         for (const node of job.nodes) {
           nodes.set(node.id, this._showTask(node, true));
         }
-  
+
         // Append child nodes.
         for (const node of job.nodes) {
           for (const child of node.children) {
@@ -196,7 +199,7 @@ export class ActivityNav extends TatorElement {
             appended.add(child);
           }
         }
-  
+
         // Append top level nodes.
         for (const node of job.nodes) {
           if (!appended.has(node.id)) {
@@ -204,7 +207,6 @@ export class ActivityNav extends TatorElement {
           }
         }
       }
-      
     }
   }
 
