@@ -338,6 +338,20 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             obj.elemental_id = uuid.uuid4()
             obj.save()
 
+        # Only allow iterative changes, this has to be changing off the last mark in the version
+        if params.get("in_place", 0) == 0 and params["pedantic"] and (obj.mark != obj.latest_mark):
+            raise ValueError(
+                f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+            )
+        elif obj.mark != obj.latest_mark:
+            obj = type(obj).objects.get(
+                project=obj.project,
+                version=obj.version,
+                mark=obj.latest_mark,
+                elemental_id=obj.elemental_id,
+            )
+
         # Patch common attributes.
         frame = params.get("frame", None)
         version = params.get("version", None)
@@ -427,13 +441,6 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             obj.save()
             log_changes(obj, model_dict, obj.project, self.request.user)
         else:
-            # Only allow iterative changes, this has to be changing off the last mark in the version
-            if params["pedantic"] and (obj.mark != obj.latest_mark):
-                raise ValueError(
-                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
-                    f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
-                )
-
             # Save edits as new object, mark is calculated in trigger
             obj.id = None
             obj.pk = None
