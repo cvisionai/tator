@@ -113,16 +113,13 @@ export class UndoBuffer extends HTMLElement {
   ) {
     const projectId = this.getAttribute("project-id");
     const promise = await this._get(detailUri, id);
-    if (extra_fw_ops == undefined)
-    {
+    if (extra_fw_ops == undefined) {
       extra_fw_ops = [];
     }
-    if (extra_bw_ops == undefined)
-    {
+    if (extra_bw_ops == undefined) {
       extra_bw_ops = [];
     }
-    if (replace_bw_ops == undefined)
-    {
+    if (replace_bw_ops == undefined) {
       replace_bw_ops = false;
     }
     if (promise) {
