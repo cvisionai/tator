@@ -370,9 +370,9 @@ export class EntitySelector extends TatorElement {
 
     if (this._selectedObject) {
       this.selectEntity(this._selectedObject);
+      // Only emit a selection if a selection occurs
+      this._emitSelection(false, true, false);
     }
-
-    this._emitSelection(false, true, false);
   }
 
   /**
