@@ -1124,6 +1124,12 @@ export class AttributePanel extends TatorElement {
     if (val == "Version") {
       this._versionWidget.style.display = "none";
     }
+    if (val == "Mark") {
+      this._markWidget.style.display = "none";
+    }
+    if (val == "Elemental ID") {
+      this._elementalIdWidget.style.display = "none";
+    }
   }
 
   showHeader() {

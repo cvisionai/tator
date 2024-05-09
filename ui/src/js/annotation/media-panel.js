@@ -32,6 +32,8 @@ export class MediaPanel extends TatorElement {
     this._attrs.disableWidget("ID");
     this._attrs.disableWidget("Frame");
     this._attrs.disableWidget("Version");
+    this._attrs.disableWidget("Elemental ID");
+    this._attrs.disableWidget("Mark");
     attrDiv.appendChild(this._attrs);
 
     const browserDiv = document.createElement("div");
