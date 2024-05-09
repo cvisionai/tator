@@ -1,12 +1,78 @@
 import logging
+import json
+import re
 
-from openapi_core import create_spec
-from openapi_core.validation.request.validators import RequestValidator
-from openapi_core.contrib.django import DjangoOpenAPIRequest
-
+from openapi_core import OpenAPI
+from openapi_core.datatypes import RequestParameters
+from openapi_core.protocols import Request
+from werkzeug.datastructures import Headers
+from werkzeug.datastructures import ImmutableMultiDict
+import django
 from ._generator import CustomGenerator
 
 logger = logging.getLogger(__name__)
+
+PATH_PARAMETER_PATTERN = r"(?:[^/<>]*)<(\w+)>([^/\[\]]*(?:\[\^[^/\]]*\][^/\[\]]*)*)"
+
+
+class DrfOpenAPIRequest(Request):
+
+    path_regex = re.compile(PATH_PARAMETER_PATTERN)
+
+    def __init__(self, request):
+        self.request = request
+
+        path = (
+            self.request._request.resolver_match
+            and self.request._request.resolver_match.kwargs
+            or {}
+        )
+        self.parameters = RequestParameters(
+            path=path,
+            query=ImmutableMultiDict(self.request._request.GET),
+            header=Headers(self.request._request.headers.items()),
+            cookie=ImmutableMultiDict(dict(self.request._request.COOKIES)),
+        )
+
+    @property
+    def host_url(self):
+        return self.request._request._current_scheme_host
+
+    @property
+    def path(self):
+        return self.request._request.path
+
+    @property
+    def path_pattern(self):
+        if self.request._request.resolver_match is None:
+            return None
+
+        route = self.path_regex.sub(r"{\1}", self.request._request.resolver_match.route)
+        # Delete start and end marker to allow concatenation.
+        if route[:1] == "^":
+            route = route[1:]
+        if route[-1:] == "$":
+            route = route[:-1]
+        return "/" + route
+
+    @property
+    def method(self):
+        if self.request.method is None:
+            return ""
+        return self.request.method.lower()
+
+    @property
+    def body(self):
+        try:
+            assert isinstance(self.request._request.body, bytes)
+            body = self.request._request.body
+        except django.http.request.RawPostDataException:
+            body = json.dumps(self.request.data)
+        return body
+
+    @property
+    def content_type(self) -> str:
+        return self.request.content_type
 
 
 def parse(request):
@@ -14,12 +80,9 @@ def parse(request):
     if parse.validator is None:
         generator = CustomGenerator(title="Tator REST API")
         spec = generator.get_schema(parser=True)
-        openapi_spec = create_spec(spec)
-        parse.validator = RequestValidator(openapi_spec)
-    openapi_request = DjangoOpenAPIRequest(request)
-    if openapi_request.mimetype.startswith("application/json") or (not openapi_request.mimetype):
-        openapi_request.mimetype = "application/json"
-    result = parse.validator.validate(openapi_request)
+        parse.validator = OpenAPI.from_dict(spec)
+    openapi_request = DrfOpenAPIRequest(request)
+    result = parse.validator.unmarshal_request(openapi_request)
     result.raise_for_errors()
     out = {
         **result.parameters.path,

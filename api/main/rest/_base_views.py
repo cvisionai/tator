@@ -36,7 +36,7 @@ def process_exception(exc):
     else:
         logger.error(format_multiline(traceback.format_exc()))
         resp = Response(
-            {"message": str(exc), "details": ""},
+            {"message": str(exc), "details": str(exc.__cause__)},
             status=status.HTTP_400_BAD_REQUEST,
         )
     return resp

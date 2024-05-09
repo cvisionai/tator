@@ -26,14 +26,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     xmlsec1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Install fork of openapi-core that works in DRF views
-WORKDIR /working
-RUN git clone https://github.com/jrtcppv/openapi-core.git
-WORKDIR /working/openapi-core
-RUN python3 setup.py install
-WORKDIR /working
-RUN rm -rf /working/openapi-core
-
 # Install pip packages
 RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
 COPY containers/tator/requirements.txt requirements.txt

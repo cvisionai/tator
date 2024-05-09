@@ -345,7 +345,7 @@ class StateListAPI(BaseListView):
                 f"Safety check failed - expected {expected_count} but would delete {count}"
             )
         if count > 0:
-            if params["prune"] == 1:
+            if params.get("prune") == 1:
                 # Delete states.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
@@ -533,7 +533,7 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.save()
             log_changes(obj, model_dict, obj.project, self.request.user)
         else:
-            if params["pedantic"] and (obj.mark != obj.latest_mark):
+            if params.get("pedantic") and (obj.mark != obj.latest_mark):
                 raise ValueError(
                     f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
                     f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
@@ -575,12 +575,12 @@ class StateDetailBaseAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        if params["prune"] == 1:
+        if params.get("prune") == 1:
             delete_and_log_changes(state, project, self.request.user)
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_delete_and_log_changes(qs, project, self.request.user)
         else:
-            if params["pedantic"] and (state.mark != state.latest_mark):
+            if params.get("pedantic") and (state.mark != state.latest_mark):
                 raise ValueError(
                     f"Pedantic mode is enabled. Can not edit prior object {state.pk}, must only edit latest mark on version."
                     f"Object is mark {state.mark} of {state.latest_mark} for {state.version.name}/{state.elemental_id}"
