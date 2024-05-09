@@ -611,7 +611,7 @@ export class AnnotationPage extends TatorPage {
         const haveTimelineDisplayMode = searchParams.has("timeline-display");
         if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
-          const entityId = Number(searchParams.get("selected_entity"));
+          const entityId = searchParams.get("selected_entity");
           this._settings.setAttribute("type-id", typeId);
           this._settings.setAttribute("entity-id", entityId);
           this._browser.selectEntityOnUpdate(entityId, typeId);
@@ -1223,7 +1223,7 @@ export class AnnotationPage extends TatorPage {
               this._selectedEntity = newSelection;
               this._browser.selectEntity(evt.detail);
               canvas.selectTimelineData(evt.detail);
-              this._settings.setAttribute("entity-id", evt.detail.id);
+              this._settings.setAttribute("entity-id", evt.detail.elemental_id);
               this._settings.setAttribute("entity-type", evt.detail.type);
               this._settings.setAttribute("type-id", evt.detail.type);
 
@@ -1309,7 +1309,7 @@ export class AnnotationPage extends TatorPage {
 
                 this._updateURL();
               }
-              this._settings.setAttribute("entity-id", evt.detail.data.id);
+              this._settings.setAttribute("entity-id", evt.detail.data.elemental_id);
               this._settings.setAttribute("entity-type", evt.detail.data.type);
               this._settings.setAttribute("type-id", evt.detail.data.type);
             });
