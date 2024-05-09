@@ -4,6 +4,7 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_with_id_list_schema
+from ._message import message_schema_with_obj
 from ._message import message_schema
 from ._attributes import (
     attribute_filter_parameter_schema,
@@ -288,7 +289,9 @@ class StateDetailSchema(AutoSchema):
                 },
             }
         if method == "PATCH":
-            responses["200"] = message_schema("update", "state")
+            responses["200"] = message_schema_with_obj(
+                "update", "state", "#/components/schemas/State"
+            )
         if method == "DELETE":
             responses["200"] = message_schema("deletion", "state")
         return responses
