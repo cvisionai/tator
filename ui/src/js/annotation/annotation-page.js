@@ -380,6 +380,26 @@ export class AnnotationPage extends TatorPage {
                     this._settings.quality = playbackQuality;
                     this._player.setAvailableQualities(primeMediaData);
                   });
+                } else if (type_data.dtype == "multi-image") {
+                  player = document.createElement("annotation-multi-image");
+                  this._player = player;
+                  this._player.parent = this;
+                  this._player.mediaType = type_data;
+                  player.addDomParent({
+                    object: this._headerDiv,
+                    alignTo: this._browser,
+                  });
+
+                  // Note: The player itself will set the metadatatypes and canvas info with this
+                  player.mediaInfo = data;
+                  var mediaIdCount = 0;
+                  for (const index of data.media_files.ids.keys()) {
+                    this._mediaIds.push(data.media_files.ids[index]);
+                    mediaIdCount += 1;
+                  }
+                  this._numberOfMedia = mediaIdCount;
+                  this._main.insertBefore(player, this._browser);
+                  this._setupInitHandlers(player);
                 } else if (type_data.dtype == "live") {
                   player = document.createElement("annotation-live");
                   this._player = player;
@@ -1124,7 +1144,7 @@ export class AnnotationPage extends TatorPage {
             // if all of the media has already registered their data types
             if (
               this._mediaDataCount == this._numberOfMedia &&
-              this._player.mediaType.dtype == "multi"
+              this._player.mediaType.dtype.includes("multi")
             ) {
               this._data.initialUpdate();
             }
@@ -1148,7 +1168,7 @@ export class AnnotationPage extends TatorPage {
             // For states specifically, if we are using the multi-view, we will
             // create the state across all media
             var stateMediaIds;
-            if (this._player.mediaType.dtype == "multi") {
+            if (this._player.mediaType.dtype.includes("multi")) {
               stateMediaIds = this._mediaIds;
             }
 
@@ -1425,7 +1445,7 @@ export class AnnotationPage extends TatorPage {
 
               // For states specifically, if we are using the multi-view, we will
               // create the state across all media
-              if (this._player.mediaType.dtype == "multi") {
+              if (this._player.mediaType.dtype.includes("multi")) {
                 save.stateMediaIds = this._mediaIds;
               }
 
@@ -1562,7 +1582,7 @@ export class AnnotationPage extends TatorPage {
 
           if (
             applet.categories.includes("multi-only") &&
-            this._player.mediaType.dtype != "multi"
+            !this._player.mediaType.dtype.includes("multi")
           ) {
             continue;
           }
@@ -1574,7 +1594,7 @@ export class AnnotationPage extends TatorPage {
             canvas.addAppletToMenu(applet.name, applet.categories);
           } else if (applet.categories.includes("annotator-canvas")) {
             // #TODO Future work. Enable canvas applets for multiview.
-            if (this._player.mediaType.dtype == "multi") {
+            if (this._player.mediaType.dtype.includes("multi")) {
               continue;
             }
 
@@ -2076,7 +2096,7 @@ export class AnnotationPage extends TatorPage {
         undo: this._undo,
       };
 
-      if (this._player.mediaType.dtype == "multi") {
+      if (this._player.mediaType.dtype.includes("multi")) {
         data.multiState = canvas._multiLayoutState;
         data.primaryMedia =
           canvas._videos[canvas._primaryVideoIndex]._mediaInfo;
@@ -2179,6 +2199,11 @@ export class AnnotationPage extends TatorPage {
           video.style.zIndex = "unset";
         }
       }
+      else if (this._mediaType.dtype == "multi-image") {
+        for (const image of this._player._images) {
+          image.style.zIndex = "unset";
+        }
+      }
     }
   }
 
@@ -2195,6 +2220,11 @@ export class AnnotationPage extends TatorPage {
     if (this._mediaType.dtype == "multi") {
       for (const video of this._player._videos) {
         video.style.zIndex = 2;
+      }
+    }
+    else if (this._mediaType.dtype == "multi-image") {
+      for (const image of this._player._images) {
+        image.style.zIndex = 2;
       }
     }
   }

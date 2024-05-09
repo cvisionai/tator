@@ -53,7 +53,7 @@ media_filter_parameter_schema = [
         "in": "query",
         "required": False,
         "description": "Data type of the files, either image or video.",
-        "schema": {"type": "string", "enum": ["image", "video", "multi"]},
+        "schema": {"type": "string", "enum": ["image", "video", "multi", "multi-image"]},
     },
     {
         "name": "md5",

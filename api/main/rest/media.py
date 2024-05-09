@@ -560,6 +560,10 @@ class MediaListAPI(BaseListView):
                     archive_qs = qs.filter(archive_state=state).exclude(pk__in=previously_updated)
                     ids_to_update = list(archive_qs.values_list("pk", flat=True))
 
+                    #
+                    # #TODO Add multi-image check here
+                    #
+
                     # Add all single media ids that are part of a multiview that has requested a
                     # state change
                     multi_constituent_ids = _single_ids_from_multi_qs(
@@ -689,6 +693,10 @@ class MediaDetailAPI(BaseDetailView):
             if "elemental_id" in params:
                 qs.update(elemental_id=params["elemental_id"])
 
+            #
+            # #TODO Handle multi-image here
+            #
+
             if "multi" in params:
                 media_files = media.media_files
                 # If this object already contains non-multi media definitions, raise an exception.
@@ -775,6 +783,10 @@ class MediaDetailAPI(BaseDetailView):
                 if next_archive_state is not None:
                     project = media.project
                     user = self.request.user
+
+                    #
+                    # #TODO Add multi-image here
+                    #
 
                     # Update the archive state of all videos if this is a multiview
                     multi_constituent_ids = _single_ids_from_multi_qs(

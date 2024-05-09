@@ -38,7 +38,8 @@ export class MediaTypeEdit extends TypeFormTemplate {
       { label: "Select", value: "" },
       { label: "Video", value: "video" },
       { label: "Image", value: "image" },
-      { label: "Multiview", value: "multi" },
+      { label: "Multiview Video", value: "multi" },
+      { label: "Multiview Images", value: "multi-image" },
     ];
   }
 

@@ -333,7 +333,7 @@ class TatorStorage(ABC):
         """
 
     def paths_from_media(self, media):
-        if media.type.dtype == "multi":
+        if "multi" in media.type.dtype:
             return self._paths_from_multi(media)
         return self._paths_from_single(media)
 

@@ -147,6 +147,7 @@ from ._media_definitions import video_definition
 from ._media_definitions import audio_definition
 from ._media_definitions import image_definition
 from ._media_definitions import multi_definition
+from ._media_definitions import multi_image_definition
 from ._media_definitions import auxiliary_file_definition
 from ._media_definitions import feed_definition
 from ._media_definitions import live_definition

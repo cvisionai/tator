@@ -380,7 +380,7 @@ export class AttributePanel extends TatorElement {
           let val = `${values.x.toFixed(4)}`;
           if (
             this._associatedMedia &&
-            this._associatedMediaType.dtype != "multi"
+            !this._associatedMediaType.dtype.includes("multi")
           ) {
             val += ` | ${Math.round(
               values.x * this._associatedMedia.width
@@ -393,7 +393,7 @@ export class AttributePanel extends TatorElement {
           let val = `${values.y.toFixed(4)}`;
           if (
             this._associatedMedia &&
-            this._associatedMediaType.dtype != "multi"
+            !this._associatedMediaType.dtype.includes("multi")
           ) {
             val += ` | ${Math.round(
               values.y * this._associatedMedia.height
@@ -406,7 +406,7 @@ export class AttributePanel extends TatorElement {
           let val = `${values.u.toFixed(4)}`;
           if (
             this._associatedMedia &&
-            this._associatedMediaType.dtype != "multi"
+            !this._associatedMediaType.dtype.includes("multi")
           ) {
             val += ` | ${Math.round(
               values.u * this._associatedMedia.width
@@ -419,7 +419,7 @@ export class AttributePanel extends TatorElement {
           let val = `${values.v.toFixed(4)}`;
           if (
             this._associatedMedia &&
-            this._associatedMediaType.dtype != "multi"
+            !this._associatedMediaType.dtype.includes("multi")
           ) {
             val += ` | ${Math.round(
               values.v * this._associatedMedia.height
@@ -436,7 +436,7 @@ export class AttributePanel extends TatorElement {
 
         if (
           this._associatedMedia &&
-          this._associatedMediaType.dtype != "multi"
+          !this._associatedMediaType.dtype.includes("multi")
         ) {
           let lineL2norm_pixels = Math.sqrt(
             Math.pow(
@@ -457,7 +457,7 @@ export class AttributePanel extends TatorElement {
           let val = `${values.width.toFixed(4)}`;
           if (
             this._associatedMedia &&
-            this._associatedMediaType.dtype != "multi"
+            !this._associatedMediaType.dtype.includes("multi")
           ) {
             val += ` | ${Math.round(
               values.width * this._associatedMedia.width
@@ -470,7 +470,7 @@ export class AttributePanel extends TatorElement {
           let val = `${values.height.toFixed(4)}`;
           if (
             this._associatedMedia &&
-            this._associatedMediaType.dtype != "multi"
+            !this._associatedMediaType.dtype.includes("multi")
           ) {
             val += ` | ${Math.round(
               values.height * this._associatedMedia.height

@@ -164,7 +164,7 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     if (
       dataType.dtype == "video" ||
       dataType.dtype == "image" ||
-      dataType.dtype == "multi"
+      dataType.dtype.includes("multi")
     ) {
       var builtInAttributes = [];
     } else {

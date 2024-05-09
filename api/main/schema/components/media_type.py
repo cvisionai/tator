@@ -11,7 +11,7 @@ media_type_properties = {
     "dtype": {
         "description": "Type of the media, image or video.",
         "type": "string",
-        "enum": ["image", "video", "multi", "live"],
+        "enum": ["image", "video", "multi", "multi-image", "live"],
     },
     "file_format": {
         "description": "File extension. If omitted, any recognized file "

@@ -145,7 +145,7 @@ image_definition = {
 }
 
 multi_definition = {
-    "description": "Object containing information needed for a multi media type.",
+    "description": "Object containing information needed for a multi video type.",
     "type": "object",
     "properties": {
         "ids": {
@@ -165,6 +165,23 @@ multi_definition = {
         },
         "quality": {"type": "integer", "description": "Resolution to fetch on each sub-video"},
     },
+}
+
+multi_image_definition = {
+    "description": "Object containing information needed for a multi image type.",
+    "type": "object",
+    "properties": {
+        "ids": {
+            "type": "array",
+            "description": "If multi-stream list of ids of sub-images",
+            "items": {"type": "integer"},
+        },
+        "layout": {
+            "type": "array",
+            "description": "2-element array to define rxc layout",
+            "items": {"type": "integer"},
+        },
+    }
 }
 
 concat_definition = {

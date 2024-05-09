@@ -1024,7 +1024,7 @@ def temporary_file_delete(sender, instance, **kwargs):
 class MediaType(Model):
     dtype = CharField(
         max_length=16,
-        choices=[("image", "image"), ("video", "video"), ("multi", "multi"), ("live", "live")],
+        choices=[("image", "image"), ("video", "video"), ("multi", "multi"), ("multi-image", "multi-image"), ("live", "live")],
     )
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column="project")
     name = CharField(max_length=64)
@@ -1447,7 +1447,7 @@ class Media(Model, ModelDiffMixin):
         """
         Returns True if all resources referenced by the media are backed up.
         """
-        if self.type.dtype == "multi":
+        if self.type.dtype == "multi" or self.type.dtype == "multi-image":
             media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
             return all(media.is_backed_up() for media in media_qs.iterator())
 

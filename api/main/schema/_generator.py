@@ -137,6 +137,7 @@ class CustomGenerator(SchemaGenerator):
                 "MembershipUpdate": membership_update,
                 "Membership": membership,
                 "MultiDefinition": multi_definition,
+                "MultiImageDefinition": multi_image_definition,
                 "NotifySpec": notify_spec,
                 "OrganizationSpec": organization_spec,
                 "OrganizationUpdate": organization_update,

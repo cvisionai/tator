@@ -217,6 +217,7 @@ media_update = {
             "type": "integer",
         },
         "multi": {"$ref": "#/components/schemas/MultiDefinition"},
+        "multi-image": {"$ref": "#/components/schemas/MultiImageDefinition"},
         "live": {"$ref": "#/components/schemas/LiveUpdateDefinition"},
         "concat": {
             "description": "List of concated videos",

@@ -76,7 +76,7 @@ class GetFrameAPI(BaseDetailView):
         elif video.type.dtype == "image":
             if len(frames) > 1:
                 raise Exception(f"Images can only supply 1 frame, asked for '{frames}'")
-        elif video.type.dtype == "live" or video.type.dtype == "multi":
+        elif video.type.dtype == "live" or "multi" in video.type.dtype:
             raise Exception(f"GetFrame does not support '{video.type.dtype}' objects.")
         tile_size = tile
 

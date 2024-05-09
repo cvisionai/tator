@@ -523,7 +523,7 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
             media_dtype = media.type.dtype
             if media_dtype in ["image", "video"]:
                 success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
-            elif media_dtype == "multi":
+            elif "multi" in media_dtype:
                 success, sc_needs_updating, tag_needs_updating = _archive_multi(media, tator_store)
             else:
                 logger.warning(
@@ -688,7 +688,7 @@ def fix_bad_restores(*, media_id_list, live_run=False, force_update=False, resto
         tator_store = tator_store_lookup[proj_id]
         if media_dtype in ["image", "video"]:
             success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
-        elif media_dtype == "multi":
+        elif "multi" in media_dtype:
             success, sc_needs_updating, tag_needs_updating = _archive_multi(media, tator_store)
         else:
             logger.warning(
@@ -790,7 +790,7 @@ def update_media_archive_state(
         if dtype in ["image", "video"]:
             for path in media.path_iterator(keys=ARCHIVE_MEDIA_KEYS):
                 update_success = update_success and update_operator(path, **op_kwargs)
-        elif dtype == "multi":
+        elif "multi" in dtype:
             if not _archive_state_comp(media):
                 single_states = (
                     _archive_state_comp(single)
@@ -919,7 +919,7 @@ def update_queryset_archive_state(media_qs, target_state):
                 continue
 
             clone_ids = list(clone_info["clones"])
-        elif media_dtype == "multi":
+        elif "multi" in media_dtype:
             clone_ids = []
         else:
             logger.warning(
