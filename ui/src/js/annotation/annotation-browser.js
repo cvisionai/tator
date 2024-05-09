@@ -98,6 +98,11 @@ export class AnnotationBrowser extends TatorElement {
       }
     });
 
+    this.addEventListener("select", (evt) => {
+      let objType = evt.detail.data.type;
+      this._openForTypeId(objType);
+    });
+
     this._expandBrowser();
   }
 
