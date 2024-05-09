@@ -212,6 +212,13 @@ export class UndoBuffer extends HTMLElement {
           else
           {
             // This handles patches to MEDIA
+            const index = this._forwardOps.length - 1;
+            if (extra_bw_ops.length > 0) {
+              if (replace_bw_ops) {
+                this._backwardOps[index] = [];
+              }
+              this._backwardOps[index].push(...extra_bw_ops);
+            }
             this._emitUpdate("PATCH", id, body, dataType);
           }
         } else {
