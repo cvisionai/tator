@@ -1215,6 +1215,12 @@ export class AnnotationPage extends TatorPage {
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
             canvas.addEventListener("select", (evt) => {
+              const newSelection = `${evt.detail.type}_${evt.detail.id}`;
+              if (this._selectedEntity == newSelection) {
+                // Canvas event is only informational, no need to update this page!
+                return;
+              }
+              this._selectedEntity = newSelection;
               this._browser.selectEntity(evt.detail);
               canvas.selectTimelineData(evt.detail);
               this._settings.setAttribute("entity-id", evt.detail.id);
@@ -1226,6 +1232,7 @@ export class AnnotationPage extends TatorPage {
             });
 
             canvas.addEventListener("unselect", () => {
+              this._selectedEntity = null;
               this._settings.removeAttribute("entity-id");
               this._settings.removeAttribute("entity-type");
               this._settings.removeAttribute("type-id");
@@ -1257,6 +1264,12 @@ export class AnnotationPage extends TatorPage {
               );
             });
             this._browser.addEventListener("select", (evt) => {
+              const newSelection = `${evt.detail.data.type}_${evt.detail.data.id}`;
+              if (this._selectedEntity == newSelection) {
+                // Canvas event is only informational, no need to update this page!
+                return;
+              }
+              this._selectedEntity = newSelection; // TODO: Move this to annotation-controller someday
               if (evt.detail.byUser) {
                 // Remove attribute here, will be reset by canvas, if appropriate.
                 this._settings.removeAttribute("entity-id");
