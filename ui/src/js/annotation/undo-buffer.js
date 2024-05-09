@@ -158,7 +158,9 @@ export class UndoBuffer extends HTMLElement {
         let patch_response = await this.redo();
         if (patch_response[0].status == 200) {
           let patch_response_json = await patch_response[0].json();
-          const new_id = patch_response_json.id;
+          patch_response_json.object.type = dataType.id;
+          this._emitUpdate("PATCH", id, patch_response_json.object, dataType);
+          const new_id = patch_response_json.object.id;
           const index = this._forwardOps.length - 1;
           let fixed_fw_ops = [];
           let fixed_bw_ops = [];
@@ -205,7 +207,7 @@ export class UndoBuffer extends HTMLElement {
       } catch (error) {
         const msg = dataType.name + " was not updated";
         Utilities.warningAlert(msg, "#ff3e1d", false);
-        console.error("Error during patch!");
+        console.error(`Error during patch! ${error}`);
       }
     } else {
       return null;
@@ -302,6 +304,8 @@ export class UndoBuffer extends HTMLElement {
               this._forwardOps.forEach(replace);
               this._backwardOps.forEach(replace);
             });
+        } else if (method == "PATCH") {
+          // Do nothing here
         } else {
           this._emitUpdate(method, id, body, dataType);
         }
@@ -342,6 +346,8 @@ export class UndoBuffer extends HTMLElement {
                 this._backwardOps.forEach(replace);
                 return data;
               });
+          } else if (method == "PATCH") {
+            // Do nothing here
           } else {
             this._emitUpdate(method, id, body, dataType);
           }

@@ -557,7 +557,7 @@ class StateDetailBaseAPI(BaseDetailView):
 
         return {
             "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
-            "id": obj.id,
+            "object": type(obj).objects.filter(pk=obj.pk).values(*STATE_PROPERTIES)[0],
         }
 
     def delete_qs(self, params, qs):
