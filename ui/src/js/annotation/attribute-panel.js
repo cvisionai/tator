@@ -45,6 +45,12 @@ export class AttributePanel extends TatorElement {
     this._standardWidgetsDiv.appendChild(this._idWidget);
     this._widgets.push(this._idWidget);
 
+    this._elementalIdWidget = document.createElement("text-input");
+    this._elementalIdWidget.permission = "View Only";
+    this._elementalIdWidget.setAttribute("name", "Elemental ID");
+    this._standardWidgetsDiv.appendChild(this._elementalIdWidget);
+    this._widgets.push(this._elementalIdWidget);
+
     this._frameWidget = document.createElement("text-input");
     this._frameWidget.permission = "View Only";
     this._frameWidget.setAttribute("name", "Frame");
@@ -1129,6 +1135,9 @@ export class AttributePanel extends TatorElement {
     if (!this._disableWidgets.has("ID")) {
       this._idWidget.style.display = "block";
     }
+    if (!this._disableWidgets.has("Elemental ID")) {
+      this._elementalIdWidget.style.display = "block";
+    }
     if (!this._disableWidgets.has("Type")) {
       this._typeWidget.style.display = "block";
     }
@@ -1157,6 +1166,7 @@ export class AttributePanel extends TatorElement {
 
     var standardWidgets = [
       { attrName: "ID", widget: this._idWidget },
+      { attrName: "Elemental ID", widget: this._elementalIdWidget},
       { attrName: "Frame", widget: this._frameWidget },
       { attrName: "Type", widget: this._typeWidget },
       { attrName: "Version", widget: this._versionWidget },
@@ -1207,6 +1217,7 @@ export class AttributePanel extends TatorElement {
   setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
     this._idWidget.setValue(values.id);
+    this._elementalIdWidget.setValue(values.elemental_id);
     this._frameWidget.setValue(values.frame);
     this._typeWidget.setValue(
       `${this._dataType.name} (ID: ${this._dataType.id})`
