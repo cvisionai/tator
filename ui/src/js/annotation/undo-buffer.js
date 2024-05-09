@@ -158,47 +158,55 @@ export class UndoBuffer extends HTMLElement {
         let patch_response = await this.redo();
         if (patch_response[0].status == 200) {
           let patch_response_json = await patch_response[0].json();
-          patch_response_json.object.type = dataType.id;
-          this._emitUpdate("PATCH", id, patch_response_json.object, dataType);
-          const new_id = patch_response_json.object.id;
-          const index = this._forwardOps.length - 1;
-          let fixed_fw_ops = [];
-          let fixed_bw_ops = [];
-          for (const op of extra_fw_ops) {
-            let [ep, uri, id, body, dataType] = op;
-            if ("localization_ids_add" in body) {
-              body["localization_ids_add"] = [new_id];
+          if (patch_response_json.object)
+          {
+            patch_response_json.object.type = dataType.id;
+            this._emitUpdate("PATCH", id, patch_response_json.object, dataType);
+            const new_id = patch_response_json.object.id;
+            const index = this._forwardOps.length - 1;
+            let fixed_fw_ops = [];
+            let fixed_bw_ops = [];
+            for (const op of extra_fw_ops) {
+              let [ep, uri, id, body, dataType] = op;
+              if ("localization_ids_add" in body) {
+                body["localization_ids_add"] = [new_id];
+              }
+              fixed_fw_ops.push([ep, uri, id, body, dataType]);
             }
-            fixed_fw_ops.push([ep, uri, id, body, dataType]);
-          }
-          for (const op of extra_bw_ops) {
-            let [method, uri, id, body, dataType] = op;
-            if ("localization_ids_remove" in body) {
-              body["localization_ids_remove"] = [new_id];
+            for (const op of extra_bw_ops) {
+              let [method, uri, id, body, dataType] = op;
+              if ("localization_ids_remove" in body) {
+                body["localization_ids_remove"] = [new_id];
+              }
+              if (method == "DELETE" && id == "$NEW_ID") {
+                id = new_id;
+              }
+              fixed_bw_ops.push([method, uri, id, body, dataType]);
             }
-            if (method == "DELETE" && id == "$NEW_ID") {
-              id = new_id;
-            }
-            fixed_bw_ops.push([method, uri, id, body, dataType]);
-          }
 
-          // Run the forward ops atomically in  this function call
-          if (extra_fw_ops && extra_fw_ops.length > 0) {
-            for (let op of fixed_fw_ops) {
-              if (op[0] == "FUNCTOR") {
-                op[1]();
-              } else {
-                await this._fetch(op);
+            // Run the forward ops atomically in  this function call
+            if (extra_fw_ops && extra_fw_ops.length > 0) {
+              for (let op of fixed_fw_ops) {
+                if (op[0] == "FUNCTOR") {
+                  op[1]();
+                } else {
+                  await this._fetch(op);
+                }
               }
             }
-          }
 
-          //  Update / Replace backward ops as appropriate
-          if (fixed_bw_ops && fixed_bw_ops.length > 0) {
-            if (replace_bw_ops) {
-              this._backwardOps[index] = [];
+            //  Update / Replace backward ops as appropriate
+            if (fixed_bw_ops && fixed_bw_ops.length > 0) {
+              if (replace_bw_ops) {
+                this._backwardOps[index] = [];
+              }
+              this._backwardOps[index].push(...fixed_bw_ops);
             }
-            this._backwardOps[index].push(...fixed_bw_ops);
+          }
+          else
+          {
+            // This handles patches to MEDIA
+            this._emitUpdate("PATCH", id, body, dataType);
           }
         } else {
           throw new Error(`Error during patch! ${e.message}`);
