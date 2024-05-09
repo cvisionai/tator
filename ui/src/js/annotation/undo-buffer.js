@@ -154,6 +154,12 @@ export class UndoBuffer extends HTMLElement {
         }
         this._resetFromNow();
         this._forwardOps.push([["PATCH", detailUri, id, body, dataType]]);
+        // Remove the _tator_import_workflow attribute if it exists as it should only be on media
+        // and isn't patchable
+        if ('_tator_import_workflow' in original.attributes)
+        {
+          delete original.attributes['_tator_import_workflow'];
+        }
         this._backwardOps.push([["PATCH", detailUri, id, original, dataType]]);
         let patch_response = await this.redo();
         if (patch_response[0].status == 200) {
