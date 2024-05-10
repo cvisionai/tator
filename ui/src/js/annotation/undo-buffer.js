@@ -352,8 +352,24 @@ export class UndoBuffer extends HTMLElement {
           if (method == "POST") {
             promise = promise
               .then((response) => response.json())
-              .then((data) => {
-                this._emitUpdate(method, data.id[0], body, dataType);
+              .then(async (data) => {
+                // Get the full body back for the object to fill in attribute panel
+                // correctly
+                let detailUrl = null;
+                if (uri == "Localizations")
+                {
+                  detailUrl = "Localization";
+                }
+                else if (uri == "States")
+                {
+                  detailUrl = "State";
+                }
+                else
+                {
+                  console.error("Unknown uri: " + uri);
+                }
+                let json_data = await this._get(detailUrl, data.id[0]);
+                this._emitUpdate(method, data.id[0], json_data, dataType);
                 const delId = this._backwardOps[this._index - 1][opIndex][2];
                 const newId = data.id[0];
                 const replace = (ops) => {
