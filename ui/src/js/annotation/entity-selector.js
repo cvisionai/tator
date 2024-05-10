@@ -367,12 +367,6 @@ export class EntitySelector extends TatorElement {
       this._current.textContent = String(data.length);
       this._slider.value = data.length - 1;
     }
-
-    if (this._selectedObject) {
-      this.selectEntity(this._selectedObject);
-      // Only emit a selection if a selection occurs
-      this._emitSelection(false, true, false);
-    }
   }
 
   /**
@@ -484,8 +478,6 @@ export class EntitySelector extends TatorElement {
         }
       }
     }
-
-    this._selectedObject = this._data[index];
 
     this.dispatchEvent(
       new CustomEvent("select", {
