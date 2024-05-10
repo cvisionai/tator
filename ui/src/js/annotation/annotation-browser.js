@@ -219,6 +219,13 @@ export class AnnotationBrowser extends TatorElement {
     }
   }
 
+  closeAll()
+  {
+    for (let key in this._entityPanels) {
+      this._entityPanels[key]._closeAll();
+    }
+  }
+
   selectEntityOnUpdate(entityId, entityTypeId) {
     for (const typeId in this._entityPanels) {
       if (typeId == entityTypeId) {

@@ -1256,6 +1256,10 @@ export class AnnotationPage extends TatorPage {
                 this._newEntity = null;
               }
 
+              if (evt.detail.method == "DELETE") {
+                this._browser.closeAll(); // close all open entity browsers in the annotation browser
+              }
+
               this._data.updateTypeLocal(
                 evt.detail.method,
                 evt.detail.id,
