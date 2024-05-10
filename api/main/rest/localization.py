@@ -461,6 +461,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         elemental_id = obj.elemental_id
         version_id = obj.version.id
         mark = obj.mark
+        obj_id = obj.id
         if params["prune"] == 1:
             delete_and_log_changes(obj, obj.project, self.request.user)
         else:
@@ -473,9 +474,11 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             b.pk = None
             b.variant_deleted = True
             b.save()
+            obj_id = b.id
             log_changes(b, b.model_dict, b.project, self.request.user)
         return {
-            "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!"
+            "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!",
+            "id": obj_id,
         }
 
     def get_queryset(self):
