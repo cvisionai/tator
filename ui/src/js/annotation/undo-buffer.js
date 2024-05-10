@@ -93,13 +93,69 @@ export class UndoBuffer extends HTMLElement {
     this._mediaType = val;
   }
 
-  post(listUri, body, dataType, deleteBody) {
+  async post(listUri, body, dataType, extra_fw_ops, extra_bw_ops, replace_bw_ops) {
     const projectId = this.getAttribute("project-id");
     const detailUri = UndoBuffer.listToDetail[listUri];
+    if (extra_fw_ops == undefined) {
+      extra_fw_ops = [];
+    }
+    if (extra_bw_ops == undefined) {
+      extra_bw_ops = [];
+    }
+    if (replace_bw_ops == undefined) {
+      replace_bw_ops = false;
+    }
+
+    if (replace_bw_ops == false)
+    {
+      extra_bw_ops.push(["DELETE", detailUri, '$NEW_ID', {}, dataType]);
+    }
     this._resetFromNow();
     this._forwardOps.push([["POST", listUri, projectId, body, dataType]]);
-    this._backwardOps.push([["DELETE", detailUri, null, deleteBody, dataType]]);
-    return this.redo();
+    this._backwardOps.push(...extra_bw_ops);
+    let response = await this.redo();
+    let json = response[0];
+    const new_id = json.id[0];
+    const index = this._forwardOps.length - 1;
+    let fixed_fw_ops = [];
+    let fixed_bw_ops = [];
+    for (const op of extra_fw_ops) {
+      let [ep, uri, id, body, dataType] = op;
+      if (body && "localization_ids_add" in body) {
+        body["localization_ids_add"] = [new_id];
+      }
+      fixed_fw_ops.push([ep, uri, id, body, dataType]);
+    }
+    for (const op of extra_bw_ops) {
+      let [method, uri, id, body, dataType] = op;
+      if ("localization_ids_remove" in body) {
+        body["localization_ids_remove"] = [new_id];
+      }
+      if (method == "DELETE" && id == "$NEW_ID") {
+        id = new_id;
+      }
+      fixed_bw_ops.push([method, uri, id, body, dataType]);
+    }
+
+    // Run the forward ops atomically in  this function call
+    if (fixed_fw_ops && fixed_fw_ops.length > 0) {
+      let new_obj = await this._get(detailUri, new_id);
+      for (let op of fixed_fw_ops) {
+        if (op[0] == "FUNCTOR") {
+          op[1](new_obj);
+        } else {
+          await this._fetch(op);
+        }
+      }
+    }
+
+    if (fixed_bw_ops && fixed_bw_ops.length > 0) {
+      if (replace_bw_ops) {
+        this._backwardOps[index] = [];
+      }
+      this._backwardOps[index].push(...fixed_bw_ops);
+    }
+    return json;
   }
 
   async patch(
@@ -380,17 +436,6 @@ export class UndoBuffer extends HTMLElement {
                 }
                 let json_data = await this._get(detailUrl, data.id[0]);
                 this._emitUpdate(method, data.id[0], json_data, dataType);
-                const delId = this._backwardOps[this._index - 1][opIndex][2];
-                const newId = data.id[0];
-                const replace = (ops) => {
-                  for (const [opIndex, op] of ops.entries()) {
-                    if (op[2] == delId || op[2] == null) {
-                      ops[opIndex][2] = newId;
-                    }
-                  }
-                };
-                this._forwardOps.forEach(replace);
-                this._backwardOps.forEach(replace);
                 return data;
               });
           } else if (method == "PATCH") {
