@@ -93,7 +93,14 @@ export class UndoBuffer extends HTMLElement {
     this._mediaType = val;
   }
 
-  async post(listUri, body, dataType, extra_fw_ops, extra_bw_ops, replace_bw_ops) {
+  async post(
+    listUri,
+    body,
+    dataType,
+    extra_fw_ops,
+    extra_bw_ops,
+    replace_bw_ops
+  ) {
     const projectId = this.getAttribute("project-id");
     const detailUri = UndoBuffer.listToDetail[listUri];
     if (extra_fw_ops == undefined) {
@@ -106,9 +113,8 @@ export class UndoBuffer extends HTMLElement {
       replace_bw_ops = false;
     }
 
-    if (replace_bw_ops == false)
-    {
-      extra_bw_ops.push(["DELETE", detailUri, '$NEW_ID', {}, dataType]);
+    if (replace_bw_ops == false) {
+      extra_bw_ops.push(["DELETE", detailUri, "$NEW_ID", {}, dataType]);
     }
     this._resetFromNow();
     this._forwardOps.push([["POST", listUri, projectId, body, dataType]]);
