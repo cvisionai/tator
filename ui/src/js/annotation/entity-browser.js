@@ -370,13 +370,18 @@ export class EntityBrowser extends TatorElement {
                 let select_new_obj = (new_obj) => {
                   this.selectEntity(new_obj);
                 }
+                const elemental_id = selector.data.elemental_id;
+                let select_old_obj = () => {
+                  this.selectEntityOnUpdate(elemental_id);
+                  this._data.updateType(this._dataType, null);
+                };
                 this._undo.patch(
                   endpoint,
                   id,
                   { attributes: values },
                   this._dataType,
-                  [['FUNCTOR', select_new_obj,null,null,null]],
-                  [["DELETE", "Localization", '$NEW_ID', {'prune':1}, this._dataType]],
+                  [['FUNCTOR', select_new_obj,{},{},{}]],
+                  [["DELETE", "Localization", '$NEW_ID', {'prune':1}, this._dataType], ['FUNCTOR', select_old_obj,{},{},{}]],
                   true
                 );
 
