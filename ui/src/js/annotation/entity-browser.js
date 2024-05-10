@@ -375,15 +375,44 @@ export class EntityBrowser extends TatorElement {
                   this.selectEntityOnUpdate(elemental_id);
                   this._data.updateType(this._dataType, null);
                 };
-                this._undo.patch(
-                  endpoint,
-                  id,
-                  { attributes: values },
-                  this._dataType,
-                  [['FUNCTOR', select_new_obj,{},{},{}]],
-                  [["DELETE", endpoint, '$NEW_ID', {'prune':1}, this._dataType], ['FUNCTOR', select_old_obj,{},{},{}]],
-                  true
-                );
+
+                if (endpoint == "Localization" && this._data._trackDb.has(id))
+                {
+                  const track = this._data._trackDb.get(id);
+                  const state_type = this._data._dataTypes[track.type];
+                  const update_spec = {'localization_ids_add': ['$NEW_ID'], 'localization_ids_remove': [id]};
+                  const reverse_spec = {'localization_ids_add': [id], 'localization_ids_remove': ['$NEW_ID']};
+                  const forward_op = ["PATCH", "State", track.id, update_spec,  state_type];
+                  const backward_op = ["PATCH", "State", track.id, reverse_spec,  state_type];
+                  let fetch_select_new_track = (new_obj) => {
+                    this._data.updateType(state_type, () => {
+                      select_new_obj(new_obj);
+                    });
+                  };
+
+                  this._undo.patch(
+                    endpoint,
+                    id,
+                    { attributes: values },
+                    this._dataType,
+                    [forward_op, ['FUNCTOR', fetch_select_new_track,{},{},{}]],
+                    [backward_op, ["DELETE", endpoint, '$NEW_ID', {'prune':1}, this._dataType], ['FUNCTOR', select_old_obj,{},{},{}]],
+                    true
+                  );
+                }
+                else
+                {
+                  // For localizations not in a track we can just edit the localization
+                  this._undo.patch(
+                    endpoint,
+                    id,
+                    { attributes: values },
+                    this._dataType,
+                    [['FUNCTOR', select_new_obj,{},{},{}]],
+                    [["DELETE", endpoint, '$NEW_ID', {'prune':1}, this._dataType], ['FUNCTOR', select_old_obj,{},{},{}]],
+                    true
+                  );
+                }
 
                 saved = true;
               }
