@@ -235,6 +235,25 @@ export class UndoBuffer extends HTMLElement {
     }
   }
 
+  async delete_metadata(detailUri, obj, dataType) {
+    const orig_obj = {...obj};
+    const orig_id = orig_obj.id;
+    this._resetFromNow();
+    this._forwardOps.push([["DELETE", detailUri, orig_id, null, dataType]]);
+    let response = await this.redo();
+    let json = await response[0].json();
+    let delete_functor = () => {
+      this._emitUpdate('POST', orig_id, orig_obj, dataType);
+    };
+    this._backwardOps.push([
+      // Prune the new delete
+      ["DELETE", detailUri, json.id, {'prune': 1}, dataType],
+      // Fake the update with a faux POST
+      ["FUNCTOR", delete_functor,{},{},{}]
+    ]);
+    this._emitUpdate('DELETE', orig_id, orig_obj, dataType);
+  }
+
   del(detailUri, id, dataType) {
     const promise = this._get(detailUri, id);
     if (promise) {
