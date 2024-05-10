@@ -454,15 +454,7 @@ export class UndoBuffer extends HTMLElement {
   }
 
   _emitUpdate(method, id, body, dataType) {
-    var msg = "";
-    if (method == "PATCH") {
-      msg = " updated!";
-    } else if (method == "POST") {
-      msg = " created!";
-    } else if (method == "DELETE") {
-      msg = " deleted!";
-    }
-    msg = dataType.name + msg;
+    const msg = `Operation complete for ${dataType.name}`
     Utilities.showSuccessIcon(msg);
 
     this.dispatchEvent(
