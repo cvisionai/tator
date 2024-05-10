@@ -1279,7 +1279,7 @@ export class AnnotationPage extends TatorPage {
                 if (evt.detail.dataType.isLocalization) {
                   canvas.selectLocalization(
                     evt.detail.data,
-                    false,
+                    true, // skip animation as the user already is aware of the selection
                     false,
                     !evt.detail.goToEntityFrame
                   );
