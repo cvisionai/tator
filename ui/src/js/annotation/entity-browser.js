@@ -381,7 +381,7 @@ export class EntityBrowser extends TatorElement {
                   { attributes: values },
                   this._dataType,
                   [['FUNCTOR', select_new_obj,{},{},{}]],
-                  [["DELETE", "Localization", '$NEW_ID', {'prune':1}, this._dataType], ['FUNCTOR', select_old_obj,{},{},{}]],
+                  [["DELETE", endpoint, '$NEW_ID', {'prune':1}, this._dataType], ['FUNCTOR', select_old_obj,{},{},{}]],
                   true
                 );
 
