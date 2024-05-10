@@ -3,6 +3,7 @@ from textwrap import dedent
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._message import message_schema
+from ._message import message_schema_with_id
 from ._message import message_schema_with_obj
 from ._message import message_with_id_list_schema
 from ._errors import error_responses
@@ -441,7 +442,7 @@ class LocalizationDetailSchema(AutoSchema):
                 "update", "localization", "#/components/schemas/Localization"
             )
         elif method == "DELETE":
-            responses["200"] = message_schema("deletion", "localization")
+            responses["200"] = message_schema_with_id("deletion", "localization")
         return responses
 
 
