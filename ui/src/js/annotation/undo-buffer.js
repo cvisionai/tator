@@ -174,7 +174,7 @@ export class UndoBuffer extends HTMLElement {
             let fixed_bw_ops = [];
             for (const op of extra_fw_ops) {
               let [ep, uri, id, body, dataType] = op;
-              if ("localization_ids_add" in body) {
+              if (body && "localization_ids_add" in body) {
                 body["localization_ids_add"] = [new_id];
               }
               fixed_fw_ops.push([ep, uri, id, body, dataType]);
@@ -194,7 +194,7 @@ export class UndoBuffer extends HTMLElement {
             if (extra_fw_ops && extra_fw_ops.length > 0) {
               for (let op of fixed_fw_ops) {
                 if (op[0] == "FUNCTOR") {
-                  op[1]();
+                  op[1](patch_response_json.object);
                 } else {
                   await this._fetch(op);
                 }
@@ -228,7 +228,7 @@ export class UndoBuffer extends HTMLElement {
       } catch (error) {
         const msg = dataType.name + " was not updated";
         Utilities.warningAlert(msg, "#ff3e1d", false);
-        console.error(`Error during patch! ${error}`);
+        console.error(`Error during patch! ${error.message} ${error.stack}`);
       }
     } else {
       return null;

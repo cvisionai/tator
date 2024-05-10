@@ -367,12 +367,19 @@ export class EntityBrowser extends TatorElement {
                 document.body.classList.remove("shortcuts-disabled");
                 saved = true;
               } else if (this._data.getVersion().id == selector.data.version) {
+                let select_new_obj = (new_obj) => {
+                  this.selectEntity(new_obj);
+                }
                 this._undo.patch(
                   endpoint,
                   id,
                   { attributes: values },
-                  this._dataType
+                  this._dataType,
+                  [['FUNCTOR', select_new_obj,null,null,null]],
+                  [],
+                  false
                 );
+
                 saved = true;
               }
               if (saved) {
