@@ -1313,7 +1313,10 @@ export class AnnotationPage extends TatorPage {
 
                 this._updateURL();
               }
-              this._settings.setAttribute("entity-id", evt.detail.data.elemental_id);
+              this._settings.setAttribute(
+                "entity-id",
+                evt.detail.data.elemental_id
+              );
               this._settings.setAttribute("entity-type", evt.detail.data.type);
               this._settings.setAttribute("type-id", evt.detail.data.type);
             });

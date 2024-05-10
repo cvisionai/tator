@@ -131,7 +131,15 @@ export class MediaPanel extends TatorElement {
         };
 
         // Fetch new media attributes on any undo operation
-        this._undo.patch(endpoint, id, { attributes: values }, val, [],[['FUNCTOR', fetch_new_values,null,null,null]], false);
+        this._undo.patch(
+          endpoint,
+          id,
+          { attributes: values },
+          val,
+          [],
+          [["FUNCTOR", fetch_new_values, null, null, null]],
+          false
+        );
         this.dispatchEvent(
           new CustomEvent("save", {
             detail: this._values,

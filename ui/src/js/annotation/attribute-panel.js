@@ -1181,11 +1181,11 @@ export class AttributePanel extends TatorElement {
 
     var standardWidgets = [
       { attrName: "ID", widget: this._idWidget },
-      { attrName: "Elemental ID", widget: this._elementalIdWidget},
+      { attrName: "Elemental ID", widget: this._elementalIdWidget },
       { attrName: "Frame", widget: this._frameWidget },
       { attrName: "Type", widget: this._typeWidget },
       { attrName: "Version", widget: this._versionWidget },
-      { attrName: "Mark", widget: this._markWidget},
+      { attrName: "Mark", widget: this._markWidget },
     ];
     for (const info of standardWidgets) {
       var attrName = info["attrName"];

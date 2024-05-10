@@ -156,16 +156,14 @@ export class UndoBuffer extends HTMLElement {
         this._forwardOps.push([["PATCH", detailUri, id, body, dataType]]);
         // Remove the _tator_import_workflow attribute if it exists as it should only be on media
         // and isn't patchable
-        if ('_tator_import_workflow' in original.attributes)
-        {
-          delete original.attributes['_tator_import_workflow'];
+        if ("_tator_import_workflow" in original.attributes) {
+          delete original.attributes["_tator_import_workflow"];
         }
         this._backwardOps.push([["PATCH", detailUri, id, original, dataType]]);
         let patch_response = await this.redo();
         if (patch_response[0].status == 200) {
           let patch_response_json = await patch_response[0].json();
-          if (patch_response_json.object)
-          {
+          if (patch_response_json.object) {
             patch_response_json.object.type = dataType.id;
             this._emitUpdate("PATCH", id, patch_response_json.object, dataType);
             const new_id = patch_response_json.object.id;
@@ -208,9 +206,7 @@ export class UndoBuffer extends HTMLElement {
               }
               this._backwardOps[index].push(...fixed_bw_ops);
             }
-          }
-          else
-          {
+          } else {
             // This handles patches to MEDIA
             const index = this._forwardOps.length - 1;
             if (extra_bw_ops.length > 0) {
@@ -236,22 +232,22 @@ export class UndoBuffer extends HTMLElement {
   }
 
   async delete_metadata(detailUri, obj, dataType) {
-    const orig_obj = {...obj};
+    const orig_obj = { ...obj };
     const orig_id = orig_obj.id;
     this._resetFromNow();
     this._forwardOps.push([["DELETE", detailUri, orig_id, null, dataType]]);
     let response = await this.redo();
     let json = await response[0].json();
     let delete_functor = () => {
-      this._emitUpdate('POST', orig_id, orig_obj, dataType);
+      this._emitUpdate("POST", orig_id, orig_obj, dataType);
     };
     this._backwardOps.push([
       // Prune the new delete
-      ["DELETE", detailUri, json.id, {'prune': 1}, dataType],
+      ["DELETE", detailUri, json.id, { prune: 1 }, dataType],
       // Fake the update with a faux POST
-      ["FUNCTOR", delete_functor,{},{},{}]
+      ["FUNCTOR", delete_functor, {}, {}, {}],
     ]);
-    this._emitUpdate('DELETE', orig_id, orig_obj, dataType);
+    this._emitUpdate("DELETE", orig_id, orig_obj, dataType);
   }
 
   del(detailUri, id, dataType) {
@@ -375,16 +371,11 @@ export class UndoBuffer extends HTMLElement {
                 // Get the full body back for the object to fill in attribute panel
                 // correctly
                 let detailUrl = null;
-                if (uri == "Localizations")
-                {
+                if (uri == "Localizations") {
                   detailUrl = "Localization";
-                }
-                else if (uri == "States")
-                {
+                } else if (uri == "States") {
                   detailUrl = "State";
-                }
-                else
-                {
+                } else {
                   console.error("Unknown uri: " + uri);
                 }
                 let json_data = await this._get(detailUrl, data.id[0]);
@@ -489,7 +480,7 @@ export class UndoBuffer extends HTMLElement {
   }
 
   _emitUpdate(method, id, body, dataType) {
-    const msg = `Operation complete for ${dataType.name}`
+    const msg = `Operation complete for ${dataType.name}`;
     Utilities.showSuccessIcon(msg);
 
     this.dispatchEvent(

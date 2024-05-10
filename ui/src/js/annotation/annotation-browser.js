@@ -219,8 +219,7 @@ export class AnnotationBrowser extends TatorElement {
     }
   }
 
-  closeAll()
-  {
+  closeAll() {
     for (let key in this._entityPanels) {
       this._entityPanels[key]._closeAll();
     }
