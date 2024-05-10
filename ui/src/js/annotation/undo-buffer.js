@@ -93,12 +93,12 @@ export class UndoBuffer extends HTMLElement {
     this._mediaType = val;
   }
 
-  post(listUri, body, dataType) {
+  post(listUri, body, dataType, deleteBody) {
     const projectId = this.getAttribute("project-id");
     const detailUri = UndoBuffer.listToDetail[listUri];
     this._resetFromNow();
     this._forwardOps.push([["POST", listUri, projectId, body, dataType]]);
-    this._backwardOps.push([["DELETE", detailUri, null, null, dataType]]);
+    this._backwardOps.push([["DELETE", detailUri, null, deleteBody, dataType]]);
     return this.redo();
   }
 
