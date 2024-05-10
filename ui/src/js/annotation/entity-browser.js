@@ -357,6 +357,7 @@ export class EntityBrowser extends TatorElement {
                   newObject.version = this._data.getVersion().id;
                   newObject.type = Number(state.type.split("_")[1]);
                   newObject.media_ids = state.media;
+                  newObject.elemental_id = state.elemental_id;
                   newObject.frame = state.frame;
                   newObject.localization_ids = state.localizations;
                   console.info(JSON.stringify(newObject));
