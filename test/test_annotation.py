@@ -15,6 +15,7 @@ def common_annotation(page, canvas, bias=0):
     box_info = [((-200, -50), 'Test Choice 1'),
                 ((-50, -50), 'Test Choice 2'),
                 ((100, -50), 'Test Choice 3')]
+    elemental_ids = {}
     for idx, (start, enum_value) in enumerate(box_info):
         print("trying to click box-button")
         page.click('box-button:not(.disabled)')
@@ -37,9 +38,23 @@ def common_annotation(page, canvas, bias=0):
         enum_input = save_dialog.query_selector('enum-input[name="Test Enum"]')
         enum_input.query_selector('select').select_option(enum_value)
         save_dialog.query_selector('text="Save"').click()
+        print("Waiting for success light...")
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
         light.wait_for_element_state('hidden')
+        print("Waiting for elemental id...")
+        elemental_id_fields = page.query_selector_all("#metadata-elemental-id")
+        # find only the visible one
+        visible_elemental_id_fields = [field for field in elemental_id_fields if field.is_visible()]
+        elemental_id_field = visible_elemental_id_fields[0] if visible_elemental_id_fields else None
+        value = elemental_id_field.input_value()
+        while value == None:
+            print("field invalid, waiting")
+            value = elemental_id_field.input_value()
+            page.wait_for_timeout(1000)
+
+        print(f"{idx}: Elemental ID: {value}")
+        elemental_ids[idx] = value
     # Move boxes
     print("Moving boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
@@ -49,8 +64,23 @@ def common_annotation(page, canvas, bias=0):
         page.mouse.move(x+50, y+50, steps=50)
         page.wait_for_timeout(1000)
         page.mouse.click(x+50, y+50)
-        selector = page.query_selector('entity-selector:visible')
-        selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
+        found = False
+        for attempts in range(5):
+            elemental_id_fields = page.query_selector_all("#metadata-elemental-id")
+            # find only the visible one
+            visible_elemental_id_fields = [
+                field for field in elemental_id_fields if field.is_visible()
+            ]
+            elemental_id_field = (
+                visible_elemental_id_fields[0] if visible_elemental_id_fields else None
+            )
+            if elemental_id_field.input_value() == elemental_ids[idx]:
+                found = True
+                break
+            page.wait_for_timeout(1000)
+
+        assert found, "Elemental ID not found"
+
         page.wait_for_timeout(1000)
         page.mouse.down()
         page.wait_for_timeout(1000)
@@ -67,23 +97,34 @@ def common_annotation(page, canvas, bias=0):
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
-        
+
         page.mouse.move(x+45, y+45, steps=50)
         page.wait_for_timeout(5000)
-        
+
         page.mouse.click(x+45, y+45)
-        selector = page.query_selector('entity-selector:visible')
-        selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
+        for attempts in range(5):
+            elemental_id_fields = page.query_selector_all("#metadata-elemental-id")
+            # find only the visible one
+            visible_elemental_id_fields = [
+                field for field in elemental_id_fields if field.is_visible()
+            ]
+            elemental_id_field = (
+                visible_elemental_id_fields[0] if visible_elemental_id_fields else None
+            )
+            if elemental_id_field.input_value() == elemental_ids[idx]:
+                found = True
+                break
+            page.wait_for_timeout(1000)
         page.wait_for_timeout(5000)
-        
+
         page.mouse.down()
         page.wait_for_timeout(5000)
-        
+
         page.mouse.move(x+95, y+95, steps=50)
         page.wait_for_timeout(5000)
-        
+
         page.mouse.up()
-        
+
         print(f'Wait for success light....')
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
@@ -105,7 +146,7 @@ def test_video_annotation(page_factory, project, video):
     page.wait_for_selector('play-button:not(.disabled)')
     common_annotation(page, canvas)
     page.close()
-    
+
 @pytest.mark.flaky(reruns=2)
 def test_image_annotation(page_factory, project, image):
     print("[Image] Going to annotation view...")
