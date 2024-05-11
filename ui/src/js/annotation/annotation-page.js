@@ -611,7 +611,7 @@ export class AnnotationPage extends TatorPage {
         const haveTimelineDisplayMode = searchParams.has("timeline-display");
         if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
-          const entityId = Number(searchParams.get("selected_entity"));
+          const entityId = searchParams.get("selected_entity");
           this._settings.setAttribute("type-id", typeId);
           this._settings.setAttribute("entity-id", entityId);
           this._browser.selectEntityOnUpdate(entityId, typeId);
@@ -1215,9 +1215,15 @@ export class AnnotationPage extends TatorPage {
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
             canvas.addEventListener("select", (evt) => {
+              const newSelection = `${evt.detail.type}_${evt.detail.id}`;
+              if (this._selectedEntity == newSelection) {
+                // Canvas event is only informational, no need to update this page!
+                return;
+              }
+              this._selectedEntity = newSelection;
               this._browser.selectEntity(evt.detail);
               canvas.selectTimelineData(evt.detail);
-              this._settings.setAttribute("entity-id", evt.detail.id);
+              this._settings.setAttribute("entity-id", evt.detail.elemental_id);
               this._settings.setAttribute("entity-type", evt.detail.type);
               this._settings.setAttribute("type-id", evt.detail.type);
 
@@ -1226,6 +1232,7 @@ export class AnnotationPage extends TatorPage {
             });
 
             canvas.addEventListener("unselect", () => {
+              this._selectedEntity = null;
               this._settings.removeAttribute("entity-id");
               this._settings.removeAttribute("entity-type");
               this._settings.removeAttribute("type-id");
@@ -1249,6 +1256,10 @@ export class AnnotationPage extends TatorPage {
                 this._newEntity = null;
               }
 
+              if (evt.detail.method == "DELETE") {
+                this._browser.closeAll(); // close all open entity browsers in the annotation browser
+              }
+
               this._data.updateTypeLocal(
                 evt.detail.method,
                 evt.detail.id,
@@ -1257,6 +1268,12 @@ export class AnnotationPage extends TatorPage {
               );
             });
             this._browser.addEventListener("select", (evt) => {
+              const newSelection = `${evt.detail.data.type}_${evt.detail.data.id}`;
+              if (this._selectedEntity == newSelection) {
+                // Canvas event is only informational, no need to update this page!
+                return;
+              }
+              this._selectedEntity = newSelection; // TODO: Move this to annotation-controller someday
               if (evt.detail.byUser) {
                 // Remove attribute here, will be reset by canvas, if appropriate.
                 this._settings.removeAttribute("entity-id");
@@ -1266,7 +1283,7 @@ export class AnnotationPage extends TatorPage {
                 if (evt.detail.dataType.isLocalization) {
                   canvas.selectLocalization(
                     evt.detail.data,
-                    false,
+                    true, // skip animation as the user already is aware of the selection
                     false,
                     !evt.detail.goToEntityFrame
                   );
@@ -1296,7 +1313,10 @@ export class AnnotationPage extends TatorPage {
 
                 this._updateURL();
               }
-              this._settings.setAttribute("entity-id", evt.detail.data.id);
+              this._settings.setAttribute(
+                "entity-id",
+                evt.detail.data.elemental_id
+              );
               this._settings.setAttribute("entity-type", evt.detail.data.type);
               this._settings.setAttribute("type-id", evt.detail.data.type);
             });
@@ -1312,6 +1332,7 @@ export class AnnotationPage extends TatorPage {
             });
             this._browser.addEventListener("close", (evt) => {
               this._settings.removeAttribute("type-id");
+              this._selectedEntity = null;
 
               // The canvas can either be the annotation player or image. The player is the only
               // annotation that has the concepts of tracks, so the following check is performed.

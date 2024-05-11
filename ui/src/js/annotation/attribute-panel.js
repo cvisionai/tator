@@ -58,11 +58,24 @@ export class AttributePanel extends TatorElement {
     this._widgets.push(this._typeWidget);
     this._typeWidget.style.display = "none";
 
+    this._elementalIdWidget = document.createElement("text-input");
+    this._elementalIdWidget._input.setAttribute("id", "metadata-elemental-id");
+    this._elementalIdWidget.permission = "View Only";
+    this._elementalIdWidget.setAttribute("name", "Elemental ID");
+    this._standardWidgetsDiv.appendChild(this._elementalIdWidget);
+    this._widgets.push(this._elementalIdWidget);
+
     this._versionWidget = document.createElement("text-input");
     this._versionWidget.setAttribute("name", "Version");
     this._versionWidget.permission = "View Only";
     this._standardWidgetsDiv.appendChild(this._versionWidget);
     this._widgets.push(this._versionWidget);
+
+    this._markWidget = document.createElement("text-input");
+    this._markWidget.setAttribute("name", "Mark");
+    this._markWidget.permission = "View Only";
+    this._standardWidgetsDiv.appendChild(this._markWidget);
+    this._widgets.push(this._markWidget);
 
     this._groupDiv = document.createElement("div");
     this._groupDiv.setAttribute(
@@ -1112,6 +1125,12 @@ export class AttributePanel extends TatorElement {
     if (val == "Version") {
       this._versionWidget.style.display = "none";
     }
+    if (val == "Mark") {
+      this._markWidget.style.display = "none";
+    }
+    if (val == "Elemental ID") {
+      this._elementalIdWidget.style.display = "none";
+    }
   }
 
   showHeader() {
@@ -1129,6 +1148,9 @@ export class AttributePanel extends TatorElement {
     if (!this._disableWidgets.has("ID")) {
       this._idWidget.style.display = "block";
     }
+    if (!this._disableWidgets.has("Elemental ID")) {
+      this._elementalIdWidget.style.display = "block";
+    }
     if (!this._disableWidgets.has("Type")) {
       this._typeWidget.style.display = "block";
     }
@@ -1137,6 +1159,9 @@ export class AttributePanel extends TatorElement {
     }
     if (!this._disableWidgets.has("Version")) {
       this._versionWidget.style.display = "block";
+    }
+    if (!this._disableWidgets.has("Mark")) {
+      this._markWidget.style.display = "block";
     }
 
     this._moreLessButton.textContent = "Less -";
@@ -1157,9 +1182,11 @@ export class AttributePanel extends TatorElement {
 
     var standardWidgets = [
       { attrName: "ID", widget: this._idWidget },
+      { attrName: "Elemental ID", widget: this._elementalIdWidget },
       { attrName: "Frame", widget: this._frameWidget },
       { attrName: "Type", widget: this._typeWidget },
       { attrName: "Version", widget: this._versionWidget },
+      { attrName: "Mark", widget: this._markWidget },
     ];
     for (const info of standardWidgets) {
       var attrName = info["attrName"];
@@ -1207,6 +1234,8 @@ export class AttributePanel extends TatorElement {
   setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
     this._idWidget.setValue(values.id);
+    this._elementalIdWidget.setValue(values.elemental_id);
+    this._markWidget.setValue(values.mark);
     this._frameWidget.setValue(values.frame);
     this._typeWidget.setValue(
       `${this._dataType.name} (ID: ${this._dataType.id})`

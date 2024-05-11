@@ -467,6 +467,19 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.elemental_id = uuid.uuid4()
             obj.save()
 
+        if params.get("in_place", 0) == 0 and params["pedantic"] and (obj.mark != obj.latest_mark):
+            raise ValueError(
+                f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+            )
+        elif obj.mark != obj.latest_mark:
+            obj = type(obj).objects.get(
+                project=obj.project,
+                version=obj.version,
+                mark=obj.latest_mark,
+                elemental_id=obj.elemental_id,
+            )
+
         if "frame" in params:
             obj.frame = params["frame"]
 
@@ -533,12 +546,6 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.save()
             log_changes(obj, model_dict, obj.project, self.request.user)
         else:
-            if params["pedantic"] and (obj.mark != obj.latest_mark):
-                raise ValueError(
-                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
-                    f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
-                )
-
             old_media = obj.media.all()
             old_localizations = obj.localizations.all()
             # Save edits as new object, mark is calculated in trigger
@@ -550,7 +557,7 @@ class StateDetailBaseAPI(BaseDetailView):
 
         return {
             "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
-            "id": obj.id,
+            "object": type(obj).objects.filter(pk=obj.pk).values(*STATE_PROPERTIES)[0],
         }
 
     def delete_qs(self, params, qs):
@@ -564,6 +571,7 @@ class StateDetailBaseAPI(BaseDetailView):
         version_id = state.version.id
         mark = state.mark
         project = state.project
+        obj_id = state.id
         delete_localizations = []
         if state.type.delete_child_localizations:
             # Only delete localizations that are not not a part of other states
@@ -588,6 +596,7 @@ class StateDetailBaseAPI(BaseDetailView):
             state.pk = None
             state.variant_deleted = True
             state.save()
+            obj_id = state.pk
             log_changes(state, state.model_dict, state.project, self.request.user)
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_update_and_log_changes(
@@ -598,7 +607,10 @@ class StateDetailBaseAPI(BaseDetailView):
                 new_attributes=None,
             )
 
-        return {"message": f"State {version_id}/{elemental_id}@@{mark} successfully deleted!"}
+        return {
+            "message": f"State {version_id}/{elemental_id}@@{mark} successfully deleted!",
+            "id": obj_id,
+        }
 
     def get_queryset(self):
         return State.objects.all()

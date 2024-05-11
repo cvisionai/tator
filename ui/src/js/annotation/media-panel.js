@@ -1,4 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class MediaPanel extends TatorElement {
   constructor() {
@@ -32,6 +33,8 @@ export class MediaPanel extends TatorElement {
     this._attrs.disableWidget("ID");
     this._attrs.disableWidget("Frame");
     this._attrs.disableWidget("Version");
+    this._attrs.disableWidget("Elemental ID");
+    this._attrs.disableWidget("Mark");
     attrDiv.appendChild(this._attrs);
 
     const browserDiv = document.createElement("div");
@@ -115,7 +118,28 @@ export class MediaPanel extends TatorElement {
       if (values !== null) {
         const endpoint = "Media";
         const id = this._mediaData["id"];
-        this._undo.patch(endpoint, id, { attributes: values }, val);
+        let fetch_new_values = async () => {
+          let response = await fetchCredentials(`/rest/Media/${id}`);
+          let json = await response.json();
+          this._attrs.setValues(json);
+          this._undo.dispatchEvent(
+            new CustomEvent("temporarilyMaskEdits", {
+              composed: true,
+              detail: { enabled: false },
+            })
+          );
+        };
+
+        // Fetch new media attributes on any undo operation
+        this._undo.patch(
+          endpoint,
+          id,
+          { attributes: values },
+          val,
+          [],
+          [["FUNCTOR", fetch_new_values, null, null, null]],
+          false
+        );
         this.dispatchEvent(
           new CustomEvent("save", {
             detail: this._values,
