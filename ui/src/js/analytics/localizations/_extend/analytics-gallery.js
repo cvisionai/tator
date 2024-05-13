@@ -415,7 +415,8 @@ export class AnalyticsGallery extends EntityCardGallery {
       if (newId == null) return console.error("Problem updating localization");
       card.cardObj = {
         ...card.cardObj,
-        ...newCardData.object
+        ...newCardData.object,
+        localization: newCardData.object
       };
 
       // Replace
