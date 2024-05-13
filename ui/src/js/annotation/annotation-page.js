@@ -1269,8 +1269,12 @@ export class AnnotationPage extends TatorPage {
             });
             this._browser.addEventListener("select", (evt) => {
               const newSelection = `${evt.detail.data.type}_${evt.detail.data.id}`;
-              if (this._selectedEntity == newSelection) {
-                // Canvas event is only informational, no need to update this page!
+              if (
+                this._selectedEntity == newSelection &&
+                evt.detail.data.frame == this._currentFrame
+              ) {
+                // The entity is already selected and we're at the entity's frame.
+                // Don't need to do proceed.
                 return;
               }
               this._selectedEntity = newSelection; // TODO: Move this to annotation-controller someday
