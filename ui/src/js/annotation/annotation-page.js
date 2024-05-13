@@ -1636,13 +1636,6 @@ export class AnnotationPage extends TatorPage {
           for (const appletId in this._canvasApplets) {
             const appletInterface = this._canvasApplets[appletId];
 
-            // Preload the canvas applets with the current image to speed things up
-            if (this._mediaType.dtype == "image") {
-              this._mediaCanvas.getPNGdata(false).then((blob) => {
-                appletInterface.updateFrame(0, blob);
-              });
-            }
-
             // Add the applet to the toolbar menu option
             const div = document.createElement("div");
             div.style.width = "400px";
@@ -2319,10 +2312,7 @@ export class AnnotationPage extends TatorPage {
 
     this._currentCanvasApplet = this._canvasApplets[appletId];
 
-    if (
-      this._mediaType.dtype != "image" &&
-      this._currentCanvasApplet._lastFrameUpdate != this._currentFrame
-    ) {
+    if (this._currentCanvasApplet._lastFrameUpdate != this._currentFrame) {
       this._mediaCanvas.getPNGdata(false).then((blob) => {
         this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
       });
