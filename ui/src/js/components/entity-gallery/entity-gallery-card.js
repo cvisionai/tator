@@ -602,6 +602,11 @@ export class EntityCard extends TatorElement {
    * - If side panel is edited the card needs to update attributes
    */
   _updateAttributeValues(data) {
+    console.log(
+      "Update card with new data",
+      data,
+      data.entityType.id == this.cardObj.entityType.id
+    );
     if (data.entityType.id == this.cardObj.entityType.id) {
       this._id_text.innerHTML = `ID: ${data.id}`;
       for (let [attr, value] of Object.entries(data.attributes)) {
@@ -614,6 +619,21 @@ export class EntityCard extends TatorElement {
             this.attributeDivs[
               attr
             ].value.innerHTML = `<span class="text-dark-gray"><span class="text-dark-gray">${attr}</span>: <<span class="text-italics ">not set</span>></span>`;
+          }
+        }
+      }
+      for (let attr_key of this.builtIns) {
+        if (data[attr_key]) {
+          if (typeof this.attributeDivs[attr_key] !== "undefined") {
+            if (this.attributeDivs[attr_key] != null) {
+              this.attributeDivs[
+                attr_key
+              ].value.innerHTML = `<span class="text-dark-gray">${attr_key}</span>: ${data[attr_key]}`;
+            } else {
+              this.attributeDivs[
+                attr_key
+              ].value.innerHTML = `<span class="text-dark-gray"><span class="text-dark-gray">${attr}</span>: <<span class="text-italics ">not set</span>></span>`;
+            }
           }
         }
       }

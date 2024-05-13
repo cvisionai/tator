@@ -410,18 +410,24 @@ export class AnalyticsGallery extends EntityCardGallery {
     if (oldId in this._currentCardIndexes) {
       // Find data index & Add new ID lookup
       const index = this._currentCardIndexes[oldId];
-      this._currentCardIndexes[newCardData.id] = index;
-
       const card = this._cardElements[index].card;
+
       // Update ID used by the following method to refetch cardObj data
-      card.cardObj.id = newCardData.id;
-      this.cardData
-        .updateLocalizationAttributes(card.cardObj, newCardData.id)
-        .then((obj) => {
-          //card.displayAttributes();
-          card._updateAttributeValues(obj);
-          this.annotationPanel.init({ cardObj: card.cardObj });
-        });
+      let newId = newCardData?.object?.id ? newCardData.object.id : null;
+      if (newId == null) return console.error("Problem updating localization");
+      card.cardObj = {
+        ...card.cardObj,
+        ...newCardData.object,
+        localization: newCardData.object,
+      };
+
+      // Replace
+      this._currentCardIndexes[newId] = index;
+      this._cardElements[index].card = card;
+
+      // Refresh
+      card._updateAttributeValues(card.cardObj);
+      this.annotationPanel.init({ cardObj: card.cardObj });
     }
   }
 
