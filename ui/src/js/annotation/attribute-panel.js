@@ -254,6 +254,9 @@ export class AttributePanel extends TatorElement {
     for (const widget of this._widgets) {
       // Specific attribute fields in this panel are always disabled
       if (
+        widget.getAttribute("name") != "Mark" &&
+        widget.getAttribute("name") != "Elemental ID" &&
+        widget.getAttribute("name") != "ID" &&
         widget.getAttribute("name") != "ID" &&
         widget.getAttribute("name") != "Frame" &&
         widget.getAttribute("name") != "Type" &&
