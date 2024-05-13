@@ -159,11 +159,13 @@ export class AnalyticsGallery extends EntityCardGallery {
     if (cardList.total === 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
-      this._numFiles.textContent = `Viewing ${cardList.paginationState.start + 1
-        } to ${cardList.paginationState.stop > cardList.total
+      this._numFiles.textContent = `Viewing ${
+        cardList.paginationState.start + 1
+      } to ${
+        cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-        } of ${cardList.total} Result${cardList.total === 1 ? "" : "s"}`;
+      } of ${cardList.total} Result${cardList.total === 1 ? "" : "s"}`;
     }
 
     //}
@@ -411,12 +413,12 @@ export class AnalyticsGallery extends EntityCardGallery {
       const card = this._cardElements[index].card;
 
       // Update ID used by the following method to refetch cardObj data
-      let newId = newCardData?.object?.id ? newCardData.object.id : null
+      let newId = newCardData?.object?.id ? newCardData.object.id : null;
       if (newId == null) return console.error("Problem updating localization");
       card.cardObj = {
         ...card.cardObj,
         ...newCardData.object,
-        localization: newCardData.object
+        localization: newCardData.object,
       };
 
       // Replace

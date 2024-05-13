@@ -602,7 +602,11 @@ export class EntityCard extends TatorElement {
    * - If side panel is edited the card needs to update attributes
    */
   _updateAttributeValues(data) {
-    console.log("Update card with new data", data, data.entityType.id == this.cardObj.entityType.id);
+    console.log(
+      "Update card with new data",
+      data,
+      data.entityType.id == this.cardObj.entityType.id
+    );
     if (data.entityType.id == this.cardObj.entityType.id) {
       this._id_text.innerHTML = `ID: ${data.id}`;
       for (let [attr, value] of Object.entries(data.attributes)) {
