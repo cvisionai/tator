@@ -98,7 +98,7 @@ export class FramePanel extends TatorElement {
             media_ids: [mediaId],
             frame: this._frame,
             version: this._version.id,
-            ...values,
+            attributes: values,
           };
 
           if (this._stateMediaIds) {
@@ -111,7 +111,7 @@ export class FramePanel extends TatorElement {
           if (this._data.getVersion().bases.indexOf(state.version) >= 0) {
             let newObject = {};
             newObject.parent = state.id;
-            newObject.attributes = { ...values };
+            newObject.attributes = values;
             newObject.version = this._data.getVersion().id;
             newObject.type = Number(state.type.split("_")[1]);
             newObject.media_ids = state.media;
