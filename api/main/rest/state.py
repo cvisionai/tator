@@ -423,8 +423,11 @@ class StateListAPI(BaseListView):
                 for p_obj, m2m, origin_datetime in zip(new_objs, many_to_many, origin_datetimes):
                     p_obj.media.set(m2m[0])
                     p_obj.localizations.set(m2m[1])
-                    p_obj.created_datetime = origin_datetime
-                    p_obj.save()
+
+                    # Django doesn't let you fix created_datetime unless you fetch the object again
+                    found_it = State.objects.get(pk=p_obj.pk)
+                    found_it.created_datetime = origin_datetime
+                    found_it.save()
 
         return {"message": f"Successfully updated {count} states!"}
 

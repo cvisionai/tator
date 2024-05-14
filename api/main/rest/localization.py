@@ -302,11 +302,13 @@ class LocalizationListAPI(BaseListView):
                     original.attributes.update(new_attrs)
                     objs.append(original)
                     origin_datetimes.append(original.created_datetime)
+
                 new_objs = Localization.objects.bulk_create(objs)
 
                 for new_obj, origin_datetime in zip(new_objs, origin_datetimes):
-                    new_obj.created_datetime = origin_datetime
-                    new_obj.save()
+                    found_it = Localization.objects.get(pk=new_obj.pk)
+                    found_it.created_datetime = origin_datetime
+                    found_it.save()
 
         return {"message": f"Successfully updated {count} localizations!"}
 
