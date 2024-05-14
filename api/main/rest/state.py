@@ -557,11 +557,12 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.pk = None
             origin_datetime = obj.created_datetime
             obj.save()
+            found_it = State.objects.get(pk=obj.pk)
             # Keep original creation time
-            obj.created_datetime = origin_datetime
-            obj.save()
-            obj.media.set(old_media)
-            obj.localizations.set(old_localizations)
+            found_it.created_datetime = origin_datetime
+            found_it.save()
+            found_it.media.set(old_media)
+            found_it.localizations.set(old_localizations)
 
         return {
             "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",

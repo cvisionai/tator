@@ -453,9 +453,10 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             obj.pk = None
             origin_datetime = obj.created_datetime
             obj.save()
+            found_it = Localization.objects.get(pk=obj.pk)
             # Do a double save to keep original creation time
-            obj.created_datetime = origin_datetime
-            obj.save()
+            found_it.created_datetime = origin_datetime
+            found_it.save()
 
         return {
             "message": f"Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",

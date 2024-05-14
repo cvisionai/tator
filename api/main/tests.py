@@ -1152,6 +1152,7 @@ class AttributeTestMixin:
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
+            print(f"Setting Bool Test to {test_val}")
             response = self.client.patch(
                 f"/rest/{self.detail_uri}/{pk}",
                 {"attributes": {"Bool Test": test_val}},
@@ -1311,9 +1312,12 @@ class AttributeTestMixin:
             format="json",
         )
         assertResponse(self, response, status.HTTP_200_OK)
+        datetime_map = {}
+
         for pk in many_pks:
             response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
             assert response.data["attributes"][attribute_name] == null_value
+            datetime_map[response.data["elemental_id"]] = response.data["created_datetime"]
 
         if hasattr(self.entities[0], "mark") and hasattr(self.entities[0], "elemental_id"):
             version = self.entities[0].version.pk
@@ -1330,6 +1334,7 @@ class AttributeTestMixin:
                     f"/rest/{self.detail_uri}/{version}/{eid}", format="json"
                 )
                 assert response.data["attributes"][attribute_name] == default_value
+                assert resposne.data["created_datetime"] == datetime_map[eid]
 
             response = self.client.patch(
                 f"/rest/{self.list_uri}/{project.pk}",
@@ -1342,9 +1347,11 @@ class AttributeTestMixin:
                     f"/rest/{self.detail_uri}/{version}/{eid}", format="json"
                 )
                 assert response.data["attributes"][attribute_name] == null_value
+                assert resposne.data["created_datetime"] == datetime_map[eid]
 
     def test_bool_attr(self):
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
+
         # Test setting an invalid bool
         response = self.client.patch(
             f"/rest/{self.detail_uri}/{self.entities[0].pk}",
