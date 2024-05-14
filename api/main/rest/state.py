@@ -408,6 +408,7 @@ class StateListAPI(BaseListView):
             else:
                 objs = []
                 many_to_many = []
+                origin_datetimes = []
 
                 for original in qs.iterator():
                     many_to_many.append((original.media.all(), original.localizations.all()))
@@ -417,10 +418,13 @@ class StateListAPI(BaseListView):
                         setattr(original, key, value)
                     original.attributes.update(new_attrs)
                     objs.append(original)
+                    origin_datetimes.append(original.created_datetime)
                 new_objs = State.objects.bulk_create(objs)
-                for p_obj, m2m in zip(new_objs, many_to_many):
+                for p_obj, m2m, origin_datetime in zip(new_objs, many_to_many, origin_datetimes):
                     p_obj.media.set(m2m[0])
                     p_obj.localizations.set(m2m[1])
+                    p_obj.created_datetime = origin_datetime
+                    p_obj.save()
 
         return {"message": f"Successfully updated {count} states!"}
 
@@ -551,6 +555,10 @@ class StateDetailBaseAPI(BaseDetailView):
             # Save edits as new object, mark is calculated in trigger
             obj.id = None
             obj.pk = None
+            origin_datetime = obj.created_datetime
+            obj.save()
+            # Keep original creation time
+            obj.created_datetime = origin_datetime
             obj.save()
             obj.media.set(old_media)
             obj.localizations.set(old_localizations)

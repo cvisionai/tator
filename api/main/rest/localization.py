@@ -2,6 +2,7 @@ import logging
 from django.db.models import Max
 from django.db import transaction
 from django.http import Http404
+from django.utils import timezone
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -289,6 +290,7 @@ class LocalizationListAPI(BaseListView):
                 )
             else:
                 objs = []
+                origin_datetimes = []
                 for original in qs.iterator():
                     original.pk = None
                     original.id = None
@@ -299,7 +301,12 @@ class LocalizationListAPI(BaseListView):
                             setattr(original, key, value)
                     original.attributes.update(new_attrs)
                     objs.append(original)
-                Localization.objects.bulk_create(objs)
+                    origin_datetimes.append(original.created_datetime)
+                new_objs = Localization.objects.bulk_create(objs)
+
+                for new_obj, origin_datetime in zip(new_objs, origin_datetimes):
+                    new_obj.created_datetime = origin_datetime
+                    new_obj.save()
 
         return {"message": f"Successfully updated {count} localizations!"}
 
@@ -444,6 +451,10 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             # Save edits as new object, mark is calculated in trigger
             obj.id = None
             obj.pk = None
+            origin_datetime = obj.created_datetime
+            obj.save()
+            # Do a double save to keep original creation time
+            obj.created_datetime = origin_datetime
             obj.save()
 
         return {
