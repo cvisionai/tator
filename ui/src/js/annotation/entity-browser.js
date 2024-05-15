@@ -255,7 +255,10 @@ export class EntityBrowser extends TatorElement {
       if (this._dataType.isLocalization) {
         groups[group].sort((item_a, item_b) => {
           if (item_a.frame === item_b.frame) {
-            return Date.parse(item_a.created_datetime) - Date.parse(item_b.created_datetime);
+            return (
+              Date.parse(item_a.created_datetime) -
+              Date.parse(item_b.created_datetime)
+            );
           }
           return item_a.frame - item_b.frame;
         });
@@ -268,14 +271,20 @@ export class EntityBrowser extends TatorElement {
             return 1;
           }
           if (item_a.segments[0][0] == item_b.segments[0][0]) {
-            return Date.parse(item_a.created_datetime) - Date.parse(item_b.created_datetime);
+            return (
+              Date.parse(item_a.created_datetime) -
+              Date.parse(item_b.created_datetime)
+            );
           }
           return item_a.segments[0][0] - item_b.segments[0][0];
         });
       } else {
         groups[group].sort((item_a, item_b) => {
           if (item_a.frame === item_b.frame) {
-            return Date.parse(item_a.created_datetime) - Date.parse(item_b.created_datetime);
+            return (
+              Date.parse(item_a.created_datetime) -
+              Date.parse(item_b.created_datetime)
+            );
           }
           return item_a.frame - item_b.frame;
         });

@@ -564,8 +564,7 @@ export class TatorData {
       url += "&presigned=28800";
     }
 
-    if (annotationType == "Localizations" || annotationType == "States")
-    {
+    if (annotationType == "Localizations" || annotationType == "States") {
       // For ordering to match if edits are done on 1.3.0+ we can sort by $created_datetime
       url += "&sort_by=$created_datetime";
     }
