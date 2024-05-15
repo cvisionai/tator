@@ -2277,7 +2277,7 @@ class MainPage extends TatorPage {
                 }
               } else {
                 attrVal = `${window.parent.location.origin}/${this._projectId}/annotation/${media.id}?`;
-                urlParams = `selected_entity=${data.id}&selected_type=${entityType.dtype}_${entityType.id}`;
+                urlParams = `selected_entity=${data.elemental_id}&selected_type=${entityType.dtype}_${entityType.id}`;
                 if (section_ids.length > 0) {
                   urlParams += `&section=${section_ids[0]}`;
                 }

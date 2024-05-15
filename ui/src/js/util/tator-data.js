@@ -928,12 +928,12 @@ export class TatorData {
    * Assumes the media is in the same project as this tator data module.
    * @param {integer} mediaId
    * @param {integer} frame - optional
-   * @param {integer} entityId - optional
+   * @param {integer} elementalId - optional
    * @param {integer} typeId - optional, will convert to Tator annotator friendly link
    * @param {integer} version - optional
    * @returns {str} Tator link using given parameters
    */
-  generateMediaLink(mediaId, frame, entityId, typeId, version) {
+  generateMediaLink(mediaId, frame, elementalId, typeId, version) {
     var outStr = `/${this._project}/annotation/${mediaId}?`;
     var addedParam = false;
 
@@ -945,11 +945,11 @@ export class TatorData {
       addedParam = true;
     }
 
-    if (entityId) {
+    if (elementalId) {
       if (addedParam) {
         outStr += "&";
       }
-      outStr += `selected_entity=${entityId}`;
+      outStr += `selected_entity=${elementalId}`;
       addedParam = true;
     }
 
