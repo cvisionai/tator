@@ -110,7 +110,7 @@ export class EntityGallerySortSimple extends TatorElement {
     if (category == "Media") {
       this._options.value = "$name";
     } else {
-      this._options.value = "$id";
+      this._options.value = "$created_datetime";
     }
     this._initialized = true;
   }

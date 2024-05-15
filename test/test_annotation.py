@@ -64,6 +64,8 @@ def common_annotation(page, canvas, bias=0):
         page.mouse.move(x+50, y+50, steps=50)
         page.wait_for_timeout(1000)
         page.mouse.click(x+50, y+50)
+        selector = page.query_selector("entity-selector:visible")
+        selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
         found = False
         for attempts in range(5):
             elemental_id_fields = page.query_selector_all("#metadata-elemental-id")
