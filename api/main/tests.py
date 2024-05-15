@@ -1317,7 +1317,8 @@ class AttributeTestMixin:
         for pk in many_pks:
             response = self.client.get(f"/rest/{self.detail_uri}/{pk}", format="json")
             assert response.data["attributes"][attribute_name] == null_value
-            datetime_map[response.data["elemental_id"]] = response.data["created_datetime"]
+            if "created_datetime" in response.data:
+                datetime_map[response.data["elemental_id"]] = response.data["created_datetime"]
 
         if hasattr(self.entities[0], "mark") and hasattr(self.entities[0], "elemental_id"):
             version = self.entities[0].version.pk
