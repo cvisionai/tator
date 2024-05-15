@@ -2251,7 +2251,6 @@ class VideoTestCase(
         response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
         assert response.data[0].get("incident", None) == None
 
-        print("About to create a bunch of boxes")
         # Make a whole bunch of boxes to make sure indices get utilized
         boxes = []
         foo_box = make_box_obj(
@@ -2269,7 +2268,35 @@ class VideoTestCase(
             },
         )
         boxes.append(foo_box)
+        foo_box = make_box_obj(
+            self.user,
+            box_type,
+            self.project,
+            self.entities[0],
+            0,
+            {
+                "String Test": "Foo",
+                "Enum Test": "enum_val1",
+                "Int Test": 1,
+                "Float Test": 1.0,
+                "Bool Test": True,
+            },
+        )
         boxes.append(foo_box)
+        foo_box = make_box_obj(
+            self.user,
+            box_type,
+            self.project,
+            self.entities[0],
+            0,
+            {
+                "String Test": "Foo",
+                "Enum Test": "enum_val1",
+                "Int Test": 1,
+                "Float Test": 1.0,
+                "Bool Test": True,
+            },
+        )
         boxes.append(foo_box)
 
         box = make_box_obj(
@@ -2343,6 +2370,9 @@ class VideoTestCase(
             ["Float Test", 1.0],
             ["Bool Test", True],
         ]
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}", format=json)
+        self.assertEqual(len(response.data), len(boxes))
+
         for key, value in searches:
             response = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?attribute={key}::{value}", format=json
@@ -2355,9 +2385,6 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
-            from pprint import pprint
-
-            pprint(response.data)
             first_hit = response.data[0]
             second_hit = response.data[1]
             self.assertEqual(first_hit.get("incident", None), 3)
