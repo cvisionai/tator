@@ -8,6 +8,7 @@ import uuid
 from django.db.models import Subquery
 from django.db.models.functions import Coalesce
 from django.db.models import Q
+from django.db.models.expressions import F
 
 from ..models import Localization, LocalizationType, Media, MediaType, Section, State, StateType
 
@@ -235,6 +236,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     show_deleted = params.get("show_deleted")
     if not show_deleted:
         qs = qs.filter(variant_deleted=False)
+
+    qs = qs.filter(mark=F("latest_mark"))
 
     if params.get("float_array", None) == None:
         if params.get("sort_by", None):
