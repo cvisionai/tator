@@ -16,6 +16,8 @@ export class EntityCard extends TatorElement {
       "modified_datetime",
       "created_datetime",
       "type",
+      "elemental_id",
+      "mark",
     ];
 
     // #todo These are not supported in card labels yet
