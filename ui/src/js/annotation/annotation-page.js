@@ -1314,8 +1314,6 @@ export class AnnotationPage extends TatorPage {
                     this._player.goToFrame(evt.detail.data.frame);
                   }
                 }
-
-                this._updateURL();
               }
               this._settings.setAttribute(
                 "entity-id",
@@ -1323,6 +1321,7 @@ export class AnnotationPage extends TatorPage {
               );
               this._settings.setAttribute("entity-type", evt.detail.data.type);
               this._settings.setAttribute("type-id", evt.detail.data.type);
+              this._updateURL();
             });
             this._browser.addEventListener("capture", (evt) => {
               if ("_video" in canvas) {

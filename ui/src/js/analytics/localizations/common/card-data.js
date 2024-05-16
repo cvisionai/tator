@@ -93,7 +93,7 @@ export class AnnotationCardData extends HTMLElement {
         let mediaLink = this._modelData.generateMediaLink(
           l.media,
           l.frame,
-          l.id,
+          l.elemental_id,
           l.type,
           l.version
         );
