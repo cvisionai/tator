@@ -89,9 +89,14 @@ export class SectionListItem extends TatorElement {
       "more d-flex flex-column f2 px-3 py-2 lh-condensed"
     );
     this.hideMoreMenu();
-    this._moreMenu.style.marginTop = "5px";
-    this._moreMenu.style.marginLeft = "200px";
-    this._shadow.appendChild(this._moreMenu);
+
+    this._moreMenu.style.top = "15px";
+    this._moreMenu.style.left = "-170px";
+
+    const innerMoreMenuDiv = document.createElement("div");
+    innerMoreMenuDiv.style.position = "relative";
+    this._mainDiv.appendChild(innerMoreMenuDiv);
+    innerMoreMenuDiv.appendChild(this._moreMenu);
 
     //
     // Details section
