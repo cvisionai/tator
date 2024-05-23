@@ -4,9 +4,8 @@ import { getApi } from "../../../../../scripts/packages/tator-js/pkg/src/index.j
 
 const api = getApi();
 const projectId = window.location.pathname.split("/")[1];
-const dashboardId = window.location.pathname.split("/")[3];
 
-const dashboardStore = createStore(
+const store = createStore(
   subscribeWithSelector((set, get) => ({
     user: null,
     announcements: [],
@@ -17,17 +16,15 @@ const dashboardStore = createStore(
         api.whoami(),
         api.getAnnouncementList(),
         api.getProject(projectId),
-        api.getApplet(dashboardId),
       ]).then((values) => {
         set({
           user: values[0],
           announcements: values[1],
           project: values[2],
-          dashboard: values[3],
         });
       });
     },
   }))
 );
 
-export { dashboardStore };
+export { store };

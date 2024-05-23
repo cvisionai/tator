@@ -1,7 +1,7 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { Utilities } from "../../util/utilities.js";
 import TatorLoading from "../../../images/tator_loading.gif";
-import { store } from "./dashboard-store.js";
+import { dashboardStore } from "./dashboard-store.js";
 
 export class RegisteredDashboard extends TatorPage {
   constructor() {
