@@ -220,7 +220,7 @@ modify-track-dialog {
 
   button {
     justify-content: space-between;
-    width: (8 / 12 * 100%); // Same as col-8
+    width: (calc(8 / 12) * 100%); // Same as col-8
   }
 }
 

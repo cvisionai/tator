@@ -1,7 +1,7 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import TatorLoading from "../../../images/tator_loading.gif";
-import { store } from "./store.js";
+import { store } from "./dashboard-store.js";
 
 export class DashboardPortal extends TatorPage {
   constructor() {

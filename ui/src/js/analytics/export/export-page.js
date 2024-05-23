@@ -1,3 +1,5 @@
+import { TatorElement } from "../../components/tator-element.js";
+import { svgNamespace } from "../../components/tator-element.js";
 import { TatorPage } from "../../components/tator-page.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
@@ -700,7 +702,7 @@ class Utilities {
 /**
  * Variation of entity-delete-button
  */
-class FilterDeleteButton extends tatorUi.components.TatorElement {
+class FilterDeleteButton extends TatorElement {
   constructor() {
     super();
 
@@ -712,7 +714,7 @@ class FilterDeleteButton extends tatorUi.components.TatorElement {
     this._shadow.appendChild(this._button);
 
     const svg = document.createElementNS(
-      tatorUi.components.svgNamespace,
+      svgNamespace,
       "svg"
     );
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -721,14 +723,14 @@ class FilterDeleteButton extends tatorUi.components.TatorElement {
     this._button.appendChild(svg);
 
     const title = document.createElementNS(
-      tatorUi.components.svgNamespace,
+      svgNamespace,
       "title"
     );
     title.textContent = "Delete";
     svg.appendChild(title);
 
     const path = document.createElementNS(
-      tatorUi.components.svgNamespace,
+      svgNamespace,
       "path"
     );
     path.setAttribute(
@@ -745,7 +747,7 @@ customElements.define("filter-delete-button", FilterDeleteButton);
  * Displays the AttributeOperationSpec in a human readable format and also
  * the encoded string
  */
-class FilterOperationDisplay extends tatorUi.components.TatorElement {
+class FilterOperationDisplay extends TatorElement {
   /**
    * Class constructor
    */
@@ -850,7 +852,7 @@ customElements.define("filter-operation-display", FilterOperationDisplay);
 /**
  * This is an updated variation of filter-condition.js
  */
-class FilterAttributeOperation extends tatorUi.components.TatorElement {
+class FilterAttributeOperation extends TatorElement {
   constructor() {
     super();
 
@@ -1312,7 +1314,7 @@ customElements.define("filter-attribute-operation", FilterAttributeOperation);
 /**
  * HTML element that encompasses an encoded search object.
  */
-class FilterGroup extends tatorUi.components.TatorElement {
+class FilterGroup extends TatorElement {
   /**
    * Class constructor
    * Data initialization is performed separately. UI initialization performed here.
@@ -3794,7 +3796,7 @@ class MainPage extends TatorPage {
    */
   makeChevron() {
     const chevron = document.createElementNS(
-      tatorUi.components.svgNamespace,
+      svgNamespace,
       "svg"
     );
     chevron.setAttribute("class", "chevron px-1 chevron-trigger-90");
@@ -3803,7 +3805,7 @@ class MainPage extends TatorPage {
     chevron.setAttribute("width", "1em");
 
     const chevronPath = document.createElementNS(
-      tatorUi.components.svgNamespace,
+      svgNamespace,
       "path"
     );
     chevronPath.setAttribute(
