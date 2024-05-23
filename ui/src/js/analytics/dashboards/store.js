@@ -10,6 +10,7 @@ const store = createStore(
     user: null,
     announcements: [],
     project: null,
+    dashboard: null,
     init: async () => {
       Promise.all([
         api.whoami(),

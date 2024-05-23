@@ -15,6 +15,7 @@
   "author": "CVision AI, Inc.",
   "license": "MIT",
   "devDependencies": {
+    "circular-dependency-plugin": "^5.2.2",
     "construct-style-sheets-polyfill": "3.1.0",
     "css-loader": "6.10.0",
     "mini-css-extract-plugin": "2.8.1",
