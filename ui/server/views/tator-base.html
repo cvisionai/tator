@@ -5,6 +5,12 @@
     <script>
       var BACKEND = '{{ backend }}';
       var KEYCLOAK_ENABLED = {{ keycloak_enabled }};
+      window.addEventListener('unload', function () {
+          console.info("Prevent BF Cache #1");
+      });
+      window.addEventListener('beforeunload', function () {
+          console.info("Prevent BF Cache #2");
+      });
     </script>
     <script src="/static/require-login.js"></script>
     <script src="/static/components.js"></script>
