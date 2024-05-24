@@ -110,10 +110,7 @@ export class RegisteredDashboard extends TatorPage {
     document.title = `Tator | ${dashboard.name}`;
     this._dashboardId = dashboard.id;
     this._dashboard = dashboard;
-    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}#${
-      window.location.search !== "" ? window.location.search + "&" : "?"
-    }username=${this._username}`;
-    this._dashboardView.src = this._dashbordSource;
+    Utilities.setIframeSrc(this._dashboardView, dashboard);
     this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
     this._loading.style.display = "none";
   }
@@ -121,10 +118,7 @@ export class RegisteredDashboard extends TatorPage {
   hashHandler(e) {
     console.log("The hash has changed!");
     console.log(window.history.state);
-    this._dashbordSource = `${Utilities.getAppletSrc(dashboard)}#${
-      window.location.search !== "" ? window.location.search + "&" : "?"
-    }username=${this._username}`;
-    this._dashboardView.src = this._dashbordSource;
+    Utilities.setIframeSrc(this._dashboardView, dashboard);
   }
 }
 

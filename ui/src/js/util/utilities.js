@@ -129,14 +129,11 @@ export class Utilities {
     });
   }
 
-  static getAppletSrc(applet) {
-    let url;
-    if (applet.rendered) {
-      const blob = new Blob([applet.rendered], { type: "text/html" });
-      url = URL.createObjectURL(blob);
+  static setIframeSrc(iframe, applet) {
+    if (applet.template) {
+      iframe.srcdoc = applet.rendered;
     } else {
-      url = applet.html_file;
+      iframe.src = applet.html_file;
     }
-    return url;
   }
 }
