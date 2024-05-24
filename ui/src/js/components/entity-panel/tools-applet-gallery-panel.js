@@ -30,7 +30,7 @@ export class ToolsAppletGalleryPanel extends TatorElement {
     this._entityForm = entityForm;
 
     // Then populate the panel
-    this._appletView.src = Utilities.getAppletSrc(applet);
+    Utilities.setIframeSrc(this._appletView, applet);
     entityForm.addAppletPanel(this._panel);
   }
 
@@ -40,7 +40,7 @@ export class ToolsAppletGalleryPanel extends TatorElement {
    *
    */
   setApplet(appletName) {
-    this._appletView.src = Utilities.getAppletSrc(this._applets[appletName]);
+    Utilities.setIframeSrc(this._appletView, this._applets[appletName]);
     this.openPanel();
   }
 

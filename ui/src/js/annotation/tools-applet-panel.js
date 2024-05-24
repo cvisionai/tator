@@ -64,7 +64,7 @@ export class ToolsAppletPanel extends TatorElement {
     this._appletTrigger.addEventListener("click", this.togglePanel.bind(this));
 
     // Then populate the panel
-    this._appletView.src = Utilities.getAppletSrc(applet);
+    Utilities.setIframeSrc(this._appletView, applet);
   }
 
   togglePanel() {

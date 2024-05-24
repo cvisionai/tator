@@ -88,7 +88,7 @@ export class CanvasAppletWrapper extends TatorElement {
         resolve();
       };
 
-      appletView.src = Utilities.getAppletSrc(applet);
+      Utilities.setIframeSrc(appletView, applet);
       this._shadow.appendChild(appletView);
     });
   }

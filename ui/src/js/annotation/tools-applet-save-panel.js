@@ -37,7 +37,7 @@ export class ToolsAppletSavePanel extends TatorElement {
     this._type = type;
 
     // Then populate the panel
-    this._appletView.src = Utilities.getAppletSrc(applet);
+    Utilities.setIframeSrc(this._appletView, applet);
     console.log("[Save tools] set applet view to " + this._appletView.src);
     saveDialog.addAppletPanel(this._panel);
   }
