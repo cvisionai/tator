@@ -51,7 +51,10 @@ export class RegisteredDashboard extends TatorPage {
       (state) => state.announcements,
       this._setAnnouncements.bind(this)
     );
-    dashboardStore.subscribe((state) => state.project, this._updateProject.bind(this));
+    dashboardStore.subscribe(
+      (state) => state.project,
+      this._updateProject.bind(this)
+    );
     dashboardStore.subscribe((state) => state.dashboard, this._init.bind(this));
 
     // Listen for URL param events
