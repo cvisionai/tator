@@ -19,7 +19,7 @@ module.exports = {
     components: "./src/js/components/index.js",
     portal: "./src/js/analytics/index.js",
     "third-party": "./src/js/third-party/index.js",
-    "tator": "./src/js/index.js",
+    "tator-ui": "./src/js/index.js",
   },
   output: {
     filename: "[name].js",
