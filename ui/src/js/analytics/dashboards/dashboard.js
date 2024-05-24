@@ -46,13 +46,13 @@ export class RegisteredDashboard extends TatorPage {
     main.appendChild(this._dashboardView);
 
     // Create store subscriptions
-    store.subscribe((state) => state.user, this._setUser.bind(this));
-    store.subscribe(
+    dashboardStore.subscribe((state) => state.user, this._setUser.bind(this));
+    dashboardStore.subscribe(
       (state) => state.announcements,
       this._setAnnouncements.bind(this)
     );
-    store.subscribe((state) => state.project, this._updateProject.bind(this));
-    store.subscribe((state) => state.dashboard, this._init.bind(this));
+    dashboardStore.subscribe((state) => state.project, this._updateProject.bind(this));
+    dashboardStore.subscribe((state) => state.dashboard, this._init.bind(this));
 
     // Listen for URL param events
     console.log(window.history.state);
@@ -74,7 +74,7 @@ export class RegisteredDashboard extends TatorPage {
   }
 
   connectedCallback() {
-    store.getState().init();
+    dashboardStore.getState().init();
   }
 
   static get observedAttributes() {
