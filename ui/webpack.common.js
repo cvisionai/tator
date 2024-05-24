@@ -5,6 +5,20 @@ const CircularDependencyPlugin = require("circular-dependency-plugin");
 
 module.exports = {
   entry: {
+    "project-settings": "./src/js/project-settings/index.js",
+    "project-detail": "./src/js/project-detail/index.js",
+    "organization-settings": "./src/js/organization-settings/index.js",
+    "password-reset": "./src/js/password-reset/index.js",
+    annotation: "./src/js/annotation/index.js",
+    organizations: "./src/js/organizations/index.js",
+    "account-profile": "./src/js/account-profile/index.js",
+    token: "./src/js/token/index.js",
+    projects: "./src/js/projects/index.js",
+    util: "./src/js/util/index.js",
+    registration: "./src/js/registration/index.js",
+    components: "./src/js/components/index.js",
+    portal: "./src/js/analytics/index.js",
+    "third-party": "./src/js/third-party/index.js",
     "tator": "./src/js/index.js",
   },
   output: {
