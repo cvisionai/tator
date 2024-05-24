@@ -8,7 +8,7 @@ class StyleHolder {
     this.css.insertRule("* { visibility: hidden }");
     this.ready = false;
     this.elements = [];
-    fetch("/static/tator.css")
+    fetch("/static/tator-ui.css")
       .then((body) => body.text())
       .then((text) => {
         this.css.replaceSync(text);
