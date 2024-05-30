@@ -63,7 +63,7 @@ bucket_properties = {
     "store_type": {
         "description": "Type of object store on which the bucket is hosted.",
         "type": "string",
-        "enum": ["AWS", "MINIO", "GCP", "OCI"],
+        "enum": ["AWS", "MINIO", "GCP", "OCI", "VAST"],
     },
     "external_host": {"description": "The proxy host for presigned urls.", "type": "string"},
 }
