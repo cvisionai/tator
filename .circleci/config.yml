@@ -75,9 +75,9 @@ jobs:
     - run:
         name: Set version in tator-py, tator-js, and REST interface
         command: |
-          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-py/config.json';
-          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-js/config.json';
-          ssh lightsail 'export TATOR_VERSION='"'$CIRCLE_TAG'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/api/main/urls.py';
+          ssh lightsail 'export TATOR_VERSION='"'${CIRCLE_TAG:-0.0.0+$CIRCLE_SHA1}'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-py/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'${CIRCLE_TAG:-0.0.0+$CIRCLE_SHA1}'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/scripts/packages/tator-js/config.json';
+          ssh lightsail 'export TATOR_VERSION='"'${CIRCLE_TAG:-0.0.0+$CIRCLE_SHA1}'"';sed -i "s/DEVELOPMENT_VERSION/$TATOR_VERSION/g" tator/api/main/urls.py';
   publish-clients:
     machine:
       image: default
@@ -304,8 +304,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-          branches:
-            ignore: /.*/
     - build-docker-images:
         requires:
         - setup-lightsail
