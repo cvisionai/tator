@@ -14,6 +14,7 @@ from ._attribute_query import (
     get_attribute_psql_queryset,
     supplied_name_to_field,
 )
+from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
         if leaf_ids == []:
             qs = qs.filter(pk=-1)
         else:
-            qs = qs.filter(pk__in=leaf_ids)
+            qs = qs.filter(pk__in=set(leaf_ids))
 
     if depth is not None:
         qs = qs.filter(path__depth=depth)
@@ -93,7 +94,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     elif stop is not None:
         qs = qs[:stop]
 
-    logger.info(qs.explain())
+    logger.info(format_multiline(qs.explain()))
     return qs
 
 

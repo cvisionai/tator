@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 from django.contrib.messages import constants as messages
 import yaml
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,10 +27,13 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = False
 
 MAIN_HOST = os.getenv("MAIN_HOST")
-ALLOWED_HOSTS = [MAIN_HOST, "gunicorn-svc", "gunicorn"]
+ALLOWED_HOSTS = [MAIN_HOST, "gunicorn-headless-svc", "gunicorn-svc", "gunicorn"]
 ALIAS_HOSTS = os.getenv("ALIAS_HOSTS")
 if ALIAS_HOSTS:
     ALLOWED_HOSTS += ALIAS_HOSTS.split(",")
+
+# For unit tests
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8080"]
 
 # Whether keycloak is being used for authentication
 KEYCLOAK_ENABLED = os.getenv("KEYCLOAK_ENABLED") == "TRUE"
@@ -89,13 +93,6 @@ MIDDLEWARE = (
         else [
             "django.middleware.csrf.CsrfViewMiddleware",
         ]
-    )
-    + (
-        [
-            "tator_online.StatsdMiddleware",
-        ]
-        if STATSD_ENABLED
-        else []
     )
     + [
         "django.contrib.messages.middleware.MessageMiddleware",
@@ -199,48 +196,44 @@ ASGI_APPLICATION = "tator_online.routing.application"
 
 
 # Turn on logging
+if os.getenv("DD_LOGS_INJECTION"):
+    import ddtrace.auto
+
+    FORMAT = (
+        "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] "
+        "[dd.service=%(dd.service)s dd.env=%(dd.env)s "
+        "dd.version=%(dd.version)s "
+        "dd.trace_id=%(dd.trace_id)s dd.span_id=%(dd.span_id)s] "
+        "- %(message)s"
+    )
+else:
+    FORMAT = "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] " "- %(message)s"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": '{levelname} {asctime} {module} {process:d} {thread:d} "{message}"',
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
-            "style": "{",
+            "format": FORMAT,
         },
     },
     "handlers": {
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": "/debug.log" if os.getenv("PYLINT_RUNNING") is None else "debug.log",
-            "formatter": "verbose",
-        },
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
     },
     "loggers": {
-        # this is for django internals
-        "django": {
-            "handlers": [
-                "file",
-                "console",
-            ],
+        "ddtrace": {
+            "handlers": ["console"],
             "level": "INFO",
-            "propagate": True,
         },
-        # This is for our application
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "main": {
-            "handlers": [
-                "file",
-                "console",
-            ],
-            "level": "DEBUG",
-            "propagate": True,
+            "handlers": ["console"],
+            "level": "INFO",
         },
     },
 }
@@ -263,11 +256,10 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
+        "main.throttles.BurstableThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "10/second",
-        "user": "100/second",
     },
     "TEST_REQUEST_RENDERER_CLASSES": [
         "main.renderers.TatorRenderer",

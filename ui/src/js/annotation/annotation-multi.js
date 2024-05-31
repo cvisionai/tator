@@ -2102,7 +2102,9 @@ export class AnnotationMulti extends TatorElement {
           console.log(
             `Video ${videoIndex} playback check - restart [Now: ${new Date().toISOString()}]`
           );
-          this._videos[videoIndex].onDemandDownloadPrefetch(-1);
+          this._videos[videoIndex].onDemandDownloadPrefetch(
+            Math.max(0, this._videos[videoIndex].currentFrame() - 200)
+          );
         }
       }
       if (not_ready == true) {

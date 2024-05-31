@@ -1,13 +1,13 @@
-import { TatorPage } from "../../components/tator-page.js";
-import { TatorData } from "../../util/tator-data.js";
-import { LoadingSpinner } from "../../components/loading-spinner.js";
-import { FilterData } from "../../components/filter-data.js";
-import { store } from "./store.js";
+import { TatorPage } from "../../../components/tator-page.js";
+import { TatorData } from "../../../util/tator-data.js";
+import { LoadingSpinner } from "../../../components/loading-spinner.js";
+import { FilterData } from "../../../components/filter-data.js";
+import { Utilities } from "../../../util/utilities.js";
 
 /**
  * Page that displays a grid view of selected annotations
  */
-export class AnalyticsLocalizationsCorrections extends TatorPage {
+export class AnalyticsPage extends TatorPage {
   constructor() {
     super();
 
@@ -23,24 +23,30 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
-    const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-items-center");
-    header.appendChild(div);
+    this._div = document.createElement("div");
+    this._div.setAttribute("class", "d-flex flex-items-center");
+    header.appendChild(this._div);
 
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
-    div.appendChild(this._breadcrumbs);
-    this._breadcrumbs.setAttribute("analytics-name", "Corrections");
+    this._div.appendChild(this._breadcrumbs);
 
     this._settings = document.createElement("analytics-settings");
     this._settings.style.marginLeft = "50px";
-    div.appendChild(this._settings);
-
-    this._settings._localizationsView.hidden = false;
+    this._div.appendChild(this._settings);
 
     // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
+    this._bulkEdit._editPanel.hidden = false;
     this._shadow.appendChild(this._bulkEdit);
+
+    this.deleteBulkModal = document.createElement("delete-bulk-modal");
+    this._shadow.appendChild(this.deleteBulkModal);
+
+    const deleteSelectedButton = document.createElement("delete-button");
+    deleteSelectedButton.setAttribute("name", "Delete selected localizations");
+    deleteSelectedButton._span.textContent = "Delete selected localizations";
+    this._bulkEdit._editPanel._otherTools.appendChild(deleteSelectedButton);
 
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
@@ -49,7 +55,9 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       "analysis--main--wrapper col-12 d-flex"
     );
     this._shadow.appendChild(this.mainWrapper);
-    this.mainWrapper.style.paddingBottom = "200px";
+
+    //TODO
+    // this.mainWrapper.style.paddingBottom = "200px";
 
     //
     // Define the main section of the page
@@ -61,18 +69,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     //
     /* Card Gallery */
     // Gallery of cards showing filter results
-    this._filterResults = document.createElement(
-      "annotations-corrections-gallery"
-    );
-    this.main.appendChild(this._filterResults);
-
-    // Localizations Filter
-    /* Filter interface part of gallery */
-    this._filterView = document.createElement("filter-interface");
-    this._filterResults._filterDiv.appendChild(this._filterView);
-
-    // Custom gallery more menu added into filter interface tools ares
-    this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
+    // this._filterResults = this._getGallery();
 
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
@@ -91,19 +88,33 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
-    // Create store subscriptions
-    store.subscribe((state) => state.user, this._setUser.bind(this));
-    store.subscribe(
-      (state) => state.announcements,
-      this._setAnnouncements.bind(this)
+    // Event listeners
+    this.deleteBulkModal.addEventListener(
+      "confirmFileDelete",
+      this._deleteSuccess.bind(this)
     );
-    store.subscribe((state) => state.project, this._init.bind(this));
+    deleteSelectedButton.addEventListener(
+      "click",
+      this._deleteSelection.bind(this)
+    );
+
+    this._bulkEdit.addEventListener(
+      "bulk-attributes-edited",
+      this.handleOutsideUpdate.bind(this)
+    );
 
     //
     /* Other */
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
+
+    //
+    // Modal parent - to pass to page components
+    this.modalNotify = document.createElement("modal-notify");
+    this._shadow.appendChild(this.modalNotify);
+    this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
+    this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
 
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
@@ -117,7 +128,8 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = project.id;
-    console.log("Corrections this._projectId" + this._projectId);
+    this.deleteBulkModal.setAttribute("project-id", this.projectId);
+    this.deleteBulkModal.addEventListener("close", this.hideDimmer.bind(this));
     this._modelData = new TatorData(this.projectId);
 
     // Card Data export class collects raw model and parses into view-model format
@@ -130,10 +142,17 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
     await this._modelData.init();
 
+    // Init sort
+    this._filterResults._sort.init(
+      "Localization",
+      this._modelData._localizationTypes
+    );
+
     // Init after modal is defined & modelData
     this._bulkEdit.init({
       page: this,
       permission: this._modelData._project.permission,
+      bulkInit: this._bulkInit,
     });
 
     // Pass panel and localization types to gallery
@@ -143,13 +162,16 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       modelData: this._modelData,
       cardData: this.cardData,
       bulkEdit: this._bulkEdit,
+      modalNotify: this.modalNotify,
+      bulkInit: this._bulkInit,
     });
 
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
 
     // Set lock value
-    this._settings._lock.hidden = true; // #TODO
+    // this._settings._lock.hidden = true; // #TODO
+    this.setupLock(project);
 
     // Init vars for filter state
     this._filterConditions = this._settings.getFilterConditionsObject();
@@ -177,10 +199,14 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       init: true,
     };
 
+    // Init vars for sort
+    this._sortState = this._filterResults._sort.getQueryParam();
+
     // Init Card Gallery and Right Panel
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
+      sort: this._sortState,
       cache: false,
     });
 
@@ -188,7 +214,14 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._filterDataView = new FilterData(
       this._modelData,
       ["annotation-analytics-view"],
-      ["MediaStates", "LocalizationStates", "FrameStates"]
+      ["MediaStates"],
+      [],
+      false,
+      {
+        FrameStates: "States (Coincident)",
+        LocalizationStates: "States (Track Membership)",
+      },
+      true
     );
 
     // Init panel side behavior
@@ -223,12 +256,36 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       "filterParameters",
       this._updateFilterResults.bind(this)
     );
+
+    // Listen for sort events
+    this._filterResults._sort.addEventListener(
+      "sortBy",
+      this._updateFilterResults.bind(this)
+    );
+  }
+
+  set store(val) {
+    this._store = val;
+
+    // Create store subscriptions
+    this._store.subscribe((state) => state.user, this._setUser.bind(this));
+    this._store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
+    this._store.subscribe((state) => state.project, this._init.bind(this));
+
+    this._initStore();
+  }
+
+  async _initStore() {
+    // Initialize store data
+    const values = await this._store.getState().init();
+    console.log("Analytics page init with values", values);
   }
 
   connectedCallback() {
     TatorPage.prototype.connectedCallback.call(this);
-    // Initialize store data
-    store.getState().init();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -240,11 +297,60 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     );
   }
 
+  setupLock(data) {
+    this._permission = data.permission;
+
+    if (this._permission === "View Only") {
+      // hide the ability to change editing
+      this._settings._lock.viewOnly();
+      if (this._settings.hasAttribute("lock"))
+        this._settings.removeAttribute("lock");
+      this._settings._bulkCorrect.hidden = true; // #TODO need permission within this as well
+      this._panelContainer.setAttribute("permissionValue", "View Only");
+      this._settings.setAttribute("lock", 0);
+    } else {
+      // Show the bulk edit button
+      this._settings._bulkCorrect.hidden = false; // #TODO  need permission within this as well
+
+      // Set lock value from the settings value // in URL
+      if (
+        this._settings.hasAttribute("lock") &&
+        this._settings.getAttribute("lock") === "0"
+      ) {
+        this._settings._lock.lock();
+        this._panelContainer.setAttribute("permissionValue", "View Only");
+        this._settings.setAttribute("lock", 0);
+      } else {
+        // User can edit, default is unlocked
+        this._settings._lock.unlock();
+        this._panelContainer.setAttribute("permissionValue", "Can Edit");
+        this._settings.setAttribute("lock", 1);
+      }
+
+      // Settings lock listener enabled
+      this._settings._lock.addEventListener("click", (evt) => {
+        const locked = this._settings._lock._pathLocked.style.display != "none";
+        const permissionValue = locked ? "View Only" : "Can Edit";
+        const panelPermissionEvt = new CustomEvent("permission-update", {
+          detail: { permissionValue },
+        });
+        this._panelContainer.dispatchEvent(panelPermissionEvt);
+
+        if (locked) {
+          this._settings.setAttribute("lock", 0);
+        } else {
+          this._settings.setAttribute("lock", 1);
+        }
+        window.history.pushState({}, "", this._settings.getURL());
+      });
+    }
+  }
+
   static get observedAttributes() {
     return TatorPage.observedAttributes;
   }
 
-  _cardGallery({ conditions, pagination, cache }) {
+  _cardGallery({ conditions, pagination, sort, cache }) {
     this.showDimmer();
     this.loading.showSpinner();
 
@@ -254,7 +360,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     if (cache) {
       // Initial view-modal "Cardlist" from fetched localizations
       return this.cardData
-        .makeCardListFromBulk(conditions, pagination)
+        .makeCardListFromBulk(conditions, pagination, sort)
         .then((cardList) => {
           // CardList inits Gallery component with cards & pagination on page
           this._filterResults.show(cardList);
@@ -263,18 +369,22 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
         });
     } else {
       // Initial view-modal "Cardlist" from fetched localizations
-      this.cardData.makeCardList(conditions, pagination).then((cardList) => {
-        // CardList inits Gallery component with cards & pagination on page
-        this._filterResults.show(cardList);
-        this.loading.hideSpinner();
-        this.hideDimmer();
-      });
+      this.cardData
+        .makeCardList(conditions, pagination, sort)
+        .then((cardList) => {
+          // CardList inits Gallery component with cards & pagination on page
+          this._filterResults.show(cardList);
+          this.loading.hideSpinner();
+          this.hideDimmer();
+        });
     }
   }
 
   // Reset the pagination back to page 0
   async _updateFilterResults(evt) {
-    this._filterConditions = evt.detail.conditions;
+    if (evt?.detail?.conditions) {
+      this._filterConditions = evt.detail.conditions;
+    }
     // console.log("UPDATE FILTER RESULTS");
     this._bulkEdit.checkForFilters(this._filterConditions);
 
@@ -290,13 +400,17 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
 
+    this._sortState = this._filterResults._sort.getQueryParam();
+
     // updated the card gallery because of filter
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
+      sort: this._sortState,
       cache: false,
     });
 
+    this._settings.setAttribute("sort", this._sortState);
     this._settings.setAttribute("filterConditions", filterURIString);
     this._settings.setAttribute("pagesize", this._paginationState.pageSize);
     this._settings.setAttribute("page", this._paginationState.page);
@@ -312,10 +426,13 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._paginationState.pageSize = evt.detail.pageSize;
     this._paginationState.init = false;
 
+    this._sortState = this._filterResults._sort.getQueryParam();
+
     // get the gallery during pagination
     await this._cardGallery({
       conditions: this._filterConditions,
       pagination: this._paginationState,
+      sort: this._sortState,
       cache: true,
     });
 
@@ -328,6 +445,70 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     window.history.pushState({}, "", this._settings.getURL());
   }
 
+  _deleteSelection() {
+    const list = Array.from(this._bulkEdit._currentMultiSelection);
+    console.log("Delete selection heard", list);
+
+    if (list && list.length > 0) {
+      this.deleteBulkModal.setAttribute(
+        "delete-name",
+        "Selected localizations"
+      );
+      this.deleteBulkModal.setAttribute("delete-id", String(list));
+      this.deleteBulkModal.open(this._bulkEdit._currentSelectionObjects);
+
+      this.setAttribute("has-open-modal", "");
+    } else {
+      // TODO
+      // this._notify(
+      //   "Make a selection",
+      //   "Nothing to delete! Make a selection first.",
+      //   "error"
+      // );
+    }
+  }
+
+  async _deleteSuccess(evt) {
+    this._bulkEdit._clearSelection();
+    this._panelContainer._panelTop.openHandler({ openFlag: false }, null, null);
+
+    this.deleteBulkModal.removeAttribute("is-open");
+    this.removeAttribute("has-open-modal", "");
+
+    let msg = `Delete success! Updating...`;
+    Utilities.showSuccessIcon(msg);
+
+    // Setup Card Gallery and Right Panel
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      sort: this._sortState,
+      cache: false,
+    });
+
+    let msg2 = `Delete success! Gallery updated`;
+    Utilities.showSuccessIcon(msg2);
+  }
+
+  async handleOutsideUpdate(evt) {
+    this._bulkEdit._clearSelection();
+    this._panelContainer._panelTop.openHandler({ openFlag: false }, null, null);
+
+    let msg = `Update success...`;
+    Utilities.showSuccessIcon(msg);
+
+    // Setup Card Gallery and Right Panel
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      sort: this._sortState,
+      cache: false,
+    });
+
+    let msg2 = `Gallery updated!`;
+    Utilities.showSuccessIcon(msg2);
+  }
+
   // Page dimmer handler
   showDimmer() {
     return this.setAttribute("has-open-modal", "");
@@ -338,7 +519,4 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
   }
 }
 
-customElements.define(
-  "analytics-localizations-corrections",
-  AnalyticsLocalizationsCorrections
-);
+customElements.define("analytics-page", AnalyticsPage);

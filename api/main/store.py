@@ -29,6 +29,7 @@ class ObjectStore(Enum):
     MINIO = "MINIO"
     GCP = "GCP"
     OCI = "OCI"
+    VAST = "VAST"
 
 
 # TODO Deprecated: remove once support for old bucket model is removed
@@ -46,6 +47,7 @@ CLIENT_MAP = {
         config["project_id"], Credentials.from_service_account_info(config)
     ),
     ObjectStore.OCI: None,
+    ObjectStore.VAST: None,
 }
 VALID_STORAGE_CLASSES = {
     "archive_sc": {
@@ -53,12 +55,14 @@ VALID_STORAGE_CLASSES = {
         ObjectStore.MINIO: ["STANDARD"],
         ObjectStore.GCP: ["STANDARD", "COLDLINE"],
         ObjectStore.OCI: ["STANDARD"],
+        ObjectStore.VAST: ["STANDARD"],
     },
     "live_sc": {
         ObjectStore.AWS: ["STANDARD"],
         ObjectStore.MINIO: ["STANDARD"],
         ObjectStore.GCP: ["STANDARD"],
         ObjectStore.OCI: ["STANDARD"],
+        ObjectStore.VAST: ["STANDARD"],
     },
 }
 
@@ -69,12 +73,14 @@ DEFAULT_STORAGE_CLASSES = {
         ObjectStore.MINIO: "STANDARD",
         ObjectStore.GCP: "COLDLINE",
         ObjectStore.OCI: "STANDARD",
+        ObjectStore.VAST: "STANDARD",
     },
     "live_sc": {
         ObjectStore.AWS: "STANDARD",
         ObjectStore.MINIO: "STANDARD",
         ObjectStore.GCP: "STANDARD",
         ObjectStore.OCI: "STANDARD",
+        ObjectStore.VAST: "STANDARD",
     },
 }
 
@@ -83,7 +89,7 @@ def _client_from_config(
     store_type, config, bucket_name, connect_timeout, read_timeout, max_attempts
 ):
     config = deepcopy(config)
-    if store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
+    if store_type in [ObjectStore.AWS, ObjectStore.MINIO, ObjectStore.VAST]:
         config["config"] = Config(
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
@@ -159,6 +165,8 @@ class TatorStorage(ABC):
             return MinIOStorage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.OCI:
             return OCIStorage(bucket, client, bucket_name, external_host)
+        if server is ObjectStore.VAST:
+            return VASTStorage(bucket, client, bucket_name, external_host)
 
         raise ValueError(f"Server type '{server}' is not supported")
 
@@ -500,6 +508,19 @@ class S3Storage(MinIOStorage):
             Key=self.path_to_key(path),
             RestoreRequest={"Days": min_exp_days},
         )
+
+
+class VASTStorage(MinIOStorage):
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
+        self._server = ObjectStore.VAST
+
+    # VAST does not support object tags
+    def put_media_id_tag(self, path, media_id):
+        return
+
+    def _put_archive_tag(self, path):
+        return
 
 
 class OCIStorage(S3Storage):

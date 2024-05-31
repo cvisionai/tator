@@ -6,9 +6,9 @@ import base64
 import uuid
 
 from django.db.models import Subquery
-from django.db.models.functions import Coalesce
-from django.db.models import Q
-from django.db.models.expressions import F
+from django.db.models.functions import Coalesce, Cast
+from django.db.models import Q, F
+from django.db.models import BigIntegerField, ExpressionWrapper
 
 from ..models import Localization, LocalizationType, Media, MediaType, Section, State, StateType
 
@@ -23,6 +23,7 @@ from ._attribute_query import (
     supplied_name_to_field,
     _look_for_section_uuid,
 )
+from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     elif annotation_type == "state":
         localization_id_put = params.get("localization_ids")  # PUT request only
         state_ids = params.get("ids")  # PUT request only
+    frame_state_ids = params.get("frame_state_ids")  # PUT request only, localizations only
+    elemental_ids = params.get("elemental_ids")
     filter_type = params.get("type")
     version = params.get("version")
     frame = params.get("frame")
@@ -72,7 +75,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if media_id is not None:
         media_ids += media_id
     if media_ids:
-        qs = qs.filter(media__in=media_ids)
+        qs = qs.filter(media__in=set(media_ids))
         if len(media_ids) > 1:
             qs = qs.distinct()
 
@@ -81,19 +84,43 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         localization_ids += localization_id_put
     if state_ids and (annotation_type == "localization"):
         localization_ids += list(
-            State.localizations.through.objects.filter(state__in=state_ids)
+            State.localizations.through.objects.filter(state__in=set(state_ids))
             .values_list("localization_id", flat=True)
             .distinct()
         )
     if localization_ids:
         if annotation_type == "localization":
-            qs = qs.filter(pk__in=localization_ids)
+            qs = qs.filter(pk__in=set(localization_ids))
         elif annotation_type == "state":
-            qs = qs.filter(localizations__in=localization_ids).distinct()
+            qs = qs.filter(localizations__in=set(localization_ids)).distinct()
 
     if state_ids and (annotation_type == "state"):
-        qs = qs.filter(pk__in=state_ids)
+        qs = qs.filter(pk__in=set(state_ids))
 
+    if frame_state_ids and (annotation_type == "localization"):
+        # Combine media and frame from states then find localizations that match
+        expression = ExpressionWrapper(
+            Cast("media", output_field=BigIntegerField()).bitleftshift(32).bitor(F("frame")),
+            output_field=BigIntegerField(),
+        )
+        media_frames = (
+            State.objects.filter(
+                pk__in=set(frame_state_ids),
+                media__isnull=False,
+                frame__isnull=False,
+                variant_deleted=False,
+            )
+            .values_list(expression, flat=True)
+            .distinct()
+        )
+        qs = (
+            qs.filter(media__isnull=False, frame__isnull=False)
+            .alias(media_frame=expression)
+            .filter(media_frame__in=media_frames)
+        )
+
+    if elemental_ids:
+        qs = qs.filter(elemental_id__in=set(elemental_ids))
     if version is not None:
         qs = qs.filter(version__in=version)
 
@@ -223,10 +250,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     qs = _do_object_search(qs, params)
     if params.get("related_id"):
         if annotation_type == "localization":
-            state_qs = State.objects.filter(pk__in=params.get("related_id"))
-            qs = qs.filter(pk__in=state_qs.values("localizations"))
+            state_qs = State.objects.filter(pk__in=set(params.get("related_id")))
+            qs = qs.filter(pk__in=state_qs.values("localizations").distinct())
         elif annotation_type == "state":
-            qs = qs.filter(localizations__in=params.get("related_id"))
+            qs = qs.filter(localizations__in=set(params.get("related_id")))
 
     if apply_merge:
         # parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
@@ -237,14 +264,16 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if not show_deleted:
         qs = qs.filter(variant_deleted=False)
 
-    qs = qs.filter(mark=F("latest_mark"))
-
     if params.get("float_array", None) == None:
         if params.get("sort_by", None):
             sortables = [supplied_name_to_field(x) for x in params.get("sort_by")]
             qs = qs.order_by(*sortables)
         else:
             qs = qs.order_by("id")
+
+    # Only return the latest results
+    if params.get("show_all_marks", 0) == 0:
+        qs = qs.filter(mark=F("latest_mark"))
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
@@ -254,8 +283,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs[:stop]
 
     # Useful for profiling / checking out query complexity
-    logger.info(f"QUERY={qs.query}")
-    logger.info(f"EXPLAIN={qs.explain()}")
+    logger.info(f"QUERY={format_multiline(qs.query)}")
+    logger.info(f"EXPLAIN={format_multiline(qs.explain())}")
 
     return qs
 

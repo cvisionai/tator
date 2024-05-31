@@ -10,6 +10,7 @@ from ._attributes import (
     attribute_filter_parameter_schema,
     related_attribute_filter_parameter_schema,
 )
+from ._safety import safety_parameter_schema
 
 boilerplate = dedent(
     """\
@@ -113,6 +114,8 @@ class MediaListSchema(AutoSchema):
                     "schema": {"type": "boolean"},
                 },
             ]
+        if method in ["PATCH", "DELETE"]:
+            params += safety_parameter_schema
         return params
 
     def get_request_body(self, path, method):

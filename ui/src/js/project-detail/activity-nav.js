@@ -1,6 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { CreateListResponse } from "../../../../scripts/packages/tator-js/pkg/src/model/CreateListResponse.js";
 
 export class ActivityNav extends TatorElement {
   constructor() {
@@ -60,45 +61,85 @@ export class ActivityNav extends TatorElement {
     this.dispatchEvent(new Event("close"));
   }
 
-  reload() {
+  async reload() {
     this._reloadButton.classList.add("is-rotating");
-    fetchCredentials(`/rest/Jobs/${this._project}`)
-      .then((response) => response.json())
-      .then((jobs) => {
-        while (this._panel.firstChild) {
-          this._panel.removeChild(this._panel.firstChild);
-        }
-        if (jobs.length == 0) {
-          const text = document.createElement("h3");
-          text.setAttribute("class", "text-semibold px-3");
-          text.textContent = "No jobs in progress.";
-          this._panel.appendChild(text);
-        } else {
-          const ul = document.createElement("ul");
-          ul.setAttribute("class", "label-tree__groups lh-default");
-          this._panel.appendChild(ul);
+    const jobsResp = await fetchCredentials(`/rest/Jobs/${this._project}`);
+    const jobs = await jobsResp.json();
 
-          // Group jobs by gid.
-          const groups = new Map();
-          const gids = [];
-          for (const job of jobs) {
-            if (!groups.has(job.gid)) {
-              groups.set(job.gid, new Set());
-              gids.push({ gid: job.gid, launched: job.start_time });
-            }
-            groups.get(job.gid).add(job);
-          }
+    // Clear out the panel
+    while (this._panel.firstChild) {
+      this._panel.removeChild(this._panel.firstChild);
+    }
 
-          // Display each group.
-          for (const gid of gids) {
-            this._showGroup(gid, groups.get(gid.gid), ul);
-          }
+    // Add Algo jobs (if any)
+    if (jobs.length == 0) {
+      const text = document.createElement("h3");
+      text.setAttribute("class", "text-semibold px-3");
+      text.textContent = "No algorithm jobs in progress.";
+      this._panel.appendChild(text);
+    } else {
+      // If anything was returned
+      const ul = document.createElement("ul");
+      ul.setAttribute("class", "label-tree__groups lh-default");
+      this._panel.appendChild(ul);
+
+      // Group jobs by gid.
+      const groups = new Map();
+      const gids = [];
+      for (const job of jobs) {
+        if (!groups.has(job.gid)) {
+          groups.set(job.gid, new Set());
+          gids.push({ gid: job.gid, launched: job.start_time });
         }
-      });
+        groups.get(job.gid).add(job);
+      }
+
+      // Display each group.
+      for (const gid of gids) {
+        this._showGroup(gid, groups.get(gid.gid), ul, "Algorithm");
+      }
+    }
+
+    const transcodesResp = await fetchCredentials(
+      `/rest/Transcodes/${this._project}`
+    );
+    const transcodes = await transcodesResp.json();
+
+    console.log("transcodes", transcodes);
+
+    // Add transcode jobs (if any)
+    if (transcodes.length == 0) {
+      const text = document.createElement("h3");
+      text.setAttribute("class", "text-semibold px-3 pt-6");
+      text.textContent = "No transcodes in progress.";
+      this._panel.appendChild(text);
+    } else {
+      // If anything was returned
+      const ul = document.createElement("ul");
+      ul.setAttribute("class", "pt-6 label-tree__groups lh-default");
+      this._panel.appendChild(ul);
+
+      // Group jobs by gid.
+      const groups = new Map();
+      const gids = [];
+      for (const data of transcodes) {
+        if (!groups.has(data.job.gid)) {
+          groups.set(data.job.gid, new Set());
+          gids.push({ gid: data.job.gid, launched: data.job.start_time });
+        }
+        groups.get(data.job.gid).add(data.job);
+      }
+
+      // Display each group.
+      for (const gid of gids) {
+        this._showGroup(gid, groups.get(gid.gid), ul, "Transcode");
+      }
+    }
+
     this._reloadButton.classList.remove("is-rotating");
   }
 
-  _showGroup(gid, jobs, ul) {
+  _showGroup(gid, jobs, ul, type) {
     // Create header for job group.
     const li = document.createElement("li");
     ul.appendChild(li);
@@ -112,7 +153,7 @@ export class ActivityNav extends TatorElement {
 
     const header = document.createElement("h3");
     header.setAttribute("class", "text-semibold css-truncate");
-    header.textContent = `Launched ${
+    header.textContent = `${type} launched ${
       new Date(gid.launched).toString().split("(")[0]
     }`;
     div.appendChild(header);
@@ -146,22 +187,24 @@ export class ActivityNav extends TatorElement {
       const appended = new Set();
 
       // Create but do not append nodes of workflow.
-      for (const node of job.nodes) {
-        nodes.set(node.id, this._showTask(node, true));
-      }
-
-      // Append child nodes.
-      for (const node of job.nodes) {
-        for (const child of node.children) {
-          nodes.get(node.id).ul.appendChild(nodes.get(child).li);
-          appended.add(child);
+      if (job.nodes) {
+        for (const node of job.nodes) {
+          nodes.set(node.id, this._showTask(node, true));
         }
-      }
 
-      // Append top level nodes.
-      for (const node of job.nodes) {
-        if (!appended.has(node.id)) {
-          workflow.ul.appendChild(nodes.get(node.id).li);
+        // Append child nodes.
+        for (const node of job.nodes) {
+          for (const child of node.children) {
+            nodes.get(node.id).ul.appendChild(nodes.get(child).li);
+            appended.add(child);
+          }
+        }
+
+        // Append top level nodes.
+        for (const node of job.nodes) {
+          if (!appended.has(node.id)) {
+            workflow.ul.appendChild(nodes.get(node.id).li);
+          }
         }
       }
     }

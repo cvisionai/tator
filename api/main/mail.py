@@ -175,7 +175,9 @@ class TatorSES(TatorMail):
     def _email(self, message, sender, recipients):
         """Sends an email via AWS SES. See :class:`main.mail.TatorMail` for details"""
         return self.ses.send_raw_email(
-            Source=sender, Destinations=recipients, RawMessage={"Data": message.as_string()}
+            Source=sender,
+            Destinations=recipients,
+            RawMessage={"Data": message.as_string()},
         )
 
 

@@ -198,6 +198,14 @@ urlpatterns += [
         GetClipAPI.as_view(),
     ),
     path(
+        "rest/HostedTemplates/<int:organization>",
+        HostedTemplateListAPI.as_view(),
+    ),
+    path(
+        "rest/HostedTemplate/<int:id>",
+        HostedTemplateDetailAPI.as_view(),
+    ),
+    path(
         "rest/ImageFiles/<int:id>",
         ImageFileListAPI.as_view(),
     ),
@@ -258,6 +266,10 @@ urlpatterns += [
     path(
         "rest/Localization/<int:id>",
         LocalizationDetailAPI.as_view(),
+    ),
+    path(
+        "rest/Localization/<int:version>/<str:elemental_id>",
+        LocalizationDetailByElementalIdAPI.as_view(),
     ),
     path(
         "rest/LocalizationCount/<int:project>",
@@ -363,6 +375,10 @@ urlpatterns += [
     path(
         "rest/State/<int:id>",
         StateDetailAPI.as_view(),
+    ),
+    path(
+        "rest/State/<int:version>/<str:elemental_id>",
+        StateDetailByElementalIdAPI.as_view(),
     ),
     path(
         "rest/MergeStates/<int:id>",

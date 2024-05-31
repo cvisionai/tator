@@ -1,4 +1,4 @@
-import { Utilities } from "./utilities.js";
+import { TatorApi } from "../../../../scripts/packages/tator-js/pkg/src";
 
 /**
  * Class used to encapsulate a condition for the data filtering interface
@@ -60,6 +60,7 @@ export class FilterUtilities {
       choices.push({ value: ">=" });
       choices.push({ value: "<" });
       choices.push({ value: "<=" });
+      choices.push({ value: "in", label: "Is one of  (Comma-separated)" });
     } else if (dtype == "bool") {
       choices.push({ value: "==" });
     } else if (dtype == "datetime") {
@@ -71,6 +72,7 @@ export class FilterUtilities {
       choices.push({ value: "Starts with" });
       choices.push({ value: "Ends with" });
       choices.push({ value: "NOT ==", label: "Does Not Equal" });
+      //  TODO:  Need fancier  inputs choices.push({ value: "in",  label: "Is one of  (Comma-separated)"});
     } else if (dtype == "geopos") {
       choices.push({
         value: "Distance <=",
@@ -82,4 +84,101 @@ export class FilterUtilities {
 
     return choices;
   }
+}
+
+/**
+ *
+ * @param {Tator.AttributeCombinatorSpec} attributeCombinatorSpec
+ * @returns HTML string representing the spec
+ */
+export function processAttributeCombinatorSpec(
+  attributeCombinatorSpec,
+  memberships = [],
+  sections = [],
+  versions = [],
+  attributeSpanClass = "text-dark-gray",
+  inverseSpanClass = "text-gray",
+  operationSpanClass = "text-gray",
+  valueSpanClass = "text-dark-gray",
+  methodSpanClass = "text-semibold text-gray px-1"
+) {
+  var operationStringTokens = [];
+  for (
+    let index = 0;
+    index < attributeCombinatorSpec.operations.length;
+    index++
+  ) {
+    var operation = attributeCombinatorSpec.operations[index];
+    if (
+      operation?.attribute == "$created_by" ||
+      operation?.attribute == "$modified_by" ||
+      operation?.attribute == "$user"
+    ) {
+      for (const membership of memberships) {
+        if (membership.user == parseInt(operation.value)) {
+          operation.value = `${membership.username} (ID: ${membership.id})`;
+          break;
+        }
+      }
+    } else if (operation?.attribute == "$section") {
+      for (const section of sections) {
+        if (section.id == parseInt(operation.value)) {
+          operation.value = `${section.name} (ID: ${section.id})`;
+          break;
+        }
+      }
+    } else if (operation?.attribute == "$version") {
+      for (const version of versions) {
+        if (version.id == parseInt(operation.value)) {
+          operation.value = `${version.name} (ID: ${version.id})`;
+          break;
+        }
+      }
+    }
+
+    if (operation.hasOwnProperty("attribute")) {
+      operationStringTokens.push("(");
+      operationStringTokens.push(
+        `<span class="${attributeSpanClass}">${operation.attribute}</span>`
+      );
+      if (operation.inverse) {
+        operationStringTokens.push(
+          `<span class="${inverseSpanClass}">NOT</span>`
+        );
+      }
+      operationStringTokens.push(
+        `<span class="${operationSpanClass}">${operation.operation}</span>`
+      );
+      if (operation.value == "" || operation.value == null) {
+        operationStringTokens.push(`<span class="${valueSpanClass}">""<span>`);
+      } else {
+        operationStringTokens.push(
+          `<span class="${valueSpanClass}">${operation.value}<span>`
+        );
+      }
+      operationStringTokens.push(")");
+    } else {
+      operationStringTokens.push("(");
+      var groupTokens = processAttributeCombinatorSpec(
+        operation,
+        memberships,
+        sections,
+        versions,
+        attributeSpanClass,
+        inverseSpanClass,
+        operationSpanClass,
+        valueSpanClass,
+        methodSpanClass
+      );
+      operationStringTokens = operationStringTokens.concat(groupTokens);
+      operationStringTokens.push(")");
+    }
+
+    if (index < attributeCombinatorSpec.operations.length - 1) {
+      operationStringTokens.push(
+        `<span class="${methodSpanClass}">${attributeCombinatorSpec.method}</span>`
+      );
+    }
+  }
+  return operationStringTokens;
 }

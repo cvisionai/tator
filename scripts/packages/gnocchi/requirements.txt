@@ -1,5 +1,5 @@
 pyqt5==5.11.3
 pyqt5-tools==5.11.3.1.4
-pyinstaller==3.6
+pyinstaller==5.13.1
 qdarkstyle==2.7
 tator>=0.0.17

@@ -51,11 +51,10 @@ class SaveAlgorithmManifestAPI(BaseListView):
         final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
 
         # Make sure there's not a duplicate of this file.
-        file_index = -1
-        while os.path.exists(final_path):
-            file_index += 1
-            new_filename = f"{filename}_{file_index}{extension}"
-            final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
+        # calculate a random slug
+        random_slug = os.urandom(8).hex()
+        new_filename = f"{filename}_{random_slug}{extension}"
+        final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
 
         project_folder = os.path.dirname(final_path)
         os.makedirs(project_folder, exist_ok=True)

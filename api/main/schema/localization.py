@@ -3,12 +3,15 @@ from textwrap import dedent
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._message import message_schema
+from ._message import message_schema_with_id
+from ._message import message_schema_with_obj
 from ._message import message_with_id_list_schema
 from ._errors import error_responses
 from ._attributes import (
     attribute_filter_parameter_schema,
     related_attribute_filter_parameter_schema,
 )
+from ._safety import safety_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
 localization_filter_schema = [
@@ -109,6 +112,8 @@ class LocalizationListSchema(AutoSchema):
                 + localization_filter_schema
                 + related_attribute_filter_parameter_schema
             )
+        if method in ["PATCH", "DELETE"]:
+            params += safety_parameter_schema
         return params
 
     def get_request_body(self, path, method):
@@ -433,7 +438,54 @@ class LocalizationDetailSchema(AutoSchema):
                 },
             }
         elif method == "PATCH":
-            responses["200"] = message_schema("update", "localization")
+            responses["200"] = message_schema_with_obj(
+                "update", "localization", "#/components/schemas/Localization"
+            )
         elif method == "DELETE":
-            responses["200"] = message_schema("deletion", "localization")
+            responses["200"] = message_schema_with_id("deletion", "localization")
         return responses
+
+
+class LocalizationByElementalIdSchema(LocalizationDetailSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        if method == "GET":
+            operation["operationId"] = "GetLocalizationByElementalId"
+        elif method == "PATCH":
+            operation["operationId"] = "UpdateLocalizationByElementalId"
+        elif method == "DELETE":
+            operation["operationId"] = "DeleteLocalizationByElementalId"
+        operation["tags"] = ["Tator"]
+        return operation
+
+    def get_path_parameters(self, path, method):
+        return [
+            {
+                "name": "version",
+                "in": "path",
+                "required": True,
+                "description": "Version ID to select object from",
+                "schema": {"type": "integer"},
+            },
+            {
+                "name": "elemental_id",
+                "in": "path",
+                "required": True,
+                "description": "Elemental ID to fetch",
+                "schema": {"type": "string"},
+            },
+        ]
+
+    def get_filter_parameters(self, path, method):
+        params = super().get_filter_parameters(path, method)
+        if method == "GET":
+            params += [
+                {
+                    "name": "mark",
+                    "in": "query",
+                    "required": False,
+                    "description": "If given, select this mark of the element on this version. Defaults to LATEST.",
+                    "schema": {"type": "integer", "minimum": 0},
+                }
+            ]
+        return params

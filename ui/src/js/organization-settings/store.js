@@ -115,6 +115,7 @@ getMap
   .set("Bucket", api.getBucketListWithHttpInfo.bind(api))
   .set("Invitation", api.getInvitationListWithHttpInfo.bind(api))
   .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
+  .set("HostedTemplate", api.getHostedTemplateListWithHttpInfo.bind(api))
   .set("Membership", api.getMembershipListWithHttpInfo.bind(api))
   .set("Project", api.getProjectListWithHttpInfo.bind(api));
 
@@ -124,7 +125,8 @@ postMap
   .set("Affiliation", api.createAffiliationWithHttpInfo.bind(api))
   .set("Bucket", api.createBucketWithHttpInfo.bind(api))
   .set("Invitation", api.createInvitationWithHttpInfo.bind(api))
-  .set("JobCluster", api.createJobClusterWithHttpInfo.bind(api));
+  .set("JobCluster", api.createJobClusterWithHttpInfo.bind(api))
+  .set("HostedTemplate", api.createHostedTemplateWithHttpInfo.bind(api));
 
 const patchMap = new Map();
 patchMap
@@ -132,7 +134,8 @@ patchMap
   .set("Affiliation", api.updateAffiliationWithHttpInfo.bind(api))
   .set("Bucket", api.updateBucketWithHttpInfo.bind(api))
   .set("Invitation", api.updateInvitationWithHttpInfo.bind(api))
-  .set("JobCluster", api.updateJobClusterWithHttpInfo.bind(api));
+  .set("JobCluster", api.updateJobClusterWithHttpInfo.bind(api))
+  .set("HostedTemplate", api.updateHostedTemplateWithHttpInfo.bind(api));
 
 const deleteMap = new Map();
 deleteMap
@@ -141,6 +144,7 @@ deleteMap
   .set("Bucket", api.deleteBucketWithHttpInfo.bind(api))
   .set("Invitation", api.deleteInvitationWithHttpInfo.bind(api))
   .set("JobCluster", api.deleteJobClusterWithHttpInfo.bind(api))
+  .set("HostedTemplate", api.deleteHostedTemplateWithHttpInfo.bind(api))
   .set("Project", api.deleteProjectWithHttpInfo.bind(api));
 
 /**
@@ -195,6 +199,12 @@ const store = create(
       },
       JobCluster: {
         name: "JobCluster",
+        init: false,
+        setList: new Set(),
+        map: new Map(),
+      },
+      HostedTemplate: {
+        name: "HostedTemplate",
         init: false,
         setList: new Set(),
         map: new Map(),

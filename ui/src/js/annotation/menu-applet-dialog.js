@@ -103,7 +103,7 @@ export class MenuAppletDialog extends ModalDialog {
     var appletView = document.createElement("iframe");
     appletView.setAttribute("class", "d-flex col-12");
     appletView.style.display = "none";
-    appletView.src = applet.html_file;
+    Utilities.setIframeSrc(appletView, applet);
     this._main.appendChild(appletView);
     this._appletViews[applet.name] = appletView;
     this._applets[applet.name] = applet;
@@ -189,6 +189,10 @@ export class MenuAppletDialog extends ModalDialog {
       const dataTypeKey = `${dataType.dtype}_${dataType.id}`;
       const typeToUpdate = this._dataInterface._dataTypes[dataTypeKey];
       this._dataInterface.updateType(typeToUpdate);
+    });
+
+    this._appletElement.addEventListener("refreshMedia", () => {
+      this._dataInterface.updateMedia();
     });
 
     this._appletElement.addEventListener("updateAcceptText", (evt) => {

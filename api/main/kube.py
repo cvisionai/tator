@@ -21,7 +21,8 @@ from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .cache import TatorCache
-from .models import Algorithm, JobCluster, MediaType
+from .models import Algorithm, JobCluster, MediaType, HostedTemplate
+from .rest.hosted_template import get_and_render
 from .version import Git
 
 logger = logging.getLogger(__name__)
@@ -49,17 +50,6 @@ def _rfc1123_name_converter(workflow_name, min_length):
 
     out = out + "-"
     return out
-
-
-def _transcode_name(project, user, media_name, media_id=None):
-    """Generates name of transcode workflow."""
-    slug_name = re.sub("[^0-9a-zA-Z.]+", "-", media_name).lower()
-    if media_id:
-        out = f"transcode-proj-{project}-usr-{user}-media-{media_id}-name-{slug_name}-"
-    else:
-        out = f"transcode-proj-{project}-usr-{user}-name-{slug_name}-"
-
-    return _rfc1123_name_converter(out, 29)
 
 
 def _algo_name(algorithm_id, project, user, name):
@@ -293,6 +283,11 @@ class TatorAlgorithm(JobManagerMixin):
         # Read in the manifest.
         if alg.manifest:
             self.manifest = yaml.safe_load(alg.manifest.open(mode="r"))
+        elif alg.template:
+            rendered = get_and_render(
+                alg.template, {"headers": alg.headers, "tparams": alg.tparams}
+            )
+            self.manifest = yaml.safe_load(rendered)
 
         # Save off the algorithm.
         self.alg = alg
@@ -403,11 +398,43 @@ class TatorAlgorithm(JobManagerMixin):
                     "cluster-autoscaler.kubernetes.io/safe-to-evict": "false",
                     **annotations,
                 }
+                labels = metadata.get("labels", {})
+                labels = {
+                    "tags.datadoghq.com/env": os.getenv("MAIN_HOST"),
+                    "tags.datadoghq.com/version": Git.sha,
+                    "tags.datadoghq.com/service": _algo_name(
+                        self.alg.id, project, user, self.alg.name
+                    ),
+                    **labels,
+                }
                 metadata = {
                     **metadata,
                     "annotations": annotations,
                 }
                 manifest["spec"]["templates"][tidx]["metadata"] = metadata
+                env = manifest["spec"]["templates"][tidx]["container"].get("env", [])
+                manifest["spec"]["templates"][tidx]["container"]["env"] = env + [
+                    {
+                        "name": "DD_ENV",
+                        "value": os.getenv("MAIN_HOST"),
+                    },
+                    {
+                        "name": "DD_VERSION",
+                        "value": Git.sha,
+                    },
+                    {
+                        "name": "DD_SERVICE",
+                        "value": _algo_name(self.alg.id, project, user, self.alg.name),
+                    },
+                    {
+                        "name": "DD_AGENT_HOST",
+                        "value": "tator-datadog.default.svc.cluster.local",
+                    },
+                    {
+                        "name": "DD_LOGS_INJECTION",
+                        "value": "true",
+                    },
+                ]
 
         # Set exit handler that sends an email if email specs are given
         if success_email_spec is not None or failure_email_spec is not None:
@@ -489,6 +516,7 @@ class TatorAlgorithm(JobManagerMixin):
                 "user": user,
                 "project": project,
                 "algorithm": self.alg.pk,
+                "media_ids": media_ids,
                 "datetime": datetime.datetime.utcnow().isoformat() + "Z",
             },
             "algorithm",

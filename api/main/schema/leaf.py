@@ -7,6 +7,7 @@ from ._message import message_schema
 from ._message import message_with_id_list_schema
 from ._leaf_query import leaf_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
+from ._safety import safety_parameter_schema
 
 boilerplate = dedent(
     """\
@@ -162,6 +163,8 @@ class LeafListSchema(AutoSchema):
             params = leaf_filter_parameter_schema + attribute_filter_parameter_schema
             # Remove search as it is not yet supported.
             params = [p for p in params if p["name"] != "search"]
+        if method in ["PATCH", "DELETE"]:
+            params += safety_parameter_schema
         return params
 
     def get_request_body(self, path, method):

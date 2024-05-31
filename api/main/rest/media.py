@@ -95,7 +95,7 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
         "thumbnail_gif",
         "attachment",
     ]
-    media_ids = [media["id"] for media in medias]
+    media_ids = set([media["id"] for media in medias])
     resources = Resource.objects.filter(media__in=media_ids)
     store_lookup = get_storage_lookup(resources)
     cache = TatorCache()
@@ -225,7 +225,8 @@ def _create_media(project, params, user, use_rq=False):
     """Media POST method in its own function for reuse by Transcode endpoint."""
     # Get common parameters (between video/image).
     entity_type = params["type"]
-    section = params["section"]
+    section = params.get("section", None)
+    section_id = params.get("section_id", None)
     name = params["name"]
     md5 = params["md5"]
     gid = params.get("gid", None)
@@ -241,13 +242,20 @@ def _create_media(project, params, user, use_rq=False):
 
     # If section does not exist and is not an empty string, create a section.
     tator_user_sections = ""
-    if section:
+    if section_id:
+        section_obj = Section.objects.filter(project=project, pk=section_id)
+        if not section_obj.exists():
+            raise ValueError(f"Section with ID {section_id} does not exist")
+        section_obj = section_obj[0]
+        tator_user_sections = section_obj.tator_user_sections
+    elif section:
         section_obj = Section.objects.filter(project=project, name__iexact=section)
         if section_obj.exists():
             tator_user_sections = section_obj[0].tator_user_sections
+            section_obj = section_obj[0]
         else:
             tator_user_sections = str(uuid1())
-            Section.objects.create(
+            section_obj = Section.objects.create(
                 project=project_obj, name=section, tator_user_sections=tator_user_sections
             )
 
@@ -350,7 +358,7 @@ def _create_media(project, params, user, use_rq=False):
     logger.info(msg)
     log_creation(media_obj, media_obj.project, user)
 
-    return media_obj, msg
+    return media_obj, msg, section_obj
 
 
 class MediaListAPI(BaseListView):
@@ -406,7 +414,7 @@ class MediaListAPI(BaseListView):
             media_spec_list = [media_spec_list]
         if len(media_spec_list) == 1:
             # Creates a single media object synchronously, works with video and images
-            obj, msg = _create_media(project, media_spec_list[0], self.request.user)
+            obj, msg, section_obj = _create_media(project, media_spec_list[0], self.request.user)
             qs = Media.objects.filter(id=obj.id)
             response_data = list(qs.values(*fields))
             response_data = response_data if received_spec_list else response_data[0]
@@ -418,13 +426,15 @@ class MediaListAPI(BaseListView):
             ids = []
             for media_spec in media_spec_list:
                 try:
-                    obj, _ = _create_media(project, media_spec, self.request.user, use_rq=True)
+                    obj, _, section_obj = _create_media(
+                        project, media_spec, self.request.user, use_rq=True
+                    )
                 except Exception:
                     logger.warning(f"Failed to import {media_spec['name']}", exc_info=True)
                 else:
                     ids.append(obj.id)
 
-            qs = Media.objects.filter(id__in=ids)
+            qs = Media.objects.filter(id__in=set(ids))
             response_data = list(qs.values(*fields))
             response = {
                 "message": f"Started import of {len(ids)} images!",
@@ -448,6 +458,12 @@ class MediaListAPI(BaseListView):
         qs = get_media_queryset(project, params)
         media_ids = list(qs.values_list("pk", flat=True).distinct())
         count = qs.count()
+        expected_count = params.get("count")
+        if expected_count is not None and expected_count != count:
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would delete {count}"
+            )
+
         if count > 0:
             bulk_delete_and_log_changes(qs, project, self.request.user)
 
@@ -493,7 +509,12 @@ class MediaListAPI(BaseListView):
             )
         qs = get_media_queryset(params["project"], params)
 
-        count = 0
+        count = qs.count()
+        expected_count = params.get("count")
+        if expected_count is not None and expected_count != count:
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would update {count}"
+            )
         if qs.exists():
             ids_to_update = list(qs.values_list("pk", flat=True).distinct())
             if qs.values("type").distinct().count() != 1:

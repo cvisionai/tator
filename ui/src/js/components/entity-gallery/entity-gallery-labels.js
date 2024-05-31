@@ -10,7 +10,7 @@ export class EntityGalleryLabels extends TatorElement {
     this.menuLink = document.createElement("button");
     this.menuLink.setAttribute(
       "class",
-      "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+      "menu-link-button btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
     );
 
     let labelIcon = new SvgDefinition({ iconName: "label-tag" });
@@ -71,6 +71,8 @@ export class EntityGalleryLabels extends TatorElement {
       { name: "Modified Datetime", id: "modified_datetime" },
       { name: "Created Datetime", id: "created_datetime" },
       { name: "Type", id: "type" },
+      { name: "Elemental ID", id: "elemental_id" },
+      { name: "Mark", id: "mark" },
     ];
   }
 

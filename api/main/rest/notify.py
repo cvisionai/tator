@@ -1,12 +1,16 @@
 import traceback
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+from ._util import format_multiline
 from ..notify import Notify
 from ..schema import NotifySchema
 from ..schema import parse
+
+logger = logging.getLogger(__name__)
 
 
 class NotifyAPI(APIView):
@@ -41,8 +45,9 @@ class NotifyAPI(APIView):
                     {"message": "Not Processed"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
                 )
         except Exception as e:
+            logger.error(format_multiline(traceback.format_exc()))
             response = Response(
-                {"message": str(e), "details": traceback.format_exc()},
+                {"message": "Failed to send notification!", "details": ""},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return response

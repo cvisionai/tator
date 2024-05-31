@@ -11,6 +11,10 @@ alg_fields = SimpleNamespace(
     files_per_job="files_per_job",
     categories="categories",
     parameters="parameters",
+    headers="headers",
+    tparams="tparams",
+    template="template",
+    rendered="rendered",
 )
 
 algorithm_post_properties = {
@@ -49,13 +53,30 @@ algorithm_post_properties = {
         "description": "List of algorithm workflow parameters",
         "items": {"$ref": "#/components/schemas/AlgorithmParameter"},
     },
+    alg_fields.template: {
+        "type": "integer",
+        "description": "Unique integer identifying a hosted template. If set, `manifest` is ignored.",
+        "nullable": True,
+    },
+    alg_fields.tparams: {
+        "type": "array",
+        "description": "Template parameters used for rendering hosted template, if set.",
+        "items": {"$ref": "#/components/schemas/Parameter"},
+        "default": [],
+    },
+    alg_fields.headers: {
+        "type": "array",
+        "description": "Headers used to retrieve hosted template, if set.",
+        "items": {"$ref": "#/components/schemas/Parameter"},
+        "default": [],
+    },
 }
 
 # Note: While project is required, it's part of the path parameter(s)
 algorithm_spec = {
     "type": "object",
     "description": "Algorithm registration creation spec.",
-    "required": [alg_fields.name, alg_fields.user, alg_fields.manifest, alg_fields.files_per_job],
+    "required": [alg_fields.name, alg_fields.user, alg_fields.files_per_job],
     "properties": {
         **algorithm_post_properties,
     },
@@ -72,7 +93,12 @@ algorithm = {
             "type": "integer",
             "description": "Unique integer identifying the project associated with the algorithm.",
         },
-        **algorithm_post_properties,
+        alg_fields.rendered: {
+            "type": "string",
+            "description": "YAML format text containing rendered Argo Workflow template. Only filled for single retrievals (not lists).",
+        },
+        # Headers are excluded from GET requests.
+        **{k: v for k, v in algorithm_post_properties.items() if k != alg_fields.headers},
     },
 }
 

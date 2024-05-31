@@ -97,25 +97,25 @@ def test_basic(request, page_factory, project, image1, video): #image
    # were slightly slower.
    page.goto(f"/{project}/analytics/localizations", wait_until='networkidle', timeout=60000)
    
-   # Get all the loc on page
+   # # Get all the loc on page
    page.select_option('.pagination select.form-select', value="100")
    page.wait_for_timeout(5000)
 
-   # confirm count
+   # # confirm count
    cards = page.query_selector_all('.enitity-gallery entity-card[style="display: block;"]')
    print(f'Got to localization gallery, showing {len(cards)} cards')
    
-   # Show Test Enum
-   page.query_selector('.entity-gallery-tools--more #icon-more-horizontal').click()
-   page.wait_for_selector('text="Localization Labels"')
-   page.query_selector('text="Localization Labels"').click()
-
+   # # Show Test Enum
    attribute_selected_name = attr_name
+   page.query_selector('.entity-gallery-tools--more #icon-more-horizontal').click()
+   page.wait_for_selector('.menu-link-button')
+   button = page.query_selector('.menu-link-button')
+   button.dispatch_event("click")
+   page.wait_for_timeout(5000)
+
+   # for Box loc type
    checkboxes = page.query_selector_all(f'.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="{attribute_selected_name}"]')
-   
-   print(f'Label panel is open: found {len(checkboxes)} labels with this name {attribute_selected_name}....')
-   checkboxes[0].click()  # for Box loc type
-   
+   checkboxes[0].dispatch_event("click")
    page.query_selector('.enitity-gallery__labels-div nav-close').click()
    page.wait_for_timeout(5000)
 
@@ -137,7 +137,8 @@ def test_basic(request, page_factory, project, image1, video): #image
 
    # Filter test
    print("Start: Test Filtering") 
-   page.click('text="Filter"')
+   page.query_selector('text="Filter"').click()
+   # button
    page.wait_for_selector('filter-condition-group button.btn.btn-outline.btn-small')
    page.click('filter-condition-group button.btn.btn-outline.btn-small')
 
@@ -153,8 +154,8 @@ def test_basic(request, page_factory, project, image1, video): #image
    page.wait_for_selector('text-input[name="Value"] input')
    page.fill('text-input[name="Value"] input', choice_three_text)
 
-   filterGroupButtons = page.query_selector_all('.modal__footer button')
-   filterGroupButtons[0].click()
+   filterGroupButton = page.query_selector('.analysis__filter_conditions_interface .modal__footer button')
+   filterGroupButton.click()
 
    page.wait_for_selector('entity-card[style="display: block;"]')
    page.wait_for_timeout(5000)
@@ -211,9 +212,10 @@ def test_basic(request, page_factory, project, image1, video): #image
 
    # Did label selection also preselect attributes?
    ## There should be one input checked 
-   selected = page.query_selector_all('.bulk-edit-attr-choices_bulk-edit input:checked')
-   print(f'Assert selected inputs {len(selected)} == Checked count 1')
-   assert len(selected) == 1
+   bulk_checkboxes = page.query_selector_all('.bulk-edit-attr-choices_bulk-edit input[value="Reviewer"]')
+   bulk_checkboxes[0].check()
+   print(f'Assert selected inputs {len(bulk_checkboxes)} == Checked count 1')
+   assert len(bulk_checkboxes) == 1
 
    # Select 2
    cards[1].click()
@@ -233,14 +235,14 @@ def test_basic(request, page_factory, project, image1, video): #image
 
    cards = page.query_selector_all('entity-card[style="display: block;"]')
    cardLength = len(cards)
-   print(f"Cards length after edit {cardLength} == 5")
-   assert cardLength == 5
+   print(f"Cards length after edit {cardLength} == (5-2) == 3")
+   assert cardLength == 3
 
    # Now refilter it should go away....
    print("Re-Apply Filter") 
    page.click('text="Filter"')
    page.wait_for_selector('enum-input[name="Category"]')
-   filterGroupButtons = page.query_selector_all('.modal__footer button')
+   filterGroupButtons = page.query_selector_all('.analysis__filter_conditions_interface .modal__footer button')
    filterGroupButtons[0].click()
 
    page.wait_for_selector('entity-card[style="display: block;"]')

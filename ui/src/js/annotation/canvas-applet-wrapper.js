@@ -4,6 +4,7 @@
  * Expected to have one of these per canvas applet.
  */
 import { TatorElement } from "../components/tator-element.js";
+import { Utilities } from "../util/utilities.js";
 
 export class CanvasAppletWrapper extends TatorElement {
   /**
@@ -74,6 +75,7 @@ export class CanvasAppletWrapper extends TatorElement {
    *    Resolves when the applet element has been initialized
    */
   init(applet, data, favorites, undo) {
+    this._applet = applet;
     return new Promise((resolve) => {
       var appletView = document.createElement("iframe");
       appletView.setAttribute("class", "d-flex col-12");
@@ -86,7 +88,7 @@ export class CanvasAppletWrapper extends TatorElement {
         resolve();
       };
 
-      appletView.src = applet.html_file;
+      Utilities.setIframeSrc(appletView, applet);
       this._shadow.appendChild(appletView);
     });
   }

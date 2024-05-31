@@ -98,6 +98,11 @@ export class AnnotationBrowser extends TatorElement {
       }
     });
 
+    this.addEventListener("select", (evt) => {
+      let objType = evt.detail.data.type;
+      this._openForTypeId(objType);
+    });
+
     this._expandBrowser();
   }
 
@@ -211,6 +216,12 @@ export class AnnotationBrowser extends TatorElement {
           this._framePanels[dataType.id] = frame;
         }
       }
+    }
+  }
+
+  closeAll() {
+    for (let key in this._entityPanels) {
+      this._entityPanels[key]._closeAll();
     }
   }
 

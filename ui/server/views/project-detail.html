@@ -2,9 +2,9 @@
 
 {% block head %}
 <title>Tator | Project Detail</title>
-<script src="/static/project-detail.js"></script>
 {% endblock head %}
 
 {% block body %}
+{% include "includes/components/entity-gallery-sort.html" %}
 <project-detail></project-detail>
 {% endblock body %}

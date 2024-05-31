@@ -69,7 +69,7 @@ export class EntityGalleryPanel extends TatorElement {
   async init({ cardObj }) {
     this.setAttribute("selected-id", cardObj.id);
     this.cardObj = cardObj;
-    //console.log(this.cardObj);
+    console.log("Panel init with new id", this.cardObj);
     // Setup linkout and the entity data for panel here
     this._mediaLink = this.cardObj.mediaLink;
     //this._mediaLinkEl.setAttribute("href", this._mediaLink);

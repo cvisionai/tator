@@ -13,6 +13,10 @@ state_properties = {
         "type": "string",
         "nullable": True,
     },
+    "mark": {
+        "description": "Revision number of this object on this version branch",
+        "type": "integer",
+    },
 }
 version_properties = {
     "version": {
@@ -151,6 +155,20 @@ state_update = {
                 "minimum": 1,
             },
         },
+        "in_place": {
+            "type": "integer",
+            "description": "Set to 1 to edit this record in-place, else mark-based versioning rules apply. This changes to 1 for authorship changes automatically.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
+        "pedantic": {
+            "type": "integer",
+            "description": "Set to 1 to enforce that this is the latest mark; else push edits to end of branch.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
     },
 }
 
@@ -233,6 +251,13 @@ state_bulk_update = {
                 "minimum": 1,
             },
         },
+        "in_place": {
+            "type": "integer",
+            "description": "Set to 1 to edit this record in-place, else mark-based versioning rules apply. This changes to 1 for authorship changes automatically.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
     },
 }
 
@@ -245,7 +270,14 @@ state_delete_schema = {
             "minimum": 0,
             "maximum": 1,
             "default": 0,
-        }
+        },
+        "pedantic": {
+            "type": "integer",
+            "description": "Set to 1 to enforce that this is the latest mark; else push edits to end of branch.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
     },
 }
 

@@ -46,7 +46,7 @@ export class AttributesForm extends TatorElement {
     this._getDtypeSelectBox("");
     this.dataTypeSelectDiv.appendChild(this._dtype);
 
-    this._dtype.addEventListener("change", this._formChanged.bind(this));
+    this._dtype.addEventListener("change", this._dtypeChanged.bind(this));
 
     // default
     /* input inside placeholder hidden until dtype selected */
@@ -188,6 +188,14 @@ export class AttributesForm extends TatorElement {
   }
 
   _formChanged() {
+    this.changed = true;
+    return this.form.classList.add("changed");
+  }
+
+  _dtypeChanged() {
+    this._getDefaultInput({
+      dtype: this._dtype.getValue(), // only dtype required
+    });
     this.changed = true;
     return this.form.classList.add("changed");
   }

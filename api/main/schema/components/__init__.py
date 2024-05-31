@@ -48,6 +48,11 @@ from .file_type import file_type_spec
 from .file_type import file_type
 from .generic_file import generic_file
 from .generic_file import generic_file_spec
+from .hosted_template import (
+    hosted_template_spec,
+    hosted_template,
+    parameter,
+)
 from .invitation import (
     invitation_spec,
     invitation_update,
@@ -103,6 +108,7 @@ from .project import project_spec
 from .project import project_update
 from .project import project
 from .section import section_spec
+from .section import bulk_section_update
 from .section import section_update
 from .section import section
 from .state import state_spec

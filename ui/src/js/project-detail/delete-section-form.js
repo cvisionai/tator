@@ -1,5 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { SectionData } from "../util/section-utilities.js";
 
 export class DeleteSectionForm extends ModalDialog {
   constructor() {
@@ -13,7 +13,7 @@ export class DeleteSectionForm extends ModalDialog {
     warning.textContent = "Warning: This cannot be undone";
     this._main.appendChild(warning);
 
-    const texts = ["", ""];
+    const texts = ["", "", ""];
     this._checks = new Array(texts.length);
     texts.forEach((item, index, array) => {
       this._checks[index] = document.createElement("labeled-checkbox");
@@ -51,55 +51,57 @@ export class DeleteSectionForm extends ModalDialog {
     });
 
     this._accept.addEventListener("click", async (evt) => {
-      const projectId = this._project;
-      const params = this._sectionParams;
-      let promise = Promise.resolve();
-      if (this._deleteMedia) {
-        promise = promise
-          .then(
-            fetchCredentials(`/rest/Medias/${projectId}?${params.toString()}`, {
-              method: "DELETE",
-            })
-          )
-          .catch((err) => console.log(err));
-      }
-      promise
-        .then(
-          fetchCredentials(`/rest/Section/${this._section.id}`, {
-            method: "DELETE",
-          })
-        )
-        .catch((err) => console.log(err));
       this.dispatchEvent(
         new CustomEvent("confirmDelete", {
-          detail: { id: this._section.id },
+          detail: { id: this._section.id, deleteMedia: this._deleteMedia },
         })
       );
     });
   }
 
-  init(project, section, sectionParams, deleteMedia) {
-    this._project = project;
+  /**
+   * @param {bool} deleteMedia
+   *    True if the media is also to be deleted along with the section.
+   *    False if it's only the section.
+   *    The UI shows different messages based on this.
+   */
+  init(section, deleteMedia) {
     this._section = section;
-    this._sectionParams = sectionParams;
     this._deleteMedia = deleteMedia;
+
+    var sectionText = "Folder";
+    if (SectionData.isSavedSearch(section)) {
+      sectionText = "Media Search";
+    }
+
     if (deleteMedia) {
-      this._title.nodeValue = `Delete "${section.name}" Media`;
+      this._title.nodeValue = `Delete ${SectionData.getMainName(
+        section
+      )} ${sectionText.toLowerCase()} and media`;
       this._checks[0].setAttribute(
         "text",
-        "Section files and annotations will be deleted"
+        `Delete ${sectionText.toLowerCase()}`
       );
       this._checks[1].setAttribute(
         "text",
-        "Section shared links will be inaccessible"
+        `Delete media in ${sectionText.toLowerCase()}`
       );
+      this._checks[2].setAttribute("text", "Delete annotations");
+      this._accept.textContent = "Delete";
     } else {
-      this._title.nodeValue = `Delete "${section.name}"`;
-      this._checks[0].setAttribute("text", "Section only will be deleted");
+      this._title.nodeValue = `Delete ${SectionData.getMainName(
+        section
+      )} ${sectionText.toLowerCase()} and retain media`;
+      this._checks[0].setAttribute(
+        "text",
+        `Delete ${sectionText.toLowerCase()}`
+      );
       this._checks[1].setAttribute(
         "text",
-        'Media will still be accessible from "All Media"'
+        'Retain and access media in "All Media"'
       );
+      this._checks[2].setAttribute("text", "Retain annotations");
+      this._accept.textContent = "Delete";
     }
     this._checks.forEach((item, index, array) => {
       item.checked = false;

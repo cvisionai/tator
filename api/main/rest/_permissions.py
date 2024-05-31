@@ -9,7 +9,6 @@ from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
-from redis import Redis
 
 from ..models import Permission
 from ..models import Project
@@ -57,6 +56,15 @@ class ProjectPermissionBase(BasePermission):
             if cache is not None and len(cache) == 1:
                 project = get_object_or_404(Project, pk=cache[0]["project"])
             else:
+                raise Http404
+        elif "elemental_id" in view.kwargs:
+            elemental_id = view.kwargs["elemental_id"]
+            obj = view.get_queryset().filter(elemental_id=elemental_id)
+            if not obj.exists():
+                raise Http404
+            obj = obj[0]
+            project = self._project_from_object(obj)
+            if project is None:
                 raise Http404
         else:
             # If this is a request from schema view, show all endpoints.

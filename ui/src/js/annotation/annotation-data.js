@@ -256,7 +256,7 @@ export class AnnotationData extends HTMLElement {
       const index = ids.indexOf(id);
       const elem = this._dataByType.get(typeId)[index];
       for (const key in body) {
-        if (key in elem) {
+        if (elem && key in elem) {
           elem[key] = body[key];
         }
       }
@@ -289,7 +289,7 @@ export class AnnotationData extends HTMLElement {
 
     let url = new URL(
       this._updateUrls.get(typeId),
-      location.protocol + "//" + location.host
+      window.BACKEND ? window.BACKEND : window.location.origin
     );
     let searchParams = new URLSearchParams(url.search.slice(1));
     if (query) {
@@ -331,6 +331,20 @@ export class AnnotationData extends HTMLElement {
         if (callback) {
           callback();
         }
+      });
+  }
+
+  updateMedia() {
+    fetchCredentials(`/rest/Media/${this._mediaId}?presigned=28800`, {}, true)
+      .then((response) => response.json())
+      .then((data) => {
+        this.dispatchEvent(
+          new CustomEvent("mediaUpdate", {
+            detail: {
+              media: data,
+            },
+          })
+        );
       });
   }
 

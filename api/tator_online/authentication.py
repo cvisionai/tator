@@ -58,15 +58,20 @@ class KeycloakAuthenticationMixin:
                 user = User.objects.get(pk=user_id)
                 out = (user, None)
             except jwt.ExpiredSignatureError:
+                logger.error(format_multiline(traceback.format_exc()))
                 raise AuthenticationFailed(f"Access token has expired!")
             except jwt.InvalidAudienceError:
+                logger.error(format_multiline(traceback.format_exc()))
                 raise AuthenticationFailed(f"Access token decode failed: Invalid audience!")
             except jwt.InvalidIssuerError:
+                logger.error(format_multiline(traceback.format_exc()))
                 raise AuthenticationFailed(f"Access token decode failed: Invalid issuer!")
             except jwt.DecodeError:
+                logger.error(format_multiline(traceback.format_exc()))
                 raise AuthenticationFailed(f"Access token decode failed: Invalid signature!")
-            except Exception as e:
-                raise AuthenticationFailed(f"Access token decode failed: {e}")
+            except Exception:
+                logger.error(format_multiline(traceback.format_exc()))
+                raise AuthenticationFailed(f"Access token decode failed: Unknown error!")
         return out
 
 

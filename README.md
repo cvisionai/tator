@@ -8,12 +8,6 @@ Unlock the true potential of your imagery datasets with Tator, the flexible web 
 
 Visit https://tator.io to learn more.
 
-<p float="left">
-  <img src="https://user-images.githubusercontent.com/7937658/114918098-b178d800-9df4-11eb-8845-d982bed5e67d.PNG" width="32%" height="200" /> 
-  <img src="https://user-images.githubusercontent.com/7937658/114918093-afaf1480-9df4-11eb-8968-5edb963029a0.PNG" width="32%" height="200" />
-  <img src="https://user-images.githubusercontent.com/7937658/114918096-b0e04180-9df4-11eb-8188-9d68f0ef42f1.PNG" width="32%" height="200" />
-</p>
-
 Quick start
 ===========
 
@@ -43,8 +37,17 @@ Blog
 
 Visit [our blog](https://www.tator.io/blog/) for upcoming features, development roadmap, news and announcements.
 
+
+Screenshots
+===========
+
+<img src="https://github.com/cvisionai/tator/assets/7937658/31eb1c49-aed3-4b2f-990f-27b410037532" alt="SAM applet" />
+<p></p>
+<img src="https://github.com/cvisionai/tator/assets/7937658/8ce714c8-ab7c-4648-9c53-493777e3182d" alt="Annotation view" />
+<p></p>
+<img src="https://github.com/cvisionai/tator/assets/7937658/9f423b3d-be1b-4664-afc8-c18527654b24" alt="Localization analytics view" />
+
 Tator Enterprise
 ================
 
 This repository has everything you need to run Tator on a single node. [Tator Enterprise](https://tator.io/product) can run on many nodes, autoscales with Kubernetes and Argo, integrates with third-party authentication, and more. Technical support is included with a Tator Enterprise subscription.
-

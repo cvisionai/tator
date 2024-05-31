@@ -1,0 +1,5 @@
+<script>
+  const id_token = window.localStorage.getItem("id_token");
+  window.localStorage.clear();
+  window.location.href = `{{ backend }}/auth/realms/tator/protocol/openid-connect/logout?post_logout_redirect_uri={{ redirect_uri_logout }}&id_token_hint=${id_token}`;
+</script>

@@ -3,10 +3,12 @@ import datetime
 import itertools
 
 from django.db import transaction
+from django.db.models import Max
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.http import Http404
 import numpy as np
+import uuid
 
 from ..models import State
 from ..models import StateType
@@ -18,7 +20,7 @@ from ..models import Version
 from ..models import User
 from ..models import InterpolationMethods
 from ..schema import StateListSchema
-from ..schema import StateDetailSchema
+from ..schema import StateDetailSchema, StateByElementalIdSchema
 from ..schema import MergeStatesSchema
 from ..schema import TrimStateEndSchema
 from ..schema.components import state as state_schema
@@ -53,7 +55,7 @@ STATE_PROPERTIES.pop(STATE_PROPERTIES.index("localizations"))
 
 def _fill_m2m(response_data):
     # Get many to many fields.
-    state_ids = [state["id"] for state in response_data]
+    state_ids = set([state["id"] for state in response_data])
     localizations = {
         obj["state_id"]: obj["localizations"]
         for obj in State.localizations.through.objects.filter(state__in=state_ids)
@@ -313,8 +315,8 @@ class StateListAPI(BaseListView):
         State.localizations.through.objects.bulk_create(loc_relations, ignore_conflicts=True)
 
         # Calculate segments (this is not triggered for bulk created m2m).
-        localization_ids = itertools.chain(
-            *[state_spec.get("localization_ids", []) for state_spec in state_specs]
+        localization_ids = set(
+            itertools.chain(*[state_spec.get("localization_ids", []) for state_spec in state_specs])
         )
         loc_id_to_frame = {
             loc["id"]: loc["frame"]
@@ -337,25 +339,47 @@ class StateListAPI(BaseListView):
     def _delete(self, params):
         qs = get_annotation_queryset(params["project"], params, "state")
         count = qs.count()
+        expected_count = params.get("count")
+        if expected_count is not None and expected_count != count:
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would delete {count}"
+            )
         if count > 0:
             if params["prune"] == 1:
                 # Delete states.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
-                bulk_update_and_log_changes(
-                    qs,
-                    params["project"],
-                    self.request.user,
-                    update_kwargs={"variant_deleted": True},
-                    new_attributes=None,
-                )
+                if params.get("in_place", 0):
+                    bulk_update_and_log_changes(
+                        qs,
+                        params["project"],
+                        self.request.user,
+                        update_kwargs={"variant_deleted": True},
+                        new_attributes=None,
+                    )
+                else:
+                    objs = []
+                    for original in qs.iterator():
+                        original.pk = None
+                        original.id = None
+                        original.variant_deleted = True
+                        objs.append(original)
+                    State.objects.bulk_create(objs)
 
         return {"message": f"Successfully deleted {count} states!"}
 
     def _patch(self, params):
+        if params.get("ids", []) != [] or params.get("user_elemental_id", None):
+            params["show_all_marks"] = 1
+            params["in_place"] = 1
         qs = get_annotation_queryset(params["project"], params, "state")
         patched_version = params.pop("new_version", None)
         count = qs.count()
+        expected_count = params.get("count")
+        if expected_count is not None and expected_count != count:
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would update {count}"
+            )
         if count > 0:
             if qs.values("type").distinct().count() != 1:
                 raise ValueError(
@@ -372,13 +396,38 @@ class StateListAPI(BaseListView):
                 update_kwargs["created_by"] = computed_author
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
-            bulk_update_and_log_changes(
-                qs,
-                params["project"],
-                self.request.user,
-                update_kwargs=update_kwargs,
-                new_attributes=new_attrs,
-            )
+
+            if params.get("in_place", 0):
+                bulk_update_and_log_changes(
+                    qs,
+                    params["project"],
+                    self.request.user,
+                    update_kwargs=update_kwargs,
+                    new_attributes=new_attrs,
+                )
+            else:
+                objs = []
+                many_to_many = []
+                origin_datetimes = []
+
+                for original in qs.iterator():
+                    many_to_many.append((original.media.all(), original.localizations.all()))
+                    original.pk = None
+                    original.id = None
+                    for key, value in update_kwargs.items():
+                        setattr(original, key, value)
+                    original.attributes.update(new_attrs)
+                    objs.append(original)
+                    origin_datetimes.append(original.created_datetime)
+                new_objs = State.objects.bulk_create(objs)
+                for p_obj, m2m, origin_datetime in zip(new_objs, many_to_many, origin_datetimes):
+                    p_obj.media.set(m2m[0])
+                    p_obj.localizations.set(m2m[1])
+
+                    # Django doesn't let you fix created_datetime unless you fetch the object again
+                    found_it = State.objects.get(pk=p_obj.pk)
+                    found_it.created_datetime = origin_datetime
+                    found_it.save()
 
         return {"message": f"Successfully updated {count} states!"}
 
@@ -387,7 +436,7 @@ class StateListAPI(BaseListView):
         return self._get(params)
 
 
-class StateDetailAPI(BaseDetailView):
+class StateDetailBaseAPI(BaseDetailView):
     """Interact with an individual state.
 
     A state is a description of a collection of other objects. The objects a state describes
@@ -396,13 +445,7 @@ class StateDetailAPI(BaseDetailView):
     a types of entity in Tator, meaning they can be described by user defined attributes.
     """
 
-    schema = StateDetailSchema()
-    permission_classes = [ProjectEditPermission]
-    lookup_field = "id"
-    http_method_names = ["get", "patch", "delete"]
-
-    def _get(self, params):
-        qs = State.objects.filter(pk=params["id"], deleted=False)
+    def get_qs(self, params, qs):
         if not qs.exists():
             raise Http404
         state = qs.values(*STATE_PROPERTIES)[0]
@@ -419,10 +462,30 @@ class StateDetailAPI(BaseDetailView):
         )
         return state
 
-    @transaction.atomic
-    def _patch(self, params):
-        obj = State.objects.get(pk=params["id"], deleted=False)
+    def patch_qs(self, params, qs):
+        if not qs.exists():
+            raise Http404
+        obj = qs[0]
         model_dict = obj.model_dict
+
+        # If this is a really old object, it may not have an elemental_id
+        # but we need to add it for trigger support
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
+
+        if params.get("in_place", 0) == 0 and params["pedantic"] and (obj.mark != obj.latest_mark):
+            raise ValueError(
+                f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+            )
+        elif obj.mark != obj.latest_mark:
+            obj = type(obj).objects.get(
+                project=obj.project,
+                version=obj.version,
+                mark=obj.latest_mark,
+                elemental_id=obj.elemental_id,
+            )
 
         if "frame" in params:
             obj.frame = params["frame"]
@@ -444,6 +507,7 @@ class StateDetailAPI(BaseDetailView):
             obj.localizations.remove(*list(localizations))
 
         if params.get("user_elemental_id", None):
+            params["in_place"] = 1
             computed_author = compute_user(
                 obj.project.pk, self.request.user, params.get("user_elemental_id", None)
             )
@@ -485,14 +549,41 @@ class StateDetailAPI(BaseDetailView):
         if params.get("elemental_id", None) is not None:
             obj.elemental_id = params["elemental_id"]
 
-        obj.save()
-        log_changes(obj, model_dict, obj.project, self.request.user)
+        if params.get("in_place", 0):
+            obj.save()
+            log_changes(obj, model_dict, obj.project, self.request.user)
+        else:
+            old_media = obj.media.all()
+            old_localizations = obj.localizations.all()
+            # Save edits as new object, mark is calculated in trigger
+            obj.id = None
+            obj.pk = None
+            origin_datetime = obj.created_datetime
+            obj.save()
+            found_it = State.objects.get(pk=obj.pk)
+            # Keep original creation time
+            found_it.created_datetime = origin_datetime
+            found_it.save()
+            found_it.media.set(old_media)
+            found_it.localizations.set(old_localizations)
 
-        return {"message": f'State {params["id"]} successfully updated!'}
+        return {
+            "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
+            "object": type(obj).objects.filter(pk=obj.pk).values(*STATE_PROPERTIES)[0],
+        }
 
-    def _delete(self, params):
-        state = State.objects.get(pk=params["id"], deleted=False)
+    def delete_qs(self, params, qs):
+        if not qs.exists():
+            raise Http404
+        state = qs[0]
+        if state.elemental_id == None:
+            state.elemental_id = uuid.uuid4()
+            state.save()
+        elemental_id = state.elemental_id
+        version_id = state.version.id
+        mark = state.mark
         project = state.project
+        obj_id = state.id
         delete_localizations = []
         if state.type.delete_child_localizations:
             # Only delete localizations that are not not a part of other states
@@ -509,8 +600,15 @@ class StateDetailAPI(BaseDetailView):
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_delete_and_log_changes(qs, project, self.request.user)
         else:
+            if params["pedantic"] and (state.mark != state.latest_mark):
+                raise ValueError(
+                    f"Pedantic mode is enabled. Can not edit prior object {state.pk}, must only edit latest mark on version."
+                    f"Object is mark {state.mark} of {state.latest_mark} for {state.version.name}/{state.elemental_id}"
+                )
+            state.pk = None
             state.variant_deleted = True
             state.save()
+            obj_id = state.pk
             log_changes(state, state.model_dict, state.project, self.request.user)
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_update_and_log_changes(
@@ -521,7 +619,10 @@ class StateDetailAPI(BaseDetailView):
                 new_attributes=None,
             )
 
-        return {"message": f'State {params["id"]} successfully deleted!'}
+        return {
+            "message": f"State {version_id}/{elemental_id}@@{mark} successfully deleted!",
+            "id": obj_id,
+        }
 
     def get_queryset(self):
         return State.objects.all()
@@ -600,3 +701,76 @@ class TrimStateEndAPI(BaseDetailView):
 
     def get_queryset(self):
         return State.objects.all()
+
+
+class StateDetailAPI(StateDetailBaseAPI):
+    """Interact with an individual state.
+
+    A state is a description of a collection of other objects. The objects a state describes
+    could be media (image or video), video frames, or localizations. A state referring
+    to a collection of localizations is often referred to as a track. States are
+    a types of entity in Tator, meaning they can be described by user defined attributes.
+    """
+
+    schema = StateDetailSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = "elemental_id"
+    http_method_names = ["get", "patch", "delete"]
+
+    def _get(self, params):
+        qs = State.objects.filter(pk=params["id"], deleted=False)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        qs = State.objects.filter(pk=params["id"], deleted=False)
+        return self.patch_qs(params, qs)
+
+    def _delete(self, params):
+        qs = State.objects.filter(pk=params["id"], deleted=False)
+        return self.delete_qs(params, qs)
+
+
+class StateDetailByElementalIdAPI(StateDetailBaseAPI):
+    """Interact with an individual state.
+
+    A state is a description of a collection of other objects. The objects a state describes
+    could be media (image or video), video frames, or localizations. A state referring
+    to a collection of localizations is often referred to as a track. States are
+    a types of entity in Tator, meaning they can be described by user defined attributes.
+    """
+
+    schema = StateByElementalIdSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = "elemental_id"
+    http_method_names = ["get", "patch", "delete"]
+
+    def calculate_queryset(self, params):
+        include_deleted = False
+        if params.get("prune", None) == 1:
+            include_deleted = True
+        qs = State.objects.filter(elemental_id=params["elemental_id"], version=params["version"])
+        if include_deleted is False:
+            qs = qs.filter(deleted=False)
+
+        # Get the latest mark or the one that is supplied by the user
+        mark_version = params.get("mark", None)
+        if mark_version:
+            qs = qs.filter(mark=mark_version)
+        else:
+            latest_mark = qs.aggregate(value=Max("mark"))
+            qs = qs.filter(mark=latest_mark["value"])
+        return qs
+
+    def _get(self, params):
+        qs = self.calculate_queryset(params)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        qs = self.calculate_queryset(params)
+        return self.patch_qs(params, qs)
+
+    def _delete(self, params):
+        qs = self.calculate_queryset(params)
+        return self.delete_qs(params, qs)

@@ -3,22 +3,31 @@ import logging
 import os
 
 from django.db import transaction
+from django.db.models import F
 from django.conf import settings
+from django.forms.models import model_to_dict
 
 from ..models import Project
 from ..models import Dashboard
+from ..models import HostedTemplate
+from ..models import Affiliation
 from ..models import User
-from ..models import database_qs
 from ..schema import AppletListSchema
 from ..schema import AppletDetailSchema
 from ..schema import parse
 from ..schema.components.applet import applet_fields as fields
+from ..schema.components.applet import applet as applet_schema
 
+from .hosted_template import get_and_render
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
+
+APPLET_GET_FIELDS = [
+    k for k in applet_schema["properties"].keys() if k not in ["rendered", "html_file"]
+] + ["html_file_url"]
 
 
 class AppletListAPI(BaseListView):
@@ -27,8 +36,19 @@ class AppletListAPI(BaseListView):
     http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
-        qs = Dashboard.objects.filter(project=params["project"]).order_by("id")
-        return database_qs(qs)
+        qs = (
+            Dashboard.objects.filter(project=params["project"])
+            .order_by("id")
+            .annotate(html_file_url=F("html_file"))
+        )
+        out = list(qs.values(*APPLET_GET_FIELDS))
+        for obj in out:
+            obj["html_file"] = obj["html_file_url"]
+            del obj["html_file_url"]
+            if obj[fields.template]:
+                ht = HostedTemplate.objects.get(pk=obj[fields.template])
+                obj[fields.rendered] = get_and_render(ht, obj)
+        return out
 
     def get_queryset(self) -> dict:
         params = parse(self.request)
@@ -45,14 +65,54 @@ class AppletListAPI(BaseListView):
             logger.error(log_msg)
             raise exc
 
-        # Gather the applet file and verify it exists on the server in the right project
-        applet_file = os.path.basename(params[fields.html_file])
-        applet_url = os.path.join(str(project_id), applet_file)
-        applet_path = os.path.join(settings.MEDIA_ROOT, applet_url)
-        if not os.path.exists(applet_path):
-            log_msg = f"Provided applet ({applet_file}) does not exist in {settings.MEDIA_ROOT}"
-            logging.error(log_msg)
-            raise ValueError(log_msg)
+        # Is manifest or template supplied?
+        template = params.get(fields.template)
+        if template is None:
+            ht = None
+            headers = []
+            tparams = []
+            # Gather the applet file and verify it exists on the server in the right project
+            applet_file = os.path.basename(params[fields.html_file])
+            applet_url = os.path.join(str(project_id), applet_file)
+            applet_path = os.path.join(settings.MEDIA_ROOT, applet_url)
+            if not os.path.exists(applet_path):
+                log_msg = f"Provided applet ({applet_file}) does not exist in {settings.MEDIA_ROOT}"
+                logging.error(log_msg)
+                raise ValueError(log_msg)
+        else:
+            # Make sure this file exists
+            applet_path = None
+            exists = HostedTemplate.objects.filter(pk=template).exists()
+            if not exists:
+                log_msg = f"Provided hosted template ({template}) does not exist"
+                logger.error(log_msg)
+                raise ValueError(log_msg)
+            ht = HostedTemplate.objects.get(pk=template)
+
+            # Make sure user has permission to use this hosted template
+            aff_qs = Affiliation.objects.filter(
+                organization=ht.organization, user=self.request.user
+            )
+            affiliated = aff_qs.exists()
+            if not affiliated:
+                log_msg = f"Insufficient permission to use hosted template {template}"
+                logger.error(log_msg)
+                raise PermissionDenied(log_msg)
+            affiliation = aff_qs.first()
+            if affiliation.permission != "Admin":
+                log_msg = f"Insufficient permission to use hosted template {template} (admin permission required)"
+                logger.error(log_msg)
+                raise PermissionDenied(log_msg)
+
+            # Make sure template is accessible with given headers
+            headers = params.get(fields.headers, [])
+            tparams = params.get(fields.tparams, [])
+            try:
+                get_and_render(ht, params)
+            except Exception as exc:
+                log_msg = "Failed to get and render template {template} with supplied headers and template parameters"
+                logger.error(log_msg)
+                raise exc
 
         # Get the optional fields and to null if need be
         description = params.get(fields.description, None)
@@ -64,6 +124,9 @@ class AppletListAPI(BaseListView):
             html_file=applet_path,
             name=params[fields.name],
             project=project,
+            template=ht,
+            headers=headers,
+            tparams=tparams,
         )
 
         return {"message": f"Successfully created applet {new_applet.id}!", "id": new_applet.id}
@@ -95,7 +158,13 @@ class AppletDetailAPI(BaseDetailView):
         return {"message": msg}
 
     def _get(self, params):
-        return database_qs(Dashboard.objects.filter(pk=params["id"]))[0]
+        obj = Dashboard.objects.get(pk=params["id"])
+        applet = model_to_dict(obj, fields=APPLET_GET_FIELDS)
+        applet["html_file"] = str(obj.html_file)
+        if applet[fields.template]:
+            ht = HostedTemplate.objects.get(pk=applet[fields.template])
+            applet[fields.rendered] = get_and_render(ht, applet)
+        return applet
 
     @transaction.atomic
     def _patch(self, params) -> dict:
@@ -127,6 +196,18 @@ class AppletDetailAPI(BaseDetailView):
             delete_path = os.path.join(settings.MEDIA_ROOT, obj.html_file.name)
             self.safe_delete(path=delete_path)
             obj.html_file = applet_path
+
+        template = params.get(fields.template, None)
+        if template is not None:
+            obj.template = HostedTemplate.objects.get(pk=template)
+
+        headers = params.get(fields.headers, None)
+        if headers is not None:
+            obj.headers = headers
+
+        tparams = params.get(fields.tparams, None)
+        if tparams is not None:
+            obj.tparams = tparams
 
         obj.save()
 

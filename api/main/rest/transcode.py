@@ -60,7 +60,7 @@ def _job_to_transcode(job):
         "uid": job["uid"],
         "url": job["url"],
         "size": job["size"],
-        "section": job["section"],
+        "section_id": job["section_id"],
         "name": job["name"],
         "attributes": job["attributes"],
         "email_spec": job["email_spec"],
@@ -99,7 +99,8 @@ class TranscodeListAPI(BaseListView):
         uid = params["uid"]
         url = params["url"]
         upload_size = params.get("size", -1)
-        section = params["section"]
+        section = params.get("section")
+        section_id = params.get("section_id")
         name = params["name"]
         project = params["project"]
         attributes = params.get("attributes", None)
@@ -155,9 +156,11 @@ class TranscodeListAPI(BaseListView):
             media_obj = Media.objects.get(pk=media_id)
             if media_obj.project.pk != project:
                 raise Exception(f"Media not part of specified project!")
+            section_id = -1
         elif entity_type != -1:
-            media_obj, _ = _create_media(project, params, self.request.user)
+            media_obj, _, section_obj = _create_media(project, params, self.request.user)
             media_id = media_obj.id
+            section_id = section_obj.id
         logger.info(f"HOST: {HOST}")
         response = requests.post(
             ENDPOINT,
@@ -170,7 +173,7 @@ class TranscodeListAPI(BaseListView):
                     "project": project,
                     "type": entity_type,
                     "name": name,
-                    "section": section,
+                    "section_id": section_id,
                     "media_id": media_id,
                     "gid": gid,
                     "uid": uid,

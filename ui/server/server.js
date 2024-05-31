@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const tracer = require('dd-trace').init();
 const express = require('express');
 const nunjucks = require('nunjucks');
 const favicon = require('serve-favicon');
@@ -9,12 +10,19 @@ const originalFetch = require('node-fetch');
 const fetch = require('fetch-retry')(originalFetch);
 const dns = require('dns');
 const yargs = require('yargs/yargs');
+const logger = require('pino-http');
+
+const loginPath = "/auth/realms/tator/protocol/openid-connect/auth";
+const loginQuery = "scope=openid&client_id=tator&response_type=code";
+const logoutPath = "/auth/realms/tator/protocol/openid-connect/logout";
+const redirect_uri_default = `http://localhost:3000/callback`;
 
 dns.setServers([
   '8.8.8.8',
   '1.1.1.1',
 ]);
 const app = express();
+app.use(logger());
 
 const argv = yargs(process.argv.slice(2))
   .usage('Usage: $0 -b https://cloud.tator.io -o -e')
@@ -24,6 +32,7 @@ const argv = yargs(process.argv.slice(2))
   .alias('e', 'email_enabled')
   .alias('o', 'okta_enabled')
   .alias('k', 'keycloak_enabled')
+  .alias("r", "redirect_uri")
   .boolean('e')
   .boolean('o')
   .boolean('k')
@@ -33,17 +42,35 @@ const argv = yargs(process.argv.slice(2))
   .describe('e', 'Include this argument if email is enabled in the backend.')
   .describe('o', 'Include this argument if Okta is enabled for authentication.')
   .describe('k', 'Include this argument if Keycloak is enabled for authentication.')
+  .describe(
+    "r",
+    `Redirect URI for auth code callback. Default is ${redirect_uri_default}.`
+  )
   .default('h', 'localhost')
   .default('p', 3000)
   .default('b', '')
   .default('k', false)
-  .argv
+  .default("r", redirect_uri_default)
+  .argv;
+
+function addHeaders(res, path, stat) {
+  if (argv.keycloak_enabled) {
+    res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  }
+  return res;
+}
 
 const params = { 
   backend: argv.backend,
   email_enabled: argv.email_enabled,
   okta_enabled: argv.okta_enabled,
   keycloak_enabled: argv.keycloak_enabled,
+  datadog_enabled: process.env.DD_LOGS_INJECTION == "true",
+  datadog_client_token: process.env.DD_CLIENT_TOKEN || "",
+  datadog_application_id: process.env.DD_APPLICATION_ID || "",
+  datadog_env: process.env.DD_ENV || "",
+  datadog_version: process.env.DD_VERSION || "",
 };
 
 nunjucks.configure('server/views', {
@@ -51,8 +78,17 @@ nunjucks.configure('server/views', {
   autoescape: true
 });
 app.set('view engine', 'html');
-app.use('/static', express.static('./dist'));
-app.use('/static', express.static('./server/static'));
+app.use("/static", express.static("./dist", { setHeaders: addHeaders }));
+app.use(
+  "/static",
+  express.static("./server/static", { setHeaders: addHeaders })
+);
+app.use(
+  "/static",
+  express.static("../scripts/packages/tator-js/src/annotator", {
+    setHeaders: addHeaders,
+  })
+);
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
@@ -60,11 +96,12 @@ app.use(cookieParser());
 if (params.backend) {
   let opts = {};
   if (params.keycloak_enabled) {
-    opts.proxyReqPathResolver = function(req) {
-      return `/auth/realms/tator/protocol/openid-connect/auth?scope=openid&client_id=tator&response_type=code&redirect_uri=http://localhost:${port}/callback`;
-    };
+    app.use("/accounts/login", (req, res) => {
+      res.redirect(
+        `${argv.backend}${loginPath}?${loginQuery}&redirect_uri=${argv.redirect_uri}`
+      );
+    });
   }
-  app.use('/accounts/login', proxy(params.backend, opts));
 }
 
 app.get('/', (req, res) => {
@@ -89,6 +126,10 @@ app.get('/:projectId/analytics/corrections', (req, res) => {
 
 app.get('/:projectId/analytics/files', (req, res) => {
   res.render('analytics/files', params);
+});
+
+app.get('/:projectId/analytics/export', (req, res) => {
+  res.render('analytics/export', params);
 });
 
 app.get('/:projectId/dashboards', (req, res) => {
@@ -121,6 +162,7 @@ app.get('/:projectId/project-settings', (req, res) => {
 
 app.get('/:projectId/annotation/:id', (req, res) => {
   res.render('annotation', params);
+  res = addHeaders(res);
 });
 
 app.get('/token', (req, res) => {
@@ -174,7 +216,7 @@ app.post('/exchange', async (req, res) => {
     })
     .then(response => {
       if (!response.ok) {
-        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+        req.log.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
         throw new Error("Response from keycloak failed!");
       }
       return response.json();
@@ -203,15 +245,15 @@ app.post('/exchange', async (req, res) => {
       });
     })
     .catch((error) => {
-      console.error(`Error in fetch for exchange: ${error}`);
-      console.error(error.message);
-      console.error(error.stack);
+      req.log.error(`Error in fetch for exchange: ${error}`);
+      req.log.error(error.message);
+      req.log.error(error.stack);
       return Promise.reject(error);
     });
   } catch (error) {
-    console.error(`Error in exchange endpoint: ${error}`);
-    console.error(error.message);
-    console.error(error.stack);
+    req.log.error(`Error in exchange endpoint: ${error}`);
+    req.log.error(error.message);
+    req.log.error(error.stack);
     res.status(403).send({message: "Failed to retrieve access token!"});
   }
 });
@@ -237,7 +279,7 @@ app.get('/refresh', async (req, res) => {
       })
       .then(response => {
         if (!response.ok) {
-          console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+          req.log.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
           throw new Error("Response from keycloak failed!");
         }
         return response.json();
@@ -265,15 +307,15 @@ app.get('/refresh', async (req, res) => {
         });
       })
       .catch((error) => {
-        console.error(`Error in fetch for refresh: ${error}`);
-        console.error(error.message);
-        console.error(error.stack);
+        req.log.error(`Error in fetch for refresh: ${error}`);
+        req.log.error(error.message);
+        req.log.error(error.stack);
         return Promise.reject(error);
       });
     } catch (error) {
-      console.error(`Error in refresh endpoint: ${error}`);
-      console.error(error.message);
-      console.error(error.stack);
+      req.log.error(`Error in refresh endpoint: ${error}`);
+      req.log.error(error.message);
+      req.log.error(error.stack);
       res.status(403).send({message: "Failed to refresh access token!"});
     }
   }
@@ -288,21 +330,21 @@ app.get('/dnstest', async (req, res) => {
     })
     .then(response => {
       if (!response.ok) {
-        console.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
+        req.log.error(`Error: Request failed with status ${response.status} ${response.statusText}`);
         throw new Error("Response from backend failed!");
       }
       res.status(200).send({message: "DNS was resolved!"});
     })
     .catch((error) => {
-      console.error(`Error in fetch to backend: ${error}`);
-      console.error(error.message);
-      console.error(error.stack);
+      req.log.error(`Error in fetch to backend: ${error}`);
+      req.log.error(error.message);
+      req.log.error(error.stack);
       return Promise.reject(error);
     });
   } catch (error) {
-    console.error(`Error in DNS test: ${error}`);
-    console.error(error.message);
-    console.error(error.stack);
+    req.log.error(`Error in DNS test: ${error}`);
+    req.log.error(error.message);
+    req.log.error(error.stack);
     res.status(400).send({message: "DNS test failed!"});
   }
 });

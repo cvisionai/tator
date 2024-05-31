@@ -1,14 +1,16 @@
-import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import { Utilities } from "../../util/utilities.js";
-import { EntityCardGallery } from "../../components/entity-gallery/entity-gallery_grid.js";
+import { fetchCredentials } from "../../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { Utilities } from "../../../util/utilities.js";
+import { EntityCardGallery } from "../../../components/entity-gallery/entity-gallery_grid.js";
 
-export class AnnotationsGallery extends EntityCardGallery {
+export class AnalyticsGallery extends EntityCardGallery {
   constructor() {
     super();
     /*
      * Add tools, headings and pagination for gallery here
      *
      */
+
+    this._cards = [];
 
     // * hook to add filter interface
     this._filterDiv = document.createElement("div");
@@ -70,7 +72,7 @@ export class AnnotationsGallery extends EntityCardGallery {
     );
     this._mainTop.appendChild(this._cardAttributeLabels);
     this._cardAttributeLabels.menuLinkTextSpan.innerHTML =
-      "Localization Labels";
+      "<span id='labelsLink'>Localization Labels</span>";
     this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
     // Init aspect toggle
@@ -86,17 +88,32 @@ export class AnnotationsGallery extends EntityCardGallery {
 
     // State of chosen labels for gallery
     this.cardLabelsChosenByType = {};
+
+    this.addEventListener("view-change", () => {
+      for (let i of this._cardElements) {
+        i.card._li.classList.toggle("aspect-true");
+      }
+    });
   }
 
   // Provide access to side panel for events
-  _initPanel({ panelContainer, pageModal, cardData, modelData, modalNotify }) {
+  _initPanel({
+    panelContainer,
+    pageModal,
+    cardData,
+    modelData,
+    modalNotify,
+    bulkEdit,
+    bulkInit = false,
+  }) {
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
     this._modalNotify = modalNotify;
-
+    this._bulkEdit = bulkEdit;
+    this.annotationPanel = this.panelContainer._panelTop._panel;
     // Listen for attribute changes
     this.panelContainer._panelTop._panel.entityData.addEventListener(
       "save",
@@ -114,7 +131,23 @@ export class AnnotationsGallery extends EntityCardGallery {
         typeData: locTypeData,
         checkedFirst: true,
       });
+
+      //init panel with localization entity type definitions
+      this._bulkEdit._editPanel.addLocType(locTypeData);
     }
+
+    this._mainTop.appendChild(this._bulkEdit._selectionPanel);
+    this._bulkEdit._selectionPanel.hidden = true;
+    if (this._bulkEdit._editMode) {
+      this._bulkEdit._selectionPanel.hidden = false;
+      this._bulkEdit._showEditPanel();
+    }
+    this._bulkEdit.addEventListener("multi-enabled", () => {
+      this._bulkEdit._selectionPanel.hidden = false;
+    });
+    this._bulkEdit.addEventListener("multi-disabled", () => {
+      this._bulkEdit._selectionPanel.hidden = true;
+    });
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -123,7 +156,7 @@ export class AnnotationsGallery extends EntityCardGallery {
     //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
     //}
     //else {
-    if (cardList.total == 0) {
+    if (cardList.total === 0) {
       this._numFiles.textContent = `${cardList.total} Results`;
     } else {
       this._numFiles.textContent = `Viewing ${
@@ -132,7 +165,7 @@ export class AnnotationsGallery extends EntityCardGallery {
         cardList.paginationState.stop > cardList.total
           ? cardList.total
           : cardList.paginationState.stop
-      } of ${cardList.total} Results`;
+      } of ${cardList.total} Result${cardList.total === 1 ? "" : "s"}`;
     }
 
     //}
@@ -146,7 +179,12 @@ export class AnnotationsGallery extends EntityCardGallery {
 
     // Hide all cards' panels and de-select
     for (let idx = 0; idx < this._cardElements.length; idx++) {
-      this._cardElements[idx].card._deselectedCardAndPanel();
+      // this._cardElements[idx].card._deselectedCardAndPanel();
+      if (!this._bulkEdit._editMode) {
+        this._cardElements[idx].card._deselectedCardAndPanel();
+      } else {
+        this._cardElements[idx].card._li.classList.remove("is-selected");
+      }
     }
 
     // Append the cardList
@@ -197,6 +235,7 @@ export class AnnotationsGallery extends EntityCardGallery {
 
       /**
        * Card labels / attributes of localization or media type
+       * Gallery can have mixed type, needs to be done for each card
        */
       const builtInChosen = this._cardAttributeLabels._getValue(-1);
       this.cardLabelsChosenByType[entityTypeId] =
@@ -206,78 +245,46 @@ export class AnnotationsGallery extends EntityCardGallery {
         ...builtInChosen,
       ];
 
+      /* Bulk edit also has a list of attributes for editing 
+      that needs to hear what available attributes are shown in gallery */
+      this._bulkEdit._updateShownAttributes({
+        typeId: entityTypeId,
+        values: this.cardLabelsChosenByType[entityTypeId],
+      });
+
+      // Cards are kept in an index list, if it isn't there it is new
       if (newCard) {
         card = document.createElement("entity-card");
-        // card._li.classList.add("analysis__annotation");
+        card._li.classList.add("aspect-true");
 
-        // Resize Tool needs to change style within card on change
-        this._resizeCards._slideInput.addEventListener("change", (evt) => {
-          let resizeValue = evt.target.value;
-          let resizeValuePerc = parseFloat(resizeValue / 100);
-          return (card._img.style.height = `${130 * resizeValuePerc}px`);
-        });
+        /* Setup listeners */
+        this._resizeCards._slideInput.addEventListener(
+          "change",
+          this.setupResizeListeners.bind(this, card)
+        );
+        this._cardAttributeLabels.addEventListener(
+          "labels-update",
+          this.setupCardLabelUpdateListener.bind(this, card)
+        );
+        card.addEventListener(
+          "card-click",
+          this.openClosedPanel.bind(this, card)
+        );
 
-        this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
-          card._updateShownAttributes(evt);
-          this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;
-          let msg = `Entry labels updated`;
-          Utilities.showSuccessIcon(msg);
-        });
-
-        // Open panel if a card is clicked
-        card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
-
-        // Update view
-        card._li.classList.toggle("aspect-true");
-        this.addEventListener("view-change", () => {
-          card._li.classList.toggle("aspect-true");
-        });
-
-        cardInfo = {
+        this._cardElements.push({
           card: card,
-        };
-        this._cardElements.push(cardInfo);
-
-        // Delete localization / entity
-        this.addEventListener("delete-entity", (evt) => {
-          this._modalNotify.init(
-            "Confirm remove",
-            `Are you sure you want to delete ${this.cardObj.localization.name}?`,
-            "error",
-            "confirm",
-            false
-          );
-          this._modalNotify.setAttribute("is-open", "true");
-
-          this._modalNotify._accept.addEventListener("click", () => {
-            this._modalNotify.closeCallback();
-            console.log("OL!");
-            fetchCredentials(`/rest/Localization/${this.cardObj.id}`, {
-              method: "DELETE",
-            })
-              .then((response) => {
-                return response.json();
-              })
-              .then((result) => {
-                this._modalNotify.init(
-                  "Success!",
-                  `${result}`,
-                  "ok",
-                  "ok",
-                  false
-                );
-                this._modalNotify.setAttribute("is-open", "");
-                this._modalNotify.fadeOut();
-              })
-              .catch((err) => {
-                console.error("Error deleting localization entity.", err);
-              });
-          });
         });
-
         this._ul.appendChild(card);
       } else {
         card = this._cardElements[index].card;
+      }
+
+      if (this._bulkEdit._editMode === true) {
+        this.enableMulti(card);
+        this._addBulkListeners(card);
+      } else {
+        console.log("_removeBulkListeners");
+        this._removeBulkListeners(card);
       }
 
       // Non-hidden attributes (ie order >= 0))
@@ -297,19 +304,33 @@ export class AnnotationsGallery extends EntityCardGallery {
       });
 
       cardLabelOptions.push(...hiddenAttrs);
-
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
-      console.log(this.modelData._memberships);
+      // console.log(this.modelData._memberships);
       card.init({
+        idx: index,
         obj: cardObj,
         panelContainer: this.panelContainer,
         cardLabelsChosen: cardLabelsChosen,
         memberships: this.modelData._memberships,
+        enableMultiselect: this._bulkEdit._editMode,
       });
 
       this._currentCardIndexes[cardObj.id] = index;
+
+      // If these cards are already selected when we are remaking them?
+      if (
+        this._bulkEdit?._currentMultiSelectionToId
+          ?.get(entityType.id)
+          ?.has(cardObj.id)
+      ) {
+        this._bulkEdit._addSelected({
+          element: card,
+          id: cardObj.id,
+          isSelected: true,
+        });
+      }
 
       card.style.display = "block";
       numberOfDisplayedCards += 1;
@@ -322,27 +343,107 @@ export class AnnotationsGallery extends EntityCardGallery {
         this._cardElements[idx].card.style.display = "none";
       }
     }
+
+    // Replace card info so that shift select can get cards in between
+    this._bulkEdit.elementList = this._cardElements;
+    this._bulkEdit.elementIndexes = this._currentCardIndexes;
+    if (this._bulkEdit._editMode) this._bulkEdit.startEditMode(); //TODO
   }
 
-  updateCardData(newCardData) {
-    if (newCardData.id in this._currentCardIndexes) {
-      const index = this._currentCardIndexes[newCardData.id];
-      const card = this._cardElements[index].card;
-      this.cardData.updateLocalizationAttributes(card.cardObj).then(() => {
-        //card.displayAttributes();
-        card._updateAttributeValues(card.cardObj);
+  setupResizeListeners(card) {
+    // Resize Tool needs to change style within card on change
+    let resizeValue = evt.target.value;
+    let resizeValuePerc = parseFloat(resizeValue / 100);
+    return (card._img.style.height = `${130 * resizeValuePerc}px`);
+  }
+
+  setupCardLabelUpdateListener(card) {
+    this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
+      card._updateShownAttributes(evt);
+      this._bulkEdit._updateShownAttributes({
+        typeId: evt.detail.typeId,
+        values: evt.detail.value,
       });
+
+      this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;
+
+      let msg = `Entry labels updated`;
+      Utilities.showSuccessIcon(msg);
+    });
+  }
+
+  _removeBulkListeners(card) {
+    card.removeEventListener(
+      "ctrl-select",
+      this._bulkEdit._openEditMode.bind(this._bulkEdit)
+    );
+    this.disableMulti(card);
+  }
+
+  _addBulkListeners(card) {
+    card.addEventListener(
+      "ctrl-select",
+      this._bulkEdit._openEditMode.bind(this._bulkEdit)
+    );
+
+    this._bulkEdit.addEventListener("multi-enabled", () => {
+      this.enableMulti(card);
+    });
+    this._bulkEdit.addEventListener("multi-disabled", () => {
+      this.disableMulti(card);
+    });
+  }
+
+  enableMulti(card) {
+    // console.log("multi-enabled heard");
+    this.multiEnabled = true;
+    card.multiEnabled = true;
+  }
+
+  disableMulti(card) {
+    // console.log("disableMulti heard");
+    card.multiEnabled = false;
+    this.multiEnabled = false;
+  }
+
+  updateCardData(newCardData, oldId) {
+    if (oldId in this._currentCardIndexes) {
+      // Find data index & Add new ID lookup
+      const index = this._currentCardIndexes[oldId];
+      const card = this._cardElements[index].card;
+
+      // Update ID used by the following method to refetch cardObj data
+      let newId = newCardData?.object?.id ? newCardData.object.id : null;
+      if (newId == null) return console.error("Problem updating localization");
+      card.cardObj = {
+        ...card.cardObj,
+        ...newCardData.object,
+        localization: newCardData.object,
+      };
+
+      // Replace
+      this._currentCardIndexes[newId] = index;
+      this._cardElements[index].card = card;
+
+      // Refresh
+      card._updateAttributeValues(card.cardObj);
+      this.annotationPanel.init({ cardObj: card.cardObj });
     }
   }
 
   entityFormChange(e) {
+    const oldId = e.detail.id;
     this.formChange({
-      id: e.detail.id,
+      id: oldId,
       values: { attributes: e.detail.values },
       type: "Localization",
-    }).then((data) => {
-      this.updateCardData(data);
-    });
+    })
+      .then((data) => {
+        this.updateCardData(data, oldId);
+      })
+      .then(() => {
+        this._bulkEdit.updateCardData(this._cardElements);
+      });
   }
 
   mediaFormChange(e) {
@@ -352,18 +453,24 @@ export class AnnotationsGallery extends EntityCardGallery {
       values: { attributes: e.detail.values },
       type: "Media",
     }).then(() => {
-      this.cardData.updateMediaAttributes(mediaId).then(() => {
-        for (let idx = 0; idx < this._cardElements.length; idx++) {
-          const card = this._cardElements[idx].card.cardObj;
-          if (card.mediaId == mediaId) {
-            this._cardElements[idx].annotationPanel.setMediaData(card);
+      this.cardData
+        .updateMediaAttributes(mediaId)
+        .then(() => {
+          for (let idx = 0; idx < this._cardElements.length; idx++) {
+            const card = this._cardElements[idx].card.cardObj;
+            if (card.mediaId == mediaId && this.annotationPanel?.setMediaData) {
+              this.annotationPanel.setMediaData(card);
+            }
           }
-        }
-      });
+        })
+        .then(() => {
+          this._bulkEdit.updateCardData(this._cardElements);
+        });
     });
   }
 
   async formChange({ type, id, values } = {}) {
+    const oldId = id;
     var result = await fetchCredentials(`/rest/${type}/${id}`, {
       method: "PATCH",
       mode: "cors",
@@ -390,23 +497,34 @@ export class AnnotationsGallery extends EntityCardGallery {
       Utilities.warningAlert(msg, "#ff3e1d", false);
     }
 
-    result = await fetchCredentials(`/rest/${type}/${id}`, {
-      mode: "cors",
-      credentials: "include",
-    });
-    data = await result.json();
     return data;
   }
 
-  openClosedPanel(e) {
-    console.log(e.target);
-    if (!this.panelContainer.open) this.panelContainer._toggleOpen();
+  openClosedPanel(card, event) {
+    console.log("card, event openClosedPanel", card, event);
+
+    if (!this.panelContainer.open && !this._bulkEdit._editMode) {
+      this.panelContainer._toggleOpen();
+      if (event.detail) event.detail.openFlag = this.panelContainer.open;
+    }
+
     this.panelControls.openHandler(
-      e.detail,
+      event.detail,
       this._cardElements,
       this._currentCardIndexes
     );
+
+    if (this._bulkEdit._editMode) {
+      // For regular clicks while edit mode is true
+      this._bulkEdit._openEditMode({
+        detail: {
+          element: card,
+          id: card.cardObj.id,
+          isSelected: card._li.classList.contains("is-selected"),
+        },
+      });
+    }
   }
 }
 
-customElements.define("annotations-gallery", AnnotationsGallery);
+customElements.define("analytics-gallery", AnalyticsGallery);

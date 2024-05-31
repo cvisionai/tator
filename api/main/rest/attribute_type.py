@@ -10,10 +10,12 @@ from ..models import (
     Media,
     LocalizationType,
     Localization,
-    StateType,
-    State,
     LeafType,
     Leaf,
+    Project,
+    Section,
+    StateType,
+    State,
 )
 from ..search import TatorSearch
 from ..schema import AttributeTypeListSchema, parse
@@ -35,6 +37,7 @@ ENTITY_TYPES = {
     "LocalizationType": (LocalizationType, Localization),
     "StateType": (StateType, State),
     "LeafType": (LeafType, Leaf),
+    "Section": (Project, Section),
 }
 
 
@@ -86,7 +89,10 @@ class AttributeTypeListAPI(BaseListView):
         models = AttributeTypeListAPI._get_models(params["entity_type"])
         entity_type = models[0].objects.select_for_update(nowait=True).get(pk=parent_id)
         model = models[1]
-        obj_qs = model.objects.filter(type=parent_id)
+        if models[0] == Project:
+            obj_qs = Section.objects.filter(project=params["id"])
+        else:
+            obj_qs = model.objects.filter(type=parent_id)
         return entity_type, obj_qs
 
     @staticmethod
@@ -219,7 +225,17 @@ class AttributeTypeListAPI(BaseListView):
         name = params["name"]
         with transaction.atomic():
             entity_type, obj_qs = self._get_objects(params)
-            TatorSearch().delete_alias(entity_type, name).save()
+            if type(entity_type) != Project:
+                TatorSearch().delete_alias(entity_type, name).save()
+            else:
+                found_idx = -1
+                for idx, attribute_obj in enumerate(entity_type.attribute_types):
+                    if attribute_obj["name"] == name:
+                        element = {**attribute_obj}
+                        found_idx = idx
+                if found_idx >= 0:
+                    del entity_type.attribute_types[found_idx]
+                    entity_type.save()
 
         if obj_qs.exists():
             bulk_delete_attributes([name], obj_qs)

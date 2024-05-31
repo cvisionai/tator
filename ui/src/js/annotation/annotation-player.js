@@ -1278,6 +1278,20 @@ export class AnnotationPlayer extends TatorElement {
     this._entityTimeline.timelineSettings = val;
   }
 
+  set stretch(val) {
+    // Note: This could potentially move into annotation.js
+    //       This is required whenever stretch is reverted back from true to false.
+    if (this._video._stretch == true && val == false) {
+      this._video._draw.resizeViewport(
+        this._video._dims[0],
+        this._video._dims[1]
+      );
+    }
+
+    this._video.stretch = val;
+    this._video.forceSizeChange();
+  }
+
   _displayPlayerSettingsMenu() {
     this._hideCanvasMenus();
 
@@ -1456,7 +1470,9 @@ export class AnnotationPlayer extends TatorElement {
           console.log(
             `Video playback check - restart [Now: ${new Date().toISOString()}]`
           );
-          this._video.onDemandDownloadPrefetch(-1);
+          this._video.onDemandDownloadPrefetch(
+            Math.max(0, this._video.currentFrame() - 200)
+          );
         }
       }
       if (not_ready == true) {

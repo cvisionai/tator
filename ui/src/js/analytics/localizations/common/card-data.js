@@ -1,5 +1,5 @@
-import { FilterConditionData } from "../../util/filter-utilities.js";
-import { TatorData } from "../../util/tator-data.js";
+import { FilterConditionData } from "../../../util/filter-utilities.js";
+import { TatorData } from "../../../util/tator-data.js";
 
 /**
  * Class that contains the data about the annotation analytics gallery.
@@ -40,13 +40,17 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * @param {array} filterConditions array of FilterConditionData objects
    */
-  async _reload(filterConditions) {
+  async _reload(filterConditions, sortState) {
     this.filterConditions = filterConditions;
+    this.sortState = sortState;
     this.cardList = {};
     this.cardList.cards = [];
     this.cardList.total = await this._modelData.getFilteredLocalizations(
       "count",
-      filterConditions
+      filterConditions,
+      NaN,
+      NaN,
+      sortState
     );
 
     return true;
@@ -55,11 +59,16 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * Note: If the filters are in a different order, this will return with True still.
    * @param {array} filterConditions array of FilterConditionData objects
+   * @param {string} sortState query param for sort
    * @returns True if reload() needs to be called
    */
-  _needReload(filterConditions) {
+  _needReload(filterConditions, sortState) {
     return (
-      JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions)
+      JSON.stringify(filterConditions) !=
+      JSON.stringify(
+        this.filterConditions ||
+          JSON.stringify(sortState) != JSON.stringify(this.sortState)
+      )
     );
   }
 
@@ -84,7 +93,7 @@ export class AnnotationCardData extends HTMLElement {
         let mediaLink = this._modelData.generateMediaLink(
           l.media,
           l.frame,
-          l.id,
+          l.elemental_id,
           l.type,
           l.version
         );
@@ -148,23 +157,26 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * @param {array} filterConditions array of FilterConditionData objects
    * @param {object} paginationState
+   * @param {string} sortState
    * @returns {object}
    */
-  async makeCardList(filterConditions, paginationState) {
+  async makeCardList(filterConditions, paginationState, sortState) {
     // console.log(filterConditions)
     // console.log(paginationState);
-    if (this._needReload(filterConditions)) {
-      await this._reload(filterConditions);
+    if (this._needReload(filterConditions, sortState)) {
+      await this._reload(filterConditions, sortState);
     }
     this.cardList.cards = [];
     this.cardList.paginationState = paginationState;
+    this.cardList.sortState = sortState;
 
     // Get the localizations for the current page
     var localizations = await this._modelData.getFilteredLocalizations(
       "objects",
       filterConditions,
       paginationState.start,
-      paginationState.stop
+      paginationState.stop,
+      sortState
     );
 
     // Query the media data associated with each localization
@@ -192,12 +204,15 @@ export class AnnotationCardData extends HTMLElement {
    * Updates the provided localization card's attributes
    * @param {} cardObj Modified by this function
    */
-  async updateLocalizationAttributes(cardObj) {
-    var locData = await this._modelData.getLocalization(cardObj.id);
+  async updateLocalizationAttributes(cardObj, newId) {
+    var locData = await this._modelData.getLocalization(newId);
+    cardObj.id = newId;
     cardObj.localization = locData;
     cardObj.attributes = locData.attributes;
     cardObj.created = new Date(locData.created_datetime);
     cardObj.modified = new Date(locData.modified_datetime);
+
+    return cardObj;
   }
 
   /**
@@ -221,20 +236,25 @@ export class AnnotationCardData extends HTMLElement {
     }
   }
 
-  async _bulkCaching(filterConditions) {
+  async _bulkCaching(filterConditions, sortState) {
     let promise = Promise.resolve();
 
     console.log(filterConditions);
+    console.log(sortState);
     if (
-      this._needReload(filterConditions) ||
+      this._needReload(filterConditions, sortState) ||
       typeof this._bulkCache == "undefined" ||
       this._bulkCache == null
     ) {
       this.filterConditions = filterConditions;
+      this.sortState = sortState;
       this.cardList = { cards: [], total: null };
       this.cardList.total = await this._modelData.getFilteredLocalizations(
         "count",
-        filterConditions
+        filterConditions,
+        NaN,
+        NaN,
+        sortState
       );
 
       let stop =
@@ -246,7 +266,8 @@ export class AnnotationCardData extends HTMLElement {
         "objects",
         filterConditions,
         0,
-        stop
+        stop,
+        sortState
       );
 
       console.log("This is the prefetch results:");
@@ -265,7 +286,7 @@ export class AnnotationCardData extends HTMLElement {
             filterConditions,
             start,
             stop,
-            null
+            sortState
           );
           this._bulkCache = [...this._bulkCache, ...next];
           start += this._stopChunk;
@@ -276,6 +297,7 @@ export class AnnotationCardData extends HTMLElement {
       }
 
       this.filterConditions = filterConditions;
+      this.sortState = sortState;
     } else {
       console.log("No change in filter condition.");
     }
@@ -286,18 +308,20 @@ export class AnnotationCardData extends HTMLElement {
   /**
    * @param {array} filterConditions array of FilterConditionData objects
    * @param {object} paginationState
+   * @param {string} sortState
    * @returns {object}
    */
-  async makeCardListFromBulk(filterConditions, paginationState) {
+  async makeCardListFromBulk(filterConditions, paginationState, sortState) {
     if (filterConditions.length == 0) {
-      return this.makeCardList(filterConditions, paginationState);
+      return this.makeCardList(filterConditions, paginationState, sortState);
     }
     // this will create a cached list if the filter is new, or if we haven't made it
-    await this._bulkCaching(filterConditions);
+    await this._bulkCaching(filterConditions, sortState);
 
     console.log(paginationState);
     this.cardList.cards = [];
     this.cardList.paginationState = paginationState;
+    this.cardList.sortState = sortState;
 
     // Get the localizations for the current page
     const localizations = [];

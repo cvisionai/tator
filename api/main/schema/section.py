@@ -7,6 +7,7 @@ from ._message import message_with_id_schema
 from ._errors import error_responses
 
 from ._type_query import type_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema
 
 boilerplate = dedent(
     """\
@@ -64,6 +65,8 @@ class SectionListSchema(AutoSchema):
             operation["operationId"] = "GetSectionList"
         elif method == "POST":
             operation["operationId"] = "CreateSection"
+        elif method == "PATCH":
+            operation["operationId"] = "UpdateSectionList"
         operation["tags"] = ["Tator"]
         return operation
 
@@ -74,6 +77,16 @@ class SectionListSchema(AutoSchema):
         elif method == "POST":
             short_desc = "Create section."
             long_desc = "Note: In order for a section to be interpreted properly, the tator_user_sections attribute of the SectionSpec cannot be None. The front end assigns a uuid1 string for this attribute, but it is not required to follow this pattern."
+        elif method == "PATCH":
+            short_desc = "Update section list."
+            long_desc = dedent(
+                """\
+            This method does a bulk update on all section matching a query.
+            """
+            )
+        elif method == "DELETE":
+            short_desc = "Delete section list"
+            long_desc = ""
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def get_path_parameters(self, path, method):
@@ -89,13 +102,20 @@ class SectionListSchema(AutoSchema):
 
     def get_filter_parameters(self, path, method):
         params = []
-        if method == "GET":
+        if method in ["GET", "PATCH", "DELETE"]:
             params = [
                 {
                     "name": "name",
                     "in": "query",
                     "required": False,
                     "description": "Name of the section.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "encoded_search",
+                    "in": "query",
+                    "required": False,
+                    "description": "Base64 encoded string representing an `Object_Search` defined in /components/AttributeOperationSpec",
                     "schema": {"type": "string"},
                 },
                 *type_filter_parameter_schema,
@@ -111,6 +131,17 @@ class SectionListSchema(AutoSchema):
                 "content": {
                     "application/json": {
                         "schema": {"$ref": "#/components/schemas/SectionSpec"},
+                    }
+                },
+            }
+        elif method == "PATCH":
+            body = {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/SectionBulkUpdate",
+                        },
                     }
                 },
             }
@@ -133,6 +164,8 @@ class SectionListSchema(AutoSchema):
             }
         elif method == "POST":
             responses["201"] = message_with_id_schema("section")
+        elif method == "PATCH":
+            responses["200"] = message_schema("update", "section list")
         return responses
 
 

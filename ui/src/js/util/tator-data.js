@@ -442,6 +442,7 @@ export class TatorData {
       "<=": "lte",
       After: "gt",
       Before: "lt",
+      in: "in",
       Includes: "icontains",
       "Starts with": "istartswith",
       "Ends with": "iendswith",
@@ -458,6 +459,14 @@ export class TatorData {
       value.includes("(ID:")
     ) {
       value = Number(value.split("(ID:")[1].replace(")", ""));
+    }
+
+    if (modifier == "in") {
+      let list_of_values = [];
+      for (let elem of value.split(",")) {
+        list_of_values.push(Number(elem) || elem);
+      }
+      value = list_of_values;
     }
 
     var filter_object = {};
@@ -477,20 +486,77 @@ export class TatorData {
    * @param {integer} listStart
    * @param {integer} listStop
    * @param {array} mediaIds
+   * @param {boolean} ignorePresign
+   * @param {string} sort
    */
   async _getAnnotationData(
     outputType,
     annotationType,
     annotationFilterData,
     mediaFilterData,
+    coincidentStatesFilterData,
+    coincidentLocalizationsFilterData,
+    trackMembershipFilterData,
     listStart,
     listStop,
     mediaIds,
-    ignorePresign
+    ignorePresign,
+    sort
   ) {
     var finalAnnotationFilters = [];
     for (const filter of annotationFilterData) {
       finalAnnotationFilters.push(this._convertFilterForTator(filter));
+    }
+
+    // Build up coincident filters based on the supplied  values
+    // If there are any, they should be top-level $coincident_XYZ  that ultimately get
+    // AND'd  with any other filters.
+    if (coincidentStatesFilterData.length > 0) {
+      let coincident_filters = [];
+      for (const filter of coincidentStatesFilterData) {
+        coincident_filters.push(this._convertFilterForTator(filter));
+      }
+      let top_coincident_filter = {
+        method: "and",
+        operations: [...coincident_filters],
+      };
+      finalAnnotationFilters.push({
+        attribute: "$coincident_states",
+        value: top_coincident_filter,
+        operation: "search",
+      });
+    }
+
+    if (coincidentLocalizationsFilterData.length > 0) {
+      let coincident_filters = [];
+      for (const filter of coincidentLocalizationsFilterData) {
+        coincident_filters.push(this._convertFilterForTator(filter));
+      }
+      let top_coincident_filter = {
+        method: "and",
+        operations: [...coincident_filters],
+      };
+      finalAnnotationFilters.push({
+        attribute: "$coincident_localizations",
+        value: top_coincident_filter,
+        operation: "search",
+      });
+    }
+
+    if (trackMembershipFilterData.length > 0) {
+      let coincident_filters = [];
+      for (const filter of coincidentLocalizationsFilterData) {
+        coincident_filters.push(this._convertFilterForTator(filter));
+      }
+      let top_coincident_filter = {
+        method: "and",
+        operations: [...coincident_filters],
+      };
+      finalAnnotationFilters.push({
+        attribute: "$track_membership",
+        value: top_coincident_filter,
+        operation: "search",
+      });
     }
 
     // Annotation Search
@@ -564,9 +630,8 @@ export class TatorData {
       url += "&presigned=28800";
     }
 
-    if (annotationType == "Localizations" || annotationType == "States") {
-      // For ordering to match if edits are done on 1.3.0+ we can sort by $created_datetime
-      url += "&sort_by=$created_datetime";
+    if (sort) {
+      url += `&${sort}`;
     }
 
     console.log("Getting data with URL: " + url);
@@ -615,48 +680,46 @@ export class TatorData {
    *   Used in conjunction with listStart and pagination of data.
    *   If null, pagination is ignored.
    *
+   * @param {string} sortState -
+   *   Query param for sorting.
+   *
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredLocalizations(outputType, filters, listStart, listStop) {
+  async getFilteredLocalizations(
+    outputType,
+    filters,
+    listStart,
+    listStop,
+    sortState
+  ) {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
     var mediaIds = [];
+    var coincidentStateFilters = [];
+    var coincidentLocalizationFilters = [];
+    var trackMembershipFilters = [];
 
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
       filters.forEach((filter) => {
-        if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
+        if (filter.categoryGroup == "States (Coincident)") {
+          coincidentStateFilters.push(filter);
+        } else if (filter.categoryGroup == "Localizations (Coincident)") {
+          coincidentLocalizationFilters.push(filter);
+        } else if (filter.categoryGroup == "States (Track Membership)") {
+          trackMembershipFilters.push(filter);
+        } else if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "$id") {
-            mediaIds.push(Number(filter.value));
-          } else if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
+            for (let value of filter.value.split(",")) {
+              mediaIds.push(Number(value));
+            }
           } else {
             mediaFilters.push(filter);
           }
         } else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            localizationFilters.push(newFilter);
-          } else {
-            localizationFilters.push(filter);
-          }
+          localizationFilters.push(filter);
         }
       });
     }
@@ -666,10 +729,14 @@ export class TatorData {
       "Localizations",
       localizationFilters,
       mediaFilters,
+      coincidentStateFilters,
+      coincidentLocalizationFilters,
+      trackMembershipFilters,
       listStart,
       listStop,
       mediaIds,
-      null
+      null,
+      sortState
     );
 
     return outData;
@@ -710,35 +777,13 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "$id") {
             mediaIds.push(Number(filter.value));
-          } else if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
           } else {
             mediaFilters.push(filter);
           }
         } else if (filter.category == "State") {
           stateFilters.push(filter);
         } else if (this._stateTypeNames.indexOf(filter.category) >= 0) {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            stateFilters.push(newFilter);
-          } else {
-            stateFilters.push(filter);
-          }
+          stateFilters.push(filter);
         }
       });
     }
@@ -748,6 +793,9 @@ export class TatorData {
       "States",
       stateFilters,
       mediaFilters,
+      [],
+      [],
+      [],
       listStart,
       listStop,
       mediaIds,
@@ -802,33 +850,11 @@ export class TatorData {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field.includes("$id")) {
             mediaIds.push(Number(filter.value));
-          } else if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
           } else {
             mediaFilters.push(filter);
           }
         } else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          if (
-            filter.field.includes("$") &&
-            typeof filter.value === "string" &&
-            filter.value.includes("(ID:")
-          ) {
-            var newFilter = Object.assign({}, filter);
-            newFilter.value = Number(
-              filter.value.split("(ID:")[1].replace(")", "")
-            );
-            mediaFilters.push(newFilter);
-          } else {
-            localizationFilters.push(filter);
-          }
+          localizationFilters.push(filter);
         }
       });
     }
@@ -838,6 +864,9 @@ export class TatorData {
       "Medias",
       localizationFilters,
       mediaFilters,
+      [],
+      [],
+      [],
       listStart,
       listStop,
       mediaIds,
@@ -899,12 +928,12 @@ export class TatorData {
    * Assumes the media is in the same project as this tator data module.
    * @param {integer} mediaId
    * @param {integer} frame - optional
-   * @param {integer} entityId - optional
+   * @param {integer} elementalId - optional
    * @param {integer} typeId - optional, will convert to Tator annotator friendly link
    * @param {integer} version - optional
    * @returns {str} Tator link using given parameters
    */
-  generateMediaLink(mediaId, frame, entityId, typeId, version) {
+  generateMediaLink(mediaId, frame, elementalId, typeId, version) {
     var outStr = `/${this._project}/annotation/${mediaId}?`;
     var addedParam = false;
 
@@ -916,11 +945,11 @@ export class TatorData {
       addedParam = true;
     }
 
-    if (entityId) {
+    if (elementalId) {
       if (addedParam) {
         outStr += "&";
       }
-      outStr += `selected_entity=${entityId}`;
+      outStr += `selected_entity=${elementalId}`;
       addedParam = true;
     }
 

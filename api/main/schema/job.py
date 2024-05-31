@@ -82,7 +82,18 @@ class JobListSchema(AutoSchema):
                     "required": False,
                     "description": "A UUID string identifying a group of jobs.",
                     "schema": {"type": "string"},
-                }
+                },
+                {
+                    "name": "media_id",
+                    "in": "query",
+                    "required": False,
+                    "description": "Comma-separated list of media IDs.",
+                    "explode": False,
+                    "schema": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                    },
+                },
             ]
         return params
 

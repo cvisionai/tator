@@ -1,6 +1,7 @@
 import { TatorPage } from "../../components/tator-page.js";
+import { Utilities } from "../../util/utilities.js";
 import TatorLoading from "../../../images/tator_loading.gif";
-import { store } from "./dashboard-store.js";
+import { dashboardStore } from "./dashboard-store.js";
 
 export class RegisteredDashboard extends TatorPage {
   constructor() {
@@ -45,13 +46,16 @@ export class RegisteredDashboard extends TatorPage {
     main.appendChild(this._dashboardView);
 
     // Create store subscriptions
-    store.subscribe((state) => state.user, this._setUser.bind(this));
-    store.subscribe(
+    dashboardStore.subscribe((state) => state.user, this._setUser.bind(this));
+    dashboardStore.subscribe(
       (state) => state.announcements,
       this._setAnnouncements.bind(this)
     );
-    store.subscribe((state) => state.project, this._updateProject.bind(this));
-    store.subscribe((state) => state.dashboard, this._init.bind(this));
+    dashboardStore.subscribe(
+      (state) => state.project,
+      this._updateProject.bind(this)
+    );
+    dashboardStore.subscribe((state) => state.dashboard, this._init.bind(this));
 
     // Listen for URL param events
     console.log(window.history.state);
@@ -73,7 +77,7 @@ export class RegisteredDashboard extends TatorPage {
   }
 
   connectedCallback() {
-    store.getState().init();
+    dashboardStore.getState().init();
   }
 
   static get observedAttributes() {
@@ -106,10 +110,7 @@ export class RegisteredDashboard extends TatorPage {
     document.title = `Tator | ${dashboard.name}`;
     this._dashboardId = dashboard.id;
     this._dashboard = dashboard;
-    this._dashbordSource = `${dashboard.html_file}${
-      window.location.search !== "" ? window.location.search + "&" : "?"
-    }username=${this._username}`;
-    this._dashboardView.src = this._dashbordSource;
+    Utilities.setIframeSrc(this._dashboardView, dashboard);
     this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
     this._loading.style.display = "none";
   }
@@ -117,10 +118,7 @@ export class RegisteredDashboard extends TatorPage {
   hashHandler(e) {
     console.log("The hash has changed!");
     console.log(window.history.state);
-    this._dashbordSource = `${dashboard.html_file}${
-      window.location.search !== "" ? window.location.search + "&" : "?"
-    }username=${this._username}`;
-    this._dashboardView.src = this._dashbordSource;
+    Utilities.setIframeSrc(this._dashboardView, dashboard);
   }
 }
 

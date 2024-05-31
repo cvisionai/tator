@@ -1,21 +1,201 @@
 table_of_builtins = """
-    | Name              | Description                            | Localizations | States | Medias | Leaves | Files | 
-    |-------------------|----------------------------------------|---------------|--------|--------|--------|-------|
-    | section           | Media section                          |       X       |   X    |   X    |        |       |
-    | created_datetime  | The time of creation for this datum    |       X       |   X    |   X    |    X   |   X   |
-    | created_by        | The user id who created this datum     |       X       |   X    |   X    |    X   |   X   |
-    | modified_datetime | The last modification time             |       X       |   X    |   X    |    X   |   X   |
-    | modified_by       | The last modification user             |       X       |   X    |   X    |    X   |   X   |
-    | name              | The name of the element                |               |        |   X    |    X   |   X   |
-    | fps               | The frames per second                  |               |        |   X    |        |       |
-    | deleted           | Whether the media is marked deleted    |               |        |   X    |    X   |   X   |
-    | variant_deleted   | Whether the metadata is marked deleted |       X       |   X    |        |        |       |
-    | archive_state     | The current archive state of the media |               |        |   X    |        |       |
-    | x, y, u, or v     | Geometric coordinates                  |               |        |        |        |       |
-    | width or height   | Geometric sizes                        |               |        |        |        |       |
-    | incident          | Available when doing a related search  |               |        |   X    |        |       |   
+<table border="1">
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Localizations</th>
+        <th>States</th>
+        <th>Medias</th>
+        <th>Leaves</th>
+        <th>Files</th>
+    </tr>
+    <tr>
+        <td>section</td>
+        <td>Media section</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>created_datetime</td>
+        <td>The time of creation for this datum</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+    </tr>
+    <tr>
+        <td>created_by</td>
+        <td>The user id who created this datum</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+    </tr>
+    <tr>
+        <td>modified_datetime</td>
+        <td>The last modification time</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+    </tr>
+    <tr>
+        <td>modified_by</td>
+        <td>The last modification user</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+    </tr>
+    <tr>
+        <td>name</td>
+        <td>The name of the element</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+    </tr>
+    <tr>
+        <td>fps</td>
+        <td>The frames per second</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>deleted</td>
+        <td>Whether the media is marked deleted</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td>X</td>
+        <td>X</td>
+    </tr>
+    <tr>
+        <td>variant_deleted</td>
+        <td>Whether the metadata is marked deleted</td>
+        <td>X</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>archive_state</td>
+        <td>The current archive state of the media</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>x, y, u, or v</td>
+        <td>Geometric coordinates</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>width or height</td>
+        <td>Geometric sizes</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>incident</td>
+        <td>Available when doing a related search</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+</table>
 """
 
+table_of_specials = """
+<table border="1">
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Localizations</th>
+        <th>States</th>
+        <th>Medias</th>
+        <th>Leaves</th>
+        <th>Files</th>
+    </tr>
+    <tr>
+        <td>related_localizations</td>
+        <td>Returns media that contain localizations that match this subquery</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>related_states</td>
+        <td>Returns media that contain states that match this subquery</td>
+        <td></td>
+        <td></td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>related_media</td>
+        <td>Returns metadata that is associated with media matching this subquery</td>
+        <td>X</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>track_membership</td>
+        <td>Returns localizations that are in a matching track (localization-state)</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>coincident_states</td>
+        <td>Returns metadata that is coincident with state(s) (same frame/media)</td>
+        <td>X</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>coincident_localizations</td>
+        <td>Returns metadata that is coincident with a localization(s) (same frame/media)</td>
+        <td>X</td>
+        <td>X</td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+</table>
+"""
 attribute_filter_schema = {
     "type": "object",
     "description": "Object to query on attribute",
@@ -37,7 +217,10 @@ attribute_filter_schema = {
               
               '$' must precede these names in search attempts. E.g. `created_by` is supplied as `$created_by`.
               """
-            + table_of_builtins,
+            + table_of_builtins
+            + "<br /><br />The following special columns are available for searching on related data. Also must be preceded with a '$'."
+            + table_of_specials
+            + "<b>IMPORTANT:</b> Only the 'search' operation is valid for these special columns",
         },
         "operation": {
             "type": "string",
@@ -52,6 +235,7 @@ attribute_filter_schema = {
                 "iendswidth",
                 "istartswith",
                 "isnull",
+                "in",
                 # Date specific operations
                 "date_eq",
                 "date_gte",
@@ -60,6 +244,8 @@ attribute_filter_schema = {
                 "date_lte",
                 "date_range",
                 "distance_lte",
+                # special operation
+                "search",  # only valid operation for $coincident searches
             ],
         },
         "inverse": {

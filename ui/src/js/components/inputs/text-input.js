@@ -21,6 +21,13 @@ export class TextInput extends TatorElement {
     this._input.setAttribute("type", "text");
     this.label.appendChild(this._input);
 
+    this._input.addEventListener("input", () => {
+      // The styling does not change liked it does with the "change" event
+      // This is due to the legacy UI interactions only using the "change" event
+      // This however has been added for other components to use
+      this.dispatchEvent(new Event("input"));
+    });
+
     this._input.addEventListener("change", () => {
       if (this.getValue() === null) {
         this._input.classList.add("has-border");
@@ -81,6 +88,10 @@ export class TextInput extends TatorElement {
             this.getValue = this._validateEmail;
             this._input.setAttribute("type", "email");
             break;
+          case "float_array":
+            this.getValue = this._validateFloatArray;
+            this._input.setAttribute("type", "float_array");
+            this._input.setAttribute("placeholder", "e.g. [0.0, 1.0, 2.0]");
           default:
             this._input.setAttribute("type", newValue);
             break;
@@ -214,6 +225,17 @@ export class TextInput extends TatorElement {
 
   _validateEmail() {
     return this._input.value;
+  }
+
+  _validateFloatArray() {
+    let val;
+    try {
+      let array = JSON.parse(this._input.value);
+      val = array.map((item) => parseFloat(item));
+    } catch {
+      val = null;
+    }
+    return val;
   }
 
   setValue(val) {

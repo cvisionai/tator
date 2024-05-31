@@ -124,7 +124,7 @@ export class FilterCondition extends TatorElement {
           if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
             if (attribute.label) {
               if (
-                ["_x", "_y", "_width", "_height"].indexOf(attribute.name) >= 0
+                ["$x", "$y", "$width", "$height"].indexOf(attribute.name) >= 0
               ) {
                 geoChoices.push({
                   value: attribute.name,
@@ -189,32 +189,61 @@ export class FilterCondition extends TatorElement {
           selectedAttributeType = attribute;
           dtype = attribute.dtype;
           if (dtype == "enum") {
-            let enumChoices = [];
-            for (let i in attribute.choices) {
-              const choiceValue = attribute.choices[i];
-              let choice;
-              let label;
+            if (Array.isArray(attribute.choices)) {
+              let enumChoices = [];
+              for (let i in attribute.choices) {
+                const choiceValue = attribute.choices[i];
+                let choice;
+                let label;
 
-              if (
-                typeof choiceValue == "object" &&
-                typeof choiceValue.value !== "undefined"
-              ) {
-                choice = choiceValue.value;
-                label =
-                  typeof choiceValue.label !== "undefined"
-                    ? choiceValue.label
-                    : choice;
-              } else {
-                choice = choiceValue;
-                label = choice;
-              }
+                if (
+                  typeof choiceValue == "object" &&
+                  typeof choiceValue.value !== "undefined"
+                ) {
+                  choice = choiceValue.value;
+                  label =
+                    typeof choiceValue.label !== "undefined"
+                      ? choiceValue.label
+                      : choice;
+                } else {
+                  choice = choiceValue;
+                  label = choice;
+                }
 
-              if (uniqueFieldChoices.indexOf(choice) < 0) {
-                enumChoices.push({ value: choice, label: label });
-                uniqueFieldChoices.push(choice);
+                if (uniqueFieldChoices.indexOf(choice) < 0) {
+                  enumChoices.push({ value: choice, label: label });
+                  uniqueFieldChoices.push(choice);
+                }
               }
+              this._valueEnum.choices = enumChoices;
+            } else {
+              let enumChoices = {};
+              let groups = Object.keys(attribute.choices);
+              for (const group of groups) {
+                enumChoices[group] = [];
+                let groupValues = attribute.choices[group];
+                for (const choiceValue of groupValues) {
+                  let choice;
+                  let label;
+
+                  if (
+                    typeof choiceValue == "object" &&
+                    typeof choiceValue.value !== "undefined"
+                  ) {
+                    choice = choiceValue.value;
+                    label =
+                      typeof choiceValue.label !== "undefined"
+                        ? choiceValue.label
+                        : choice;
+                  } else {
+                    choice = choiceValue;
+                    label = choice;
+                  }
+                  enumChoices[group].push({ value: choice, label: label });
+                }
+              }
+              this._valueEnum.choices = enumChoices;
             }
-            this._valueEnum.choices = enumChoices;
           }
           break;
         }
@@ -288,7 +317,13 @@ export class FilterCondition extends TatorElement {
         choices.push({ value: attributeType.typeGroupName });
         uniqueCategories.push(attributeType.typeGroupName);
       }
-      this._categoryMap[attributeType.name] = attributeType.typeGroupName;
+      //  @TODO:  This category map seems like a  really bad idea.
+      if (
+        attributeType.typeGroupName.indexOf("(Coincident)") < 0 &&
+        attributeType.typeGroupName.indexOf("(Track Membership)")
+      ) {
+        this._categoryMap[attributeType.name] = attributeType.typeGroupName;
+      }
     }
     this._category.choices = choices;
     this._category.selectedIndex = -1;

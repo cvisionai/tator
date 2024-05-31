@@ -84,4 +84,11 @@ annotation_filter_parameter_schema = [
         "description": "Include in the return set objects that have `variant_deleted` set to True.",
         "schema": {"type": "integer", "minimum": 0, "maximum": 1, "default": 0},
     },
+    {
+        "name": "show_all_marks",
+        "in": "query",
+        "required": False,
+        "description": "Include in the return set all marks, not just the latest.",
+        "schema": {"type": "integer", "minimum": 0, "maximum": 1, "default": 0},
+    },
 ]

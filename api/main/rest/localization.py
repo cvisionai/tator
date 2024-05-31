@@ -1,6 +1,8 @@
 import logging
+from django.db.models import Max
 from django.db import transaction
 from django.http import Http404
+from django.utils import timezone
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -10,7 +12,7 @@ from ..models import User
 from ..models import Project
 from ..models import Version
 from ..schema import LocalizationListSchema
-from ..schema import LocalizationDetailSchema
+from ..schema import LocalizationDetailSchema, LocalizationByElementalIdSchema
 from ..schema.components import localization as localization_schema
 
 from ._base_views import BaseListView
@@ -32,6 +34,8 @@ from ._util import (
     compute_user,
 )
 from ._permissions import ProjectEditPermission
+
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -216,25 +220,48 @@ class LocalizationListAPI(BaseListView):
     def _delete(self, params):
         qs = get_annotation_queryset(params["project"], params, "localization")
         count = qs.count()
+        expected_count = params.get("count")
+        if expected_count is not None and expected_count != count:
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would delete {count}"
+            )
         if count > 0:
             if params["prune"] == 1:
                 # Delete the localizations.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             else:
-                bulk_update_and_log_changes(
-                    qs,
-                    params["project"],
-                    self.request.user,
-                    update_kwargs={"variant_deleted": True},
-                    new_attributes=None,
-                )
+                if params.get("in_place", 0):
+                    bulk_update_and_log_changes(
+                        qs,
+                        params["project"],
+                        self.request.user,
+                        update_kwargs={"variant_deleted": True},
+                        new_attributes=None,
+                    )
+                else:
+                    objs = []
+                    for original in qs.iterator():
+                        original.pk = None
+                        original.id = None
+                        original.variant_deleted = True
+                        objs.append(original)
+                    Localization.objects.bulk_create(objs)
 
         return {"message": f"Successfully deleted {count} localizations!"}
 
     def _patch(self, params):
         patched_version = params.pop("new_version", None)
+        # Adding an id query a
+        if params.get("ids", []) != [] or params.get("user_elemental_id", None):
+            params["show_all_marks"] = 1
+            params["in_place"] = 1
         qs = get_annotation_queryset(params["project"], params, "localization")
         count = qs.count()
+        expected_count = params.get("count")
+        if expected_count is not None and expected_count != count:
+            raise ValueError(
+                f"Safety check failed - expected {expected_count} but would update {count}"
+            )
         if count > 0:
             if qs.values("type").distinct().count() != 1:
                 raise ValueError(
@@ -253,13 +280,35 @@ class LocalizationListAPI(BaseListView):
             if patched_version is not None:
                 update_kwargs["version"] = patched_version
 
-            bulk_update_and_log_changes(
-                qs,
-                params["project"],
-                self.request.user,
-                update_kwargs=update_kwargs,
-                new_attributes=new_attrs,
-            )
+            if params.get("in_place", 0):
+                bulk_update_and_log_changes(
+                    qs,
+                    params["project"],
+                    self.request.user,
+                    update_kwargs=update_kwargs,
+                    new_attributes=new_attrs,
+                )
+            else:
+                objs = []
+                origin_datetimes = []
+                for original in qs.iterator():
+                    original.pk = None
+                    original.id = None
+                    for key, value in update_kwargs.items():
+                        if key == "version":
+                            setattr(original, key, Version.objects.get(pk=value))
+                        else:
+                            setattr(original, key, value)
+                    original.attributes.update(new_attrs)
+                    objs.append(original)
+                    origin_datetimes.append(original.created_datetime)
+
+                new_objs = Localization.objects.bulk_create(objs)
+
+                for new_obj, origin_datetime in zip(new_objs, origin_datetimes):
+                    found_it = Localization.objects.get(pk=new_obj.pk)
+                    found_it.created_datetime = origin_datetime
+                    found_it.save()
 
         return {"message": f"Successfully updated {count} localizations!"}
 
@@ -268,7 +317,7 @@ class LocalizationListAPI(BaseListView):
         return self._get(params)
 
 
-class LocalizationDetailAPI(BaseDetailView):
+class LocalizationDetailBaseAPI(BaseDetailView):
     """Interact with single localization.
 
     Localizations are shape annotations drawn on a video or image. They are currently of type
@@ -281,16 +330,36 @@ class LocalizationDetailAPI(BaseDetailView):
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
-    def _get(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
+    def get_qs(self, params, qs):
         if not qs.exists():
             raise Http404
         return qs.values(*LOCALIZATION_PROPERTIES)[0]
 
-    @transaction.atomic
-    def _patch(self, params):
-        obj = Localization.objects.get(pk=params["id"], deleted=False)
+    def patch_qs(self, params, qs):
+        if not qs.exists():
+            raise Http404
+        obj = qs[0]
         model_dict = obj.model_dict
+
+        # If this is a really old object, it may not have an elemental_id
+        # but we need to add it for trigger support
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
+
+        # Only allow iterative changes, this has to be changing off the last mark in the version
+        if params.get("in_place", 0) == 0 and params["pedantic"] and (obj.mark != obj.latest_mark):
+            raise ValueError(
+                f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+            )
+        elif obj.mark != obj.latest_mark:
+            obj = type(obj).objects.get(
+                project=obj.project,
+                version=obj.version,
+                mark=obj.latest_mark,
+                elemental_id=obj.elemental_id,
+            )
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -299,9 +368,10 @@ class LocalizationDetailAPI(BaseDetailView):
         if frame is not None:
             obj.frame = frame
         if version is not None:
-            obj.version = version
+            obj.version = Version.objects.get(pk=version)
 
         if params.get("user_elemental_id", None):
+            params["in_place"] = 1
             computed_author = compute_user(
                 obj.project.pk, self.request.user, params.get("user_elemental_id", None)
             )
@@ -376,24 +446,127 @@ class LocalizationDetailAPI(BaseDetailView):
             obj.thumbnail_image = patch_attributes(new_attrs, obj.thumbnail_image)
             obj.thumbnail_image.save()
 
-        obj.save()
-        log_changes(obj, model_dict, obj.project, self.request.user)
+        if params.get("in_place", 0):
+            obj.save()
+            log_changes(obj, model_dict, obj.project, self.request.user)
+        else:
+            # Save edits as new object, mark is calculated in trigger
+            obj.id = None
+            obj.pk = None
+            origin_datetime = obj.created_datetime
+            obj.save()
+            found_it = Localization.objects.get(pk=obj.pk)
+            # Do a double save to keep original creation time
+            found_it.created_datetime = origin_datetime
+            found_it.save()
 
-        return {"message": f'Localization {params["id"]} successfully updated!'}
+        return {
+            "message": f"Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
+            "object": type(obj).objects.filter(pk=obj.pk).values(*LOCALIZATION_PROPERTIES)[0],
+        }
 
-    def _delete(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
+    def delete_qs(self, params, qs):
         if not qs.exists():
             raise Http404
         obj = qs[0]
+        if obj.elemental_id == None:
+            obj.elemental_id = uuid.uuid4()
+            obj.save()
+        elemental_id = obj.elemental_id
+        version_id = obj.version.id
+        mark = obj.mark
+        obj_id = obj.id
         if params["prune"] == 1:
             delete_and_log_changes(obj, obj.project, self.request.user)
         else:
+            if params["pedantic"] and (obj.mark != obj.latest_mark):
+                raise ValueError(
+                    f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                    f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+                )
             b = qs[0]
+            b.pk = None
             b.variant_deleted = True
             b.save()
+            obj_id = b.id
             log_changes(b, b.model_dict, b.project, self.request.user)
-        return {"message": f'Localization {params["id"]} successfully deleted!'}
+        return {
+            "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!",
+            "id": obj_id,
+        }
 
     def get_queryset(self):
         return Localization.objects.all()
+
+
+class LocalizationDetailAPI(LocalizationDetailBaseAPI):
+    """Interact with single localization.
+
+    Localizations are shape annotations drawn on a video or image. They are currently of type
+    box, line, or dot. Each shape has slightly different data members. Localizations are
+    a type of entity in Tator, meaning they can be described by user defined attributes.
+    """
+
+    schema = LocalizationDetailSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = "id"
+    http_method_names = ["get", "patch", "delete"]
+
+    def _get(self, params):
+        qs = Localization.objects.filter(pk=params["id"], deleted=False)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        qs = Localization.objects.filter(pk=params["id"], deleted=False)
+        return self.patch_qs(params, qs)
+
+    def _delete(self, params):
+        qs = Localization.objects.filter(pk=params["id"], deleted=False)
+        return self.delete_qs(params, qs)
+
+
+class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
+    """Interact with single localization.
+
+    Localizations are shape annotations drawn on a video or image. They are currently of type
+    box, line, or dot. Each shape has slightly different data members. Localizations are
+    a type of entity in Tator, meaning they can be described by user defined attributes.
+    """
+
+    schema = LocalizationByElementalIdSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = "elemental_id"
+    http_method_names = ["get", "patch", "delete"]
+
+    def calculate_queryset(self, params):
+        include_deleted = False
+        if params.get("prune", None) == 1:
+            include_deleted = True
+        qs = Localization.objects.filter(
+            elemental_id=params["elemental_id"], version=params["version"]
+        )
+        if include_deleted is False:
+            qs = qs.filter(deleted=False)
+
+        # Get the latest mark or the one that is supplied by the user
+        mark_version = params.get("mark", None)
+        if mark_version:
+            qs = qs.filter(mark=mark_version)
+        else:
+            latest_mark = qs.aggregate(value=Max("mark"))
+            qs = qs.filter(mark=latest_mark["value"])
+        return qs
+
+    def _get(self, params):
+        qs = self.calculate_queryset(params)
+        return self.get_qs(params, qs)
+
+    @transaction.atomic
+    def _patch(self, params):
+        qs = self.calculate_queryset(params)
+        return self.patch_qs(params, qs)
+
+    def _delete(self, params):
+        qs = self.calculate_queryset(params)
+        return self.delete_qs(params, qs)

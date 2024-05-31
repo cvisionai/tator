@@ -1,0 +1,49 @@
+<template id="entity-gallery-sort">
+  <style>
+    .container {
+      display: flex;
+      align-items: center;
+      margin-left: 20px;
+    }
+    svg {
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    select {
+      max-width: 100px;
+      margin-left: 10px;
+      background-color: transparent;
+      border-color: rgba(109, 122, 150, 0.5);
+      border: 1px solid rgb(38, 46, 61);
+      border-radius: 3px;
+      font-size: inherit;
+      font-family: "Inter var", sans-serif;
+      transition-duration: 0.25s;
+      transition-property: color, border-color;
+    }
+    optgroup {
+      background-color: rgb(38, 46, 61);
+    }
+    option {
+      background-color: rgb(38, 46, 61);
+    }
+  </style>
+  <div class="container text-gray f3">
+    <label for="options">Sort By:</label>
+    <select id="options" class="select-sm2 has-border">
+    </select>
+
+    <!-- Ascending -->
+    <svg style="fill: none;" xmlns="http://www.w3.org/2000/svg" id="ascending" width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up">
+      <title>Ascending</title>
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+
+    <!-- Descending -->
+    <svg style="fill: none;" xmlns="http://www.w3.org/2000/svg" id="descending" width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down">
+      <title>Descending</title>
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </div>
+
+</template>

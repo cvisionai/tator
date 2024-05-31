@@ -1,15 +1,16 @@
-import create from "zustand/vanilla";
+import { createStore } from "zustand/vanilla";
 import { subscribeWithSelector } from "zustand/middleware";
 import { getApi } from "../../../../../scripts/packages/tator-js/pkg/src/index.js";
 
 const api = getApi();
 const projectId = window.location.pathname.split("/")[1];
 
-const store = create(
+const store = createStore(
   subscribeWithSelector((set, get) => ({
     user: null,
     announcements: [],
     project: null,
+    dashboard: null,
     init: async () => {
       Promise.all([
         api.whoami(),

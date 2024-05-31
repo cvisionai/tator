@@ -28,6 +28,8 @@ from .file_type import FileTypeListAPI
 from .file_type import FileTypeDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
+from .hosted_template import HostedTemplateListAPI
+from .hosted_template import HostedTemplateDetailAPI
 from .image_file import ImageFileListAPI
 from .image_file import ImageFileDetailAPI
 from .invitation import InvitationListAPI
@@ -44,6 +46,7 @@ from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
 from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
+from .localization import LocalizationDetailByElementalIdAPI
 from .localization_count import LocalizationCountAPI
 from .localization_type import LocalizationTypeListAPI
 from .localization_type import LocalizationTypeDetailAPI
@@ -72,6 +75,7 @@ from .section import SectionListAPI
 from .section import SectionDetailAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
+from .state import StateDetailByElementalIdAPI
 from .state_count import StateCountAPI
 from .state import MergeStatesAPI
 from .state import TrimStateEndAPI

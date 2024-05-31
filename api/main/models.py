@@ -43,7 +43,9 @@ from django.forms.models import model_to_dict
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
-from django.db import transaction
+from django.db import transaction, connection
+from django.db.backends.signals import connection_created
+from django.dispatch import receiver
 from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
@@ -107,6 +109,42 @@ ELSE
 END  IF; 
 RETURN NEW;
 """
+
+
+# Register prepared statements for the triggers to optimize performance on creation of a database  connection
+@receiver(connection_created)
+def on_connection_created(sender, connection, **kwargs):
+    # These prepared statements get reused for each row in a bulk insert, greatly improving performance
+    cursor = connection.cursor()
+
+    create_prepared_statements(cursor)
+
+
+def create_prepared_statements(cursor):
+    # We need the db migrated first
+    cursor.execute("SELECT 1 FROM pg_tables WHERE tablename = 'main_localization';")
+    if cursor.fetchone() is None:
+        return
+
+    # Bomb out if we already made the prepared statements on this connection (unit test check only)
+    cursor.execute(
+        "SELECT COUNT(name) FROM pg_prepared_statements WHERE name='get_next_mark_localization';"
+    )
+    if cursor.fetchone()[0] > 0:
+        return
+    cursor.execute(
+        "PREPARE get_next_mark_localization(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
+    )
+    cursor.execute(
+        "PREPARE update_latest_mark_localization(UUID, INT) AS UPDATE main_localization SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_localization WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
+    # State table prepared statements
+    cursor.execute(
+        "PREPARE get_next_mark_state(UUID, INT) AS SELECT COALESCE(MAX(mark)+1,0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE;"
+    )
+    cursor.execute(
+        "PREPARE update_latest_mark_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
 
 
 class ModelDiffMixin(object):
@@ -1782,7 +1820,6 @@ def file_post_delete(sender, instance, **kwargs):
 
 
 class Localization(Model, ModelDiffMixin):
-
     class Meta:
         triggers = [
             pgtrigger.Trigger(

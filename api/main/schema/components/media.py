@@ -97,7 +97,7 @@ media_get_properties = {
 
 media_spec = {
     "type": "object",
-    "required": ["type", "section", "name", "md5"],
+    "required": ["type", "name", "md5"],
     "properties": {
         "type": {
             "description": "Unique integer identifying a media type. Use "
@@ -125,6 +125,10 @@ media_spec = {
         "section": {
             "description": "Media section name.",
             "type": "string",
+        },
+        "section_id": {
+            "description": "Media section ID. If given `section` is ignored.",
+            "type": "integer",
         },
         "name": {
             "description": "Name of the file.",

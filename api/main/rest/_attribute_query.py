@@ -7,7 +7,17 @@ import re
 import uuid
 
 from django.db.models.functions import Cast, Greatest
-from django.db.models import Func, F, Q, Count, Subquery, OuterRef, Value
+from django.db.models import (
+    Func,
+    F,
+    Q,
+    Count,
+    Subquery,
+    OuterRef,
+    Value,
+    BigIntegerField,
+    ExpressionWrapper,
+)
 from django.contrib.gis.db.models import (
     BigIntegerField,
     BooleanField,
@@ -62,6 +72,14 @@ OPERATOR_SUFFIXES = {
     "attribute_contains": "__icontains",
     "attribute_distance": "__distance_lte",
 }
+
+
+class MediaFieldExpression:
+    def get_wrapper():
+        return ExpressionWrapper(
+            Cast("media", output_field=BigIntegerField()).bitleftshift(32).bitor(F("frame")),
+            output_field=BigIntegerField(),
+        )
 
 
 def _sanitize(name):
@@ -202,6 +220,7 @@ def _get_field_for_attribute(entity_type, key):
         "float": FloatField,
         "enum": CharField,
         "string": CharField,
+        "blob": CharField,
         "datetime": DateTimeField,
         "geopos": PointField,
         "float_array": VectorField,
@@ -313,6 +332,83 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             else:
                 query = Q(media__in=media_qs)
             all_casts.add("tator_user_sections")
+        elif attr_name == "$coincident_states":
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
+            #  Find matching states  from the
+            proj_states = State.objects.filter(project=project)
+            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+
+            # Have to annotate to get it accessible to query object
+            proj_states = proj_states.annotate(
+                **{f"media_frame": MediaFieldExpression.get_wrapper()}
+            )
+            query = Q(media_frame__in=proj_states.values("media_frame"))
+
+            all_casts.add("$coincident")
+        elif attr_name == "$coincident_localizations":
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
+            proj_locals = Localization.objects.filter(project=project)
+            proj_locals = get_attribute_psql_queryset_from_query_obj(proj_locals, value)
+
+            # Have to annotate to get it accessible to query object
+            proj_locals = proj_locals.annotate(
+                **{f"media_frame": MediaFieldExpression.get_wrapper()}
+            )
+            query = Q(media_frame__in=proj_locals.values("media_frame"))
+
+            all_casts.add("$coincident")
+        elif attr_name == "$track_membership":
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
+            #  Find matching states  from the
+            proj_states = State.objects.filter(project=project)
+            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+
+            query = Q(pk__in=proj_states.values("localizations"))
+        elif attr_name == "$related_localizations":
+            if is_media is False:
+                raise ValueError(f"'{attr_name}' not valid on metadata!")
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            proj_locals = Localization.objects.filter(project=project)
+            proj_locals = get_attribute_psql_queryset_from_query_obj(proj_locals, value)
+            query = Q(pk__in=proj_locals.values("media").distinct())
+        elif attr_name == "$related_states":
+            if is_media is False:
+                raise ValueError(f"'{attr_name}' not valid on metadata!")
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            proj_states = State.objects.filter(project=project)
+            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+            query = Q(pk__in=proj_states.values("media").distinct())
+        elif attr_name == "$related_media":
+            if is_media is True:
+                raise ValueError(f"'{attr_name}' not valid on media!")
+            if operation != "search":
+                raise ValueError(
+                    f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
+                )
+            proj_media = Media.objects.filter(project=project)
+            proj_media = get_attribute_psql_queryset_from_query_obj(proj_media, value)
+            query = Q(media__in=proj_media.values("id").distinct())
         else:
             if attr_name.startswith("$"):
                 db_lookup = attr_name[1:]
@@ -343,17 +439,18 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             # NOTE: For string functions avoid the '"' work around due to the django
             # string handling bug
             # only apply if cast func is active
-            if castFunc and operation in ["icontains", "iendswith", "istartswith"]:
+            if castFunc and operation in ["icontains", "iendswith", "istartswith", "in"]:
                 castFunc = lambda x: x
                 # Don't use casts for these operations either
                 if attr_name.startswith("$") == False:
                     db_lookup = f"attributes__{attr_name}"
-            if operation in ["isnull"]:
+            if castFunc and operation in ["isnull"]:
                 value = _convert_boolean(value)
             elif castFunc:
                 value = castFunc(value)
             else:
                 return Q(pk=-1), []
+
             if operation in ["date_eq", "eq"]:
                 query = Q(**{f"{db_lookup}": value})
             else:
@@ -391,6 +488,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         "float": float,
         "enum": lambda x: f'"{x}"',
         "string": lambda x: f'"{x}"',
+        "blob": lambda x: f'"{x}"',
         "datetime": str,
         "geopos": lambda x: x,
         "float_array": None,
@@ -398,14 +496,22 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
 
     attributeCast = {}
     annotateField = {}
-    typeModel = typeLookup[type(qs[0])]
-    typeObjects = typeModel.objects.filter(project=qs[0].project)
+    # For Section the attribute types are stored in the project itself
+    if type(qs[0]) == Section:
+        typeObjects = [qs[0].project]
+    else:
+        typeModel = typeLookup[type(qs[0])]
+        typeObjects = typeModel.objects.filter(project=qs[0].project)
     for typeObject in typeObjects:
         for attributeType in typeObject.attribute_types:
             attributeCast[attributeType["name"]] = castLookup[attributeType["dtype"]]
             annotateField[attributeType["name"]], _ = _get_field_for_attribute(
                 typeObject, attributeType["name"]
             )
+
+    # For localizations  we support finding coincident localizations/states  on the same frame
+    if is_media == False:
+        annotateField["$coincident"] = MediaFieldExpression
 
     annotateField["tator_user_sections"] = TextField
     attributeCast["tator_user_sections"] = lambda x: f'"{x}"'
@@ -436,20 +542,20 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         query_object, attributeCast, is_media, qs[0].project, set()
     )
 
-    logger.info(f"Q_Object = {q_object}")
+    logger.info(f"Q_Object = {q_object} Model = {qs.model}")
     logger.info(f"Query requires the following annotations: {required_annotations}")
     for annotation in required_annotations:
         logger.info(f"\t {annotation} to {annotateField[annotation]()}")
         if annotateField[annotation] == DateTimeField:
             # Cast DateTime to text first
-            qs = qs.annotate(
+            qs = qs.alias(
                 **{
                     f"casted_{_sanitize(annotation)}_text": Cast(
                         F(f"attributes__{annotation}"), TextField()
                     )
                 }
             )
-            qs = qs.annotate(
+            qs = qs.alias(
                 **{
                     f"casted_{_sanitize(annotation)}": Cast(
                         F(f"casted_{_sanitize(annotation)}_text"),
@@ -457,8 +563,10 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
                     )
                 }
             )
+        elif annotateField[annotation] == MediaFieldExpression:
+            qs = qs.alias(**{f"media_frame": MediaFieldExpression.get_wrapper()})
         else:
-            qs = qs.annotate(
+            qs = qs.alias(
                 **{
                     f"casted_{_sanitize(annotation)}": Cast(
                         F(f"attributes__{annotation}"), annotateField[annotation]()

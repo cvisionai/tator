@@ -74,6 +74,10 @@ localization_properties = {
         "type": "string",
         "nullable": True,
     },
+    "mark": {
+        "description": "Revision number of this object on this version branch",
+        "type": "integer",
+    },
 }
 
 post_properties = {
@@ -198,6 +202,20 @@ localization_update = {
                 "minimum": 1,
             },
         },
+        "in_place": {
+            "type": "integer",
+            "description": "Set to 1 to edit this record in-place, else mark-based versioning rules apply. This changes to 1 for authorship changes automatically.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
+        "pedantic": {
+            "type": "integer",
+            "description": "Set to 1 to enforce that this is the latest mark; else push edits to end of branch.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
     },
 }
 
@@ -225,8 +243,24 @@ localization_id_query = {
                 "minimum": 1,
             },
         },
+        "elemental_ids": {
+            "description": "Array of localizations to retrieve.",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minimum": 1,
+            },
+        },
         "state_ids": {
-            "description": "Array of parent state IDs for which localizations should be retrieved.",
+            "description": "Array of parent localization state (track) IDs for which localizations should be retrieved.",
+            "type": "array",
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+            },
+        },
+        "frame_state_ids": {
+            "description": "Array of frame state IDs for which localizations present in the same media/frame will be retrieved.",
             "type": "array",
             "items": {
                 "type": "integer",
@@ -251,7 +285,14 @@ localization_delete_schema = {
             "minimum": 0,
             "maximum": 1,
             "default": 0,
-        }
+        },
+        "pedantic": {
+            "type": "integer",
+            "description": "Set to 1 to enforce that this is the latest mark; else push edits to end of branch.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
+        },
     },
 }
 localization_bulk_delete_schema = {
@@ -259,22 +300,6 @@ localization_bulk_delete_schema = {
     "properties": {
         **localization_delete_schema["properties"],
         **localization_id_query["properties"],
-        "null_attributes": {
-            "description": "Null a value in the attributes body",
-            "type": "array",
-            "items": {
-                "type": "string",
-                "minimum": 1,
-            },
-        },
-        "reset_attributes": {
-            "description": "Reset an attribute to the default value specified in the Type object",
-            "type": "array",
-            "items": {
-                "type": "string",
-                "minimum": 1,
-            },
-        },
     },
 }
 
@@ -298,6 +323,29 @@ localization_bulk_update = {
         "user_elemental_id": {
             "description": "Unique ID of the original user who created this. If permissions allow, will change the creating user to the one referenced by this elemental_id",
             "type": "string",
+        },
+        "null_attributes": {
+            "description": "Null a value in the attributes body",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minimum": 1,
+            },
+        },
+        "reset_attributes": {
+            "description": "Reset an attribute to the default value specified in the Type object",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minimum": 1,
+            },
+        },
+        "in_place": {
+            "type": "integer",
+            "description": "Set to 1 to edit this record in-place, else mark-based versioning rules apply. Note: If querying by ids or applying a author change this is always treated as 1.",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0,
         },
         **localization_id_query["properties"],
     },

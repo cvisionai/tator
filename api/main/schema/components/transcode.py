@@ -2,7 +2,7 @@ from .email import email_spec
 
 transcode_spec = {
     "type": "object",
-    "required": ["type", "gid", "uid", "url", "section", "name"],
+    "required": ["type", "gid", "uid", "url", "name"],
     "properties": {
         "type": {
             "description": "Unique integer identifying a video type.",
@@ -39,6 +39,10 @@ transcode_spec = {
         "section": {
             "description": "Media section name to upload to.",
             "type": "string",
+        },
+        "section_id": {
+            "description": "Media section ID to upload to. If given `section` is ignored.",
+            "type": "integer",
         },
         "name": {
             "description": "Name of the file.",

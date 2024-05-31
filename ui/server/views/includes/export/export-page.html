@@ -1,0 +1,323 @@
+<template id="export-page">
+
+<style>
+.puple-button-outline {
+  background: #202543;
+  border: 2px solid #4A4EAE;
+  color: #fff;
+}
+
+.purple-box-border {
+  border: 2px solid #4A4EAE;
+}
+
+.box-border {
+  border: 1px solid #262e3d;
+}
+
+.purple-box {
+  border: 2px solid #4A4EAE;
+  background-color: #202543;
+}
+
+.main-div {
+  background-color: #151b28;
+}
+
+.emphasis-background {
+  background-color: #202543;
+}
+
+.text-purple {
+  color: #696cff;
+}
+@keyframes gradient {
+  0% {
+      background-position: 0% 50%;
+  }
+  50% {
+      background-position: 100% 50%;
+  }
+  100% {
+      background-position: 0% 50%;
+  }
+}
+.loading-background {
+  background: linear-gradient(-45deg, rgba(74,78,174,1), rgba(42,43,102,1), rgba(10,63,100,1));
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: initial;
+  position: fixed;
+  z-index: 1500;
+}
+
+.circle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    opacity: 0.7;
+    animation: scale 3s infinite
+      cubic-bezier(0, 0, 0.50, 1.00);
+  }
+}
+
+.circle-1 {
+  background-color: #696cff;
+    &:before {
+      background-color: #696cff;
+      animation-delay: 500ms;
+    }
+}
+.circle-2 {
+  background-color: #696cff;
+    &:before {
+      background-color: #696cff;
+      animation-delay: 1000ms;
+    }
+}
+.circle-3 {
+  background-color: #696cff;
+    &:before {
+      background-color: #696cff;
+      animation-delay: 1500ms;
+    }
+}
+
+@keyframes scale {
+  0% {
+    transform: scale(1);
+  }
+  50%, 75% {
+    transform: scale(2.5);
+  }
+  78%, 100% {
+    opacity: 0;
+  }
+}
+
+.loading-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  text-align: center;
+}
+
+</style>
+
+<div id="dimmer" class="background-dimmer"></div>
+
+<div id="loadingScreen" class="loading-background">
+  <div class="loading-text flex-column">
+    <div class="d-flex py-5">
+      <div class="circle circle-1 mx-1"></div>
+      <div class="circle circle-2 mx-1"></div>
+      <div class="circle circle-3 mx-1"></div>
+    </div>
+    <div id="loadingScreenText"></div>
+  </div>
+</div>
+
+<main id="mainPage" class="px-1" style="max-width: 1300px; margin: auto;">
+
+  <!--
+  HEADER
+  -->
+  <div class="h1 mt-6">Export Data</div>
+  <div class="text-gray py-2 f1 mb-4">
+    Export entities from a filtered set of localizations, states, or media in the project.
+  </div>
+
+  <!--
+  PAGE: QUERY TYPE
+  -->
+  <div class="mb-4">
+    <div id="pageQueryType_edit" class="main-div py-3 px-3 rounded-2 d-flex flex-column mb-2 flex-grow" style="background-color: #00070D; border: 2px solid #151b28;">
+      <div class="d-flex flex-justify-between">
+        <div class="h1 text-dark-gray">1. Select Export Type</div>
+        <button id="pageQueryType_editButton" class="btn-outline btn btn-small f2 text-gray">Edit</button>
+      </div>
+      <div id="pageQueryType_editHeader" class="text-purple text-semibold f2 mt-3"></div>
+    </div>
+    <div id="pageQueryType_main" class="main-div py-3 px-3 rounded-2 mb-2 flex-grow">
+      <div class="py-3 col-12">
+        <div class="h1">1. Select Export Type</div>
+        <span class="text-gray f2 py-1 mt-1 d-flex">Select the type(s) of data to be exported. Additional filters can be applied after selecting the options below.</span>
+        <div class="d-flex mt-1 col-12">
+          <div class="d-flex flex-items-center flex-column px-2 py-2 mx-2 box-border rounded-2 col-4 text-left">
+            <button id="pageQueryType_mediaButton" class="btn btn-clear btn-purple py-2 px-2 mx-3 my-3 d-flex flex-column" style="height: 80px; width: 280px;" disabled>
+              <div class="d-flex flex-row py-1 pt-1">
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /></svg>
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M8 4l0 16" /><path d="M16 4l0 16" /><path d="M4 8l4 0" /><path d="M4 16l4 0" /><path d="M4 12l16 0" /><path d="M16 8l4 0" /><path d="M16 16l4 0" /></svg>
+              </div>
+              <div class="py-1">Export Media</div>
+            </button>
+            <div class="f3 text-gray text-semibold text-uppercase mt-3 col-12">Media Types To Export</div>
+            <div id="pageQueryType_mediaTypesList" class="mt-1 col-12"></div>
+          </div>
+          <div class="d-flex flex-items-center flex-column px-2 py-2 mx-2 box-border rounded-2 col-4 text-left">
+            <button id="pageQueryType_localizationsButton" class="btn btn-clear btn-purple py-2 px-2 mx-3 my-3 d-flex flex-column" style="height: 80px; width: 280px;" disabled>
+              <div class="d-flex flex-row py-1 pt-1">
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /></svg>
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M18 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M7.5 16.5l9 -9" /></svg>
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 18a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M20 18a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M20 6a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M8 6a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M6 8v8" /><path d="M18 16v-8" /><path d="M8 6h8" /><path d="M16 18h-8" /></svg>
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M19 8m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 11m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M15 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M6.5 9.5l3.5 -3" /><path d="M14 5.5l3 1.5" /><path d="M18.5 10l-2.5 7" /><path d="M13.5 17.5l-7 -5" /></svg>
+              </div>
+              <div class="py-1">Export Localizations</div>
+            </button>
+            <div class="f3 text-gray text-semibold text-uppercase mt-3 col-12">Localization Types To Export</div>
+            <div id="pageQueryType_localizationTypesList" class="mt-1 col-12"></div>
+          </div>
+          <div class="d-flex flex-items-center flex-column px-2 py-2 mx-2 box-border rounded-2 col-4 text-left">
+            <button id="pageQueryType_statesButton" class="btn btn-clear btn-purple py-2 px-2 mx-3 my-3 d-flex flex-column" style="height: 80px; width: 280px;" disabled>
+              <div class="d-flex flex-row py-1 pt-1">
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 4m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" /><path d="M16 16v2a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2h2" /></svg>
+                <svg class="no-fill" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 19l16 0" /><path d="M4 15l4 -6l4 2l4 -5l4 4" /></svg>
+              </div>
+              <div class="py-1">Export States</div>
+            </button>
+            <div class="f3 text-gray text-semibold text-uppercase mt-3 col-12">State Types To Export</div>
+            <div id="pageQueryType_statesTypesList" class="mt-1 col-12"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--
+  PAGE: MEDIA FILTERS
+  -->
+  <div id="pageMediaFilters" class="mb-4">
+    <div id="pageMediaFilters_edit" class="main-div py-3 px-3 rounded-2 d-flex flex-column flex-grow" style="background-color: #00070D; border: 2px solid #151b28;">
+      <div class="d-flex flex-justify-between flex-items-center">
+        <div class="h1 text-dark-gray">2. Create Media Filters</div>
+        <button id="pageMediaFilters_editButton" class="btn-outline btn btn-small f2 text-gray">Edit</button>
+      </div>
+      <div id="pageMediaFilters_editHeader" class="text-purple text-semibold f2 mt-3"><span class="text-dark-gray">No media filters.</span></div>
+    </div>
+    <div id="pageMediaFilters_main" class="main-div py-3 px-3 rounded-2 d-flex flex-column flex-grow">
+      <div class="d-flex flex-column flex-grow" style="max-width: 100%;"">
+        <div class="d-flex flex-row flex-justify-between flex-items-center">
+          <div class="h1">2. Create Media Filters</div>
+          <button id="pageMediaFilters_applyButton" class="btn btn-clear btn-small f2 text-white">Apply</button>
+        </div>
+        <span class="text-gray f2 py-1 d-flex">Create the set of media-based filter conditions to apply to the query. Leave blank to apply no filters.</span>
+        <div class="py-3 d-flex flex-column flex-grow">
+          <filter-group id="mediaFilterGroup" class="d-flex flex-grow"></filter-group>
+        </div>
+        <filter-operation-display id="mediaFilterDisplay" class="d-flex flex-grow mt-3">></filter-operation-display>
+      </div>
+    </div>
+  </div>
+
+  <!--
+  PAGE: METADATA FILTERS
+  -->
+  <div id="pageMetadataFilters" class="mb-4">
+    <div id="pageMetadataFilters_edit" class="main-div py-3 px-3 rounded-2 d-flex flex-column flex-grow" style="background-color: #00070D; border: 2px solid #151b28;">
+      <div class="d-flex flex-justify-between flex-items-center">
+        <div class="h1 text-dark-gray">3. Create Metadata Filters</div>
+        <button id="pageMetadataFilters_editButton" class="btn-outline btn btn-small f2 text-gray">Edit</button>
+      </div>
+      <div id="pageMetadataFilters_editHeader" class="text-purple text-semibold f2 mt-3"><span class="text-dark-gray">No metadata filters.</span></div>
+    </div>
+    <div id="pageMetadataFilters_main" class="main-div py-3 px-3 rounded-2 d-flex flex-column flex-grow">
+      <div class="d-flex flex-column flex-grow" style="max-width: 100%;"">
+        <div class="d-flex flex-row flex-justify-between flex-items-center">
+          <div class="h1">3. Create Metadata Filters</div>
+          <button id="pageMetadataFilters_applyButton" class="btn btn-clear btn-small f2 text-white">Apply</button>
+        </div>
+        <span class="text-gray f2 py-1 d-flex">Create the set of metadata-based (localizations/states) filter conditions to apply to the query. Leave blank to apply no filters.</span>
+        <div class="py-3 d-flex flex-column flex-grow">
+          <filter-group id="metadataFilterGroup" class="d-flex flex-grow"></filter-group>
+        </div>
+        <filter-operation-display id="metadataFilterDisplay" class="d-flex flex-grow mt-3">></filter-operation-display>
+      </div>
+    </div>
+  </div>
+
+  <!--
+  PAGE: QUERY DATA
+  -->
+  <div id="pageQueryData_main" class="main-div py-3 px-3 rounded-2 mb-4">
+    <div class="d-flex flex-column flex-grow" style="max-width: 100%;"">
+      <div class="d-flex flex-row flex-justify-between flex-items-center">
+        <div>
+          <div class="h1">4. Export</div>
+        </div>
+        <div id="pageQueryData_resultCount" class="h1 text-gray mx-3 d-flex flex-justify-right flex-column">Querying...</div>
+      </div>
+
+    <div class="d-flex px-2 py-2">
+
+      <div id="exportReportPage" class="d-flex flex-column flex-grow">
+          <div class="d-flex flex-justify-center flex-items-center emphasis-background rounded-2 py-3 my-6 flex-column">
+            <div class="col-4 px-6">
+              <button id="exportDataButton" class="col-12 btn btn-clear">
+                <svg xmlns="http://www.w3.org/2000/svg" class="no-fill pr-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" />
+                </svg>
+                Export Report
+              </button>
+            </div>
+          </div>
+
+          <div class="main-div py-3 rounded-2 mb-6">
+            <text-input id="exportFileName" name="Filename"></text-input>
+            <span class="f3 text-gray" style="margin-left: 100px;">Export the report with the provided filename.</span>
+          </div>
+
+          <div class="mt-1 h3">Column Selection</div>
+          <div class="f3 text-gray py-1">Select the columns to output for each type. Attributes with the same name from different entity types share the same column in the output report.</div>
+          <div class="d-flex flex-row mt-3">
+
+            <div class="d-flex flex-column flex-grow">
+              <div class="d-flex mt-1">
+                <div id="exportPage_MainTab" class="dark-page-tab px-3 d-flex flex-grow flex-justify-left py-1 active text-uppercase" style="height: 40px;">
+                  <div class="d-flex flex-column flex-justify-center flex-items-center">
+                    <span class="px-2 f2 text-semibold">Main Data Types</span>
+                  </div>
+                </div>
+                <div id="exportPage_RelatedTab" class="dark-page-tab px-3 d-flex flex-grow flex-justify-left py-1 text-uppercase" style="height: 40px;">
+                  <div class="d-flex flex-column flex-justify-center flex-items-center">
+                    <span class="px-2 f2 text-semibold">Related Media Types</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-row py-3 flex-grow box-border rounded-2">
+                <div id="typePageSelect" class="d-flex flex-justify-center flex-column analysis__filter_main"></div>
+                <div id="typeAttributes" class="d-flex flex-column px-2 py-2 purple-box-border flex-grow mt-1 mr-2 rounded-2" style="max-height: 70vh; overflow-y: auto;"></div>
+                <div id="relatedTypePageSelect" class="d-flex flex-justify-center flex-column analysis__filter_main" style="display: none;"></div>
+                <div id="relatedTypeAttributes" class="d-flex flex-column px-2 py-2 purple-box-border flex-grow mt-1 mr-2 rounded-2" style="display: none; max-height: 70vh; overflow-y: auto;"></div>
+              </div>
+
+            </div>
+
+            <div class="d-flex flex-grow flex-column box-border rounded-2 px-2 py-2 ml-3" style="max-height: 80vh; overflow-y: auto;">
+              <span id="columnCount" class="text-semibold text-dark-gray mb-2"></span>
+              <div id="selectedColumns" class="f2 text-dark-gray"></div>
+            </div>
+          </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+</template>

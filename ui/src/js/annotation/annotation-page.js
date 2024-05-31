@@ -68,6 +68,14 @@ export class AnnotationPage extends TatorPage {
     this._settings = document.createElement("annotation-settings");
     settingsDiv.appendChild(this._settings);
 
+    this._appletShortcutBar = document.createElement("applet-shortcut-bar");
+    this._appletShortcutBar.style.display = "none";
+    settingsDiv.appendChild(this._appletShortcutBar);
+
+    this._appletShortcutBar.addEventListener("showApplet", (evt) => {
+      this.showCanvasApplet(evt.detail.appletId);
+    });
+
     this._canvasAppletHeader = document.createElement("annotation-header");
     this._canvasAppletHeader.setAttribute(
       "class",
@@ -603,7 +611,7 @@ export class AnnotationPage extends TatorPage {
         const haveTimelineDisplayMode = searchParams.has("timeline-display");
         if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
-          const entityId = Number(searchParams.get("selected_entity"));
+          const entityId = searchParams.get("selected_entity");
           this._settings.setAttribute("type-id", typeId);
           this._settings.setAttribute("entity-id", entityId);
           this._browser.selectEntityOnUpdate(entityId, typeId);
@@ -852,6 +860,10 @@ export class AnnotationPage extends TatorPage {
       canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
     });
 
+    this._videoSettingsDialog.addEventListener("stretchVideo", (evt) => {
+      canvas.stretch = evt.detail.stretch;
+    });
+
     this._videoSettingsDialog.addEventListener("allowSafeMode", (evt) => {
       canvas.allowSafeMode(evt.detail.allowSafeMode);
     });
@@ -1073,6 +1085,10 @@ export class AnnotationPage extends TatorPage {
               versions,
               memberships
             );
+            this._data.addEventListener("mediaUpdate", (evt) => {
+              this._browser.mediaInfo = evt.detail.media;
+              this._browser.mediaType = this._mediaType; // Required to update the browser UI
+            });
             this._data.addEventListener("freshData", (evt) => {
               this._browser.updateData(evt);
 
@@ -1199,9 +1215,15 @@ export class AnnotationPage extends TatorPage {
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
             canvas.addEventListener("select", (evt) => {
+              const newSelection = `${evt.detail.type}_${evt.detail.id}`;
+              if (this._selectedEntity == newSelection) {
+                // Canvas event is only informational, no need to update this page!
+                return;
+              }
+              this._selectedEntity = newSelection;
               this._browser.selectEntity(evt.detail);
               canvas.selectTimelineData(evt.detail);
-              this._settings.setAttribute("entity-id", evt.detail.id);
+              this._settings.setAttribute("entity-id", evt.detail.elemental_id);
               this._settings.setAttribute("entity-type", evt.detail.type);
               this._settings.setAttribute("type-id", evt.detail.type);
 
@@ -1210,6 +1232,7 @@ export class AnnotationPage extends TatorPage {
             });
 
             canvas.addEventListener("unselect", () => {
+              this._selectedEntity = null;
               this._settings.removeAttribute("entity-id");
               this._settings.removeAttribute("entity-type");
               this._settings.removeAttribute("type-id");
@@ -1233,6 +1256,10 @@ export class AnnotationPage extends TatorPage {
                 this._newEntity = null;
               }
 
+              if (evt.detail.method == "DELETE") {
+                this._browser.closeAll(); // close all open entity browsers in the annotation browser
+              }
+
               this._data.updateTypeLocal(
                 evt.detail.method,
                 evt.detail.id,
@@ -1241,6 +1268,16 @@ export class AnnotationPage extends TatorPage {
               );
             });
             this._browser.addEventListener("select", (evt) => {
+              const newSelection = `${evt.detail.data.type}_${evt.detail.data.id}`;
+              if (
+                this._selectedEntity == newSelection &&
+                evt.detail.data.frame == this._currentFrame
+              ) {
+                // The entity is already selected and we're at the entity's frame.
+                // Don't need to do proceed.
+                return;
+              }
+              this._selectedEntity = newSelection; // TODO: Move this to annotation-controller someday
               if (evt.detail.byUser) {
                 // Remove attribute here, will be reset by canvas, if appropriate.
                 this._settings.removeAttribute("entity-id");
@@ -1250,7 +1287,7 @@ export class AnnotationPage extends TatorPage {
                 if (evt.detail.dataType.isLocalization) {
                   canvas.selectLocalization(
                     evt.detail.data,
-                    false,
+                    true, // skip animation as the user already is aware of the selection
                     false,
                     !evt.detail.goToEntityFrame
                   );
@@ -1277,12 +1314,14 @@ export class AnnotationPage extends TatorPage {
                     this._player.goToFrame(evt.detail.data.frame);
                   }
                 }
-
-                this._updateURL();
               }
-              this._settings.setAttribute("entity-id", evt.detail.data.id);
+              this._settings.setAttribute(
+                "entity-id",
+                evt.detail.data.elemental_id
+              );
               this._settings.setAttribute("entity-type", evt.detail.data.type);
               this._settings.setAttribute("type-id", evt.detail.data.type);
+              this._updateURL();
             });
             this._browser.addEventListener("capture", (evt) => {
               if ("_video" in canvas) {
@@ -1296,6 +1335,7 @@ export class AnnotationPage extends TatorPage {
             });
             this._browser.addEventListener("close", (evt) => {
               this._settings.removeAttribute("type-id");
+              this._selectedEntity = null;
 
               // The canvas can either be the annotation player or image. The player is the only
               // annotation that has the concepts of tracks, so the following check is performed.
@@ -1466,10 +1506,14 @@ export class AnnotationPage extends TatorPage {
             );
 
             canvas.addEventListener("maximize", () => {
+              this._videoSettingsDialog.stretchVideo = true;
+              canvas.stretch = true;
               document.documentElement.requestFullscreen();
             });
 
             canvas.addEventListener("minimize", () => {
+              this._videoSettingsDialog.stretchVideo = false;
+              canvas.stretch = false;
               document.exitFullscreen();
             });
           }
@@ -1489,6 +1533,10 @@ export class AnnotationPage extends TatorPage {
    *    List of Tator.Favorites associated with the user
    */
   _setupAnnotatorApplets(canvas, canvasElement, favorites) {
+    this._appletMap = {};
+    this._canvasAppletWrappers = {};
+    this._canvasApplets = [];
+
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
@@ -1506,6 +1554,7 @@ export class AnnotationPage extends TatorPage {
       this.setAttribute("has-open-modal", "");
       document.body.classList.add("shortcuts-disabled");
     });
+
     this._menuAppletDialog.addEventListener("hideLoadingScreen", () => {
       this._loading.style.display = "none";
       this.removeAttribute("has-open-modal");
@@ -1516,10 +1565,6 @@ export class AnnotationPage extends TatorPage {
     fetchCredentials("/rest/Applets/" + projectId, {}, true)
       .then((response) => response.json())
       .then((applets) => {
-        this._appletMap = {};
-        this._canvasApplets = {};
-        var canvasAppletObjects = [];
-
         for (let applet of applets) {
           if (applet.categories == null) {
             continue;
@@ -1558,7 +1603,7 @@ export class AnnotationPage extends TatorPage {
             }
 
             // Add canvas applet
-            canvasAppletObjects.push(applet);
+            this._canvasApplets.push(applet);
           }
           // Init for annotator tools applets
           if (applet.categories.includes("annotator-tools")) {
@@ -1595,8 +1640,7 @@ export class AnnotationPage extends TatorPage {
         //
         // Setup the canvas applets
         //
-        this._numCanvasApplets = canvasAppletObjects.length;
-        if (this._numCanvasApplets == 0) {
+        if (this._canvasApplets.length == 0) {
           this._sidebar.disableCanvasApplet();
         }
 
@@ -1615,7 +1659,7 @@ export class AnnotationPage extends TatorPage {
         this._canvasElement = canvasElement;
 
         var canvasAppletInitPromises = [];
-        for (const applet of canvasAppletObjects) {
+        for (const applet of this._canvasApplets) {
           // Create the canvas applet
           const appletInterface = document.createElement(
             "canvas-applet-wrapper"
@@ -1626,15 +1670,29 @@ export class AnnotationPage extends TatorPage {
             appletInterface.init(applet, this._data, favorites, this._undo)
           );
           this._canvasAppletPageWrapper.appendChild(appletInterface);
-          this._canvasApplets[applet.id] = appletInterface;
+          this._canvasAppletWrappers[applet.id] = appletInterface;
         }
-
         Promise.all(canvasAppletInitPromises).then(() => {
           this._canvasAppletMenuLoading.style.display = "none";
 
-          // #TODO Add alphabetical ordering
-          for (const appletId in this._canvasApplets) {
-            const appletInterface = this._canvasApplets[appletId];
+          // Sort the applets by their title now that the elements have been loaded
+          this._canvasApplets.sort((a, b) => {
+            var aTitle = this._canvasAppletWrappers[a.id].getTitle();
+            var bTitle = this._canvasAppletWrappers[b.id].getTitle();
+            return aTitle.localeCompare(bTitle);
+          });
+
+          // Initialize the header bar
+          var sortedWrappers = [];
+          for (const applet of this._canvasApplets) {
+            sortedWrappers.push(this._canvasAppletWrappers[applet.id]);
+          }
+          this._appletShortcutBar.init(sortedWrappers);
+
+          // Initialize the menu
+          for (const applet of this._canvasApplets) {
+            const appletId = applet.id;
+            const appletInterface = this._canvasAppletWrappers[appletId];
 
             // Add the applet to the toolbar menu option
             const div = document.createElement("div");
@@ -2031,6 +2089,8 @@ export class AnnotationPage extends TatorPage {
         projectId: evt.detail.projectId,
         selectedTrack: evt.detail.selectedTrack,
         selectedLocalization: evt.detail.selectedLocalization,
+        data: this._data,
+        undo: this._undo,
       };
 
       if (this._player.mediaType.dtype == "multi") {
@@ -2280,7 +2340,7 @@ export class AnnotationPage extends TatorPage {
     this._sidebar._canvasApplet._button.classList.add("purple-box-border");
 
     let pos = this._sidebar._canvasApplet.getBoundingClientRect();
-    let padding = 20 + this._numCanvasApplets * 60;
+    let padding = 20 + this._canvasApplets.length * 60;
     this._canvasAppletMenu.style.top = `${pos.top - padding}px`;
     this._canvasAppletMenu.style.left = `${pos.right + 18}px`;
     this._canvasAppletMenu.style.display = "block";
@@ -2303,6 +2363,17 @@ export class AnnotationPage extends TatorPage {
   showCanvasApplet(appletId) {
     this.hideCanvasAppletMenu();
 
+    if (this._currentCanvasApplet != null) {
+      if (!this._currentCanvasApplet.allowedToClose()) {
+        return;
+      }
+
+      this._currentCanvasApplet.style.display = "none";
+      this._currentCanvasApplet.close();
+      this._canvasAppletHeader.style.display = "none";
+      this._currentCanvasApplet = null;
+    }
+
     var appletData = {
       frame: this._currentFrame,
       selectedTrack: this._canvas._activeTrack,
@@ -2310,7 +2381,7 @@ export class AnnotationPage extends TatorPage {
       media: this._canvas._mediaInfo,
     };
 
-    this._currentCanvasApplet = this._canvasApplets[appletId];
+    this._currentCanvasApplet = this._canvasAppletWrappers[appletId];
 
     if (this._currentCanvasApplet._lastFrameUpdate != this._currentFrame) {
       this._mediaCanvas.getPNGdata(false).then((blob) => {
@@ -2327,12 +2398,14 @@ export class AnnotationPage extends TatorPage {
       this._currentCanvasApplet.getTitle()
     );
 
-    //
-    // HIDE MAIN PAGE PARTS
-    //
+    // Hide the main annotation page and the appropriate header components
     this._versionButton.style.display = "none";
     this._settings.style.display = "none";
     this._main.style.display = "none";
+
+    // Display the shortcuts
+    this._appletShortcutBar.setActive(appletId);
+    this._appletShortcutBar.style.display = "block";
   }
 
   /**
@@ -2350,12 +2423,13 @@ export class AnnotationPage extends TatorPage {
     this._canvasAppletHeader.style.display = "none";
     this._currentCanvasApplet = null;
 
-    //
-    // SHOW MAIN PAGE PARTS
-    //
+    // Show the main page and the appropriate header components
     this._versionButton.style.display = "block";
     this._settings.style.display = "block";
     this._main.style.display = "flex";
+
+    // Hide shortcuts
+    this._appletShortcutBar.style.display = "none";
 
     // Required resize to reset the elements correctly
     window.dispatchEvent(new Event("resize"));

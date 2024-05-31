@@ -2,6 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    {% if datadog_enabled %}
+    {% include "datadog.html" %}
+    {% endif %}
     <script>
       var BACKEND = '{{ backend }}';
       var KEYCLOAK_ENABLED = {{ keycloak_enabled }};
@@ -13,9 +16,8 @@
       });
     </script>
     <script src="/static/require-login.js"></script>
-    <script src="/static/components.js"></script>
-    <script src="/static/util.js"></script>
-    <link rel="stylesheet" type="text/css" href="/static/components.css" />
+    <script src="/static/tator-ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/tator-ui.css" />
     {% block head %}
     {% endblock head %}
   </head>

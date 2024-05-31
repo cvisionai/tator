@@ -174,6 +174,11 @@ export class FavoritesPanel extends TatorElement {
         }
       }
     }
+    this._favorites.forEach((arr) => {
+      arr.sort((a, b) => {
+        return a.name.localeCompare(b.name);
+      });
+    });
     this._updatePage();
   }
 
