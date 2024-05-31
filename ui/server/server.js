@@ -128,6 +128,10 @@ app.get('/:projectId/analytics/files', (req, res) => {
   res.render('analytics/files', params);
 });
 
+app.get('/:projectId/analytics/export', (req, res) => {
+  res.render('analytics/export', params);
+});
+
 app.get('/:projectId/dashboards', (req, res) => {
   res.render('analytics/dashboard-portal', params);
 });

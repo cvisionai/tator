@@ -367,12 +367,6 @@ export class EntitySelector extends TatorElement {
       this._current.textContent = String(data.length);
       this._slider.value = data.length - 1;
     }
-
-    if (this._selectedObject) {
-      this.selectEntity(this._selectedObject);
-    }
-
-    this._emitSelection(false, true, false);
   }
 
   /**
@@ -381,7 +375,7 @@ export class EntitySelector extends TatorElement {
   selectEntityWithId(id, emitSelectEvent) {
     var selectedObject = false;
     for (const [index, data] of this._data.entries()) {
-      if (data.id == id) {
+      if (data.elemental_id == id) {
         this._div.classList.add("is-open");
         this.dispatchEvent(new Event("open"));
         this._current.textContent = String(index + 1);
@@ -484,8 +478,6 @@ export class EntitySelector extends TatorElement {
         }
       }
     }
-
-    this._selectedObject = this._data[index];
 
     this.dispatchEvent(
       new CustomEvent("select", {

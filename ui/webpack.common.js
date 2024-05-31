@@ -1,6 +1,7 @@
 const path = require("path")
 const WebpackShellPluginNext = require("webpack-shell-plugin-next");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CircularDependencyPlugin = require("circular-dependency-plugin");
 
 module.exports = {
   entry: {
@@ -17,7 +18,8 @@ module.exports = {
     registration: "./src/js/registration/index.js",
     components: "./src/js/components/index.js",
     portal: "./src/js/analytics/index.js",
-    "third-party": "./src/js/third-party/index.js"
+    "third-party": "./src/js/third-party/index.js",
+    "tator-ui": "./src/js/index.js",
   },
   output: {
     filename: "[name].js",
@@ -33,7 +35,12 @@ module.exports = {
         parallel: false
       }
     }),
-    new MiniCssExtractPlugin()
+    new MiniCssExtractPlugin(),
+    new CircularDependencyPlugin({
+      exclude: /node_modules/,
+      failOnError: true,
+      cwd: process.cwd(),
+    }),
   ],
   module: {
     rules: [

@@ -73,7 +73,7 @@ export class CollectionSlideCardData extends HTMLElement {
       let mediaLink = this._modelData.generateMediaLink(
         l.media,
         l.frame,
-        l.id,
+        l.elemental_id,
         l.version
       );
       let entityType = this.findMetaDetails(l.type);

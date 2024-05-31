@@ -71,6 +71,8 @@ export class EntityGalleryLabels extends TatorElement {
       { name: "Modified Datetime", id: "modified_datetime" },
       { name: "Created Datetime", id: "created_datetime" },
       { name: "Type", id: "type" },
+      { name: "Elemental ID", id: "elemental_id" },
+      { name: "Mark", id: "mark" },
     ];
   }
 

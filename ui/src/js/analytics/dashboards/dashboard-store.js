@@ -6,7 +6,7 @@ const api = getApi();
 const projectId = window.location.pathname.split("/")[1];
 const dashboardId = window.location.pathname.split("/")[3];
 
-const store = createStore(
+const dashboardStore = createStore(
   subscribeWithSelector((set, get) => ({
     user: null,
     announcements: [],
@@ -30,4 +30,4 @@ const store = createStore(
   }))
 );
 
-export { store };
+export { dashboardStore };

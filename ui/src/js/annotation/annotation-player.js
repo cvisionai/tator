@@ -1470,7 +1470,9 @@ export class AnnotationPlayer extends TatorElement {
           console.log(
             `Video playback check - restart [Now: ${new Date().toISOString()}]`
           );
-          this._video.onDemandDownloadPrefetch(-1);
+          this._video.onDemandDownloadPrefetch(
+            Math.max(0, this._video.currentFrame() - 200)
+          );
         }
       }
       if (not_ready == true) {

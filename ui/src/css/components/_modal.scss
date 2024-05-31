@@ -137,6 +137,6 @@
     width: 100%;
   }
   .col-modal-5 {
-    width: (5 / 12 * 100%);
+    width: (calc(5 / 12) * 100%);
   }
 }

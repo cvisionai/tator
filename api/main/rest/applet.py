@@ -45,6 +45,9 @@ class AppletListAPI(BaseListView):
         for obj in out:
             obj["html_file"] = obj["html_file_url"]
             del obj["html_file_url"]
+            if obj[fields.template]:
+                ht = HostedTemplate.objects.get(pk=obj[fields.template])
+                obj[fields.rendered] = get_and_render(ht, obj)
         return out
 
     def get_queryset(self) -> dict:

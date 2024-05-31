@@ -40,7 +40,12 @@ class DownloadInfoSchema(AutoSchema):
                     "in": "query",
                     "required": False,
                     "description": "Number of seconds until URL expires and becomes invalid.",
-                    "schema": {"type": "integer", "minimum": 1, "maximum": 86400, "default": 86400},
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 604800,
+                        "default": 86400,
+                    },
                 },
             ]
         return params

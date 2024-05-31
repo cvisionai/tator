@@ -290,3 +290,31 @@
   width: 40px;
   height: 40px;
 }
+
+.project-topbar-button {
+  width: 86px;
+  background-color: transparent;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  &:hover,
+  &:focus {
+    color: $color-white;
+  }
+}
+.project-topbar-button-icon {
+  width: 60px;
+  height: 60px;
+  border: 1px solid $color-charcoal--light;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+}
+.project-topbar-button:focus .project-topbar-button-icon {
+  border: 1px solid $color-charcoal--dark;
+  background-color: $color-white;
+  color: $color-charcoal--dark;
+}
+.project-topbar-button:hover .project-topbar-button-icon {
+  border: 1px solid $color-charcoal--dark;
+  background-color: $color-white;
+  color: $color-charcoal--dark;
+}

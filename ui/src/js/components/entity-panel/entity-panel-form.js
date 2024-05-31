@@ -71,6 +71,11 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.displayGoToTrack(false);
     this._attributes.displayGoToLocalization(false);
 
+    // Disable marks for media version of this panel
+    if ("media" in data) {
+      this._attributes.disableWidget("Mark");
+    }
+
     this._data = data;
 
     if (attributePanelData.attributes !== null) {

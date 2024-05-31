@@ -2,6 +2,7 @@ import logging
 from django.db.models import Max
 from django.db import transaction
 from django.http import Http404
+from django.utils import timezone
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -289,6 +290,7 @@ class LocalizationListAPI(BaseListView):
                 )
             else:
                 objs = []
+                origin_datetimes = []
                 for original in qs.iterator():
                     original.pk = None
                     original.id = None
@@ -299,7 +301,14 @@ class LocalizationListAPI(BaseListView):
                             setattr(original, key, value)
                     original.attributes.update(new_attrs)
                     objs.append(original)
-                Localization.objects.bulk_create(objs)
+                    origin_datetimes.append(original.created_datetime)
+
+                new_objs = Localization.objects.bulk_create(objs)
+
+                for new_obj, origin_datetime in zip(new_objs, origin_datetimes):
+                    found_it = Localization.objects.get(pk=new_obj.pk)
+                    found_it.created_datetime = origin_datetime
+                    found_it.save()
 
         return {"message": f"Successfully updated {count} localizations!"}
 
@@ -337,6 +346,20 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         if obj.elemental_id == None:
             obj.elemental_id = uuid.uuid4()
             obj.save()
+
+        # Only allow iterative changes, this has to be changing off the last mark in the version
+        if params.get("in_place", 0) == 0 and params["pedantic"] and (obj.mark != obj.latest_mark):
+            raise ValueError(
+                f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+            )
+        elif obj.mark != obj.latest_mark:
+            obj = type(obj).objects.get(
+                project=obj.project,
+                version=obj.version,
+                mark=obj.latest_mark,
+                elemental_id=obj.elemental_id,
+            )
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -437,11 +460,16 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             # Save edits as new object, mark is calculated in trigger
             obj.id = None
             obj.pk = None
+            origin_datetime = obj.created_datetime
             obj.save()
+            found_it = Localization.objects.get(pk=obj.pk)
+            # Do a double save to keep original creation time
+            found_it.created_datetime = origin_datetime
+            found_it.save()
 
         return {
             "message": f"Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
-            "id": obj.id,
+            "object": type(obj).objects.filter(pk=obj.pk).values(*LOCALIZATION_PROPERTIES)[0],
         }
 
     def delete_qs(self, params, qs):
@@ -454,6 +482,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
         elemental_id = obj.elemental_id
         version_id = obj.version.id
         mark = obj.mark
+        obj_id = obj.id
         if params.get("prune") == 1:
             delete_and_log_changes(obj, obj.project, self.request.user)
         else:
@@ -466,9 +495,11 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             b.pk = None
             b.variant_deleted = True
             b.save()
+            obj_id = b.id
             log_changes(b, b.model_dict, b.project, self.request.user)
         return {
-            "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!"
+            "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!",
+            "id": obj_id,
         }
 
     def get_queryset(self):

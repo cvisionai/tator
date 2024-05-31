@@ -315,9 +315,9 @@ class StateListAPI(BaseListView):
         State.localizations.through.objects.bulk_create(loc_relations, ignore_conflicts=True)
 
         # Calculate segments (this is not triggered for bulk created m2m).
-        localization_ids = set(itertools.chain(
-            *[state_spec.get("localization_ids", []) for state_spec in state_specs]
-        ))
+        localization_ids = set(
+            itertools.chain(*[state_spec.get("localization_ids", []) for state_spec in state_specs])
+        )
         loc_id_to_frame = {
             loc["id"]: loc["frame"]
             for loc in Localization.objects.filter(pk__in=localization_ids)
@@ -408,6 +408,7 @@ class StateListAPI(BaseListView):
             else:
                 objs = []
                 many_to_many = []
+                origin_datetimes = []
 
                 for original in qs.iterator():
                     many_to_many.append((original.media.all(), original.localizations.all()))
@@ -417,10 +418,16 @@ class StateListAPI(BaseListView):
                         setattr(original, key, value)
                     original.attributes.update(new_attrs)
                     objs.append(original)
+                    origin_datetimes.append(original.created_datetime)
                 new_objs = State.objects.bulk_create(objs)
-                for p_obj, m2m in zip(new_objs, many_to_many):
+                for p_obj, m2m, origin_datetime in zip(new_objs, many_to_many, origin_datetimes):
                     p_obj.media.set(m2m[0])
                     p_obj.localizations.set(m2m[1])
+
+                    # Django doesn't let you fix created_datetime unless you fetch the object again
+                    found_it = State.objects.get(pk=p_obj.pk)
+                    found_it.created_datetime = origin_datetime
+                    found_it.save()
 
         return {"message": f"Successfully updated {count} states!"}
 
@@ -466,6 +473,19 @@ class StateDetailBaseAPI(BaseDetailView):
         if obj.elemental_id == None:
             obj.elemental_id = uuid.uuid4()
             obj.save()
+
+        if params.get("in_place", 0) == 0 and params["pedantic"] and (obj.mark != obj.latest_mark):
+            raise ValueError(
+                f"Pedantic mode is enabled. Can not edit prior object {obj.pk}, must only edit latest mark on version."
+                f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
+            )
+        elif obj.mark != obj.latest_mark:
+            obj = type(obj).objects.get(
+                project=obj.project,
+                version=obj.version,
+                mark=obj.latest_mark,
+                elemental_id=obj.elemental_id,
+            )
 
         if "frame" in params:
             obj.frame = params["frame"]
@@ -544,13 +564,18 @@ class StateDetailBaseAPI(BaseDetailView):
             # Save edits as new object, mark is calculated in trigger
             obj.id = None
             obj.pk = None
+            origin_datetime = obj.created_datetime
             obj.save()
-            obj.media.set(old_media)
-            obj.localizations.set(old_localizations)
+            found_it = State.objects.get(pk=obj.pk)
+            # Keep original creation time
+            found_it.created_datetime = origin_datetime
+            found_it.save()
+            found_it.media.set(old_media)
+            found_it.localizations.set(old_localizations)
 
         return {
             "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
-            "id": obj.id,
+            "object": type(obj).objects.filter(pk=obj.pk).values(*STATE_PROPERTIES)[0],
         }
 
     def delete_qs(self, params, qs):
@@ -564,6 +589,7 @@ class StateDetailBaseAPI(BaseDetailView):
         version_id = state.version.id
         mark = state.mark
         project = state.project
+        obj_id = state.id
         delete_localizations = []
         if state.type.delete_child_localizations:
             # Only delete localizations that are not not a part of other states
@@ -588,6 +614,7 @@ class StateDetailBaseAPI(BaseDetailView):
             state.pk = None
             state.variant_deleted = True
             state.save()
+            obj_id = state.pk
             log_changes(state, state.model_dict, state.project, self.request.user)
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_update_and_log_changes(
@@ -598,7 +625,10 @@ class StateDetailBaseAPI(BaseDetailView):
                 new_attributes=None,
             )
 
-        return {"message": f"State {version_id}/{elemental_id}@@{mark} successfully deleted!"}
+        return {
+            "message": f"State {version_id}/{elemental_id}@@{mark} successfully deleted!",
+            "id": obj_id,
+        }
 
     def get_queryset(self):
         return State.objects.all()

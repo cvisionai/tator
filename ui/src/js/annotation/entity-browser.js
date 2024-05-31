@@ -255,7 +255,10 @@ export class EntityBrowser extends TatorElement {
       if (this._dataType.isLocalization) {
         groups[group].sort((item_a, item_b) => {
           if (item_a.frame === item_b.frame) {
-            return item_a.id - item_b.id;
+            return (
+              Date.parse(item_a.created_datetime) -
+              Date.parse(item_b.created_datetime)
+            );
           }
           return item_a.frame - item_b.frame;
         });
@@ -268,14 +271,20 @@ export class EntityBrowser extends TatorElement {
             return 1;
           }
           if (item_a.segments[0][0] == item_b.segments[0][0]) {
-            return item_a.id - item_b.id;
+            return (
+              Date.parse(item_a.created_datetime) -
+              Date.parse(item_b.created_datetime)
+            );
           }
           return item_a.segments[0][0] - item_b.segments[0][0];
         });
       } else {
         groups[group].sort((item_a, item_b) => {
           if (item_a.frame === item_b.frame) {
-            return item_a.id - item_b.id;
+            return (
+              Date.parse(item_a.created_datetime) -
+              Date.parse(item_b.created_datetime)
+            );
           }
           return item_a.frame - item_b.frame;
         });
@@ -357,6 +366,7 @@ export class EntityBrowser extends TatorElement {
                   newObject.version = this._data.getVersion().id;
                   newObject.type = Number(state.type.split("_")[1]);
                   newObject.media_ids = state.media;
+                  newObject.elemental_id = state.elemental_id;
                   newObject.frame = state.frame;
                   newObject.localization_ids = state.localizations;
                   console.info(JSON.stringify(newObject));
@@ -367,12 +377,90 @@ export class EntityBrowser extends TatorElement {
                 document.body.classList.remove("shortcuts-disabled");
                 saved = true;
               } else if (this._data.getVersion().id == selector.data.version) {
-                this._undo.patch(
-                  endpoint,
-                  id,
-                  { attributes: values },
-                  this._dataType
-                );
+                let select_new_obj = (new_obj) => {
+                  this.selectEntity(new_obj);
+                };
+                const elemental_id = selector.data.elemental_id;
+                let select_old_obj = () => {
+                  this.selectEntityOnUpdate(elemental_id);
+                  this._data.updateType(this._dataType, null);
+                };
+
+                if (endpoint == "Localization" && this._data._trackDb.has(id)) {
+                  const track = this._data._trackDb.get(id);
+                  const state_type = this._data._dataTypes[track.type];
+                  const update_spec = {
+                    localization_ids_add: ["$NEW_ID"],
+                    localization_ids_remove: [id],
+                  };
+                  const reverse_spec = {
+                    localization_ids_add: [id],
+                    localization_ids_remove: ["$NEW_ID"],
+                  };
+                  const forward_op = [
+                    "PATCH",
+                    "State",
+                    track.id,
+                    update_spec,
+                    state_type,
+                  ];
+                  const backward_op = [
+                    "PATCH",
+                    "State",
+                    track.id,
+                    reverse_spec,
+                    state_type,
+                  ];
+                  let fetch_select_new_track = (new_obj) => {
+                    this._data.updateType(state_type, () => {
+                      select_new_obj(new_obj);
+                    });
+                  };
+
+                  this._undo.patch(
+                    endpoint,
+                    id,
+                    { attributes: values },
+                    this._dataType,
+                    [
+                      forward_op,
+                      ["FUNCTOR", fetch_select_new_track, {}, {}, {}],
+                    ],
+                    [
+                      backward_op,
+                      [
+                        "DELETE",
+                        endpoint,
+                        "$NEW_ID",
+                        { prune: 1 },
+                        this._dataType,
+                      ],
+                      ["FUNCTOR", select_old_obj, {}, {}, {}],
+                    ],
+                    true
+                  );
+                } else {
+                  // For localizations not in a track we can just edit the localization
+                  this._undo.patch(
+                    endpoint,
+                    id,
+                    { attributes: values },
+                    this._dataType,
+                    [["FUNCTOR", select_new_obj, {}, {}, {}]],
+                    [
+                      [
+                        "DELETE",
+                        endpoint,
+                        "$NEW_ID",
+                        { prune: 1 },
+                        this._dataType,
+                      ],
+                      ["FUNCTOR", select_old_obj, {}, {}, {}],
+                    ],
+                    true
+                  );
+                }
+
                 saved = true;
               }
               if (saved) {

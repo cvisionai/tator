@@ -1,3 +1,20 @@
+// Function to read the stream in chunks
+async function read(reader, writableStream, tempFileHandle, name, dirHandle) {
+  const { done, value } = await reader.read();
+  if (done) {
+    // Close the writable stream after writing all chunks.
+    await writableStream.close();
+    // Rename the temporary file to the final file name
+    await tempFileHandle.move(name);
+    return;
+  }
+
+  // Write each chunk to the writable stream
+  await writableStream.write(value);
+  // Continue reading
+  await read(reader, writableStream, tempFileHandle, name, dirHandle);
+}
+
 async function downloadFile(name, url, index, existing, dirHandle) {
   let msg;
   if (existing.has(name)) {
@@ -5,11 +22,13 @@ async function downloadFile(name, url, index, existing, dirHandle) {
   } else {
     msg = `Downloading file ${name}...\n`;
     const response = await fetch(url);
-    const data = await response.blob();
-    const fileHandle = await dirHandle.getFileHandle(name, { create: true });
-    const writableStream = await fileHandle.createWritable();
-    await writableStream.write(data);
-    await writableStream.close();
+    const reader = response.body.getReader();
+    const tempName = `${name}.tmp`;
+    const tempFileHandle = await dirHandle.getFileHandle(tempName, {
+      create: true,
+    });
+    const writableStream = await tempFileHandle.createWritable();
+    await read(reader, writableStream, tempFileHandle, name, dirHandle);
   }
   return msg;
 }
