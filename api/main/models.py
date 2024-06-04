@@ -2017,7 +2017,7 @@ def calc_segments(sender, **kwargs):
     )
 
     # Bring up related media to association
-    instance.media.set(sortedLocalizations.all().values_list("media", flat=True))
+    instance.media.add(*sortedLocalizations.all().values_list("media", flat=True))
     segmentList = []
     current = [None, None]
     last = None
