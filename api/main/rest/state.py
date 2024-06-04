@@ -467,6 +467,7 @@ class StateDetailBaseAPI(BaseDetailView):
             raise Http404
         obj = qs[0]
         model_dict = obj.model_dict
+        association_type = obj.type.association
 
         # If this is a really old object, it may not have an elemental_id
         # but we need to add it for trigger support
@@ -493,18 +494,38 @@ class StateDetailBaseAPI(BaseDetailView):
         if "media_ids" in params:
             media_elements = Media.objects.filter(pk__in=params["media_ids"])
             obj.media.set(media_elements)
+            if association_type != "Media":
+                logger.warning(
+                    f"Media set on state {obj.id} of type {association_type}."
+                    "This is not a Media type state."
+                )
 
         if "localization_ids" in params:
             localizations = Localization.objects.filter(pk__in=params["localization_ids"])
             obj.localizations.set(localizations)
+            if association_type != "Localization":
+                logger.warning(
+                    f"Media set on state {obj.id} of type {association_type}."
+                    "This is not a Media type state."
+                )
 
         if "localization_ids_add" in params:
             localizations = Localization.objects.filter(pk__in=params["localization_ids_add"])
             obj.localizations.add(*list(localizations))
+            if association_type != "Localization":
+                logger.warning(
+                    f"Media set on state {obj.id} of type {association_type}."
+                    "This is not a Media type state."
+                )
 
         if "localization_ids_remove" in params:
             localizations = Localization.objects.filter(pk__in=params["localization_ids_remove"])
             obj.localizations.remove(*list(localizations))
+            if association_type != "Localization":
+                logger.warning(
+                    f"Media set on state {obj.id} of type {association_type}."
+                    "This is not a Media type state."
+                )
 
         if params.get("user_elemental_id", None):
             params["in_place"] = 1
