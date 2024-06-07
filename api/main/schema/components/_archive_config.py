@@ -102,8 +102,7 @@ s3_storage_config = {
 archive_config = {
     "type": "object",
     "required": ["encode"],
-    "description": "Settings for archival video encode and storage. If not set, the raw video "
-    "will be stored in Tator.",
+    "description": "Settings for archival video encode and storage.",
     "properties": {
         "name": {
             "type": "string",
