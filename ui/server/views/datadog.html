@@ -13,7 +13,7 @@
     trackResources: true,
     trackLongTasks: false,
     trackUserInteractions: false,
-    allowedTracingUrls: ["{{ backend }}/rest"],
+    allowedTracingUrls: [/^https?:\/\/[^\/]+\/rest/],
   });
   let userData;
   if (localStorage.id_token) {
