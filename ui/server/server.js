@@ -61,6 +61,14 @@ function addHeaders(res, path, stat) {
   return res;
 }
 
+const allowedHosts = [process.env.MAIN_HOST];
+if (process.env.ALIAS_HOSTS) {
+  allowedHosts.push(process.env.ALIAS_HOSTS.split(","));
+}
+if (argv.backend) {
+  allowedHosts.push(argv.backend);
+}
+
 const params = { 
   backend: argv.backend,
   email_enabled: argv.email_enabled,
@@ -71,6 +79,7 @@ const params = {
   datadog_application_id: process.env.DD_APPLICATION_ID || "",
   datadog_env: process.env.DD_ENV || "",
   datadog_version: process.env.DD_VERSION || "",
+  datadog_allowed_hosts: allowedHosts.join(","),
 };
 
 nunjucks.configure('server/views', {
