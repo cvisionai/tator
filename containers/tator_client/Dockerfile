@@ -1,4 +1,5 @@
-FROM cvisionai/svt_encoder:v0.0.13 AS cvtranscoder
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS cvtranscoder
 MAINTAINER CVision AI <info@cvisionai.com>
 
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
