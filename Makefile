@@ -191,10 +191,14 @@ ui-image: webpack
 postgis-image:
 	DOCKER_BUILDKIT=1 docker build --pull --network host -t $(REGISTRY)/tator_postgis:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/postgis/Dockerfile . || exit 255
 
-# Publish client image to dockerhub so it can be used cross-cluster
+.PHONY: svt-image
+svt-image:
+	DOCKER_BUILDKIT=1 docker build --pull --platform linux/amd64 --network host -t $(REGISTRY)/svt_transcoder:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/svt_transcoder/Dockerfile containers/svt_transcoder || exit 255
+	docker tag $(REGISTRY)/svt_transcoder:$(GIT_VERSION) $(REGISTRY)/svt_transcoder:latest
+
 .PHONY: client-image
-client-image: $(TATOR_PY_WHEEL_FILE)
-	DOCKER_BUILDKIT=1 docker build --pull --platform linux/amd64 --network host -t $(REGISTRY)/tator_client:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) -f containers/tator_client/Dockerfile . || exit 255
+client-image: $(TATOR_PY_WHEEL_FILE) svt-image
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(REGISTRY)/tator_client:$(GIT_VERSION) --build-arg APT_REPO_HOST=$(APT_REPO_HOST) --build-arg BASE_IMAGE=$(REGISTRY)/svt_transcoder:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 	docker tag $(REGISTRY)/tator_client:$(GIT_VERSION) $(REGISTRY)/tator_client:latest
 
 .PHONY: transcode-image
