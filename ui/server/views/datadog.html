@@ -1,5 +1,16 @@
 <script src="https://tator-ci.s3.amazonaws.com/datadog-rum.js" type="text/javascript" crossorigin="anonymous"></script>
 <script>
+  const allowedHosts = "{{ datadog_allowed_hosts }}".split(",");
+  const useDatadog = (url) => {
+    const parsed = new URL(url);
+    const host = parsed.host;
+    const hostname = parsed.hostname; // Allow with or without port
+    const path = parsed.pathname;
+    if ((allowedHosts.includes(host) || allowedHosts.includes(hostname)) && path.startsWith("/rest")) {
+      return true;
+    }
+    return false;
+  }
   window.DD_RUM &&
   window.DD_RUM.init({
     clientToken: '{{ datadog_client_token }}',
@@ -13,7 +24,7 @@
     trackResources: true,
     trackLongTasks: false,
     trackUserInteractions: false,
-    allowedTracingUrls: [/^https?:\/\/[^\/]+\/rest/],
+    allowedTracingUrls: [useDatadog],
   });
   let userData;
   if (localStorage.id_token) {
