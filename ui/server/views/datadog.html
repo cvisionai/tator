@@ -1,6 +1,6 @@
 <script src="https://tator-ci.s3.amazonaws.com/datadog-rum.js" type="text/javascript" crossorigin="anonymous"></script>
 <script>
-  const allowedHosts = {{ datadog_allowed_hosts }}.split(",");
+  const allowedHosts = "{{ datadog_allowed_hosts }}".split(",");
   const useDatadog = (url) => {
     const parsed = new URL(url);
     const host = parsed.host;
