@@ -10,3 +10,6 @@
 [submodule "containers/tator_transcode"]
 	path = containers/tator_transcode
 	url = ../tator-transcode
+[submodule "containers/svt_transcoder"]
+	path = containers/svt_transcoder
+	url = ../svt_transcoder
