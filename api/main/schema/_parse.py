@@ -16,7 +16,6 @@ PATH_PARAMETER_PATTERN = r"(?:[^/<>]*)<(\w+)>([^/\[\]]*(?:\[\^[^/\]]*\][^/\[\]]*
 
 
 class DrfOpenAPIRequest(Request):
-
     path_regex = re.compile(PATH_PARAMETER_PATTERN)
 
     def __init__(self, request):
