@@ -979,7 +979,8 @@ export class ProjectDetail extends TatorPage {
                 this._description.setAttribute("text", this._project.summary);
                 this._collaborators.usernames = this._project.usernames;
 
-                // Initialize bulk edit
+                // Initialize bulk edit and the card attribute labels
+                this._cardAttributeLabels.init(project.id);
                 for (let mediaTypeData of this._mediaTypes) {
                   this._cardAttributeLabels.add({
                     typeData: mediaTypeData,
@@ -1002,7 +1003,6 @@ export class ProjectDetail extends TatorPage {
                   this._cardAttributeLabels;
                 this._mediaSection._bulkEdit = this._bulkEdit;
                 this._mediaSection.algorithms = this._algorithms;
-                this._cardAttributeLabels.init(project.id);
 
                 // Initialize folder/search/bookmark data
                 this._sectionData.init(this._sections);
