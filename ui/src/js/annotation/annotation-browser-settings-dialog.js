@@ -168,7 +168,13 @@ export class AnnotationBrowserSettingsDialog extends ModalDialog {
     ) {
       var builtInAttributes = [];
     } else {
-      var builtInAttributes = ["ID", "Version", "Frame"];
+      var builtInAttributes = [
+        "Elemental ID",
+        "Mark",
+        "ID",
+        "Version",
+        "Frame",
+      ];
     }
 
     const allSortedAttrTypes = dataType.attribute_types.sort((a, b) => {
