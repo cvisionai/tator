@@ -749,6 +749,17 @@ class Project(Model):
     )
     """ If set, backups will use this bucket by default.
     """
+    scratch_bucket = ForeignKey(
+        Bucket,
+        null=True,
+        blank=True,
+        on_delete=SET_NULL,
+        related_name="+",
+        db_column="scratch_bucket",
+    )
+    """ If set, the bucket will be exposed via s3proxy to 
+        project members with upload privileges.
+    """
     default_media = ForeignKey(
         "MediaType",
         null=True,
