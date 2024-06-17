@@ -55,7 +55,7 @@ def _write_script(path, confs):
         for conf in confs:
             cmd += f"--properties {conf} "
     else:
-        cmd = "echo 'No scratch buckets defined!'"
+        cmd = "echo 'No scratch buckets defined!';sleep 3600;"
     with open(outpath, "w") as f:
         f.write(cmd)
 
