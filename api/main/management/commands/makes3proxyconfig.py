@@ -1,7 +1,11 @@
 from django.core.management.base import BaseCommand
+import psycopg2
 import os
+import logging
 
 from main.models import Project
+
+logger = logging.getLogger(__name__)
 
 def _write_conf(path, project):
     bucket = project.scratch_bucket
@@ -57,6 +61,10 @@ class Command(BaseCommand):
         parser.add_argument("--outdir", type=str)
 
     def handle(self, **options):
-        projects = Project.objects.filter(scratch_bucket__isnull=False)
+        try:
+            projects = Project.objects.filter(scratch_bucket__isnull=False)
+        except psycopg2.errors.UndefinedColumn:
+            logger.warning(f"Migration for scratch buckets not yet run.")
+            return
         confs = [_write_config(options.outdir, project) for project in projects.iterator()]
         _write_script(options.outdir, confs)
