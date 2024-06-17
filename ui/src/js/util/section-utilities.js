@@ -155,6 +155,10 @@ export class SectionData {
       // This assumes that this is in the top level. This replicates the string substitution
       // that occurs in the section REST endpoint.
       thisPath = SectionData.cleanPathString(thisPath);
+
+      // Also, given that it's possible there is a "." in the name, we'll just force
+      // the folder to the top-level and replace it with an underscore.
+      thisPath = thisPath.replace(/\./g, "_");
     }
 
     return thisPath;
