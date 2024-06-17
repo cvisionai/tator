@@ -3,6 +3,7 @@ import { svgNamespace } from "../../components/tator-element.js";
 import { TatorPage } from "../../components/tator-page.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
+import { SectionData } from "../../util/section-utilities.js";
 
 class FilterData {
   /**
@@ -106,14 +107,39 @@ class FilterData {
     }
     sortList(this._versionOptions);
 
-    this._sectionOptions = [];
-    for (const section of this._sections) {
-      this._sectionOptions.push({
-        label: `${section.name} (ID: ${section.id})`,
-        value: `${section.name} (ID: ${section.id})`,
+    this.sectionData = new SectionData();
+    this.sectionData.init(this._sections);
+    this._sectionOptions = {};
+    this._sectionOptions["Folders"] = [];
+    this._sectionOptions["Media Searches"] = [];
+    this._sectionOptions["Hidden Folders"] = [];
+
+    var sectionList = this.sectionData.getFolderEnumChoices();
+    for (let idx = 0; idx < sectionList.length; idx++) {
+      let enumChoice = sectionList[idx];
+      this._sectionOptions["Folders"].push({
+        label: `${enumChoice.label} (ID: ${enumChoice.value})`,
+        value: `${enumChoice.label} (ID: ${enumChoice.value})`,
       });
     }
-    sortList(this._sectionOptions);
+
+    var sectionList = this.sectionData.getSavedSearchEnumChoices();
+    for (let idx = 0; idx < sectionList.length; idx++) {
+      let enumChoice = sectionList[idx];
+      this._sectionOptions["Media Searches"].push({
+        label: `${enumChoice.label} (ID: ${enumChoice.value})`,
+        value: `${enumChoice.label} (ID: ${enumChoice.value})`,
+      });
+    }
+
+    var sectionList = this.sectionData.getHiddenFolderEnumChoices();
+    for (let idx = 0; idx < sectionList.length; idx++) {
+      let enumChoice = sectionList[idx];
+      this._sectionOptions["Hidden Folders"].push({
+        label: `${enumChoice.label} (ID: ${enumChoice.value})`,
+        value: `${enumChoice.label} (ID: ${enumChoice.value})`,
+      });
+    }
 
     this._archiveStateOptions = [
       { label: "live", value: "live" },
@@ -911,8 +937,8 @@ class FilterAttributeOperation extends TatorElement {
     this._valueEnum.permission = "View Only";
     this._valueEnum.style.display = "none";
     this._valueEnum._select.classList.remove("col-8");
+    this._valueEnum._select.classList.add("col-11");
     this._valueEnum._select.classList.add("ml-3");
-    this._valueEnum._select.classList.add("flex-grow");
     this._innerDiv.appendChild(this._valueEnum);
 
     this._valueDate = document.createElement("datetime-input");
@@ -1028,32 +1054,61 @@ class FilterAttributeOperation extends TatorElement {
           selectedAttributeType = attribute;
           dtype = attribute.dtype;
           if (dtype == "enum") {
-            let enumChoices = [];
-            for (let i in attribute.choices) {
-              const choiceValue = attribute.choices[i];
-              let choice;
-              let label;
+            if (Array.isArray(attribute.choices)) {
+              let enumChoices = [];
+              for (let i in attribute.choices) {
+                const choiceValue = attribute.choices[i];
+                let choice;
+                let label;
 
-              if (
-                typeof choiceValue == "object" &&
-                typeof choiceValue.value !== "undefined"
-              ) {
-                choice = choiceValue.value;
-                label =
-                  typeof choiceValue.label !== "undefined"
-                    ? choiceValue.label
-                    : choice;
-              } else {
-                choice = choiceValue;
-                label = choice;
-              }
+                if (
+                  typeof choiceValue == "object" &&
+                  typeof choiceValue.value !== "undefined"
+                ) {
+                  choice = choiceValue.value;
+                  label =
+                    typeof choiceValue.label !== "undefined"
+                      ? choiceValue.label
+                      : choice;
+                } else {
+                  choice = choiceValue;
+                  label = choice;
+                }
 
-              if (uniqueFieldChoices.indexOf(choice) < 0) {
-                enumChoices.push({ value: choice, label: label });
-                uniqueFieldChoices.push(choice);
+                if (uniqueFieldChoices.indexOf(choice) < 0) {
+                  enumChoices.push({ value: choice, label: label });
+                  uniqueFieldChoices.push(choice);
+                }
               }
+              this._valueEnum.choices = enumChoices;
+            } else {
+              let enumChoices = {};
+              let groups = Object.keys(attribute.choices);
+              for (const group of groups) {
+                enumChoices[group] = [];
+                let groupValues = attribute.choices[group];
+                for (const choiceValue of groupValues) {
+                  let choice;
+                  let label;
+
+                  if (
+                    typeof choiceValue == "object" &&
+                    typeof choiceValue.value !== "undefined"
+                  ) {
+                    choice = choiceValue.value;
+                    label =
+                      typeof choiceValue.label !== "undefined"
+                        ? choiceValue.label
+                        : choice;
+                  } else {
+                    choice = choiceValue;
+                    label = choice;
+                  }
+                  enumChoices[group].push({ value: choice, label: label });
+                }
+              }
+              this._valueEnum.choices = enumChoices;
             }
-            this._valueEnum.choices = enumChoices;
           }
           break;
         }
@@ -1548,7 +1603,7 @@ class FilterGroup extends TatorElement {
       var valueSet = elem.setValue(attribute, operation, value);
       if (valueSet == false) {
         console.error(
-          "Failed to set value for filter operation. Deleting condition"
+          `Failed to set value for filter operation. Deleting condition. Provided values: ${attribute}, ${operation}, ${value}`
         );
         this._body.removeChild(elem);
         return;
@@ -1651,9 +1706,6 @@ class LoadingInterface {
  * Singleton class for this dashboard's UI
  */
 class MainPage extends TatorPage {
-  /**
-   * @param {int} projectId - Project ID associated with where the dashboard is registered
-   */
   constructor() {
     super();
     const template = document.querySelector("#export-page");
@@ -1677,15 +1729,38 @@ class MainPage extends TatorPage {
       }
     }
 
+    const header = document.createElement("div");
+    this._headerDiv = this._header._shadow.querySelector("header");
+    header.setAttribute(
+      "class",
+      "annotation__header d-flex flex-items-center flex-justify-between px-6 f3"
+    );
+    const user = this._header._shadow.querySelector("header-user");
+    user.parentNode.insertBefore(header, user);
+
+    const div = document.createElement("div");
+    div.setAttribute("class", "d-flex flex-items-center");
+    header.appendChild(div);
+
+    this._breadcrumbs = document.createElement("analytics-breadcrumbs");
+    this._breadcrumbs.setAttribute("analytics-name", "Export Data");
+    div.appendChild(this._breadcrumbs);
+
     // Create store subscriptions
     store.subscribe((state) => state.user, this._setUser.bind(this));
     store.subscribe(
       (state) => state.announcements,
       this._setAnnouncements.bind(this)
     );
+    store.subscribe((state) => state.project, this._updateProject.bind(this));
+  }
+
+  _updateProject(project) {
+    this._breadcrumbs.setAttribute("project-name", project.name);
   }
 
   connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
     store.getState().init();
     this.init().then(() => {
       this.switchQueryPage("queryType");
@@ -2686,9 +2761,23 @@ class MainPage extends TatorPage {
 
     if (this._selectedSectionIds.length > 0) {
       var sectionNames = [];
-      for (const section of this._utils._sections) {
+      for (const section of this._mediaFilterData._sections) {
         if (this._selectedSectionIds.includes(section.id)) {
-          sectionNames.push(`${section.name} (ID: ${section.id})`);
+          var foundSection = false;
+          for (const sectionType in this._mediaFilterData._sectionOptions) {
+            for (const option of this._mediaFilterData._sectionOptions[
+              sectionType
+            ]) {
+              if (option.value.includes(`(ID: ${section.id}`)) {
+                sectionNames.push(option.label);
+                foundSection = true;
+                break;
+              }
+            }
+            if (foundSection) {
+              break;
+            }
+          }
         }
       }
       this._mediaFilterGroup.addSelectedSections(sectionNames);
