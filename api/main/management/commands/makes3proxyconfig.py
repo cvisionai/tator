@@ -3,8 +3,6 @@ import psycopg2
 import os
 import logging
 
-from main.models import Project
-
 logger = logging.getLogger(__name__)
 
 def _write_conf(path, project):
@@ -56,15 +54,27 @@ def _write_script(path, confs):
     with open(outpath, "w") as f:
         f.write(cmd)
 
+def _write_empty_script(path):
+    outpath = os.path.join(path, "s3proxy.sh")
+    cmd = "echo 'Projects table is missing the scratch_buckets column!'"
+    with open(outpath, "w") as f:
+        f.write(cmd)
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--outdir", type=str)
 
     def handle(self, **options):
         try:
-            projects = Project.objects.filter(scratch_bucket__isnull=False)
+            from main.models import Project
+            imported = True
         except psycopg2.errors.UndefinedColumn:
             logger.warning(f"Migration for scratch buckets not yet run.")
-            return
-        confs = [_write_config(options.outdir, project) for project in projects.iterator()]
-        _write_script(options.outdir, confs)
+            imported = False
+
+        if imported:
+            projects = Project.objects.filter(scratch_bucket__isnull=False)
+            confs = [_write_config(options.outdir, project) for project in projects.iterator()]
+            _write_script(options.outdir, confs)
+        else:
+            _write_empty_script(options.outdir)
