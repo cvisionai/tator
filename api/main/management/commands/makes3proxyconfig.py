@@ -53,7 +53,7 @@ def _write_gcp_config(path, project, config):
 def _write_script(path, confs):
     outpath = os.path.join(path, "s3proxy.sh")
     if len(confs) > 0:
-        cmd = "java -jar /opt/s3proxy/s3proxy "
+        cmd = "java -DLOG_LEVEL=debug -jar /opt/s3proxy/s3proxy "
         for conf in confs:
             cmd += f"--properties {conf} "
     else:
