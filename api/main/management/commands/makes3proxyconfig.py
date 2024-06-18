@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def _write_config(path, project):
     bucket = project.scratch_bucket
-    store_type = bucket.store_type.lower()
+    store_type = bucket.store_type.name.lower()
     config = bucket.config
     outpath = os.path.join(path, f"project-{project.id}.conf")
     with open(outpath, 'w') as f:
