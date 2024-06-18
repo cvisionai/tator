@@ -7,7 +7,7 @@ from main.models import Project
 
 logger = logging.getLogger(__name__)
 
-def _write_conf(path, project):
+def _write_config(path, project):
     bucket = project.scratch_bucket
     store_type = bucket.store_type.lower()
     config = bucket.config

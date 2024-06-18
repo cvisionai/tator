@@ -33,6 +33,11 @@ project_properties = {
         "type": "integer",
         "minimum": 1,
     },
+    "scratch_bucket": {
+        "description": "Unique integer identifying a bucket for scratch area.",
+        "type": "integer",
+        "minimum": 1,
+    },
     "elemental_id": {
         "description": "The elemental ID of the object.",
         "type": "string",
@@ -65,6 +70,7 @@ project_update = {
         "bucket": project_properties["bucket"],
         "upload_bucket": project_properties["upload_bucket"],
         "backup_bucket": project_properties["backup_bucket"],
+        "scratch_bucket": project_properties["scratch_bucket"],
         "elemental_id": project_properties["elemental_id"],
     },
 }

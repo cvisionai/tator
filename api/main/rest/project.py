@@ -143,6 +143,12 @@ class ProjectListAPI(BaseListView):
             if params["backup_bucket"].organization.pk != params["organization"]:
                 raise PermissionDenied
 
+        # Make sure scratch bucket can be set by this user.
+        if "scratch_bucket" in params:
+            params["scratch_bucket"] = get_object_or_404(Bucket, pk=params["scratch_bucket"])
+            if params["scratch_bucket"].organization.pk != params["organization"]:
+                raise PermissionDenied
+
         params["organization"] = get_object_or_404(Organization, pk=params["organization"])
         del params["body"]
         if params.get("elemental_id", None) is None:
@@ -273,6 +279,11 @@ class ProjectDetailAPI(BaseDetailView):
         if "backup_bucket" in params:
             project.backup_bucket = get_object_or_404(Bucket, pk=params["backup_bucket"])
             if project.backup_bucket.organization != project.organization:
+                raise PermissionDenied
+            made_changes = True
+        if "scratch_bucket" in params:
+            project.scratch_bucket = get_object_or_404(Bucket, pk=params["scratch_bucket"])
+            if project.scratch_bucket.organization != project.organization:
                 raise PermissionDenied
             made_changes = True
         if elemental_id:
