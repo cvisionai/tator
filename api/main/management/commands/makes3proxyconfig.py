@@ -7,11 +7,11 @@ from main.models import Project
 
 logger = logging.getLogger(__name__)
 
-def _write_config(path, project, idx):
+def _write_config(path, project):
     bucket = project.scratch_bucket
     store_type = bucket.store_type.name.lower()
     config = bucket.config
-    outpath = os.path.join(path, f"project-{project.id}.conf")
+    outpath = os.path.join(path, f"{bucket.name}.conf")
     with open(outpath, 'w') as f:
         if store_type in ["aws", "minio", "vast"]:
             _write_s3_config(f, project, config)
@@ -21,15 +21,13 @@ def _write_config(path, project, idx):
             _write_gcp_config(f, project, config)
         else:
             logger.warning(f"Failed to write s3proxy config for project {project.id}, unrecognized store type {bucket.store_type}")
-        f.write(f"s3proxy.alias-blobstore.project-{project.id}={bucket.name}\n")
-        f.write(f"s3proxy.bucket-locator.{idx}=project-{project.id}\n")
+        f.write(f"s3proxy.bucket-locator.1={bucket.name}\n")
     return outpath
 
 def _write_s3_config(f, project, config):
     f.write("s3proxy.endpoint=http://0.0.0.0:80\n")
     f.write("s3proxy.authorization=none\n")
-    f.write("jclouds.provider=s3\n")
-    f.write(f"jclouds.endpoint={config['endpoint_url']}\n")
+    f.write("jclouds.provider=aws-s3\n")
     f.write(f"jclouds.identity={config['aws_access_key_id']}\n")
     f.write(f"jclouds.credential={config['aws_secret_access_key']}\n")
     f.write(f"jclouds.region={config['region_name']}\n")
@@ -72,5 +70,5 @@ class Command(BaseCommand):
         except:
             logger.warning(f"Migration for scratch buckets not yet run.")
             projects = []
-        confs = [_write_config(options['outdir'], project, idx+1) for idx, project in enumerate(projects)]
+        confs = [_write_config(options['outdir'], project) for project in projects]
         _write_script(options['outdir'], confs)
