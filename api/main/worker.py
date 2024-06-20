@@ -1,4 +1,11 @@
-from redis import Redis
+from redis.backoff import ExponentialBackoff
+from redis.retry import Retry
+from redis.client import Redis
+from redis.exceptions import (
+    BusyLoadingError,
+    ConnectionError,
+    TimeoutError,
+)
 from rq import Queue, Worker
 
 import os
@@ -28,8 +35,11 @@ def push_job(queue, function, *args, **kwargs):
     push_job('async_jobs', print, 'Hello')
     See [https://python-rq.org/docs/] for information on available kwargs
     """
+    retry = Retry(ExponentialBackoff(), 3)
     redis = Redis(
         host=os.getenv("REDIS_HOST"),
+        retry=retry,
+        retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
         ssl=REDIS_USE_SSL,
     )
     queue = Queue(queue, connection=redis)
@@ -41,8 +51,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Processes a python-rq queue.")
     parser.add_argument("queue", help="Name of queue to process.")
     args = parser.parse_args()
+    retry = Retry(ExponentialBackoff(), 3)
     redis = Redis(
         host=os.getenv("REDIS_HOST"),
+        retry=retry,
+        retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
         ssl=REDIS_USE_SSL,
     )
     queue = Queue(args.queue, connection=redis)

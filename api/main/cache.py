@@ -1,4 +1,11 @@
-import redis
+from redis.backoff import ExponentialBackoff
+from redis.retry import Retry
+from redis.client import Redis
+from redis.exceptions import (
+    BusyLoadingError,
+    ConnectionError,
+    TimeoutError,
+)
 import json
 import os
 import logging
@@ -16,8 +23,11 @@ class TatorCache:
 
     @classmethod
     def setup_redis(cls):
-        cls.rds = redis.Redis(
+        retry = Retry(ExponentialBackoff(), 3)
+        cls.rds = Redis(
             host=os.getenv("REDIS_HOST"),
+            retry=retry,
+            retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
             health_check_interval=30,
             ssl=REDIS_USE_SSL,
         )
