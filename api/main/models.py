@@ -472,6 +472,11 @@ class User(AbstractUser):
             ]
         )
 
+    def clean(self):
+        super().clean()
+        if User.objects.filter(username__iexact=self.username).exists():
+            raise ValidationError("A user with that username already exists.")
+
 
 def block_user_save_email(instance, method, *args, **kwargs):
     # Create random attribute name with static prefix for determining if this is the root trigger of
