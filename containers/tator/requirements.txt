@@ -17,6 +17,7 @@ grafana-django-saml2-auth==3.9.0
 gunicorn==22.0.0
 hiredis==2.3.2
 imageio==2.34.0
+inflection==0.5.1
 jinja2==3.1.4
 jsonschema==4.9.1
 kubernetes==29.0.0
