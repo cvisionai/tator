@@ -1123,3 +1123,80 @@ def upgrade_vector_db():
             if attribute_info["dtype"] == "float_array":
                 print(f"Reindexing {attribute_info['name']} of {entity_type.name}")
                 ts.create_psql_index(entity_type, attribute_info, flush=True, concurrent=True)
+
+
+def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.fromtimestamp(0)):
+    from django.db.models import F, Window, Count, ExpressionWrapper
+    from django.db.models.functions import Lag
+
+    project = Project.objects.get(pk=project_id)
+    local_types = LocalizationType.objects.filter(project=project)
+    state_types = StateType.objects.filter(project=project)
+    versions = Version.objects.filter(project=project)
+    print(f"Checking project {project.id} {project.name}")
+
+    def find_bad_marks(objs):
+        # Logic is to find any object where the latest mark isn't 1 less than the total number of marks
+        bad_ones = (
+            objs.annotate(
+                all_marks=Window(
+                    expression=Count("id"),
+                    partition_by=("elemental_id", "version"),
+                )
+            )
+            .annotate(
+                mark_count_minus_one=ExpressionWrapper(
+                    F("all_marks") - 1, output_field=IntegerField()
+                )
+            )
+            .exclude(latest_mark__gte=F("mark_count_minus_one"))
+        )
+        if bad_ones.exists():
+            # for bad in bad_ones:
+            #    print(f"\t{bad.elemental_id}: ")
+            #    print(
+            #        f"\t\tId={bad.id} Mark={bad.mark} Latest={bad.latest_mark} Count={bad.mark_count_minus_one}"
+            #    )
+            print(f"Bad objects in {objs[0].type.name}({objs[0].type.id}): ")
+            print(
+                f"Total = {objs.count()} Bad = {bad_ones.count()} Incident_rate = {bad_ones.count() / objs.count()}"
+            )
+            bad_ones = bad_ones.values("elemental_id", "version").distinct()
+            for bad in bad_ones:
+                print(f"\t{bad['elemental_id']}: ")
+                cousins = objs.model.objects.filter(
+                    elemental_id=bad["elemental_id"], version=bad["version"]
+                ).order_by("modified_datetime")
+                for cousin in cousins:
+                    print(
+                        f"\t\tID={cousin.id} MARK={cousin.mark} LAST={cousin.latest_mark} MOD_TIME={cousin.modified_datetime} "
+                    )
+
+                if fix_it == True:
+                    latest_mark = cousins.count() - 1
+                    for new_mark, cousin in enumerate(cousins):
+                        # The trigger won't run up update because we aren't deleting
+                        # so do it all manually
+                        cousin.mark = new_mark
+                        cousin.latest_mark = latest_mark
+                        cousin.save()
+
+    for lt in local_types:
+        for version in versions:
+            potential_locals = Localization.objects.filter(
+                type=lt,
+                mark__gte=1,
+                version=version,
+                deleted=False,
+                modified_datetime__gte=since_when,
+            )
+            find_bad_marks(potential_locals)
+    for st in state_types:
+        for version in versions:
+            potential_states = State.objects.filter(
+                type=st,
+                mark__gte=1,
+                version=version,
+                modified_datetime__gte=since_when,
+            )
+            find_bad_marks(potential_states)
