@@ -84,6 +84,9 @@ END IF;
 IF NEW.version IS NULL THEN
             RAISE EXCEPTION 'version cannot be null';
 END IF;
+
+EXECUTE format('SELECT * FROM %I.%I  WHERE elemental_id=%L AND version=%s FOR UPDATE',TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version);
+
 IF (SELECT COUNT(name) FROM pg_prepared_statements WHERE name='get_next_mark_localization')  THEN
     SET plan_cache_mode=force_generic_plan;
     EXECUTE format('EXECUTE get_next_mark_{0}(%L,%s)', NEW.elemental_id::uuid, NEW.version::integer) INTO _var;
@@ -98,7 +101,7 @@ RETURN NEW;
 
 
 AFTER_MARK_TRIGGER_FUNC = """
-
+EXECUTE format('SELECT * FROM %I.%I  WHERE elemental_id=%L AND version=%s FOR UPDATE',TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.elemental_id, NEW.version);
 IF (SELECT COUNT(name) FROM pg_prepared_statements WHERE name='get_next_mark_localization')  THEN
     SET plan_cache_mode=force_generic_plan;
     EXECUTE format('EXECUTE update_latest_mark_{0}(%L,%s)',NEW.elemental_id::uuid, NEW.version::integer);
