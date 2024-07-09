@@ -46,7 +46,7 @@ from django_ltree.fields import PathField
 from django.db import transaction, connection
 from django.db.backends.signals import connection_created
 from django.dispatch import receiver
-from django.db.models import UniqueConstraint, FilteredRelation, Q, F, Value
+from django.db.models import UniqueConstraint, FilteredRelation, Q, F, Value, Subquery
 from django.db.models.functions import Coalesce
 
 from .backup import TatorBackupManager
@@ -2477,7 +2477,10 @@ class RowProtection(Model):
 
     def augment_permission(user, qs):
         model = qs.model
-        if model in [Media, File, Section, Algorithm]:
+        groups = user.groupmembership_set.all().values("group")
+        # groups = Group.objects.filter(pk=-1).values("id")
+        organizations = user.affiliation_set.all().values("organization")
+        if model in [File, Section, Algorithm]:
             # For these models, we can use the project to determine permissions
             # First find any matching protection rows for the element
             #    - By user, then group, then org
@@ -2485,8 +2488,6 @@ class RowProtection(Model):
             #    - By user, then group, then org
             # Annotate each row with the best matching permission in this order
             # If there are no matches, return 0 (no access)
-            groups = user.groupmembership_set.all().values("group")
-            organizations = user.affiliation_set.all().values("organization")
             qs = qs.alias(
                 permission_user=FilteredRelation(
                     "rowprotection", condition=Q(rowprotection__user=user)
@@ -2496,6 +2497,49 @@ class RowProtection(Model):
                 ),
                 permission_org=FilteredRelation(
                     "rowprotection", condition=Q(rowprotection__organization__in=organizations)
+                ),
+                proj_permission_user=FilteredRelation(
+                    "project__rowprotection",
+                    condition=Q(project__rowprotection__user=user),
+                ),
+                proj_permission_group=FilteredRelation(
+                    "project__rowprotection",
+                    condition=Q(project__rowprotection__group__in=groups),
+                ),
+                proj_permission_org=FilteredRelation(
+                    "project__rowprotection",
+                    condition=Q(project__rowprotection__organization__in=organizations),
+                ),
+            ).annotate(
+                effective_permission=Coalesce(
+                    F("permission_user__permission"),
+                    F("permission_group__permission"),
+                    F("permission_org__permission"),
+                    F("proj_permission_user__permission"),
+                    F("proj_permission_group__permission"),
+                    F("proj_permission_org__permission"),
+                    Value(0),
+                )
+            )
+        elif model in [Media]:
+            # For these models, we can use the project to determine permissions
+            # We then use the section the media is in
+            # First find any matching protection rows for the element
+            #    - By user, then group, then org
+            # Second find any matching protection rows for the project
+            #    - By user, then group, then org
+            # Annotate each row with the best matching permission in this order
+            # If there are no matches, return 0 (no access)
+            qs = qs.alias(
+                permission_user=FilteredRelation(
+                    "rowprotection", condition=Q(rowprotection__user=user)
+                ),
+                permission_group=FilteredRelation(
+                    "rowprotection", condition=Q(rowprotection__group__in=groups)
+                ),
+                permission_org=FilteredRelation(
+                    "rowprotection",
+                    condition=Q(rowprotection__organization__in=organizations),
                 ),
                 proj_permission_user=FilteredRelation(
                     "project__rowprotection",
@@ -2530,8 +2574,6 @@ class RowProtection(Model):
             #    - By user, then group, then org
             # Annotate each row with the best matching permission in this order
             # If there are no matches, return 0 (no access)
-            groups = user.groupmembership_set.all().values("group")
-            organizations = user.affiliation_set.all().values("organization")
             qs = qs.alias(
                 permission_user=FilteredRelation(
                     "rowprotection", condition=Q(rowprotection__user=user)
@@ -2540,7 +2582,8 @@ class RowProtection(Model):
                     "rowprotection", condition=Q(rowprotection__group__in=groups)
                 ),
                 permission_org=FilteredRelation(
-                    "rowprotection", condition=Q(rowprotection__organization__in=organizations)
+                    "rowprotection",
+                    condition=Q(rowprotection__organization__in=organizations),
                 ),
                 version_permission_user=FilteredRelation(
                     "version__rowprotection",

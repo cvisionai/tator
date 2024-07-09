@@ -107,7 +107,7 @@ class ProjectPermissionBase(BasePermission):
             granted = False
         else:
             # Find membership for this user and project
-            permissions = RowProtection.augment_permissions(request.user, fake_qs)
+            permissions = RowProtection.augment_permissions(request.user, query)
 
             # If user is not part of project, deny access
             if permissions.exist() == False:
