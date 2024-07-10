@@ -1282,9 +1282,9 @@ def memberships_to_rowp(project_id):
 
 def migrate_tator_sections(project):
     folders = Section.objects.filter(project=project, tator_user_sections__isnull=False)
-    for folder in progressbar.ProgressBar(folders.iterator()):
+    print(f"Found {folders.count()} folders to migrate")
+    for folder in progressbar(folders.iterator()):
         effected_media = Media.objects.filter(
-            project=project, attribute__tator_user_sections=folder.tator_user_sections
+            project=project, attributes__tator_user_sections=folder.tator_user_sections
         )
         effected_media.update(primary_section=folder.pk)
-        print(f"Updating {effected_media.count()} media objects for {folder.name}")
