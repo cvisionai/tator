@@ -1279,3 +1279,12 @@ def memberships_to_rowp(project_id):
             print(f"Adding user {user.username} to group {group.name}")
             GroupMembership.objects.create(group=group, user=user)
 
+
+def migrate_tator_sections(project):
+    folders = Section.objects.filter(project=project, tator_user_sections__isnull=False)
+    for folder in progressbar.ProgressBar(folders.iterator()):
+        effected_media = Media.objects.filter(
+            project=project, attribute__tator_user_sections=folder.tator_user_sections
+        )
+        effected_media.update(primary_section=folder.pk)
+        print(f"Updating {effected_media.count()} media objects for {folder.name}")
