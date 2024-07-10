@@ -34,7 +34,7 @@ from django.contrib.auth.models import UserManager
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
-from django.db.models import JSONField, Lookup, IntegerField
+from django.db.models import JSONField, Lookup, IntegerField, Case, When
 from django.db.models import FloatField, Transform, UUIDField
 from django.db.models.signals import m2m_changed, pre_delete, pre_save, post_delete, post_save
 from django.dispatch import receiver
@@ -2632,41 +2632,74 @@ class RowProtection(Model):
 
             # Get the project permission as the baseline because we know
             # each request is scoped to a project
-            project_permission = 0
 
             if qs.exists():
-                # Calculate the project permissions knowing the query set can only contain one project
-                # If this usage changes, this logic would need to be updated.
-                proj_permission = RowProtection.objects.filter(
-                    project=qs[0].project, group__in=groups
-                ).values("permission")[:1]
-                if proj_permission.exists():
-                    project_permission = Value(proj_permission[0]["permission"])
+                # This assumes all checks are scoped to the same project (expensive to check in runtime)
+                project = qs[0].project
+                project_permission_query = RowProtection.objects.filter(
+                    project=project, group__in=groups
+                )
+                if project_permission_query.exists():
+                    project_permission = project_permission_query[0].permission
+                else:
+                    project_permission = 0
 
-                # Subquery to calculate version permission
-                version_permissions = RowProtection.objects.filter(
-                    version__in=qs.values("version"), group__in=groups
+                # Alias in the section for each object
+                if model == Localization:
+                    qs = qs.annotate(section=F("media__primary_section__pk"))
+                elif model == State:
+                    sb = Subquery(
+                        Media.objects.filter(state__pk=OuterRef("pk")).values(
+                            "primary_section__pk"
+                        )[:1]
+                    )
+                    qs = qs.annotate(section=sb)
+
+                # Calculate a dictionary for permissions by section and version in this set
+                section_rp = RowProtection.objects.filter(
+                    group__in=groups, section__in=qs.values("section").distinct()
+                )
+                version_rp = RowProtection.objects.filter(
+                    group__in=groups, version__in=qs.values("version").distinct()
                 )
 
-                extras = []
+                section_perm_dict = {
+                    entry["section"]: entry["permission"]
+                    for entry in section_rp.values("section", "permission")
+                }
+                version_perm_dict = {
+                    entry["version"]: entry["permission"]
+                    for entry in version_rp.values("version", "permission")
+                }
 
-                # Check to see if any version permissions exist
-                # If so, add this to the extras list for the BIT_OR path
-                if version_permissions.exists():
-                    qs = qs.alias(
-                        version_permission_group_rel=FilteredRelation(
-                            "version__rowprotection",
-                            condition=Q(version__rowprotection__group__in=groups),
-                        )
-                    )
-                    extras.append(F("version_permission_group_rel__permission"))
+                section_cases = [
+                    When(section=section, then=Value(perm))
+                    for section, perm in section_perm_dict.items()
+                ]
+                version_cases = [
+                    When(version=version, then=Value(perm))
+                    for version, perm in version_perm_dict.items()
+                ]
 
-                if extras:
-                    qs.annotate(
-                        effective_permission=ColBitwiseOr(*extras, Value(project_permission))
+                qs = qs.alias(
+                    section_permission=Case(
+                        *section_cases, default=Value(0), output_field=BigIntegerField()
+                    ),
+                )
+
+                qs = qs.alias(
+                    version_permission=Case(
+                        *version_cases, default=Value(0), output_field=BigIntegerField()
+                    ),
+                )
+
+                qs = qs.annotate(
+                    effective_permission=Coalesce(
+                        F("section_permission"),
+                        F("version_permission"),
+                        Value(project_permission),
                     )
-                else:
-                    qs = qs.annotate(effective_permission=Value(project_permission))
+                )
 
         return qs
 
