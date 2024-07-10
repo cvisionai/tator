@@ -46,8 +46,19 @@ from django_ltree.fields import PathField
 from django.db import transaction, connection
 from django.db.backends.signals import connection_created
 from django.dispatch import receiver
-from django.db.models import UniqueConstraint, FilteredRelation, Q, F, Value, Subquery
-from django.db.models.functions import Coalesce
+from django.db.models import (
+    UniqueConstraint,
+    FilteredRelation,
+    Q,
+    F,
+    Value,
+    Subquery,
+    Func,
+    OuterRef,
+    Window,
+)
+from django.contrib.postgres.aggregates import BitOr
+from django.db.models.functions import Coalesce, Cast
 
 from .backup import TatorBackupManager
 from .search import TatorSearch
@@ -115,7 +126,6 @@ ELSE
 END  IF; 
 RETURN NEW;
 """
-
 
 # Register prepared statements for the triggers to optimize performance on creation of a database  connection
 @receiver(connection_created)
@@ -2530,6 +2540,34 @@ class RowProtection(Model):
             #    - By user, then group, then org
             # Annotate each row with the best matching permission in this order
             # If there are no matches, return 0 (no access)
+            explicit_section_query = (
+                Section.objects.filter(
+                    media__pk=OuterRef("pk"),
+                )
+                .alias(
+                    permission_user=FilteredRelation(
+                        "rowprotection", condition=Q(rowprotection__user=user)
+                    ),
+                    permission_group=FilteredRelation(
+                        "rowprotection", condition=Q(rowprotection__group__in=groups)
+                    ),
+                    permission_org=FilteredRelation(
+                        "rowprotection",
+                        condition=Q(rowprotection__organization__in=organizations),
+                    ),
+                )
+                .annotate(
+                    effective_permission=Coalesce(
+                        F("permission_user__permission"),
+                        F("permission_group__permission"),
+                        F("permission_org__permission"),
+                    )
+                )
+                .annotate(
+                    or_effective_permission=Window(expression=BitOr(F("effective_permission")))
+                )
+                .values("or_effective_permission")[:1]
+            )
             qs = qs.alias(
                 permission_user=FilteredRelation(
                     "rowprotection", condition=Q(rowprotection__user=user)
@@ -2540,6 +2578,9 @@ class RowProtection(Model):
                 permission_org=FilteredRelation(
                     "rowprotection",
                     condition=Q(rowprotection__organization__in=organizations),
+                ),
+                explicit_section_perm=Cast(
+                    Subquery(explicit_section_query), output_field=BigIntegerField()
                 ),
                 proj_permission_user=FilteredRelation(
                     "project__rowprotection",
@@ -2558,6 +2599,7 @@ class RowProtection(Model):
                     F("permission_user__permission"),
                     F("permission_group__permission"),
                     F("permission_org__permission"),
+                    F("explicit_section_perm"),
                     F("proj_permission_user__permission"),
                     F("proj_permission_group__permission"),
                     F("proj_permission_org__permission"),
