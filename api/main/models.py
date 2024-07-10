@@ -34,7 +34,7 @@ from django.contrib.auth.models import UserManager
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
-from django.db.models import JSONField
+from django.db.models import JSONField, Lookup, IntegerField
 from django.db.models import FloatField, Transform, UUIDField
 from django.db.models.signals import m2m_changed, pre_delete, pre_save, post_delete, post_save
 from django.dispatch import receiver
@@ -90,6 +90,23 @@ from .middleware import get_http_method
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
+
+
+class ColBitwiseOr(Func):
+    function = "|"
+    template = "%(expressions)s"
+
+
+@BigIntegerField.register_lookup
+class BitwiseAnd(Lookup):
+    lookup_name = "bitand"
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        return "%s & %s" % (lhs, rhs), params
+
 
 BEFORE_MARK_TRIGGER_FUNC = """
 IF NEW.elemental_id IS NULL THEN
@@ -2579,9 +2596,6 @@ class RowProtection(Model):
                     "rowprotection",
                     condition=Q(rowprotection__organization__in=organizations),
                 ),
-                explicit_section_perm=Cast(
-                    Subquery(explicit_section_query), output_field=BigIntegerField()
-                ),
                 proj_permission_user=FilteredRelation(
                     "project__rowprotection",
                     condition=Q(project__rowprotection__user=user),
@@ -2599,7 +2613,6 @@ class RowProtection(Model):
                     F("permission_user__permission"),
                     F("permission_group__permission"),
                     F("permission_org__permission"),
-                    F("explicit_section_perm"),
                     F("proj_permission_user__permission"),
                     F("proj_permission_group__permission"),
                     F("proj_permission_org__permission"),
@@ -2616,55 +2629,45 @@ class RowProtection(Model):
             #    - By user, then group, then org
             # Annotate each row with the best matching permission in this order
             # If there are no matches, return 0 (no access)
-            qs = qs.alias(
-                permission_user=FilteredRelation(
-                    "rowprotection", condition=Q(rowprotection__user=user)
-                ),
-                permission_group=FilteredRelation(
-                    "rowprotection", condition=Q(rowprotection__group__in=groups)
-                ),
-                permission_org=FilteredRelation(
-                    "rowprotection",
-                    condition=Q(rowprotection__organization__in=organizations),
-                ),
-                version_permission_user=FilteredRelation(
-                    "version__rowprotection",
-                    condition=Q(version__rowprotection__user=user),
-                ),
-                version_permission_group=FilteredRelation(
-                    "version__rowprotection",
-                    condition=Q(version__rowprotection__group__in=groups),
-                ),
-                version_permission_org=FilteredRelation(
-                    "version__rowprotection",
-                    condition=Q(version__rowprotection__organization__in=organizations),
-                ),
-                proj_permission_user=FilteredRelation(
-                    "project__rowprotection",
-                    condition=Q(project__rowprotection__user=user),
-                ),
-                proj_permission_group=FilteredRelation(
-                    "project__rowprotection",
-                    condition=Q(project__rowprotection__group__in=groups),
-                ),
-                proj_permission_org=FilteredRelation(
-                    "project__rowprotection",
-                    condition=Q(project__rowprotection__organization__in=organizations),
-                ),
-            ).annotate(
-                effective_permission=Coalesce(
-                    F("permission_user__permission"),
-                    F("permission_group__permission"),
-                    F("permission_org__permission"),
-                    F("version_permission_user__permission"),
-                    F("version_permission_group__permission"),
-                    F("version_permission_org__permission"),
-                    F("proj_permission_user__permission"),
-                    F("proj_permission_group__permission"),
-                    F("proj_permission_org__permission"),
-                    Value(0),
+
+            # Get the project permission as the baseline because we know
+            # each request is scoped to a project
+            project_permission = 0
+
+            if qs.exists():
+                # Calculate the project permissions knowing the query set can only contain one project
+                # If this usage changes, this logic would need to be updated.
+                proj_permission = RowProtection.objects.filter(
+                    project=qs[0].project, group__in=groups
+                ).values("permission")[:1]
+                if proj_permission.exists():
+                    project_permission = Value(proj_permission[0]["permission"])
+
+                # Subquery to calculate version permission
+                version_permissions = RowProtection.objects.filter(
+                    version__in=qs.values("version"), group__in=groups
                 )
-            )
+
+                extras = []
+
+                # Check to see if any version permissions exist
+                # If so, add this to the extras list for the BIT_OR path
+                if version_permissions.exists():
+                    qs = qs.alias(
+                        version_permission_group_rel=FilteredRelation(
+                            "version__rowprotection",
+                            condition=Q(version__rowprotection__group__in=groups),
+                        )
+                    )
+                    extras.append(F("version_permission_group_rel__permission"))
+
+                if extras:
+                    qs.annotate(
+                        effective_permission=ColBitwiseOr(*extras, Value(project_permission))
+                    )
+                else:
+                    qs = qs.annotate(effective_permission=Value(project_permission))
+
         return qs
 
 
