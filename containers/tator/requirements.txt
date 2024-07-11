@@ -1,4 +1,5 @@
 boto3==1.34.66
+certifi==2024.7.4
 cryptography==42.0.5
 datadog==0.49.1
 ddtrace==2.7.4
