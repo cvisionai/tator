@@ -98,6 +98,11 @@ class ColBitwiseOr(Func):
     template = "%(expressions)s"
 
 
+class ColBitwiseAnd(Func):
+    function = "&"
+    template = "%(expressions)s"
+
+
 @BigIntegerField.register_lookup
 class BitwiseAnd(Lookup):
     lookup_name = "bitand"
@@ -2517,10 +2522,39 @@ class RowProtection(Model):
         ]
 
     def augment_permission(user, qs):
-        model = qs.model
-        groups = user.groupmembership_set.all().values("group").distinct()
-        # groups = Group.objects.filter(pk=-1).values("id")
-        organizations = user.affiliation_set.all().values("organization")
+        if qs.exists():
+            model = qs.model
+            groups = user.groupmembership_set.all().values("group").distinct()
+            # groups = Group.objects.filter(pk=-1).values("id")
+            organizations = user.affiliation_set.all().values("organization")
+            # This assumes all checks are scoped to the same project (expensive to check in runtime)
+            project = qs[0].project
+
+            # Filter for all relevant permissions the user has and OR them together
+            # If someone is in a group with a permission, you can't remove it via a user-level
+            # permission
+            project_permission_query = RowProtection.objects.filter(project=project).filter(
+                Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+            )
+            if project_permission_query.exists():
+                project_permission_query = project_permission_query.aggregate(
+                    computed_permission=BitOr("permission")
+                )
+                project_permission = (
+                    project_permission_query["computed_permission"]
+                    >> RowProtection.BITS.CHILD_SHIFT
+                    & 0xFF
+                )
+            else:
+                project_permission = 0
+
+            qs = qs.alias(
+                project_permission=Value(project_permission),
+            )
+        else:
+            return qs
+
+        # continue on based on type of model where each is handled a little differently
         if model in [File, Section, Algorithm]:
             # For these models, we can use the project to determine permissions
             # First find any matching protection rows for the element
@@ -2634,91 +2668,83 @@ class RowProtection(Model):
                 )
             )
         elif model in [Localization, State]:
-            # For these models, we can use the version+project to determine permissions
-            # First find any matching protection rows for the element
-            #    - By user, then group, then org
-            # Second find any matching protection rows for the version
-            #    - By user, then group, then org
-            # Lastly, find any matching protection rows for the project
-            #    - By user, then group, then org
-            # Annotate each row with the best matching permission in this order
-            # If there are no matches, return 0 (no access)
+            # For these models, we can use the section+version+project to determine permissions
+            #
 
             # Get the project permission as the baseline because we know
             # each request is scoped to a project
-
-            if qs.exists():
-                # This assumes all checks are scoped to the same project (expensive to check in runtime)
-                project = qs[0].project
-                project_permission_query = RowProtection.objects.filter(
-                    project=project, group__in=groups
+            if model == Localization:
+                qs = qs.annotate(section=F("media__primary_section__pk"))
+            elif model == State:
+                sb = Subquery(
+                    Media.objects.filter(state__pk=OuterRef("pk")).values("primary_section__pk")[:1]
                 )
-                if project_permission_query.exists():
-                    project_permission = project_permission_query[0].permission
-                else:
-                    project_permission = 0
+                qs = qs.annotate(section=sb)
 
-                # Calculate a dictionary for permissions by section and version in this set
-                effected_media = qs.values("media__pk").distinct()
-                effected_sections = (
-                    Section.objects.filter(project=project, media__in=effected_media)
-                    .values("pk")
-                    .distinct()
-                )
-                effected_versions = qs.values("version__pk").distinct()
+            # Calculate a dictionary for permissions by section and version in this set
+            effected_media = qs.values("media__pk").distinct()
+            effected_sections = (
+                Section.objects.filter(project=project, media__in=effected_media)
+                .values("pk")
+                .distinct()
+            )
+            effected_versions = qs.values("version__pk").distinct()
 
-                print("=====================================")
-                section_rp = RowProtection.objects.filter(
-                    group__in=groups, section__in=effected_sections
-                )
-                print("SECTION QUERY")
-                print(section_rp.explain(analyze=True))
-                print("=====================================")
-                version_rp = RowProtection.objects.filter(
-                    group__in=groups, version__in=effected_versions
-                )
-                print("VERSION QUERY")
-                print(version_rp.explain(analyze=True))
-                print("=====================================")
+            section_rp = RowProtection.objects.filter(section__in=effected_sections).filter(
+                Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+            )
+            section_rp = section_rp.annotate(
+                calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
+            )
+            version_rp = RowProtection.objects.filter(version__in=effected_versions).filter(
+                Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+            )
+            version_rp = version_rp.annotate(
+                calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("version")])
+            )
 
-                section_perm_dict = {
-                    entry["section"]: entry["permission"] >> RowProtection.BITS.CHILD_SHIFT
-                    for entry in section_rp.values("section", "permission")
-                }
-                version_perm_dict = {
-                    entry["version"]: entry["permission"] >> RowProtection.BITS.CHILD_SHIFT
-                    for entry in version_rp.values("version", "permission")
-                }
+            section_perm_dict = {
+                entry["section"]: (entry["calc_perm"] >> RowProtection.BITS.CHILD_SHIFT) & 0xFF
+                for entry in section_rp.values("section", "calc_perm")
+            }
+            version_perm_dict = {
+                entry["version"]: (entry["calc_perm"] >> RowProtection.BITS.CHILD_SHIFT) & 0xFF
+                for entry in version_rp.values("version", "calc_perm")
+            }
 
-                section_cases = [
-                    When(section=section, then=Value(perm))
-                    for section, perm in section_perm_dict.items()
-                ]
-                version_cases = [
-                    When(version=version, then=Value(perm))
-                    for version, perm in version_perm_dict.items()
-                ]
+            section_cases = [
+                When(section=section, then=Value(perm))
+                for section, perm in section_perm_dict.items()
+            ]
+            version_cases = [
+                When(version=version, then=Value(perm))
+                for version, perm in version_perm_dict.items()
+            ]
 
-                # Annotate on the final permission for each row
-                qs = qs.annotate(
-                    section_permission=Case(*section_cases, output_field=BigIntegerField()),
-                )
-
-                qs = qs.annotate(
-                    version_permission=Case(*version_cases, output_field=BigIntegerField()),
-                )
-
-                qs = qs.annotate(
-                    project_permission=Value(project_permission),
-                )
-
-                qs = qs.annotate(
-                    effective_permission=Coalesce(
-                        F("section_permission"),
-                        F("version_permission"),
-                        Value(project_permission),
+            combo_cases = []
+            for section, section_perm in section_perm_dict.items():
+                for version, version_perm in version_perm_dict.items():
+                    combined_perm = (
+                        (section_perm & version_perm) >> RowProtection.BITS.CHILD_SHIFT
+                    ) & 0xFF
+                    combo_cases.append(
+                        When(
+                            section=section,
+                            version=version,
+                            then=Value(combined_perm),
+                        )
                     )
-                )
+
+            # Annotate on the final permission for each row
+            qs = qs.annotate(
+                effective_permission=Case(
+                    *combo_cases,  # Match intersections first
+                    *section_cases,  # Then sections
+                    *version_cases,  # Then versions
+                    default=F("project_permission"),
+                    output_field=BigIntegerField(),
+                ),
+            )
 
         return qs
 
