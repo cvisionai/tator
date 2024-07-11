@@ -85,6 +85,17 @@ export class CanvasAppletWrapper extends TatorElement {
         that._appletElement =
           appletView.contentWindow.document.getElementById("mainApplet");
         that._appletElement.init(applet, data, favorites, undo);
+
+        that._appletElement.addEventListener("overrideCanvas", (event) => {
+          that.dispatchEvent(
+            new CustomEvent("overrideCanvas", { detail: event.detail })
+          );
+        });
+
+        that._appletElement.addEventListener("clearOverrideCanvas", (event) => {
+          that.dispatchEvent(new CustomEvent("clearOverrideCanvas"));
+        });
+
         resolve();
       };
 
@@ -112,6 +123,14 @@ export class CanvasAppletWrapper extends TatorElement {
   // #TODO
   newData(newElement, associatedType) {
     this._appletElement.newData(newElement, associatedType);
+  }
+
+  /**
+   * Forces the applet to have its canvas updated when loaded
+   * @precondition init() must have been called
+   */
+  forceUpdateFrameOnLoad() {
+    this._lastFrameUpdate = -1;
   }
 }
 
