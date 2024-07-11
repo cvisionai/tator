@@ -360,9 +360,9 @@ export class ProjectDetail extends TatorPage {
     this._uploadDialog = document.createElement("upload-dialog");
     this._projects.appendChild(this._uploadDialog);
 
-    const attachmentDialog = document.createElement("attachment-dialog");
-    attachmentDialog._header.classList.add("fixed-height-scroll");
-    this._projects.appendChild(attachmentDialog);
+    this._attachmentDialog = document.createElement("attachment-dialog");
+    this._attachmentDialog._header.classList.add("fixed-height-scroll");
+    this._projects.appendChild(this._attachmentDialog);
 
     this._activityNav = document.createElement("activity-nav");
     this.main.appendChild(this._activityNav);
@@ -412,7 +412,7 @@ export class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
-    attachmentDialog.addEventListener("close", (evt) => {
+    this._attachmentDialog.addEventListener("close", (evt) => {
       this.removeAttribute("has-open-modal");
     });
 
@@ -852,8 +852,8 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._mediaSection.addEventListener("attachments", (evt) => {
-      attachmentDialog.init(evt.detail);
-      attachmentDialog.setAttribute("is-open", "");
+      this._attachmentDialog.init(evt.detail);
+      this._attachmentDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
   }
