@@ -85,6 +85,7 @@ import shutil
 import uuid
 
 import pgtrigger
+from types import SimpleNamespace
 
 from .middleware import get_http_method
 
@@ -2466,24 +2467,37 @@ class RowProtection(Model):
         0 - Can not see
         0x1 - Exist
         0x2 - Read (e.g. generate presigned URLs)
-        0x4 - Write
-        0x8 - Full control (ability to delete)
+        0x4 - POST permission 
+        0x8 - PATCH permission
+        0x10 - DELETE permissions
+        0x20  - in_place / prune_permissions
+        0x40  - Execute bit (for algorithms/projects)
+        0x80  - Upload bit (can upload media)
+        0xFF - Full control
 
-        In the next nibble, the following permissions are encoded:
-        0x10 - Execute bit (for algorithms/projects)
-        0x20  - Upload bit (can upload media)
-        0x40  - RESERVED
-        0x80  - RESERVED
+        CRUD permissions are repeated in 0xFF00 for children objects
 
-        In the next nibble, the following permissions for projects properties are
-        encoded
-        0x100 - Can see project existence
-        0x200 - Can edit project attributes
-        0x400 - RESERVED
-        0x800 - Can delete project
+        In the next byte we specify special permissions relevant only to administration
+        0x1_0000 - Can make ACLs impacting project
+        0x2_0000 - RESERVED
+        0x4_0000 - RESERVED
+        0x8_0000 - Can delete project
 
         bits above this are reserved for future use.
     """
+
+    BITS = SimpleNamespace(
+        CHILD_SHIFT=8,  # Shift required to get children bit
+        EXIST=0x1,
+        READ=0x2,
+        POST=0x4,
+        PATCH=0x8,
+        DELETE=0x10,
+        IN_PLACE_PRUNE=0x20,
+        EXECUTE=0x40,
+        UPLOAD=0x80,
+        FULL_CONTROL=0xFF,
+    )
 
     class Meta:
         constraints = [
@@ -2504,7 +2518,7 @@ class RowProtection(Model):
 
     def augment_permission(user, qs):
         model = qs.model
-        groups = user.groupmembership_set.all().values("group")
+        groups = user.groupmembership_set.all().values("group").distinct()
         # groups = Group.objects.filter(pk=-1).values("id")
         organizations = user.affiliation_set.all().values("organization")
         if model in [File, Section, Algorithm]:
@@ -2644,31 +2658,35 @@ class RowProtection(Model):
                 else:
                     project_permission = 0
 
-                # Alias in the section for each object
-                if model == Localization:
-                    qs = qs.annotate(section=F("media__primary_section__pk"))
-                elif model == State:
-                    sb = Subquery(
-                        Media.objects.filter(state__pk=OuterRef("pk")).values(
-                            "primary_section__pk"
-                        )[:1]
-                    )
-                    qs = qs.annotate(section=sb)
-
                 # Calculate a dictionary for permissions by section and version in this set
+                effected_media = qs.values("media__pk").distinct()
+                effected_sections = (
+                    Section.objects.filter(project=project, media__in=effected_media)
+                    .values("pk")
+                    .distinct()
+                )
+                effected_versions = qs.values("version__pk").distinct()
+
+                print("=====================================")
                 section_rp = RowProtection.objects.filter(
-                    group__in=groups, section__in=qs.values("section").distinct()
+                    group__in=groups, section__in=effected_sections
                 )
+                print("SECTION QUERY")
+                print(section_rp.explain(analyze=True))
+                print("=====================================")
                 version_rp = RowProtection.objects.filter(
-                    group__in=groups, version__in=qs.values("version").distinct()
+                    group__in=groups, version__in=effected_versions
                 )
+                print("VERSION QUERY")
+                print(version_rp.explain(analyze=True))
+                print("=====================================")
 
                 section_perm_dict = {
-                    entry["section"]: entry["permission"]
+                    entry["section"]: entry["permission"] >> RowProtection.BITS.CHILD_SHIFT
                     for entry in section_rp.values("section", "permission")
                 }
                 version_perm_dict = {
-                    entry["version"]: entry["permission"]
+                    entry["version"]: entry["permission"] >> RowProtection.BITS.CHILD_SHIFT
                     for entry in version_rp.values("version", "permission")
                 }
 
@@ -2681,16 +2699,17 @@ class RowProtection(Model):
                     for version, perm in version_perm_dict.items()
                 ]
 
-                qs = qs.alias(
-                    section_permission=Case(
-                        *section_cases, default=Value(0), output_field=BigIntegerField()
-                    ),
+                # Annotate on the final permission for each row
+                qs = qs.annotate(
+                    section_permission=Case(*section_cases, output_field=BigIntegerField()),
                 )
 
-                qs = qs.alias(
-                    version_permission=Case(
-                        *version_cases, default=Value(0), output_field=BigIntegerField()
-                    ),
+                qs = qs.annotate(
+                    version_permission=Case(*version_cases, output_field=BigIntegerField()),
+                )
+
+                qs = qs.annotate(
+                    project_permission=Value(project_permission),
                 )
 
                 qs = qs.annotate(
