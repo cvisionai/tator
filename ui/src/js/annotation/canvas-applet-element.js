@@ -477,6 +477,8 @@ export class CanvasAppletElement extends TatorElement {
   redrawCanvas() {
     if (this._canvasCenterPoint == null) {
       return; // Not initialized yet.
+    } else if (this._frameImage.width == 0) {
+      return; // No frame image loaded
     }
 
     //
