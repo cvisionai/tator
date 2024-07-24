@@ -182,4 +182,4 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
             tator_store = get_tator_store(bucket, upload=use_upload_bucket)
             tator_store.put_media_id_tag(path, media_obj.id)
 
-    logging.info(f"Total time: {time.time() - total_start} seconds")
+    print(f"Total time: {time.time() - total_start} seconds")
