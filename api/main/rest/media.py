@@ -413,15 +413,17 @@ class MediaListAPI(BaseListView):
             received_spec_list = False
             media_spec_list = [media_spec_list]
         if len(media_spec_list) == 1:
-            # Creates a single media object synchronously, works with video and images
-            obj, msg, section_obj = _create_media(project, media_spec_list[0], self.request.user)
+            # Creates a single media object asynchronously, which only does something for images anyway
+            obj, msg, section_obj = _create_media(
+                project, media_spec_list[0], self.request.user, use_rq=True
+            )
             qs = Media.objects.filter(id=obj.id)
             response_data = list(qs.values(*fields))
             response_data = response_data if received_spec_list else response_data[0]
             id_resp = [obj.id] if received_spec_list else obj.id
             response = {"message": msg, "id": id_resp, "object": response_data}
         elif media_spec_list:
-            # Creates multiple media objects asynchronously, works with images only
+            # Creates multiple media objects asynchronously, does not apply to videos but won't not work
             assert_list_of_image_specs(project, media_spec_list)
             ids = []
             for media_spec in media_spec_list:
