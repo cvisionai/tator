@@ -4793,16 +4793,10 @@ class ResourceTestCase(TatorTransactionTest):
         image_id = response.data["id"][0]
 
         # Make sure we have an image and thumbnail key.
-        for x in range(10):
-            try:
-                image = Media.objects.get(pk=image_id)
-                print(image.media_files)
-                image_key = image.media_files["image"][0]["path"]
-                thumb_key = image.media_files["thumbnail"][0]["path"]
-            except Exception as e:
-                print(e)
-                print(f"waiting for async job to complete. {x}/10")
-                time.sleep(2)
+        image = Media.objects.get(pk=image_id)
+        image_key = image.media_files["image"][0]["path"]
+        thumb_key = image.media_files["thumbnail"][0]["path"]
+
         self.assertTrue(self._store_obj_exists(image_key))
         self.assertTrue(self._store_obj_exists(thumb_key))
         self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
@@ -4831,15 +4825,10 @@ class ResourceTestCase(TatorTransactionTest):
         image_id = response.data["id"][0]
 
         # Make sure we have an image and thumbnail key.
-        for x in range(10):
-            try:
-                image = Media.objects.get(pk=image_id)
-                image_key = image.media_files["image"][0]["path"]
-                thumb_key = image.media_files["thumbnail"][0]["path"]
-            except Exception as e:
-                print(e)
-                print("waiting for async job to complete.")
-                time.sleep(1)
+        image = Media.objects.get(pk=image_id)
+        image_key = image.media_files["image"][0]["path"]
+        thumb_key = image.media_files["thumbnail"][0]["path"]
+
         self.assertTrue(self._store_obj_exists(image_key))
         self.assertTrue(self._store_obj_exists(thumb_key))
         self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
