@@ -10,7 +10,7 @@ from uuid import uuid1, uuid4
 from urllib.parse import urlparse
 
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models import Case, When
 from django.http import Http404
 from PIL import Image
@@ -239,6 +239,10 @@ def _create_media(project, params, user, use_rq=False):
     project_obj = Project.objects.get(pk=project)
 
     computed_author = compute_user(project, user, params.get("user_elemental_id", None))
+
+    if use_rq and connection.settings_dict["NAME"].find("test") >= 0:
+        logger.warning("Refusing to use ASYNC for tests")
+        use_rq = False
 
     # If section does not exist and is not an empty string, create a section.
     tator_user_sections = ""
