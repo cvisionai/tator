@@ -88,8 +88,10 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         image_format = image.format
 
         exif_transpose_start = time.time()
+        needed_rotate = False
         if _needs_exif_transpose(image):
             image = ImageOps.exif_transpose(image)
+            needed_rotate = True
         media_obj.width, media_obj.height = image.size
         logger.info(
             f"Exif transpose took {time.time() - exif_transpose_start} seconds format={image_format}"
@@ -99,8 +101,8 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         # Add a png for compatibility purposes in case of HEIF or AVIF import.
         # always make AVIF
         if reference_only is False:
-            if not image_format in ["PNG", "JPEG"]:
-                logging.info(f"{image_format} is not PNG or JPEG, converting to PNG")
+            if needed_rotate or not image_format in ["PNG", "JPEG"]:
+                logging.info(f"{image_format} is rotated or not PNG or JPEG, converting to PNG")
                 alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                 image.save(alt_image, format="png", quality=100, subsampling=0)
                 alt_images.append(alt_image)
