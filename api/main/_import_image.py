@@ -27,6 +27,8 @@ from main.rest._util import url_to_key
 
 import time
 
+logger = logging.getLogger(__name__)
+
 def _import_image(name, url, thumbnail_url, media_id, reference_only):
     """Note: In reference_only mode we do not store an alt image format"""
     total_start = time.time()
@@ -61,14 +63,14 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
             temp_image = tempfile.NamedTemporaryFile(delete=False)
             download_file(url, temp_image.name, 5)
 
-        logging.info(f"Downloaded {url} in {time.time() - download_start} seconds")
+        logger.info(f"Downloaded {url} in {time.time() - download_start} seconds")
         image = Image.open(temp_image.name)
         image_format = image.format
 
         exif_transpose_start = time.time()
         image = ImageOps.exif_transpose(image)
         media_obj.width, media_obj.height = image.size
-        logging.info(f"Exif transpose took {time.time() - exif_transpose_start} seconds")
+        logger.info(f"Exif transpose took {time.time() - exif_transpose_start} seconds")
 
         alt_format_start = time.time()
         # Add a png for compatibility purposes in case of HEIF or AVIF import.
@@ -83,7 +85,7 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
             image.save(alt_image, format="avif", quality=100)
             alt_images.append(alt_image)
             alt_formats.append("avif")
-        logging.info(f"Alt format generation took {time.time() - alt_format_start} seconds")
+        logger.info(f"Alt format generation took {time.time() - alt_format_start} seconds")
 
         # Download or create the thumbnail.
         if thumbnail_url is None:
@@ -98,7 +100,7 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
             thumb_width = image.width
             thumb_height = image.height
             image.close()
-            logging.info(f"Thumbnail generation took {time.time() - thumbnail_start} seconds")
+            logger.info(f"Thumbnail generation took {time.time() - thumbnail_start} seconds")
 
     if thumbnail_url:
         thumbnail_fetch_start = time.time()
@@ -110,7 +112,7 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         thumb_width = thumb.width
         thumb_height = thumb.height
         thumb.close()
-        logging.info(f"Thumbnail download took {time.time() - thumbnail_fetch_start} seconds")
+        logger.info(f"Thumbnail download took {time.time() - thumbnail_fetch_start} seconds")
 
     media_obj.media_files = {}
     if reference_only and url:
@@ -150,7 +152,7 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         )
         os.remove(alt_image.name)
         Resource.add_resource(image_key, media_obj)
-    logging.info(f"Upload took {time.time() - upload_start} seconds")
+    logger.info(f"Upload took {time.time() - upload_start} seconds")
 
     thumbnail_upload_start = time.time()
     if url or thumbnail_url:
@@ -170,7 +172,7 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         ]
         os.remove(temp_thumb.name)
         Resource.add_resource(thumb_key, media_obj)
-    logging.info(f"Thumbnail upload took {time.time() - thumbnail_upload_start} seconds")
+    logger.info(f"Thumbnail upload took {time.time() - thumbnail_upload_start} seconds")
 
     media_obj.save()
 
