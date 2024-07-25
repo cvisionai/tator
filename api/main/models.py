@@ -1425,6 +1425,9 @@ class Media(Model, ModelDiffMixin):
         related_name="media_modified_by",
         db_column="modified_by",
     )
+    primary_section = ForeignKey(
+        "Section", on_delete=SET_NULL, null=True, blank=True, related_name="primary_section"
+    )
     name = CharField(max_length=256, db_index=True)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
@@ -1988,7 +1991,7 @@ class State(Model, ModelDiffMixin):
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column="version")
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True, db_column="parent")
     """ Pointer to localization in which this one was generated from """
-    media = ManyToManyField(Media, related_name="media")
+    media = ManyToManyField(Media, related_name="state")
     localizations = ManyToManyField(Localization)
     segments = JSONField(null=True, blank=True)
     color = CharField(null=True, blank=True, max_length=8)
@@ -2358,6 +2361,11 @@ class GroupMembership(Model):
 
 
 class RowProtection(Model):
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(
+        User, on_delete=SET_NULL, null=True, blank=True, related_name="rp_created_by"
+    )
+
     # Pointer to protected row element, one of the following should be non-null.
     # Note: Currently type objects are protected by project membership status
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -2366,6 +2374,8 @@ class RowProtection(Model):
     state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
     file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
     section = ForeignKey(Section, on_delete=CASCADE, null=True, blank=True)
+    algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
 
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
