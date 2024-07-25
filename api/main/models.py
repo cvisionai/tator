@@ -2559,61 +2559,16 @@ class RowProtection(Model):
         if model in [File]:
             # These models are only protected by project-level permissions
             qs = qs.annotate(effective_permission=F("project_permission"))
-
-        if model in [Section, Algorithm]:
+        if model in [Algorithm]:
+            pass
+        if model in [Section]:
             # These models are protected by individual and project-level permissions
+            # Section-level permissions inherit from parent sections
             # Make the appropriate subquery for individual protection, then coalesce with
             # project-level permissions
-            if model == Section:
-                rp_user = (
-                    RowProtection.objects.filter(section=OuterRef("pk"))
-                    .filter(user=user)
-                    .order_by("-permission")[:1]
-                )
-                rp_group = (
-                    RowProtection.objects.filter(section=OuterRef("pk"))
-                    .filter(group__in=groups)
-                    .order_by("-permission")[:1]
-                )
-                rp_org = (
-                    RowProtection.objects.filter(section=OuterRef("pk"))
-                    .filter(organization__in=organizations)
-                    .order_by("-permission")[:1]
-                )
-            elif model == Algorithm:
-                rp_user = (
-                    RowProtection.objects.filter(algorithm=OuterRef("pk"))
-                    .filter(user=user)
-                    .order_by("-permission")[:1]
-                )
-                rp_group = (
-                    RowProtection.objects.filter(algorithm=OuterRef("pk"))
-                    .filter(group__in=groups)
-                    .order_by("-permission")[:1]
-                )
-                rp_org = (
-                    RowProtection.objects.filter(algorithm=OuterRef("pk"))
-                    .filter(organization__in=organizations)
-                    .order_by("-permission")[:1]
-                )
-            qs = qs.alias(permission_user=Subquery(rp_user))
-            qs = qs.alias(permission_group=Subquery(rp_group))
-            qs = qs.alias(permission_org=Subquery(rp_org))
-            qs = qs.annotate(
-                effective_permission=Case(
-                    When(
-                        Q(permission_user__isnull=False)
-                        & Q(permission_group__isnull=False)
-                        & Q(permission_org__isnull=False),
-                        Then=ColBitwiseOr(
-                            F("permission_user"),
-                            F("permission_group"),
-                            F("permission_org"),
-                            F("project_permission"),
-                        ),
-                        output_field=BigIntegerField(),
-                    )
-                ),
+            nested_subquery=Section.objects.filter(path__ancestors=OuterRef('path'))
+            section_rp = RowProtection.objects.filter(section__in=).filter(
+                Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
             )
         elif model in [Media]:
             # For these models, we can use the section+project to determine permissions
