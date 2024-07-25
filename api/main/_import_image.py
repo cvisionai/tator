@@ -80,12 +80,16 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
             image.save(alt_image, format="png", quality=100, subsampling=0)
             alt_images.append(alt_image)
             alt_formats.append("png")
+            png_end = time.time()
 
             alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
             image.save(alt_image, format="avif", quality=100)
             alt_images.append(alt_image)
             alt_formats.append("avif")
-        logger.info(f"Alt format generation took {time.time() - alt_format_start} seconds")
+            avif_end = time.time()
+        logger.info(
+            f"Alt format generation took {time.time() - alt_format_start} seconds png={png_end-alt_format_start} avif={avif_end-png_end}"
+        )
 
         # Download or create the thumbnail.
         if thumbnail_url is None:
