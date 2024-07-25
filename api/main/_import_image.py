@@ -70,16 +70,22 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
         exif_transpose_start = time.time()
         image = ImageOps.exif_transpose(image)
         media_obj.width, media_obj.height = image.size
-        logger.info(f"Exif transpose took {time.time() - exif_transpose_start} seconds")
+        logger.info(
+            f"Exif transpose took {time.time() - exif_transpose_start} seconds format={image_format}"
+        )
 
         alt_format_start = time.time()
         # Add a png for compatibility purposes in case of HEIF or AVIF import.
         # always make AVIF
         if reference_only is False:
-            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-            image.save(alt_image, format="png", quality=100, subsampling=0)
-            alt_images.append(alt_image)
-            alt_formats.append("png")
+            if not image_format in ["PNG", "JPEG"]:
+                logging.info(
+                    f"{image_format} is not PNG or JPEG, converting to PNG --- is png/jpeg: {image_format in ['PNG', 'JPEG']}"
+                )
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                image.save(alt_image, format="png", quality=100, subsampling=0)
+                alt_images.append(alt_image)
+                alt_formats.append("png")
             png_end = time.time()
 
             alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
