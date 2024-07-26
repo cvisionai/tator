@@ -5,6 +5,7 @@ import subprocess
 import tarfile
 import pytest
 import inspect
+import time
 
 import tator
 
@@ -407,6 +408,15 @@ def referenced_image(request, base_url, token, page_factory, project, image_sect
                   'reference_only': 1
                   }
     response = api.create_media_list(project, [media_spec])
+    media_resp = api.get_media(response.id[0]).to_dict()
+    attempts = 0
+    while (
+        media_resp["media_files"] is None or len(media_resp["media_files"].get("image", [])) < 1
+    ) and attempts < 30:
+        print(f"Waiting for async image job {attempts+1}/30")
+        media_resp = api.get_media(response.id[0]).to_dict()
+        time.sleep(1)
+        attempts += 1
     yield response.id[0]
 
 @pytest.fixture(scope='session')
