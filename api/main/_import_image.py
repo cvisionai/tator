@@ -107,6 +107,9 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
                 image.save(alt_image, format="png", quality=100, subsampling=0)
                 alt_images.append(alt_image)
                 alt_formats.append("png")
+            else:
+                alt_images.append(temp_image)
+                alt_formats.append(image_format.lower())
             png_end = time.time()
 
             alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
