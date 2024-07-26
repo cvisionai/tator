@@ -32,6 +32,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.expressions import ArraySubquery
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
 from django.db.models import JSONField, Lookup, IntegerField, Case, When
@@ -2391,6 +2392,8 @@ class Group(Model):
 class GroupMembership(Model):
     """Associates a user to a group"""
 
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    """ Project that the group membership belongs to (DISREGARD THIS FIELD)"""
     user = ForeignKey(User, on_delete=CASCADE)
     group = ForeignKey(Group, on_delete=CASCADE)
     group_admin = BooleanField(default=False)
