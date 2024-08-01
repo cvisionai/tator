@@ -13,6 +13,7 @@ from django.db.models import (
     Window,
 )
 from django.contrib.postgres.aggregates import BitOr
+from django.contrib.postgres.expressions import ArraySubquery
 from django.db.models.functions import Coalesce, Cast
 
 
@@ -81,10 +82,25 @@ def augment_permission(user, qs):
         # Section-level permissions inherit from parent sections
         # Make the appropriate subquery for individual protection, then coalesce with
         # project-level permissions
-        nested_subquery = Section.objects.filter(path__ancestors=OuterRef("path"))
-        # section_rp = RowProtection.objects.filter(section__in=).filter(
-        #    Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
-        # )
+
+        # First get all sections including parents (this includes self)
+        section_rp = RowProtection.objects.filter(section__project=project).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        section_rp = section_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
+        )
+        section_perm_dict = {
+            entry["section"]: entry["calc_perm"]
+            for entry in section_rp.values("section", "calc_perm")
+        }
+        qs = qs.annotate(
+            effective_permission=Case(
+                *section_cases,
+                default=F("project_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
     elif model in [Media]:
         # For these models, we can use the section+project to determine permissions
         #
