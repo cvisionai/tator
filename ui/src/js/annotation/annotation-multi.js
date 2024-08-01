@@ -1642,7 +1642,6 @@ export class AnnotationMulti extends TatorElement {
       video.contextMenuNone.displayEntry("Reset Multiview", true);
     }
   }
-  
 
   setupMultiMenu(vid_id) {
     let div = this._videoDivs[vid_id];
@@ -1699,8 +1698,7 @@ export class AnnotationMulti extends TatorElement {
       }
 
       // Opens video in new tab
-      window.open(outStr, '_blank');
-
+      window.open(outStr, "_blank");
     };
 
     video_element.contextMenuAvailable.then(() => {
@@ -1710,7 +1708,10 @@ export class AnnotationMulti extends TatorElement {
         this.setHorizontal.bind(this)
       );
       video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
-      video_element.contextMenuNone.addMenuEntry("Go-to channel video", goToChannelVideo);
+      video_element.contextMenuNone.addMenuEntry(
+        "Go-to channel video",
+        goToChannelVideo
+      );
     });
   }
 
