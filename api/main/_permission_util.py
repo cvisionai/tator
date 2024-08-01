@@ -76,7 +76,26 @@ def augment_permission(user, qs):
         # These models are only protected by project-level permissions
         qs = qs.annotate(effective_permission=F("project_permission"))
     if model in [Algorithm]:
-        pass
+        algo_rp = RowProtection.objects.filter(algorithm__pk__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        algo_rp = algo_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("algorithm")])
+        )
+        algo_perm_dict = {
+            entry["algorithm"]: entry["calc_perm"]
+            for entry in section_rp.values("algorithm", "calc_perm")
+        }
+        algo_cases = [
+            When(algorithm=algo, then=Value(perm)) for algo, perm in algo_perm_dict.items()
+        ]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *algo_cases,
+                default=F("project_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
     if model in [Section]:
         # These models are protected by individual and project-level permissions
         # Section-level permissions inherit from parent sections
@@ -84,7 +103,7 @@ def augment_permission(user, qs):
         # project-level permissions
 
         # First get all sections including parents (this includes self)
-        section_rp = RowProtection.objects.filter(section__project=project).filter(
+        section_rp = RowProtection.objects.filter(section__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
         section_rp = section_rp.annotate(
@@ -94,6 +113,9 @@ def augment_permission(user, qs):
             entry["section"]: entry["calc_perm"]
             for entry in section_rp.values("section", "calc_perm")
         }
+        section_cases = [
+            When(section=section, then=Value(perm)) for section, perm in section_perm_dict.items()
+        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *section_cases,
@@ -121,6 +143,9 @@ def augment_permission(user, qs):
             entry["section"]: (entry["calc_perm"] >> RowProtection.BITS.CHILD_SHIFT) & 0xFF
             for entry in section_rp.values("section", "calc_perm")
         }
+        section_cases = [
+            When(section=section, then=Value(perm)) for section, perm in section_perm_dict.items()
+        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *section_cases,
