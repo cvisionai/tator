@@ -490,12 +490,14 @@ export class UndoBuffer extends HTMLElement {
         obj.body = JSON.stringify(body);
       }
     }
-    this.dispatchEvent(
-      new CustomEvent("temporarilyMaskEdits", {
-        composed: true,
-        detail: { enabled: true },
-      })
-    );
+    if (!["image", "video", "multi"].includes(dataType.dtype)) {
+      this.dispatchEvent(
+        new CustomEvent("temporarilyMaskEdits", {
+          composed: true,
+          detail: { enabled: true },
+        })
+      );
+    }
 
     function errorMsg() {
       var msg = "";
