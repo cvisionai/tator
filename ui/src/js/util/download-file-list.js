@@ -33,7 +33,13 @@ async function downloadFile(name, url, index, existing, dirHandle) {
   return msg;
 }
 
-export async function downloadFileList(dirHandle, names, urls, callback, abort) {
+export async function downloadFileList(
+  dirHandle,
+  names,
+  urls,
+  callback,
+  abort
+) {
   if (dirHandle) {
     const existing = new Set();
     for await (const entry of dirHandle.values()) {
