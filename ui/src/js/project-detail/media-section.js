@@ -441,10 +441,11 @@ export class MediaSection extends TatorElement {
     const filenames = new Set();
     const re = /(?:\.([^.]+))?$/;
     let url = `${getUrl("Medias")}&presigned=28800`;
-    const mediaPromise = fetchCredentials(url, {}, true)
-      .then((response) => response.json());
-    Promise.all([directoryPromise, mediaPromise])
-      .then(async ([dirHandle, medias]) => {
+    const mediaPromise = fetchCredentials(url, {}, true).then((response) =>
+      response.json()
+    );
+    Promise.all([directoryPromise, mediaPromise]).then(
+      async ([dirHandle, medias]) => {
         const names = [];
         const urls = [];
         dialog._setTotalFiles(medias.length);
@@ -486,7 +487,8 @@ export class MediaSection extends TatorElement {
           }
         }
         downloadFileList(dirHandle, names, urls, callback, abort);
-      });
+      }
+    );
   }
 
   _downloadAnnotations(evt) {
