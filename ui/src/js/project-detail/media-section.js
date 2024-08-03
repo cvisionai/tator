@@ -425,91 +425,70 @@ export class MediaSection extends TatorElement {
       const params = joinParams(this._sectionParams(), mediaParams);
       return `/rest/${endpoint}/${this._project}?${params.toString()}`;
     };
-    fetchCredentials(getUrl("MediaStats"), {}, true)
-      .then((response) => response.json())
-      .then(async (mediaStats) => {
+    const dialog = document.createElement("download-dialog");
+    const page = document.getElementsByTagName("project-detail")[0];
+    page._projects.appendChild(dialog);
+    dialog.setAttribute("is-open", "");
+    page.setAttribute("has-open-modal", "");
+    dialog.addEventListener("close", (evt) => {
+      page.removeAttribute("has-open-modal", "");
+      page._projects.removeChild(dialog);
+    });
+    const directoryPromise = window.showDirectoryPicker({
+      mode: "readwrite",
+      startIn: "downloads",
+    });
+    const filenames = new Set();
+    const re = /(?:\.([^.]+))?$/;
+    let url = `${getUrl("Medias")}&presigned=28800`;
+    const mediaPromise = fetchCredentials(url, {}, true).then((response) =>
+      response.json()
+    );
+    Promise.all([directoryPromise, mediaPromise]).then(
+      async ([dirHandle, medias]) => {
+        const names = [];
+        const urls = [];
+        dialog._setTotalFiles(medias.length);
+        const callback = (numDone, name) => {
+          dialog._setFilesCompleted(numDone);
+          dialog._setFilename(name);
+        };
+        let cancel = false;
+        dialog.addEventListener("cancel", () => {
+          cancel = true;
+          page.removeAttribute("has-open-modal", "");
+          page._projects.removeChild(dialog);
+        });
+        const abort = () => {
+          return cancel;
+        };
         let lastId = null;
-        let numImages = 0;
-        let numVideos = 0;
-        let size = 0;
-        console.log("Download size: " + mediaStats.download_size);
-        console.log("Download num files: " + mediaStats.count);
-        if (mediaStats.downloadSize > 60000000000 || mediaStats.count > 5000) {
-          const bigDownload = document.createElement("big-download-form");
-          const page = document.getElementsByTagName("project-detail")[0];
-          page._projects.appendChild(bigDownload);
-          bigDownload.setAttribute("is-open", "");
-          page.setAttribute("has-open-modal", "");
-          bigDownload.addEventListener("close", (evt) => {
-            page.removeAttribute("has-open-modal", "");
-            page._projects.removeChild(bigDownload);
-          });
-          while (bigDownload.hasAttribute("is-open")) {
-            await new Promise((resolve) => setTimeout(resolve, 100));
+        for (const media of medias) {
+          lastId = media.id;
+          const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
+          const ext = re.exec(media.name)[0];
+          let basename = basenameOrig;
+          let vers = 1;
+          while (filenames.has(basename)) {
+            basename = basenameOrig + " (" + vers + ")";
+            vers++;
           }
-          if (!bigDownload._confirm) {
-            page._leaveConfirmOk = false;
-            return;
+          filenames.add(basename);
+
+          const request = Utilities.getDownloadInfo(media)["request"];
+          if (request !== null) {
+            // Media objects with no downloadable files will return null.
+            names.push(basename + ext);
+            urls.push(request.url);
+          } else {
+            dialog._addError(
+              `Could not find download URL for media ${media.name} (ID ${media.id}), skipping...`
+            );
           }
         }
-
-        const filenames = new Set();
-        const re = /(?:\.([^.]+))?$/;
-        let url = `${getUrl("Medias")}&presigned=28800`;
-        await fetchCredentials(url, {}, true)
-          .then((response) => response.json())
-          .then(async (medias) => {
-            const names = [];
-            const urls = [];
-            const dialog = document.createElement("download-dialog");
-            const page = document.getElementsByTagName("project-detail")[0];
-            page._projects.appendChild(dialog);
-            dialog.setAttribute("is-open", "");
-            page.setAttribute("has-open-modal", "");
-            dialog.addEventListener("close", (evt) => {
-              page.removeAttribute("has-open-modal", "");
-              page._projects.removeChild(dialog);
-            });
-            dialog._setTotalFiles(medias.length);
-            const callback = (numDone, name) => {
-              dialog._setFilesCompleted(numDone);
-              dialog._setFilename(name);
-            };
-            let cancel = false;
-            dialog.addEventListener("cancel", () => {
-              cancel = true;
-              page.removeAttribute("has-open-modal", "");
-              page._projects.removeChild(dialog);
-            });
-            const abort = () => {
-              return cancel;
-            };
-            for (const media of medias) {
-              lastId = media.id;
-              const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
-              const ext = re.exec(media.name)[0];
-              let basename = basenameOrig;
-              let vers = 1;
-              while (filenames.has(basename)) {
-                basename = basenameOrig + " (" + vers + ")";
-                vers++;
-              }
-              filenames.add(basename);
-
-              const request = Utilities.getDownloadInfo(media)["request"];
-              if (request !== null) {
-                // Media objects with no downloadable files will return null.
-                names.push(basename + ext);
-                urls.push(request.url);
-              } else {
-                dialog._addError(
-                  `Could not find download URL for media ${media.name} (ID ${media.id}), skipping...`
-                );
-              }
-            }
-            downloadFileList(names, urls, callback, abort);
-          });
-      });
+        downloadFileList(dirHandle, names, urls, callback, abort);
+      }
+    );
   }
 
   _downloadAnnotations(evt) {
