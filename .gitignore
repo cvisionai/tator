@@ -27,6 +27,7 @@ real-secrets.yaml
 helm/tator/values.yaml
 token.txt
 .token
+package-lock.json
 
 # Dev files
 tags*
@@ -42,6 +43,7 @@ helm/tator/configs/*
 .env
 test-results
 rest-junit.xml
+*.swp
 
 # Hidden mac files
 ._.
