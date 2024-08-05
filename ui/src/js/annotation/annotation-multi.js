@@ -1687,6 +1687,20 @@ export class AnnotationMulti extends TatorElement {
       this.setFocusVertical(vid_id);
     };
 
+    let goToChannelVideo = () => {
+      // Creates url for channel videos, extracts version
+      let outStr = `/${this._annotationData._projectId}/annotation/${vid_id}?`;
+      let version = this._annotationData._version;
+
+      // Ensures version not null
+      if (version != null) {
+        outStr += `version=${version.id}`;
+      }
+
+      // Opens video in new tab
+      window.open(outStr, "_blank");
+    };
+
     video_element.contextMenuAvailable.then(() => {
       video_element.contextMenuNone.addMenuEntry("Focus Video", focusVertical);
       video_element.contextMenuNone.addMenuEntry(
@@ -1694,6 +1708,10 @@ export class AnnotationMulti extends TatorElement {
         this.setHorizontal.bind(this)
       );
       video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
+      video_element.contextMenuNone.addMenuEntry(
+        "Go-to channel video",
+        goToChannelVideo
+      );
     });
   }
 
