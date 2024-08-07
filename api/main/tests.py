@@ -108,6 +108,12 @@ def create_test_user(is_staff=False, username=None):
     )
 
 
+def create_test_group(name):
+    return Group.objects.create(
+        name=name,
+    )
+
+
 def create_test_organization():
     return Organization.objects.create(
         name="my_org",
@@ -5984,3 +5990,186 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["attributes"]["Test Blob"], "foo")
+
+
+class AdvancedPermissionTestCase(TatorTransactionTest):
+    def setUp(self):
+        # Add 9 users
+        names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"]
+        self.users = [create_test_user(is_staff=False, username=name) for name in names]
+
+        self.random_user = create_test_user(is_staff=False, username="Outsider")
+
+        groups = ["Admin", "Member", "Guest"]
+        self.groups = [create_test_group(name) for name in groups]
+
+        self.organization = create_test_organization()
+
+        # Add the users to the organization
+        for user in self.users:
+            Affiliation.objects.create(
+                user=user, organization=self.organization, permission="Member"
+            )
+
+        self.admin_users = [u.pk for u in self.users[:3]]
+        self.member_users = [u.pk for u in self.users[3:6]]
+        self.guest_users = [u.pk for u in self.users[6:]]
+
+        # Add the first 3 users to the Admin group
+        for user in self.admin_users:
+            gm = GroupMembership.objects.create(
+                user=User.objects.get(pk=user), group=self.groups[0]
+            )
+
+        # Add the middle 3 users to the Member group
+        for user in self.member_users:
+            gm = GroupMembership.objects.create(
+                user=User.objects.get(pk=user), group=self.groups[1]
+            )
+
+        # Add the last 3 users to the Guest group
+        for user in self.guest_users:
+            gm = GroupMembership.objects.create(
+                user=User.objects.get(pk=user), group=self.groups[2]
+            )
+
+        self.project = create_test_project(self.users[0])
+
+        # Make a bunch of test data (media + localizations)
+        self.video_type = MediaType.objects.create(
+            name="video", dtype="video", project=self.project
+        )
+
+        self.box_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype="box",
+            project=self.project,
+        )
+
+        # create test videos
+        self.videos = [
+            create_test_video(self.users[0], f"test{idx}.mp4", self.video_type, self.project)
+            for idx in range(20)
+        ]
+
+        # create a bunch of boxes
+        for video in self.videos:
+            for idx in range(10):
+                create_test_box(self.users[0], self.box_type, self.project, video, idx)
+
+        # create a 2 sections
+        self.public_section = Section.objects.create(
+            name="Public",
+            path="Public",
+            explicit_listing=True,
+            project=self.project,
+        )
+
+        self.private_section = Section.objects.create(
+            name="Private",
+            path="Private",
+            explicit_listing=True,
+            project=self.project,
+        )
+
+        self.total_media = [v.pk for v in self.videos]
+        self.public_media = [v.pk for v in self.videos[:3]]
+        self.private_media = [v.pk for v in self.videos[3:6]]
+
+        for media in self.videos[:3]:
+            self.public_section.media.add(media)
+            self.public_section.save()
+            media.primary_section = self.public_section
+            media.save()
+
+        for media in self.videos[3:6]:
+            self.private_section.media.add(media)
+            self.private_section.save()
+            media.primary_section = self.private_section
+            media.save()
+
+    def test_permission_augmentation(self):
+        from main._permission_util import augment_permission
+
+        """This test will verify permissions get augmented correctly using the augment routine"""
+
+        # Add exist permission to all members of the organization for the project
+        rp = RowProtection.objects.create(
+            organization=self.organization, project=self.project, permission=0x010101
+        )
+
+        # Add full permissions to the Admin group (project-wide)
+        rp = RowProtection.objects.create(
+            group=self.groups[0], project=self.project, permission=0xFFFFFF
+        )
+
+        # Add read/write permissions to the member group to public/private but not whole project
+        # They can modify media / localizations but not the sections themselves
+        rp = RowProtection.objects.create(
+            group=self.groups[1], section=self.public_section, permission=0x0F03
+        )
+        rp = RowProtection.objects.create(
+            group=self.groups[1], section=self.private_section, permission=0x0F03
+        )
+
+        # Lastly add read-only permissions to the guest group for the public section
+        rp = RowProtection.objects.create(
+            group=self.groups[2], section=self.public_section, permission=0x0303
+        )
+
+        # Check random user has no permissions
+        media_qs = Media.objects.filter(pk__in=[media.pk for media in self.videos])
+        media_qs = augment_permission(self.random_user, media_qs)
+        assert media_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        section_qs = Section.objects.filter(
+            pk__in=[self.public_section.pk, self.private_section.pk]
+        )
+        section_qs = augment_permission(self.random_user, section_qs)
+        assert section_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        # Augment the permissions for each user
+        for user in self.users:
+            media_qs = Media.objects.filter(pk__in=[media.pk for media in self.videos])
+            media_qs = augment_permission(user, media_qs)
+
+            # Check permission is at least 0x1 for all media because we are in the organization
+            for media in media_qs:
+                assert media.effective_permission >= 0x1
+
+                if user.pk in self.admin_users:
+                    # Admins should have full permissions
+                    assert media.effective_permission == 0xFF
+                elif user.pk in self.member_users:
+                    if media.pk in self.public_media:
+                        # Members should have read/write permissions to public media
+                        assert media.effective_permission == 0x0F
+                    elif media.pk in self.private_media:
+                        # Members should have read/write permissions to private media
+                        assert media.effective_permission == 0x0F
+                    else:
+                        # Members have exist permission from being in the org, but nothing to on sectioned media
+                        assert media.effective_permission == 0x01
+                elif user.pk in self.guest_users:
+                    if media.pk in self.public_media:
+                        # Guests should have read-only permissions to public media
+                        assert media.effective_permission == 0x03
+                    else:
+                        # Guests should have exist permission because they are in the organization
+                        assert media.effective_permission == 0x01
+
+            section_qs = Section.objects.filter(
+                pk__in=[self.public_section.pk, self.private_section.pk]
+            )
+            section_qs = augment_permission(user, section_qs)
+            for section in section_qs:
+                if user.pk in self.admin_users:
+                    print("Section permission = ", section.effective_permission)
+                    assert section.effective_permission == 0xFFFF
+                elif user.pk in self.member_users:
+                    assert section.effective_permission == 0x0F03
+                else:
+                    if section.pk == self.public_section.pk:
+                        assert section.effective_permission == 0x0303
+                    else:
+                        assert section.effective_permission == 0x0101

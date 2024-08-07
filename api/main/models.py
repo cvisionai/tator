@@ -2381,22 +2381,28 @@ class GroupMembership(Model):
 
 
 class PermissionMask:
+    ## These bits are repeated so the left-byte is for children objects. This allows
+    ## a higher object to store the default permission for children objects by bitshifting by the
+    ## level of abstraction.
+
     EXIST = 0x1  # Allows a row to be seen in a list, or individual GET
     READ = 0x2  # Allows a references to be accessed, e.g. generate presigned URLs
     WRITE = 0x4  # Allows a row to be updated
     DELETE = 0x8  # Allows a row to be deleted (pruned for metadata)
-    EXECUTE = 0x10  # Allows an algorithm to be executed (applies to project-level only)
+    EXECUTE = 0x10  # Allows an algorithm to be executed (applies to project-level or algorithm)
     UPLOAD = 0x20  # Allows media to be uploaded (applies to project-level only)
-    PROJECT_EXIST = 0x100  # Allows a project to be seen in a list, or individual GET
-    PROJECT_EDIT = 0x200  # Allows a project to be edited
-    PROJECT_DELETE = 0x800  # Allows a project to be deleted
 
     # Convenience wrappers to original tator permission system
-    OLD_READ = EXIST | READ | PROJECT_EXIST
-    OLD_WRITE = OLD_READ | WRITE | DELETE
+    OLD_READ = EXIST | READ | EXIST << 8 | READ << 8 | EXIST << 16 | READ << 16
+
+    # Old write was a bit more complicated as it let you modify elements but not the project itself
+    OLD_WRITE = OLD_READ | WRITE << 8 | DELETE << 8 | WRITE << 16 | DELETE << 16
     OLD_TRANSFER = OLD_WRITE | UPLOAD
+
     OLD_EXECUTE = OLD_TRANSFER | EXECUTE
-    OLD_FULL_CONTROL = OLD_EXECUTE | PROJECT_EDIT | PROJECT_DELETE
+
+    # Old full control lets one delete and write the project
+    OLD_FULL_CONTROL = OLD_EXECUTE | DELETE | WRITE
 
 
 class RowProtection(Model):

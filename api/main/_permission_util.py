@@ -12,10 +12,12 @@ from django.db.models import (
     OuterRef,
     Window,
 )
+from django.contrib.gis.db.models import BigIntegerField
 from django.contrib.postgres.aggregates import BitOr
 from django.contrib.postgres.expressions import ArraySubquery
 from django.db.models.functions import Coalesce, Cast
-
+from django.db.models import JSONField, Lookup, IntegerField, Case, When
+from main.models import File, Section, Media, Localization, State, Algorithm
 
 class ColBitwiseOr(Func):
     function = "|"
@@ -42,6 +44,13 @@ def augment_permission(user, qs):
     # Add effective_permission to the queryset
     if qs.exists():
         model = qs.model
+        # handle shift due to underlying model
+        # children are shifted by 8 bits, grandchildren by 16, etc.
+        bit_shift = 0
+        if model in [Media, Localization, State]:
+            bit_shift = RowProtection.BITS.CHILD_SHIFT * 2
+        elif model in [Section]:
+            bit_shift = RowProtection.BITS.CHILD_SHIFT
         groups = user.groupmembership_set.all().values("group").distinct()
         # groups = Group.objects.filter(pk=-1).values("id")
         organizations = user.affiliation_set.all().values("organization")
@@ -58,15 +67,12 @@ def augment_permission(user, qs):
             project_permission_query = project_permission_query.aggregate(
                 computed_permission=BitOr("permission")
             )
-            project_permission = (
-                project_permission_query["computed_permission"] >> RowProtection.BITS.CHILD_SHIFT
-                & 0xFF
-            )
+            project_permission = project_permission_query["computed_permission"]
         else:
             project_permission = 0
 
         qs = qs.alias(
-            project_permission=Value(project_permission),
+            project_permission=Value(project_permission >> bit_shift),
         )
     else:
         return qs
@@ -114,7 +120,7 @@ def augment_permission(user, qs):
             for entry in section_rp.values("section", "calc_perm")
         }
         section_cases = [
-            When(section=section, then=Value(perm)) for section, perm in section_perm_dict.items()
+            When(pk=section, then=Value(perm)) for section, perm in section_perm_dict.items()
         ]
         qs = qs.annotate(
             effective_permission=Case(
@@ -126,12 +132,7 @@ def augment_permission(user, qs):
     elif model in [Media]:
         # For these models, we can use the section+project to determine permissions
         #
-        effected_sections = (
-            Section.objects.filter(project=project, media__in=effected_media)
-            .values("pk")
-            .distinct()
-        )
-        effected_versions = qs.values("version__pk").distinct()
+        effected_sections = qs.values("primary_section__pk").distinct()
 
         section_rp = RowProtection.objects.filter(section__in=effected_sections).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
