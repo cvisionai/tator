@@ -17,7 +17,7 @@ from django.contrib.postgres.aggregates import BitOr
 from django.contrib.postgres.expressions import ArraySubquery
 from django.db.models.functions import Coalesce, Cast
 from django.db.models import JSONField, Lookup, IntegerField, Case, When
-from main.models import File, Section, Media, Localization, State, Algorithm, Version
+from main.models import File, Section, Media, Localization, State, Algorithm, Version, Project
 
 class ColBitwiseOr(Func):
     function = "|"
@@ -56,37 +56,64 @@ def augment_permission(user, qs):
         groups = user.groupmembership_set.all().values("group").distinct()
         # groups = Group.objects.filter(pk=-1).values("id")
         organizations = user.affiliation_set.all().values("organization")
-        # This assumes all checks are scoped to the same project (expensive to check in runtime)
-        project = qs[0].project
 
-        # Filter for all relevant permissions the user has and OR them together
-        # If someone is in a group with a permission, you can't remove it via a user-level
-        # permission
-        project_permission_query = RowProtection.objects.filter(project=project).filter(
-            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
-        )
-        if project_permission_query.exists():
-            project_permission_query = project_permission_query.aggregate(
-                computed_permission=BitOr("permission")
+        if model != Project:
+            # This assumes all checks are scoped to the same project (expensive to check in runtime)
+            project = qs[0].project
+
+            # Filter for all relevant permissions the user has and OR them together
+            # If someone is in a group with a permission, you can't remove it via a user-level
+            # permission
+            project_permission_query = RowProtection.objects.filter(project=project).filter(
+                Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
             )
-            project_permission = project_permission_query["computed_permission"]
-        else:
-            project_permission = 0
+            if project_permission_query.exists():
+                project_permission_query = project_permission_query.aggregate(
+                    computed_permission=BitOr("permission")
+                )
+                project_permission = project_permission_query["computed_permission"]
+            else:
+                project_permission = 0
 
-        qs = qs.alias(
-            project_permission=Value(project_permission >> bit_shift),
-        )
+            qs = qs.alias(
+                project_permission=Value(project_permission >> bit_shift),
+            )
+        else:
+            pass
     else:
         return qs
 
-    # continue on based on type of model where each is handled a little differently
-    if model in [File]:
+    if model in [Project]:
+        # These models are only protected by project-level permissions
+        raw_rp = RowProtection.objects.filter(project__in=qs.values("pk"))
+        project_rp = RowProtection.objects.filter(project__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        project_rp = project_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("project")])
+        )
+        project_perm_dict = {
+            entry["project"]: entry["calc_perm"]
+            for entry in project_rp.values("project", "calc_perm")
+        }
+
+        project_cases = [
+            When(pk=project, then=Value(perm)) for project, perm in project_perm_dict.items()
+        ]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *project_cases,
+                default=Value(0),
+                output_field=BigIntegerField(),
+            ),
+        )
+    elif model in [File]:
         # These models are only protected by project-level permissions
         file_rp = RowProtection.objects.filter(file__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
         file_rp = file_rp.annotate(
-            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("algorithm")])
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("file")])
         )
         file_perm_dict = {
             entry["file"]: entry["calc_perm"] for entry in file_rp.values("file", "calc_perm")
@@ -123,7 +150,7 @@ def augment_permission(user, qs):
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
         version_rp = version_rp.annotate(
-            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("algorithm")])
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("version")])
         )
         version_perm_dict = {
             entry["version"]: entry["calc_perm"]

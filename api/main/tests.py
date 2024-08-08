@@ -6006,6 +6006,7 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         self.groups = [create_test_group(name) for name in groups]
 
         self.organization = create_test_organization()
+        print(f"Organization is {self.organization.pk}")
 
         # Add the users to the organization
         for user in self.users:
@@ -6197,8 +6198,20 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         algorithm_qs = augment_permission(self.random_user, algorithm_qs)
         assert algorithm_qs.filter(effective_permission__gte=0x1).exists() == False
 
+        # Verify project permissions are correct
+        project_qs = Project.objects.filter(pk=self.project.pk)
+        project_qs = augment_permission(self.random_user, project_qs)
+        assert project_qs[0].effective_permission == 0x0
+
         # Augment the permissions for each user, and test each media, section, localization, and version
         for user in self.users:
+            project_qs = Project.objects.filter(pk=self.project.pk)
+            project_qs = augment_permission(user, project_qs)
+            if user.pk in self.admin_users:
+                assert project_qs[0].effective_permission == 0xFFFFFFFF
+            else:
+                assert project_qs[0].effective_permission == 0x010101
+
             public_algo_qs = Algorithm.objects.filter(pk=self.public_algo.pk)
             public_algo_qs = augment_permission(user, public_algo_qs)
             assert public_algo_qs[0].effective_permission == 0xFF
