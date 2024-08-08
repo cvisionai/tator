@@ -47,7 +47,7 @@ def augment_permission(user, qs):
         # handle shift due to underlying model
         # children are shifted by 8 bits, grandchildren by 16, etc.
         bit_shift = 0
-        if model in [Media, Localization, State]:
+        if model in [Media, Localization, State, File]:
             bit_shift = RowProtection.BITS.CHILD_SHIFT * 2
         elif model in [Section]:
             bit_shift = RowProtection.BITS.CHILD_SHIFT
@@ -141,7 +141,7 @@ def augment_permission(user, qs):
             calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
         )
         section_perm_dict = {
-            entry["section"]: (entry["calc_perm"] >> RowProtection.BITS.CHILD_SHIFT) & 0xFF
+            entry["section"]: (entry["calc_perm"] >> RowProtection.BITS.CHILD_SHIFT)
             for entry in section_rp.values("section", "calc_perm")
         }
         section_cases = [
@@ -207,9 +207,7 @@ def augment_permission(user, qs):
         combo_cases = []
         for section, section_perm in section_perm_dict.items():
             for version, version_perm in version_perm_dict.items():
-                combined_perm = (
-                    (section_perm & version_perm) >> RowProtection.BITS.CHILD_SHIFT
-                ) & 0xFF
+                combined_perm = (section_perm & version_perm) >> RowProtection.BITS.CHILD_SHIFT
                 combo_cases.append(
                     When(
                         section=section,

@@ -2384,6 +2384,12 @@ class PermissionMask:
     ## These bits are repeated so the left-byte is for children objects. This allows
     ## a higher object to store the default permission for children objects by bitshifting by the
     ## level of abstraction.
+    ## [0:7] Self-level objects (projects, algos, versions)
+    ## [8:15] Children objects (project -> section* -> media -> metadata)
+    ## [16:23] Grandchildren objects (project -> section -> media* -> metadata)
+    ## [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
+    ## If a permission points to a child object, that occupies [0:7]
+    ## Permission objects exist against either projects, algos, versions or sections
 
     EXIST = 0x1  # Allows a row to be seen in a list, or individual GET
     READ = 0x2  # Allows a references to be accessed, e.g. generate presigned URLs
@@ -2393,10 +2399,20 @@ class PermissionMask:
     UPLOAD = 0x20  # Allows media to be uploaded (applies to project-level only)
 
     # Convenience wrappers to original tator permission system
-    OLD_READ = EXIST | READ | EXIST << 8 | READ << 8 | EXIST << 16 | READ << 16
+    OLD_READ = (
+        EXIST | READ | EXIST << 8 | READ << 8 | EXIST << 16 | READ << 16 | EXIST << 24 | READ << 24
+    )
 
     # Old write was a bit more complicated as it let you modify elements but not the project itself
-    OLD_WRITE = OLD_READ | WRITE << 8 | DELETE << 8 | WRITE << 16 | DELETE << 16
+    OLD_WRITE = (
+        OLD_READ
+        | WRITE << 8
+        | DELETE << 8
+        | WRITE << 16
+        | DELETE << 16
+        | WRITE << 24
+        | DELETE << 24
+    )
     OLD_TRANSFER = OLD_WRITE | UPLOAD
 
     OLD_EXECUTE = OLD_TRANSFER | EXECUTE

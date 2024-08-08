@@ -6093,28 +6093,28 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
         """This test will verify permissions get augmented correctly using the augment routine"""
 
-        # Add exist permission to all members of the organization for the project
+        # Add exist permission to all members of the organization for the project for project,section+media
         rp = RowProtection.objects.create(
-            organization=self.organization, project=self.project, permission=0x010101
+            organization=self.organization, project=self.project, permission=0x00010101
         )
 
         # Add full permissions to the Admin group (project-wide)
         rp = RowProtection.objects.create(
-            group=self.groups[0], project=self.project, permission=0xFFFFFF
+            group=self.groups[0], project=self.project, permission=0xFFFFFFFF
         )
 
         # Add read/write permissions to the member group to public/private but not whole project
         # They can modify media / localizations but not the sections themselves
         rp = RowProtection.objects.create(
-            group=self.groups[1], section=self.public_section, permission=0x0F03
+            group=self.groups[1], section=self.public_section, permission=0x0F0F03
         )
         rp = RowProtection.objects.create(
-            group=self.groups[1], section=self.private_section, permission=0x0F03
+            group=self.groups[1], section=self.private_section, permission=0x0F0F03
         )
 
         # Lastly add read-only permissions to the guest group for the public section
         rp = RowProtection.objects.create(
-            group=self.groups[2], section=self.public_section, permission=0x0303
+            group=self.groups[2], section=self.public_section, permission=0x030303
         )
 
         # Check random user has no permissions
@@ -6139,21 +6139,21 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
                 if user.pk in self.admin_users:
                     # Admins should have full permissions
-                    assert media.effective_permission == 0xFF
+                    assert media.effective_permission == 0xFFFF
                 elif user.pk in self.member_users:
                     if media.pk in self.public_media:
                         # Members should have read/write permissions to public media
-                        assert media.effective_permission == 0x0F
+                        assert media.effective_permission == 0x0F0F
                     elif media.pk in self.private_media:
                         # Members should have read/write permissions to private media
-                        assert media.effective_permission == 0x0F
+                        assert media.effective_permission == 0x0F0F
                     else:
-                        # Members have exist permission from being in the org, but nothing to on sectioned media
-                        assert media.effective_permission == 0x01
+                        # Members have exist permission from being in the org, but can't see metadata
+                        assert media.effective_permission == 0x0001
                 elif user.pk in self.guest_users:
                     if media.pk in self.public_media:
                         # Guests should have read-only permissions to public media
-                        assert media.effective_permission == 0x03
+                        assert media.effective_permission == 0x0303
                     else:
                         # Guests should have exist permission because they are in the organization
                         assert media.effective_permission == 0x01
@@ -6164,12 +6164,13 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             section_qs = augment_permission(user, section_qs)
             for section in section_qs:
                 if user.pk in self.admin_users:
-                    print("Section permission = ", section.effective_permission)
-                    assert section.effective_permission == 0xFFFF
+                    assert section.effective_permission == 0xFFFFFF
                 elif user.pk in self.member_users:
-                    assert section.effective_permission == 0x0F03
+                    assert section.effective_permission == 0x0F0F03
                 else:
                     if section.pk == self.public_section.pk:
-                        assert section.effective_permission == 0x0303
+                        assert section.effective_permission == 0x030303
                     else:
-                        assert section.effective_permission == 0x0101
+                        assert section.effective_permission == 0x000101
+
+            # Test effective permission for boxes in media match expected result
