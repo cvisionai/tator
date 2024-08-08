@@ -2422,7 +2422,7 @@ class PermissionMask:
     OLD_EXECUTE = OLD_TRANSFER | EXECUTE
 
     # Old full control lets one delete and write the project
-    OLD_FULL_CONTROL = OLD_EXECUTE | DELETE | WRITE
+    OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE
 
 
 class RowProtection(Model):
