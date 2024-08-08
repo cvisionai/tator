@@ -30,14 +30,9 @@ from main.models import (
     Membership,
 )
 
-class ColBitwiseOr(Func):
-    function = "|"
-    template = "%(expressions)s"
+import logging
 
-
-class ColBitwiseAnd(Func):
-    function = "&"
-    template = "%(expressions)s"
+logger = logging.getLogger(__name__)
 
 
 @BigIntegerField.register_lookup
@@ -51,19 +46,24 @@ class BitwiseAnd(Lookup):
         return "%s & %s" % (lhs, rhs), params
 
 
+def shift_permission(model):
+    if model in [Localization, State]:
+        return RowProtection.BITS.CHILD_SHIFT * 3
+    if model in [Media]:
+        return RowProtection.BITS.CHILD_SHIFT * 2
+    elif model in [Section, Version, Algorithm, File, Bookmark]:
+        return RowProtection.BITS.CHILD_SHIFT
+    else:
+        return 0
+
+
 def augment_permission(user, qs):
     # Add effective_permission to the queryset
     if qs.exists():
         model = qs.model
         # handle shift due to underlying model
         # children are shifted by 8 bits, grandchildren by 16, etc.
-        bit_shift = 0
-        if model in [Localization, State]:
-            bit_shift = RowProtection.BITS.CHILD_SHIFT * 3
-        if model in [Media]:
-            bit_shift = RowProtection.BITS.CHILD_SHIFT * 2
-        elif model in [Section, Version, Algorithm, File]:
-            bit_shift = RowProtection.BITS.CHILD_SHIFT
+        bit_shift = shift_permission(model)
         groups = user.groupmembership_set.all().values("group").distinct()
         # groups = Group.objects.filter(pk=-1).values("id")
         organizations = user.affiliation_set.all().values("organization")
@@ -94,8 +94,10 @@ def augment_permission(user, qs):
     else:
         return qs
 
-    if model in [Bookmark, Membership]:
+    if model in [Bookmark]:
         qs = qs.annotate(effective_permission=F("project_permission"))
+    elif model in [Membership]:
+        qs = qs.annotate(effective_permission=Value(0x3))  # disable mutability of these objects
     elif model in [Project]:
         # These models are only protected by project-level permissions
         raw_rp = RowProtection.objects.filter(project__in=qs.values("pk"))
@@ -158,6 +160,7 @@ def augment_permission(user, qs):
                 output_field=BigIntegerField(),
             ),
         )
+        logger.info(f"GOT HERE = {qs.query}")
     elif model in [Version]:
         version_rp = RowProtection.objects.filter(version__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)

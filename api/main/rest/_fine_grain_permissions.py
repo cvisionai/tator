@@ -13,9 +13,18 @@ from django.conf import settings
 from ..models import *
 from ..cache import TatorCache
 
-from .._permission_util import ColBitwiseOr, ColBitwiseAnd, augment_permission
+from .._permission_util import augment_permission, shift_permission
 
 logger = logging.getLogger(__name__)
+
+
+class BitAnd(Func):
+    function = ""
+    template = "(%(expressions)s & %(bitmask)s)"
+
+    def __init__(self, expression, bitmask, **extra):
+        super().__init__(expression, bitmask=bitmask, **extra)
+
 
 ### With fine-grained permissions enabled, we use the existance of permissions to determine access.
 ### a nuance is a given queryset (say all media) may be partially viewable to the user. This should be
@@ -72,6 +81,8 @@ class ProjectPermissionBase(BasePermission):
             project = obj
         return project
 
+    # This works for Read + Modify permissions
+    # TODO: Add support for POST permissions
     def _validate_project(self, request, project, view):
         granted = False
 
@@ -79,15 +90,36 @@ class ProjectPermissionBase(BasePermission):
             granted = False
         else:
             if hasattr(view, "get_queryset") is True:
-                qs = view.get_queryset()
-                qs = augment_permission(request.user, qs)
+                perm_qs = view.get_queryset()
+                logger.info(f"perm_qs: {perm_qs.model}")
+                perm_qs = augment_permission(request.user, perm_qs)
+                if perm_qs.exists():
+                    perm_qs = perm_qs.alias(
+                        granted=BitAnd(F("effective_permission"), self.required_mask)
+                    )
+                    perm_qs = perm_qs.filter(granted__gt=0)
             else:
-                qs = Project.objects.filter(pk=project.pk)
-                qs = augment_permission(request.user, qs)
+                perm_qs = RowProtection.objects.filter(pk=-1)
 
-            # Check if user has any permissions in the project that match the request on the
-            # requested models
-            granted = True
+            if not perm_qs.exists() and self.mode == "permissive":
+                ## If there are no objects to check or no permissions we have to go to the parent object
+                ## If we are permissive (reading) we can see if the user has read permissions to the parent
+                ## to avoid a 403, even if the set is empty
+                model = None
+                if hasattr(view, "get_queryset") is True:
+                    model = view.get_queryset().model
+                proj_perm_qs = Project.objects.filter(pk=project.pk)
+                proj_perm_qs = augment_permission(request.user, proj_perm_qs)
+                proj_perm_qs = proj_perm_qs.alias(
+                    granted=BitAnd(
+                        F("effective_permission"), (self.required_mask << shift_permission(model))
+                    )
+                )
+                perm_qs = proj_perm_qs.filter(granted__gt=0)
+
+            if perm_qs.exists():
+                granted = True
+
         return granted
 
 
@@ -98,6 +130,7 @@ class ProjectViewOnlyPermission(ProjectPermissionBase):
 
     message = "Not a member of this project."
     required_mask = PermissionMask.EXIST | PermissionMask.READ
+    mode = "permissive"
 
 
 class ProjectEditPermission(ProjectPermissionBase):
@@ -107,6 +140,7 @@ class ProjectEditPermission(ProjectPermissionBase):
     required_mask = (
         PermissionMask.EXIST | PermissionMask.READ | PermissionMask.CREATE | PermissionMask.MODIFY
     )
+    mode = "strict"
 
 
 class ProjectTransferPermission(ProjectPermissionBase):
@@ -114,6 +148,7 @@ class ProjectTransferPermission(ProjectPermissionBase):
 
     message = "Insufficient permission to transfer media within this project."
     required_mask = PermissionMask.UPLOAD
+    mode = "strict"
 
 
 class ProjectExecutePermission(ProjectPermissionBase):
@@ -121,6 +156,7 @@ class ProjectExecutePermission(ProjectPermissionBase):
 
     message = "Insufficient permission to execute within this project."
     required_mask = PermissionMask.EXECUTE
+    mode = "strict"
 
 
 class ProjectFullControlPermission(ProjectPermissionBase):
@@ -128,7 +164,7 @@ class ProjectFullControlPermission(ProjectPermissionBase):
 
     message = "Insufficient permission to edit project settings."
     required_mask = PermissionMask.FULL_CONTROL
-
+    mode = "strict"
 
 class PermalinkPermission(BasePermission):
     """
