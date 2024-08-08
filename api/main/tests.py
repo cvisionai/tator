@@ -6146,8 +6146,24 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         section_qs = augment_permission(self.random_user, section_qs)
         assert section_qs.filter(effective_permission__gte=0x1).exists() == False
 
-        # Augment the permissions for each user
+        # Augment the permissions for each user, and test each media, section, localization, and version
         for user in self.users:
+
+            # Check version objects for the proper permission
+            version_qs = Version.objects.filter(
+                pk__in=[self.baseline_version.pk, self.readonly_version.pk]
+            )
+            version_qs = augment_permission(user, version_qs)
+
+            for version in version_qs:
+                if user.pk in self.admin_users:
+                    assert version.effective_permission == 0xFFFFFF
+                elif user.pk in self.member_users:
+                    if version.pk == self.readonly_version.pk:
+                        assert version.effective_permission == 0x0303
+                    else:
+                        assert version.effective_permission == 0x0101
+
             media_qs = Media.objects.filter(pk__in=[media.pk for media in self.videos])
             media_qs = augment_permission(user, media_qs)
 

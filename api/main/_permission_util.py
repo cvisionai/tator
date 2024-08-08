@@ -94,9 +94,7 @@ def augment_permission(user, qs):
             entry["algorithm"]: entry["calc_perm"]
             for entry in section_rp.values("algorithm", "calc_perm")
         }
-        algo_cases = [
-            When(algorithm=algo, then=Value(perm)) for algo, perm in algo_perm_dict.items()
-        ]
+        algo_cases = [When(pk=algo, then=Value(perm)) for algo, perm in algo_perm_dict.items()]
         qs = qs.annotate(
             effective_permission=Case(
                 *algo_cases,
@@ -104,7 +102,29 @@ def augment_permission(user, qs):
                 output_field=BigIntegerField(),
             ),
         )
-    if model in [Section]:
+    if model in [Version]:
+        version_rp = RowProtection.objects.filter(version__pk__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        version_rp = version_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("algorithm")])
+        )
+        version_perm_dict = {
+            entry["version"]: entry["calc_perm"]
+            for entry in version_rp.values("version", "calc_perm")
+        }
+
+        version_cases = [
+            When(pk=version, then=Value(perm)) for version, perm in version_perm_dict.items()
+        ]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *version_cases,
+                default=F("project_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
+    elif model in [Section]:
         # These models are protected by individual and project-level permissions
         # Section-level permissions inherit from parent sections
         # Make the appropriate subquery for individual protection, then coalesce with
@@ -228,5 +248,7 @@ def augment_permission(user, qs):
                 output_field=BigIntegerField(),
             ),
         )
+    else:
+        assert False, f"Unhandled model {model}"
 
     return qs
