@@ -6113,6 +6113,12 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             for idx in range(20)
         ]
 
+        self.public_algo = create_test_algorithm(self.users[0], "public_algo", self.project)
+        self.private_algo = create_test_algorithm(self.users[0], "private_algo", self.project)
+        self.unspecified_algo = create_test_algorithm(
+            self.users[0], "unspecified_algo", self.project
+        )
+
     def test_permission_augmentation(self):
         from main._permission_util import augment_permission
 
@@ -6151,6 +6157,19 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         for f in self.files:
             rp = RowProtection.objects.create(group=self.groups[1], file=f, permission=0xFF)
 
+        # Add some algo permissions
+        # Allow anyone in the org to see + use the public algo
+        rp = RowProtection.objects.create(
+            algorithm=self.public_algo, organization=self.organization, permission=0xFF
+        )
+        # Allow admin + member users to see + use the private algo
+        rp = RowProtection.objects.create(
+            algorithm=self.private_algo, group=self.groups[1], permission=0xFF
+        )
+        rp = RowProtection.objects.create(
+            algorithm=self.private_algo, group=self.groups[0], permission=0xFF
+        )
+
         # Check random user has no permissions
         media_qs = Media.objects.filter(pk__in=[media.pk for media in self.videos])
         media_qs = augment_permission(self.random_user, media_qs)
@@ -6170,8 +6189,36 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         file_qs = augment_permission(self.random_user, file_qs)
         assert file_qs.filter(effective_permission__gte=0x1).exists() == False
 
+        algorithm_qs = Algorithm.objects.filter(
+            pk__in=[
+                algo.pk for algo in [self.public_algo, self.private_algo, self.unspecified_algo]
+            ]
+        )
+        algorithm_qs = augment_permission(self.random_user, algorithm_qs)
+        assert algorithm_qs.filter(effective_permission__gte=0x1).exists() == False
+
         # Augment the permissions for each user, and test each media, section, localization, and version
         for user in self.users:
+            public_algo_qs = Algorithm.objects.filter(pk=self.public_algo.pk)
+            public_algo_qs = augment_permission(user, public_algo_qs)
+            assert public_algo_qs[0].effective_permission == 0xFF
+
+            private_algo_qs = Algorithm.objects.filter(pk=self.private_algo.pk)
+            private_algo_qs = augment_permission(user, private_algo_qs)
+            if user.pk in self.admin_users:
+                assert private_algo_qs[0].effective_permission == 0xFF
+            elif user.pk in self.member_users:
+                assert private_algo_qs[0].effective_permission == 0xFF
+            else:
+                assert private_algo_qs[0].effective_permission == 0x0101  # project permissions
+
+            unspecified_algo_qs = Algorithm.objects.filter(pk=self.unspecified_algo.pk)
+            unspecified_algo_qs = augment_permission(user, unspecified_algo_qs)
+            if user.pk in self.admin_users:
+                assert unspecified_algo_qs[0].effective_permission == 0xFFFFFF
+            else:
+                assert unspecified_algo_qs[0].effective_permission == 0x0101
+
             # Check all files have the proper permission (exist only)
             file_qs = File.objects.filter(pk__in=[file.pk for file in self.files])
             file_qs = augment_permission(user, file_qs)

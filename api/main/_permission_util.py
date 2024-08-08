@@ -108,7 +108,7 @@ def augment_permission(user, qs):
         )
         algo_perm_dict = {
             entry["algorithm"]: entry["calc_perm"]
-            for entry in section_rp.values("algorithm", "calc_perm")
+            for entry in algo_rp.values("algorithm", "calc_perm")
         }
         algo_cases = [When(pk=algo, then=Value(perm)) for algo, perm in algo_perm_dict.items()]
         qs = qs.annotate(
