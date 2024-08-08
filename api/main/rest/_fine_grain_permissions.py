@@ -13,7 +13,7 @@ from django.conf import settings
 from ..models import *
 from ..cache import TatorCache
 
-from .._permission_util import ColBitwiseOr, ColBitwiseAnd
+from .._permission_util import ColBitwiseOr, ColBitwiseAnd, augment_permission
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,6 @@ class ProjectPermissionBase(BasePermission):
 
     def has_permission(self, request, view):
         # Get the project from the URL parameters
-        if hasattr(view, "get_queryset"):
-            model = view.get_queryset().model
-        else:
-            model = None
         if "project" in view.kwargs:
             project_id = view.kwargs["project"]
             project = get_object_or_404(Project, pk=int(project_id))
@@ -60,7 +56,7 @@ class ProjectPermissionBase(BasePermission):
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)
 
-        return self._validate_project(request, project, model)
+        return self._validate_project(request, project, view)
 
     def has_object_permission(self, request, view, obj):
         # Get the project from the object
@@ -76,53 +72,22 @@ class ProjectPermissionBase(BasePermission):
             project = obj
         return project
 
-    def _validate_project(self, request, project, model):
+    def _validate_project(self, request, project, view):
         granted = False
 
         if isinstance(request.user, AnonymousUser):
             granted = False
         else:
-            user = request.user
-            groups = user.groupmembership_set.all().values("group").distinct()
-            # groups = Group.objects.filter(pk=-1).values("id")
-            organizations = user.affiliation_set.all().values("organization")
-
-            # Build up query based on what we are looking at
-            if model in [Project, Bookmark, Membership, None]:
-                all_rp = RowProtection.objects.filter(project=project)
-            elif model in [File]:
-                file_rp = File.objects.filter(project=project).values("rowprotection").distinct()
-                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=file_rp))
-            elif model in [Algorithm]:
-                algo_rp = (
-                    Algorithm.objects.filter(project=project).values("rowprotection").distinct()
-                )
-                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=algo_rp))
-            elif model in [Version]:
-                version_rp = (
-                    Version.objects.filter(project=project).values("rowprotection").distinct()
-                )
-                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=version_rp))
-            elif model in [Media, Section]:
-                section_rp = (
-                    Section.objects.filter(project=project).values("rowprotection").distinct()
-                )
-                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=section_rp))
-            elif model in [Localization, State]:
-                section_rp = (
-                    Section.objects.filter(project=project).values("rowprotection").distinct()
-                )
-                version_rp = (
-                    Version.objects.filter(project=project).values("rowprotection").distinct()
-                )
-                all_rp = RowProtection.objects.filter(
-                    Q(project=project) | Q(pk__in=version_rp) | Q(pk__in=section_rp)
-                )
+            if hasattr(view, "get_queryset") is True:
+                qs = view.get_queryset()
+                qs = augment_permission(request.user, qs)
             else:
-                assert False, f"Unsupported model {model}"
+                qs = Project.objects.filter(pk=project.pk)
+                qs = augment_permission(request.user, qs)
+
             # Check if user has any permissions in the project that match the request on the
             # requested models
-            granted = all_rp.exists()
+            granted = True
         return granted
 
 

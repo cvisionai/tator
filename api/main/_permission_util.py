@@ -17,7 +17,18 @@ from django.contrib.postgres.aggregates import BitOr
 from django.contrib.postgres.expressions import ArraySubquery
 from django.db.models.functions import Coalesce, Cast
 from django.db.models import JSONField, Lookup, IntegerField, Case, When
-from main.models import File, Section, Media, Localization, State, Algorithm, Version, Project
+from main.models import (
+    File,
+    Section,
+    Media,
+    Localization,
+    State,
+    Algorithm,
+    Version,
+    Project,
+    Bookmark,
+    Membership,
+)
 
 class ColBitwiseOr(Func):
     function = "|"
@@ -83,7 +94,9 @@ def augment_permission(user, qs):
     else:
         return qs
 
-    if model in [Project]:
+    if model in [Bookmark, Membership]:
+        qs = qs.annotate(effective_permission=F("project_permission"))
+    elif model in [Project]:
         # These models are only protected by project-level permissions
         raw_rp = RowProtection.objects.filter(project__in=qs.values("pk"))
         project_rp = RowProtection.objects.filter(project__in=qs.values("pk")).filter(
