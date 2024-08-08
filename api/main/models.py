@@ -2475,41 +2475,8 @@ class RowProtection(Model):
     permission = BigIntegerField(default=0, db_index=True)
     """ Permission bitmask for the row in question
 
-        CRUD permissions are encoded as follows:
-        0 - Can not see
-        0x1 - Exist
-        0x2 - Read (e.g. generate presigned URLs)
-        0x4 - POST permission 
-        0x8 - PATCH permission
-        0x10 - DELETE permissions
-        0x20  - in_place / prune_permissions
-        0x40  - Execute bit (for algorithms/projects)
-        0x80  - Upload bit (can upload media)
-        0xFF - Full control
-
-        CRUD permissions are repeated in 0xFF00 for children objects
-
-        In the next byte we specify special permissions relevant only to administration
-        0x1_0000 - Can make ACLs impacting project
-        0x2_0000 - RESERVED
-        0x4_0000 - RESERVED
-        0x8_0000 - Can delete project
-
-        bits above this are reserved for future use.
+        See PermissionMask for definition
     """
-
-    BITS = SimpleNamespace(
-        CHILD_SHIFT=8,  # Shift required to get children bit
-        EXIST=0x1,
-        READ=0x2,
-        POST=0x4,
-        PATCH=0x8,
-        DELETE=0x10,
-        IN_PLACE_PRUNE=0x20,
-        EXECUTE=0x40,
-        UPLOAD=0x80,
-        FULL_CONTROL=0xFF,
-    )
 
     class Meta:
         constraints = [
