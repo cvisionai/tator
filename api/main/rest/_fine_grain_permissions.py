@@ -10,16 +10,12 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.conf import settings
 
-from ..models import Permission
-from ..models import Project
-from ..models import Membership
-from ..models import Organization
-from ..models import Affiliation
-from ..models import User
-from ..models import Media
-from ..models import Algorithm
-from ..models import PermissionMask
+from ..models import *
 from ..cache import TatorCache
+
+from .._permission_util import ColBitwiseOr, ColBitwiseAnd
+
+logger = logging.getLogger(__name__)
 
 ### With fine-grained permissions enabled, we use the existance of permissions to determine access.
 ### a nuance is a given queryset (say all media) may be partially viewable to the user. This should be
@@ -29,7 +25,10 @@ class ProjectPermissionBase(BasePermission):
 
     def has_permission(self, request, view):
         # Get the project from the URL parameters
-        model = view.get_queryset().model
+        if hasattr(view, "get_queryset"):
+            model = view.get_queryset().model
+        else:
+            model = None
         if "project" in view.kwargs:
             project_id = view.kwargs["project"]
             project = get_object_or_404(Project, pk=int(project_id))
@@ -48,7 +47,9 @@ class ProjectPermissionBase(BasePermission):
                 raise Http404
         elif "elemental_id" in view.kwargs:
             elemental_id = view.kwargs["elemental_id"]
+
             obj = view.get_queryset().filter(elemental_id=elemental_id)
+
             if not obj.exists():
                 raise Http404
             obj = obj[0]
@@ -87,27 +88,27 @@ class ProjectPermissionBase(BasePermission):
             organizations = user.affiliation_set.all().values("organization")
 
             # Build up query based on what we are looking at
-            if model in [Project, None]:
+            if model in [Project, Bookmark, Membership, None]:
                 all_rp = RowProtection.objects.filter(project=project)
-            if model in [File]:
+            elif model in [File]:
                 file_rp = File.objects.filter(project=project).values("rowprotection").distinct()
                 all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=file_rp))
-            if model in [Algorithm]:
+            elif model in [Algorithm]:
                 algo_rp = (
                     Algorithm.objects.filter(project=project).values("rowprotection").distinct()
                 )
                 all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=algo_rp))
-            if model in [Version]:
+            elif model in [Version]:
                 version_rp = (
                     Version.objects.filter(project=project).values("rowprotection").distinct()
                 )
                 all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=version_rp))
-            if model in [Media]:
+            elif model in [Media, Section]:
                 section_rp = (
                     Section.objects.filter(project=project).values("rowprotection").distinct()
                 )
                 all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=section_rp))
-            if model in [Localization, State]:
+            elif model in [Localization, State]:
                 section_rp = (
                     Section.objects.filter(project=project).values("rowprotection").distinct()
                 )
@@ -121,8 +122,6 @@ class ProjectPermissionBase(BasePermission):
                 assert False, f"Unsupported model {model}"
             # Check if user has any permissions in the project that match the request on the
             # requested models
-            all_rp = all_rp.annotate(granted=F("permission__permission") & self.required_mask)
-            all_rp = all_rp.filter(granted=self.required_mask)
             granted = all_rp.exists()
         return granted
 
