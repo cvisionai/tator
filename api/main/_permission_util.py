@@ -17,7 +17,7 @@ from django.contrib.postgres.aggregates import BitOr
 from django.contrib.postgres.expressions import ArraySubquery
 from django.db.models.functions import Coalesce, Cast
 from django.db.models import JSONField, Lookup, IntegerField, Case, When
-from main.models import File, Section, Media, Localization, State, Algorithm
+from main.models import File, Section, Media, Localization, State, Algorithm, Version
 
 class ColBitwiseOr(Func):
     function = "|"
@@ -47,9 +47,11 @@ def augment_permission(user, qs):
         # handle shift due to underlying model
         # children are shifted by 8 bits, grandchildren by 16, etc.
         bit_shift = 0
-        if model in [Media, Localization, State, File]:
+        if model in [Localization, State]:
+            bit_shift = RowProtection.BITS.CHILD_SHIFT * 3
+        if model in [Media, File]:
             bit_shift = RowProtection.BITS.CHILD_SHIFT * 2
-        elif model in [Section]:
+        elif model in [Section, Version, Algorithm]:
             bit_shift = RowProtection.BITS.CHILD_SHIFT
         groups = user.groupmembership_set.all().values("group").distinct()
         # groups = Group.objects.filter(pk=-1).values("id")

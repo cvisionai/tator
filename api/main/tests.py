@@ -6174,3 +6174,23 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                         assert section.effective_permission == 0x000101
 
             # Test effective permission for boxes in media match expected result
+            for media in media_qs:
+                localization_qs = Localization.objects.filter(project=self.project, media=media)
+                localization_qs = augment_permission(user, localization_qs)
+                if media.primary_section:
+                    media_primary_section_pk = media.primary_section.pk
+                else:
+                    media_primary_section_pk = None
+                for localization in localization_qs:
+                    if user.pk in self.admin_users:
+                        assert localization.effective_permission == 0xFF
+                    elif user.pk in self.member_users:
+                        if media_primary_section_pk == self.public_section.pk:
+                            assert localization.effective_permission == 0x0F
+                        elif media_primary_section_pk == self.private_section.pk:
+                            assert localization.effective_permission == 0x0F
+                    else:
+                        if media_primary_section_pk == self.public_section.pk:
+                            assert localization.effective_permission == 0x03
+                        else:
+                            assert localization.effective_permission == 0x00
