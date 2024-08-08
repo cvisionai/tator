@@ -2393,10 +2393,11 @@ class PermissionMask:
 
     EXIST = 0x1  # Allows a row to be seen in a list, or individual GET
     READ = 0x2  # Allows a references to be accessed, e.g. generate presigned URLs
-    WRITE = 0x4  # Allows a row to be updated
-    DELETE = 0x8  # Allows a row to be deleted (pruned for metadata)
-    EXECUTE = 0x10  # Allows an algorithm to be executed (applies to project-level or algorithm)
-    UPLOAD = 0x20  # Allows media to be uploaded (applies to project-level only)
+    CREATE = 0x4  # Allows a row to be created (e.g. POST)
+    MODIFY = 0x8  # Allows a row to be PATCHED (but not in-place, includes variant delete)
+    DELETE = 0x10  # Allows a row to be deleted (pruned for metadata)
+    EXECUTE = 0x20  # Allows an algorithm to be executed (applies to project-level or algorithm)
+    UPLOAD = 0x40  # Allows media to be uploaded (applies to project-level only)
 
     # Convenience wrappers to original tator permission system
     OLD_READ = (
@@ -2406,11 +2407,14 @@ class PermissionMask:
     # Old write was a bit more complicated as it let you modify elements but not the project itself
     OLD_WRITE = (
         OLD_READ
-        | WRITE << 8
+        | CREATE << 8
+        | MODIFY << 8
         | DELETE << 8
-        | WRITE << 16
+        | CREATE << 16
+        | MODIFY << 16
         | DELETE << 16
-        | WRITE << 24
+        | CREATE << 24
+        | MODIFY << 24
         | DELETE << 24
     )
     OLD_TRANSFER = OLD_WRITE | UPLOAD
