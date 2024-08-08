@@ -20,12 +20,15 @@ from ..models import Media
 from ..models import Algorithm
 from ..cache import TatorCache
 
-
+### With fine-grained permissions enabled, we use the existance of permissions to determine access.
+### a nuance is a given queryset (say all media) may be partially viewable to the user. This should be
+### handled by the view itself.
 class ProjectPermissionBase(BasePermission):
     """Base class for requiring project permissions."""
 
     def has_permission(self, request, view):
         # Get the project from the URL parameters
+        model = view.get_queryset().model
         if "project" in view.kwargs:
             project_id = view.kwargs["project"]
             project = get_object_or_404(Project, pk=int(project_id))
@@ -55,7 +58,7 @@ class ProjectPermissionBase(BasePermission):
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)
 
-        return self._validate_project(request, project)
+        return self._validate_project(request, project, model)
 
     def has_object_permission(self, request, view, obj):
         # Get the project from the object
@@ -71,25 +74,55 @@ class ProjectPermissionBase(BasePermission):
             project = obj
         return project
 
-    def _validate_project(self, request, project):
-        granted = True
+    def _validate_project(self, request, project, model):
+        granted = False
 
         if isinstance(request.user, AnonymousUser):
             granted = False
         else:
-            # Find membership for this user and project
-            membership = Membership.objects.filter(user=request.user, project=project)
+            user = request.user
+            groups = user.groupmembership_set.all().values("group").distinct()
+            # groups = Group.objects.filter(pk=-1).values("id")
+            organizations = user.affiliation_set.all().values("organization")
 
-            # If user is not part of project, deny access
-            if membership.count() == 0:
-                granted = False
+            # Build up query based on what we are looking at
+            if model in [Project, None]:
+                all_rp = RowProtection.objects.filter(project=project)
+            if model in [File]:
+                file_rp = File.objects.filter(project=project).values("rowprotection").distinct()
+                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=file_rp))
+            if model in [Algorithm]:
+                algo_rp = (
+                    Algorithm.objects.filter(project=project).values("rowprotection").distinct()
+                )
+                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=algo_rp))
+            if model in [Version]:
+                version_rp = (
+                    Version.objects.filter(project=project).values("rowprotection").distinct()
+                )
+                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=version_rp))
+            if model in [Media]:
+                section_rp = (
+                    Section.objects.filter(project=project).values("rowprotection").distinct()
+                )
+                all_rp = RowProtection.objects.filter(Q(project=project) | Q(pk__in=section_rp))
+            if model in [Localization, State]:
+                section_rp = (
+                    Section.objects.filter(project=project).values("rowprotection").distinct()
+                )
+                version_rp = (
+                    Version.objects.filter(project=project).values("rowprotection").distinct()
+                )
+                all_rp = RowProtection.objects.filter(
+                    Q(project=project) | Q(pk__in=version_rp) | Q(pk__in=section_rp)
+                )
             else:
-                # If user has insufficient permission, deny access
-                permission = membership[0].permission
-                insufficient = permission in self.insufficient_permissions
-                is_edit = request.method not in SAFE_METHODS
-                if is_edit and insufficient:
-                    granted = False
+                assert False, f"Unsupported model {model}"
+            # Check if user has any permissions in the project that match the request on the
+            # requested models
+            all_rp = all_rp.annotate(granted=F("permission__permission") & self.required_mask)
+            all_rp = all_rp.filter(granted=self.required_mask)
+            granted = all_rp.exists()
         return granted
 
 
@@ -99,44 +132,35 @@ class ProjectViewOnlyPermission(ProjectPermissionBase):
     """
 
     message = "Not a member of this project."
-    insufficient_permissions = []
+    required_mask = PermissionMask.EXIST | PermissionMask.VIEW
 
 
 class ProjectEditPermission(ProjectPermissionBase):
     """Checks whether a user has edit access to a project."""
 
     message = "Insufficient permission to modify this project."
-    insufficient_permissions = [Permission.VIEW_ONLY]
+    required_mask = PermissionMask.EXIST | PermissionMask.VIEW | PermissionMask.EDIT
 
 
 class ProjectTransferPermission(ProjectPermissionBase):
     """Checks whether a user has transfer access to a project."""
 
     message = "Insufficient permission to transfer media within this project."
-    insufficient_permissions = [Permission.VIEW_ONLY, Permission.CAN_EDIT]
+    required_mask = PermissionMask.UPLOAD
 
 
 class ProjectExecutePermission(ProjectPermissionBase):
     """Checks whether a user has execute access to a project."""
 
     message = "Insufficient permission to execute within this project."
-    insufficient_permissions = [
-        Permission.VIEW_ONLY,
-        Permission.CAN_EDIT,
-        Permission.CAN_TRANSFER,
-    ]
+    required_mask = PermissionMask.EXECUTE
 
 
 class ProjectFullControlPermission(ProjectPermissionBase):
     """Checks if user has full control over a project."""
 
     message = "Insufficient permission to edit project settings."
-    insufficient_permissions = [
-        Permission.VIEW_ONLY,
-        Permission.CAN_EDIT,
-        Permission.CAN_TRANSFER,
-        Permission.CAN_EXECUTE,
-    ]
+    required_mask = PermissionMask.FULL_CONTROL
 
 
 class PermalinkPermission(BasePermission):

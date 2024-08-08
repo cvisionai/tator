@@ -2398,7 +2398,7 @@ class PermissionMask:
     DELETE = 0x10  # Allows a row to be deleted (pruned for metadata)
     EXECUTE = 0x20  # Allows an algorithm to be executed (applies to project-level or algorithm)
     UPLOAD = 0x40  # Allows media to be uploaded (applies to project-level only)
-
+    FULL_CONTROL = 0xFF  # All bits and all future bits are set
     # Convenience wrappers to original tator permission system
     OLD_READ = (
         EXIST | READ | EXIST << 8 | READ << 8 | EXIST << 16 | READ << 16 | EXIST << 24 | READ << 24
