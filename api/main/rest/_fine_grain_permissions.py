@@ -18,6 +18,7 @@ from ..models import Affiliation
 from ..models import User
 from ..models import Media
 from ..models import Algorithm
+from ..models import PermissionMask
 from ..cache import TatorCache
 
 ### With fine-grained permissions enabled, we use the existance of permissions to determine access.
@@ -132,14 +133,16 @@ class ProjectViewOnlyPermission(ProjectPermissionBase):
     """
 
     message = "Not a member of this project."
-    required_mask = PermissionMask.EXIST | PermissionMask.VIEW
+    required_mask = PermissionMask.EXIST | PermissionMask.READ
 
 
 class ProjectEditPermission(ProjectPermissionBase):
     """Checks whether a user has edit access to a project."""
 
     message = "Insufficient permission to modify this project."
-    required_mask = PermissionMask.EXIST | PermissionMask.VIEW | PermissionMask.EDIT
+    required_mask = (
+        PermissionMask.EXIST | PermissionMask.READ | PermissionMask.CREATE | PermissionMask.MODIFY
+    )
 
 
 class ProjectTransferPermission(ProjectPermissionBase):
