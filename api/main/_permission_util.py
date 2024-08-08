@@ -49,9 +49,9 @@ def augment_permission(user, qs):
         bit_shift = 0
         if model in [Localization, State]:
             bit_shift = RowProtection.BITS.CHILD_SHIFT * 3
-        if model in [Media, File]:
+        if model in [Media]:
             bit_shift = RowProtection.BITS.CHILD_SHIFT * 2
-        elif model in [Section, Version, Algorithm]:
+        elif model in [Section, Version, Algorithm, File]:
             bit_shift = RowProtection.BITS.CHILD_SHIFT
         groups = user.groupmembership_set.all().values("group").distinct()
         # groups = Group.objects.filter(pk=-1).values("id")
@@ -82,8 +82,24 @@ def augment_permission(user, qs):
     # continue on based on type of model where each is handled a little differently
     if model in [File]:
         # These models are only protected by project-level permissions
-        qs = qs.annotate(effective_permission=F("project_permission"))
-    if model in [Algorithm]:
+        file_rp = RowProtection.objects.filter(file__pk__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        file_rp = file_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("algorithm")])
+        )
+        file_perm_dict = {
+            entry["file"]: entry["calc_perm"] for entry in file_rp.values("file", "calc_perm")
+        }
+        file_cases = [When(pk=fp, then=Value(perm)) for fp, perm in file_perm_dict.items()]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *file_cases,
+                default=F("project_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
+    elif model in [Algorithm]:
         algo_rp = RowProtection.objects.filter(algorithm__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
@@ -102,7 +118,7 @@ def augment_permission(user, qs):
                 output_field=BigIntegerField(),
             ),
         )
-    if model in [Version]:
+    elif model in [Version]:
         version_rp = RowProtection.objects.filter(version__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )

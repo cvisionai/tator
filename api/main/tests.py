@@ -6048,6 +6048,12 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             project=self.project,
         )
 
+        self.file_entity_type = FileType.objects.create(
+            name="TestFileType",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+
         self.baseline_version = create_test_version("baseline", "", 0, self.project, None)
         self.readonly_version = create_test_version("readonly", "", 0, self.project, None)
 
@@ -6101,6 +6107,12 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                     version = self.readonly_version
                 create_test_box(self.users[0], self.box_type, self.project, video, idx)
 
+        # Make some files
+        self.files = [
+            create_test_file(f"test_{idx}.txt", self.file_entity_type, self.project, self.users[0])
+            for idx in range(20)
+        ]
+
     def test_permission_augmentation(self):
         from main._permission_util import augment_permission
 
@@ -6135,6 +6147,10 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             group=self.groups[1], version=self.readonly_version, permission=0x0303
         )
 
+        # Give member group read/write permissions to all files
+        for f in self.files:
+            rp = RowProtection.objects.create(group=self.groups[1], file=f, permission=0xFF)
+
         # Check random user has no permissions
         media_qs = Media.objects.filter(pk__in=[media.pk for media in self.videos])
         media_qs = augment_permission(self.random_user, media_qs)
@@ -6146,9 +6162,26 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         section_qs = augment_permission(self.random_user, section_qs)
         assert section_qs.filter(effective_permission__gte=0x1).exists() == False
 
+        localization_qs = Localization.objects.filter(project=self.project)
+        localization_qs = augment_permission(self.random_user, localization_qs)
+        assert localization_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        file_qs = File.objects.filter(pk__in=[file.pk for file in self.files])
+        file_qs = augment_permission(self.random_user, file_qs)
+        assert file_qs.filter(effective_permission__gte=0x1).exists() == False
+
         # Augment the permissions for each user, and test each media, section, localization, and version
         for user in self.users:
-
+            # Check all files have the proper permission (exist only)
+            file_qs = File.objects.filter(pk__in=[file.pk for file in self.files])
+            file_qs = augment_permission(user, file_qs)
+            for f in file_qs:
+                if user.pk in self.admin_users:
+                    assert f.effective_permission == 0xFFFFFF
+                elif user.pk in self.member_users:
+                    assert f.effective_permission == 0xFF
+                else:
+                    assert f.effective_permission == 0x0101
             # Check version objects for the proper permission
             version_qs = Version.objects.filter(
                 pk__in=[self.baseline_version.pk, self.readonly_version.pk]
