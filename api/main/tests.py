@@ -271,18 +271,20 @@ def create_test_image(user, name, entity_type, project, attributes={}):
     )
 
 
-def create_test_box(user, entity_type, project, media, frame, attributes={}):
+def create_test_box(user, entity_type, project, media, frame, attributes={}, version=None):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
     w = random.uniform(0.0, float(media.width) - x)
     h = random.uniform(0.0, float(media.height) - y)
+    if version is None:
+        version = project.version_set.all()[0]
     return Localization.objects.create(
         user=user,
         created_by=user,
         modified_by=user,
         type=entity_type,
         project=project,
-        version=project.version_set.all()[0],
+        version=version,
         media=media,
         frame=frame,
         x=x,
@@ -6046,16 +6048,14 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             project=self.project,
         )
 
+        self.baseline_version = create_test_version("baseline", "", 0, self.project, None)
+        self.readonly_version = create_test_version("readonly", "", 0, self.project, None)
+
         # create test videos
         self.videos = [
             create_test_video(self.users[0], f"test{idx}.mp4", self.video_type, self.project)
             for idx in range(20)
         ]
-
-        # create a bunch of boxes
-        for video in self.videos:
-            for idx in range(10):
-                create_test_box(self.users[0], self.box_type, self.project, video, idx)
 
         # create a 2 sections
         self.public_section = Section.objects.create(
@@ -6088,6 +6088,19 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             media.primary_section = self.private_section
             media.save()
 
+        # create a bunch of boxes
+        for video in self.videos:
+            version = self.baseline_version
+            for idx in range(10):
+                # Add every other box in the public section to the read-only version
+                if (
+                    video.primary_section
+                    and video.primary_section.pk == self.public_section.pk
+                    and idx % 2 == 0
+                ):
+                    version = self.readonly_version
+                create_test_box(self.users[0], self.box_type, self.project, video, idx)
+
     def test_permission_augmentation(self):
         from main._permission_util import augment_permission
 
@@ -6112,9 +6125,14 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             group=self.groups[1], section=self.private_section, permission=0x0F0F03
         )
 
-        # Lastly add read-only permissions to the guest group for the public section
+        # Add read-only permissions to the guest group for the public section
         rp = RowProtection.objects.create(
             group=self.groups[2], section=self.public_section, permission=0x030303
+        )
+
+        # Add read-only permissions to members to the read-only version
+        rp = RowProtection.objects.create(
+            group=self.groups[1], version=self.readonly_version, permission=0x0303
         )
 
         # Check random user has no permissions
@@ -6186,7 +6204,10 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                         assert localization.effective_permission == 0xFF
                     elif user.pk in self.member_users:
                         if media_primary_section_pk == self.public_section.pk:
-                            assert localization.effective_permission == 0x0F
+                            if localization.version.pk == self.readonly_version.pk:
+                                assert localization.effective_permission == 0x03
+                            else:
+                                assert localization.effective_permission == 0x0F
                         elif media_primary_section_pk == self.private_section.pk:
                             assert localization.effective_permission == 0x0F
                     else:
