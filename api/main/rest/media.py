@@ -379,6 +379,9 @@ class MediaListAPI(BaseListView):
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = MediaType  # Needed by attribute filter mixin
 
+    def get_queryset(self):
+        return get_media_queryset(self.params["project"], self.params)
+
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
         if self.request.method == "POST":
@@ -393,7 +396,7 @@ class MediaListAPI(BaseListView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
-        qs = get_media_queryset(self.kwargs["project"], params)
+        qs = self.get_queryset()
         fields = [*MEDIA_PROPERTIES]
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
@@ -461,7 +464,7 @@ class MediaListAPI(BaseListView):
         recommended to use a GET request first to check what is being deleted.
         """
         project = params["project"]
-        qs = get_media_queryset(project, params)
+        qs = self.get_queryset()
         media_ids = list(qs.values_list("pk", flat=True).distinct())
         count = qs.count()
         expected_count = params.get("count")
@@ -513,7 +516,7 @@ class MediaListAPI(BaseListView):
                 "Must specify 'attributes', 'reset_attributes', 'null_attributes', 'user_elemental_id',"
                 " and/or property to patch, but none found"
             )
-        qs = get_media_queryset(params["project"], params)
+        qs = self.get_queryset()
 
         count = qs.count()
         expected_count = params.get("count")
@@ -629,7 +632,7 @@ class MediaDetailAPI(BaseDetailView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
-        qs = Media.objects.filter(pk=params["id"], deleted=False)
+        qs = self.get_queryset()
         if not qs.exists():
             raise Http404
         fields = [*MEDIA_PROPERTIES]
@@ -648,7 +651,7 @@ class MediaDetailAPI(BaseDetailView):
         meaning they can be described by user defined attributes.
         """
         with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(pk=params["id"], deleted=False)
+            qs = self.get_queryset()
             media = qs[0]
             model_dict = media.model_dict
             computed_author = compute_user(
@@ -812,7 +815,7 @@ class MediaDetailAPI(BaseDetailView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
-        media = Media.objects.get(pk=params["id"], deleted=False)
+        media = self.get_queryset()[0]
         project = media.project
         delete_and_log_changes(media, project, self.request.user)
 
@@ -835,4 +838,4 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
-        return Media.objects.all()
+        return Media.objects.filter(pk=self.params["id"], deleted=False)
