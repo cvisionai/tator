@@ -33,17 +33,14 @@ class BookmarkListAPI(BaseListView):
         and user.
         """
         name = params.get("name", None)
-        qs = Bookmark.objects.filter(project=params["project"], user=self.request.user).order_by(
-            "name"
-        )
+        qs = self.get_queryset().order_by("name")
         if name is not None:
             qs = qs.filter(name__iexact=f"'{name}'")
         return database_qs(qs)
 
     def get_queryset(self):
         """Returns a queryset of bookmarks related with the current request's project"""
-        params = parse(self.request)
-        qs = Bookmark.objects.filter(project__id=params["project"], user=self.request.user)
+        qs = Bookmark.objects.filter(project__id=self.params["project"], user=self.request.user)
         return qs
 
     def _post(self, params: dict) -> dict:
@@ -67,12 +64,12 @@ class BookmarkDetailAPI(BaseDetailView):
 
     def _get(self, params):
         """Retrieve the requested bookmark by ID."""
-        return database_qs(Bookmark.objects.filter(pk=params["id"]))[0]
+        return database_qs(self.get_queryset())[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:
         """Patch operation on the bookmark."""
-        obj = Bookmark.objects.select_for_update().get(pk=params["id"])
+        obj = self.get_queryset()[0]
         name = params.get("name", None)
         uri = params.get("uri", None)
         if name is not None:
@@ -84,9 +81,9 @@ class BookmarkDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         """Deletes the provided bookmark."""
-        Bookmark.objects.get(pk=params["id"]).delete()
+        self.get_queryset().delete()
         return {"message": f"Bookmark with ID {params['id']} deleted successfully!"}
 
     def get_queryset(self):
         """Returns a queryset of all bookmarks."""
-        return Bookmark.objects.all()
+        return Bookmark.objects.filter(pk=self.params["id"], user=self.request.user)

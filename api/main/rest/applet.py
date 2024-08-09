@@ -36,11 +36,7 @@ class AppletListAPI(BaseListView):
     http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
-        qs = (
-            Dashboard.objects.filter(project=params["project"])
-            .order_by("id")
-            .annotate(html_file_url=F("html_file"))
-        )
+        qs = self.get_queryset().annotate(html_file_url=F("html_file"))
         out = list(qs.values(*APPLET_GET_FIELDS))
         for obj in out:
             obj["html_file"] = obj["html_file_url"]
@@ -51,8 +47,7 @@ class AppletListAPI(BaseListView):
         return out
 
     def get_queryset(self) -> dict:
-        params = parse(self.request)
-        qs = Dashboard.objects.filter(project__id=params["project"])
+        qs = Dashboard.objects.filter(project__id=self.params["project"])
         return qs
 
     def _post(self, params: dict) -> dict:
@@ -146,7 +141,7 @@ class AppletDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         # Grab the applet object and delete it from the database
-        applet = Dashboard.objects.get(pk=params["id"])
+        applet = self.get_queryset().first()
         html_file = applet.html_file
         applet.delete()
 
@@ -158,7 +153,7 @@ class AppletDetailAPI(BaseDetailView):
         return {"message": msg}
 
     def _get(self, params):
-        obj = Dashboard.objects.get(pk=params["id"])
+        obj = self.get_queryset().first()
         applet = model_to_dict(obj, fields=APPLET_GET_FIELDS)
         applet["html_file"] = str(obj.html_file)
         if applet[fields.template]:
@@ -169,7 +164,7 @@ class AppletDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params) -> dict:
         applet_id = params["id"]
-        obj = Dashboard.objects.get(pk=applet_id)
+        obj = self.get_queryset().first()
 
         name = params.get(fields.name, None)
         if name is not None:
@@ -215,4 +210,4 @@ class AppletDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         """Returns a queryset of all registered applet files"""
-        return Dashboard.objects.all()
+        return Dashboard.objects.filter(pk=self.params["id"])

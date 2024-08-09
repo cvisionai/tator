@@ -35,15 +35,12 @@ class FavoriteListAPI(BaseListView):
         """Returns the full database entries of favorites registered with this project
         and user.
         """
-        qs = Favorite.objects.filter(project=params["project"], user=self.request.user).order_by(
-            "id"
-        )
+        qs = self.get_queryset().order_by("id")
         return database_qs(qs)
 
     def get_queryset(self):
         """Returns a queryset of favorites related with the current request's project"""
-        params = parse(self.request)
-        qs = Favorite.objects.filter(project__id=params["project"], user=self.request.user)
+        qs = Favorite.objects.filter(project__id=self.params["project"], user=self.request.user)
         return qs
 
     def _post(self, params: dict) -> dict:
@@ -91,7 +88,7 @@ class FavoriteDetailAPI(BaseDetailView):
 
     def _get(self, params):
         """Retrieve the requested favorite by ID."""
-        return database_qs(Favorite.objects.filter(pk=params["id"]))[0]
+        return database_qs(self.get_queryset())[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:
@@ -119,9 +116,9 @@ class FavoriteDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         """Deletes the provided favorite."""
-        Favorite.objects.get(pk=params["id"]).delete()
+        self.get_queryset().delete()
         return {"message": f"Favorite with ID {params['id']} deleted successfully!"}
 
     def get_queryset(self):
         """Returns a queryset of all favorites."""
-        return Favorite.objects.all()
+        return Favorite.objects.filter(pk=self.params["id"], user=self.request.user)
