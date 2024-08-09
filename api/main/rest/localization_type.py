@@ -46,7 +46,8 @@ class LocalizationTypeListAPI(BaseListView):
     schema = LocalizationTypeListSchema()
     http_method_names = ["get", "post"]
 
-    def _get(self, params):
+    def get_queryset(self):
+        params = self.params
         media_id = params.get("media_id", None)
         if media_id != None:
             if len(media_id) != 1:
@@ -59,6 +60,10 @@ class LocalizationTypeListAPI(BaseListView):
             qs = localizations
         else:
             qs = LocalizationType.objects.filter(project=params["project"])
+        return qs
+
+    def _get(self, params):
+        qs = self.get_queryset()
 
         elemental_id = params.get("elemental_id", None)
         if elemental_id is not None:
@@ -137,7 +142,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
         shape, name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        loc = LocalizationType.objects.filter(pk=params["id"]).values(*fields)[0]
+        loc = self.queryset().values(*fields)[0]
         # Get many to many fields.
         loc["media"] = list(
             LocalizationType.media.through.objects.filter(localizationtype_id=loc["id"]).aggregate(
@@ -199,4 +204,4 @@ class LocalizationTypeDetailAPI(BaseDetailView):
         }
 
     def get_queryset(self):
-        return LocalizationType.objects.all()
+        return LocalizationType.objects.filter(pk=self.params["id"])

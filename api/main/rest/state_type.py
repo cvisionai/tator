@@ -46,13 +46,8 @@ class StateTypeListAPI(BaseListView):
     schema = StateTypeListSchema()
     http_method_names = ["get", "post"]
 
-    def _get(self, params):
-        """Retrieve state types.
-
-        A state type is the metadata definition object for a state. It includes association
-        type, name, description, and (like other entity types) may have any number of attribute
-        types associated with it.
-        """
+    def get_queryset(self):
+        params = self.params
         media_id = params.get("media_id", None)
         if media_id != None:
             if len(media_id) != 1:
@@ -73,6 +68,16 @@ class StateTypeListAPI(BaseListView):
             # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
             qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+        return qs
+
+    def _get(self, params):
+        """Retrieve state types.
+
+        A state type is the metadata definition object for a state. It includes association
+        type, name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+        """
+        qs = self.get_queryset()
 
         response_data = qs.order_by("name").values(*fields)
         # Get many to many fields.
@@ -140,7 +145,7 @@ class StateTypeDetailAPI(BaseDetailView):
         type, name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        state = StateType.objects.filter(pk=params["id"]).values(*fields)[0]
+        state = self.get_queryset().values(*fields)[0]
         # Get many to many fields.
         state["media"] = list(
             StateType.media.through.objects.filter(statetype_id=state["id"]).aggregate(
@@ -206,4 +211,4 @@ class StateTypeDetailAPI(BaseDetailView):
         }
 
     def get_queryset(self):
-        return StateType.objects.all()
+        return StateType.objects.filter(pk=self.params["id"])
