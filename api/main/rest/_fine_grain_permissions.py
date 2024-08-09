@@ -13,7 +13,7 @@ from django.conf import settings
 from ..models import *
 from ..cache import TatorCache
 
-from .._permission_util import augment_permission, shift_permission, BitAnd
+from .._permission_util import augment_permission, shift_permission, ColBitAnd
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ class ProjectPermissionBase(BasePermission):
                 proj_perm_qs = Project.objects.filter(pk=project.pk)
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
                 proj_perm_qs = proj_perm_qs.alias(
-                    granted=BitAnd(
+                    granted=ColBitAnd(
                         F("effective_permission"),
                         (self.required_mask << shift_permission(model, Project)),
                     )
@@ -137,7 +137,7 @@ class ProjectPermissionBase(BasePermission):
                 proj_perm_qs = Project.objects.filter(pk=project.pk)
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
                 proj_perm_qs = proj_perm_qs.alias(
-                    granted=BitAnd(
+                    granted=ColBitAnd(
                         F("effective_permission"),
                         (self.required_mask << shift_permission(model, Project)),
                     )

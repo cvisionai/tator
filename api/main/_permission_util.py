@@ -24,7 +24,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class BitAnd(Func):
+class ColBitAnd(Func):
     function = ""
     template = "(%(expressions)s & %(bitmask)s)"
 
