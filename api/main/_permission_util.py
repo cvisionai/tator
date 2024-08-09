@@ -84,7 +84,6 @@ def get_parents_for_model(model):
 
 
 def shift_permission(model, source_model):
-
     if source_model == Project:
         shift = 0
     elif source_model in [Section, Version]:

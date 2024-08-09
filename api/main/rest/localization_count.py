@@ -7,6 +7,7 @@ from ._annotation_query import get_annotation_count
 from ._permissions import ProjectViewOnlyPermission
 from ._annotation_query import get_annotation_queryset
 
+
 class LocalizationCountAPI(BaseListView):
     """Retrieve number of localizations in a localization list.
 
@@ -17,6 +18,7 @@ class LocalizationCountAPI(BaseListView):
     schema = LocalizationCountSchema()
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get", "put"]
+
     def get_queryset(self):
         return get_annotation_queryset(self.params["project"], self.params, "localization")
 

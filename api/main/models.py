@@ -129,6 +129,7 @@ END  IF;
 RETURN NEW;
 """
 
+
 # Register prepared statements for the triggers to optimize performance on creation of a database  connection
 @receiver(connection_created)
 def on_connection_created(sender, connection, **kwargs):
@@ -2513,6 +2514,7 @@ class RowProtection(Model):
                 name="permission_uniqueness_check",
             )
         ]
+
 
 # Structure to handle identifying columns with project-scoped indices
 # e.g. Not relaying solely on `db_index=True` in django.

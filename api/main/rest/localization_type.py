@@ -142,7 +142,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
         shape, name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        loc = self.queryset().values(*fields)[0]
+        loc = self.get_queryset().values(*fields)[0]
         # Get many to many fields.
         loc["media"] = list(
             LocalizationType.media.through.objects.filter(localizationtype_id=loc["id"]).aggregate(

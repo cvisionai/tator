@@ -199,6 +199,7 @@ class ProjectFullControlPermission(ProjectPermissionBase):
     message = "Insufficient permission to edit project settings."
     required_mask = PermissionMask.FULL_CONTROL
 
+
 class PermalinkPermission(BasePermission):
     """
     1.) Let request through if project has anonymous membership

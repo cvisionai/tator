@@ -1124,6 +1124,7 @@ def upgrade_vector_db():
                 print(f"Reindexing {attribute_info['name']} of {entity_type.name}")
                 ts.create_psql_index(entity_type, attribute_info, flush=True, concurrent=True)
 
+
 def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.fromtimestamp(0)):
     from django.db.models import F, Window, Count, ExpressionWrapper
     from django.db.models.functions import Lag
@@ -1199,6 +1200,7 @@ def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.from
                 modified_datetime__gte=since_when,
             )
             find_bad_marks(potential_states)
+
 
 def memberships_to_rowp(project_id):
     print("This tool will convert membership objects to row permissions.")
