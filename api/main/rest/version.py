@@ -33,9 +33,11 @@ class VersionListAPI(BaseListView):
     """
 
     schema = VersionListSchema()
-    queryset = Version.objects.all()
     permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post"]
+
+    def get_queryset(self):
+        return Version.objects.filter(project=self.params["project"])
 
     def _post(self, params):
         name = params["name"]
@@ -69,7 +71,7 @@ class VersionListAPI(BaseListView):
         media = params.get("media_id", None)
         project = params["project"]
 
-        qs = Version.objects.filter(project=project).order_by("number")
+        qs = self.get_queryset().order_by("number")
         return VersionSerializer(
             qs,
             context=self.get_renderer_context(),
@@ -93,12 +95,12 @@ class VersionDetailAPI(BaseDetailView):
     http_method_names = ["get", "patch", "delete"]
 
     def _get(self, params):
-        version = Version.objects.get(pk=params["id"])
+        version = self.get_queryset()[0]
         return VersionSerializer(version).data
 
     @transaction.atomic
     def _patch(self, params):
-        version = Version.objects.get(pk=params["id"])
+        version = self.get_queryset()[0]
         if "name" in params:
             version.name = params["name"]
         if "description" in params:
@@ -129,8 +131,8 @@ class VersionDetailAPI(BaseDetailView):
                 f"Cannot delete version with annotations! Found "
                 f"{localization_count} localizations, {state_count} states!"
             )
-        Version.objects.get(pk=params["id"]).delete()
+        self.get_queryset()[0].delete()
         return {"message": f'Version {params["id"]} deleted successfully!'}
 
     def get_queryset(self):
-        return Version.objects.all()
+        return Version.objects.filter(pk=self.params["id"])
