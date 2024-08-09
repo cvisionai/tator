@@ -104,7 +104,7 @@ class ProjectPermissionBase(BasePermission):
                     perm_qs.alias(
                         granted=ColBitAnd(
                             F("effective_permission"),
-                            (self.required_mask << shift_permission(model, Project)),
+                            (self.required_mask),
                         )
                     )
                     .filter(granted=0)
