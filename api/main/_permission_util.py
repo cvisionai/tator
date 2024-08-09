@@ -17,19 +17,7 @@ from django.contrib.postgres.aggregates import BitOr
 from django.contrib.postgres.expressions import ArraySubquery
 from django.db.models.functions import Coalesce, Cast
 from django.db.models import JSONField, Lookup, IntegerField, Case, When
-from main.models import (
-    File,
-    Section,
-    Media,
-    Localization,
-    State,
-    Algorithm,
-    Version,
-    Project,
-    Bookmark,
-    Membership,
-    PermissionMask,
-)
+from main.models import *
 
 import logging
 
@@ -60,6 +48,30 @@ def mask_to_old_permission_string(project_bitmask):
     return string_val
 
 
+def get_parents_for_model(model):
+    if model in [
+        Dashboard,
+        Favorite,
+        Bookmark,
+        HostedTemplate,
+        TemporaryFile,
+        ChangeLog,
+        Announcement,
+    ]:
+        return [Project]
+    elif model in [Localization, State]:
+        return [Section, Version]
+    elif model in [Media]:
+        return [Section]
+    elif model in [Section, Version, Algorithm, File, Bucket, JobCluster, Leaf]:
+        return [Project]
+    elif model in [Project, MediaType, LocalizationType, StateType, LeafType, FileType, Membership]:
+        # These objects are originators, but logic should work out
+        return [Project]
+    else:
+        assert False, f"Unhandled model {model}"
+
+
 def shift_permission(model):
     if model in [
         Dashboard,
@@ -77,7 +89,16 @@ def shift_permission(model):
         return PermissionMask.CHILD_SHIFT * 2
     elif model in [Section, Version, Algorithm, File, Bucket, JobCluster, Leaf]:
         return PermissionMask.CHILD_SHIFT
-    elif model in [Project, MediaType, LocalizationType, StateType, LeafType, FileType]:
+    elif model in [
+        Project,
+        MediaType,
+        LocalizationType,
+        StateType,
+        LeafType,
+        FileType,
+        None,
+        Membership,
+    ]:
         return 0
     else:
         assert False, f"Unhandled model {model}"
