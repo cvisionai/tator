@@ -46,16 +46,16 @@ class MediaTypeListAPI(BaseListView):
 
     schema = MediaTypeListSchema()
     permission_classes = [ProjectFullControlPermission]
-    queryset = MediaType.objects.all()
     http_method_names = ["get", "post"]
 
-    def _get(self, params):
+    def get_queryset(self):
         """Retrieve media types.
 
         A media type is the metadata definition object for media. It includes file format,
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
+        params = self.params
         media_id = params.get("media_id", None)
         if media_id != None:
             if len(media_id) != 1:
@@ -74,6 +74,10 @@ class MediaTypeListAPI(BaseListView):
             # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
             qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+        return qs
+
+    def _get(self, params):
+        qs = self.get_queryset()
         return list(qs.order_by("name").values(*fields))
 
     def _post(self, params):
@@ -134,7 +138,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        return MediaType.objects.filter(pk=params["id"]).values(*fields)[0]
+        return self.get_queryset().values(*fields)[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -203,7 +207,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        media_type = MediaType.objects.get(pk=params["id"])
+        media_type = self.get_queryset()[0]
         count = delete_instances(media_type, Media, self.request.user, "media")
         media_type.delete()
         return {
@@ -211,4 +215,4 @@ class MediaTypeDetailAPI(BaseDetailView):
         }
 
     def get_queryset(self):
-        return MediaType.objects.all()
+        return MediaType.objects.filter(pk=self.params["id"])
