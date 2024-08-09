@@ -1,7 +1,7 @@
 import traceback
 import logging
 
-from rest_framework.views import APIView
+from ._base_views import TatorAPIView
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -13,7 +13,7 @@ from ..schema import parse
 logger = logging.getLogger(__name__)
 
 
-class NotifyAPI(APIView):
+class NotifyAPI(TatorAPIView):
     """Send a notification to administrators.
 
     Uses the Slack API to send a notification to system administrators. This

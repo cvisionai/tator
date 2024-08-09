@@ -18,6 +18,8 @@ from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
+import os
+
 """ TODO: add documentation for this """
 
 
@@ -42,6 +44,32 @@ def process_exception(exc):
     return resp
 
 
+class TatorAPIView(APIView):
+    def initial(self, request, *args, **kwargs):
+        """
+        Runs anything that needs to occur prior to calling the method handler.
+        """
+        self.format_kwarg = self.get_format_suffix(**kwargs)
+
+        # Perform content negotiation and store the accepted info on the request
+        neg = self.perform_content_negotiation(request)
+        request.accepted_renderer, request.accepted_media_type = neg
+
+        # Determine the API version, if versioning is in use.
+        version, scheme = self.determine_version(request, *args, **kwargs)
+        request.version, request.versioning_scheme = version, scheme
+
+        # Check throttles before permissions check which can be expensive
+        self.perform_authentication(request)
+        self.check_throttles(request)
+
+        # parse the request and store the validated schema as a member
+        self.params = parse(request)
+        # Ensure that the incoming request is permitted
+
+        self.check_permissions(request)
+
+
 class GetMixin:
     # pylint: disable=redefined-builtin,unused-argument
     """TODO: add documentation for this"""
@@ -49,8 +77,7 @@ class GetMixin:
     def get(self, request, format=None, **kwargs):
         """TODO: add documentation for this"""
         resp = Response({})
-        params = parse(request)
-        response_data = self._get(params)
+        response_data = self._get(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
@@ -62,8 +89,7 @@ class PostMixin:
     def post(self, request, format=None, **kwargs):
         """TODO: add documentation for this"""
         resp = Response({})
-        params = parse(request)
-        response_data = self._post(params)
+        response_data = self._post(self.params)
         resp = Response(response_data, status=status.HTTP_201_CREATED)
         return resp
 
@@ -74,8 +100,7 @@ class PatchMixin:
 
     def patch(self, request, format=None, **kwargs):
         """TODO: add documentation for this"""
-        params = parse(request)
-        response_data = self._patch(params)
+        response_data = self._patch(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
@@ -86,21 +111,19 @@ class DeleteMixin:
 
     def delete(self, request, format=None, **kwargs):
         """TODO: add documentation for this"""
-        params = parse(request)
-        response_data = self._delete(params)
+        response_data = self._delete(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
 
 class PutMixin:
     def put(self, request, format=None, **kwargs):
-        params = parse(request)
-        response_data = self._put(params)
+        response_data = self._put(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
 
-class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
+class BaseListView(TatorAPIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
     """Base class for list views."""
 
     http_method_names = ["get", "post", "patch", "delete", "put"]
@@ -109,7 +132,7 @@ class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMix
         return process_exception(exc)
 
 
-class BaseDetailView(APIView, GetMixin, PatchMixin, DeleteMixin):
+class BaseDetailView(TatorAPIView, GetMixin, PatchMixin, DeleteMixin):
     """Base class for detail views."""
 
     http_method_names = ["get", "patch", "delete"]

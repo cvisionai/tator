@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.shortcuts import redirect
 
-from rest_framework.views import APIView
+from ._base_views import TatorAPIView
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -14,7 +14,7 @@ from ..schema import Oauth2LoginSchema
 logger = logging.getLogger(__name__)
 
 
-class Oauth2LoginAPI(APIView):
+class Oauth2LoginAPI(TatorAPIView):
     """Generic Oauth2 login gateway"""
 
     def get(self, request, format=None, **kwargs):

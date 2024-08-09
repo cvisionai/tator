@@ -15,7 +15,7 @@ from django.http import Http404
 from PIL import Image
 
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from ._base_views import TatorAPIView
 from rest_framework import status
 
 from ..models import Media, Resource
@@ -73,7 +73,7 @@ def _presign(expiration, medias, fields=None):
                         )
 
 
-class PermalinkAPI(APIView):
+class PermalinkAPI(TatorAPIView):
     """Provide a permalink to an object-store resource
 
     Given a media object this endpoint will redirect to a pre-signed URL of the required

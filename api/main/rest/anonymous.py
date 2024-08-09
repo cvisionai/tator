@@ -2,7 +2,7 @@ from django.contrib.auth import login
 from django.shortcuts import redirect
 from django.http import HttpResponseRedirect
 from django.utils.http import url_has_allowed_host_and_scheme
-from rest_framework.views import APIView
+from ._base_views import TatorAPIView
 
 from ..models import User
 from ..schema import AnonymousGatewaySchema
@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class AnonymousGatewayAPI(APIView):
+class AnonymousGatewayAPI(TatorAPIView):
     """Notional Anonymous login gateway"""
 
     schema = AnonymousGatewaySchema()
