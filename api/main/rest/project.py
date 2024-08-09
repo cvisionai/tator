@@ -27,7 +27,7 @@ from ..store import get_tator_store
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
-from .._permission_util import augment_permission, BitAnd, mask_to_old_permission_string
+from .._permission_util import augment_permission, ColBitAnd, mask_to_old_permission_string
 
 import os
 
@@ -97,9 +97,11 @@ def get_projects_for_user(user):
         all_projects = Project.objects.all()
         all_projects = augment_permission(user, all_projects)
         all_projects = all_projects.alias(
-            granted=BitAnd(F("effective_permission"), PermissionMask.EXIST | PermissionMask.READ),
+            granted=ColBitAnd(
+                F("effective_permission"), PermissionMask.EXIST | PermissionMask.READ
+            ),
         )
-        projects = all_projects.filter(granted__gt=0)
+        projects = all_projects.filter(granted__eq=(PermissionMask.EXIST | PermissionMask.READ))
     else:
         projects = Project.objects.filter(membership__user=user)
     return projects
@@ -328,4 +330,4 @@ class ProjectDetailAPI(BaseDetailView):
         return {"message": f'Project {params["id"]} deleted successfully!'}
 
     def get_queryset(self):
-        return Project.objects.all()
+        return Project.objects.filter(pk=self.params["id"])
