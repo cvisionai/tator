@@ -4,6 +4,7 @@ import io
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.db.models import F
 
 import uuid
 
@@ -17,6 +18,7 @@ from ..models import Media
 from ..models import Bucket
 from ..models import database_qs
 from ..models import safe_delete
+from ..models import PermissionMask
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
 from ..store import get_tator_store
@@ -24,6 +26,9 @@ from ..store import get_tator_store
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+from .._permission_util import augment_permission, BitAnd
+
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +83,19 @@ def _serialize_projects(projects, user_id):
     return project_data
 
 
+def get_projects_for_user(user):
+    if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
+        all_projects = Project.objects.all()
+        all_projects = augment_permission(user, all_projects)
+        all_projects = all_projects.alias(
+            granted=BitAnd(F("effective_permission"), PermissionMask.EXIST | PermissionMask.READ),
+        )
+        projects = all_projects.filter(granted__gt=0)
+    else:
+        projects = Project.objects.filter(membership__user=user)
+    return projects
+
+
 class ProjectListAPI(BaseListView):
     """Interact with a list of projects.
 
@@ -118,11 +136,8 @@ class ProjectListAPI(BaseListView):
         else:
             raise PermissionDenied
 
-        if (
-            Project.objects.filter(membership__user=self.request.user)
-            .filter(name__iexact=params["name"])
-            .exists()
-        ):
+        projects_for_user = get_projects_for_user(self.request.user)
+        if projects_for_user.filter(name__iexact=params["name"]).exists():
             raise Exception("Project with this name already exists!")
 
         # Make sure bucket can be set by this user.
@@ -180,7 +195,7 @@ class ProjectListAPI(BaseListView):
         }
 
     def get_queryset(self):
-        projects = Project.objects.filter(membership__user=self.request.user).order_by("id")
+        projects = get_projects_for_user(self.request.user).order_by("id")
         return projects
 
 

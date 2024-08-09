@@ -13,18 +13,9 @@ from django.conf import settings
 from ..models import *
 from ..cache import TatorCache
 
-from .._permission_util import augment_permission, shift_permission
+from .._permission_util import augment_permission, shift_permission, BitAnd
 
 logger = logging.getLogger(__name__)
-
-
-class BitAnd(Func):
-    function = ""
-    template = "(%(expressions)s & %(bitmask)s)"
-
-    def __init__(self, expression, bitmask, **extra):
-        super().__init__(expression, bitmask=bitmask, **extra)
-
 
 ### With fine-grained permissions enabled, we use the existance of permissions to determine access.
 ### a nuance is a given queryset (say all media) may be partially viewable to the user. This should be

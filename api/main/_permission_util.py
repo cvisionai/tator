@@ -36,15 +36,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@BigIntegerField.register_lookup
-class BitwiseAnd(Lookup):
-    lookup_name = "bitand"
+class BitAnd(Func):
+    function = ""
+    template = "(%(expressions)s & %(bitmask)s)"
 
-    def as_sql(self, compiler, connection):
-        lhs, lhs_params = self.process_lhs(compiler, connection)
-        rhs, rhs_params = self.process_rhs(compiler, connection)
-        params = lhs_params + rhs_params
-        return "%s & %s" % (lhs, rhs), params
+    def __init__(self, expression, bitmask, **extra):
+        super().__init__(expression, bitmask=bitmask, **extra)
 
 
 def shift_permission(model):
