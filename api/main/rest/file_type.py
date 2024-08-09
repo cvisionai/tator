@@ -41,8 +41,7 @@ class FileTypeListAPI(BaseListView):
         return database_qs(qs)
 
     def get_queryset(self) -> dict:
-        params = parse(self.request)
-        qs = FileType.objects.filter(project__id=params["project"])
+        qs = FileType.objects.filter(project__id=self.params["project"])
         return qs
 
     def _post(self, params):
@@ -79,7 +78,7 @@ class FileTypeDetailAPI(BaseDetailView):
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        return FileType.objects.filter(pk=params["id"]).values(*fields)[0]
+        return self.get_queryset().values(*fields)[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -117,4 +116,4 @@ class FileTypeDetailAPI(BaseDetailView):
         }
 
     def get_queryset(self):
-        return FileType.objects.all()
+        return FileType.objects.filter(pk=params["id"])
