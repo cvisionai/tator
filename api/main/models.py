@@ -2401,7 +2401,16 @@ class PermissionMask:
     FULL_CONTROL = 0xFF  # All bits and all future bits are set
     # Convenience wrappers to original tator permission system
     OLD_READ = (
-        EXIST | READ | EXIST << 8 | READ << 8 | EXIST << 16 | READ << 16 | EXIST << 24 | READ << 24
+        EXIST
+        | READ
+        | EXIST << 8
+        | READ << 8
+        | EXIST << 16
+        | READ << 16
+        | EXIST << 24
+        | READ << 24
+        | EXIST << 32
+        | READ << 32
     )
 
     # Old write was a bit more complicated as it let you modify elements but not the project itself
@@ -2416,10 +2425,13 @@ class PermissionMask:
         | CREATE << 24
         | MODIFY << 24
         | DELETE << 24
+        | MODIFY << 32
+        | DELETE << 32
+        | CREATE << 32
     )
-    OLD_TRANSFER = OLD_WRITE | UPLOAD
+    OLD_TRANSFER = OLD_WRITE | UPLOAD << 16
 
-    OLD_EXECUTE = OLD_TRANSFER | EXECUTE
+    OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32
 
     # Old full control lets one delete and write the project
     OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE
