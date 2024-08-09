@@ -67,14 +67,30 @@ def get_parents_for_model(model):
         return [Project]
     elif model in [Bucket, JobCluster]:
         return [Organization]
-    elif model in [Project, MediaType, LocalizationType, StateType, LeafType, FileType, Membership]:
+    elif model in [
+        Project,
+        MediaType,
+        LocalizationType,
+        StateType,
+        LeafType,
+        FileType,
+        Membership,
+        None,
+    ]:
         # These objects are originators, but logic should work out
         return [Project]
     else:
         assert False, f"Unhandled model {model}"
 
 
-def shift_permission(model):
+def shift_permission(model, source_model):
+
+    if source_model == Project:
+        shift = 0
+    elif source_model in [Section, Version]:
+        shift = 1
+    else:
+        assert False, f"Unhandled source_model {source_model}"
     if model in [
         Dashboard,
         Favorite,
@@ -84,13 +100,13 @@ def shift_permission(model):
         ChangeLog,
         Announcement,
     ]:
-        return PermissionMask.CHILD_SHIFT * 4
+        return PermissionMask.CHILD_SHIFT * (4 - shift)
     elif model in [Localization, State]:
-        return PermissionMask.CHILD_SHIFT * 3
+        return PermissionMask.CHILD_SHIFT * (3 - shift)
     elif model in [Media]:
-        return PermissionMask.CHILD_SHIFT * 2
+        return PermissionMask.CHILD_SHIFT * (2 - shift)
     elif model in [Section, Version, Algorithm, File, Bucket, JobCluster, Leaf]:
-        return PermissionMask.CHILD_SHIFT
+        return PermissionMask.CHILD_SHIFT * (1 - shift)
     elif model in [
         Project,
         MediaType,
@@ -98,10 +114,9 @@ def shift_permission(model):
         StateType,
         LeafType,
         FileType,
-        None,
         Membership,
     ]:
-        return 0
+        return 0 - (shift * 8)  # this will cause an exception if we have a logic error somewhere
     else:
         assert False, f"Unhandled model {model}"
 
@@ -112,7 +127,7 @@ def augment_permission(user, qs):
         model = qs.model
         # handle shift due to underlying model
         # children are shifted by 8 bits, grandchildren by 16, etc.
-        bit_shift = shift_permission(model)
+        bit_shift = shift_permission(model, Project)
         groups = user.groupmembership_set.all().values("group").distinct()
         # groups = Group.objects.filter(pk=-1).values("id")
         organizations = user.affiliation_set.all().values("organization")

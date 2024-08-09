@@ -102,7 +102,8 @@ class ProjectPermissionBase(BasePermission):
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
                 proj_perm_qs = proj_perm_qs.alias(
                     granted=BitAnd(
-                        F("effective_permission"), (self.required_mask << shift_permission(model))
+                        F("effective_permission"),
+                        (self.required_mask << shift_permission(model, Project)),
                     )
                 )
                 perm_qs = proj_perm_qs.filter(granted__gt=0)
@@ -118,14 +119,13 @@ class ProjectPermissionBase(BasePermission):
 
             if not perm_qs.exists():
                 ## If there are no permissions yet we have to go to the project object to confirm
-                model = None
-                if hasattr(view, "get_queryset") is True:
-                    model = view.get_queryset().model
+                model = view.get_queryset().model
                 proj_perm_qs = Project.objects.filter(pk=project.pk)
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
                 proj_perm_qs = proj_perm_qs.alias(
                     granted=BitAnd(
-                        F("effective_permission"), (self.required_mask << shift_permission(model))
+                        F("effective_permission"),
+                        (self.required_mask << shift_permission(model, Project)),
                     )
                 )
                 perm_qs = proj_perm_qs.filter(granted__gt=0)

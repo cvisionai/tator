@@ -69,6 +69,15 @@ class TatorAPIView(APIView):
 
         self.check_permissions(request)
 
+    def get_parent_objects():
+        model = self.get_queryset().model
+        parents = get_parents_for_model(model)
+        parent_set = []
+        for parent_model in parents:
+            if parent_model == Project:
+                parent_set.append(Project.objects.get(pk=self.params["project"]))
+        return parent_set
+
 
 class GetMixin:
     # pylint: disable=redefined-builtin,unused-argument
