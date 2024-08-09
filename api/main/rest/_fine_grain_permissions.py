@@ -92,7 +92,7 @@ class ProjectPermissionBase(BasePermission):
         if isinstance(request.user, AnonymousUser):
             granted = False
 
-        if request.method in ["GET", "HEAD", "PATCH", "DELETE"]:
+        if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
             perm_qs = view.get_queryset()
             perm_qs = augment_permission(request.user, perm_qs)
@@ -151,14 +151,16 @@ class ProjectPermissionBase(BasePermission):
                 )
                 perm_qs = proj_perm_qs.filter(granted__gt=0)
 
-            if perm_qs.exists():
-                granted = True
+                if perm_qs.exists():
+                    granted = True
         else:
             assert False, f"Unsupported method={request.method}"
 
         return granted
 
 
+# These map to the old permission system to make code work with both modes based on the setting of
+# TATOR_FINE_GRAINED_PERMISSIONS environment variable
 class ProjectViewOnlyPermission(ProjectPermissionBase):
     """Checks whether a user has view only access to a project. This
     is just to check whether a user is a member of a project.
