@@ -49,7 +49,8 @@ class SectionListAPI(BaseListView):
     permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post", "patch", "delete"]
 
-    def _get_qs(self, params):
+    def get_queryset(self):
+        params = self.params
         qs = Section.objects.filter(project=params["project"])
         if "name" in params:
             qs = qs.filter(name__iexact=f"{params['name']}")
@@ -76,7 +77,7 @@ class SectionListAPI(BaseListView):
         return qs
 
     def _get(self, params):
-        qs = self._get_qs(params)
+        qs = self.get_queryset()
         results = list(qs.values(*SECTION_PROPERTIES))
         # values does not convert Ltree.Path to a string consistently
         for idx, r in enumerate(results):
@@ -85,7 +86,7 @@ class SectionListAPI(BaseListView):
         return results
 
     def _delete(self, params):
-        qs = self._get_qs(params)
+        qs = self.get_queryset()
         count = qs.count()
         qs.delete()
         return {"message": f"Successfully deleted {count} sections!"}
@@ -130,7 +131,7 @@ class SectionListAPI(BaseListView):
         return {"message": f"Section {name} created!", "id": section.id}
 
     def _patch(self, params):
-        qs = self._get_qs(params)
+        qs = self.get_queryset()
         count = 0
         if "path_substitution" in params:
             old_path = params["path_substitution"]["old"]
@@ -145,11 +146,6 @@ class SectionListAPI(BaseListView):
 
         return {"message": f"Successfully patched {count} sections!"}
 
-    def get_queryset(self):
-        project_id = self.kwargs["project"]
-        sections = Section.objects.filter(project__id=project_id)
-        return sections
-
 
 class SectionDetailAPI(BaseDetailView):
     """Interact with an individual section."""
@@ -161,9 +157,7 @@ class SectionDetailAPI(BaseDetailView):
 
     def _get(self, params):
         # Make result match schema
-        qs = Section.objects.filter(pk=params["id"]).annotate(
-            related_search=F("related_object_search")
-        )
+        qs = self.get_queryset().annotate(related_search=F("related_object_search"))
         results = list(qs.values(*SECTION_PROPERTIES))
         results = _fill_m2m(results)
         for idx, r in enumerate(results):
@@ -172,7 +166,7 @@ class SectionDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        section = Section.objects.get(pk=params["id"])
+        section = self.get_queryset()[0]
         if "name" in params:
             section.name = params["name"]
         if "path" in params:
@@ -209,8 +203,8 @@ class SectionDetailAPI(BaseDetailView):
         return {"message": f"Section {section.name} updated successfully!"}
 
     def _delete(self, params):
-        Section.objects.get(pk=params["id"]).delete()
+        self.get_queryset().delete()
         return {"message": f'Section {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
-        return Section.objects.all()
+        return Section.objects.filter(pk=self.params["id"])
