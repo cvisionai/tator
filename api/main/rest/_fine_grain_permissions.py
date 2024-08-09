@@ -87,31 +87,36 @@ class ProjectPermissionBase(BasePermission):
         return project
 
     def _validate_project(self, request, project, view):
-        granted = False
+        granted = False  # Always deny by default
 
         if isinstance(request.user, AnonymousUser):
             granted = False
 
         if request.method in ["GET", "HEAD", "PATCH", "DELETE"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
-            if hasattr(view, "get_queryset") is True:
-                perm_qs = view.get_queryset()
-                perm_qs = augment_permission(request.user, perm_qs)
-                if perm_qs.exists():
-                    perm_qs = perm_qs.alias(
-                        granted=BitAnd(F("effective_permission"), self.required_mask)
-                    )
-                    perm_qs = perm_qs.filter(granted__gt=0)
-            else:
-                perm_qs = RowProtection.objects.filter(pk=-1)
+            perm_qs = view.get_queryset()
+            perm_qs = augment_permission(request.user, perm_qs)
+            model = view.get_queryset().model
 
+            if perm_qs.exists():
+                # See if any objects in the requested set DON'T have the required permission
+                no_perm_qs = (
+                    perm_qs.alias(
+                        granted=ColBitAnd(
+                            F("effective_permission"),
+                            (self.required_mask << shift_permission(model, Project)),
+                        )
+                    )
+                    .filter(granted=0)
+                    .exists()
+                )
+                # If nothing is found, we have permission
+                if not no_perm_qs:
+                    granted = True
             if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
                 ## If we are permissive (reading) we can see if the user has read permissions to the parent
                 ## to avoid a 403, even if the set is empty
-                model = None
-                if hasattr(view, "get_queryset") is True:
-                    model = view.get_queryset().model
                 proj_perm_qs = Project.objects.filter(pk=project.pk)
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
                 proj_perm_qs = proj_perm_qs.alias(
@@ -120,10 +125,12 @@ class ProjectPermissionBase(BasePermission):
                         (self.required_mask << shift_permission(model, Project)),
                     )
                 )
-                perm_qs = proj_perm_qs.filter(granted__gt=0)
+                perm_qs = proj_perm_qs.filter(
+                    granted__eq=(self.required_mask << shift_permission(model, Project))
+                )
 
-            if perm_qs.exists():
-                granted = True
+                if perm_qs.exists():
+                    granted = True
         elif request.method in ["POST"]:
             ### POST gets permission from a model's parent object permission
             perm_qs = RowProtection.objects.filter(pk=-1)
