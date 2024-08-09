@@ -2466,6 +2466,9 @@ class RowProtection(Model):
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
 
+    # This is a pointer to the organization the permissions are describing
+    target_organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
     """ Pointer to the user this permission/rule refers to """
