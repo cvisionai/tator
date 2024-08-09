@@ -82,7 +82,7 @@ class TatorAPIView(APIView):
 
     def filter_only_viewables(self, qs):
         # Convenience function for filtering out objects for most views
-        if os.getenv("TATOR_FINE_GRAINED_PERMISSIONS", None) == True:
+        if os.getenv("TATOR_FINE_GRAINED_PERMISSIONS", None) == "true":
             qs = augment_permission(self.request.user, qs)
             return qs.filter(effective_permission__gte=0)
         else:
