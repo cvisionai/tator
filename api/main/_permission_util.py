@@ -165,7 +165,22 @@ def augment_permission(user, qs):
             project_permission=Value(project_permission >> bit_shift),
         )
 
-    if model in [Favorite, Bookmark, MediaType, LocalizationType, StateType, LeafType, FileType]:
+    if model in [Announcement]:
+        # Everyone can read announcements
+        qs = qs.annotate(effective_permission=Value(0x3))
+    elif model in [
+        Favorite,
+        Bookmark,
+        MediaType,
+        LocalizationType,
+        StateType,
+        LeafType,
+        FileType,
+        Dashboard,
+        HostedTemplate,
+        TemporaryFile,
+        ChangeLog,
+    ]:
         qs = qs.annotate(effective_permission=F("project_permission"))
     elif model in [Membership]:
         qs = qs.annotate(effective_permission=Value(0x3))  # disable mutability of these objects
