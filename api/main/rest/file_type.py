@@ -116,4 +116,4 @@ class FileTypeDetailAPI(BaseDetailView):
         }
 
     def get_queryset(self):
-        return FileType.objects.filter(pk=params["id"])
+        return FileType.objects.filter(pk=self.params["id"])
