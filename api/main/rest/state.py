@@ -101,9 +101,12 @@ class StateListAPI(BaseListView):
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = StateType  # Needed by attribute filter mixin
 
+    def get_queryset(self):
+        return get_annotation_queryset(self.params["project"], self.params, "state")
+
     def _get(self, params):
         t0 = datetime.datetime.now()
-        qs = get_annotation_queryset(self.kwargs["project"], params, "state")
+        qs = self.get_queryset()
         response_data = list(qs.values(*STATE_PROPERTIES))
 
         t1 = datetime.datetime.now()
@@ -337,7 +340,7 @@ class StateListAPI(BaseListView):
         return {"message": f"Successfully created {len(ids)} states!", "id": ids}
 
     def _delete(self, params):
-        qs = get_annotation_queryset(params["project"], params, "state")
+        qs = self.get_queryset()
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
@@ -372,7 +375,7 @@ class StateListAPI(BaseListView):
         if params.get("ids", []) != [] or params.get("user_elemental_id", None):
             params["show_all_marks"] = 1
             params["in_place"] = 1
-        qs = get_annotation_queryset(params["project"], params, "state")
+        qs = self.get_queryset()
         patched_version = params.pop("new_version", None)
         count = qs.count()
         expected_count = params.get("count")
@@ -744,18 +747,18 @@ class StateDetailAPI(StateDetailBaseAPI):
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_queryset(self):
+        return State.objects.filter(pk=self.params["id"], deleted=False)
+
     def _get(self, params):
-        qs = State.objects.filter(pk=params["id"], deleted=False)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = State.objects.filter(pk=params["id"], deleted=False)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = State.objects.filter(pk=params["id"], deleted=False)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())
 
 
 class StateDetailByElementalIdAPI(StateDetailBaseAPI):
@@ -772,7 +775,8 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
-    def calculate_queryset(self, params):
+    def get_queryset(self):
+        params = self.params
         include_deleted = False
         if params.get("prune", None) == 1:
             include_deleted = True
@@ -790,14 +794,11 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
         return qs
 
     def _get(self, params):
-        qs = self.calculate_queryset(params)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = self.calculate_queryset(params)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = self.calculate_queryset(params)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())

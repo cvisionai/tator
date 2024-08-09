@@ -58,9 +58,12 @@ class LocalizationListAPI(BaseListView):
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = LocalizationType  # Needed by attribute filter mixin
 
+    def get_queryset(self):
+        return get_annotation_queryset(self.params["project"], self.params, "localization")
+
     def _get(self, params):
         logger.info("PARAMS=%s", params)
-        qs = get_annotation_queryset(self.kwargs["project"], params, "localization")
+        qs = self.get_queryset()
         response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
 
         # Adjust fields for csv output.
@@ -218,7 +221,7 @@ class LocalizationListAPI(BaseListView):
         return {"message": f"Successfully created {len(ids)} localizations!", "id": ids}
 
     def _delete(self, params):
-        qs = get_annotation_queryset(params["project"], params, "localization")
+        qs = self.get_queryset()
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
@@ -255,7 +258,7 @@ class LocalizationListAPI(BaseListView):
         if params.get("ids", []) != [] or params.get("user_elemental_id", None):
             params["show_all_marks"] = 1
             params["in_place"] = 1
-        qs = get_annotation_queryset(params["project"], params, "localization")
+        qs = self.get_queryset()
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
@@ -512,18 +515,18 @@ class LocalizationDetailAPI(LocalizationDetailBaseAPI):
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_queryset(self):
+        return Localization.objects.filter(pk=self.params["id"], deleted=False)
+
     def _get(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())
 
 
 class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
@@ -539,7 +542,8 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
-    def calculate_queryset(self, params):
+    def get_queryset(self):
+        params = self.params
         include_deleted = False
         if params.get("prune", None) == 1:
             include_deleted = True
@@ -559,14 +563,11 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
         return qs
 
     def _get(self, params):
-        qs = self.calculate_queryset(params)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = self.calculate_queryset(params)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = self.calculate_queryset(params)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())
