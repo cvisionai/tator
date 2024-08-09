@@ -63,8 +63,10 @@ def get_parents_for_model(model):
         return [Section, Version]
     elif model in [Media]:
         return [Section]
-    elif model in [Section, Version, Algorithm, File, Bucket, JobCluster, Leaf]:
+    elif model in [Section, Version, Algorithm, File, Leaf]:
         return [Project]
+    elif model in [Bucket, JobCluster]:
+        return [Organization]
     elif model in [Project, MediaType, LocalizationType, StateType, LeafType, FileType, Membership]:
         # These objects are originators, but logic should work out
         return [Project]
