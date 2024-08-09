@@ -61,14 +61,26 @@ def mask_to_old_permission_string(project_bitmask):
 
 
 def shift_permission(model):
-    if model in [Localization, State]:
+    if model in [
+        Dashboard,
+        Favorite,
+        Bookmark,
+        HostedTemplate,
+        TemporaryFile,
+        ChangeLog,
+        Announcement,
+    ]:
+        return PermissionMask.CHILD_SHIFT * 4
+    elif model in [Localization, State]:
         return PermissionMask.CHILD_SHIFT * 3
-    if model in [Media]:
+    elif model in [Media]:
         return PermissionMask.CHILD_SHIFT * 2
-    elif model in [Section, Version, Algorithm, File, Bookmark]:
+    elif model in [Section, Version, Algorithm, File, Bucket, JobCluster, Leaf]:
         return PermissionMask.CHILD_SHIFT
-    else:
+    elif model in [Project, MediaType, LocalizationType, StateType, LeafType, FileType]:
         return 0
+    else:
+        assert False, f"Unhandled model {model}"
 
 
 def augment_permission(user, qs):
