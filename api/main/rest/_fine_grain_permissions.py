@@ -88,7 +88,9 @@ class ProjectPermissionBase(BasePermission):
 
         if isinstance(request.user, AnonymousUser):
             granted = False
-        else:
+
+        if request.method in ["GET", "HEAD", "PATCH", "DELETE"]:
+            ### GET, HEAD, PATCH, DELETE require permissions on the item itself
             if hasattr(view, "get_queryset") is True:
                 perm_qs = view.get_queryset()
                 logger.info(f"perm_qs: {perm_qs.model}")
@@ -101,7 +103,7 @@ class ProjectPermissionBase(BasePermission):
             else:
                 perm_qs = RowProtection.objects.filter(pk=-1)
 
-            if not perm_qs.exists() and self.mode == "permissive":
+            if not perm_qs.exists() and request.method in ["GET", "HEAD"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
                 ## If we are permissive (reading) we can see if the user has read permissions to the parent
                 ## to avoid a 403, even if the set is empty
@@ -119,6 +121,10 @@ class ProjectPermissionBase(BasePermission):
 
             if perm_qs.exists():
                 granted = True
+        elif request.method in ["POST"]:
+            pass
+        else:
+            assert False, f"Unsupported method={request.method}"
 
         return granted
 

@@ -28,6 +28,7 @@ from main.models import (
     Project,
     Bookmark,
     Membership,
+    PermissionMask,
 )
 
 import logging
@@ -48,11 +49,11 @@ class BitwiseAnd(Lookup):
 
 def shift_permission(model):
     if model in [Localization, State]:
-        return RowProtection.BITS.CHILD_SHIFT * 3
+        return PermissionMask.CHILD_SHIFT * 3
     if model in [Media]:
-        return RowProtection.BITS.CHILD_SHIFT * 2
+        return PermissionMask.CHILD_SHIFT * 2
     elif model in [Section, Version, Algorithm, File, Bookmark]:
-        return RowProtection.BITS.CHILD_SHIFT
+        return PermissionMask.CHILD_SHIFT
     else:
         return 0
 
@@ -270,11 +271,11 @@ def augment_permission(user, qs):
         )
 
         section_perm_dict = {
-            entry["section"]: (entry["calc_perm"] >> (RowProtection.BITS.CHILD_SHIFT * 2))
+            entry["section"]: (entry["calc_perm"] >> (PermissionMask.CHILD_SHIFT * 2))
             for entry in section_rp.values("section", "calc_perm")
         }
         version_perm_dict = {
-            entry["version"]: (entry["calc_perm"] >> RowProtection.BITS.CHILD_SHIFT)
+            entry["version"]: (entry["calc_perm"] >> PermissionMask.CHILD_SHIFT)
             for entry in version_rp.values("version", "calc_perm")
         }
 

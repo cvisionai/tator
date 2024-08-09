@@ -2424,6 +2424,8 @@ class PermissionMask:
     # Old full control lets one delete and write the project
     OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE
 
+    CHILD_SHIFT = 8
+
 
 class RowProtection(Model):
     """
