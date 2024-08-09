@@ -236,7 +236,7 @@ def augment_permission(user, qs):
             calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
         )
         section_perm_dict = {
-            entry["section"]: (entry["calc_perm"] >> RowProtection.BITS.CHILD_SHIFT)
+            entry["section"]: (entry["calc_perm"] >> PermissionMask.CHILD_SHIFT)
             for entry in section_rp.values("section", "calc_perm")
         }
         section_cases = [
