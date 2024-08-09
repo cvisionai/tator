@@ -17,6 +17,20 @@ from .._permission_util import augment_permission, shift_permission, BitAnd
 
 logger = logging.getLogger(__name__)
 
+
+def _for_schema_view(request, view):
+    """Returns true if permission is being requested for the schema view. This is
+    necessary since there is no way to check project based permissions when
+    no URL parameters are given.
+    """
+    return (
+        view.kwargs == {}
+        and isinstance(request.authenticators[0], SessionAuthentication)
+        and request.META["HTTP_HOST"] in settings.ALLOWED_HOSTS
+        and request.META["RAW_URI"].startswith("/schema/")
+    )
+
+
 ### With fine-grained permissions enabled, we use the existance of permissions to determine access.
 ### a nuance is a given queryset (say all media) may be partially viewable to the user. This should be
 ### handled by the view itself.
