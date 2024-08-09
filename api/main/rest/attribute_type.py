@@ -285,5 +285,5 @@ class AttributeTypeListAPI(BaseListView):
     def get_queryset(self):
         params = parse(self.request)
         models = self._get_models(params["entity_type"])
-        queryset = models[0].objects.filter(pk=params["id"])
-        return queryset
+        qs = models[0].objects.filter(pk=params["id"])
+        return self.filter_only_viewables(qs)

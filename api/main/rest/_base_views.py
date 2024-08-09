@@ -15,6 +15,7 @@ from ..schema import parse
 
 from ..rest import _base_views
 from ._util import format_multiline
+from .._permission_util import augment_permission
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,7 @@ class TatorAPIView(APIView):
         self.check_permissions(request)
 
     def get_parent_objects():
+        # Default to project as parents as that is usually the case
         model = self.get_queryset().model
         parents = get_parents_for_model(model)
         parent_set = []
@@ -77,6 +79,14 @@ class TatorAPIView(APIView):
             if parent_model == Project:
                 parent_set.append(Project.objects.get(pk=self.params["project"]))
         return parent_set
+
+    def filter_only_viewables(self, qs):
+        # Convenience function for filtering out objects for most views
+        if os.getenv("TATOR_FINE_GRAINED_PERMISSIONS", None) == True:
+            qs = augment_permission(self.request.user, qs)
+            return qs.filter(effective_permission__gte=0)
+        else:
+            return qs
 
 
 class GetMixin:

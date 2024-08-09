@@ -58,7 +58,7 @@ class AlgorithmListAPI(BaseListView):
         """Returns a queryset of algorithms related with the current request's project"""
         params = parse(self.request)
         qs = Algorithm.objects.filter(project__id=params["project"])
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _post(self, params: dict) -> dict:
         """Registers a new algorithm argo workflow using the provided parameters

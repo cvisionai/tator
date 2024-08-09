@@ -48,7 +48,7 @@ class AppletListAPI(BaseListView):
 
     def get_queryset(self) -> dict:
         qs = Dashboard.objects.filter(project__id=self.params["project"])
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _post(self, params: dict) -> dict:
         # Does the project ID exist?

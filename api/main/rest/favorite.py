@@ -41,7 +41,7 @@ class FavoriteListAPI(BaseListView):
     def get_queryset(self):
         """Returns a queryset of favorites related with the current request's project"""
         qs = Favorite.objects.filter(project__id=self.params["project"], user=self.request.user)
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _post(self, params: dict) -> dict:
         """Saves a new favorite."""
