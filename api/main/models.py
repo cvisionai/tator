@@ -2467,7 +2467,9 @@ class RowProtection(Model):
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
 
     # This is a pointer to the organization the permissions are describing
-    target_organization = ForeignKey(Organization, on_delete=CASCADE, null=True, blank=True)
+    target_organization = ForeignKey(
+        Organization, on_delete=CASCADE, null=True, blank=True, related_name="target_organization"
+    )
 
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
