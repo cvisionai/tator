@@ -141,6 +141,13 @@ def augment_permission(user, qs):
     else:
         return qs
 
+    if qs.query.low_mark != 0 or qs.query.high_mark is not None:
+        # This is a slice, we need to get the full queryset to annotate + filter
+        qs = model.objects.filter(pk__in=qs.values("pk"))
+        qs = qs.alias(
+            project_permission=Value(project_permission >> bit_shift),
+        )
+
     if model in [Bookmark]:
         qs = qs.annotate(effective_permission=F("project_permission"))
     elif model in [Membership]:
@@ -260,7 +267,7 @@ def augment_permission(user, qs):
     elif model in [Media]:
         # For these models, we can use the section+project to determine permissions
         #
-        effected_sections = qs.values("primary_section__pk").distinct()
+        effected_sections = qs.values("primary_section__pk")
 
         section_rp = RowProtection.objects.filter(section__in=effected_sections).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
@@ -295,13 +302,13 @@ def augment_permission(user, qs):
             qs = qs.annotate(section=sb)
 
         # Calculate a dictionary for permissions by section and version in this set
-        effected_media = qs.values("media__pk").distinct()
+        effected_media = qs.values("media__pk")
         effected_sections = (
             Section.objects.filter(project=project, media__in=effected_media)
             .values("pk")
             .distinct()
         )
-        effected_versions = qs.values("version__pk").distinct()
+        effected_versions = qs.values("version__pk")
 
         section_rp = RowProtection.objects.filter(section__in=effected_sections).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
