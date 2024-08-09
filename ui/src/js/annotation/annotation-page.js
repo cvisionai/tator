@@ -13,8 +13,14 @@ export class AnnotationPage extends TatorPage {
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
     this._loading.setAttribute("src", TatorLoading);
+    this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
+
+    this._modalDimmer = document.createElement("div");
+    this._modalDimmer.setAttribute("class", "background-dimmer");
+    this._modalDimmer.style.zIndex = 101;
+    this._shadow.appendChild(this._modalDimmer);
 
     document.body.setAttribute("class", "no-padding-bottom");
 
@@ -799,11 +805,15 @@ export class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", (evt) => {
+      this._loading.style.display = "block";
+      this._modalDimmer.classList.add("has-open-modal");
       this._data
         .setVersion(evt.detail.version, evt.detail.viewables)
         .then(() => {
           this._settings.setAttribute("version", evt.detail.version.id);
           this._canvas.refresh();
+          this._loading.style.display = "none";
+          this._modalDimmer.classList.remove("has-open-modal");
         });
       this._browser.version = evt.detail.version;
       this._versionButton.text = evt.detail.version.name;
