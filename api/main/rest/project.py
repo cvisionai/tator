@@ -19,6 +19,7 @@ from ..models import Bucket
 from ..models import database_qs
 from ..models import safe_delete
 from ..models import PermissionMask
+from ..models import User
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
 from ..store import get_tator_store
@@ -26,7 +27,7 @@ from ..store import get_tator_store
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
-from .._permission_util import augment_permission, BitAnd
+from .._permission_util import augment_permission, BitAnd, mask_to_old_permission_string
 
 import os
 
@@ -38,11 +39,19 @@ def _serialize_projects(projects, user_id):
     ttl = 28800
     project_data = database_qs(projects)
     stores = {None: get_tator_store(None, connect_timeout=1, read_timeout=1, max_attempts=1)}
+    if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
+        projects = augment_permission(User.objects.get(pk=user_id), projects)
+
     for idx, project in enumerate(projects):
-        if project.creator.pk == user_id:
-            project_data[idx]["permission"] = "Creator"
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
+            project_bitmask = project.effective_permission & 0xFF
+            old_permission = mask_to_old_permission_string(project_bitmask)
+            project_data[idx]["permission"] = old_permission
         else:
-            project_data[idx]["permission"] = str(project.user_permission(user_id))
+            if project.creator.pk == user_id:
+                project_data[idx]["permission"] = "Creator"
+            else:
+                project_data[idx]["permission"] = str(project.user_permission(user_id))
         del project_data[idx]["attribute_type_uuids"]
         thumb = ""  # TODO put default value here
         thumb_path = project_data[idx]["thumb"]

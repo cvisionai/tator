@@ -44,6 +44,22 @@ class BitAnd(Func):
         super().__init__(expression, bitmask=bitmask, **extra)
 
 
+def mask_to_old_permission_string(project_bitmask):
+    string_val = "None"
+    if project_bitmask == PermissionMask.FULL_CONTROL:
+        string_val = "Full Control"
+    elif project_bitmask & PermissionMask.EXECUTE:
+        string_val = "Can Execute"
+    elif project_bitmask & PermissionMask.UPLOAD:
+        string_val = "Can Transfer"
+    elif project_bitmask & (PermissionMask.CREATE | PermissionMask.MODIFY):
+        string_val = "Can Edit"
+    elif project_bitmask & PermissionMask.READ:
+        string_val = "View Only"
+
+    return string_val
+
+
 def shift_permission(model):
     if model in [Localization, State]:
         return PermissionMask.CHILD_SHIFT * 3
