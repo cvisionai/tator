@@ -126,7 +126,7 @@ class ProjectPermissionBase(BasePermission):
                     )
                 )
                 perm_qs = proj_perm_qs.filter(
-                    granted__eq=(self.required_mask << shift_permission(model, Project))
+                    granted__exact=(self.required_mask << shift_permission(model, Project))
                 )
 
                 if perm_qs.exists():

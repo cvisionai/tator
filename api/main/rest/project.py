@@ -101,7 +101,7 @@ def get_projects_for_user(user):
                 F("effective_permission"), PermissionMask.EXIST | PermissionMask.READ
             ),
         )
-        projects = all_projects.filter(granted__eq=(PermissionMask.EXIST | PermissionMask.READ))
+        projects = all_projects.filter(granted__exact=(PermissionMask.EXIST | PermissionMask.READ))
     else:
         projects = Project.objects.filter(membership__user=user)
     return projects
