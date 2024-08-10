@@ -99,7 +99,6 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
 
         alt_format_start = time.time()
         # Add a png for compatibility purposes in case of HEIF or AVIF import.
-        # always make AVIF
         if reference_only is False:
             if needed_rotate or not image_format in ["PNG", "JPEG"]:
                 logging.info(f"{image_format} is rotated or not PNG or JPEG, converting to PNG")
@@ -112,13 +111,8 @@ def _import_image(name, url, thumbnail_url, media_id, reference_only):
                 alt_formats.append(image_format.lower())
             png_end = time.time()
 
-            alt_image = tempfile.NamedTemporaryFile(delete=False, suffix=".avif")
-            image.save(alt_image, format="avif", quality=100)
-            alt_images.append(alt_image)
-            alt_formats.append("avif")
-            avif_end = time.time()
             logger.info(
-                f"Alt format generation took {time.time() - alt_format_start} seconds png={png_end-alt_format_start} avif={avif_end-png_end}"
+                f"Alt format generation took {time.time() - alt_format_start} seconds png={png_end-alt_format_start}"
             )
 
         # Download or create the thumbnail.
