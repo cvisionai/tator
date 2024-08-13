@@ -114,7 +114,7 @@ localization_get_properties = {
     },
     "thumbnail_image": {
         "type": "string",
-        "description": "URL of thumbnail corresponding to this localization.",
+        "description": "URL of thumbnail corresponding to this localization. (Deprecated)",
     },
     "version": {
         "type": "integer",
