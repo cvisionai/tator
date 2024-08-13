@@ -282,10 +282,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     elif stop is not None:
         qs = qs[:stop]
 
-    # Useful for profiling / checking out query complexity
-    logger.info(f"QUERY={format_multiline(qs.query)}")
-    logger.info(f"EXPLAIN={format_multiline(qs.explain())}")
-
     return qs
 
 

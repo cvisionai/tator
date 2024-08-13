@@ -383,7 +383,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             y = params.get("y", None)
             height = params.get("height", None)
             width = params.get("width", None)
-            thumbnail_image = params.get("thumbnail_image", None)
+
             if x is not None:
                 obj.x = x
             if y is not None:
@@ -397,13 +397,6 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             if (x or y or height or width) and obj.thumbnail_image:
                 obj.thumbnail_image.delete()
 
-            if thumbnail_image:
-                try:
-                    thumbnail_obj = Media.objects.get(pk=thumbnail_image)
-                except Media.DoesNotExist:
-                    logger.error("Bad thumbnail reference given")
-                else:
-                    obj.thumbnail_image = thumbnail_obj
         elif obj.type.dtype == "line":
             x = params.get("x", None)
             y = params.get("y", None)

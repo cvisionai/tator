@@ -109,7 +109,6 @@ class LeafSuggestionAPI(BaseDetailView):
             return elem["group"]
 
         suggestions.sort(key=functor)
-        logger.info(format_multiline(queryset.explain()))
         return suggestions
 
 
