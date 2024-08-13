@@ -802,11 +802,6 @@ class MediaDetailAPI(BaseDetailView):
                     )
 
         obj = Media.objects.get(pk=params["id"], deleted=False)
-        if "attributes" in params:
-            if obj.type.dtype == "image":
-                for localization in obj.localization_thumbnail_image.all():
-                    localization = patch_attributes(new_attrs, localization)
-                    localization.save()
 
         log_changes(obj, model_dict, obj.project, self.request.user)
         return {"message": f'Media {params["id"]} successfully updated!'}
