@@ -269,7 +269,6 @@ def _get_media_psql_queryset(project, filter_ops, params):
         qs = qs[start:]
 
     logger.info(format_multiline(qs.query))
-    logger.info(format_multiline(qs.explain()))
 
     return qs
 

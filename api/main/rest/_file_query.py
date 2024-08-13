@@ -99,7 +99,6 @@ def _get_file_psql_queryset(project, filter_ops, params):
         qs = qs[:stop]
 
     logger.info(format_multiline(qs.query))
-    logger.info(format_multiline(qs.explain()))
 
     return qs
 
