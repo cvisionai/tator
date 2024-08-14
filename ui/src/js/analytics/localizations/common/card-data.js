@@ -188,12 +188,7 @@ export class AnnotationCardData extends HTMLElement {
       }
     }
 
-    // #TODO change this to the put command to get the object list
-    //       this potentially could move to a separate async pathway
-    for (let idx = 0; idx < mediaList.length; idx++) {
-      mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
-    }
-    var medias = await Promise.all(mediaPromises);
+    var medias = await this._modelData.getMediaListByIds(mediaList);
 
     // Now gather all the card information
     await this._getCardList(localizations, medias);
