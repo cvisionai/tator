@@ -353,6 +353,11 @@ urlpatterns += [
         ProjectDetailAPI.as_view(),
     ),
     path(
+        "rest/RoiGraphic",
+        RoiGraphicAPI.as_view(),
+        name="RoiGraphic",
+    ),
+    path(
         "rest/SaveGenericFile/<int:project>",
         SaveGenericFileAPI.as_view(),
         name="SaveGenericFile",

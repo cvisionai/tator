@@ -70,6 +70,7 @@ from .password_reset import PasswordResetListAPI
 from .permalink import PermalinkAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
+from .roi_graphic import RoiGraphicAPI
 from .save_generic_file import SaveGenericFileAPI
 from .section import SectionListAPI
 from .section import SectionDetailAPI

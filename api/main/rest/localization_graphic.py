@@ -18,7 +18,6 @@ from ..schema import parse
 from ._base_views import BaseDetailView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
-from .temporary_file import TemporaryFileDetailAPI
 
 logger = logging.getLogger(__name__)
 

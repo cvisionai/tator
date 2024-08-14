@@ -73,6 +73,7 @@ from .password_reset import PasswordResetListSchema
 from .permalink import PermalinkSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
+from .roi_graphic import RoiGraphicSchema
 from .save_generic_file import SaveGenericFileSchema
 from .section import SectionListSchema
 from .section import SectionDetailSchema
