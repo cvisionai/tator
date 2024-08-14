@@ -39,7 +39,7 @@ class RoiGraphicAPI(APIView):
             status=status_obj,
         )
 
-    def put(self, request, format=None, **kwargs):
+    def get(self, request, format=None, **kwargs):
         # By reaching here, it's expected that the graphics mode is to create a new
         # thumbnail using the provided parameters. That new thumbnail is returned
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -31,7 +31,7 @@ class RoiGraphicSchema(AutoSchema):
                 {
                     "name": "x",
                     "in": "query",
-                    "required": False,
+                    "required": True,
                     "description": f"Normalized x coordinate of top left of ROI.",
                     "schema": {
                         "type": "number",
@@ -42,7 +42,7 @@ class RoiGraphicSchema(AutoSchema):
                 {
                     "name": "y",
                     "in": "query",
-                    "required": False,
+                    "required": True,
                     "description": f"Normalized y coordinate of top left of ROI.",
                     "schema": {
                         "type": "number",
@@ -53,7 +53,7 @@ class RoiGraphicSchema(AutoSchema):
                 {
                     "name": "width",
                     "in": "query",
-                    "required": False,
+                    "required": True,
                     "description": f"Normalized width of ROI.",
                     "schema": {
                         "type": "number",
@@ -64,7 +64,7 @@ class RoiGraphicSchema(AutoSchema):
                 {
                     "name": "height",
                     "in": "query",
-                    "required": False,
+                    "required": True,
                     "description": f"Normalized height of ROI.",
                     "schema": {
                         "type": "number",
@@ -73,9 +73,19 @@ class RoiGraphicSchema(AutoSchema):
                     },
                 },
                 {
-                    "name": "encoded_media",
+                    "name": "frame",
                     "in": "query",
                     "required": False,
+                    "description": f"Frame number (if the media is a video).",
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 0,
+                    },
+                },
+                {
+                    "name": "encoded_media",
+                    "in": "query",
+                    "required": True,
                     "description": f"Base64 encoded JSON string representing a `Media` object.",
                     "schema": {
                         "type": "string",
