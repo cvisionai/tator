@@ -137,6 +137,7 @@ export class AnalyticsPage extends TatorPage {
     await this.cardData.init(this._modelData);
 
     this.cardData.addEventListener("setCardImage", (evt) => {
+      console.log(`Got card image event for ${evt.detail.id}!`);
       this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
     });
 
