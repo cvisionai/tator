@@ -369,12 +369,11 @@ export class TatorData {
   async getMediaListByIds(mediaIds) {
     var response = await fetchCredentials(`/rest/Medias/${this._project}`, {
       method: "PUT",
-      body: JSON.stringify({ids: mediaIds})
-    })
+      body: JSON.stringify({ ids: mediaIds }),
+    });
     const data = await response.json();
     return data;
   }
-
 
   /**
    * Converts the given attribute name to a Tator search compliant string
