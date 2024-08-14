@@ -364,6 +364,19 @@ export class TatorData {
   }
 
   /**
+   * Returns a list of Media using IDs
+   */
+  async getMediaListByIds(mediaIds) {
+    var response = await fetchCredentials(`/rest/Medias/${this._project}`, {
+      method: "PUT",
+      body: JSON.stringify({ids: mediaIds})
+    })
+    const data = await response.json();
+    return data;
+  }
+
+
+  /**
    * Converts the given attribute name to a Tator search compliant string
    * @param {*} attrName - Name of attribute to convert
    * @returns {string} - Tator search compliant attribute name
