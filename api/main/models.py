@@ -74,6 +74,8 @@ import uuid
 
 import pgtrigger
 
+from .middleware import get_http_method
+
 # Load the main.view logger
 logger = logging.getLogger(__name__)
 
@@ -117,10 +119,14 @@ RETURN NEW;
 # Register prepared statements for the triggers to optimize performance on creation of a database  connection
 @receiver(connection_created)
 def on_connection_created(sender, connection, **kwargs):
-    # These prepared statements get reused for each row in a bulk insert, greatly improving performance
-    cursor = connection.cursor()
-
-    create_prepared_statements(cursor)
+    http_method = get_http_method()
+    if http_method in ["PATCH", "POST"]:
+        logger.info(
+            f"{http_method} detected, creating prepared statements."
+        )  # useful for testing purposes
+        # These prepared statements get reused for each row in a bulk insert, greatly improving performance
+        cursor = connection.cursor()
+        create_prepared_statements(cursor)
 
 
 def create_prepared_statements(cursor):
