@@ -393,6 +393,7 @@ class MediaListAPI(BaseListView):
             self.permission_classes = [ProjectTransferPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def get_queryset(self):
@@ -630,9 +631,21 @@ class MediaDetailAPI(BaseDetailView):
     """
 
     schema = MediaDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE"]:
+            self.permission_classes = [ProjectEditPermission]
+        elif self.request.method == "POST":
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Retrieve individual media.
