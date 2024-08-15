@@ -32,10 +32,9 @@ from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager
 from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.expressions import ArraySubquery
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
-from django.db.models import JSONField, Lookup, IntegerField, Case, When
+from django.db.models import JSONField
 from django.db.models import FloatField, Transform, UUIDField
 from django.db.models.signals import m2m_changed, pre_delete, pre_save, post_delete, post_save
 from django.dispatch import receiver
@@ -47,19 +46,7 @@ from django_ltree.fields import PathField
 from django.db import transaction, connection
 from django.db.backends.signals import connection_created
 from django.dispatch import receiver
-from django.db.models import (
-    UniqueConstraint,
-    FilteredRelation,
-    Q,
-    F,
-    Value,
-    Subquery,
-    Func,
-    OuterRef,
-    Window,
-)
-from django.contrib.postgres.aggregates import BitOr
-from django.db.models.functions import Coalesce, Cast
+from django.db.models import UniqueConstraint
 
 from .backup import TatorBackupManager
 from .search import TatorSearch
@@ -86,7 +73,6 @@ import shutil
 import uuid
 
 import pgtrigger
-from types import SimpleNamespace
 
 from .middleware import get_http_method
 
@@ -2468,6 +2454,7 @@ class RowProtection(Model):
     created_by = ForeignKey(
         User, on_delete=SET_NULL, null=True, blank=True, related_name="rp_created_by"
     )
+
     # Pointer to protected row element, one of the following should be non-null.
     # Note: Currently type objects are protected by project membership status
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)

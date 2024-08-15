@@ -7,6 +7,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
+from django.db.models import F
 from django.http import Http404
 from django.conf import settings
 
