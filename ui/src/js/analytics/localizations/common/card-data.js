@@ -77,7 +77,7 @@ export class AnnotationCardData extends HTMLElement {
    * @returns {Promise}
    */
   _getCardList(localizations, medias) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       let counter = localizations.length;
       var haveCardShells = function () {
         if (counter <= 0) {
@@ -138,18 +138,29 @@ export class AnnotationCardData extends HTMLElement {
         this.cardList.cards.push(card);
         counter--;
         haveCardShells();
+      }
 
-        this._modelData.getLocalizationGraphic(l.id).then((image) => {
-          this.dispatchEvent(
-            new CustomEvent("setCardImage", {
-              composed: true,
-              detail: {
-                id: l.id,
-                image: image,
-              },
-            })
-          );
-        });
+      let promiseBatch = [];
+      for (let [i, l] of localizations.entries()) {
+        promiseBatch.push(
+          this._modelData.getLocalizationGraphic(l.id).then((image) => {
+            console.log(`Dispatching image event for localization ${l.id}!`);
+            this.dispatchEvent(
+              new CustomEvent("setCardImage", {
+                composed: true,
+                detail: {
+                  id: l.id,
+                  image: image,
+                },
+              })
+            );
+          })
+        );
+        // Only fetch five graphics at a time
+        if (promiseBatch.length % 5 == 0) {
+          console.log(`Waiting for ${promiseBatch.length} images to load...`);
+          await Promise.all(promiseBatch);
+        }
       }
     });
   }
@@ -188,12 +199,7 @@ export class AnnotationCardData extends HTMLElement {
       }
     }
 
-    // #TODO change this to the put command to get the object list
-    //       this potentially could move to a separate async pathway
-    for (let idx = 0; idx < mediaList.length; idx++) {
-      mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
-    }
-    var medias = await Promise.all(mediaPromises);
+    var medias = await this._modelData.getMediaListByIds(mediaList);
 
     // Now gather all the card information
     await this._getCardList(localizations, medias);
