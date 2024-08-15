@@ -3676,6 +3676,7 @@ class LeafTestCase(
         ]
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {"name": "leaf1"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         project = self.entity_type.project.id
@@ -3718,6 +3719,7 @@ class LeafTypeTestCase(
         }
         self.patch_json = {"name": "leaf asdf"}
         self.edit_permission = Permission.FULL_CONTROL
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class StateTypeTestCase(

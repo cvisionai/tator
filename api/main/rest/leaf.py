@@ -32,7 +32,7 @@ from ._util import (
     log_changes,
     format_multiline,
 )
-from ._permissions import ProjectViewOnlyPermission
+from ._permissions import ProjectViewOnlyPermission, ProjectEditPermission
 from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
@@ -120,14 +120,29 @@ class LeafListAPI(BaseListView):
     """
 
     schema = LeafListSchema()
-    permission_classes = [ProjectFullControlPermission]
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = LeafType  # Needed by attribute filter mixin
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         qs = get_leaf_queryset(params["project"], params)
         response_data = list(qs.values(*LEAF_PROPERTIES))
         return response_data
+
+    def get_queryset(self):
+        """Returns a queryset of bookmarks related with the current request's project"""
+        qs = Leaf.objects.filter(project__id=self.params["project"])
+        return self.filter_only_viewables(qs)
 
     @staticmethod
     def _leaf_obj_generator(project, leaf_specs, attr_specs, metas, user):
@@ -246,8 +261,18 @@ class LeafDetailAPI(BaseDetailView):
     """
 
     schema = LeafDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         qs = Leaf.objects.filter(pk=params["id"], deleted=False)
@@ -332,7 +357,7 @@ class LeafDetailAPI(BaseDetailView):
         return new_array
 
     def get_queryset(self):
-        return Leaf.objects.all()
+        return Leaf.objects.filter(pk=self.params["id"], deleted=False)
 
     def _update_children_newparent(self, children, grandparent, newparent):
         if children and len(children) > 0:
