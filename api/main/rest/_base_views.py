@@ -16,8 +16,11 @@ from ..schema import parse
 from ..rest import _base_views
 from ._util import format_multiline
 from .._permission_util import augment_permission
+from ._permissions import *
+from main.models import *
 
 logger = logging.getLogger(__name__)
+
 
 import os
 
@@ -87,6 +90,31 @@ class TatorAPIView(APIView):
             return qs.filter(effective_permission__gte=0)
         else:
             return qs
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        model = self.get_queryset().model
+        if model in [Media]:
+            if self.request.method == "POST":
+                self.permission_classes = [ProjectTransferPermission]
+            elif self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+                self.permission_classes = [ProjectViewOnlyPermission]
+            elif self.request.method in ["PATCH", "DELETE"]:
+                self.permission_classes = [ProjectEditPermission]
+            else:
+                raise ValueError(f"Unsupported method {self.request.method}")
+        elif model in [State, Localization]:
+            """Require transfer permissions for POST, edit otherwise."""
+            if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+                self.permission_classes = [ProjectViewOnlyPermission]
+            elif self.request.method in ["PATCH", "DELETE", "POST"]:
+                self.permission_classes = [ProjectEditPermission]
+            else:
+                raise ValueError(f"Unsupported method {self.request.method}")
+        else:
+            # Todo is there a default?
+            raise ValueError(f"Unsupported model {model}")
+        return super().get_permissions()
 
 
 class GetMixin:
