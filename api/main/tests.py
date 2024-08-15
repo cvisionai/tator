@@ -928,6 +928,9 @@ class PermissionDetailTestMixin:
 
 class PermissionListMembershipTestMixin:
     def test_list_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            rp.delete()
         self.membership.delete()
         url = f"/rest/{self.list_uri}/{self.project.pk}"
         if hasattr(self, "entity_type"):
@@ -935,8 +938,15 @@ class PermissionListMembershipTestMixin:
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.membership.save()
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_list_is_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            old_perm = rp.permission
+            rp.permission = PermissionMask.OLD_READ
+            rp.save()
+
         self.membership.permission = Permission.VIEW_ONLY
         self.membership.save()
         url = f"/rest/{self.list_uri}/{self.project.pk}"
@@ -946,10 +956,16 @@ class PermissionListMembershipTestMixin:
         assertResponse(self, response, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.permission = old_perm
+            rp.save()
 
 
 class PermissionDetailMembershipTestMixin:
     def test_detail_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            rp.delete()
         self.membership.delete()
         url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
         if hasattr(self, "entity_type"):
@@ -957,8 +973,15 @@ class PermissionDetailMembershipTestMixin:
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.membership.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.save()
 
     def test_detail_is_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            old_perm = rp.permission
+            rp.permission = PermissionMask.OLD_READ
+            rp.save()
         self.membership.permission = Permission.VIEW_ONLY
         self.membership.save()
         url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
@@ -968,6 +991,9 @@ class PermissionDetailMembershipTestMixin:
         assertResponse(self, response, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.permission = old_perm
+            rp.save()
 
 
 class PermissionListAffiliationTestMixin:
@@ -1227,7 +1253,6 @@ class AttributeTestMixin:
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
-            print(f"Setting Bool Test to {test_val}")
             response = self.client.patch(
                 f"/rest/{self.detail_uri}/{pk}",
                 {"attributes": {"Bool Test": test_val}},
@@ -2182,6 +2207,7 @@ class VideoTestCase(
         )
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "video1", "last_edit_start": "2017-07-21T17:32:28Z"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_search(self):
         box_type = LocalizationType.objects.create(
