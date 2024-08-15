@@ -52,7 +52,11 @@ from ._util import (
 from ._base_views import BaseListView, BaseDetailView
 from ._media_query import get_media_queryset
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
-from ._permissions import ProjectEditPermission, ProjectTransferPermission
+from ._permissions import (
+    ProjectEditPermission,
+    ProjectTransferPermission,
+    ProjectViewOnlyPermission,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -378,6 +382,18 @@ class MediaListAPI(BaseListView):
     schema = MediaListSchema()
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = MediaType  # Needed by attribute filter mixin
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE"]:
+            self.permission_classes = [ProjectEditPermission]
+        elif self.request.method == "POST":
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def get_queryset(self):
         return get_media_queryset(self.params["project"], self.params)

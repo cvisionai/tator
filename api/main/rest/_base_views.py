@@ -91,32 +91,6 @@ class TatorAPIView(APIView):
         else:
             return qs
 
-    def get_permissions(self):
-        """Require transfer permissions for POST, edit otherwise."""
-        model = self.get_queryset().model
-        if model in [Media]:
-            if self.request.method == "POST":
-                self.permission_classes = [ProjectTransferPermission]
-            elif self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
-                self.permission_classes = [ProjectViewOnlyPermission]
-            elif self.request.method in ["PATCH", "DELETE"]:
-                self.permission_classes = [ProjectEditPermission]
-            else:
-                raise ValueError(f"Unsupported method {self.request.method}")
-        elif model in [State, Localization]:
-            """Require transfer permissions for POST, edit otherwise."""
-            if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
-                self.permission_classes = [ProjectViewOnlyPermission]
-            elif self.request.method in ["PATCH", "DELETE", "POST"]:
-                self.permission_classes = [ProjectEditPermission]
-            else:
-                raise ValueError(f"Unsupported method {self.request.method}")
-        else:
-            # Todo is there a default?
-            raise ValueError(f"Unsupported model {model}")
-        return super().get_permissions()
-
-
 class GetMixin:
     # pylint: disable=redefined-builtin,unused-argument
     """TODO: add documentation for this"""
