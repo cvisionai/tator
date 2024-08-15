@@ -802,8 +802,6 @@ class PermissionListTestMixin:
         self.membership.save()
 
     def test_list_delete_permissions(self):
-        # Wait for ES
-        time.sleep(1)
         permission_index = permission_levels.index(self.edit_permission)
         for index, level in enumerate(permission_levels):
             self.membership.permission = level
