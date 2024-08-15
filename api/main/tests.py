@@ -822,26 +822,11 @@ class PermissionListTestMixin:
 
 class PermissionDetailTestMixin:
     def test_detail_patch_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            if "name" in self.patch_json:
-                self.patch_json["name"] += f"_{index}"
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
-            )
-            assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
-
-    def test_detail_delete_permissions(self):
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
 
             # iterate over all permission levels and change the underlying row protection object for this project
             # to a given permission level and verify that the delete endpoint respects this
@@ -853,7 +838,57 @@ class PermissionDetailTestMixin:
                 PermissionMask.OLD_EXECUTE,
                 PermissionMask.OLD_FULL_CONTROL,
             ]:
-                rp = RowProtection.objects.get(project=self.project)
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{index}"
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
+
+    def test_detail_delete_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
                 rp.permission = permission
                 rp.save()
                 response = self.client.delete(
@@ -869,6 +904,8 @@ class PermissionDetailTestMixin:
                 # Delete it from the list if we actually deleted it
                 if expected_status == status.HTTP_200_OK:
                     del self.entities[0]
+            rp.permission = orig_permission
+            rp.save()
         else:
             permission_index = permission_levels.index(self.edit_permission)
             for index, level in enumerate(permission_levels):
