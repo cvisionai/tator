@@ -7,7 +7,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
-from django.db.models import F
+from django.db.models import F, BooleanField, Case, When, Value
 from django.http import Http404
 from django.conf import settings
 
@@ -99,20 +99,27 @@ class ProjectPermissionBase(BasePermission):
             perm_qs = augment_permission(request.user, perm_qs)
             model = view.get_queryset().model
 
+            logger.info(
+                f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)}"
+            )
             if perm_qs.exists():
                 # See if any objects in the requested set DON'T have the required permission
-                no_perm_qs = (
-                    perm_qs.alias(
-                        granted=ColBitAnd(
-                            F("effective_permission"),
-                            (self.required_mask),
-                        )
+                perm_qs = perm_qs.alias(
+                    bitand=ColBitAnd(
+                        F("effective_permission"),
+                        (self.required_mask),
                     )
-                    .filter(granted=0)
-                    .exists()
+                ).alias(
+                    granted=Case(
+                        When(bitand__exact=Value(self.required_mask), then=True),
+                        default=False,
+                        output_field=BooleanField(),
+                    )
                 )
-                # If nothing is found, we have permission
-                if not no_perm_qs:
+                # logger.info(f"Query = {perm_qs.values('id', 'bitand', 'effective_permission')}")
+
+                # If nothing is found we don't have permission for in this set, we have permission
+                if not perm_qs.filter(granted=False).exists():
                     granted = True
             if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
