@@ -179,6 +179,7 @@ def augment_permission(user, qs):
         HostedTemplate,
         TemporaryFile,
         ChangeLog,
+        Leaf,
     ]:
         qs = qs.annotate(effective_permission=F("project_permission"))
     elif model in [Membership]:
