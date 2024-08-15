@@ -116,7 +116,9 @@ class ProjectPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
-                # logger.info(f"Query = {perm_qs.values('id', 'bitand', 'effective_permission')}")
+                # logger.info(
+                #    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                # )
 
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
@@ -182,6 +184,7 @@ class ProjectEditPermission(ProjectPermissionBase):
     """Checks whether a user has edit access to a project."""
 
     message = "Insufficient permission to modify this project."
+    # TODO this should be CREATE on POST and MODIFY on PATCH
     required_mask = (
         PermissionMask.EXIST | PermissionMask.READ | PermissionMask.CREATE | PermissionMask.MODIFY
     )
