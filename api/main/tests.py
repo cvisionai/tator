@@ -4250,6 +4250,7 @@ class BookmarkTestCase(
             "name": "New name",
         }
         self.edit_permission = Permission.CAN_EDIT
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class AffiliationTestCase(
