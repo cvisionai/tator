@@ -1202,27 +1202,27 @@ def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.from
             find_bad_marks(potential_states)
 
 
-def memberships_to_rowp(project_id):
-    print("This tool will convert membership objects to row permissions.")
-    print(
-        "It does so in a way that retains all legacy permissions. It may not be the most optimal."
-    )
-    print("Example: Groups can span multiple projects, but this makes 1 group per project.")
-    print("Manual migration of permissions would be preferable in some situations.")
-    print(
-        "This tool will not delete membership objects, but is designed to make them redundant in  terms of  permission level"
-    )
-    print(
-        "This tool will not delete any row permissions; if doing this on migration, confirm you deleted all row protection prior."
-    )
+def memberships_to_rowp(project_id, force=False, verbose=True):
+    if force == False and os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+        return
 
-    if project_id:
+    memberships = Membership.objects.filter(project=project_id)
+    if verbose:
+        print("This tool will convert membership objects to row permissions.")
+        print(
+            "It does so in a way that retains all legacy permissions. It may not be the most optimal."
+        )
+        print("Example: Groups can span multiple projects, but this makes 1 group per project.")
+        print("Manual migration of permissions would be preferable in some situations.")
+        print(
+            "This tool will not delete membership objects, but is designed to make them redundant in  terms of  permission level"
+        )
+        print(
+            "This tool will not delete any row permissions; if doing this on migration, confirm you deleted all row protection prior."
+        )
+
         print(f"Processing memberships for {project_id}")
-        memberships = Membership.objects.filter(project=project_id)
-    else:
-        print("Processing all memberships")
-        memberships = Membership.objects.all()
-    print("There are {len(memberships)} memberships to convert.")
+        print("There are {len(memberships)} memberships to convert.")
 
     """
     class Permission(Enum):
@@ -1236,26 +1236,22 @@ def memberships_to_rowp(project_id):
 
     def group_for_project(project, permission):
         """This subfunction will create a group for a project based on the permission level"""
-        if permission == "a":
-            new_permission = PermissionMask.OLD_FULL_CONTROL
-            permission_name = "Full Control"
-        elif permission == "x":
-            new_permission = PermissionMask.OLD_EXECUTE
-            permission_name = "Can Execute"
-        elif permission in ["t"]:
-            new_permission = PermissionMask.OLD_TRANSFER
-            permission_name = "Can Transfer"
-        elif permission == "w":
-            new_permission = PermissionMask.OLD_EDIT
-            permission_name = "Can Edit"
-        elif permission == "r":
-            new_permission = PermissionMask.OLD_READ
-            permission_name = "Can Read"
-        elif permission == "n":
-            new_permission = 0x0  # None
-            permission_name = "None"
+        permission_str = str(permission)
 
-        group_name = f"{project.name} {permission_name}"
+        compat_map = {
+            "Full Control": PermissionMask.OLD_FULL_CONTROL,
+            "Can Execute": PermissionMask.OLD_EXECUTE,
+            "Can Transfer": PermissionMask.OLD_TRANSFER,
+            "Can Edit": PermissionMask.OLD_WRITE,
+            "View Only": PermissionMask.OLD_READ,
+        }
+
+        if permission_str in compat_map:
+            new_permission = compat_map[permission_str]
+        else:
+            raise Exception(f"Unknown permission {permission_str}")
+
+        group_name = f"{project.name} {permission_str}"
         org_group = Group.objects.filter(organization=project.organization).filter(name=group_name)
         if org_group.exists():
             return org_group.first()
@@ -1264,7 +1260,6 @@ def memberships_to_rowp(project_id):
             rp = RowProtection.objects.create(
                 project=project, group=group, permission=new_permission
             )
-            print(f"Created {group.name}")
             return group
 
     for membership in memberships:
@@ -1276,9 +1271,11 @@ def memberships_to_rowp(project_id):
         # Check if the user is already in the group
         membership = GroupMembership.objects.filter(group=group, user=user)
         if membership.exists():
-            print(f"User {user.username} already in group {group.name}")
+            if verbose:
+                print(f"User {user.username} already in group {group.name}")
         else:
-            print(f"Adding user {user.username} to group {group.name}")
+            if verbose:
+                print(f"Adding user {user.username} to group {group.name}")
             GroupMembership.objects.create(group=group, user=user)
 
 

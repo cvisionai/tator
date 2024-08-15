@@ -29,7 +29,7 @@ from .backup import TatorBackupManager
 from .models import *
 from .search import TatorSearch, ALLOWED_MUTATIONS
 from .store import get_tator_store, PATH_KEYS
-from .util import update_queryset_archive_state
+from .util import update_queryset_archive_state, memberships_to_rowp
 
 from django.db import transaction
 
@@ -2587,6 +2587,7 @@ class ImageTestCase(
         )
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "image1"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationBoxTestCase(
