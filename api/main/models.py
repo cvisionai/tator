@@ -2352,7 +2352,8 @@ class Group(Model):
 class GroupMembership(Model):
     """Associates a user to a group"""
 
-    project = ForeignKey(Project, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    """ Project that the group membership belongs to (DISREGARD THIS FIELD)"""
     user = ForeignKey(User, on_delete=CASCADE)
     group = ForeignKey(Group, on_delete=CASCADE)
     group_admin = BooleanField(default=False)
@@ -2361,7 +2362,89 @@ class GroupMembership(Model):
     """ Descriptive name for the role of this user in the group """
 
 
+class PermissionMask:
+    ## These bits are repeated so the left-byte is for children objects. This allows
+    ## a higher object to store the default permission for children objects by bitshifting by the
+    ## level of abstraction.
+    ## [0:7] Self-level objects (projects, algos, versions)
+    ## [8:15] Children objects (project -> section* -> media -> metadata)
+    ## [16:23] Grandchildren objects (project -> section -> media* -> metadata)
+    ## [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
+    ## If a permission points to a child object, that occupies [0:7]
+    ## Permission objects exist against either projects, algos, versions or sections
+
+    EXIST = 0x1  # Allows a row to be seen in a list, or individual GET
+    READ = 0x2  # Allows a references to be accessed, e.g. generate presigned URLs
+    CREATE = 0x4  # Allows a row to be created (e.g. POST)
+    MODIFY = 0x8  # Allows a row to be PATCHED (but not in-place, includes variant delete)
+    DELETE = 0x10  # Allows a row to be deleted (pruned for metadata)
+    EXECUTE = 0x20  # Allows an algorithm to be executed (applies to project-level or algorithm)
+    UPLOAD = 0x40  # Allows media to be uploaded (applies to project-level only)
+    FULL_CONTROL = 0xFF  # All bits and all future bits are set
+    # Convenience wrappers to original tator permission system
+    OLD_READ = (
+        EXIST
+        | READ
+        | EXIST << 8
+        | READ << 8
+        | EXIST << 16
+        | READ << 16
+        | EXIST << 24
+        | READ << 24
+        | EXIST << 32
+        | READ << 32
+    )
+
+    # Old write was a bit more complicated as it let you modify elements but not the project itself
+    OLD_WRITE = (
+        OLD_READ
+        | CREATE << 8
+        | MODIFY << 8
+        | DELETE << 8
+        | CREATE << 16
+        | MODIFY << 16
+        | DELETE << 16
+        | CREATE << 24
+        | MODIFY << 24
+        | DELETE << 24
+        | MODIFY << 32
+        | DELETE << 32
+        | CREATE << 32
+    )
+    OLD_TRANSFER = OLD_WRITE | UPLOAD << 16
+
+    OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32
+
+    # Old full control lets one delete and write the project
+    OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE
+
+    CHILD_SHIFT = 8
+
+
 class RowProtection(Model):
+    """
+    Row  protection  models cascade in  two dimensions. The first dimension is
+    the type of object being protected. The second dimension is the type of
+    object, or the subject, who is doing the action.
+
+    Permissions are encoded as a bitmask. If multiple permissions apply the most
+    specific applies. Specifically permission masks are NOT OR'd together. Examples:
+
+    A project row permission project grants a user permission to read/write/execute. For
+    a specific algorithm, the user does not have permission to execute. Therefore the can
+    not execute this particular algorithm.
+
+    Similarly, if  a project is set  to be read-only for all organization members; then
+    an override object can be set for a user or group to supply write permissions for certain
+    groups.
+
+    For ease of use of this system, it is recommended to utilize Groups to manage permissions
+    for sets of users.
+
+
+    For Media Requests:
+       - Find permission objects that match media+user
+    """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(
         User, on_delete=SET_NULL, null=True, blank=True, related_name="rp_created_by"
@@ -2378,6 +2461,11 @@ class RowProtection(Model):
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
 
+    # This is a pointer to the organization the permissions are describing
+    target_organization = ForeignKey(
+        Organization, on_delete=CASCADE, null=True, blank=True, related_name="target_organization"
+    )
+
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
     """ Pointer to the user this permission/rule refers to """
@@ -2388,12 +2476,8 @@ class RowProtection(Model):
 
     permission = BigIntegerField(default=0, db_index=True)
     """ Permission bitmask for the row in question
-        0 - Can not see
-        0x1 - Exist
-        0x2 - Read
-        0x4 - Write
-        0x8 - Full control (ability to delete)
-        bits above this are reserved for future use.
+
+        See PermissionMask for definition
     """
 
     class Meta:
