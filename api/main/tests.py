@@ -840,23 +840,53 @@ class PermissionDetailTestMixin:
         self.membership.save()
 
     def test_detail_delete_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp = RowProtection.objects.get(project=self.project)
+                rp.permission = permission
+                rp.save()
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.DELETE == PermissionMask.DELETE:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                assertResponse(self, response, expected_status)
+                # Delete it from the list if we actually deleted it
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                test_val = random.random() > 0.5
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
+            self.membership.permission = Permission.FULL_CONTROL
             self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            test_val = random.random() > 0.5
-            response = self.client.delete(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
-            )
-            assertResponse(self, response, expected_status)
-            if expected_status == status.HTTP_200_OK:
-                del self.entities[0]
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
 
 
 class PermissionListMembershipTestMixin:
@@ -3881,6 +3911,7 @@ class ProjectTestCase(TatorTransactionTest):
             else:
                 expected_status = status.HTTP_403_FORBIDDEN
             test_val = random.random() > 0.5
+            print(f"{level} = {expected_status}")
             response = self.client.delete(
                 f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
             )
