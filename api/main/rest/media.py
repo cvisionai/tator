@@ -382,14 +382,6 @@ class MediaListAPI(BaseListView):
     def get_queryset(self):
         return get_media_queryset(self.params["project"], self.params)
 
-    def get_permissions(self):
-        """Require transfer permissions for POST, edit otherwise."""
-        if self.request.method == "POST":
-            self.permission_classes = [ProjectTransferPermission]
-        else:
-            self.permission_classes = [ProjectEditPermission]
-        return super().get_permissions()
-
     def _get(self, params):
         """Retrieve list of media.
 
