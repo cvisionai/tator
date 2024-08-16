@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 PROJECT_PROPERTIES = list(project_schema.keys())
 PROJECT_PROPERTIES.append("thumb")
+PROJECT_PROPERTIES.append("attribute_types")
 
 
 def _serialize_projects(projects, user_id):
