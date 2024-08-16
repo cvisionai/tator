@@ -44,7 +44,7 @@ from ._util import (
     construct_parent_from_spec,
     compute_user,
 )
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
@@ -97,12 +97,26 @@ class StateListAPI(BaseListView):
     """
 
     schema = StateListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = StateType  # Needed by attribute filter mixin
 
-    def get_queryset(self):
-        return get_annotation_queryset(self.params["project"], self.params, "state")
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, override_params={}):
+        params = {**self.params}
+        params.update(override_params)
+        return self.filter_only_viewables(
+            get_annotation_queryset(self.params["project"], params, "state")
+        )
 
     def _get(self, params):
         t0 = datetime.datetime.now()
@@ -743,12 +757,22 @@ class StateDetailAPI(StateDetailBaseAPI):
     """
 
     schema = StateDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
-    def get_queryset(self):
-        return State.objects.filter(pk=self.params["id"], deleted=False)
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(State.objects.filter(pk=self.params["id"], deleted=False))
 
     def _get(self, params):
         return self.get_qs(params, self.get_queryset())
@@ -771,11 +795,21 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
     """
 
     schema = StateByElementalIdSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
-    def get_queryset(self):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
         params = self.params
         include_deleted = False
         if params.get("prune", None) == 1:

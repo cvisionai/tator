@@ -396,7 +396,7 @@ class MediaListAPI(BaseListView):
         logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return get_media_queryset(self.params["project"], self.params)
 
     def _get(self, params):
@@ -858,5 +858,5 @@ class MediaDetailAPI(BaseDetailView):
 
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return Media.objects.filter(pk=self.params["id"], deleted=False)

@@ -48,7 +48,7 @@ class BookmarkListAPI(BaseListView):
             qs = qs.filter(name__iexact=f"'{name}'")
         return database_qs(qs)
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of bookmarks related with the current request's project"""
         qs = Bookmark.objects.filter(project__id=self.params["project"], user=self.request.user)
         return self.filter_only_viewables(qs)
@@ -104,6 +104,6 @@ class BookmarkDetailAPI(BaseDetailView):
         self.get_queryset().delete()
         return {"message": f"Bookmark with ID {params['id']} deleted successfully!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all bookmarks."""
         return Bookmark.objects.filter(pk=self.params["id"], user=self.request.user)

@@ -139,7 +139,7 @@ class LeafListAPI(BaseListView):
         response_data = list(qs.values(*LEAF_PROPERTIES))
         return response_data
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of bookmarks related with the current request's project"""
         qs = Leaf.objects.filter(project__id=self.params["project"])
         return self.filter_only_viewables(qs)
@@ -356,7 +356,7 @@ class LeafDetailAPI(BaseDetailView):
 
         return new_array
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return Leaf.objects.filter(pk=self.params["id"], deleted=False)
 
     def _update_children_newparent(self, children, grandparent, newparent):
