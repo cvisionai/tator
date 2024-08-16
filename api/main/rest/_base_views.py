@@ -5,7 +5,7 @@ import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
@@ -29,18 +29,18 @@ import os
 
 def process_exception(exc):
     """TODO: add documentation for this"""
-    logger.info("Handling Exception!")
-    logger.info(type(exc))
+    logger.info("Handling Exception!", exc_info=True)
     if isinstance(exc, response.Http404):
         resp = Response({"message": str(exc)}, status=status.HTTP_404_NOT_FOUND)
     elif isinstance(exc, ObjectDoesNotExist):
         logger.error(f"Not found in GET request: {str(exc)}")
         resp = Response({"message": str(exc)}, status=status.HTTP_404_NOT_FOUND)
-    elif isinstance(exc, PermissionDenied):
+    elif type(exc) == PermissionDenied or type(exc) == DrfPermissionDenied:
         logger.error(f"Permission denied error: {str(exc)}")
         resp = Response({"message": str(exc)}, status=status.HTTP_403_FORBIDDEN)
     else:
-        logger.error(format_multiline(traceback.format_exc()))
+        logger.error(f"Unhandled exception: {type(exc)}")
+        logger.error(traceback.format_exc())
         resp = Response(
             {"message": str(exc), "details": str(exc.__cause__)},
             status=status.HTTP_400_BAD_REQUEST,
@@ -71,7 +71,10 @@ class TatorAPIView(APIView):
         self.params = parse(request)
         # Ensure that the incoming request is permitted
 
-        self.check_permissions(request)
+        try:
+            self.check_permissions(request)
+        except DrfPermissionDenied as e:
+            self.permission_denied(request)
 
     def get_parent_objects(self):
         # Default to project as parents as that is usually the case
