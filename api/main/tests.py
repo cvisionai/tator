@@ -2189,6 +2189,7 @@ class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin)
             create_test_algorithm(self.user, f"result{idx}", self.project)
             for idx in range(random.randint(6, 10))
         ]
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class AnonymousAccessTestCase(TatorTransactionTest):
