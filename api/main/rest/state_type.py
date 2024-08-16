@@ -13,7 +13,7 @@ from ..schema import StateTypeDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
@@ -33,6 +33,9 @@ fields = [
     "elemental_id",
 ]
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StateTypeListAPI(BaseListView):
     """Create or retrieve state types.
@@ -42,11 +45,21 @@ class StateTypeListAPI(BaseListView):
     types associated with it.
     """
 
-    permission_classes = [ProjectFullControlPermission]
     schema = StateTypeListSchema()
     http_method_names = ["get", "post"]
 
-    def get_queryset(self):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
         params = self.params
         media_id = params.get("media_id", None)
         if media_id != None:
@@ -135,8 +148,18 @@ class StateTypeDetailAPI(BaseDetailView):
     """
 
     schema = StateTypeDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Retrieve state type.
@@ -210,5 +233,5 @@ class StateTypeDetailAPI(BaseDetailView):
             "message": f"State type {params['id']} (and {count} instances) deleted successfully!"
         }
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return StateType.objects.filter(pk=self.params["id"])
