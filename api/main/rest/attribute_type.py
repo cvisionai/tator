@@ -282,7 +282,7 @@ class AttributeTypeListAPI(BaseListView):
 
         return {"message": f"New attribute type '{new_name}' added"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         params = parse(self.request)
         models = self._get_models(params["entity_type"])
         qs = models[0].objects.filter(pk=params["id"])

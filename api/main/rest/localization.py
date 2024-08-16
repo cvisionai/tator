@@ -11,6 +11,7 @@ from ..models import Membership
 from ..models import User
 from ..models import Project
 from ..models import Version
+from ..models import Section
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema, LocalizationByElementalIdSchema
 from ..schema.components import localization as localization_schema
@@ -345,7 +346,8 @@ class LocalizationListAPI(BaseListView):
             version_ids = set([spec.get("version", None) for spec in specs])
             media_ids = set([spec.get("media_id", None) for spec in specs])
             versions = Version.objects.filter(pk__in=version_ids)
-            sections = Media.objects.filter(pk__in=media_ids).values("primary_section").distinct()
+            primary_sections = Media.objects.filter(pk__in=media_ids).values("primary_section")
+            sections = Section.objects.filter(pk__in=primary_sections)
             return {
                 "project": Project.objects.filter(pk=self.params["project"]),
                 "version": versions,
