@@ -2384,7 +2384,7 @@ class PermissionMask:
     MODIFY = 0x8  # Allows a row to be PATCHED (but not in-place, includes variant delete)
     DELETE = 0x10  # Allows a row to be deleted (pruned for metadata)
     EXECUTE = 0x20  # Allows an algorithm to be executed (applies to project-level or algorithm)
-    UPLOAD = 0x40  # Allows media to be uploaded (applies to project-level only)
+    UPLOAD = 0x40  # Allows media to be uploaded
     FULL_CONTROL = 0xFF  # All bits and all future bits are set
     # Convenience wrappers to original tator permission system
     OLD_READ = (
