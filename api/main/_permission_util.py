@@ -104,7 +104,7 @@ def shift_permission(model, source_model):
         return PermissionMask.CHILD_SHIFT * (3 - shift)
     elif model in [Media]:
         return PermissionMask.CHILD_SHIFT * (2 - shift)
-    elif model in [Section, Version, Algorithm, File, Bucket, JobCluster, Leaf]:
+    elif model in [Section, Version, Algorithm, File, Bucket, JobCluster]:
         return PermissionMask.CHILD_SHIFT * (1 - shift)
     elif model in [
         Project,
@@ -114,6 +114,7 @@ def shift_permission(model, source_model):
         LeafType,
         FileType,
         Membership,
+        Leaf,
     ]:
         return 0 - (shift * 8)  # this will cause an exception if we have a logic error somewhere
     else:
