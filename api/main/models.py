@@ -2418,7 +2418,7 @@ class PermissionMask:
     )
     OLD_TRANSFER = OLD_WRITE | UPLOAD << 16
 
-    OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32
+    OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32 | EXECUTE << 8
 
     # Old full control lets one delete and write the project (plus you need all bits set in lower byte)
     OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE | 0xFF

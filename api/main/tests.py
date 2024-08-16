@@ -4789,6 +4789,7 @@ class ResourceTestCase(TatorTransactionTest):
         wait_for_indices(self.file_entity_type)
         self.store = get_tator_store()
         self.backup_bucket = None
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
@@ -5357,6 +5358,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
             attribute_types=create_test_attribute_types(),
         )
         wait_for_indices(self.file_entity_type)
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class AttributeTestCase(TatorTransactionTest):
@@ -5419,6 +5421,7 @@ class AttributeTestCase(TatorTransactionTest):
             "entity_type": "LocalizationType",
             "name": "Int Test",
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_patch_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)

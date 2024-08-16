@@ -368,12 +368,15 @@ class ClonePermission(ProjectPermissionBase):
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)
 
-        return self._validate_project(request, src_project) and self._validate_project(
-            request, dst_project
+        return self._validate_project(request, src_project, view) and self._validate_project(
+            request, dst_project, view
         )
 
     def has_object_permission(self, request, view, obj):
         return False
+
+    def get_required_mask(self):
+        return PermissionMask.UPLOAD | PermissionMask.CREATE | PermissionMask.MODIFY
 
 
 class OrganizationPermissionBase(BasePermission):
