@@ -96,7 +96,7 @@ class ProjectPermissionBase(BasePermission):
 
         if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
-            perm_qs = view.get_queryset()
+            perm_qs = view.get_queryset(override_params={"show_all_marks": 1})
             perm_qs = augment_permission(request.user, perm_qs)
             model = view.get_queryset().model
 
