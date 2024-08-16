@@ -19,8 +19,10 @@ class LocalizationCountAPI(BaseListView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get", "put"]
 
-    def get_queryset(self):
-        return get_annotation_queryset(self.params["project"], self.params, "localization")
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(
+            get_annotation_queryset(self.params["project"], self.params, "localization")
+        )
 
     def _get(self, params):
         """Retrieve number of media in list of media."""
