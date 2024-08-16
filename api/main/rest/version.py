@@ -17,7 +17,7 @@ from ..schema import VersionDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +33,21 @@ class VersionListAPI(BaseListView):
     """
 
     schema = VersionListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post"]
 
-    def get_queryset(self):
-        return Version.objects.filter(project=self.params["project"])
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Version.objects.filter(project=self.params["project"]))
 
     def _post(self, params):
         name = params["name"]
@@ -90,9 +100,19 @@ class VersionDetailAPI(BaseDetailView):
     """
 
     schema = VersionDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         version = self.get_queryset()[0]
@@ -134,5 +154,5 @@ class VersionDetailAPI(BaseDetailView):
         self.get_queryset()[0].delete()
         return {"message": f'Version {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
-        return Version.objects.filter(pk=self.params["id"])
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Version.objects.filter(pk=self.params["id"]))

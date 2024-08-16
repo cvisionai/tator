@@ -206,7 +206,9 @@ class ProjectListAPI(BaseListView):
         }
 
     def get_queryset(self, **kwargs):
-        projects = get_projects_for_user(self.request.user).order_by("id")
+        projects = self.filter_only_viewables(
+            get_projects_for_user(self.request.user).order_by("id")
+        )
         return projects
 
 

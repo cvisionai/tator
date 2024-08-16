@@ -4043,6 +4043,9 @@ class ProjectTestCase(TatorTransactionTest):
         }
         self.edit_permission = Permission.FULL_CONTROL
 
+        for entity in self.entities:
+            memberships_to_rowp(entity.pk, force=False, verbose=False)
+
     def test_create_no_affiliation(self):
         endpoint = f"/rest/{self.list_uri}"
         self.affiliation.delete()
@@ -4063,40 +4066,105 @@ class ProjectTestCase(TatorTransactionTest):
             assertResponse(self, response, expected_status)
 
     def test_detail_patch_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
-            )
-            assertResponse(self, response, expected_status)
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.entities[0])
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
 
     def test_detail_delete_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            test_val = random.random() > 0.5
-            print(f"{level} = {expected_status}")
-            response = self.client.delete(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
-            )
-            assertResponse(self, response, expected_status)
-            if expected_status == status.HTTP_200_OK:
-                del self.entities[0]
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.entities[0])
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
+            rp.delete()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                test_val = random.random() > 0.5
+                print(f"{level} = {expected_status}")
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
 
     def test_delete_non_creator(self):
         other_user = User.objects.create(
@@ -4180,6 +4248,7 @@ class VersionTestCase(
             "description": "asdf123",
         }
         self.edit_permission = Permission.CAN_EDIT
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
