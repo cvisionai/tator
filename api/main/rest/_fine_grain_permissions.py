@@ -94,6 +94,7 @@ class ProjectPermissionBase(BasePermission):
         if isinstance(request.user, AnonymousUser):
             granted = False
 
+        # TODO: Change these to alias's once kinks are worked out
         if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
             perm_qs = view.get_queryset(override_params={"show_all_marks": 1})
@@ -101,25 +102,26 @@ class ProjectPermissionBase(BasePermission):
             model = view.get_queryset().model
 
             logger.info(
-                f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)}"
+                f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
+            logger.info(f"Query = {perm_qs.query}")
             if perm_qs.exists():
                 # See if any objects in the requested set DON'T have the required permission
-                perm_qs = perm_qs.alias(
+                perm_qs = perm_qs.annotate(
                     bitand=ColBitAnd(
                         F("effective_permission"),
                         (self.required_mask),
                     )
-                ).alias(
+                ).annotate(
                     granted=Case(
                         When(bitand__exact=Value(self.required_mask), then=True),
                         default=False,
                         output_field=BooleanField(),
                     )
                 )
-                # logger.info(
-                #    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                # )
+                logger.info(
+                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                )
 
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
@@ -130,14 +132,26 @@ class ProjectPermissionBase(BasePermission):
                 ## to avoid a 403, even if the set is empty
                 proj_perm_qs = Project.objects.filter(pk=project.pk)
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
-                proj_perm_qs = proj_perm_qs.alias(
-                    granted=ColBitAnd(
+                perm_qs = proj_perm_qs.annotate(
+                    bitand=ColBitAnd(
                         F("effective_permission"),
                         (self.required_mask << shift_permission(model, Project)),
                     )
+                ).annotate(
+                    granted=Case(
+                        When(
+                            bitand__exact=Value(
+                                self.required_mask << shift_permission(model, Project)
+                            ),
+                            then=True,
+                        ),
+                        default=False,
+                        output_field=BooleanField(),
+                    )
                 )
-                perm_qs = proj_perm_qs.filter(
-                    granted__exact=(self.required_mask << shift_permission(model, Project))
+
+                logger.info(
+                    f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                 )
 
                 if perm_qs.exists():
