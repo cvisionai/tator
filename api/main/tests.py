@@ -4354,6 +4354,7 @@ class FavoriteStateTestCase(
         self.patch_json = {
             "name": "New name",
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class FavoriteLocalizationTestCase(
@@ -4400,6 +4401,7 @@ class FavoriteLocalizationTestCase(
         self.patch_json = {
             "name": "New name",
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class BookmarkTestCase(
