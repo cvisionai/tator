@@ -4687,6 +4687,7 @@ class VideoFileTestCase(TatorTransactionTest, FileMixin):
             "codec": "h264",
             "segment_info": self._generate_key(),
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_streaming(self):
         self._test_methods("streaming")
@@ -4745,6 +4746,7 @@ class AuxiliaryFileTestCase(TatorTransactionTest, FileMixin):
         self.detail_uri = "AuxiliaryFile"
         self.create_json = {"path": self._generate_key(), "name": "asdf1"}
         self.patch_json = {"path": self._generate_key(), "name": "asdf"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_attachment(self):
         self._test_methods("attachment")
