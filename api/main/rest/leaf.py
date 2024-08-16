@@ -32,7 +32,7 @@ from ._util import (
     log_changes,
     format_multiline,
 )
-from ._permissions import ProjectViewOnlyPermission, ProjectEditPermission
+from ._permissions import ProjectViewOnlyPermission, ProjectFullControlPermission
 from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
@@ -128,7 +128,7 @@ class LeafListAPI(BaseListView):
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
             self.permission_classes = [ProjectViewOnlyPermission]
         elif self.request.method in ["PATCH", "DELETE", "POST"]:
-            self.permission_classes = [ProjectEditPermission]
+            self.permission_classes = [ProjectFullControlPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
         logger.info(f"{self.request.method} permissions: {self.permission_classes}")
@@ -268,7 +268,7 @@ class LeafDetailAPI(BaseDetailView):
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
             self.permission_classes = [ProjectViewOnlyPermission]
         elif self.request.method in ["PATCH", "DELETE", "POST"]:
-            self.permission_classes = [ProjectEditPermission]
+            self.permission_classes = [ProjectFullControlPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
         logger.info(f"{self.request.method} permissions: {self.permission_classes}")
