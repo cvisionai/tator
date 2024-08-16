@@ -2647,6 +2647,7 @@ class VideoTestCase(
         # Test on Project object
         new_uuid = str(uuid4())
         response = self.client.get(f"/rest/Projects?elemental_id={new_uuid}")
+        assertResponse(self, response, status.HTTP_200_OK)
         assert len(response.data) == 0
         response = self.client.get(f"/rest/Project/{test_video.project.id}")
         assert str(response.data["elemental_id"]) == str(test_video.project.elemental_id)
