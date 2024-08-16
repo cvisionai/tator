@@ -98,6 +98,11 @@ app.use(
     setHeaders: addHeaders,
   })
 );
+app.use(
+  "/static",
+  express.static("./src", { setHeaders: addHeaders })
+);
+app.use("/scripts", express.static("../scripts"));
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());

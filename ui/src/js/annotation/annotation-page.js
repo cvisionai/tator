@@ -1,8 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
-import TatorLoading from "../../images/tator_loading.gif";
-import { store } from "./store.js";
 import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
 import { TimelineSettings } from "./timeline-settings.js";
 import { playerControlManagement } from "./annotation-common.js";
@@ -12,7 +10,7 @@ export class AnnotationPage extends TatorPage {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", TatorLoading);
+    this._loading.setAttribute("src", "/static/images/tator_loading.gif");
     this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
@@ -153,13 +151,15 @@ export class AnnotationPage extends TatorPage {
     });
 
     // Create store subscriptions
-    store.subscribe((state) => state.user, this._setUser.bind(this));
-    store.subscribe(
-      (state) => state.announcements,
-      this._setAnnouncements.bind(this)
-    );
-    store.subscribe((state) => state.project, this._updateProject.bind(this));
-    store.subscribe((state) => state.mediaId, this._updateMedia.bind(this));
+    this._projectId = window.location.pathname.split("/")[1];
+    this._mediaId = window.location.pathname.split("/")[3];
+    fetchCredentials("/rest/Project/" + this.getAttribute("project-id"), {}, true)
+      .then(this._updateProject.bind(this));
+    fetchCredentials("/rest/Announcements", {}, true)
+      .then(this._setAnnouncements.bind(this));
+    fetchCredentials("/rest/User/GetCurrent", {}, true)
+      .then(this._setUser.bind(this));
+    this._updateMedia();
 
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";

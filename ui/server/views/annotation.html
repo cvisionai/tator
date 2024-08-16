@@ -2,9 +2,15 @@
 
 {% block head %}
 <title>Tator | Annotation</title>
+<script type="module" src="/static/js/annotation/annotation-page.js"></script>
+<script type="module" src="/static/js/components/index.js"></script>
+<script>
+  window.onload = () => {
+    const page = document.createElement("annotation-page");
+    document.body.appendChild(page);
+  };
+</script>
 {% endblock head %}
 
 {% block body %}
-<annotation-page>
-</annotation-page>
 {% endblock body %}
