@@ -16,7 +16,6 @@ from ..models import Affiliation
 from ..models import Permission
 from ..models import Media
 from ..models import Bucket
-from ..models import database_qs
 from ..models import safe_delete
 from ..models import PermissionMask
 from ..models import User
@@ -29,15 +28,20 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from .._permission_util import augment_permission, ColBitAnd, mask_to_old_permission_string
 
+from ..schema.components.project import project_properties as project_schema
+
 import os
 
 logger = logging.getLogger(__name__)
+
+PROJECT_PROPERTIES = list(project_schema.keys())
+PROJECT_PROPERTIES.append("thumb")
 
 
 def _serialize_projects(projects, user_id):
     cache = TatorCache()
     ttl = 28800
-    project_data = database_qs(projects)
+    project_data = list(projects.values(*PROJECT_PROPERTIES))
     stores = {None: get_tator_store(None, connect_timeout=1, read_timeout=1, max_attempts=1)}
     if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
         projects = augment_permission(User.objects.get(pk=user_id), projects)
@@ -52,8 +56,9 @@ def _serialize_projects(projects, user_id):
                 project_data[idx]["permission"] = "Creator"
             else:
                 project_data[idx]["permission"] = str(project.user_permission(user_id))
-        del project_data[idx]["attribute_type_uuids"]
+        # del project_data[idx]["attribute_type_uuids"]
         thumb = ""  # TODO put default value here
+        logger.info(f"{project_data}")
         thumb_path = project_data[idx]["thumb"]
         if thumb_path:
             url = cache.get_presigned(user_id, thumb_path)
@@ -129,7 +134,7 @@ class ProjectListAPI(BaseListView):
         logger.info(f"{elemental_id} = {type(elemental_id)}")
         if elemental_id is not None:
             safe = uuid.UUID(elemental_id)
-            qs = qs.filter(elemental_id=safe)
+            projects = projects.filter(elemental_id=safe)
         logger.info(projects.query)
         return _serialize_projects(projects, self.request.user.pk)
 
