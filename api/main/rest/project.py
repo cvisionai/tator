@@ -205,7 +205,7 @@ class ProjectListAPI(BaseListView):
             "object": _serialize_projects(projects, self.request.user.pk)[0],
         }
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         projects = get_projects_for_user(self.request.user).order_by("id")
         return projects
 
@@ -329,5 +329,5 @@ class ProjectDetailAPI(BaseDetailView):
         project.delete()
         return {"message": f'Project {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
-        return Project.objects.filter(pk=self.params["id"])
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Project.objects.filter(pk=self.params["id"]))

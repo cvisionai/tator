@@ -12,9 +12,13 @@ from ..schema import MediaTypeDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 fields = [
     "id",
@@ -45,10 +49,20 @@ class MediaTypeListAPI(BaseListView):
     """
 
     schema = MediaTypeListSchema()
-    permission_classes = [ProjectFullControlPermission]
     http_method_names = ["get", "post"]
 
-    def get_queryset(self):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
         """Retrieve media types.
 
         A media type is the metadata definition object for media. It includes file format,
@@ -74,7 +88,7 @@ class MediaTypeListAPI(BaseListView):
             # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
             qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _get(self, params):
         qs = self.get_queryset()
@@ -127,9 +141,19 @@ class MediaTypeDetailAPI(BaseDetailView):
     """
 
     schema = MediaTypeDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Get media type.
@@ -214,5 +238,5 @@ class MediaTypeDetailAPI(BaseDetailView):
             "message": f"Media type {params['id']} (and {count} instances) deleted successfully!"
         }
 
-    def get_queryset(self):
-        return MediaType.objects.filter(pk=self.params["id"])
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(MediaType.objects.filter(pk=self.params["id"]))
