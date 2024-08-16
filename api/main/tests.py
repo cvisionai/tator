@@ -4004,29 +4004,32 @@ class LocalizationTypeTestCase(
             assert len(response.data) == 1
 
 
-class MembershipTestCase(
-    TatorTransactionTest, PermissionListMembershipTestMixin, PermissionDetailTestMixin
-):
-    def setUp(self):
-        print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.entities = [
-            self.membership,
-        ]
-        self.list_uri = "Memberships"
-        self.detail_uri = "Membership"
-        self.patch_json = {
-            "permission": "Full Control",
-        }
-        self.create_json = {
-            "user": self.user.pk,
-            "permission": "Full Control",
-        }
-        self.edit_permission = Permission.FULL_CONTROL
+# Only test memberships if fine grain permissions are disabled
+if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
+
+    class MembershipTestCase(
+        TatorTransactionTest, PermissionListMembershipTestMixin, PermissionDetailTestMixin
+    ):
+        def setUp(self):
+            print(f"\n{self.__class__.__name__}=", end="", flush=True)
+            logging.disable(logging.CRITICAL)
+            self.user = create_test_user()
+            self.client.force_authenticate(self.user)
+            self.project = create_test_project(self.user)
+            self.membership = create_test_membership(self.user, self.project)
+            self.entities = [
+                self.membership,
+            ]
+            self.list_uri = "Memberships"
+            self.detail_uri = "Membership"
+            self.patch_json = {
+                "permission": "Full Control",
+            }
+            self.create_json = {
+                "user": self.user.pk,
+                "permission": "Full Control",
+            }
+            self.edit_permission = Permission.FULL_CONTROL
 
 
 class ProjectTestCase(TatorTransactionTest):
