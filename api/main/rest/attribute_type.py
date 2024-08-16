@@ -45,8 +45,18 @@ class AttributeTypeListAPI(BaseListView):
     """Interact with attributes on an individual type."""
 
     schema = AttributeTypeListSchema()
-    permission_classes = [ProjectFullControlPermission]
     http_method_names = ["patch", "post", "put", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     @staticmethod
     def _check_attribute_type(attribute_type):

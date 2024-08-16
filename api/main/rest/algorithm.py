@@ -25,7 +25,7 @@ from ..schema.components.algorithm import algorithm as alg_schema
 from .hosted_template import get_and_render, to_dict
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 from ..schema import parse
 
 logger = logging.getLogger(__name__)
@@ -40,8 +40,18 @@ class AlgorithmListAPI(BaseListView):
 
     # pylint: disable=no-member,no-self-use
     schema = AlgorithmListSchema()
-    permission_classes = [ProjectEditPermission]
+
     http_method_names = ["get", "post"]
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params: dict) -> dict:
         """Returns the full database entries of algorithm registered with this project"""
@@ -54,7 +64,7 @@ class AlgorithmListAPI(BaseListView):
             del obj["manifest_url"]
         return out
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of algorithms related with the current request's project"""
         params = parse(self.request)
         qs = Algorithm.objects.filter(project__id=params["project"])
@@ -209,8 +219,18 @@ class AlgorithmDetailAPI(BaseDetailView):
     """Interact with a single registered algorithm"""
 
     schema = AlgorithmDetailSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def safe_delete(self, path: str) -> None:
         """Attempts to delete the file at the provided path.
@@ -321,6 +341,6 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         return {"message": f"Algorithm {alg_id} successfully updated!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all registered algorithms"""
-        return Algorithm.objects.all()
+        return self.filter_only_viewables(Algorithm.objects.filter(pk=self.params["id"]))
