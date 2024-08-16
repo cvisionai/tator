@@ -5424,55 +5424,154 @@ class AttributeTestCase(TatorTransactionTest):
         memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_patch_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.patch(
-                f"/rest/{self.list_uri}/{self.entity_type.pk}", self.patch_json, format="json"
-            )
-            with self.subTest(i=index):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            model = type(self.entities[0])
+            required_permission = PermissionMask.FULL_CONTROL
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (permission) & required_permission == required_permission:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+
+                print(f"permission = {hex(permission)}, expected_status = {expected_status}")
+
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.patch(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.patch_json, format="json"
+                )
                 assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
+            self.membership.permission = Permission.FULL_CONTROL
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.patch_json, format="json"
+                )
+                with self.subTest(i=index):
+                    assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
 
     def test_post_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_201_CREATED
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.post(
-                f"/rest/{self.list_uri}/{self.entity_type.pk}", self.post_json, format="json"
-            )
-            with self.subTest(i=index):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            model = type(self.entities[0])
+            required_permission = PermissionMask.FULL_CONTROL
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (permission) & required_permission == required_permission:
+                    expected_status = status.HTTP_201_CREATED
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+
+                print(f"permission = {hex(permission)}, expected_status = {expected_status}")
+
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.post(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.post_json, format="json"
+                )
                 assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
+            self.membership.permission = Permission.FULL_CONTROL
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_201_CREATED
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.post(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.post_json, format="json"
+                )
+                with self.subTest(i=index):
+                    assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
 
     def test_delete_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.delete(
-                f"/rest/{self.list_uri}/{self.entity_type.pk}", self.delete_json, format="json"
-            )
-            with self.subTest(i=index):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            model = type(self.entities[0])
+            required_permission = PermissionMask.FULL_CONTROL
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (permission) & required_permission == required_permission:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+
+                print(f"permission = {hex(permission)}, expected_status = {expected_status}")
+
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.delete(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.delete_json, format="json"
+                )
                 assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
+            self.membership.permission = Permission.FULL_CONTROL
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.delete(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.delete_json, format="json"
+                )
+                with self.subTest(i=index):
+                    assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
 
 
 class MutateAliasTestCase(TatorTransactionTest):
