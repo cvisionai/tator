@@ -2420,8 +2420,8 @@ class PermissionMask:
 
     OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32
 
-    # Old full control lets one delete and write the project
-    OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE
+    # Old full control lets one delete and write the project (plus you need all bits set in lower byte)
+    OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE | 0xFF
 
     CHILD_SHIFT = 8
 
