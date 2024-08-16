@@ -33,7 +33,7 @@ from ._util import (
     construct_parent_from_spec,
     compute_user,
 )
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 import uuid
 
@@ -54,12 +54,26 @@ class LocalizationListAPI(BaseListView):
     """
 
     schema = LocalizationListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = LocalizationType  # Needed by attribute filter mixin
 
-    def get_queryset(self):
-        return get_annotation_queryset(self.params["project"], self.params, "localization")
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, override_params={}):
+        params = {**self.params}
+        params.update(override_params)
+        return self.filter_only_viewables(
+            get_annotation_queryset(self.params["project"], params, "localization")
+        )
 
     def _get(self, params):
         logger.info("PARAMS=%s", params)
@@ -329,9 +343,19 @@ class LocalizationDetailBaseAPI(BaseDetailView):
     """
 
     schema = LocalizationDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def get_qs(self, params, qs):
         if not qs.exists():
@@ -498,10 +522,6 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             "id": obj_id,
         }
 
-    def get_queryset(self):
-        return Localization.objects.all()
-
-
 class LocalizationDetailAPI(LocalizationDetailBaseAPI):
     """Interact with single localization.
 
@@ -511,12 +531,24 @@ class LocalizationDetailAPI(LocalizationDetailBaseAPI):
     """
 
     schema = LocalizationDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
-    def get_queryset(self):
-        return Localization.objects.filter(pk=self.params["id"], deleted=False)
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(
+            Localization.objects.filter(pk=self.params["id"], deleted=False)
+        )
 
     def _get(self, params):
         return self.get_qs(params, self.get_queryset())
@@ -542,7 +574,7 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         params = self.params
         include_deleted = False
         if params.get("prune", None) == 1:
@@ -560,7 +592,7 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
         else:
             latest_mark = qs.aggregate(value=Max("mark"))
             qs = qs.filter(mark=latest_mark["value"])
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _get(self, params):
         return self.get_qs(params, self.get_queryset())
