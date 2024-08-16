@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, connection
 from django.db.models import Case, When
 from django.http import Http404
+from django.core.exceptions import PermissionDenied
 from PIL import Image
 
 from ..models import (
@@ -26,6 +27,7 @@ from ..models import (
     Bucket,
     database_qs,
     database_query_ids,
+    PermissionMask,
 )
 from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
@@ -62,6 +64,7 @@ logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema["properties"].keys())
 
+from .._permission_util import augment_permission, shift_permission
 
 def _get_next_archive_state(desired_archive_state, last_archive_state):
     if desired_archive_state == "to_live":
@@ -397,7 +400,27 @@ class MediaListAPI(BaseListView):
         return super().get_permissions()
 
     def get_queryset(self, **kwargs):
-        return get_media_queryset(self.params["project"], self.params)
+        params = {**self.params}
+
+        # POST takes section as a name not an ID
+        # Return the media queryset only if we have permissions to make a section if it doesn't exist
+        if self.request.method == "POST":
+            section_name = params.pop("section", None)
+            if section_name:
+                section = Section.objects.filter(project=params["project"], name=section_name)
+                if section.exists():
+                    params["section"] = section[0].id
+                else:
+                    proj = Project.objects.filter(pk=params["project"])
+                    proj = augment_permission(self.request.user, proj)
+                    can_create = (
+                        (proj[0].effective_permission >> shift_permission(Section, Project))
+                        & PermissionMask.CREATE
+                    ) == PermissionMask.CREATE
+                    if not can_create:
+                        raise PermissionDenied
+
+        return self.filter_only_viewables(get_media_queryset(self.params["project"], params))
 
     def _get(self, params):
         """Retrieve list of media.
