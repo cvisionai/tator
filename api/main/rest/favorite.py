@@ -18,7 +18,7 @@ from ..schema import parse
 
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,18 @@ class FavoriteListAPI(BaseListView):
 
     # pylint: disable=no-member,no-self-use
     schema = FavoriteListSchema()
-    permission_classes = [ProjectEditPermission]
+
     http_method_names = ["get", "post"]
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params: dict) -> dict:
         """Returns the full database entries of favorites registered with this project
@@ -38,7 +48,7 @@ class FavoriteListAPI(BaseListView):
         qs = self.get_queryset().order_by("id")
         return database_qs(qs)
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of favorites related with the current request's project"""
         qs = Favorite.objects.filter(project__id=self.params["project"], user=self.request.user)
         return self.filter_only_viewables(qs)
@@ -83,8 +93,18 @@ class FavoriteDetailAPI(BaseDetailView):
     """Interact with a single favorite."""
 
     schema = FavoriteDetailSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Retrieve the requested favorite by ID."""
@@ -119,6 +139,6 @@ class FavoriteDetailAPI(BaseDetailView):
         self.get_queryset().delete()
         return {"message": f"Favorite with ID {params['id']} deleted successfully!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all favorites."""
         return Favorite.objects.filter(pk=self.params["id"], user=self.request.user)
