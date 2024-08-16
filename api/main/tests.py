@@ -3207,12 +3207,12 @@ class StateTestCase(
         project = self.entity_type.project.id
         response = self.client.get(f"/rest/StateTypes/{project}?elemental_id={new_uuid}")
         assert len(response.data) == 0
-        response = self.client.get(f"/rest/StateTypes/{self.entity_type.id}")
         response = self.client.get(f"/rest/StateType/{self.entity_type.id}")
         assert str(response.data["elemental_id"]) == str(self.entity_type.elemental_id)
         response = self.client.patch(
             f"/rest/StateType/{self.entity_type.id}", {"elemental_id": str(new_uuid)}, format="json"
         )
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f"/rest/StateType/{self.entity_type.id}")
         assert str(response.data["elemental_id"]) == new_uuid
         response = self.client.get(f"/rest/StateTypes/{project}?elemental_id={new_uuid}")
