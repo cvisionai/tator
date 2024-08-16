@@ -48,7 +48,7 @@ class FileTypeListAPI(BaseListView):
             safe = uuid.UUID(elemental_id)
             qs = qs.filter(elemental_id=safe)
         qs = qs.order_by("id")
-        return database_qs(qs)
+        return list(qs.values(*fields))
 
     def get_queryset(self, **kwargs) -> dict:
         qs = FileType.objects.filter(project__id=self.params["project"])
