@@ -74,11 +74,8 @@ class LeafTypeListAPI(BaseListView):
         qs = LeafType.objects.filter(project=self.params["project"])
         elemental_id = self.params.get("elemental_id", None)
         if elemental_id is not None:
-            # Django 3.X has a bug where UUID fields aren't escaped properly
-            # Use .extra to manually validate the input is UUID
-            # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
-            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+            qs = qs.filter(elemental_id=safe)
         return self.filter_only_viewables(qs)
 
 
