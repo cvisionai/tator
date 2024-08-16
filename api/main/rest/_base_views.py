@@ -6,6 +6,7 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
+from django.core.exceptions import PermissionDenied
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
