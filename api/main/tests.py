@@ -2870,6 +2870,7 @@ class LocalizationBoxTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "box1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationLineTestCase(
@@ -2953,6 +2954,7 @@ class LocalizationLineTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "line1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationDotTestCase(
@@ -3034,6 +3036,7 @@ class LocalizationDotTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "dot1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationPolyTestCase(
@@ -3114,6 +3117,7 @@ class LocalizationPolyTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "box1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class StateTestCase(
@@ -3132,7 +3136,7 @@ class StateTestCase(
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
@@ -3195,6 +3199,7 @@ class StateTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "state1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
