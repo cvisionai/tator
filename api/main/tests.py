@@ -946,7 +946,7 @@ class PermissionDetailTestMixin:
                 rp.permission = permission
                 rp.save()
                 if "name" in self.patch_json:
-                    self.patch_json["name"] += f"_{hex(permission)}"
+                    self.patch_json["name"] = f"foo_{hex(permission)}"
                 response = self.client.patch(
                     f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
                 )
@@ -3551,6 +3551,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         )
         wait_for_indices(self.entity_type)
         self.entity_type.media.add(self.image_type)
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_single_media_delete(self):
         # Tests deleting a state's associated media (1). The corresponding
