@@ -73,15 +73,13 @@ class TatorAPIView(APIView):
 
         self.check_permissions(request)
 
-    def get_parent_objects():
+    def get_parent_objects(self):
         # Default to project as parents as that is usually the case
-        model = self.get_queryset().model
-        parents = get_parents_for_model(model)
-        parent_set = []
-        for parent_model in parents:
-            if parent_model == Project:
-                parent_set.append(Project.objects.get(pk=self.params["project"]))
-        return parent_set
+        return {
+            "project": Project.objects.filter(pk=self.params["project"]),
+            "version": Version.objects.filter(pk=-1),
+            "section": Section.objects.filter(pk=-1),
+        }
 
     def filter_only_viewables(self, qs):
         # Convenience function for filtering out objects for most views

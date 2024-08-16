@@ -6,6 +6,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.postgres.aggregates import BitAnd
 from django.shortcuts import get_object_or_404
 from django.db.models import F, BooleanField, Case, When, Value
 from django.http import Http404
@@ -144,25 +145,35 @@ class ProjectPermissionBase(BasePermission):
         elif request.method in ["POST"]:
             ### POST gets permission from a model's parent object permission
             perm_qs = RowProtection.objects.filter(pk=-1)
-            if hasattr(view, "get_parent_objs") is True:
-                # TODO: Return parent objects and check permissions against those
-                pass
+            parent_objs = view.get_parent_objects()
+            model = view.get_queryset().model
 
-            if not perm_qs.exists():
-                ## If there are no permissions yet we have to go to the project object to confirm
-                model = view.get_queryset().model
-                proj_perm_qs = Project.objects.filter(pk=project.pk)
-                proj_perm_qs = augment_permission(request.user, proj_perm_qs)
-                proj_perm_qs = proj_perm_qs.alias(
-                    granted=ColBitAnd(
-                        F("effective_permission"),
-                        (self.required_mask << shift_permission(model, Project)),
-                    )
+            grand_permission = 0x0
+            for proj in parent_objs["project"]:
+                proj_qs = Project.objects.filter(pk=proj.pk)
+                proj_qs = augment_permission(request.user, proj_qs)
+                grand_permission = proj_qs[0].effective_permission >> shift_permission(
+                    model, Project
                 )
-                perm_qs = proj_perm_qs.filter(granted__gt=0)
+            if parent_objs["version"]:
+                version_qs = Version.objects.filter(pk=[i for i in parent_objs["version"]])
+                version_qs = augment_permission(request.user, version_qs)
+                agg_qs = version_qs.aggregate(effective_permission=BitAnd("effective_permission"))
+                grand_permission &= agg_qs["effective_permission"] >> shift_permission(
+                    model, Version
+                )
 
-                if perm_qs.exists():
-                    granted = True
+            for section in parent_objs["section"]:
+                section_qs = Section.objects.filter(pk=[i for i in parent_objs["section"]])
+                section_qs = augment_permission(request.user, section_qs)
+                agg_qs = section_qs.aggregate(effective_permission=BitAnd("effective_permission"))
+                grand_permission &= agg_qs["effective_permission"] >> shift_permission(
+                    model, Section
+                )
+
+            # POST requires CREATE permission on the parent object
+            if grand_permission & PermissionMask.CREATE:
+                granted = True
         else:
             assert False, f"Unsupported method={request.method}"
 
