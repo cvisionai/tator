@@ -2,8 +2,6 @@ import { TatorElement } from "../tator-element.js";
 import { svgNamespace } from "../tator-element.js";
 import { hasPermission } from "../../util/has-permission.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import Spinner from "../../../images/spinner-transparent.svg";
-import LiveThumb from "../../../images/live-thumb.png";
 
 export class EntityCard extends TatorElement {
   constructor() {
@@ -42,7 +40,7 @@ export class EntityCard extends TatorElement {
 
     // Image, spinner until SRC set
     this._img = document.createElement("img");
-    this._img.setAttribute("src", Spinner);
+    this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
     this._img.setAttribute("class", "entity-card__image rounded-1");
     this._img.setAttribute("crossorigin", "anonymous");
     this._link.appendChild(this._img);
@@ -438,7 +436,7 @@ export class EntityCard extends TatorElement {
       this.setImageStatic(obj.image);
     } else if (!mediaInit) {
       //this.setAttribute("thumb", Spinner);
-      this.setImageStatic(Spinner);
+      this.setImageStatic("/static/images/spinner-transparent.svg");
     }
 
     if (obj.posText) {
@@ -730,7 +728,7 @@ export class EntityCard extends TatorElement {
       ) {
         // Default to tator thumbnail
         // TODO: Have some visual indication if stream is active.
-        this._img.setAttribute("src", LiveThumb);
+        this._img.setAttribute("src", "/static/images/live-thumb.png");
       }
     }
 

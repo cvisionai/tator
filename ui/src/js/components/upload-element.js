@@ -1,5 +1,5 @@
 import { TatorElement } from "./tator-element.js";
-import { v1 as uuidv1 } from "uuid";
+import { v1 as uuidv1 } from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 import { uploadMedia } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 
 export class UploadElement extends TatorElement {

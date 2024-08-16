@@ -1,5 +1,5 @@
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import autocomplete from "autocompleter";
+import autocompleter from 'https://cdn.jsdelivr.net/npm/autocompleter@9.3.2/+esm';
 
 export class WormsAutoComplete {
   /// Construct a WormsAutocomplete handler based on
