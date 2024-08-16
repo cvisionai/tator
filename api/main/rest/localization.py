@@ -333,6 +333,27 @@ class LocalizationListAPI(BaseListView):
         """Retrieve list of localizations by ID."""
         return self._get(params)
 
+    def get_parent_objects(self):
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
+
+            return super().get_parent_objects()
+        elif self.request.method in ["POST"]:
+            # For POST Localizations/States we need to see what versions/sections are being impacted
+            specs = self.params["body"]
+            if not isinstance(specs, list):
+                specs = [specs]
+            version_ids = set([spec.get("version", None) for spec in specs])
+            media_ids = set([spec.get("media_id", None) for spec in specs])
+            versions = Version.objects.filter(pk__in=version_ids)
+            sections = Media.objects.filter(pk__in=media_ids).values("primary_section").distinct()
+            return {
+                "project": Project.objects.filter(pk=self.params["project"]),
+                "version": versions,
+                "section": sections,
+            }
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+
 
 class LocalizationDetailBaseAPI(BaseDetailView):
     """Interact with single localization.
