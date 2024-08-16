@@ -4717,6 +4717,7 @@ class AudioFileTestCase(TatorTransactionTest, FileMixin):
         self.detail_uri = "AudioFile"
         self.create_json = {"path": self._generate_key(), "codec": "h264"}
         self.patch_json = {"path": self._generate_key(), "codec": "h264"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_audio(self):
         self._test_methods("audio")

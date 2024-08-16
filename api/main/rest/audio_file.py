@@ -11,14 +11,27 @@ from ..search import TatorSearch
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectTransferPermission
+from ._permissions import ProjectTransferPermission, ProjectViewOnlyPermission
 from ._util import check_resource_prefix
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AudioFileListAPI(BaseListView):
     schema = AudioFileListSchema()
-    permission_classes = [ProjectTransferPermission]
     http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         media = Media.objects.get(pk=params["id"])
@@ -55,18 +68,28 @@ class AudioFileListAPI(BaseListView):
         Resource.add_resource(body["path"], media)
         return {"message": f"Media file in media object {media.id} created!"}
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))
 
 
 class AudioFileDetailAPI(BaseDetailView):
     schema = AudioFileDetailSchema()
-    permission_classes = [ProjectTransferPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
     def _get(self, params):
-        media = Media.objects.get(pk=params["id"])
+        media = self.get_queryset()[0]
         index = params["index"]
         response_data = []
         if media.media_files:
@@ -131,5 +154,5 @@ class AudioFileDetailAPI(BaseDetailView):
 
         return {"message": f'Media file in media object {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))
