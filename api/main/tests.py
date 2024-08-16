@@ -3877,6 +3877,7 @@ class StateTypeTestCase(
         }
         self.patch_json = {"name": "state asdf"}
         self.edit_permission = Permission.FULL_CONTROL
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class MediaTypeTestCase(
@@ -3919,6 +3920,7 @@ class MediaTypeTestCase(
             "dtype": "video",
             "attribute_types": create_test_attribute_types(),
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationTypeTestCase(
@@ -3972,6 +3974,7 @@ class LocalizationTypeTestCase(
         }
         self.patch_json = {"name": "box asdf"}
         self.edit_permission = Permission.FULL_CONTROL
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
