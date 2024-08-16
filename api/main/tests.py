@@ -762,9 +762,15 @@ class PermissionCreateTestMixin:
             rp = RowProtection.objects.get(project=self.project)
             orig_permission = rp.permission
 
-            # iterate over all permission levels and change the underlying row protection object for this project
-            # to a given permission level and verify that the delete endpoint respects this
-            model = type(self.entities[0])
+            if self.list_uri == "Transcodes":
+                model = Media
+                required_permission = PermissionMask.UPLOAD
+            else:
+
+                # iterate over all permission levels and change the underlying row protection object for this project
+                # to a given permission level and verify that the delete endpoint respects this
+                model = type(self.entities[0])
+                required_permission = PermissionMask.MODIFY
             for permission in [
                 PermissionMask.OLD_READ,
                 PermissionMask.OLD_WRITE,
@@ -776,7 +782,7 @@ class PermissionCreateTestMixin:
                 rp.save()
                 if (
                     permission >> shift_permission(model, Project)
-                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                ) & required_permission == required_permission:
                     expected_status = status.HTTP_201_CREATED
                 else:
                     expected_status = status.HTTP_403_FORBIDDEN
@@ -3291,6 +3297,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         self.line_type.save()
         self.dot_type.media.add(self.image_type)
         self.dot_type.save()
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_single_media_delete(self):
         # Tests deleting a localization's associated media (1). The corresponding
@@ -4211,6 +4218,7 @@ class TranscodeTestCase(TatorTransactionTest, PermissionCreateTestMixin):
             "size": 1,
         }
         self.edit_permission = Permission.CAN_TRANSFER
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class VersionTestCase(

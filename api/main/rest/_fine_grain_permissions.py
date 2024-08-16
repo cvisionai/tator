@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import F, BooleanField, Case, When, Value
 from django.http import Http404
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 
 from ..models import *
 from ..cache import TatorCache
@@ -90,6 +91,8 @@ class ProjectPermissionBase(BasePermission):
 
     def _validate_project(self, request, project, view):
         granted = False  # Always deny by default
+        self.request = request
+        self.required_mask = self.get_required_mask()
 
         if isinstance(request.user, AnonymousUser):
             granted = False
@@ -158,9 +161,11 @@ class ProjectPermissionBase(BasePermission):
                     granted = True
         elif request.method in ["POST"]:
             ### POST gets permission from a model's parent object permission
-            perm_qs = RowProtection.objects.filter(pk=-1)
             parent_objs = view.get_parent_objects()
-            model = view.get_queryset().model
+            try:
+                model = view.get_queryset().model
+            except PermissionDenied:
+                return False
 
             grand_permission = 0x0
             for proj in parent_objs["project"]:
@@ -170,24 +175,32 @@ class ProjectPermissionBase(BasePermission):
                     model, Project
                 )
             if parent_objs["version"]:
-                version_qs = Version.objects.filter(pk=[i for i in parent_objs["version"]])
+                version_qs = Version.objects.filter(pk__in=parent_objs["version"])
                 version_qs = augment_permission(request.user, version_qs)
-                agg_qs = version_qs.aggregate(effective_permission=BitAnd("effective_permission"))
-                grand_permission &= agg_qs["effective_permission"] >> shift_permission(
+                agg_qs = version_qs.aggregate(
+                    effective_permission_agg=BitAnd("effective_permission")
+                )
+                grand_permission &= agg_qs["effective_permission_agg"] >> shift_permission(
                     model, Version
                 )
 
             for section in parent_objs["section"]:
-                section_qs = Section.objects.filter(pk=[i for i in parent_objs["section"]])
+                section_qs = Section.objects.filter(pk__in=parent_objs["section"])
                 section_qs = augment_permission(request.user, section_qs)
-                agg_qs = section_qs.aggregate(effective_permission=BitAnd("effective_permission"))
-                grand_permission &= agg_qs["effective_permission"] >> shift_permission(
+                agg_qs = section_qs.aggregate(
+                    effective_permission_agg=BitAnd("effective_permission")
+                )
+                grand_permission &= agg_qs["effective_permission_agg"] >> shift_permission(
                     model, Section
                 )
 
             # POST requires CREATE permission on the parent object
-            if grand_permission & PermissionMask.CREATE:
+            if grand_permission & self.required_mask == self.required_mask:
                 granted = True
+
+            logger.info(
+                f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {grand_permission} GRANTED={granted}"
+            )
         else:
             assert False, f"Unsupported method={request.method}"
 
@@ -202,38 +215,43 @@ class ProjectViewOnlyPermission(ProjectPermissionBase):
     """
 
     message = "Not a member of this project."
-    required_mask = PermissionMask.EXIST | PermissionMask.READ
+    def get_required_mask(self):
+        return PermissionMask.EXIST | PermissionMask.READ
 
 
 class ProjectEditPermission(ProjectPermissionBase):
     """Checks whether a user has edit access to a project."""
 
     message = "Insufficient permission to modify this project."
-    # TODO this should be CREATE on POST and MODIFY on PATCH
-    required_mask = (
-        PermissionMask.EXIST | PermissionMask.READ | PermissionMask.CREATE | PermissionMask.MODIFY
-    )
+    def get_required_mask(self):
+        if self.request.method == "POST":
+            return PermissionMask.CREATE
+        else:
+            return PermissionMask.MODIFY
 
 
 class ProjectTransferPermission(ProjectPermissionBase):
     """Checks whether a user has transfer access to a project."""
 
     message = "Insufficient permission to transfer media within this project."
-    required_mask = PermissionMask.UPLOAD
+    def get_required_mask(self):
+        return PermissionMask.UPLOAD | PermissionMask.CREATE
 
 
 class ProjectExecutePermission(ProjectPermissionBase):
     """Checks whether a user has execute access to a project."""
 
     message = "Insufficient permission to execute within this project."
-    required_mask = PermissionMask.EXECUTE
+    def get_required_mask(self):
+        return PermissionMask.EXECUTE
 
 
 class ProjectFullControlPermission(ProjectPermissionBase):
     """Checks if user has full control over a project."""
 
     message = "Insufficient permission to edit project settings."
-    required_mask = PermissionMask.FULL_CONTROL
+    def get_required_mask(self):
+        return PermissionMask.FULL_CONTROL
 
 
 class PermalinkPermission(BasePermission):
