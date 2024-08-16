@@ -15,7 +15,7 @@ from ..schema.components import section
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 from ._util import check_required_fields
 from ._attributes import validate_attributes, patch_attributes
 from ._annotation_query import _do_object_search
@@ -46,10 +46,20 @@ class SectionListAPI(BaseListView):
     """Create or retrieve a list of project media sections."""
 
     schema = SectionListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post", "patch", "delete"]
 
-    def get_queryset(self):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
         params = self.params
         qs = Section.objects.filter(project=params["project"])
         if "name" in params:
@@ -74,7 +84,7 @@ class SectionListAPI(BaseListView):
         qs = qs.annotate(related_search=F("related_object_search"))
 
         qs = qs.order_by("name")
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _get(self, params):
         qs = self.get_queryset()
@@ -151,9 +161,20 @@ class SectionDetailAPI(BaseDetailView):
     """Interact with an individual section."""
 
     schema = SectionDetailSchema()
-    permission_classes = [ProjectEditPermission]
+
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         # Make result match schema
@@ -206,5 +227,5 @@ class SectionDetailAPI(BaseDetailView):
         self.get_queryset().delete()
         return {"message": f'Section {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return Section.objects.filter(pk=self.params["id"])

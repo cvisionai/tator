@@ -5945,6 +5945,7 @@ class SectionTestCase(TatorTransactionTest):
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_unique_section_name(self):
         section_spec = {

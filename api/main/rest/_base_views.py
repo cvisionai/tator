@@ -79,10 +79,16 @@ class TatorAPIView(APIView):
     def get_parent_objects(self):
         # Default to project as parents as that is usually the case
         project_id = self.params.get("project", None)
-        if not project_id:
-            project_id = self.get_queryset().values_list("project__pk", flat=True)[0]
+        model = self.get_queryset().model
+        logger.info(f"Model: {model}")
+        if model == Project:
+            projects = self.get_queryset()
+        elif not project_id:
+            projects = Project.objects.filter(pk__in=self.get_queryset().values("project"))
+        else:
+            projects = Project.objects.filter(pk=project_id)
         return {
-            "project": Project.objects.filter(pk=project_id),
+            "project": projects,
             "version": Version.objects.filter(pk=-1),
             "section": Section.objects.filter(pk=-1),
         }
