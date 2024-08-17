@@ -8,6 +8,9 @@ import { playerControlManagement } from "./annotation-common.js";
 export class AnnotationPage extends TatorPage {
   constructor() {
     super();
+  }
+
+  connectedCallback() {
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
     this._loading.setAttribute("src", "/static/images/tator_loading.gif");
@@ -150,17 +153,6 @@ export class AnnotationPage extends TatorPage {
       this._progressDialog.removeAttribute("is-open", "");
     });
 
-    // Create store subscriptions
-    this._projectId = window.location.pathname.split("/")[1];
-    this._mediaId = window.location.pathname.split("/")[3];
-    fetchCredentials("/rest/Project/" + this.getAttribute("project-id"), {}, true)
-      .then(this._updateProject.bind(this));
-    fetchCredentials("/rest/Announcements", {}, true)
-      .then(this._setAnnouncements.bind(this));
-    fetchCredentials("/rest/User/GetCurrent", {}, true)
-      .then(this._setUser.bind(this));
-    this._updateMedia();
-
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";
       //window.alert(evt.message);
@@ -189,6 +181,27 @@ export class AnnotationPage extends TatorPage {
     this._progressDialog.addEventListener("jobsDone", (evt) => {
       evt.detail.job.callback(evt.detail.status);
     });
+
+    this._projectId = window.location.pathname.split("/")[1];
+    this._mediaId = window.location.pathname.split("/")[3];
+    console.log("Project ID: " + this._projectId);
+    console.log("Media ID: " + this._mediaId);
+    this.setAttribute("project-id", this._projectId);
+    this.setAttribute("media-id", this._mediaId);
+
+    this.setAttribute("has-open-modal", "");
+    TatorPage.prototype.connectedCallback.call(this);
+
+    // Create store subscriptions
+    fetchCredentials("/rest/Project/" + this.getAttribute("project-id"), {}, true)
+      .then(response => response.json())
+      .then(data => this._updateProject(data));
+    fetchCredentials("/rest/Announcements", {}, true)
+      .then(response => response.json())
+      .then(data => this._setAnnouncements(data));
+    fetchCredentials("/rest/User/GetCurrent", {}, true)
+      .then(response => response.json())
+      .then(data => this._setUser(data));
   }
 
   /**
@@ -205,12 +218,6 @@ export class AnnotationPage extends TatorPage {
     return ["project-name", "project-id", "media-id"].concat(
       TatorPage.observedAttributes
     );
-  }
-
-  connectedCallback() {
-    this.setAttribute("has-open-modal", "");
-    TatorPage.prototype.connectedCallback.call(this);
-    store.getState().init();
   }
 
   _updateProject(project) {
@@ -235,7 +242,7 @@ export class AnnotationPage extends TatorPage {
         break;
       case "project-id":
         this._undo.setAttribute("project-id", newValue);
-        this._updateLastVisitedBookmark();
+        this._updateLastVisitedBookmark(newValue);
         break;
       case "media-id":
         const searchParams = new URLSearchParams(window.location.search);
@@ -2300,12 +2307,12 @@ export class AnnotationPage extends TatorPage {
     this._sidebar.permission = permission;
   }
 
-  _updateLastVisitedBookmark() {
+  _updateLastVisitedBookmark(projectId) {
     const uri = `${window.location.pathname}${window.location.search}`;
     const name = "Last visited";
     // Get the last visited, if it exists.
     fetchCredentials(
-      `/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`,
+      `/rest/Bookmarks/${projectId}?name=${name}`,
       {},
       true
     )
@@ -2313,7 +2320,7 @@ export class AnnotationPage extends TatorPage {
       .then((data) => {
         if (data.length == 0) {
           fetchCredentials(
-            `/rest/Bookmarks/${this.getAttribute("project-id")}`,
+            `/rest/Bookmarks/${projectId}`,
             {
               method: "POST",
               body: JSON.stringify({ name: name, uri: uri }),

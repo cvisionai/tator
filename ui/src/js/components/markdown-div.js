@@ -1,4 +1,4 @@
-import { marked } from "marked";
+import marked from 'https://cdn.jsdelivr.net/npm/marked@14.0.0/+esm';
 
 // An unstyled div for displaying parsed markdown.
 export class MarkdownDiv extends HTMLElement {

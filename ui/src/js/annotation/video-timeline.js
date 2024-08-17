@@ -1,5 +1,5 @@
 import { BaseTimeline } from "../annotation/base-timeline.js";
-import * as d3 from "d3";
+import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 
 /**
  * Web component that displays the video timeline axis in the annotator.

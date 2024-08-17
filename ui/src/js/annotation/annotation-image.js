@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { ImageCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { ImageCanvas } from "../../../../scripts/packages/tator-js/src/annotator/image.js";
 
 if (!customElements.get("image-canvas")) {
   customElements.define("image-canvas", ImageCanvas);

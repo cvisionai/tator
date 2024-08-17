@@ -1,7 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { MultiRenderer } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
-import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { MultiRenderer } from "../../../../scripts/packages/tator-js/src/annotator/multi-renderer.js";
+import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 import {
   handle_video_error,
   handle_decoder_error,
@@ -11,7 +11,7 @@ import {
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { TimeStore } from "./time-store.js";
 
-import { VideoCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { VideoCanvas } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 
 if (!customElements.get("video-canvas")) {
   customElements.define("video-canvas", VideoCanvas);

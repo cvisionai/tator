@@ -1,5 +1,5 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
-import { v1 as uuidv1 } from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
+import { v1 as uuidv1 } from 'https://cdn.jsdelivr.net/npm/uuid@10.0.0/+esm';
 import { BaseTimeline } from "../annotation/base-timeline.js";
 
 export class EntityTimeline extends BaseTimeline {
