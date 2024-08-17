@@ -3,8 +3,8 @@
 }
 
 .annotation-subheader {
-  color: $color-white;
-  background-color: $color-charcoal--light;
+  color: var(--color-white);
+  background-color: var(--color-charcoal--light);
   box-sizing: border-box;
   height: 32px;
   width: 100%;
@@ -15,42 +15,42 @@
   border: none;
   &:hover,
   &:focus {
-    color: $color-white;
+    color: var(--color-white);
   }
 }
 
 .annotation__breadcrumbs {
   button {
-    margin-left: $spacing-3;
+    margin-left: var(--spacing-3);
     justify-content: space-between;
     width: 146px;
   }
 }
 
 .annotation__setting {
-  background-color: $color-charcoal--light;
-  margin-left: $spacing-2;
+  background-color: var(--color-charcoal--light);
+  margin-left: var(--spacing-2);
   height: 32px;
 
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--light;
-    color: $color-gray--dark;
+    background-color: var(--color-charcoal--light);
+    color: var(--color-gray--dark);
     cursor: not-allowed;
   }
 }
 
 .annotation__shape {
-  background-color: $color-charcoal--medium;
-  margin-bottom: $spacing-2;
+  background-color: var(--color-charcoal--medium);
+  margin-bottom: var(--spacing-2);
   &.is-selected {
-    color: $color-white;
+    color: var(--color-white);
   }
 
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--light;
-    color: $color-gray--dark;
+    background-color: var(--color-charcoal--light);
+    color: var(--color-gray--dark);
     cursor: not-allowed;
   }
 
@@ -61,7 +61,7 @@
 }
 
 .annotation__shape-indicator {
-  background-color: $color-purple;
+  background-color: var(--color-purple);
   border-bottom-right-radius: 3px;
   border-top-right-radius: 3px;
   height: 50px;
@@ -148,22 +148,22 @@
 }
 
 .annotation__panel {
-  background-color: $color-charcoal--medium;
-  margin-bottom: $spacing-3;
+  background-color: var(--color-charcoal--medium);
+  margin-bottom: var(--spacing-3);
   overflow: hidden;
 }
 
 .annotation_browser_wrapper {
-  background-color: $color-charcoal--medium-dark;
+  background-color: var(--color-charcoal--medium-dark);
 }
 
 .annotation_browser_settings_wrapper {
-  background-color: $color-charcoal--dark;
+  background-color: var(--color-charcoal--dark);
 }
 
 .annotation_browser_header_panel {
-  background-color: $color-charcoal--medium;
-  margin-bottom: $spacing-3;
+  background-color: var(--color-charcoal--medium);
+  margin-bottom: var(--spacing-3);
 }
 
 save-dialog {
@@ -186,11 +186,11 @@ save-dialog {
 }
 
 .save-dialog-bottom-border {
-  border-bottom: 1px solid $color-charcoal--light;
+  border-bottom: 1px solid var(--color-charcoal--light);
 }
 
 .save-dialog-attribute-panel {
-  background-color: $color-charcoal--dark;
+  background-color: var(--color-charcoal--dark);
 }
 
 modify-track-dialog {
@@ -215,8 +215,8 @@ modify-track-dialog {
 .annotation__panel-group {
   //   max-height: calc(100vh - 307px);
   //   overflow-y: auto;
-  //   border-top: 1px solid $color-charcoal--light;
-  //   padding-bottom: $spacing-3;
+  //   border-top: 1px solid var(--color-charcoal--light);
+  //   padding-bottom: var(--spacing-3);
 
   button {
     justify-content: space-between;
@@ -225,7 +225,7 @@ modify-track-dialog {
 }
 
 .annotation__panel-border {
-  border: 1px solid $color-charcoal--medium;
+  border: 1px solid var(--color-charcoal--medium);
 }
 
 .annotation__entities {
@@ -234,11 +234,11 @@ modify-track-dialog {
   li {
     attribute-panel {
       display: none;
-      background-color: $color-charcoal--dark;
+      background-color: var(--color-charcoal--dark);
     }
     &.is-open,
     &:hover {
-      background-color: $color-charcoal--light;
+      background-color: var(--color-charcoal--light);
     }
     &.is-open {
       .annotation__frame-player {
@@ -249,7 +249,7 @@ modify-track-dialog {
       }
     }
     &:last-child {
-      margin-bottom: $spacing-3;
+      margin-bottom: var(--spacing-3);
     }
   }
 }
@@ -257,7 +257,7 @@ modify-track-dialog {
 .entity__selector {
   &.is-open,
   &:hover {
-    background-color: $color-charcoal--light;
+    background-color: var(--color-charcoal--light);
 
     .annotation__entity-count {
       opacity: 1;
@@ -272,8 +272,8 @@ modify-track-dialog {
 .annotation__entity-count {
   background-image: linear-gradient(
     to right,
-    rgba($color-charcoal--light, 0%),
-    $color-charcoal--light 15%
+    rgba(var(--color-charcoal--light), 0%),
+    var(--color-charcoal--light) 15%
   ); // Safari bug on transparent
   opacity: 0;
   position: absolute;
@@ -281,26 +281,26 @@ modify-track-dialog {
 }
 
 .entity__button {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   transition-duration: 0.25s;
   transition-property: background-color, color;
   &:hover,
   &:focus {
-    background-color: $color-white;
-    color: $color-charcoal--medium;
+    background-color: var(--color-white);
+    color: var(--color-charcoal--medium);
   }
 }
 
 .annotation__frame-player {
   display: none;
-  grid-gap: $spacing-2;
+  grid-gap: var(--spacing-2);
   grid-template-columns: min-content auto;
-  padding-bottom: $spacing-4;
+  padding-bottom: var(--spacing-4);
 
   button {
     &:hover,
     &:focus {
-      color: $color-gray--dark;
+      color: var(--color-gray--dark);
     }
   }
 }
@@ -310,13 +310,13 @@ modify-track-dialog {
 }
 
 favorite-button {
-  margin-bottom: $spacing-2;
-  margin-right: $spacing-2;
+  margin-bottom: var(--spacing-2);
+  margin-right: var(--spacing-2);
 }
 
 .favorites-panel {
-  border: 1px solid $color-charcoal--light;
-  background-color: $color-charcoal--medium;
+  border: 1px solid var(--color-charcoal--light);
+  background-color: var(--color-charcoal--medium);
 }
 
 .annotation__multi-grid {
@@ -333,11 +333,11 @@ favorite-button {
   flex-direction: column;
   flex-grow: 1;
   overflow: hidden;
-  margin-bottom: $spacing-3;
-  margin-top: $spacing-3;
+  margin-bottom: var(--spacing-3);
+  margin-top: var(--spacing-3);
   width: 100%;
   &.is-full-screen {
-    margin-right: $spacing-3;
+    margin-right: var(--spacing-3);
 
     & + .annotation__panels {
       display: none;
@@ -364,7 +364,7 @@ favorite-button {
 }
 
 .annotation__announcement {
-  border-bottom: 1px solid $color-charcoal--light;
+  border-bottom: 1px solid var(--color-charcoal--light);
 }
 
 .annotation__video-player {
@@ -373,11 +373,11 @@ favorite-button {
   flex-direction: column;
   flex-grow: 1;
   overflow: hidden;
-  margin-bottom: $spacing-3;
-  margin-top: $spacing-3;
+  margin-bottom: var(--spacing-3);
+  margin-top: var(--spacing-3);
   width: 100%;
   &.is-full-screen {
-    margin-right: $spacing-3;
+    margin-right: var(--spacing-3);
 
     & + .annotation__panels {
       display: none;
@@ -409,24 +409,24 @@ annotation-player {
 }
 
 .video__controls {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   min-height: 64px;
 }
 
 .scrub__bar {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   padding-bottom: 16px;
 }
 
 .video__rewind {
   &:hover,
   &:focus {
-    color: $color-purple;
+    color: var(--color-purple);
   }
 
   &:disabled,
   [disabled] {
-    color: $color-gray--dark;
+    color: var(--color-gray--dark);
     cursor: not-allowed;
   }
 }
@@ -435,23 +435,23 @@ annotation-player {
   margin-right: 16px;
   &:hover,
   &:focus {
-    color: $color-purple;
+    color: var(--color-purple);
   }
 
   &:disabled,
   [disabled] {
-    color: $color-gray--dark;
+    color: var(--color-gray--dark);
     cursor: not-allowed;
   }
 }
 
 .video__play-wrap {
-  background-color: $color-charcoal--light;
+  background-color: var(--color-charcoal--light);
   height: 36px;
   width: 36px;
   &:hover,
   &:focus {
-    background-color: $color-purple;
+    background-color: var(--color-purple);
   }
 
   .video__play {
@@ -469,7 +469,7 @@ annotation-player {
 
   &:disabled,
   [disabled] {
-    color: $color-gray--dark;
+    color: var(--color-gray--dark);
     cursor: not-allowed;
   }
 }
@@ -531,7 +531,7 @@ annotation-player {
 
 .annotation-browser-btn {
   align-items: center;
-  background-color: $color-charcoal--medium-dark;
+  background-color: var(--color-charcoal--medium-dark);
   border: 1px #1e2129;
   border-radius: 3px;
   color: #a2afcd;
@@ -576,7 +576,7 @@ annotation-player {
 }
 .dark-page-tab {
   align-items: center;
-  background-color: $color-charcoal--dark;
+  background-color: var(--color-charcoal--dark);
   color: #a2afcd;
   cursor: pointer;
   display: flex;
@@ -592,8 +592,8 @@ annotation-player {
 .dark-page-tab.active,
 .dark-page-tab:hover,
 .dark-page-tab:focus {
-  color: $color-white;
-  background-color: $color-charcoal--dark;
+  color: var(--color-white);
+  background-color: var(--color-charcoal--dark);
   border-bottom: 1px solid #ffffff;
 }
 
@@ -640,8 +640,8 @@ annotation-player {
   grid-row-gap: 20px;
   grid-template-columns: 60% 40%;
   grid-template-rows: auto;
-  border-bottom: 1px solid $color-charcoal--light;
-  border-top: 1px solid $color-charcoal--light;
+  border-bottom: 1px solid var(--color-charcoal--light);
+  border-top: 1px solid var(--color-charcoal--light);
 }
 
 .video-timeline-control {
@@ -651,7 +651,7 @@ annotation-player {
   position: absolute;
   z-index: 10;
   border: 2px solid black;
-  background-color: $color-charcoal--dark;
+  background-color: var(--color-charcoal--dark);
   padding: 2px;
 }
 
@@ -660,13 +660,13 @@ annotation-player {
   overflow: initial;
   position: absolute;
   z-index: 10;
-  background-color: $color-charcoal--dark;
+  background-color: var(--color-charcoal--dark);
   padding: 2px;
 }
 
 .annotation-canvas-overlay-menu-back {
   padding: 8px;
-  border-bottom: 1px solid $color-charcoal--light;
+  border-bottom: 1px solid var(--color-charcoal--light);
 }
 
 .annotation-canvas-overlay-menu-option {
@@ -678,7 +678,7 @@ annotation-player {
   }
   &:hover,
   &:focus {
-    color: $color-white;
-    background-color: $color-purple50;
+    color: var(--color-white);
+    background-color: var(--color-purple50);
   }
 }

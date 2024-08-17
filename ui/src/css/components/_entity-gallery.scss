@@ -1,5 +1,5 @@
 .enitity-gallery {
-  //background-color: $color-charcoal--medium;
+  //background-color: var(--color-charcoal--medium);
   border: 2px solid #151b28;
   //margin-bottom: 500px;
 }
@@ -17,12 +17,12 @@
 }
 
 .entity-resize {
-  //border: 1px solid $color-charcoal--medium;
-  //padding: $spacing-2 $spacing-4;
+  //border: 1px solid var(--color-charcoal--medium);
+  //padding: var(--spacing-2) var(--spacing-4);
   //width: 300px;
 
   .entity-resize__label {
-    padding-right: $spacing-2;
+    padding-right: var(--spacing-2);
   }
 }
 
@@ -37,24 +37,24 @@ entity-gallery-aspect-ratio {
 }
 
 .entity-card {
-  background-color: $color-charcoal--light;
+  background-color: var(--color-charcoal--light);
   padding: 6px;
   position: relative;
 
   &.dark-card {
-    background-color: $color-charcoal--medium;
+    background-color: var(--color-charcoal--medium);
   }
 
   img {
-    background-color: $color-charcoal--medium;
+    background-color: var(--color-charcoal--medium);
     height: 130px;
     width: 100%;
     background-image: linear-gradient(
         to right,
-        $color-charcoal--light 1px,
+        var(--color-charcoal--light) 1px,
         transparent 1px
       ),
-      linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
+      linear-gradient(to bottom, var(--color-charcoal--light) 1px, transparent 1px);
     background-size: 10px 10px;
     // transition: all 300ms linear;
     object-fit: cover;
@@ -93,7 +93,7 @@ entity-gallery-aspect-ratio {
     text-overflow: ellipsis;
   }
   &.is-selected {
-    border: 1px solid $color-purple;
+    border: 1px solid var(--color-purple);
   }
 }
 
@@ -104,9 +104,9 @@ entity-gallery-aspect-ratio {
 
 .entity-panel--container {
   transition: 500ms ease right;
-  background: $color-charcoal--dark;
+  background: var(--color-charcoal--dark);
   //padding-left: 5px;
-  border-left: 5px solid $color-purple;
+  border-left: 5px solid var(--color-purple);
   -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   padding-bottom: 50px;
@@ -139,9 +139,9 @@ entity-gallery-aspect-ratio {
 
 .entity-panel--container-left {
   transition: 500ms ease left;
-  background: $color-charcoal--dark;
+  background: var(--color-charcoal--dark);
   width: 390px;
-  // border-right: 5px solid $color-purple;
+  // border-right: 5px solid var(--color-purple);
   -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   padding-bottom: 50px;
@@ -199,7 +199,7 @@ entity-gallery-aspect-ratio {
 }
 
 .entity-panel--container--top-bar {
-  border-bottom: 1px solid $color-charcoal--light;
+  border-bottom: 1px solid var(--color-charcoal--light);
   display: flex;
 }
 
@@ -214,7 +214,7 @@ entity-gallery-aspect-ratio {
   z-index: 100;
 
   &:hover {
-    color: $color-charcoal--light;
+    color: var(--color-charcoal--light);
   }
 
   &.left {
@@ -234,16 +234,16 @@ entity-gallery-aspect-ratio {
   //width: 100%; // fill container
   img {
     width: 95%;
-    //background-color: $color-charcoal--medium;
+    //background-color: var(--color-charcoal--medium);
     max-height: 350px;
     object-fit: contain;
     padding: 15px;
     background-image: linear-gradient(
         to right,
-        $color-charcoal--light 1px,
+        var(--color-charcoal--light) 1px,
         transparent 1px
       ),
-      linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
+      linear-gradient(to bottom, var(--color-charcoal--light) 1px, transparent 1px);
     background-size: 10px 10px;
   }
 
@@ -266,7 +266,7 @@ collections-card {
   }
 
   &:hover {
-    border-color: $color-gray--light;
+    border-color: var(--color-gray--light);
   }
 }
 
@@ -307,24 +307,24 @@ collections-card {
 }
 
 .entity-gallery-slider {
-  background: $color-charcoal--medium-dark70;
+  background: var(--color-charcoal--medium-dark70);
   margin: 10px 0 20px;
   padding: 10px;
   // transition: 300ms linear all;
-  border: 2px solid $color-charcoal--medium;
+  border: 2px solid var(--color-charcoal--medium);
   &:hover {
-    border-color: $color-purple50;
-    background: $color-charcoal--medium-dark;
+    border-color: var(--color-purple50);
+    background: var(--color-charcoal--medium-dark);
     .entity-gallery-slider--title {
-      color: $color-white !important;
+      color: var(--color-white) !important;
     }
   }
   &:focus,
   &.active {
-    border-color: $color-purple;
-    background: $color-charcoal--medium-dark;
+    border-color: var(--color-purple);
+    background: var(--color-charcoal--medium-dark);
     .entity-gallery-slider--title {
-      color: $color-white !important;
+      color: var(--color-white) !important;
     }
     .enitity-gallery-slider__nav {
       display: block;
@@ -343,31 +343,31 @@ collections-card {
 }
 
 .collections-gallery--main .entity-panel--container {
-  border-left: 10px solid $color-charcoal--light;
+  border-left: 10px solid var(--color-charcoal--light);
 }
 
 .gallery-label-count {
-  background: $color-purple;
-  color: $color-white;
-  width: $spacing-2;
-  height: $spacing-2;
+  background: var(--color-purple);
+  color: var(--color-white);
+  width: var(--spacing-2);
+  height: var(--spacing-2);
   padding: 3px 8px;
   font-size: 0.8em;
   border-radius: 30px;
-  margin: 0 $spacing-2;
+  margin: 0 var(--spacing-2);
 
   &.off {
-    background-color: $color-gray--medium;
-    color: $color-charcoal--light;
+    background-color: var(--color-gray--medium);
+    color: var(--color-charcoal--light);
   }
 }
 
 .enitity-gallery__labels-div {
-  background: $color-charcoal--medium;
+  background: var(--color-charcoal--medium);
 }
 
 .entity-gallery-labels {
-  border: 1px solid $color-charcoal--light;
+  border: 1px solid var(--color-charcoal--light);
 }
 
 .enitity-gallery__tools {
@@ -376,8 +376,8 @@ collections-card {
 
 .entity-gallery-tools--menu {
   position: absolute;
-  background: $color-charcoal--light;
-  box-shadow: 0 2px 4px $color-charcoal--dark70;
+  background: var(--color-charcoal--light);
+  box-shadow: 0 2px 4px var(--color-charcoal--dark70);
   // transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
   z-index: 100;
   width: 200px;
@@ -393,16 +393,16 @@ collections-card {
 
   .triangle,
   .label-tag {
-    margin: 0 $spacing-2;
-    fill: $color-charcoal--light;
-    stroke: $color-gray--light;
+    margin: 0 var(--spacing-2);
+    fill: var(--color-charcoal--light);
+    stroke: var(--color-gray--light);
   }
 
   .hover-text-white {
     &:hover {
       .triangle,
       .label-tag {
-        stroke: $color-white;
+        stroke: var(--color-white);
       }
     }
   }
@@ -421,8 +421,8 @@ collections-card {
 
 // .entity-gallery-card__attribute:not(.hidden) {
 //   &:first-child span:not(.text-italics) {
-//     font-weight: $weight-semibold;
-//     color: $color-white;
+//     font-weight: var(--weight-semibold);
+//     color: var(--color-white);
 //   }
 // }
 
@@ -430,7 +430,7 @@ collections-card {
   .enitity-gallery-header.mr-6,
   .enitity-gallery.mr-6,
   .enitity-gallery_h-slide.mr-6 {
-    margin-right: $spacing-1;
+    margin-right: var(--spacing-1);
   }
 }
 
@@ -512,7 +512,7 @@ collections-card {
   left: -5px; // relative to the container this puts it on the left border
   cursor: col-resize;
   float: left;
-  background: $color-purple;
+  background: var(--color-purple);
 }
 
 .entity-panel-draghandle.left {

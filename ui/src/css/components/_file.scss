@@ -1,20 +1,20 @@
 .files-wrap {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   align-self: flex-start;
   margin-right: 20px;
 }
 
 .files__header {
   align-items: stretch;
-  border-bottom: 1px solid $color-charcoal--light;
+  border-bottom: 1px solid var(--color-charcoal--light);
 }
 
 .files__nav-type {
-  margin-right: $spacing-5;
+  margin-right: var(--spacing-5);
   &.is-active {
-    color: $color-white;
+    color: var(--color-white);
     &:after {
-      background-color: $color-purple;
+      background-color: var(--color-purple);
       bottom: -1px;
       content: "";
       height: 1px;
@@ -34,7 +34,7 @@
 }
 
 .files__footer {
-  border-top: 1px solid $color-charcoal--light;
+  border-top: 1px solid var(--color-charcoal--light);
   box-sizing: border-box;
   height: 57px; // To match overview when there are six files showing
 }
@@ -42,7 +42,7 @@
 .file {
   &:hover,
   &:focus {
-    background-color: $color-charcoal--light70;
+    background-color: var(--color-charcoal--light70);
 
     media-more {
       opacity: 1;

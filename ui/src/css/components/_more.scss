@@ -1,7 +1,7 @@
 .more {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   border-radius: 6px;
-  box-shadow: 0 2px 4px $color-charcoal--dark70;
+  box-shadow: 0 2px 4px var(--color-charcoal--dark70);
   position: absolute;
   z-index: 1000;
   box-shadow: rgb(0 0 0 / 70%) 3px 3px 15px 5px;
@@ -23,7 +23,7 @@
 
   .header__layout-wrap & {
     box-sizing: border-box;
-    left: -$spacing-4;
+    left: -var(--spacing-4);
     top: calc(100% + 10px);
     width: 420px;
   }
@@ -53,7 +53,7 @@
   .project__search & {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
-    border-top: 1px solid $color-charcoal--light;
+    border-top: 1px solid var(--color-charcoal--light);
     box-sizing: border-box;
     margin-left: 50px;
     top: 100%;
@@ -62,7 +62,7 @@
 
   algorithm-menu {
     &:not(:last-child) {
-      border-bottom: 1px solid $color-charcoal--light;
+      border-bottom: 1px solid var(--color-charcoal--light);
     }
   }
 }

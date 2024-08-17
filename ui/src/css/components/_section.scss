@@ -8,20 +8,20 @@
 }
 
 .sections {
-  padding-bottom: $spacing-5;
+  padding-bottom: var(--spacing-5);
 
   &:not(:last-child) {
-    border-bottom: 1px solid $color-charcoal--light;
+    border-bottom: 1px solid var(--color-charcoal--light);
   }
 }
 
 .is-active {
   .section__name {
-    color: $color-white;
-    font-weight: $weight-semibold;
+    color: var(--color-white);
+    font-weight: var(--weight-semibold);
 
     &:before {
-      background-color: $color-purple;
+      background-color: var(--color-purple);
       border-bottom-right-radius: 6px;
       border-top-right-radius: 6px;
       content: "";
@@ -34,7 +34,7 @@
 }
 
 .section {
-  margin-left: -$spacing-2;
+  margin-left: -var(--spacing-2);
 
   &:first-child {
     padding-top: 0;
@@ -43,7 +43,7 @@
   &:hover,
   &:focus {
     .section__name {
-      color: $color-white;
+      color: var(--color-white);
     }
 
     details {
@@ -53,13 +53,13 @@
 
   &.is-active {
     .section__name {
-      color: $color-white;
-      font-weight: $weight-semibold;
+      color: var(--color-white);
+      font-weight: var(--weight-semibold);
     }
   }
 
   &.is-active:before {
-    background-color: $color-purple;
+    background-color: var(--color-purple);
     border-bottom-right-radius: 6px;
     border-top-right-radius: 6px;
     content: "";
@@ -74,12 +74,12 @@
   }
 
   &.has-copy-to-section {
-    box-shadow: 0 0 0 1.5px $color-purple;
+    box-shadow: 0 0 0 1.5px var(--color-purple);
     position: relative;
     &::before {
-      background-color: rgba($color-purple, 0.3);
+      background-color: rgba(var(--color-purple), 0.3);
       border-bottom-left-radius: 2px;
-      color: $color-white;
+      color: var(--color-white);
       content: "Copy to section";
       font-size: 8px;
       padding: 3px 5px;
@@ -90,13 +90,13 @@
     }
 
     &::after {
-      background-color: $color-purple;
+      background-color: var(--color-purple);
       border-radius: 9px;
       bottom: -10px;
-      color: $color-white;
+      color: var(--color-white);
       content: attr(data-copy);
       font-size: 11px;
-      font-weight: $weight-semibold;
+      font-weight: var(--weight-semibold);
       padding: 4px 8px;
       position: absolute;
       right: 10px;

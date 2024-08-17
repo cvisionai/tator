@@ -1,10 +1,10 @@
 .pagination a {
-  border: 1px solid $color-charcoal--light;
+  border: 1px solid var(--color-charcoal--light);
   border-radius: 2px;
   box-sizing: border-box;
-  color: $color-gray--light;
+  color: var(--color-gray--light);
   display: flex;
-  font-weight: $weight-semibold;
+  font-weight: var(--weight-semibold);
   justify-content: center;
   margin-right: 3px;
   min-width: 30px;
@@ -12,18 +12,18 @@
   &.is-active,
   &:hover,
   &:focus {
-    border-color: $color-purple;
+    border-color: var(--color-purple);
   }
   &:first-child,
   &:last-child {
-    font-weight: $weight-regular;
+    font-weight: var(--weight-regular);
   }
   &.is-disabled {
-    color: $color-gray--dark;
+    color: var(--color-gray--dark);
     cursor: not-allowed;
     &:hover,
     &:focus {
-      border-color: $color-charcoal--light;
+      border-color: var(--color-charcoal--light);
     }
   }
 }

@@ -3,9 +3,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  // background: $color-gray--light;
-  background: $color-charcoal--dark;
-  border-top: 5px solid $color-gray--light;
+  // background: var(--color-gray--light);
+  background: var(--color-charcoal--dark);
+  border-top: 5px solid var(--color-gray--light);
   box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
   resize: horizontal;
   transition: height 500ms ease-out;
@@ -20,16 +20,16 @@
   left: 0;
   right: 0;
   top: 0;
-  // background-color: $color-purple50;
-  // background-color: $color-charcoal--medium-dark;
+  // background-color: var(--color-purple50);
+  // background-color: var(--color-charcoal--medium-dark);
   // content: "SELECTION MODE";
-  color: $color-white;
+  color: var(--color-white);
   text-align: center;
-  padding: $spacing-3 $spacing-6;
+  padding: var(--spacing-3) var(--spacing-6);
 }
 kbd {
-  color: $color-white;
-  background: $color-purple50;
+  color: var(--color-white);
+  background: var(--color-purple50);
   font-family: monospace;
   border-radius: 3px;
   padding: 2px;
@@ -55,25 +55,25 @@ entity-gallery-bulk-edit {
   top: 0;
   left: 0;
 
-  margin-bottom: $spacing-3;
-  margin-left: -$spacing-1; // SVG includes a bit of space around it
+  margin-bottom: var(--spacing-3);
+  margin-left: -var(--spacing-1); // SVG includes a bit of space around it
   &:hover,
   &:focus {
-    color: $color-white;
+    color: var(--color-white);
   }
 
   &.has-background svg {
-    background-color: $color-charcoal--light;
+    background-color: var(--color-charcoal--light);
   }
   // }
   &:after {
     content: "[Esc]";
-    color: $color-gray--light;
+    color: var(--color-gray--light);
     display: block;
     font-size: 12px;
     &:hover,
     &:focus {
-      color: $color-white;
+      color: var(--color-white);
     }
   }
 }
@@ -84,17 +84,17 @@ entity-gallery-bulk-edit {
     content: " ";
     width: 25px;
     height: 25px;
-    background-color: $color-charcoal--medium-dark;
+    background-color: var(--color-charcoal--medium-dark);
     display: block;
     position: absolute;
     top: 0;
     left: 0;
     border-radius: 5px 0 5px 0;
-    border: 5px solid $color-charcoal--light;
+    border: 5px solid var(--color-charcoal--light);
   }
   &.is-selected {
     &:before {
-      background-color: $color-purple;
+      background-color: var(--color-purple);
       // border: 3px solid #696cff;
     }
   }
@@ -106,7 +106,7 @@ entity-gallery-bulk-edit {
 
 .bulk-edit-attr-choices,
 .bulk-edit-form__panel-group {
-  background: $color-charcoal--medium-dark;
+  background: var(--color-charcoal--medium-dark);
   max-height: 300px;
   overflow-y: scroll;
 }
@@ -116,7 +116,7 @@ entity-gallery-bulk-edit {
   max-height: 200px;
   overflow-y: scroll;
   .entity-gallery-labels {
-    background: $color-charcoal--medium-dark;
+    background: var(--color-charcoal--medium-dark);
   }
 }
 
@@ -126,7 +126,7 @@ entity-gallery-bulk-edit {
 }
 
 .annotation__panel-group_bulk-edit {
-  // border: 1px solid $color-gray--light;
+  // border: 1px solid var(--color-gray--light);
   border-radius: 3px;
   // padding: 25px 10px;
   position: relative;
@@ -136,9 +136,9 @@ entity-gallery-bulk-edit {
   position: absolute;
   left: 15px;
   top: -9px;
-  background-color: $color-charcoal--medium-dark;
+  background-color: var(--color-charcoal--medium-dark);
   border-radius: 30px;
-  border: 1px solid $color-charcoal--light;
+  border: 1px solid var(--color-charcoal--light);
   padding: 5px;
 }
 
@@ -154,7 +154,7 @@ entity-card:focus {
 }
 
 [class^="arr-"] {
-  border: solid $color-gray--light;
+  border: solid var(--color-gray--light);
   border-width: 0 0.1em 0.1em 0;
   display: inline-block;
   padding: 0.2em;

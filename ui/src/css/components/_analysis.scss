@@ -1,24 +1,24 @@
 body.analysis-annotations-body {
-  //background-color: $color-charcoal--light !important;
+  //background-color: var(--color-charcoal--light) !important;
   padding-bottom: 0px;
 }
 
 .analysis__panel-group {
-  border-top: 1px solid $color-charcoal--light;
+  border-top: 1px solid var(--color-charcoal--light);
 }
 
 .analysis__labels {
   flex-wrap: wrap;
 
   button {
-    margin-bottom: $spacing-2;
-    margin-right: $spacing-2;
+    margin-bottom: var(--spacing-2);
+    margin-right: var(--spacing-2);
     width: initial;
   }
 }
 
 .analysis {
-  //background-color: $color-charcoal--light;
+  //background-color: var(--color-charcoal--light);
   bottom: 0;
   box-sizing: border-box;
   overflow-y: auto;
@@ -35,14 +35,14 @@ body.analysis-annotations-body {
 }
 
 .analysis__nav-wrap {
-  border-bottom: 1px solid $color-gray--dark50;
+  border-bottom: 1px solid var(--color-gray--dark50);
 }
 
 .analysis__nav a.is-active {
-  color: $color-white;
+  color: var(--color-white);
 
   &:after {
-    background-color: $color-purple;
+    background-color: var(--color-purple);
     bottom: -1px;
     content: "";
     height: 1px;
@@ -53,19 +53,19 @@ body.analysis-annotations-body {
 }
 
 .analysis__block {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   height: 430px;
 }
 
 .analysis__subnav {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
 }
 
 .analysis__subnav a.is-active {
-  color: $color-white;
+  color: var(--color-white);
 
   &:after {
-    background-color: $color-purple;
+    background-color: var(--color-purple);
     bottom: 0;
     content: "";
     height: 1px;
@@ -83,19 +83,19 @@ body.analysis-annotations-body {
 
 .analysis__collection,
 .analysis__annotation {
-  //background-color: $color-charcoal--light;
+  //background-color: var(--color-charcoal--light);
   overflow: hidden;
   position: relative;
   &:hover,
   &:focus {
-    box-shadow: 0 0 0 3px $color-purple;
+    box-shadow: 0 0 0 3px var(--color-purple);
   }
 
   &.is-selected {
-    box-shadow: 0 0 0 3px $color-purple;
+    box-shadow: 0 0 0 3px var(--color-purple);
     &:before {
       content: "";
-      background-color: $color-purple;
+      background-color: var(--color-purple);
       opacity: 0.3;
       position: absolute;
       top: 0;
@@ -106,17 +106,17 @@ body.analysis-annotations-body {
   }
 
   img {
-    background-color: $color-charcoal--medium;
+    background-color: var(--color-charcoal--medium);
     height: 130px;
     object-fit: cover;
     margin: 5px auto;
     width: 100%;
     background-image: linear-gradient(
         to right,
-        $color-charcoal--light 1px,
+        var(--color-charcoal--light) 1px,
         transparent 1px
       ),
-      linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
+      linear-gradient(to bottom, var(--color-charcoal--light) 1px, transparent 1px);
     background-size: 10px 10px;
     // transition: all 300ms linear;
   }
@@ -132,17 +132,17 @@ body.analysis-annotations-body {
   border: 2px solid transparent;
   &:hover,
   &:focus {
-    box-shadow: 0 0 0 3px $color-charcoal--light;
+    box-shadow: 0 0 0 3px var(--color-charcoal--light);
   }
 
   &.is-selected {
-    border-color: $color-white;
-    box-shadow: 0 0 0 3px $color-charcoal--light;
+    border-color: var(--color-white);
+    box-shadow: 0 0 0 3px var(--color-charcoal--light);
     &:before {
-      //background-color: $color-charcoal--light;
+      //background-color: var(--color-charcoal--light);
     }
     .entity-gallery-card__attribute {
-      color: $color-white !important;
+      color: var(--color-white) !important;
     }
   }
 }
@@ -155,12 +155,12 @@ body.analysis-annotations-body {
 }
 
 .analysis__parameters input {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   color: transparent;
 }
 
 .analysis__parameters input:focus {
-  color: $color-white;
+  color: var(--color-white);
 }
 
 .analysis__parameters input:focus + div {
@@ -186,7 +186,7 @@ body.analysis-annotations-body {
   flex-direction: column;
   flex-grow: 1;
   align-items: stretch;
-  background: $color-charcoal--medium;
+  background: var(--color-charcoal--medium);
 }
 
 .analysis__filter_main {
@@ -213,17 +213,17 @@ body.analysis-annotations-body {
 }
 
 .analysis__filter_conditions_interface {
-  background: $color-charcoal--medium;
+  background: var(--color-charcoal--medium);
 }
 
 .analysis__filter_condition_group {
-  border-top: 1px solid $color-gray--dark50;
-  border-bottom: 1px solid $color-gray--dark50;
+  border-top: 1px solid var(--color-gray--dark50);
+  border-bottom: 1px solid var(--color-gray--dark50);
 }
 
 .analysis__filter_conditions {
-  border: 1px solid $color-gray--dark50;
-  background: $color-charcoal--dark;
+  border: 1px solid var(--color-gray--dark50);
+  background: var(--color-charcoal--dark);
 }
 
 .analysis__filter_conditions_list {
@@ -233,12 +233,12 @@ body.analysis-annotations-body {
 }
 
 .analysis__filter_field_border {
-  border: 1px solid $color-charcoal--light;
+  border: 1px solid var(--color-charcoal--light);
   margin: 3px;
 }
 
 .analysis__dashboard-box {
-  background: $color-charcoal--medium;
+  background: var(--color-charcoal--medium);
   width: 250px;
   height: 250px;
   margin: 100px 25px;
@@ -246,12 +246,12 @@ body.analysis-annotations-body {
   // transition: all 300ms linear;
 
   svg {
-    color: $color-white;
+    color: var(--color-white);
   }
 
   &:hover {
-    border-color: $color-charcoal--light;
-    background-color: $color-charcoal--medium70;
+    border-color: var(--color-charcoal--light);
+    background-color: var(--color-charcoal--medium70);
   }
 }
 
@@ -263,7 +263,7 @@ body.analysis-annotations-body {
 }
 
 .reports_main {
-  border-left: 1px solid $color-charcoal--light;
+  border-left: 1px solid var(--color-charcoal--light);
   box-sizing: border-box;
   height: calc(100vh - 62px);
   overflow: auto;
@@ -278,17 +278,17 @@ body.analysis-annotations-body {
 
 .dashboard_summary-icon {
   align-items: stretch;
-  background: $color-charcoal--medium;
+  background: var(--color-charcoal--medium);
   width: 50px;
   height: 50px;
   border: 2px solid;
-  border-color: $color-charcoal--light;
+  border-color: var(--color-charcoal--light);
   transition: all 300ms linear;
-  color: $color-gray--light;
+  color: var(--color-gray--light);
 
   &:hover {
-    border-color: $color-white--50;
-    background-color: $color-charcoal--light;
-    color: $color-white;
+    border-color: var(--color-white--50);
+    background-color: var(--color-charcoal--light);
+    color: var(--color-white);
   }
 }

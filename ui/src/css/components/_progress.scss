@@ -3,14 +3,14 @@
   height: 4px;
   width: 100%;
   &::-webkit-progress-bar {
-    background-color: $color-charcoal--light;
+    background-color: var(--color-charcoal--light);
   }
   &::-webkit-progress-value {
-    background-color: $color-green;
+    background-color: var(--color-green);
   }
 
   & + label svg {
-    fill: $color-green;
-    margin-right: $spacing-3;
+    fill: var(--color-green);
+    margin-right: var(--spacing-3);
   }
 }

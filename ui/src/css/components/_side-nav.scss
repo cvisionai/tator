@@ -8,7 +8,7 @@ settings-nav {
   //overflow-y: scroll;
   //overflow-x: hidden;
   //height: 90vh;
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   transition: background-color 500ms ease;
   border-radius: 10px;
   margin-bottom: 150px;
@@ -25,7 +25,7 @@ settings-nav {
     border-radius: 0 0 10px 10px;
   }
 
-  @media only screen and ($width-sm) {
+  @media only screen and (var(--width-sm)) {
     position: relative;
   }
 }
@@ -36,12 +36,12 @@ settings-nav {
   overflow: auto;
   display: block;
   max-height: 50vh;
-  padding: 12px $spacing-3;
-  color: $color-gray--light;
+  padding: 12px var(--spacing-3);
+  color: var(--color-gray--light);
   text-align: left;
   background-color: transparent;
   border: 0;
-  //border-top: 1px solid $color-gray--light;
+  //border-top: 1px solid var(--color-gray--light);
 
   //&:first-child {
   //border-top: 0;
@@ -55,8 +55,8 @@ settings-nav {
   // }
 
   &[selected="true"] {
-    //background-color: $color-charcoal--light70;
-    color: $color-white;
+    //background-color: var(--color-charcoal--light70);
+    color: var(--color-white);
   }
 
   .SideNav-heading button,
@@ -72,7 +72,7 @@ settings-nav {
 }
 .SideNav-item,
 .SideNav-heading {
-  border: 1px solid $color-charcoal--light70;
+  border: 1px solid var(--color-charcoal--light70);
 
   &:last-child {
     //border-bottom: none;
@@ -83,7 +83,7 @@ settings-nav {
 // States
 .SideNav-heading button:hover,
 .SideNav-item:hover {
-  color: $color-white;
+  color: var(--color-white);
 
   // Bar on the left
   &::before {
@@ -95,7 +95,7 @@ settings-nav {
     width: 4px;
     pointer-events: none;
     content: "";
-    background-color: $color-gray--light;
+    background-color: var(--color-gray--light);
     border-bottom-right-radius: 6px;
     border-top-right-radius: 6px;
   }
@@ -106,8 +106,8 @@ settings-nav {
 .SideNav-item:focus {
   text-decoration: none;
   // stylelint-disable-next-line primer/colors
-  //background-color: $color-charcoal--light70;
-  color: $color-white;
+  //background-color: var(--color-charcoal--light70);
+  color: var(--color-white);
   outline: none;
 
   // Bar on the left
@@ -120,7 +120,7 @@ settings-nav {
     width: 4px;
     pointer-events: none;
     content: "";
-    background-color: $color-purple;
+    background-color: var(--color-purple);
     border-bottom-right-radius: 6px;
     border-top-right-radius: 6px;
   }
@@ -128,15 +128,15 @@ settings-nav {
 
 .SideNav-heading button:active,
 .SideNav-item:active {
-  background-color: $color-gray--light;
+  background-color: var(--color-gray--light);
 }
 
 .SideNav-heading button[aria-current]:not([aria-current="false"]),
 .SideNav-heading button[aria-selected="true"],
 .SideNav-item[aria-current]:not([aria-current="false"]),
 .SideNav-item[aria-selected="true"] {
-  background-color: $color-charcoal--light70;
-  color: $color-white;
+  background-color: var(--color-charcoal--light70);
+  color: var(--color-white);
 }
 
 // Icon
@@ -147,11 +147,11 @@ settings-nav {
   width: 16px;
   margin-right: 15px;
   color: auto;
-  //color: $color-charcoal--light70;
+  //color: var(--color-charcoal--light70);
 }
 
 .SubItems {
-  //background: $color-gray--dark;
+  //background: var(--color-gray--dark);
   margin-bottom: 0;
   border: 0;
   position: relative;
@@ -171,7 +171,7 @@ settings-nav {
   position: relative;
   display: block;
   margin: 15px 0 15px 44px;
-  color: $color-gray--light;
+  color: var(--color-gray--light);
   text-align: left;
   background-color: transparent;
   border: 0;
@@ -179,32 +179,32 @@ settings-nav {
   @extend .f2;
 
   &[selected="true"] {
-    color: $color-white;
+    color: var(--color-white);
   }
 }
 
 .SideNav-subItem:hover {
   //text-decoration: underline;
-  color: $color-white;
+  color: var(--color-white);
 }
 
 .SideNav-subItem[aria-current]:not([aria-current="false"]),
 .SideNav-subItem[aria-selected="true"] {
-  font-weight: $weight-semibold;
-  color: $color-white;
+  font-weight: var(--weight-semibold);
+  color: var(--color-white);
 }
 .SideNav-heading button span {
   @extend .f1;
 }
 
 .SideNav-heading[selected="true"] {
-  background-color: $color-charcoal--light70;
+  background-color: var(--color-charcoal--light70);
 }
 
 .SideNav-heading[selected="true"] button,
 .SideNav-item[selected="true"] {
   color: white;
-  //background-color: $color-charcoal--light70;
+  //background-color: var(--color-charcoal--light70);
   // KEEP this if they click into sub items
   // Bar on the left
   // Bar on the left
@@ -217,7 +217,7 @@ settings-nav {
     width: 4px;
     pointer-events: none;
     content: "";
-    background-color: $color-purple;
+    background-color: var(--color-purple);
     border-bottom-right-radius: 6px;
     border-top-right-radius: 6px;
   }
@@ -232,6 +232,6 @@ settings-nav {
   @extend .h3;
   &:hover {
     //transform: scale(1.1);
-    color: $color-purple;
+    color: var(--color-purple);
   }
 }

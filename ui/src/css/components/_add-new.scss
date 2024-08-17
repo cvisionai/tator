@@ -1,16 +1,16 @@
 .add-new {
-  border: 2px dashed $color-charcoal--light70;
+  border: 2px dashed var(--color-charcoal--light70);
   height: 100px;
   transition-duration: 0.25s;
   transition-property: background-color, border-style, color; // Border-style only for add / remove people from project
   &:hover,
   &:focus {
-    background-color: $color-charcoal--medium70;
-    color: $color-white;
+    background-color: var(--color-charcoal--medium70);
+    color: var(--color-white);
 
     .add-new__icon {
-      background-color: $color-white;
-      color: $color-charcoal--medium;
+      background-color: var(--color-white);
+      color: var(--color-charcoal--medium);
     }
   }
 }
@@ -21,30 +21,30 @@
 
     &:hover,
     &:focus {
-      background-color: $color-charcoal--light;
+      background-color: var(--color-charcoal--light);
     }
   }
 }
 
 .add-new__icon {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   height: 34px;
   transition-duration: 0.25s;
   transition-property: background-color, color;
   width: 34px;
   &:hover,
   &:focus {
-    background-color: $color-white;
-    color: $color-charcoal--medium;
+    background-color: var(--color-white);
+    color: var(--color-charcoal--medium);
   }
   .avatar + & {
-    margin-left: $spacing-1;
+    margin-left: var(--spacing-1);
   }
   #js-invite-people & {
-    background-color: $color-charcoal--light70;
+    background-color: var(--color-charcoal--light70);
     &:hover,
     &:focus {
-      background-color: $color-white;
+      background-color: var(--color-white);
     }
   }
 }

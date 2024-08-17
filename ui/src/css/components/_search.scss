@@ -2,18 +2,18 @@
   width: 525px;
 
   label {
-    background-color: $color-charcoal--medium;
+    background-color: var(--color-charcoal--medium);
     cursor: pointer;
     flex-shrink: 0;
     height: 34px;
-    margin-right: $spacing-3;
+    margin-right: var(--spacing-3);
     transition-duration: 0.25s;
     transition-property: background-color, color;
     width: 34px;
     &:hover,
     &:focus {
-      background-color: $color-white;
-      color: $color-charcoal--medium;
+      background-color: var(--color-white);
+      color: var(--color-charcoal--medium);
     }
   }
 
@@ -30,7 +30,7 @@
       display: block;
     }
     &:focus {
-      background-color: $color-charcoal--medium;
+      background-color: var(--color-charcoal--medium);
       outline: none;
 
       & + .more {
@@ -48,7 +48,7 @@
   width: initial;
 
   input {
-    background-color: $color-charcoal--medium;
+    background-color: var(--color-charcoal--medium);
     margin-top: 0;
     padding-right: 36px;
   }

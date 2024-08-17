@@ -35,7 +35,7 @@
 .Label {
   @include labels-base;
   background-color: transparent !important; // TODO: Remove again
-  border-color: $color-charcoal--light;
+  border-color: var(--color-charcoal--light);
 
   &:hover {
     text-decoration: none;
@@ -58,62 +58,62 @@
 
 .Label--outline, // TODO: Deprecate? It's now the default
 .Label--gray {
-  color: $color-gray--medium;
-  border-color: $color-gray--medium;
+  color: var(--color-gray--medium);
+  border-color: var(--color-gray--medium);
 }
 
 .Label--gray-darker {
-  color: $color-gray--dark;
+  color: var(--color-gray--dark);
   // stylelint-disable-next-line primer/borders
-  border-color: $color-gray--dark50;
+  border-color: var(--color-gray--dark50);
 }
 
 // Colors
 /*
 .Label--yellow {
   // stylelint-disable-next-line primer/colors
-  color: $yellow-900;
+  color: var(--yellow-900);
   // stylelint-disable-next-line primer/borders
-  border-color: $yellow-800;
+  border-color: var(--yellow-800);
 }
 
 .Label--orange {
   // stylelint-disable-next-line primer/colors
-  color: $orange-800;
+  color: var(--orange-800);
   // stylelint-disable-next-line primer/borders
-  border-color: $orange-500;
+  border-color: var(--orange-500);
 }
 
 .Label--red {
-  color: $text-red;
+  color: var(--text-red);
   // stylelint-disable-next-line primer/borders
-  border-color: $red-600;
+  border-color: var(--red-600);
 }
 
 .Label--outline-green, // TODO: Deprecate
 .Label--green {
   // stylelint-disable-next-line primer/colors
-  color: $green-600;
+  color: var(--green-600);
   // stylelint-disable-next-line primer/borders
-  border-color: $green-500;
+  border-color: var(--green-500);
 }
 
 .Label--blue {
-  color: $text-blue;
-  border-color: $border-blue;
+  color: var(--text-blue);
+  border-color: var(--border-blue);
 }
 
 .Label--purple {
-  color: $text-purple;
+  color: var(--text-purple);
   // stylelint-disable-next-line primer/borders
-  border-color: $purple-400;
+  border-color: var(--purple-400);
 }
 
 .Label--pink {
   // stylelint-disable-next-line primer/colors
-  color: $pink-600;
+  color: var(--pink-600);
   // stylelint-disable-next-line primer/borders
-  border-color: $pink-400;
+  border-color: var(--pink-400);
 }*/
 
 .leaf-edit-icon:after {

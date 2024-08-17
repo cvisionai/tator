@@ -42,7 +42,7 @@
 }
 
 .modal {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -59,22 +59,22 @@
   top: 12px;
   &:hover,
   &:focus {
-    color: $color-white;
+    color: var(--color-white);
   }
 }
 
 .modal__header {
-  border-bottom: 1px solid $color-charcoal--light70;
+  border-bottom: 1px solid var(--color-charcoal--light70);
   box-sizing: border-box;
   width: 100%;
 
   svg {
-    margin-bottom: $spacing-2;
+    margin-bottom: var(--spacing-2);
   }
 
   label {
     // Search for Invite People to project
-    margin-top: $spacing-4;
+    margin-top: var(--spacing-4);
   }
 }
 
@@ -86,7 +86,7 @@
 
 .modal__main {
   box-sizing: border-box;
-  margin-bottom: $spacing-4;
+  margin-bottom: var(--spacing-4);
   width: 95%;
 }
 
@@ -107,7 +107,7 @@
   box-sizing: border-box;
 
   input {
-    margin-right: $spacing-1;
+    margin-right: var(--spacing-1);
     width: 120px;
   }
 }
@@ -118,7 +118,7 @@
 }
 
 .modal__errors {
-  margin-top: $spacing-2;
+  margin-top: var(--spacing-2);
 }
 
 .loading {

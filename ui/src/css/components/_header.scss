@@ -1,5 +1,5 @@
 .header {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   box-sizing: border-box;
   height: 62px;
   position: fixed;
@@ -11,7 +11,7 @@
 .header__menu {
   &:hover,
   &:focus {
-    color: $color-white;
+    color: var(--color-white);
   }
 }
 
@@ -25,7 +25,7 @@
   z-index: 1;
 
   progress {
-    margin-top: $spacing-2;
+    margin-top: var(--spacing-2);
     width: 100%;
   }
 }
@@ -42,7 +42,7 @@
   width: 316px;
 
   & + svg {
-    margin-left: $spacing-6;
+    margin-left: var(--spacing-6);
   }
 }
 
@@ -51,15 +51,15 @@
   animation-duration: 0.25s;
   animation-fill-mode: forwards;
   animation-name: fade-out;
-  background-color: $color-white;
-  color: $color-charcoal--dark;
+  background-color: var(--color-white);
+  color: var(--color-charcoal--dark);
 
   svg {
-    fill: $color-green;
+    fill: var(--color-green);
   }
 
   svg + & {
-    margin-left: -$spacing-3; // To cover maximize processing button
+    margin-left: -var(--spacing-3); // To cover maximize processing button
   }
 }
 
@@ -70,5 +70,5 @@
 }
 
 .header__error {
-  background-color: $color-red;
+  background-color: var(--color-red);
 }

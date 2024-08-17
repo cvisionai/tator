@@ -1,8 +1,8 @@
 .btn {
   align-items: center;
-  background-color: $color-purple;
+  background-color: var(--color-purple);
   border-radius: 3px;
-  color: $color-white;
+  color: var(--color-white);
   cursor: pointer;
   display: flex;
   height: 46px;
@@ -17,120 +17,120 @@
   }
   &:hover,
   &:focus {
-    background-color: $color-white;
-    color: $color-purple;
+    background-color: var(--color-white);
+    color: var(--color-purple);
   }
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--light;
-    color: $color-gray--dark;
+    background-color: var(--color-charcoal--light);
+    color: var(--color-gray--dark);
     cursor: not-allowed;
     &:hover,
     &:focus {
-      background-color: $color-charcoal--light;
-      color: $color-gray--dark;
+      background-color: var(--color-charcoal--light);
+      color: var(--color-gray--dark);
     }
   }
 }
 
 .btn.text-gray {
-  color: $color-gray--light;
+  color: var(--color-gray--light);
 }
 
 .btn-warning {
-  background-color: $color-brown;
+  background-color: var(--color-brown);
   &:hover,
   &:focus {
-    color: $color-brown;
+    color: var(--color-brown);
   }
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--brown;
-    color: $color-gray--dark;
+    background-color: var(--color-charcoal--brown);
+    color: var(--color-gray--dark);
   }
 }
 
 .btn-purple50 {
-  background-color: $color-purple50;
-  color: $color-white;
+  background-color: var(--color-purple50);
+  color: var(--color-white);
   &:hover,
   &:focus {
-    background-color: $color-charcoal--light;
-    color: $color-white;
+    background-color: var(--color-charcoal--light);
+    color: var(--color-white);
   }
 }
 
 .btn-purple {
-  background-color: $color-purple;
-  color: $color-white;
+  background-color: var(--color-purple);
+  color: var(--color-white);
   &:hover,
   &:focus {
-    background-color: $color-charcoal--light;
-    color: $color-white;
+    background-color: var(--color-charcoal--light);
+    color: var(--color-white);
   }
 }
 
 .btn-red {
-  background-color: $color-red;
+  background-color: var(--color-red);
   &:hover,
   &:focus {
-    color: $color-red;
+    color: var(--color-red);
   }
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--red;
-    color: $color-gray--dark;
+    background-color: var(--color-charcoal--red);
+    color: var(--color-gray--dark);
   }
 }
 
 .btn-charcoal {
-  background-color: $color-charcoal--light;
+  background-color: var(--color-charcoal--light);
   &:hover,
   &:focus {
-    color: $color-charcoal--light;
+    color: var(--color-charcoal--light);
   }
 }
 
 .btn-charcoal-medium {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   &:hover,
   &:focus {
-    color: $color-charcoal--light;
+    color: var(--color-charcoal--light);
   }
 }
 
 .btn-outline {
   background-color: transparent;
-  border: 1px solid $color-gray--dark50;
-  color: $color-gray--dark;
+  border: 1px solid var(--color-gray--dark50);
+  color: var(--color-gray--dark);
   &:hover,
   &:focus {
     border-color: transparent;
-    color: $color-charcoal--light;
+    color: var(--color-charcoal--light);
   }
   &:hover,
   &:focus {
     .text-white {
-      color: $color-charcoal--light;
+      color: var(--color-charcoal--light);
     }
   }
   &:disabled,
   [disabled] {
     background-color: transparent;
-    color: $color-gray--dark !important;
-    border: 1px solid $color-gray--dark50 !important;
+    color: var(--color-gray--dark) !important;
+    border: 1px solid var(--color-gray--dark50) !important;
     &:hover,
     &:focus {
       background-color: transparent;
-      color: $color-gray--dark !important;
-      border: 1px solid $color-gray--dark50 !important;
+      color: var(--color-gray--dark) !important;
+      border: 1px solid var(--color-gray--dark50) !important;
     }
   }
 }
 
 .btn-border {
-  border: 1px solid $color-gray--dark50;
-  color: $color-gray--dark;
+  border: 1px solid var(--color-gray--dark50);
+  color: var(--color-gray--dark);
 }
 
 .btn-small {
@@ -156,19 +156,19 @@
 }
 
 .border-green {
-  border: 1px solid $color-green;
+  border: 1px solid var(--color-green);
 }
 
 .border-red {
-  border: 1px solid $color-red;
+  border: 1px solid var(--color-red);
 }
 
 .border-orange {
-  border: 1px solid $color-orange;
+  border: 1px solid var(--color-orange);
 }
 
 .border-purple {
-  border: 1px solid $color-purple;
+  border: 1px solid var(--color-purple);
 }
 
 .btn-auto-width {
@@ -177,35 +177,35 @@
 
 .btn.background-green,
 .background-green {
-  background-color: $color-rainforest-green;
+  background-color: var(--color-rainforest-green);
 
   &:hover,
   &:focus {
-    background-color: $color-white;
-    color: $color-rainforest-green;
+    background-color: var(--color-white);
+    color: var(--color-rainforest-green);
   }
   &:disabled,
   [disabled] {
     background-color: transparent;
-    color: $color-gray--dark !important;
-    border: 1px solid $color-gray--dark50 !important;
+    color: var(--color-gray--dark) !important;
+    border: 1px solid var(--color-gray--dark50) !important;
     &:hover,
     &:focus {
       background-color: transparent;
-      color: $color-gray--dark !important;
-      border: 1px solid $color-gray--dark50 !important;
+      color: var(--color-gray--dark) !important;
+      border: 1px solid var(--color-gray--dark50) !important;
     }
   }
 }
 
 .background-red {
-  background-color: $color-red !important;
+  background-color: var(--color-red) !important;
 }
 
 .background-orange {
-  background-color: $color-orange !important;
+  background-color: var(--color-orange) !important;
 }
 
 .background-purple {
-  background-color: $color-purple !important;
+  background-color: var(--color-purple) !important;
 }

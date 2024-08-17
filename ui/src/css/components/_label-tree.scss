@@ -1,8 +1,8 @@
 .tips {
-  background-color: $color-charcoal--medium;
+  background-color: var(--color-charcoal--medium);
   box-sizing: border-box;
   position: absolute;
-  right: $spacing-0;
+  right: var(--spacing-0);
   top: 70px;
   width: 368px;
   z-index: 1;
@@ -26,10 +26,10 @@
   &:hover {
     background-image: linear-gradient(
       to right,
-      $color-charcoal--dark,
-      $color-charcoal--medium70 20%,
-      $color-charcoal--medium70 80%,
-      $color-charcoal--dark
+      var(--color-charcoal--dark),
+      var(--color-charcoal--medium70) 20%,
+      var(--color-charcoal--medium70) 80%,
+      var(--color-charcoal--dark)
     );
   }
 }
@@ -38,10 +38,10 @@
   &:hover {
     background-image: linear-gradient(
       to right,
-      $color-charcoal--medium70,
-      $color-charcoal--dark 20%,
-      $color-charcoal--dark 80%,
-      $color-charcoal--medium70
+      var(--color-charcoal--medium70),
+      var(--color-charcoal--dark) 20%,
+      var(--color-charcoal--dark) 80%,
+      var(--color-charcoal--medium70)
     );
   }
 }
