@@ -1,0 +1,136 @@
+@font-face {
+  font-family: "Inter var";
+  font-weight: 100 900;
+  font-style: normal;
+  font-named-instance: "Regular";
+  src: url("../fonts/Inter-upright.var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Cabin";
+  font-weight: 100 900;
+  font-style: bold;
+  font-named-instance: "Bold";
+  src: url("../fonts/cabin-v13-latin-700.woff2") format("woff2");
+}
+body {
+  background-color: var(--color-charcoal--dark);
+  color: var(--color-white);
+  font-family: "Inter var", sans-serif;
+  padding-bottom: 120px;
+  padding-top: 62px;
+}
+body.no-padding-bottom {
+  padding-bottom: 0;
+}
+
+button:focus,
+a:focus {
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+}
+
+p svg {
+  vertical-align: sub;
+}
+
+svg {
+  fill: currentColor;
+}
+svg.no-fill {
+  fill: none;
+}
+
+summary {
+  cursor: pointer;
+  list-style-type: none;
+}
+summary:focus {
+  outline: none;
+}
+summary::marker {
+  display: none;
+}
+
+.layout-sm {
+  max-width: var(--width-sm);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.layout-md {
+  max-width: var(--container-md);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.layout-lg {
+  max-width: var(--container-lg);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.layout-max {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: var(--container-xl);
+  width: 100%;
+}
+
+.main__header {
+  min-height: 46px;
+}
+
+.background-dimmer {
+  background-color: var(--color-charcoal--dark70);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+  position: fixed;
+  opacity: 0;
+  transition-duration: 0.15s;
+  transition-property: opacity;
+  z-index: 1;
+}
+.background-dimmer.has-open-modal {
+  opacity: 100;
+  pointer-events: initial;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.unselectable {
+  -moz-user-select: -moz-none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-charcoal--medium-dark70);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-white--50);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+}
+
