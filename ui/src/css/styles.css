@@ -1,8 +1,9 @@
+@import url("reset.css");
 @import url("variables.css");
-@import url("base.css");
 @import url("text.css");
 @import url("utilities.css");
-@import url("reset.css");
+@import url("base.css");
+
 @import url("components/action.css");
 @import url("components/add-new.css");
 @import url("components/analysis.css");
@@ -11,7 +12,6 @@
 @import url("components/bulk-edit.css");
 @import url("components/button.css");
 @import url("components/entity-gallery.css");
-@import url("components/entity-panel-image.css");
 @import url("components/file.css");
 @import url("components/form.css");
 @import url("components/header.css");
@@ -32,3 +32,4 @@
 @import url("components/table.css");
 @import url("components/toggle-content.css");
 @import url("components/tooltip.css");
+@import url("components/entity-panel-image.css");
