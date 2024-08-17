@@ -1,5 +1,7 @@
-var(--placeholder-opacity-max): 0.5 !default;
-var(--placeholder-opacity-min): 0.2 !default;
+:root, :host {
+  --placeholder-opacity-max: 0.5;
+  --placeholder-opacity-min: 0.2;
+}
 .placeholder {
   display: inline-block;
   min-height: 1em;
@@ -44,7 +46,7 @@ var(--placeholder-opacity-min): 0.2 !default;
   mask-image: linear-gradient(
     130deg,
     #000 55%,
-    rgba(0, 0, 0, (1 - var(--placeholder-opacity-min))) 75%,
+    rgba(0, 0, 0, 0.8) 75%,
     #000 95%
   );
   mask-size: 200% 100%;

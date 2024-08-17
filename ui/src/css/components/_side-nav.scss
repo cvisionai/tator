@@ -176,7 +176,7 @@ settings-nav {
   background-color: transparent;
   border: 0;
   width: fit-content;
-  @extend .f2;
+  @extend .f2 !optional;
 
   &[selected="true"] {
     color: var(--color-white);
@@ -194,7 +194,7 @@ settings-nav {
   color: var(--color-white);
 }
 .SideNav-heading button span {
-  @extend .f1;
+  @extend .f1 !optional;
 }
 
 .SideNav-heading[selected="true"] {
@@ -229,7 +229,7 @@ settings-nav {
   padding: 10px;
   display: block;
   box-sizing: border-box;
-  @extend .h3;
+  @extend .h3 !optional;
   &:hover {
     //transform: scale(1.1);
     color: var(--color-purple);
