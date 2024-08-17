@@ -1,7 +1,7 @@
 /**
 ** Colors
 **/
-:root {
+:host, :root {
   --color-purple: #696cff;
   --color-purple50: rgba(var(--color-purple), 0.5);
 
@@ -144,9 +144,9 @@
   --width-xl: 1280px !default;
 
 // Responsive container widths
-  --container-sm:   --width-sm !default;
-  --container-md:   --width-md !default;
-  --container-lg:   --width-lg !default;
-  --container-xl:   --width-xl !default;
+  --container-sm: var(--width-sm) !default;
+  --container-md: var(--width-md) !default;
+  --container-lg: var(--width-lg) !default;
+  --container-xl: var(--width-xl) !default;
 
 }
