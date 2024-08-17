@@ -15,8 +15,8 @@
 }
 
 body {
-  background-color: $color-charcoal--dark;
-  color: $color-white;
+  background-color: var(--color-charcoal--dark);
+  color: var(--color-white);
   font-family: "Inter var", sans-serif;
   padding-bottom: 120px;
   padding-top: 62px; // Height of header
@@ -65,21 +65,21 @@ summary {
 
 // 544px
 .layout-sm {
-  max-width: $width-sm;
+  max-width: var(--width-sm);
   margin-right: auto;
   margin-left: auto;
 }
 
 // 768px
 .layout-md {
-  max-width: $container-md;
+  max-width: var(--container-md);
   margin-right: auto;
   margin-left: auto;
 }
 
 // 1004px - this matches the current fixed width: 980px + padding: px-3
 .layout-lg {
-  max-width: $container-lg;
+  max-width: var(--container-lg);
   margin-right: auto;
   margin-left: auto;
 }
@@ -88,7 +88,7 @@ summary {
 .layout-max {
   margin-left: auto;
   margin-right: auto;
-  max-width: $container-xl;
+  max-width: var(--container-xl);
   width: 100%;
 }
 
@@ -97,7 +97,7 @@ summary {
 }
 
 .background-dimmer {
-  background-color: $color-charcoal--dark70;
+  background-color: var(--color-charcoal--dark70);
   bottom: 0;
   left: 0;
   right: 0;
@@ -131,11 +131,11 @@ summary {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: $color-charcoal--medium-dark70;
+  background-color: var(--color-charcoal--medium-dark70);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: $color-white--50;
+  background-color: var(--color-white--50);
   border-radius: 8px;
 }
 

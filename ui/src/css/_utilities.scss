@@ -1,3 +1,11 @@
+$breakpoints: (
+  xs: var(--width-xs),
+  sm: var(--width-sm),
+  md: var(--width-md),
+  lg: var(--width-lg),
+  xl: var(--width-xl),
+) !default;
+
 .d-block {
   display: block;
 }
@@ -88,41 +96,41 @@
 
 // Border utilities
 .bottom-border {
-  border-bottom: 1px solid $color-charcoal--light;
+  border-bottom: 1px solid var(--color-charcoal--light);
 }
 .bottom-border-2 {
-  border-bottom: 2px solid $color-charcoal--light;
+  border-bottom: 2px solid var(--color-charcoal--light);
 }
 .bottom-border-3 {
-  border-bottom: 4px solid $color-charcoal--light;
+  border-bottom: 4px solid var(--color-charcoal--light);
 }
 .top-border {
-  border-top: 1px solid $color-charcoal--light;
+  border-top: 1px solid var(--color-charcoal--light);
 }
 .top-border-2 {
-  border-top: 2px solid $color-charcoal--light;
+  border-top: 2px solid var(--color-charcoal--light);
 }
 .top-border-3 {
-  border-top: 4px solid $color-charcoal--light;
+  border-top: 4px solid var(--color-charcoal--light);
 }
 
 .bottom-border-dark {
-  border-bottom: 1px solid $color-charcoal--medium;
+  border-bottom: 1px solid var(--color-charcoal--medium);
 }
 .bottom-border-dark-2 {
-  border-bottom: 2px solid $color-charcoal--medium;
+  border-bottom: 2px solid var(--color-charcoal--medium);
 }
 .bottom-border-dark-3 {
-  border-bottom: 4px solid $color-charcoal--medium;
+  border-bottom: 4px solid var(--color-charcoal--medium);
 }
 .top-border-dark {
-  border-top: 1px solid $color-charcoal--medium;
+  border-top: 1px solid var(--color-charcoal--medium);
 }
 .top-border-dark-2 {
-  border-top: 2px solid $color-charcoal--medium;
+  border-top: 2px solid var(--color-charcoal--medium);
 }
 .top-border-dark-3 {
-  border-top: 4px solid $color-charcoal--medium;
+  border-top: 4px solid var(--color-charcoal--medium);
 }
 
 /*
@@ -130,326 +138,326 @@
 */
 
 .py-0 {
-  padding-bottom: $spacing-0;
-  padding-top: $spacing-0;
+  padding-bottom: var(--spacing-0);
+  padding-top: var(--spacing-0);
 }
 
 .py-1 {
-  padding-bottom: $spacing-1;
-  padding-top: $spacing-1;
+  padding-bottom: var(--spacing-1);
+  padding-top: var(--spacing-1);
 }
 
 .py-2 {
-  padding-bottom: $spacing-2;
-  padding-top: $spacing-2;
+  padding-bottom: var(--spacing-2);
+  padding-top: var(--spacing-2);
 }
 
 .py-3 {
-  padding-bottom: $spacing-3;
-  padding-top: $spacing-3;
+  padding-bottom: var(--spacing-3);
+  padding-top: var(--spacing-3);
 }
 
 .py-4 {
-  padding-bottom: $spacing-4;
-  padding-top: $spacing-4;
+  padding-bottom: var(--spacing-4);
+  padding-top: var(--spacing-4);
 }
 
 .py-5 {
-  padding-bottom: $spacing-5;
-  padding-top: $spacing-5;
+  padding-bottom: var(--spacing-5);
+  padding-top: var(--spacing-5);
 }
 
 .py-6 {
-  padding-bottom: $spacing-6;
-  padding-top: $spacing-6;
+  padding-bottom: var(--spacing-6);
+  padding-top: var(--spacing-6);
 }
 
 .pt-1 {
-  padding-top: $spacing-1;
+  padding-top: var(--spacing-1);
 }
 
 .pt-2 {
-  padding-top: $spacing-2;
+  padding-top: var(--spacing-2);
 }
 
 .pt-3 {
-  padding-top: $spacing-3;
+  padding-top: var(--spacing-3);
 }
 
 .pt-4 {
-  padding-top: $spacing-4;
+  padding-top: var(--spacing-4);
 }
 
 .pt-5 {
-  padding-top: $spacing-5;
+  padding-top: var(--spacing-5);
 }
 
 .pt-6 {
-  padding-top: $spacing-6;
+  padding-top: var(--spacing-6);
 }
 
 .pb-1 {
-  padding-bottom: $spacing-1;
+  padding-bottom: var(--spacing-1);
 }
 
 .pb-2 {
-  padding-bottom: $spacing-2;
+  padding-bottom: var(--spacing-2);
 }
 
 .pb-3 {
-  padding-bottom: $spacing-3;
+  padding-bottom: var(--spacing-3);
 }
 
 .pb-4 {
-  padding-bottom: $spacing-4;
+  padding-bottom: var(--spacing-4);
 }
 
 .pb-5 {
-  padding-bottom: $spacing-5;
+  padding-bottom: var(--spacing-5);
 }
 
 .pb-6 {
-  padding-bottom: $spacing-6;
+  padding-bottom: var(--spacing-6);
 }
 
 .pr-1 {
-  padding-right: $spacing-1;
+  padding-right: var(--spacing-1);
 }
 
 .pr-2 {
-  padding-right: $spacing-2;
+  padding-right: var(--spacing-2);
 }
 
 .pr-3 {
-  padding-right: $spacing-3;
+  padding-right: var(--spacing-3);
 }
 
 .pr-4 {
-  padding-right: $spacing-4;
+  padding-right: var(--spacing-4);
 }
 
 .pr-5 {
-  padding-right: $spacing-5;
+  padding-right: var(--spacing-5);
 }
 
 .pr-6 {
-  padding-right: $spacing-6;
+  padding-right: var(--spacing-6);
 }
 
 .pl-1 {
-  padding-left: $spacing-1;
+  padding-left: var(--spacing-1);
 }
 
 .pl-2 {
-  padding-left: $spacing-2;
+  padding-left: var(--spacing-2);
 }
 
 .pl-3 {
-  padding-left: $spacing-3;
+  padding-left: var(--spacing-3);
 }
 
 .pl-4 {
-  padding-left: $spacing-4;
+  padding-left: var(--spacing-4);
 }
 
 .pl-5 {
-  padding-left: $spacing-5;
+  padding-left: var(--spacing-5);
 }
 
 .pl-6 {
-  padding-left: $spacing-6;
+  padding-left: var(--spacing-6);
 }
 
 .px-0 {
-  padding-left: $spacing-0;
-  padding-right: $spacing-0;
+  padding-left: var(--spacing-0);
+  padding-right: var(--spacing-0);
 }
 
 .px-1 {
-  padding-left: $spacing-1;
-  padding-right: $spacing-1;
+  padding-left: var(--spacing-1);
+  padding-right: var(--spacing-1);
 }
 
 .px-2 {
-  padding-left: $spacing-2;
-  padding-right: $spacing-2;
+  padding-left: var(--spacing-2);
+  padding-right: var(--spacing-2);
 }
 
 .px-3 {
-  padding-left: $spacing-3;
-  padding-right: $spacing-3;
+  padding-left: var(--spacing-3);
+  padding-right: var(--spacing-3);
 }
 
 .px-4 {
-  padding-left: $spacing-4;
-  padding-right: $spacing-4;
+  padding-left: var(--spacing-4);
+  padding-right: var(--spacing-4);
 }
 
 .px-5 {
-  padding-left: $spacing-5;
-  padding-right: $spacing-5;
+  padding-left: var(--spacing-5);
+  padding-right: var(--spacing-5);
 }
 
 .px-6 {
-  padding-left: $spacing-6;
-  padding-right: $spacing-6;
+  padding-left: var(--spacing-6);
+  padding-right: var(--spacing-6);
 }
 
 // Margins R, L, X, Y, Top, Bottom
 .mr-1 {
-  margin-right: $spacing-1;
+  margin-right: var(--spacing-1);
 }
 
 .mr-2 {
-  margin-right: $spacing-2;
+  margin-right: var(--spacing-2);
 }
 
 .mr-3 {
-  margin-right: $spacing-3;
+  margin-right: var(--spacing-3);
 }
 
 .mr-4 {
-  margin-right: $spacing-4;
+  margin-right: var(--spacing-4);
 }
 
 .mr-5 {
-  margin-right: $spacing-5;
+  margin-right: var(--spacing-5);
 }
 
 .mr-6 {
-  margin-right: $spacing-6;
+  margin-right: var(--spacing-6);
 }
 
 .ml-1 {
-  margin-left: $spacing-1;
+  margin-left: var(--spacing-1);
 }
 
 .ml-2 {
-  margin-left: $spacing-2;
+  margin-left: var(--spacing-2);
 }
 
 .ml-3 {
-  margin-left: $spacing-3;
+  margin-left: var(--spacing-3);
 }
 
 .ml-4 {
-  margin-left: $spacing-4;
+  margin-left: var(--spacing-4);
 }
 
 .ml-5 {
-  margin-left: $spacing-5;
+  margin-left: var(--spacing-5);
 }
 
 .ml-6 {
-  margin-left: $spacing-6;
+  margin-left: var(--spacing-6);
 }
 
 .mx-1 {
-  margin-left: $spacing-1;
-  margin-right: $spacing-1;
+  margin-left: var(--spacing-1);
+  margin-right: var(--spacing-1);
 }
 
 .mx-2 {
-  margin-left: $spacing-2;
-  margin-right: $spacing-2;
+  margin-left: var(--spacing-2);
+  margin-right: var(--spacing-2);
 }
 
 .mx-3 {
-  margin-left: $spacing-3;
-  margin-right: $spacing-3;
+  margin-left: var(--spacing-3);
+  margin-right: var(--spacing-3);
 }
 
 .mx-4 {
-  margin-left: $spacing-4;
-  margin-right: $spacing-4;
+  margin-left: var(--spacing-4);
+  margin-right: var(--spacing-4);
 }
 
 .mx-5 {
-  margin-left: $spacing-5;
-  margin-right: $spacing-5;
+  margin-left: var(--spacing-5);
+  margin-right: var(--spacing-5);
 }
 
 .mx-6 {
-  margin-left: $spacing-6;
-  margin-right: $spacing-6;
+  margin-left: var(--spacing-6);
+  margin-right: var(--spacing-6);
 }
 
 .my-1 {
-  margin-top: $spacing-1;
-  margin-bottom: $spacing-1;
+  margin-top: var(--spacing-1);
+  margin-bottom: var(--spacing-1);
 }
 
 .my-2 {
-  margin-top: $spacing-2;
-  margin-bottom: $spacing-2;
+  margin-top: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
 }
 
 .my-3 {
-  margin-top: $spacing-3;
-  margin-bottom: $spacing-3;
+  margin-top: var(--spacing-3);
+  margin-bottom: var(--spacing-3);
 }
 
 .my-4 {
-  margin-top: $spacing-4;
-  margin-bottom: $spacing-4;
+  margin-top: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
 }
 
 .my-5 {
-  margin-top: $spacing-5;
-  margin-bottom: $spacing-5;
+  margin-top: var(--spacing-5);
+  margin-bottom: var(--spacing-5);
 }
 
 .my-6 {
-  margin-top: $spacing-6;
-  margin-bottom: $spacing-6;
+  margin-top: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
 }
 
 .mt-1 {
-  margin-top: $spacing-1;
+  margin-top: var(--spacing-1);
 }
 
 .mt-2 {
-  margin-top: $spacing-2;
+  margin-top: var(--spacing-2);
 }
 
 .mt-3 {
-  margin-top: $spacing-3;
+  margin-top: var(--spacing-3);
 }
 
 .mt-4 {
-  margin-top: $spacing-4;
+  margin-top: var(--spacing-4);
 }
 
 .mt-5 {
-  margin-top: $spacing-5;
+  margin-top: var(--spacing-5);
 }
 
 .mt-6 {
-  margin-top: $spacing-6;
+  margin-top: var(--spacing-6);
 }
 
 .mb-1 {
-  margin-bottom: $spacing-1;
+  margin-bottom: var(--spacing-1);
 }
 
 .mb-2 {
-  margin-bottom: $spacing-2;
+  margin-bottom: var(--spacing-2);
 }
 
 .mb-3 {
-  margin-bottom: $spacing-3;
+  margin-bottom: var(--spacing-3);
 }
 
 .mb-4 {
-  margin-bottom: $spacing-4;
+  margin-bottom: var(--spacing-4);
 }
 
 .mb-5 {
-  margin-bottom: $spacing-5;
+  margin-bottom: var(--spacing-5);
 }
 
 .mb-6 {
-  margin-bottom: $spacing-6;
+  margin-bottom: var(--spacing-6);
 }
 
 //
@@ -463,7 +471,7 @@
 
   &:disabled,
   [disabled] {
-    color: $color-gray--dark;
+    color: var(--color-gray--dark);
     cursor: not-allowed;
   }
 }
@@ -621,16 +629,16 @@
 @each $breakpoint in map-keys($breakpoints) {
   @include breakpoint($breakpoint) {
     .py-#{$breakpoint}-5 {
-      padding-top: $spacing-5;
-      padding-bottom: $spacing-5;
+      padding-top: var(--spacing-5);
+      padding-bottom: var(--spacing-5);
     }
     .py-#{$breakpoint}-6 {
-      padding-top: $spacing-6;
-      padding-bottom: $spacing-6;
+      padding-top: var(--spacing-6);
+      padding-bottom: var(--spacing-6);
     }
     .px-#{$breakpoint}-6 {
-      padding-left: $spacing-6;
-      padding-right: $spacing-6;
+      padding-left: var(--spacing-6);
+      padding-right: var(--spacing-6);
     }
     .pl-#{$breakpoint}-6 {
       padding-left: 40px;
@@ -667,25 +675,25 @@
 }
 
 // Each hide utility only applies to one breakpoint range.
-@media (max-width: $width-sm - 1px) {
+@media (max-width: var(--width-sm) - 1px) {
   .hide-sm {
     display: none !important;
   }
 }
 
-@media (min-width: $width-sm) and (max-width: $width-md - 1px) {
+@media (min-width: var(--width-sm)) and (max-width: var(--width-md) - 1px) {
   .hide-md {
     display: none !important;
   }
 }
 
-@media (min-width: $width-md) and (max-width: $width-lg - 1px) {
+@media (min-width: var(--width-md)) and (max-width: var(--width-lg) - 1px) {
   .hide-lg {
     display: none !important;
   }
 }
 
-@media (min-width: $width-lg) {
+@media (min-width: var(--width-lg)) {
   .hide-xl {
     display: none !important;
   }
