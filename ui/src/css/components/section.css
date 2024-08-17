@@ -1,0 +1,109 @@
+.sections-wrap {
+  box-sizing: border-box;
+  height: calc(100vh - 62px);
+  overflow: auto;
+  padding-bottom: 200px;
+  position: fixed;
+  width: 380px;
+}
+
+.sections {
+  padding-bottom: var(--spacing-5);
+}
+.sections:not(:last-child) {
+  border-bottom: 1px solid var(--color-charcoal--light);
+}
+
+.is-active .section__name {
+  color: var(--color-white);
+  font-weight: var(--weight-semibold);
+}
+.is-active .section__name:before {
+  background-color: var(--color-purple);
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
+  content: "";
+  height: 22px;
+  left: 0;
+  position: absolute;
+  width: 4px;
+}
+
+.section {
+  margin-left: -var(--spacing-2);
+}
+.section:first-child {
+  padding-top: 0;
+}
+.section:hover .section__name, .section:focus .section__name {
+  color: var(--color-white);
+}
+.section:hover details, .section:focus details {
+  opacity: 1;
+}
+.section.is-active .section__name {
+  color: var(--color-white);
+  font-weight: var(--weight-semibold);
+}
+.section.is-active:before {
+  background-color: var(--color-purple);
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
+  content: "";
+  height: 22px;
+  left: 0;
+  position: absolute;
+  width: 4px;
+}
+.section details {
+  opacity: 0;
+}
+.section.has-copy-to-section {
+  box-shadow: 0 0 0 1.5px var(--color-purple);
+  position: relative;
+}
+.section.has-copy-to-section::before {
+  background-color: rgba(var(--color-purple), 0.3);
+  border-bottom-left-radius: 2px;
+  color: var(--color-white);
+  content: "Copy to section";
+  font-size: 8px;
+  padding: 3px 5px;
+  position: absolute;
+  right: 0;
+  text-transform: uppercase;
+  top: 0;
+}
+.section.has-copy-to-section::after {
+  background-color: var(--color-purple);
+  border-radius: 9px;
+  bottom: -10px;
+  color: var(--color-white);
+  content: attr(data-copy);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  padding: 4px 8px;
+  position: absolute;
+  right: 10px;
+}
+.section.has-copy-to-section details {
+  opacity: 0;
+}
+
+.section__link[href] {
+  flex-grow: 1;
+}
+.section__link[href]:hover .section__name span:first-child, .section__link[href]:focus .section__name span:first-child {
+  text-decoration: underline;
+}
+
+.section__image {
+  height: 45px;
+  object-fit: cover;
+  width: 45px;
+}
+
+.section__name {
+  display: block;
+  max-width: 260px;
+}
