@@ -2366,9 +2366,9 @@ class PermissionMask:
     ## These bits are repeated so the left-byte is for children objects. This allows
     ## a higher object to store the default permission for children objects by bitshifting by the
     ## level of abstraction.
-    ## [0:7] Self-level objects (projects, algos, versions)
-    ## [8:15] Children objects (project -> section* -> media -> metadata)
-    ## [16:23] Grandchildren objects (project -> section -> media* -> metadata)
+    ## [0:7] Self-level objects (projects, algos, versions, Organization)
+    ## [8:15] Children objects (project -> section* -> media -> metadata) (Organization->Bucket,JobCluster)
+    ## [16:23] Grandchildren objects (project -> section -> media* -> metadata)  (Organization->***->Group)
     ## [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
     ## If a permission points to a child object, that occupies [0:7]
     ## Permission objects exist against either projects, algos, versions or sections
@@ -2461,9 +2461,22 @@ class RowProtection(Model):
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
 
+    # These objects fall under the Organization heirarchy
     # This is a pointer to the organization the permissions are describing
     target_organization = ForeignKey(
         Organization, on_delete=CASCADE, null=True, blank=True, related_name="target_organization"
+    )
+    target_group = ForeignKey(
+        Group, on_delete=CASCADE, null=True, blank=True, related_name="target_group"
+    )
+    job_cluster = ForeignKey(
+        JobCluster, on_delete=CASCADE, null=True, blank=True, related_name="job_cluster"
+    )
+    bucket = ForeignKey(
+        Bucket, on_delete=CASCADE, null=True, blank=True, related_name="target_bucket"
+    )
+    hosted_template = ForeignKey(
+        HostedTemplate, on_delete=CASCADE, null=True, blank=True, related_name="hosted_template"
     )
 
     # One of the following must be non-null
