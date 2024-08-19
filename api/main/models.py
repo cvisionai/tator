@@ -2385,6 +2385,7 @@ class PermissionMask:
     DELETE = 0x10  # Allows a row to be deleted (pruned for metadata)
     EXECUTE = 0x20  # Allows an algorithm to be executed (applies to project-level or algorithm)
     UPLOAD = 0x40  # Allows media to be uploaded
+    ACL = 0x80  # Allows ACL modification for a row, if not a creator
     FULL_CONTROL = 0xFF  # All bits and all future bits are set
     # Convenience wrappers to original tator permission system
     OLD_READ = (
@@ -2421,7 +2422,7 @@ class PermissionMask:
     OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32 | EXECUTE << 8
 
     # Old full control lets one delete and write the project (plus you need all bits set in lower byte)
-    OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE | 0xFF
+    OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE | 0xFF | ACL < 8 | ACL < 16 | ACL < 24
 
     CHILD_SHIFT = 8
 
