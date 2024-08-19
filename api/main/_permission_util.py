@@ -84,7 +84,7 @@ def get_parents_for_model(model):
 
 
 def shift_permission(model, source_model):
-    if source_model == Project:
+    if source_model == [Project, Organization]:
         shift = 0
     elif source_model in [Section, Version]:
         shift = 1
@@ -100,7 +100,7 @@ def shift_permission(model, source_model):
         Announcement,
     ]:
         return PermissionMask.CHILD_SHIFT * (4 - shift)
-    elif model in [Localization, State]:
+    elif model in [Localization, State, Group]:
         return PermissionMask.CHILD_SHIFT * (3 - shift)
     elif model in [Media]:
         return PermissionMask.CHILD_SHIFT * (2 - shift)
