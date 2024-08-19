@@ -8,9 +8,7 @@ import { playerControlManagement } from "./annotation-common.js";
 export class AnnotationPage extends TatorPage {
   constructor() {
     super();
-  }
 
-  connectedCallback() {
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
     this._loading.setAttribute("src", "/static/images/tator_loading.gif");
@@ -182,26 +180,32 @@ export class AnnotationPage extends TatorPage {
       evt.detail.job.callback(evt.detail.status);
     });
 
+  }
+
+  connectedCallback() {
+    this.setAttribute("has-open-modal", "");
+    TatorPage.prototype.connectedCallback.call(this);
+
     this._projectId = window.location.pathname.split("/")[1];
     this._mediaId = window.location.pathname.split("/")[3];
     console.log("Project ID: " + this._projectId);
     console.log("Media ID: " + this._mediaId);
-    this.setAttribute("project-id", this._projectId);
-    this.setAttribute("media-id", this._mediaId);
-
-    this.setAttribute("has-open-modal", "");
-    TatorPage.prototype.connectedCallback.call(this);
 
     // Create store subscriptions
-    fetchCredentials("/rest/Project/" + this.getAttribute("project-id"), {}, true)
-      .then(response => response.json())
-      .then(data => this._updateProject(data));
-    fetchCredentials("/rest/Announcements", {}, true)
-      .then(response => response.json())
-      .then(data => this._setAnnouncements(data));
-    fetchCredentials("/rest/User/GetCurrent", {}, true)
-      .then(response => response.json())
-      .then(data => this._setUser(data));
+    const promises = [
+      fetchCredentials(`/rest/Project/${this._projectId}`, {}, true)
+        .then(response => response.json()),
+      fetchCredentials("/rest/Announcements", {}, true)
+        .then(response => response.json()),
+      fetchCredentials("/rest/User/GetCurrent", {}, true)
+        .then(response => response.json()),
+    ];
+    Promise.all(promises).then(([project, announcements, user]) => {
+      this._setUser(user);
+      this._setAnnouncements(announcements);
+      this._updateProject(project);
+      this._updateMedia(this._mediaId);
+    });
   }
 
   /**
