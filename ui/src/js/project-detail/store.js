@@ -1,8 +1,5 @@
-import create from "zustand/vanilla";
-import { subscribeWithSelector } from "zustand/middleware";
-import { getApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
-
-const api = getApi();
+import create from 'https://cdn.jsdelivr.net/npm/zustand@4.5.5/vanilla/+esm';
+import { subscribeWithSelector } from 'https://cdn.jsdelivr.net/npm/zustand@4.5.5/middleware/+esm';
 
 const store = create(
   subscribeWithSelector((set, get) => ({
@@ -29,10 +26,14 @@ const store = create(
     init: async () => {
       const projectId = Number(window.location.pathname.split("/")[1]);
       Promise.all([
-        api.whoami(),
-        api.getAnnouncementList(),
-        api.getProject(projectId),
-        api.getMediaTypeList(projectId),
+        fetchCredentials(`/rest/User/GetCurrent`, {}, true)
+          .then((response) => response.json()),
+        fetchCredentials('/rest/Announcements', {}, true)
+          .then((response) => response.json()),
+        fetchCredentials('/rest/Project/' + projectId, {}, true)
+          .then((response) => response.json()),
+        fetchCredentials('/rest/MediaTypes', {}, true)
+          .then((response) => response.json()),
       ]).then((values) => {
         set({
           user: values[0],
@@ -45,4 +46,4 @@ const store = create(
   }))
 );
 
-export { store, api };
+export { store };

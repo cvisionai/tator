@@ -1,7 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { svgNamespace } from "../components/tator-element.js";
-import { CreateListResponse } from "../../../../scripts/packages/tator-js/pkg/src/model/CreateListResponse.js";
 
 export class ActivityNav extends TatorElement {
   constructor() {

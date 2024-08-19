@@ -2,9 +2,14 @@
 
 {% block head %}
 <title>Tator | Project Detail</title>
+<script type="module">
+  import "/static/js/project-detail/index.js";
+  import "/static/js/components/index.js";
+  const page = document.createElement("project-detail");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
 {% include "includes/components/entity-gallery-sort.html" %}
-<project-detail></project-detail>
 {% endblock body %}
