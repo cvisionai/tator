@@ -39,6 +39,8 @@ PROJECT_PROPERTIES.append("thumb")
 PROJECT_PROPERTIES.append("attribute_types")
 PROJECT_PROPERTIES.append("usernames")
 PROJECT_PROPERTIES.append("id")
+PROJECT_PROPERTIES.append("num_files")
+PROJECT_PROPERTIES.append("duration")
 
 
 def _serialize_projects(projects, user_id):
