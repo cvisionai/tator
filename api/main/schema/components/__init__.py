@@ -48,6 +48,7 @@ from .file_type import file_type_spec
 from .file_type import file_type
 from .generic_file import generic_file
 from .generic_file import generic_file_spec
+from .group import group_spec, group_update_spec, group
 from .hosted_template import (
     hosted_template_spec,
     hosted_template,
