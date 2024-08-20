@@ -30,6 +30,8 @@ from .file_type import FileTypeListSchema
 from .file_type import FileTypeDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
+from .group import GroupListSchema
+from .group import GroupDetailSchema
 from .hosted_template import HostedTemplateListSchema
 from .hosted_template import HostedTemplateDetailSchema
 from .image_file import ImageFileListSchema
