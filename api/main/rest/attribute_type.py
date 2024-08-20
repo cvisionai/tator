@@ -27,7 +27,7 @@ from ._attributes import (
     bulk_delete_attributes,
     convert_attribute,
 )
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
