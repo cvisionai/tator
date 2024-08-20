@@ -41,11 +41,12 @@ class GroupListSchema(AutoSchema):
             this method creates a group object.
             """
             )
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def get_path_parameters(self, path, method):
         return [
             {
-                "name": "organization",
+                "name": "id",
                 "in": "path",
                 "required": True,
                 "description": "A unique integer identifying an organization.",
@@ -144,7 +145,7 @@ class GroupDetailSchema(AutoSchema):
                 "required": True,
                 "content": {
                     "application/json": {
-                        "schema": {"$ref": "#/components/schemas/GroupUpdate"},
+                        "schema": {"$ref": "#/components/schemas/GroupUpdateSpec"},
                     }
                 },
             }
