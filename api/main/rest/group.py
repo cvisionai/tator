@@ -45,6 +45,9 @@ class GroupListAPI(BaseListView):
         groups = organization.group_set.all()
         groups = groups.annotate(members=ArrayAgg("groupmembership__user"))
         groups_resp = list(groups.values("id", "organization__id", "name", "members"))
+        for idx, group in enumerate(groups_resp):
+            if group["members"] == [None]:
+                groups_resp[idx]["members"] = []
         return groups_resp
 
     def get_queryset(self, **kwargs):
@@ -101,13 +104,16 @@ class GroupDetailAPI(BaseDetailView):
             "organization": group.organization.id,
             "members": group.members,
         }
+        # Manually filter on None elements
+        if group_dict["members"] == [None]:
+            group_dict["members"] = []
         return group_dict
 
     @transaction.atomic
     def _patch(self, params) -> dict:
         """Patch operation on the job cluster entry"""
+        group = Group.objects.get(pk=params["id"])
         if params.get("name", None):
-            group = Group.objects.get(pk=params["id"])
             group.name = params["name"]
             group.save()
 
