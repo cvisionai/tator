@@ -346,3 +346,8 @@ class OrganizationAdminPermission(OrganizationPermissionBase):
 
     message = "User does not have admin access to organization."
     insufficient_permissions = ["Member"]
+
+
+# Make a copy of OrganizationAdminPermission for OrganizationEditPermission for API backwards compatibility
+class OrganizationEditPermission(OrganizationAdminPermission):
+    pass

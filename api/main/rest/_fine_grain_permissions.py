@@ -414,24 +414,12 @@ class OrganizationPermissionBase(BasePermission):
         return organization
 
     def _validate_organization(self, request, organization):
-        granted = True
+        granted = False  # Always deny by default
 
         if isinstance(request.user, AnonymousUser):
             granted = False
         else:
-            # Find affiliation for this user and organization
-            affiliation = Affiliation.objects.filter(user=request.user, organization=organization)
-
-            # If user is not part of organization, deny access
-            if affiliation.count() == 0:
-                granted = False
-            else:
-                # If user has insufficient permission, deny access
-                permission = affiliation[0].permission
-                insufficient = permission in self.insufficient_permissions
-                is_edit = request.method not in SAFE_METHODS
-                if is_edit and insufficient:
-                    granted = False
+            pass
         return granted
 
 
@@ -441,7 +429,28 @@ class OrganizationMemberPermission(OrganizationPermissionBase):
     """
 
     message = "Not a member of this organization."
-    insufficient_permissions = []
+    def get_required_mask(self):
+        return PermissionMask.EXIST
+
+
+class OrganizationEditPermission(OrganizationPermissionBase):
+    """Checks whether a user has admin access to an organization. This
+    is just to check whether a user is a member of an organization.
+    """
+
+    message = "User does not have elevated access to organization."
+
+    def get_required_mask(self):
+        if self.request.method in "GET":
+            return PermissionMask.READ
+        elif self.request.method in ["PATCH"]:
+            return PermissionMask.MODIFY
+        elif self.request.method in ["DELETE"]:
+            return PermissionMask.DELETE
+        elif self.request.method in ["POST"]:
+            return PermissionMask.CREATE
+        else:
+            assert False, f"Unsupported method={self.request.method}"
 
 
 class OrganizationAdminPermission(OrganizationPermissionBase):
@@ -450,4 +459,5 @@ class OrganizationAdminPermission(OrganizationPermissionBase):
     """
 
     message = "User does not have admin access to organization."
-    insufficient_permissions = ["Member"]
+    def get_required_mask(self):
+        return PermissionMask.FULL_CONTROL
