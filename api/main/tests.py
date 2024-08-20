@@ -6727,3 +6727,79 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                             assert localization.effective_permission == 0x03
                         else:
                             assert localization.effective_permission == 0x00
+
+
+class GroupTestCase(TatorTransactionTest):
+    def setUp(self):
+        # Add 9 users
+        names = ["Kirk", "Spock", "McCoy", "Scotty", "Uhura", "Sulu", "Chekov", "Picard", "Data"]
+        self.users = [create_test_user(is_staff=False, username=name) for name in names]
+        self.starfleet = create_test_organization()
+
+        self.admin_user = create_test_user(is_staff=True, username="Admin")
+        self.affilitation = create_test_affiliation(self.admin_user, self.starfleet)
+        self.client.force_authenticate(user=self.admin_user)
+
+    def test_group_creation_and_manip(self):
+        resp = self.client.post(
+            f"/rest/Groups/{self.starfleet.pk}",
+            {"name": "NCC-1701", "initial_members": [u.id for u in self.users[:6]]},
+            format="json",
+        )
+        print(resp)
+        assertResponse(self, resp, status.HTTP_201_CREATED)
+        group_id = resp.data["id"]
+
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(resp.data["name"], "NCC-1701")
+        self.assertEqual(len(resp.data["members"]), 6)
+
+        # Now add Chekov who joined us in the second season
+        resp = self.client.patch(
+            f"/rest/Group/{group_id}",
+            {"add_members": [self.users[6].id]},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data["members"]), 7)
+
+        # Verify creating an empty group works
+        resp = self.client.post(
+            f"/rest/Groups/{self.starfleet.pk}",
+            {"name": "NCC-1701-D", "initial_members": []},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_201_CREATED)
+        group_id = resp.data["id"]
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(resp.data["name"], "NCC-1701-D")
+        print(resp.data)
+        self.assertEqual(len(resp.data["members"]), 0)
+
+        # Verify adding a user to an empty group works
+        resp = self.client.patch(
+            f"/rest/Group/{group_id}",
+            {"add_members": [self.users[8].id, self.users[7].id]},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data["members"]), 2)
+
+        # One-time, they found Scotty in a transporter and he joined the other crew.
+        # Make sure we handle that case too.
+        resp = self.client.patch(
+            f"/rest/Group/{group_id}",
+            {"add_members": [self.users[3].id]},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data["members"]), 3)
