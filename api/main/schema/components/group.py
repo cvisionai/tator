@@ -1,4 +1,5 @@
 group_properties = {
+    "id": {"description": "Primary key of the group", "type": "integer"},
     "name": {"description": "Group Name", "type": "string"},
     "organization": {"description": "Organization the group falls under", "type": "integer"},
     "members": {
@@ -11,6 +12,7 @@ group_properties = {
 
 post_properties = {**group_properties}
 del post_properties["members"]
+del post_properties["id"]
 post_properties["initial_members"] = {
     "description": "List of members to add to the group upon creation (user pk)",
     "type": "array",
@@ -25,6 +27,9 @@ group_spec = {
 }
 
 patch_properties = {**post_properties}
+del patch_properties["organization"]  # can't patch organization
+del patch_properties["initial_members"]  # can't patch initial members
+
 patch_properties["add_members"] = {
     "description": "List of members to add to the group (user pk)",
     "type": "array",

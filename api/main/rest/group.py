@@ -7,6 +7,9 @@ import os
 from django.db import transaction
 from django.forms.models import model_to_dict
 from django.conf import settings
+from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import Subquery, OuterRef
+from django.http import Http404
 from rest_framework.exceptions import PermissionDenied
 import yaml
 
@@ -14,7 +17,7 @@ from ..models import Project
 from ..models import Affiliation
 from ..models import Algorithm
 from ..models import Organization
-from ..models import JobCluster
+from ..models import Group
 from ..models import database_qs
 from ..schema import GroupListSchema, GroupDetailSchema
 from ._base_views import BaseDetailView
@@ -36,10 +39,13 @@ class GroupListAPI(BaseListView):
 
     def _get(self, params: dict) -> dict:
         """
-        Returns the full database entries of registered job clusters for the given organization
+        Returns the full database entries of groups for the organization
         """
-        user = self.request.user
-        organization = self.get_queryset().first()
+        organization = Organization.objects.get(pk=params["id"])
+        groups = organization.group_set.all()
+        groups = groups.annotate(members=ArrayAgg("groupmembership__user"))
+        groups_resp = list(groups.values("id", "organization__id", "name", "members"))
+        return groups_resp
 
     def get_queryset(self, **kwargs):
         """
@@ -67,24 +73,47 @@ class GroupDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         """
-        Deletes the provided job cluster
+        Deletes the provided group cluster
         """
 
         # Grab the job cluster's object and delete it from the database
         grp_obj = Group.objects.get(pk=params["id"])
         grp_obj.delete()
 
-        return {"message": "Job cluster deleted successfully!"}
+        return {"message": "Group deleted successfully!"}
 
     def _get(self, params):
-        """Retrieve the requested algortihm entry by ID"""
-        group = Group.objects.get(pk=params["id"])
-        return model_to_dict(group, fields=["id", "name", "host", "port", "token", "cert"])
+        """Retrieve the requested Group by ID"""
+        logger.info(f"PARAMS={params}")
+        group = Group.objects.filter(pk=params["id"])
+        if not group.exists():
+            raise Http404("Group not found")
+
+        group = group.annotate(members=ArrayAgg("groupmembership__user")).first()
+        group_dict = {
+            "id": group.id,
+            "name": group.name,
+            "organization": group.organization.id,
+            "members": group.members,
+        }
+        return group_dict
 
     @transaction.atomic
     def _patch(self, params) -> dict:
         """Patch operation on the job cluster entry"""
-        pass
+        if params["name"]:
+            group = Group.objects.get(pk=params["id"])
+            group.name = params["name"]
+            group.save()
+
+        if params["add_members"]:
+            for new_member in params["add_members"]:
+                if not GroupMembership.objects.filter(group=group, user=new_member).exists():
+                    GroupMembership.objects.create(group=group, user=new_member)
+
+        if params["remove_members"]:
+            for member in params["remove_members"]:
+                GroupMembership.objects.filter(group=group, user=member).delete()
 
         return {"message": f"Group {params['id']} successfully updated!"}
 
