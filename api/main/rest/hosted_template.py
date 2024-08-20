@@ -17,7 +17,7 @@ from ..schema import HostedTemplateDetailSchema
 from ..schema import HostedTemplateListSchema
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 from ..schema import parse
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class HostedTemplateListAPI(BaseListView):
     """
 
     schema = HostedTemplateListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
@@ -97,7 +97,7 @@ class HostedTemplateDetailAPI(BaseDetailView):
     """
 
     schema = HostedTemplateDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "patch", "delete"]
 
     def _delete(self, params: dict) -> dict:

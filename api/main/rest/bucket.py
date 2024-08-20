@@ -14,7 +14,7 @@ from ..store import ObjectStore
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class BucketListAPI(BaseListView):
     """List endpoint for Buckets."""
 
     schema = BucketListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params):
@@ -80,7 +80,7 @@ class BucketDetailAPI(BaseDetailView):
     """Detail endpoint for Buckets."""
 
     schema = BucketDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 

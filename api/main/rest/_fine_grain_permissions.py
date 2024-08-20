@@ -415,11 +415,76 @@ class OrganizationPermissionBase(BasePermission):
 
     def _validate_organization(self, request, organization):
         granted = False  # Always deny by default
+        self.request = request
+        self.required_mask = self.get_required_mask()
 
         if isinstance(request.user, AnonymousUser):
             granted = False
+
+        if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT", "POST"]:
+            ### GET, HEAD, PATCH, DELETE require permissions on the item itself
+            perm_qs = view.get_queryset(override_params={"show_all_marks": 1})
+            perm_qs = augment_permission(request.user, perm_qs)
+            model = view.get_queryset().model
+
+            logger.info(
+                f"OrganizationPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
+            )
+            logger.info(f"Query = {perm_qs.query}")
+            if perm_qs.exists():
+                # See if any objects in the requested set DON'T have the required permission
+                perm_qs = perm_qs.annotate(
+                    bitand=ColBitAnd(
+                        F("effective_permission"),
+                        (self.required_mask),
+                    )
+                ).annotate(
+                    granted=Case(
+                        When(bitand__exact=Value(self.required_mask), then=True),
+                        default=False,
+                        output_field=BooleanField(),
+                    )
+                )
+                logger.info(
+                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                )
+
+                # If nothing is found we don't have permission for in this set, we have permission
+                if not perm_qs.filter(granted=False).exists():
+                    granted = True
+            if not perm_qs.exists():
+                ## If there are no objects to check or no permissions we have to go to the parent object
+                ## If we are permissive (reading) we can see if the user has read permissions to the parent
+                ## to avoid a 403, even if the set is empty
+                org_perm_qs = Organization.objects.filter(pk=organization.pk)
+                org_perm_qs = augment_permission(request.user, org_perm_qs)
+                perm_qs = proj_perm_qs.annotate(
+                    bitand=ColBitAnd(
+                        F("effective_permission"),
+                        (self.required_mask << shift_permission(model, Organization)),
+                    )
+                ).annotate(
+                    granted=Case(
+                        When(
+                            bitand__exact=Value(
+                                self.required_mask << shift_permission(model, Organization)
+                            ),
+                            then=True,
+                        ),
+                        default=False,
+                        output_field=BooleanField(),
+                    )
+                )
+
+                logger.info(
+                    f"Org Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                )
+
+                if org_qs.exists():
+                    granted = True
         else:
-            pass
+            assert False, f"Unsupported method={request.method}"
+
         return granted
 
 

@@ -10,7 +10,7 @@ from ..schema import AffiliationDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 
 
 def _serialize_affiliations(affiliations):
@@ -39,7 +39,7 @@ class AffiliationListAPI(BaseListView):
     """
 
     schema = AffiliationListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params):
@@ -83,7 +83,7 @@ class AffiliationDetailAPI(BaseDetailView):
     """
 
     schema = AffiliationDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 

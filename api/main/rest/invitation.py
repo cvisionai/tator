@@ -18,7 +18,7 @@ from ..mail import get_email_service
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class InvitationListAPI(BaseListView):
     """Create or retrieve a list of project invitations."""
 
     schema = InvitationListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params):
@@ -107,7 +107,7 @@ class InvitationDetailAPI(BaseDetailView):
     """Interact with an individual invitation."""
 
     schema = InvitationDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 

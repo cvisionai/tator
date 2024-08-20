@@ -19,7 +19,7 @@ from ..models import database_qs
 from ..schema import GroupListSchema, GroupDetailSchema
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 from ..schema import parse
 
 logger = logging.getLogger(__name__)
@@ -31,30 +31,21 @@ class GroupListAPI(BaseListView):
     """
 
     schema = GroupListSchema()
-    permission_classes = [OrganizationAdminPermission]
-    http_method_names = ["get", "post", "patch", "delete"]
+    permission_classes = [OrganizationEditPermission]
+    http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
         """
         Returns the full database entries of registered job clusters for the given organization
         """
         user = self.request.user
-        org_id = params["id"]
-        affiliations = Affiliation.objects.filter(user=user, permission="Admin")
-        organization_ids = affiliations.values_list("organization", flat=True)
-        if org_id not in organization_ids:
-            raise PermissionDenied(
-                f"User {user} does not have Admin permissions for organization {org_id}"
-            )
-        return list(
-            JobCluster.objects.filter(organization__id=org_id).values(*JOB_CLUSTER_PROPERTIES)
-        )
+        organization = self.get_queryset().first()
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """
         Returns a queryset of organizations
         """
-        return Organization.objects.all()
+        return self.filter_only_viewables(Organization.objects.filter(pk=self.params["id"]))
 
     def _post(self, params: dict) -> dict:
         """
@@ -62,7 +53,7 @@ class GroupListAPI(BaseListView):
         """
         organization = Organization.objects.get(pk=params["id"])
 
-        return {"message": "Successfully registered job cluster.", "id": None}
+        return {"message": "Successfully created group.", "id": None}
 
 
 class GroupDetailAPI(BaseDetailView):
@@ -71,7 +62,7 @@ class GroupDetailAPI(BaseDetailView):
     """
 
     schema = GroupDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "patch", "delete"]
 
     def _delete(self, params: dict) -> dict:
@@ -97,7 +88,7 @@ class GroupDetailAPI(BaseDetailView):
 
         return {"message": f"Group {params['id']} successfully updated!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all job clusters"""
         params = parse(self.request)
         return self.filter_only_viewables(Group.objects.filter(pk=params["id"]))

@@ -7,7 +7,7 @@ from ..schema import OrganizationUploadInfoSchema
 from ..store import get_tator_store
 
 from ._base_views import BaseDetailView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class OrganizationUploadInfoAPI(BaseDetailView):
     """Retrieve info needed to upload a file to organization prefix."""
 
     schema = OrganizationUploadInfoSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get"]
 
     def _get(self, params):
