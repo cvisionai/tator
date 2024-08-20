@@ -84,12 +84,13 @@ def get_parents_for_model(model):
 
 
 def shift_permission(model, source_model):
-    if source_model == [Project, Organization]:
+    if source_model in [Project, Organization]:
         shift = 0
     elif source_model in [Section, Version]:
         shift = 1
     else:
         assert False, f"Unhandled source_model {source_model}"
+
     if model in [
         Dashboard,
         Favorite,
