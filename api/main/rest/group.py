@@ -17,7 +17,7 @@ from ..models import Project
 from ..models import Affiliation
 from ..models import Algorithm
 from ..models import Organization
-from ..models import Group
+from ..models import Group, GroupMembership, User
 from ..models import database_qs
 from ..schema import GroupListSchema, GroupDetailSchema
 from ._base_views import BaseDetailView
@@ -58,8 +58,13 @@ class GroupListAPI(BaseListView):
         Registers a new job cluster using the provided parameters
         """
         organization = Organization.objects.get(pk=params["id"])
+        group = Group.objects.create(name=params["name"], organization=organization)
+        if params.get("initial_members", None):
+            for member in params["initial_members"]:
+                user = User.objects.get(pk=member)
+                GroupMembership.objects.create(group=group, user=user)
 
-        return {"message": "Successfully created group.", "id": None}
+        return {"message": "Successfully created group.", "id": group.pk}
 
 
 class GroupDetailAPI(BaseDetailView):
@@ -80,7 +85,7 @@ class GroupDetailAPI(BaseDetailView):
         grp_obj = Group.objects.get(pk=params["id"])
         grp_obj.delete()
 
-        return {"message": "Group deleted successfully!"}
+        return {"message": "Group deleted successfully!", "id": params["id"]}
 
     def _get(self, params):
         """Retrieve the requested Group by ID"""
@@ -101,17 +106,18 @@ class GroupDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params) -> dict:
         """Patch operation on the job cluster entry"""
-        if params["name"]:
+        if params.get("name", None):
             group = Group.objects.get(pk=params["id"])
             group.name = params["name"]
             group.save()
 
-        if params["add_members"]:
+        if params.get("add_members", None):
             for new_member in params["add_members"]:
-                if not GroupMembership.objects.filter(group=group, user=new_member).exists():
-                    GroupMembership.objects.create(group=group, user=new_member)
+                user = User.objects.get(pk=new_member)
+                if not GroupMembership.objects.filter(group=group, user=user).exists():
+                    GroupMembership.objects.create(group=group, user=user)
 
-        if params["remove_members"]:
+        if params.get("remove_members", None):
             for member in params["remove_members"]:
                 GroupMembership.objects.filter(group=group, user=member).delete()
 

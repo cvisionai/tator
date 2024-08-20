@@ -13,6 +13,8 @@ group_properties = {
 post_properties = {**group_properties}
 del post_properties["members"]
 del post_properties["id"]
+del post_properties["organization"]  # can't post organization in body, its in the URL
+
 post_properties["initial_members"] = {
     "description": "List of members to add to the group upon creation (user pk)",
     "type": "array",
@@ -22,12 +24,11 @@ post_properties["initial_members"] = {
 # The spec used by POST methods
 group_spec = {
     "type": "object",
-    "required": ["name", "organization"],
+    "required": ["name"],
     "properties": post_properties,
 }
 
 patch_properties = {**post_properties}
-del patch_properties["organization"]  # can't patch organization
 del patch_properties["initial_members"]  # can't patch initial members
 
 patch_properties["add_members"] = {
