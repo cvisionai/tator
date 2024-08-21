@@ -1279,6 +1279,73 @@ def memberships_to_rowp(project_id, force=False, verbose=True):
             GroupMembership.objects.create(group=group, user=user)
 
 
+def affiliations_to_rowp(org_id, force=False, verbose=False):
+    """Idempotently make rowprotections for an organization based on legacy affiliations"""
+    from main._permission_util import shift_permission
+
+    org = Organization.objects.get(pk=org_id)
+
+    affiliations = Affiliation.objects.filter(organization=org)
+    # Make org admin + user groups first
+    admin_permission = (
+        (
+            PermissionMask.EXIST
+            | PermissionMask.READ
+            | PermissionMask.MODIFY
+            | PermissionMask.CREATE
+            | PermissionMask.DELETE
+            | PermissionMask.ACL
+        )
+        << shift_permission(Group, Organization)
+        | (
+            PermissionMask.EXIST
+            | PermissionMask.READ
+            | PermissionMask.CREATE
+            | PermissionMask.MODIFY
+            | PermissionMask.DELETE
+            | PermissionMask.ACL
+        )
+        << shift_permission(JobCluster, Organization)
+        | (PermissionMask.FULL_CONTROL)
+    )
+    user_permission = (
+        (
+            PermissionMask.EXIST
+            | PermissionMask.READ
+            | PermissionMask.CREATE
+            | PermissionMask.MODIFY
+            | PermissionMask.DELETE
+        )
+        << shift_permission(Group, Organization)
+        | (PermissionMask.EXIST) << shift_permission(JobCluster, Organization)
+        | (PermissionMask.READ | PermissionMask.EXIST)
+    )
+
+    admin_group = Group.objects.filter(organization=org).filter(name=f"{org.name} Admin")
+    if not admin_group.exists():
+        admin_group = Group.objects.create(name=f"{org.name} Admin", organization=org)
+        rp = RowProtection.objects.create(
+            target_organization=org, group=admin_group, permission=admin_permission
+        )
+
+    user_group = Group.objects.filter(organization=org).filter(name=f"{org.name} User")
+    if not user_group.exists():
+        user_group = Group.objects.create(name=f"{org.name} User", organization=org)
+        RowProtection.objects.create(
+            target_organization=org, group=user_group, permission=user_permission
+        )
+
+    for affl in affiliations.iterator():
+        if affl.permission == "Admin":
+            group = admin_group
+        else:
+            group = user_group
+
+        membership = GroupMembership.objects.filter(group=group, user=affl.user)
+        if not membership.exists():
+            GroupMembership.objects.create(group=group, user=affl.user)
+
+
 def migrate_tator_sections(project):
     folders = Section.objects.filter(project=project, tator_user_sections__isnull=False)
     print(f"Found {folders.count()} folders to migrate")
