@@ -2469,12 +2469,20 @@ class RowProtection(Model):
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
 
+    # These objects fall under the Organization heirarchy
     # This is a pointer to the organization the permissions are describing
     target_organization = ForeignKey(
         Organization, on_delete=CASCADE, null=True, blank=True, related_name="target_organization"
     )
     target_group = ForeignKey(
         Group, on_delete=CASCADE, null=True, blank=True, related_name="target_group"
+    )
+    job_cluster = ForeignKey(
+        JobCluster, on_delete=CASCADE, null=True, blank=True, related_name="job_cluster"
+    )
+    bucket = ForeignKey(Bucket, on_delete=CASCADE, null=True, blank=True, related_name="bucket")
+    hosted_template = ForeignKey(
+        HostedTemplate, on_delete=CASCADE, null=True, blank=True, related_name="hosted_template"
     )
 
     # One of the following must be non-null
