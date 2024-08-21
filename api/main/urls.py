@@ -232,7 +232,7 @@ urlpatterns += [
         JobDetailAPI.as_view(),
     ),
     path(
-        "rest/JobClusters/<int:id>",
+        "rest/JobClusters/<int:organization>",
         JobClusterListAPI.as_view(),
     ),
     path(
