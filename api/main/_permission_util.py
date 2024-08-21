@@ -204,7 +204,6 @@ def augment_permission(user, qs):
         LeafType,
         FileType,
         Dashboard,
-        HostedTemplate,
         TemporaryFile,
         ChangeLog,
         Leaf,

@@ -66,11 +66,15 @@ class HostedTemplateListAPI(BaseListView):
             )
         )
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """
         Returns a queryset of hosted templates
         """
-        return HostedTemplate.objects.all()
+        return self.filter_only_viewables(
+            HostedTemplate.objects.filter(organization__id=self.params["organization"]).values(
+                *HOSTED_TEMPLATE_PROPERTIES
+            )
+        )
 
     def _post(self, params: dict) -> dict:
         """
@@ -146,7 +150,6 @@ class HostedTemplateDetailAPI(BaseDetailView):
 
         return {"message": f"Hosted template {obj_id} successfully updated!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all hosted templates"""
-        params = parse(self.request)
-        return HostedTemplate.objects.filter(pk=params["id"])
+        return self.filter_only_viewables(HostedTemplate.objects.filter(pk=self.params["id"]))
