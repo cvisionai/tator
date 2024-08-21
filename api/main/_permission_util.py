@@ -23,6 +23,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+CHILD_SHIFT = 8
 
 class ColBitAnd(Func):
     function = ""
@@ -100,13 +101,13 @@ def shift_permission(model, source_model):
         ChangeLog,
         Announcement,
     ]:
-        return PermissionMask.CHILD_SHIFT * (4 - shift)
+        return CHILD_SHIFT * (4 - shift)
     elif model in [Localization, State, Group]:
-        return PermissionMask.CHILD_SHIFT * (3 - shift)
+        return CHILD_SHIFT * (3 - shift)
     elif model in [Media]:
-        return PermissionMask.CHILD_SHIFT * (2 - shift)
+        return CHILD_SHIFT * (2 - shift)
     elif model in [Section, Version, Algorithm, File, Bucket, JobCluster]:
-        return PermissionMask.CHILD_SHIFT * (1 - shift)
+        return CHILD_SHIFT * (1 - shift)
     elif model in [
         Project,
         MediaType,
@@ -437,7 +438,7 @@ def augment_permission(user, qs):
             calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
         )
         section_perm_dict = {
-            entry["section"]: (entry["calc_perm"] >> PermissionMask.CHILD_SHIFT)
+            entry["section"]: (entry["calc_perm"] >> CHILD_SHIFT)
             for entry in section_rp.values("section", "calc_perm")
         }
         section_cases = [
@@ -485,11 +486,11 @@ def augment_permission(user, qs):
         )
 
         section_perm_dict = {
-            entry["section"]: (entry["calc_perm"] >> (PermissionMask.CHILD_SHIFT * 2))
+            entry["section"]: (entry["calc_perm"] >> (CHILD_SHIFT * 2))
             for entry in section_rp.values("section", "calc_perm")
         }
         version_perm_dict = {
-            entry["version"]: (entry["calc_perm"] >> PermissionMask.CHILD_SHIFT)
+            entry["version"]: (entry["calc_perm"] >> CHILD_SHIFT)
             for entry in version_rp.values("version", "calc_perm")
         }
 
@@ -526,3 +527,75 @@ def augment_permission(user, qs):
         assert False, f"Unhandled model {model}"
 
     return qs
+
+
+class PermissionMask:
+    ## These bits are repeated so the left-byte is for children objects. This allows
+    ## a higher object to store the default permission for children objects by bitshifting by the
+    ## level of abstraction.
+    ## [0:7] Self-level objects (projects, algos, versions)
+    ## [8:15] Children objects (project -> section* -> media -> metadata)
+    ## [16:23] Grandchildren objects (project -> section -> media* -> metadata)
+    ## [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
+    ## If a permission points to a child object, that occupies [0:7]
+    ## Permission objects exist against either projects, algos, versions or sections
+
+    EXIST = 0x1  # Allows a row to be seen in a list, or individual GET
+    READ = 0x2  # Allows a references to be accessed, e.g. generate presigned URLs
+    CREATE = 0x4  # Allows a row to be created (e.g. POST)
+    MODIFY = 0x8  # Allows a row to be PATCHED (but not in-place, includes variant delete)
+    DELETE = 0x10  # Allows a row to be deleted (pruned for metadata)
+    EXECUTE = 0x20  # Allows an algorithm to be executed (applies to project-level or algorithm)
+    UPLOAD = 0x40  # Allows media to be uploaded
+    ACL = 0x80  # Allows ACL modification for a row, if not a creator
+    FULL_CONTROL = 0xFF  # All bits and all future bits are set
+    # Convenience wrappers to original tator permission system
+    OLD_READ = (
+        EXIST
+        | READ
+        | EXIST << 8
+        | READ << 8
+        | EXIST << 16
+        | READ << 16
+        | EXIST << 24
+        | READ << 24
+        | EXIST << 32
+        | READ << 32
+    )
+
+    # Old write was a bit more complicated as it let you modify elements but not the project itself
+    OLD_WRITE = (
+        OLD_READ
+        | CREATE << 8
+        | MODIFY << 8
+        | DELETE << 8
+        | CREATE << 16
+        | MODIFY << 16
+        | DELETE << 16
+        | CREATE << 24
+        | MODIFY << 24
+        | DELETE << 24
+        | MODIFY << 32
+        | DELETE << 32
+        | CREATE << 32
+    )
+    OLD_TRANSFER = OLD_WRITE | UPLOAD << 16
+
+    OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32 | EXECUTE << 8
+
+    # Old full control lets one delete and write the project (plus you need all bits set in lower byte)
+    OLD_FULL_CONTROL = (
+        OLD_EXECUTE | CREATE | MODIFY | DELETE | 0xFF | ACL << 8 | ACL << 16 | ACL << 24
+    )
+
+    OLD_AFFL_ADMIN = (
+        (EXIST | READ | MODIFY | CREATE | DELETE | ACL) << shift_permission(Group, Organization)
+        | (EXIST | READ | CREATE | MODIFY | DELETE | ACL)
+        << shift_permission(JobCluster, Organization)
+        | (FULL_CONTROL)
+    )
+    OLD_AFFL_USER = (
+        (EXIST | READ | CREATE | MODIFY | DELETE) << shift_permission(Group, Organization)
+        | (EXIST) << shift_permission(JobCluster, Organization)
+        | (READ | EXIST)
+    )

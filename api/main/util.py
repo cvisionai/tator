@@ -1203,6 +1203,8 @@ def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.from
 
 
 def memberships_to_rowp(project_id, force=False, verbose=True):
+    from main._permission_util import shift_permission, PermissionMask
+
     if force == False and os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
         return
 
@@ -1281,13 +1283,13 @@ def memberships_to_rowp(project_id, force=False, verbose=True):
 
 def affiliations_to_rowp(org_id, force=False, verbose=False):
     """Idempotently make rowprotections for an organization based on legacy affiliations"""
-    from main._permission_util import shift_permission
+    from main._permission_util import shift_permission, PermissionMask
 
     org = Organization.objects.get(pk=org_id)
 
     affiliations = Affiliation.objects.filter(organization=org)
     # Make org admin + user groups first
-    admin_permission = PemissionMask.OLD_AFFL_ADMIN
+    admin_permission = PermissionMask.OLD_AFFL_ADMIN
     user_permission = PermissionMask.OLD_AFFL_USER
 
     admin_group = Group.objects.filter(organization=org).filter(name=f"{org.name} Admin")

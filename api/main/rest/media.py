@@ -27,8 +27,9 @@ from ..models import (
     Bucket,
     database_qs,
     database_query_ids,
-    PermissionMask,
 )
+from .._permission_util import PermissionMask
+
 from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..download import download_file

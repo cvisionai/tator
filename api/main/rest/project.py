@@ -17,7 +17,7 @@ from ..models import Permission
 from ..models import Media
 from ..models import Bucket
 from ..models import safe_delete
-from ..models import PermissionMask
+from .._permission_util import PermissionMask
 from ..models import User
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema

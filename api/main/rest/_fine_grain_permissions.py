@@ -16,7 +16,7 @@ from django.core.exceptions import PermissionDenied
 from ..models import *
 from ..cache import TatorCache
 
-from .._permission_util import augment_permission, shift_permission, ColBitAnd
+from .._permission_util import augment_permission, shift_permission, ColBitAnd, PermissionMask
 
 logger = logging.getLogger(__name__)
 

@@ -30,6 +30,7 @@ from .models import *
 from .search import TatorSearch, ALLOWED_MUTATIONS
 from .store import get_tator_store, PATH_KEYS
 from .util import update_queryset_archive_state, memberships_to_rowp, affiliations_to_rowp
+from ._permission_util import PermissionMask, shift_permission
 
 from django.db import transaction
 
@@ -1168,7 +1169,63 @@ class PermissionDetailAffiliationTestMixin:
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             from main._permission_util import shift_permission
 
-            rp = RowProtection.objects.get(project=self.entities[0])
+            print(f"Looking for {self.entities[0].organization}")
+            rp = RowProtection.objects.get(
+                target_organization=self.entities[0].organization,
+                group__name=f"{self.entities[0].organization.name} Admin",
+            )
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_AFFL_ADMIN,
+                PermissionMask.OLD_AFFL_USER,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = affiliation_levels.index(self.edit_permission)
+            for index, level in enumerate(affiliation_levels):
+                obj = Affiliation.objects.filter(
+                    organization=self.get_organization(), user=self.user
+                )[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
+
+    def test_detail_delete_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            print(f"Looking for {self.entities[0].organization}")
+            rp = RowProtection.objects.get(
+                target_organization=self.entities[0].organization,
+                group__name=f"{self.entities[0].organization.name} Admin",
+            )
             orig_permission = rp.permission
 
             # iterate over all permission levels and change the underlying row protection object for this project
@@ -1209,31 +1266,13 @@ class PermissionDetailAffiliationTestMixin:
                     expected_status = status.HTTP_200_OK
                 else:
                     expected_status = status.HTTP_403_FORBIDDEN
-                response = self.client.patch(
-                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                test_val = random.random() > 0.5
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
                 )
                 assertResponse(self, response, expected_status)
-
-    def test_detail_delete_permissions(self):
-        permission_index = affiliation_levels.index(self.edit_permission)
-        for index, level in enumerate(affiliation_levels):
-            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[
-                0
-            ]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            test_val = random.random() > 0.5
-            response = self.client.delete(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
-            )
-            assertResponse(self, response, expected_status)
-            if expected_status == status.HTTP_200_OK:
-                del self.entities[0]
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
 
 
 class AttributeMediaTestMixin:
@@ -4612,7 +4651,7 @@ class BucketTestCase(
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -5795,7 +5834,7 @@ class JobClusterTestCase(TatorTransactionTest):
 
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -5805,6 +5844,7 @@ class JobClusterTestCase(TatorTransactionTest):
         self.create_json = self._random_job_cluster_spec()
         self.entity = JobCluster(organization=self.organization, **self.create_json)
         self.entity.save()
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
