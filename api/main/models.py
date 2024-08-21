@@ -2426,6 +2426,18 @@ class PermissionMask:
         OLD_EXECUTE | CREATE | MODIFY | DELETE | 0xFF | ACL << 8 | ACL << 16 | ACL << 24
     )
 
+    OLD_AFFL_ADMIN = (
+        (EXIST | READ | MODIFY | CREATE | DELETE | ACL) << shift_permission(Group, Organization)
+        | (EXIST | READ | CREATE | MODIFY | DELETE | ACL)
+        << shift_permission(JobCluster, Organization)
+        | (PermissionMask.FULL_CONTROL)
+    )
+    OLD_AFFL_USER = (
+        (EXIST | READ | CREATE | MODIFY | DELETE) << shift_permission(Group, Organization)
+        | (EXIST) << shift_permission(JobCluster, Organization)
+        | (READ | EXIST)
+    )
+
     CHILD_SHIFT = 8
 
 
@@ -2480,7 +2492,9 @@ class RowProtection(Model):
     job_cluster = ForeignKey(
         JobCluster, on_delete=CASCADE, null=True, blank=True, related_name="job_cluster"
     )
-    bucket = ForeignKey(Bucket, on_delete=CASCADE, null=True, blank=True, related_name="bucket")
+    bucket = ForeignKey(
+        Bucket, on_delete=CASCADE, null=True, blank=True, related_name="target_bucket"
+    )
     hosted_template = ForeignKey(
         HostedTemplate, on_delete=CASCADE, null=True, blank=True, related_name="hosted_template"
     )

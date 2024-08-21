@@ -114,9 +114,9 @@ def create_test_group(name):
     )
 
 
-def create_test_organization():
+def create_test_organization(name="my_org"):
     return Organization.objects.create(
-        name="my_org",
+        name=name,
     )
 
 
@@ -1165,22 +1165,54 @@ class PermissionDetailAffiliationTestMixin:
         affiliation.save()
 
     def test_detail_patch_permissions(self):
-        permission_index = affiliation_levels.index(self.edit_permission)
-        for index, level in enumerate(affiliation_levels):
-            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[
-                0
-            ]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
-            )
-            assertResponse(self, response, expected_status)
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.entities[0])
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_AFFL_ADMIN,
+                PermissionMask.OLD_AFFL_USER,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = affiliation_levels.index(self.edit_permission)
+            for index, level in enumerate(affiliation_levels):
+                obj = Affiliation.objects.filter(
+                    organization=self.get_organization(), user=self.user
+                )[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
 
     def test_detail_delete_permissions(self):
         permission_index = affiliation_levels.index(self.edit_permission)
@@ -4580,10 +4612,11 @@ class BucketTestCase(
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
+        self.another_org = create_test_organization("another")
         self.affiliation = create_test_affiliation(self.user, self.organization)
         self.entities = [create_test_bucket(self.organization) for _ in range(3)]
         self.list_uri = "Buckets"
@@ -4610,6 +4643,7 @@ class BucketTestCase(
         }
         self.edit_permission = "Admin"
         self.get_requires_admin = True
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
@@ -4618,11 +4652,9 @@ class BucketTestCase(
         return self.organization
 
     def test_create_no_affiliation(self):
-        endpoint = f"/rest/{self.list_uri}/{self.organization.pk}"
-        self.affiliation.delete()
+        endpoint = f"/rest/{self.list_uri}/{self.another_org.pk}"
         response = self.client.post(endpoint, self.create_json, format="json")
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        self.affiliation.save()
 
 
 class ImageFileTestCase(TatorTransactionTest, FileMixin):

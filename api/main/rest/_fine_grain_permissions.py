@@ -157,7 +157,7 @@ class ProjectPermissionBase(BasePermission):
                     f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                 )
 
-                if perm_qs.exists():
+                if perm_qs.filter(granted=True).exists():
                     granted = True
         elif request.method in ["POST"]:
             ### POST gets permission from a model's parent object permission
@@ -458,7 +458,7 @@ class OrganizationPermissionBase(BasePermission):
                 ## to avoid a 403, even if the set is empty
                 org_perm_qs = Organization.objects.filter(pk=organization.pk)
                 org_perm_qs = augment_permission(request.user, org_perm_qs)
-                perm_qs = proj_perm_qs.annotate(
+                perm_qs = org_perm_qs.annotate(
                     bitand=ColBitAnd(
                         F("effective_permission"),
                         (self.required_mask << shift_permission(model, Organization)),
@@ -480,7 +480,7 @@ class OrganizationPermissionBase(BasePermission):
                     f"Org Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                 )
 
-                if org_qs.exists():
+                if perm_qs.filter(granted=True).exists():
                     granted = True
         else:
             assert False, f"Unsupported method={request.method}"

@@ -58,7 +58,7 @@ class BucketListAPI(BaseListView):
             raise PermissionDenied
         if affiliation[0].permission != "Admin":
             raise PermissionDenied
-        buckets = Bucket.objects.filter(organization=params["organization"])
+        buckets = self.get_queryset()
         return [serialize_bucket(bucket) for bucket in buckets]
 
     def _post(self, params):
@@ -74,6 +74,11 @@ class BucketListAPI(BaseListView):
         # Create the bucket
         bucket = Bucket.objects.create(**params)
         return {"message": f"Bucket {bucket.name} created!", "id": bucket.id}
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(
+            Bucket.objects.filter(organization=self.params["organization"])
+        )
 
 
 class BucketDetailAPI(BaseDetailView):
@@ -136,5 +141,5 @@ class BucketDetailAPI(BaseDetailView):
         bucket.delete()
         return {"message": f'Bucket {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return Bucket.objects.all()

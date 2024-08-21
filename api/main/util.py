@@ -1287,39 +1287,8 @@ def affiliations_to_rowp(org_id, force=False, verbose=False):
 
     affiliations = Affiliation.objects.filter(organization=org)
     # Make org admin + user groups first
-    admin_permission = (
-        (
-            PermissionMask.EXIST
-            | PermissionMask.READ
-            | PermissionMask.MODIFY
-            | PermissionMask.CREATE
-            | PermissionMask.DELETE
-            | PermissionMask.ACL
-        )
-        << shift_permission(Group, Organization)
-        | (
-            PermissionMask.EXIST
-            | PermissionMask.READ
-            | PermissionMask.CREATE
-            | PermissionMask.MODIFY
-            | PermissionMask.DELETE
-            | PermissionMask.ACL
-        )
-        << shift_permission(JobCluster, Organization)
-        | (PermissionMask.FULL_CONTROL)
-    )
-    user_permission = (
-        (
-            PermissionMask.EXIST
-            | PermissionMask.READ
-            | PermissionMask.CREATE
-            | PermissionMask.MODIFY
-            | PermissionMask.DELETE
-        )
-        << shift_permission(Group, Organization)
-        | (PermissionMask.EXIST) << shift_permission(JobCluster, Organization)
-        | (PermissionMask.READ | PermissionMask.EXIST)
-    )
+    admin_permission = PemissionMask.OLD_AFFL_ADMIN
+    user_permission = PermissionMask.OLD_AFFL_USER
 
     admin_group = Group.objects.filter(organization=org).filter(name=f"{org.name} Admin")
     if not admin_group.exists():

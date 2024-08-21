@@ -134,7 +134,8 @@ def augment_permission(user, qs):
         # groups = Group.objects.filter(pk=-1).values("id")
         organizations = user.affiliation_set.all().values("organization")
 
-        if not model in [Project, Organization, Group]:
+        # Exclude projects + organizational level objects
+        if not model in [Project, Organization, Group, JobCluster, Bucket, HostedTemplate]:
             # This assumes all checks are scoped to the same project (expensive to check in runtime)
             project = qs[0].project
 
@@ -155,7 +156,8 @@ def augment_permission(user, qs):
             qs = qs.alias(
                 project_permission=Value(project_permission >> bit_shift),
             )
-        elif model in [Group]:
+        elif model in [Group, JobCluster, Bucket, HostedTemplate]:
+            # This calculates the default permission for an object based on what organization it is in
             org_qs = qs.values("organization")
             org_rp = RowProtection.objects.filter(target_organization__in=org_qs).filter(
                 Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
@@ -179,6 +181,7 @@ def augment_permission(user, qs):
         else:
             pass
     else:
+        # If an object doesn't exist, we can't annotate it
         return qs
 
     if qs.query.low_mark != 0 or qs.query.high_mark is not None:
@@ -293,6 +296,63 @@ def augment_permission(user, qs):
             effective_permission=Case(
                 *file_cases,
                 default=F("project_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
+    elif model in [Bucket]:
+        bucket_rp = RowProtection.objects.filter(target_group__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        bucket_rp = bucket_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("bucket")])
+        )
+        bucket_perm_dict = {
+            entry["bucket"]: entry["calc_perm"] for entry in bucket_rp.values("bucket", "calc_perm")
+        }
+        bucket_cases = [
+            When(bucket=bucket, then=Value(perm)) for bucket, perm in bucket_perm_dict.items()
+        ]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *bucket_cases,  # not to be confused with basket_cases
+                default=F("org_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
+    elif model in [JobCluster]:
+        jc_rp = RowProtection.objects.filter(target_group__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        jc_rp = jc_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("job_cluster")])
+        )
+        jc_perm_dict = {
+            entry["jc"]: entry["calc_perm"] for entry in jc_rp.values("job_cluster", "calc_perm")
+        }
+        jc_cases = [When(job_cluster=jc, then=Value(perm)) for jc, perm in jc_perm_dict.items()]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *jc_cases,
+                default=F("org_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
+    elif model in [HostedTemplate]:
+        ht_rp = RowProtection.objects.filter(target_group__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        ht_rp = ht_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("hosted_template")])
+        )
+        ht_perm_dict = {
+            entry["jc"]: entry["calc_perm"]
+            for entry in ht_rp.values("hosted_template", "calc_perm")
+        }
+        ht_cases = [When(job_cluster=jc, then=Value(perm)) for ht, perm in ht_perm_dict.items()]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *ht_cases,
+                default=F("org_permission"),
                 output_field=BigIntegerField(),
             ),
         )
