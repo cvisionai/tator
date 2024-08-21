@@ -57,7 +57,15 @@ class GroupListSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method in ["GET", "PUT", "PATCH", "DELETE"]:
-            pass
+            params.append(
+                {
+                    "name": "user",
+                    "in": "query",
+                    "required": False,
+                    "description": "Filter on groups that contain a specific user.",
+                    "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+                }
+            )
         return params
 
     def get_request_body(self, path, method):

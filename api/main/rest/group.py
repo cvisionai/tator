@@ -42,7 +42,10 @@ class GroupListAPI(BaseListView):
         Returns the full database entries of groups for the organization
         """
         organization = Organization.objects.get(pk=params["id"])
-        groups = organization.group_set.all()
+        if params.get("user", None):
+            groups = organization.group_set.filter(groupmembership__user=params["user"])
+        else:
+            groups = organization.group_set.all()
         groups = groups.annotate(members=ArrayAgg("groupmembership__user"))
         groups_resp = list(groups.values("id", "organization__id", "name", "members"))
         for idx, group in enumerate(groups_resp):

@@ -29,7 +29,7 @@ from .backup import TatorBackupManager
 from .models import *
 from .search import TatorSearch, ALLOWED_MUTATIONS
 from .store import get_tator_store, PATH_KEYS
-from .util import update_queryset_archive_state, memberships_to_rowp
+from .util import update_queryset_archive_state, memberships_to_rowp, affiliations_to_rowp
 
 from django.db import transaction
 
@@ -6399,6 +6399,7 @@ class SectionTestCase(TatorTransactionTest):
 
 class AdvancedPermissionTestCase(TatorTransactionTest):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         # Add 9 users
         names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"]
         self.users = [create_test_user(is_staff=False, username=name) for name in names]
@@ -6732,6 +6733,7 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 class GroupTestCase(TatorTransactionTest):
     def setUp(self):
         # Add 9 users
+        logging.disable(logging.CRITICAL)
         names = ["Kirk", "Spock", "McCoy", "Scotty", "Uhura", "Sulu", "Chekov", "Picard", "Data"]
         self.users = [create_test_user(is_staff=False, username=name) for name in names]
         self.starfleet = create_test_organization()
@@ -6739,6 +6741,7 @@ class GroupTestCase(TatorTransactionTest):
         self.admin_user = create_test_user(is_staff=True, username="Admin")
         self.affilitation = create_test_affiliation(self.admin_user, self.starfleet)
         self.client.force_authenticate(user=self.admin_user)
+        affiliations_to_rowp(self.starfleet.pk, False, False)
 
     def test_group_creation_and_manip(self):
         resp = self.client.post(
@@ -6746,7 +6749,6 @@ class GroupTestCase(TatorTransactionTest):
             {"name": "NCC-1701", "initial_members": [u.id for u in self.users[:6]]},
             format="json",
         )
-        print(resp)
         assertResponse(self, resp, status.HTTP_201_CREATED)
         group_id = resp.data["id"]
 
@@ -6778,7 +6780,6 @@ class GroupTestCase(TatorTransactionTest):
         resp = self.client.get(f"/rest/Group/{group_id}", format="json")
         assertResponse(self, resp, status.HTTP_200_OK)
         self.assertEqual(resp.data["name"], "NCC-1701-D")
-        print(resp.data)
         self.assertEqual(len(resp.data["members"]), 0)
 
         # Verify adding a user to an empty group works
@@ -6803,3 +6804,17 @@ class GroupTestCase(TatorTransactionTest):
         resp = self.client.get(f"/rest/Group/{group_id}", format="json")
         assertResponse(self, resp, status.HTTP_200_OK)
         self.assertEqual(len(resp.data["members"]), 3)
+
+        # Verify we get one group when we look up by Spock
+        resp = self.client.get(
+            f"/rest/Groups/{self.starfleet.pk}?user={self.users[1].pk}", format="json"
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+
+        # Verify we get two groups when we look up by Scotty
+        resp = self.client.get(
+            f"/rest/Groups/{self.starfleet.pk}?user={self.users[3].pk}", format="json"
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 2)
