@@ -116,6 +116,7 @@ def shift_permission(model, source_model):
         FileType,
         Membership,
         Leaf,
+        Organization,
     ]:
         return 0 - (shift * 8)  # this will cause an exception if we have a logic error somewhere
     else:
@@ -133,7 +134,7 @@ def augment_permission(user, qs):
         # groups = Group.objects.filter(pk=-1).values("id")
         organizations = user.affiliation_set.all().values("organization")
 
-        if model != Project:
+        if not model in [Project, Organization, Group]:
             # This assumes all checks are scoped to the same project (expensive to check in runtime)
             project = qs[0].project
 
@@ -153,6 +154,27 @@ def augment_permission(user, qs):
 
             qs = qs.alias(
                 project_permission=Value(project_permission >> bit_shift),
+            )
+        elif model in [Group]:
+            org_qs = qs.values("organization")
+            org_rp = RowProtection.objects.filter(target_organization__in=org_qs).filter(
+                Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+            )
+            org_rp = org_rp.annotate(
+                calc_perm=Window(
+                    expression=BitOr(F("permission")), partition_by=[F("target_organization")]
+                )
+            )
+            org_perm_dict = {
+                entry["target_organization"]: entry["calc_perm"]
+                for entry in org_rp.values("target_organization", "calc_perm")
+            }
+            org_cases = [
+                When(organization=target_org, then=Value(perm))
+                for target_org, perm in org_perm_dict.items()
+            ]
+            qs = qs.alias(
+                org_permission=Case(*org_cases, default=Value(0), output_field=BigIntegerField())
             )
         else:
             pass
@@ -186,10 +208,30 @@ def augment_permission(user, qs):
         qs = qs.annotate(effective_permission=F("project_permission"))
     elif model in [Membership]:
         qs = qs.annotate(effective_permission=Value(0x3))  # disable mutability of these objects
+    elif model in [Group]:
+        group_rp = RowProtection.objects.filter(target_group__in=qs.values("pk")).filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        group_rp = group_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("target_group")])
+        )
+        group_perm_dict = {
+            entry["group"]: entry["calc_perm"] for entry in group_rp.values("group", "calc_perm")
+        }
+        group_cases = [
+            When(target_group=group, then=Value(perm)) for group, perm in group_perm_dict.items()
+        ]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *group_cases,
+                default=F("org_permission"),
+                output_field=BigIntegerField(),
+            ),
+        )
     elif model in [Project]:
         # These models are only protected by project-level permissions
         raw_rp = RowProtection.objects.filter(project__in=qs.values("pk"))
-        project_rp = RowProtection.objects.filter(project__in=qs.values("pk")).filter(
+        project_rp = raw_rp.filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
         project_rp = project_rp.annotate(
@@ -206,6 +248,31 @@ def augment_permission(user, qs):
         qs = qs.annotate(
             effective_permission=Case(
                 *project_cases,
+                default=Value(0),
+                output_field=BigIntegerField(),
+            ),
+        )
+    elif model in [Organization]:
+        raw_rp = RowProtection.objects.filter(target_organization__in=qs.values("pk"))
+        org_rp = raw_rp.filter(
+            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
+        )
+        org_rp = org_rp.annotate(
+            calc_perm=Window(
+                expression=BitOr(F("permission")), partition_by=[F("target_organization")]
+            )
+        )
+        org_perm_dict = {
+            entry["target_organization"]: entry["calc_perm"]
+            for entry in org_rp.values("target_organization", "calc_perm")
+        }
+        logger.info(f"ORG RP = {org_perm_dict}")
+        org_cases = [
+            When(pk=target_org, then=Value(perm)) for target_org, perm in org_perm_dict.items()
+        ]
+        qs = qs.annotate(
+            effective_permission=Case(
+                *org_cases,
                 default=Value(0),
                 output_field=BigIntegerField(),
             ),
