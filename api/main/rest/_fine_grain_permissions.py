@@ -397,12 +397,12 @@ class OrganizationPermissionBase(BasePermission):
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)
 
-        return self._validate_organization(request, organization)
+        return self._validate_organization(request, organization, view)
 
     def has_object_permission(self, request, view, obj):
         # Get the organization from the object
         organization = self._organization_from_object(obj)
-        return self._validate_organization(request, organization)
+        return self._validate_organization(request, organization, view)
 
     def _organization_from_object(self, obj):
         organization = None
@@ -413,7 +413,7 @@ class OrganizationPermissionBase(BasePermission):
             organization = obj
         return organization
 
-    def _validate_organization(self, request, organization):
+    def _validate_organization(self, request, organization, view):
         granted = False  # Always deny by default
         self.request = request
         self.required_mask = self.get_required_mask()
@@ -428,7 +428,7 @@ class OrganizationPermissionBase(BasePermission):
             model = view.get_queryset().model
 
             logger.info(
-                f"OrganizationPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
+                f"OrganizationPermissionBase: {model} {organization.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
             logger.info(f"Query = {perm_qs.query}")
             if perm_qs.exists():
