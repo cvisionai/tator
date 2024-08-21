@@ -2471,6 +2471,9 @@ class RowProtection(Model):
     target_organization = ForeignKey(
         Organization, on_delete=CASCADE, null=True, blank=True, related_name="target_organization"
     )
+    target_group = ForeignKey(
+        Group, on_delete=CASCADE, null=True, blank=True, related_name="target_group"
+    )
 
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
