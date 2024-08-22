@@ -63,7 +63,7 @@ class JobClusterListAPI(BaseListView):
         """
         Registers a new job cluster using the provided parameters
         """
-        organization = Organization.objects.get(pk=params["id"])
+        organization = Organization.objects.get(pk=params["organization"])
 
         # Is the name unique?
         job_cluster_name = params["name"]
