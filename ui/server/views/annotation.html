@@ -3,8 +3,8 @@
 {% block head %}
 <title>Tator | Annotation</title>
 <script type="module">
-  import "/static/js/annotation/index.js";
-  import "/static/js/components/index.js";
+  import "{{ static_path }}/ui/src/js/annotation/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
   const page = document.createElement("annotation-page");
   document.body.appendChild(page);
 </script>

@@ -46,11 +46,15 @@ const argv = yargs(process.argv.slice(2))
     "r",
     `Redirect URI for auth code callback. Default is ${redirect_uri_default}.`
   )
+  .describe('static_path', 'URL path to static files')
+  .describe('max_age', 'Max age to cache static files in seconds')
   .default('h', 'localhost')
   .default('p', 3000)
   .default('b', '')
   .default('k', false)
   .default("r", redirect_uri_default)
+  .default('static_path', '/static')
+  .default('max_age', 0)
   .argv;
 
 function addHeaders(res, path, stat) {
@@ -74,6 +78,7 @@ const params = {
   email_enabled: argv.email_enabled,
   okta_enabled: argv.okta_enabled,
   keycloak_enabled: argv.keycloak_enabled,
+  static_path: argv.static_path,
   datadog_enabled: process.env.DD_LOGS_INJECTION == "true",
   datadog_client_token: process.env.DD_CLIENT_TOKEN || "",
   datadog_application_id: process.env.DD_APPLICATION_ID || "",
@@ -87,22 +92,26 @@ nunjucks.configure('server/views', {
   autoescape: true
 });
 app.set('view engine', 'html');
-app.use("/static", express.static("./dist", { setHeaders: addHeaders }));
 app.use(
-  "/static",
-  express.static("./server/static", { setHeaders: addHeaders })
+  argv.static_path,
+  express.static("./server/static", { setHeaders: addHeaders, maxAge: argv.max_age })
 );
 app.use(
-  "/static",
+  argv.static_path,
   express.static("../scripts/packages/tator-js/src/annotator", {
     setHeaders: addHeaders,
+    maxAge: argv.max_age,
   })
 );
 app.use(
-  "/static",
+  argv.static_path + "/ui/src",
   express.static("./src", { setHeaders: addHeaders })
 );
-app.use("/scripts", express.static("../scripts"));
+app.use(
+  argv.static_path + "/ui/node_modules",
+  express.static("./node_modules", { setHeaders: addHeaders })
+);
+app.use(argv.static_path + "/scripts", express.static("../scripts", { setHeaders: addHeaders, maxAge: argv.max_age }));
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());

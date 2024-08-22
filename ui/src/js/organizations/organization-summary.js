@@ -1,5 +1,4 @@
 import { TatorElement } from "../components/tator-element.js";
-import TatorSymbol from "../../images/tator-logo-symbol-only.png";
 
 export class OrganizationSummary extends TatorElement {
   constructor() {
@@ -20,7 +19,7 @@ export class OrganizationSummary extends TatorElement {
       this._img.setAttribute("src", val.thumb);
       this._img.setAttribute("style", "object-fit:cover");
     } else {
-      this._img.setAttribute("src", TatorSymbol);
+      this._img.setAttribute("src", "/static/images/tator-logo-symbol-only.png");
       this._img.setAttribute("style", "object-fit:contain");
     }
     if (val.permission == "Admin") {

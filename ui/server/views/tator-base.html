@@ -8,6 +8,7 @@
     <script>
       var BACKEND = '{{ backend }}';
       var KEYCLOAK_ENABLED = {{ keycloak_enabled }};
+      var STATIC_PATH = '{{ static_path }}';
       window.addEventListener('unload', function () {
           console.info("Prevent BF Cache #1");
       });
@@ -15,9 +16,9 @@
           console.info("Prevent BF Cache #2");
       });
     </script>
-    <script src="/static/require-login.js"></script>
+    <script src="{{ static_path }}/require-login.js"></script>
     <!-- script src="/static/tator-ui.js"></script -->
-    <link rel="stylesheet" type="text/css" href="/static/css/styles.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ static_path }}/ui/src/css/styles.css"/>
     {% block head %}
     {% endblock head %}
   </head>

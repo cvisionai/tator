@@ -21,11 +21,15 @@ module.exports = {
     "third-party": "./src/js/third-party/index.js",
     "tator-ui": "./src/js/index.js",
   },
+  experiments: {
+    outputModule: true,
+  },
   output: {
-    filename: "[name].js",
     path: path.resolve(__dirname, "dist"),
-    libraryTarget: "umd",
-    library: ["tatorUi", "[name]"]
+    clean: true,
+    library: {
+      type: 'module',
+    }
   },
   plugins: [
     new WebpackShellPluginNext({
@@ -45,7 +49,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.scss$/i,
+        test: /\.css$/i,
         use: [
           MiniCssExtractPlugin.loader,
           "css-loader",

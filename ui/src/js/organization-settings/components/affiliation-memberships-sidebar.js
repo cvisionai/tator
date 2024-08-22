@@ -1,5 +1,4 @@
 import { TatorElement } from "../../components/tator-element";
-import TatorSymbol from "../../../images/tator-logo-symbol-only.png";
 import { store } from "../store";
 import { AffiliationMembershipDialog } from "./new-membership-dialog";
 
@@ -102,7 +101,7 @@ export class AffiliationMembershipSidebar extends TatorElement {
       if (project.thumb) {
         projectThumb.setAttribute("src", project.thumb);
       } else {
-        projectThumb.setAttribute("src", TatorSymbol);
+        projectThumb.setAttribute("src", "/static/images/tator-logo-symbol-only.png");
       }
 
       //

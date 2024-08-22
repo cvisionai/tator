@@ -1,14 +1,13 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
-import TatorLoading from "../../../images/tator_loading.gif";
 
 export class FilesPage extends TatorPage {
   constructor() {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", TatorLoading);
+    this._loading.setAttribute("src", "/static/images/tator_loading.gif");
     this._shadow.appendChild(this._loading);
 
     // Header

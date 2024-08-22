@@ -12,7 +12,8 @@ import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 export class VideoTimeline extends BaseTimeline {
   constructor() {
     super();
-
+  
+    console.log("VideoTimeline constructor"); 
     this._timelineDiv = document.createElement("div");
     this._timelineDiv.id = "video-timeline";
     this._shadow.appendChild(this._timelineDiv);

@@ -1,5 +1,6 @@
-import create from 'https://cdn.jsdelivr.net/npm/zustand@4.5.5/vanilla/+esm';
-import { subscribeWithSelector } from 'https://cdn.jsdelivr.net/npm/zustand@4.5.5/middleware/+esm';
+import create from '../../../node_modules/zustand/esm/vanilla.mjs';
+import { subscribeWithSelector } from '../../../node_modules/zustand/esm/middleware.js';
+import { fetchCredentials } from '../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
 
 const store = create(
   subscribeWithSelector((set, get) => ({
@@ -32,7 +33,7 @@ const store = create(
           .then((response) => response.json()),
         fetchCredentials('/rest/Project/' + projectId, {}, true)
           .then((response) => response.json()),
-        fetchCredentials('/rest/MediaTypes', {}, true)
+        fetchCredentials(`/rest/MediaTypes/${projectId}`, {}, true)
           .then((response) => response.json()),
       ]).then((values) => {
         set({

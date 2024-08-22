@@ -365,7 +365,6 @@ const store = create(
             set({
               [type]: {
                 ...get()[type],
-                setList,
                 map: data.newMap,
                 setList: data.newSetList,
                 init: true,

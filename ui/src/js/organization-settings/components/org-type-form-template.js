@@ -269,7 +269,6 @@ export class OrgTypeFormTemplate extends TatorElement {
       port: "",
       token: "",
       cert: "",
-      name: "",
       config: "",
       external_host: null,
       archive_sc: "",

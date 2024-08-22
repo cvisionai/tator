@@ -1,6 +1,5 @@
 import { OrgTypeFormTemplate } from "./components/org-type-form-template.js";
 import { store } from "./store.js";
-import TatorSymbol from "../../images/tator-logo-symbol-only.png";
 
 export class ProjectDisplayList extends OrgTypeFormTemplate {
   constructor() {
@@ -47,7 +46,7 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     if (this._data.thumb) {
       this._thumb.setAttribute("src", this._data.thumb);
     } else {
-      this._thumb.setAttribute("src", TatorSymbol);
+      this._thumb.setAttribute("src", "/static/images/tator-logo-symbol-only.png");
     }
 
     //  this._name.setValue(this._data.name);

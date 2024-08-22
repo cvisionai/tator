@@ -1,8 +1,7 @@
-import { createStore } from "zustand/vanilla";
-import { subscribeWithSelector } from "zustand/middleware";
-import { getApi } from "../../../../../scripts/packages/tator-js/pkg/src/index.js";
+import create from '/static/deps/zustand/esm/vanilla.mjs';
+import { subscribeWithSelector } from '/static/deps/node_modules/zustand/esm/middleware.js';
+import { fetchCredentials } from '../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
 
-const api = getApi();
 const projectId = window.location.pathname.split("/")[1];
 
 const store = createStore(
@@ -12,9 +11,12 @@ const store = createStore(
     project: null,
     init: async () => {
       Promise.all([
-        api.whoami(),
-        api.getAnnouncementList(),
-        api.getProject(projectId),
+        fetchCredentials(`/rest/User/GetCurrent`, {}, true)
+          .then((response) => response.json()),
+        fetchCredentials('/rest/Announcements', {}, true)
+          .then((response) => response.json()),
+        fetchCredentials('/rest/Project/' + projectId, {}, true)
+          .then((response) => response.json()),
       ]).then((values) => {
         set({
           user: values[0],
