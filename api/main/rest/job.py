@@ -76,11 +76,8 @@ class JobListAPI(BaseListView):
             batch_int = [int(pk) for pk in batch]
             batch_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(batch_int)])
             qs = Media.objects.filter(pk__in=batch_int).order_by(batch_order)
-            sections = qs.values_list("attributes__tator_user_sections", flat=True)
-            sections = ",".join(list(sections))
             alg_response = submitter.start_algorithm(
                 media_ids=batch_str,
-                sections=sections,
                 gid=gid,
                 uid=uid,
                 token=token,
