@@ -63,7 +63,7 @@ def _serialize_projects(projects, user_id):
                 project_data[idx]["permission"] = str(project.user_permission(user_id))
         # del project_data[idx]["attribute_type_uuids"]
         thumb = ""  # TODO put default value here
-        logger.info(f"{project_data}")
+        # logger.info(f"{project_data}")
         thumb_path = project_data[idx]["thumb"]
         if thumb_path:
             url = cache.get_presigned(user_id, thumb_path)
