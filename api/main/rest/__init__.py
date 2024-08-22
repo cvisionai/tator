@@ -100,3 +100,4 @@ from .video_file import VideoFileListAPI
 from .video_file import VideoFileDetailAPI
 from .jwt import JwtGatewayAPI
 from .anonymous import AnonymousGatewayAPI
+from .rowprotection import RowProtectionListAPI, RowProtectionDetailAPI

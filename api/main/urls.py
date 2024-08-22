@@ -355,6 +355,14 @@ urlpatterns += [
         ProjectDetailAPI.as_view(),
     ),
     path(
+        "rest/RowProtections",
+        RowProtectionListAPI.as_view(),
+    ),
+    path(
+        "rest/RowProtection/<int:id>",
+        RowProtectionDetailAPI.as_view(),
+    ),
+    path(
         "rest/SaveGenericFile/<int:project>",
         SaveGenericFileAPI.as_view(),
         name="SaveGenericFile",
