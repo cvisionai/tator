@@ -295,7 +295,6 @@ class TatorAlgorithm(JobManagerMixin):
     def start_algorithm(
         self,
         media_ids,
-        sections,
         gid,
         uid,
         token,
@@ -328,10 +327,6 @@ class TatorAlgorithm(JobManagerMixin):
                 {
                     "name": "media_ids",
                     "value": media_ids,
-                },
-                {
-                    "name": "sections",
-                    "value": sections,
                 },
                 {
                     "name": "gid",
@@ -384,7 +379,6 @@ class TatorAlgorithm(JobManagerMixin):
         }
         manifest["metadata"]["annotations"] = {
             **manifest["metadata"]["annotations"],
-            "sections": sections,
             "media_ids": media_ids,
             "name": self.alg.name,
         }
