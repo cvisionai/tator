@@ -1110,6 +1110,11 @@ class PermissionDetailMembershipTestMixin:
 
 class PermissionListAffiliationTestMixin:
     def test_list_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(
+                target_organization=self.organization, group__name=f"{self.organization.name} Admin"
+            )
+            rp.delete()
         affiliation = self.get_affiliation(self.organization, self.user)
         affiliation.delete()
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
@@ -1118,6 +1123,8 @@ class PermissionListAffiliationTestMixin:
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.save()
 
     def test_list_is_a_member_permissions(self):
         for index, level in enumerate(affiliation_levels):
@@ -4601,42 +4608,41 @@ class BookmarkTestCase(
         memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
-if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
+class AffiliationTestCase(
+    TatorTransactionTest,
+    PermissionListAffiliationTestMixin,
+    PermissionDetailAffiliationTestMixin,
+):
+    def setUp(self):
+        print(f"\n{self.__class__.__name__}=", end="", flush=True)
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entities = [
+            create_test_affiliation(create_test_user(), self.organization) for _ in range(3)
+        ]
+        self.list_uri = "Affiliations"
+        self.detail_uri = "Affiliation"
+        self.patch_json = {
+            "permission": "Member",
+        }
+        self.create_json = {
+            "user": self.user.pk,
+            "permission": "Admin",
+        }
+        self.edit_permission = "Admin"
+        self.get_requires_admin = False
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
-    class AffiliationTestCase(
-        TatorTransactionTest,
-        PermissionListAffiliationTestMixin,
-        PermissionDetailAffiliationTestMixin,
-    ):
-        def setUp(self):
-            print(f"\n{self.__class__.__name__}=", end="", flush=True)
-            logging.disable(logging.CRITICAL)
-            self.user = create_test_user()
-            self.client.force_authenticate(self.user)
-            self.organization = create_test_organization()
-            self.affiliation = create_test_affiliation(self.user, self.organization)
-            self.project = create_test_project(self.user)
-            self.membership = create_test_membership(self.user, self.project)
-            self.entities = [
-                create_test_affiliation(create_test_user(), self.organization) for _ in range(3)
-            ]
-            self.list_uri = "Affiliations"
-            self.detail_uri = "Affiliation"
-            self.patch_json = {
-                "permission": "Member",
-            }
-            self.create_json = {
-                "user": self.user.pk,
-                "permission": "Admin",
-            }
-            self.edit_permission = "Admin"
-            self.get_requires_admin = False
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
 
-        def get_affiliation(self, organization, user):
-            return Affiliation.objects.filter(organization=organization, user=user)[0]
-
-        def get_organization(self):
-            return self.organization
+    def get_organization(self):
+        return self.organization
 
 
 class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTestMixin):

@@ -106,7 +106,7 @@ def shift_permission(model, source_model):
         return CHILD_SHIFT * (3 - shift)
     elif model in [Media]:
         return CHILD_SHIFT * (2 - shift)
-    elif model in [Section, Version, Algorithm, File, Bucket, JobCluster]:
+    elif model in [Section, Version, Algorithm, File, Bucket, JobCluster, Affiliation]:
         return CHILD_SHIFT * (1 - shift)
     elif model in [
         Project,
@@ -136,7 +136,15 @@ def augment_permission(user, qs):
         organizations = user.affiliation_set.all().values("organization")
 
         # Exclude projects + organizational level objects
-        if not model in [Project, Organization, Group, JobCluster, Bucket, HostedTemplate]:
+        if not model in [
+            Project,
+            Organization,
+            Group,
+            JobCluster,
+            Bucket,
+            HostedTemplate,
+            Affiliation,
+        ]:
             # This assumes all checks are scoped to the same project (expensive to check in runtime)
             project = qs[0].project
 
@@ -157,7 +165,7 @@ def augment_permission(user, qs):
             qs = qs.alias(
                 project_permission=Value(project_permission >> bit_shift),
             )
-        elif model in [Group, JobCluster, Bucket, HostedTemplate]:
+        elif model in [Group, JobCluster, Bucket, HostedTemplate, Affiliation]:
             # This calculates the default permission for an object based on what organization it is in
             org_qs = qs.values("organization")
             org_rp = RowProtection.objects.filter(target_organization__in=org_qs).filter(
@@ -181,7 +189,8 @@ def augment_permission(user, qs):
                 org_permission=Case(*org_cases, default=Value(0), output_field=BigIntegerField())
             )
         else:
-            pass
+            # This will make for clearer error messages if we don't have a model handled correctly (unlikely)
+            assert False, f"Unhandled model {model} (no permission logic for org/project)"
     else:
         # If an object doesn't exist, we can't annotate it
         return qs
@@ -232,6 +241,9 @@ def augment_permission(user, qs):
                 output_field=BigIntegerField(),
             ),
         )
+    elif model in [Affiliation]:
+        # Affiliations don't have per-row control, they are all scoped to the organization permission shifted
+        qs = qs.annotate(effective_permission=F("org_permission"))
     elif model in [Project]:
         # These models are only protected by project-level permissions
         raw_rp = RowProtection.objects.filter(project__in=qs.values("pk"))
