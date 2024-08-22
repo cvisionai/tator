@@ -719,9 +719,9 @@ export class MediaSection extends TatorElement {
       params.set("encoded_search", this._searchString);
     }
 
-    params.delete("related_search");
+    params.delete("encoded_related_search");
     if (this._relatedSearchString != "" && this._relatedSearchString != null) {
-      params.set("related_search", this._relatedSearchString);
+      params.set("encoded_related_search", this._relatedSearchString);
     }
 
     return params;
