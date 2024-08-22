@@ -1193,7 +1193,7 @@ class PermissionDetailAffiliationTestMixin:
                     self.patch_json["name"] += f"_{hex(permission)}"
                 if (
                     permission >> shift_permission(model, Project)
-                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                ) & PermissionMask.READ == PermissionMask.READ:
                     expected_status = status.HTTP_200_OK
                 else:
                     expected_status = status.HTTP_403_FORBIDDEN
