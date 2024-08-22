@@ -170,6 +170,7 @@ def augment_permission(user, qs):
             )
             org_perm_dict = {
                 entry["target_organization"]: entry["calc_perm"]
+                >> shift_permission(model, Organization)
                 for entry in org_rp.values("target_organization", "calc_perm")
             }
             org_cases = [
