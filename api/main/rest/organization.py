@@ -73,11 +73,11 @@ class OrganizationListAPI(BaseListView):
         )
         return {"message": f"Organization {params['name']} created!", "id": organization.id}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         affiliations = Affiliation.objects.filter(user=self.request.user)
         organization_ids = affiliations.values_list("organization", flat=True)
         organizations = Organization.objects.filter(pk__in=organization_ids).order_by("name")
-        return organizations
+        return self.filter_only_viewables(organizations)
 
 
 class OrganizationDetailAPI(BaseDetailView):
@@ -124,5 +124,5 @@ class OrganizationDetailAPI(BaseDetailView):
         organization = Organization.objects.get(pk=params["id"]).delete()
         return {"message": f'Organization {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
-        return Organization.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Organization.objects.filter(pk=self.params["id"]))

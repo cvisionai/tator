@@ -1139,6 +1139,20 @@ class PermissionListAffiliationTestMixin:
 
 class PermissionDetailAffiliationTestMixin:
     def test_detail_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
+            else:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
+            rp.delete()
         affiliation = self.get_affiliation(self.get_organization(), self.user)
         affiliation.delete()
         url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
@@ -1147,33 +1161,80 @@ class PermissionDetailAffiliationTestMixin:
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.save()
 
     def test_detail_is_a_member_permissions(self):
-        for index, level in enumerate(affiliation_levels):
-            affiliation = self.get_affiliation(self.get_organization(), self.user)
-            affiliation.permission = level
-            affiliation.save()
-            if self.get_requires_admin and not (level == "Admin"):
-                expected_status = status.HTTP_403_FORBIDDEN
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
             else:
-                expected_status = status.HTTP_200_OK
-            url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
-            if hasattr(self, "entity_type"):
-                url += f"?type={self.entity_type.pk}"
-            response = self.client.get(url)
-            assertResponse(self, response, expected_status)
-        affiliation.permission = "Admin"
-        affiliation.save()
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_AFFL_ADMIN,
+                PermissionMask.OLD_AFFL_USER,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            for index, level in enumerate(affiliation_levels):
+                affiliation = self.get_affiliation(self.get_organization(), self.user)
+                affiliation.permission = level
+                affiliation.save()
+                if self.get_requires_admin and not (level == "Admin"):
+                    expected_status = status.HTTP_403_FORBIDDEN
+                else:
+                    expected_status = status.HTTP_200_OK
+                url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                assertResponse(self, response, expected_status)
+            affiliation.permission = "Admin"
+            affiliation.save()
 
     def test_detail_patch_permissions(self):
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             from main._permission_util import shift_permission
 
-            print(f"Looking for {self.entities[0].organization}")
-            rp = RowProtection.objects.get(
-                target_organization=self.entities[0].organization,
-                group__name=f"{self.entities[0].organization.name} Admin",
-            )
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
+            else:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
             orig_permission = rp.permission
 
             # iterate over all permission levels and change the underlying row protection object for this project
@@ -1220,12 +1281,16 @@ class PermissionDetailAffiliationTestMixin:
     def test_detail_delete_permissions(self):
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             from main._permission_util import shift_permission
-
-            print(f"Looking for {self.entities[0].organization}")
-            rp = RowProtection.objects.get(
-                target_organization=self.entities[0].organization,
-                group__name=f"{self.entities[0].organization.name} Admin",
-            )
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
+            else:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
             orig_permission = rp.permission
 
             # iterate over all permission levels and change the underlying row protection object for this project
@@ -1235,6 +1300,17 @@ class PermissionDetailAffiliationTestMixin:
                 PermissionMask.OLD_AFFL_ADMIN,
                 PermissionMask.OLD_AFFL_USER,
             ]:
+                # As we delete orgs, we need to refetch the permission object
+                if type(self.entities[0]) != Organization:
+                    rp = RowProtection.objects.get(
+                        target_organization=self.entities[0].organization,
+                        group__name=f"{self.entities[0].organization.name} Admin",
+                    )
+                else:
+                    rp = RowProtection.objects.get(
+                        target_organization=self.entities[0].pk,
+                        group__name=f"{self.entities[0].name} Admin",
+                    )
                 rp.permission = permission
                 rp.save()
                 if "name" in self.patch_json:
@@ -1251,8 +1327,9 @@ class PermissionDetailAffiliationTestMixin:
                 assertResponse(self, response, expected_status)
                 if expected_status == status.HTTP_200_OK:
                     del self.entities[0]
-            rp.permission = orig_permission
-            rp.save()
+            if type(self.entities[0]) != Organization:
+                rp.permission = orig_permission
+                rp.save()
         else:
             permission_index = affiliation_levels.index(self.edit_permission)
             for index, level in enumerate(affiliation_levels):
@@ -4576,6 +4653,8 @@ class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTest
         self.patch_json = {"name": "My new org"}
         self.edit_permission = "Admin"
         self.get_requires_admin = False
+        for entity in self.entities:
+            affiliations_to_rowp(entity.pk, force=False, verbose=False)
 
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
@@ -4589,6 +4668,11 @@ class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTest
         assertResponse(self, response, status.HTTP_201_CREATED)
 
     def test_default_membership(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            print(
+                "Warning: skipping test_default_membership because TATOR_FINE_GRAIN PERMISSIONS are enabled"
+            )
+            return
         other_user = create_test_user(is_staff=False)
         other_affiliation = create_test_affiliation(other_user, self.organization)
 
@@ -5921,6 +6005,7 @@ class HostedTemplateTestCase(TatorTransactionTest):
         self.create_json = self._hosted_template_spec()
         self.entity = HostedTemplate(organization=self.organization, **self.create_json)
         self.entity.save()
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
