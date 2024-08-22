@@ -395,7 +395,13 @@ class OrganizationPermissionBase(BasePermission):
                 raise Http404
         else:
             # If this is a request from schema view, show all endpoints.
-            return _for_schema_view(request, view)
+            # This is posting a new organization; so the user has to be staff
+            if request.method == "POST":
+                if request.user.is_staff or os.getenv("ALLOW_ORGANIZATION_POST") == "true":
+                    return True
+                else:
+                    logger.error(f"User {request.user} is not staff")
+                    return False
 
         return self._validate_organization(request, organization, view)
 

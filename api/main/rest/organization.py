@@ -15,10 +15,13 @@ from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
 from ..store import get_tator_store
 
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationAdminPermission, OrganizationMemberPermission
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _serialize_organizations(organizations, user_id):
     ttl = 28800
@@ -48,6 +51,17 @@ class OrganizationListAPI(BaseListView):
 
     schema = OrganizationListSchema()
     http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [OrganizationMemberPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [OrganizationAdminPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         organizations = self.get_queryset()
@@ -84,9 +98,19 @@ class OrganizationDetailAPI(BaseDetailView):
     """Interact with an individual organization."""
 
     schema = OrganizationDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [OrganizationMemberPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [OrganizationAdminPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         organizations = Organization.objects.filter(pk=params["id"])

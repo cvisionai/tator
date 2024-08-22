@@ -188,8 +188,8 @@ def augment_permission(user, qs):
             qs = qs.alias(
                 org_permission=Case(*org_cases, default=Value(0), output_field=BigIntegerField())
             )
-        elif model in [Project]:
-            pass  # Project permissions are handled below
+        elif model in [Project, Organization]:
+            pass  # Project/ Organization permissions are handled below (for self)
         else:
             # This will make for clearer error messages if we don't have a model handled correctly (unlikely)
             assert False, f"Unhandled model {model} (no permission logic for org/project)"
