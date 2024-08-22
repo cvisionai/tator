@@ -20,6 +20,9 @@ from ..models import Media
 from ..models import Algorithm
 from ..cache import TatorCache
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _for_schema_view(request, view):
     """Returns true if permission is being requested for the schema view. This is
@@ -273,12 +276,12 @@ class ClonePermission(ProjectPermissionBase):
     def has_object_permission(self, request, view, obj):
         return False
 
-
 class OrganizationPermissionBase(BasePermission):
     """Base class for requiring organization permissions."""
 
     def has_permission(self, request, view):
         # Get the organization from the URL parameters
+        logger.info(f"View kwargs: {view.kwargs}")
         if "organization" in view.kwargs:
             organization_id = view.kwargs["organization"]
             organization = get_object_or_404(Organization, pk=int(organization_id))
@@ -289,8 +292,14 @@ class OrganizationPermissionBase(BasePermission):
             if organization is None:
                 raise Http404
         else:
+            # This is the organizations endpoint
+            is_staff = request.user.is_staff
+            can_post = is_staff
+            if request.method == "POST":
+                if os.getenv("ALLOW_ORGANIZATION_POST", None) == "true":
+                    can_post = True
             # If this is a request from schema view, show all endpoints.
-            return _for_schema_view(request, view)
+            return can_post
 
         return self._validate_organization(request, organization)
 
