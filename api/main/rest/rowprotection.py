@@ -96,10 +96,10 @@ class RowProtectionListAPI(BaseListView):
         Returns a queryset of organizations
         """
         qs = RowProtection.objects.all()
-        filters = [x.name for x in search_filters]
-        for key, value in self.params.keys():
-            if key in filters and params.get(key, None):
-                qs = qs.filter(key=params[key])
+        filters = [x["name"] for x in search_filters]
+        for key in self.params.keys():
+            if key in filters and self.params.get(key, None):
+                qs = qs.filter(**{key: self.params[key]})
 
         for row_protection in qs:
             if check_acl_permission_of_children(self.request.user, row_protection) is False:
