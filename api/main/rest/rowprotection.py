@@ -5,6 +5,7 @@
 import logging
 import os
 from django.db import transaction
+from django.db.models import F, Case, When, Value, BooleanField
 from django.forms.models import model_to_dict
 from django.conf import settings
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -20,7 +21,8 @@ from ._base_views import BaseListView
 from ._permissions import OrganizationEditPermission
 from ..schema import parse
 from ..schema.rowprotection import search_filters
-from .._permission_util import PermissionMask, augment_permission
+from .._permission_util import PermissionMask, augment_permission, ColBitAnd
+
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +43,9 @@ target_objects = {
 
 def check_acl_permission_of_children(user, row_protection):
     for target in target_objects.keys():
-        if getattr(row_protection, target):
+        if getattr(row_protection, target) is not None:
             target_object = target_objects[target].objects.filter(
-                pk=getattr(row_protection, target)
+                pk=getattr(row_protection, target).pk
             )
             if check_acl_permission_target(user, target_object) is True:
                 return True
@@ -52,7 +54,7 @@ def check_acl_permission_of_children(user, row_protection):
 
 def check_acl_permission_target(user, target_object_qs):
     target_object_qs = augment_permission(user, target_object_qs)
-    target_object_qs.annotate(
+    target_object_qs = target_object_qs.annotate(
         bitand=ColBitAnd(
             F("effective_permission"),
             (PermissionMask.ACL),
@@ -93,11 +95,18 @@ class RowProtectionListAPI(BaseListView):
         """
         Returns a queryset of organizations
         """
-        qs = self.filter_only_viewables(RowProtection.objects.all())
+        qs = RowProtection.objects.all()
         filters = [x.name for x in search_filters]
         for key, value in self.params.keys():
             if key in filters and params.get(key, None):
                 qs = qs.filter(key=params[key])
+
+        for row_protection in qs:
+            if check_acl_permission_of_children(self.request.user, row_protection) is False:
+                raise PermissionDenied(
+                    "User does not have permission to acccess this row protection set"
+                )
+
         return qs
     def _delete(self, params: dict) -> dict:
         qs = self.get_queryset()
@@ -190,7 +199,7 @@ class RowProtectionDetailAPI(BaseDetailView):
                 "User does not have permission to delete this row protection set"
             )
 
-        return model_to_dict(row_protection)
+        return model_to_dict(qs.first())
 
     @transaction.atomic
     def _patch(self, params) -> dict:
@@ -209,4 +218,4 @@ class RowProtectionDetailAPI(BaseDetailView):
 
     def get_queryset(self, **kwargs):
         """Returns a queryset of all job clusters"""
-        return self.filter_only_viewables(RowProtection.objects.filter(pk=self.params["id"]))
+        return RowProtection.objects.filter(pk=self.params["id"])
