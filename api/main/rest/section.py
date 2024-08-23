@@ -20,6 +20,7 @@ from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 from ._util import check_required_fields
 from ._attributes import validate_attributes, patch_attributes
 from ._annotation_query import _do_object_search
+from .._permission_util import PermissionMask
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +100,9 @@ class SectionListAPI(BaseListView):
         qs.delete()
         return {"message": f"Successfully deleted {count} sections!"}
 
+    def get_model(self):
+        return Section
+
     def _post(self, params):
         project = params["project"]
         name = params["name"]
@@ -138,7 +142,12 @@ class SectionListAPI(BaseListView):
             section.save()
         # Automatically create row protection for newly created section based on the creator
         RowProtection.objects.create(
-            section=section, user=self.request.user, permission=PermissionMask.FULL_CONTROL
+            section=section,
+            user=self.request.user,
+            # Full permission for the section and any media with in it.
+            permission=PermissionMask.FULL_CONTROL << 16
+            | PermissionMask.FULL_CONTROL << 8
+            | PermissionMask.FULL_CONTROL,
         )
         return {"message": f"Section {name} created!", "id": section.id}
 
