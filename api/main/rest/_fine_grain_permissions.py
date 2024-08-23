@@ -17,6 +17,7 @@ from ..models import *
 from ..cache import TatorCache
 
 from .._permission_util import augment_permission, shift_permission, ColBitAnd, PermissionMask
+from functools import reduce
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +105,10 @@ class ProjectPermissionBase(BasePermission):
             perm_qs = augment_permission(request.user, perm_qs)
             model = view.get_queryset().model
 
+            logger.info(f"original query = {perm_qs.query}")
+
             logger.info(
-                f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
+                f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
             logger.info(f"Query = {perm_qs.query}")
             if perm_qs.exists():
@@ -162,10 +165,7 @@ class ProjectPermissionBase(BasePermission):
         elif request.method in ["POST"]:
             ### POST gets permission from a model's parent object permission
             parent_objs = view.get_parent_objects()
-            try:
-                model = view.get_queryset().model
-            except PermissionDenied:
-                return False
+            model = view.get_model()
 
             grand_permission = 0x0
             for proj in parent_objs["project"]:
@@ -174,25 +174,37 @@ class ProjectPermissionBase(BasePermission):
                 grand_permission = proj_qs[0].effective_permission >> shift_permission(
                     model, Project
                 )
+
+            version_perms = []
+
+            # Version permissions can override project default, this allows us to not
+            # make a project wide-open to allow a version to be created
             if parent_objs["version"]:
                 version_qs = Version.objects.filter(pk__in=parent_objs["version"])
                 version_qs = augment_permission(request.user, version_qs)
                 agg_qs = version_qs.aggregate(
                     effective_permission_agg=BitAnd("effective_permission")
                 )
-                grand_permission &= agg_qs["effective_permission_agg"] >> shift_permission(
-                    model, Version
-                )
+                version_perms.append(agg_qs["effective_permission_agg"])
 
-            for section in parent_objs["section"]:
-                section_qs = Section.objects.filter(pk__in=parent_objs["section"])
-                section_qs = augment_permission(request.user, section_qs)
-                agg_qs = section_qs.aggregate(
-                    effective_permission_agg=BitAnd("effective_permission")
-                )
-                grand_permission &= agg_qs["effective_permission_agg"] >> shift_permission(
-                    model, Section
-                )
+                # AND version params together into a single permission
+                version_perm = 0x0
+                if len(version_perms) > 0:
+                    version_perm = reduce(lambda x, y: x & y, version_perms)
+
+                grand_permission = version_perm >> shift_permission(model, Version)
+
+            if parent_objs["section"]:
+                section_perms = []
+                for section in parent_objs["section"]:
+                    section_qs = Section.objects.filter(pk__in=parent_objs["section"])
+                    section_qs = augment_permission(request.user, section_qs)
+                    agg_qs = section_qs.aggregate(
+                        effective_permission_agg=BitAnd("effective_permission")
+                    )
+                    section_perms.append(agg_qs["effective_permission_agg"])
+                total_section_perm = reduce(lambda x, y: x & y, section_perms)
+                grand_permission &= total_section_perm >> shift_permission(model, Section)
 
             # POST requires CREATE permission on the parent object
             if grand_permission & self.required_mask == self.required_mask:
