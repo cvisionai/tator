@@ -2399,8 +2399,8 @@ class RowProtection(Model):
     # Note: Currently type objects are protected by project membership status
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
-    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
-    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)  # not used
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)  # not used
     file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
     section = ForeignKey(Section, on_delete=CASCADE, null=True, blank=True)
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
