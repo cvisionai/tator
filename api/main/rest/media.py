@@ -363,6 +363,10 @@ def _create_media(project, params, user, use_rq=False):
                 tator_store = get_tator_store(bucket, upload=use_upload_bucket)
                 tator_store.put_media_id_tag(path, media_obj.id)
 
+    # update primary section of media object
+    media_obj.primary_section = section_obj
+    media_obj.save()
+
     msg = (
         f"Media object {media_obj.id} created for {media_type.dtype} {name} "
         f"on project {media_type.project.name}"
@@ -430,6 +434,7 @@ class MediaListAPI(BaseListView):
         meaning they can be described by user defined attributes.
         """
         qs = self.get_queryset()
+        logger.info(f"MediaListAPI GET: {qs.query}")
         fields = [*MEDIA_PROPERTIES]
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
@@ -439,6 +444,9 @@ class MediaListAPI(BaseListView):
             no_cache = params.get("no_cache", False)
             _presign(self.request.user.pk, presigned, response_data, no_cache=no_cache)
         return response_data
+
+    def get_model(self):
+        return Media
 
     def _post(self, params):
         project = params["project"]
