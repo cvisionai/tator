@@ -3,7 +3,7 @@ import { subscribeWithSelector } from '../../../node_modules/zustand/esm/middlew
 import { fetchCredentials } from '../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
 
 async function configureImageClassification(project) {
-  let response = await fetchCredentials(`/rest/MediaType/${project.id}`, {
+  let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Images",
@@ -22,7 +22,7 @@ async function configureImageClassification(project) {
 }
 
 async function configureObjectDetection(project) {
-  let response = await fetchCredentials(`/rest/MediaType/${project.id}`, {
+  let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Images",
@@ -33,7 +33,7 @@ async function configureObjectDetection(project) {
   console.log(response.message);
   const imageTypeId = response.id;
 
-  response = await fetchCredentials(`/rest/MediaType/${project.id}`, {
+  response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Videos",
@@ -44,7 +44,7 @@ async function configureObjectDetection(project) {
   console.log(response.message);
   const videoTypeId = response.id;
 
-  response = await fetchCredentials(`/rest/LocalizationType/${project.id}`, {
+  response = await fetchCredentials(`/rest/LocalizationTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Boxes",
@@ -64,7 +64,7 @@ async function configureObjectDetection(project) {
 }
 
 async function configureMultiObjectTracking(project) {
-  let response = await fetchCredentials(`/rest/MediaType/${project.id}`, {
+  let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Videos",
@@ -75,7 +75,7 @@ async function configureMultiObjectTracking(project) {
   console.log(response.message);
   const videoTypeId = response.id;
 
-  response = await fetchCredentials(`/rest/StateType/${project.id}`, {
+  response = await fetchCredentials(`/rest/StateTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Tracks",
@@ -94,7 +94,7 @@ async function configureMultiObjectTracking(project) {
   });
   console.log(response.message);
 
-  response = await fetchCredentials(`/rest/LocalizationType/${project.id}`, {
+  response = await fetchCredentials(`/rest/LocalizationTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Boxes",
@@ -106,7 +106,7 @@ async function configureMultiObjectTracking(project) {
 }
 
 async function configureActivityRecognition(project) {
-  let response = await fetchCredentials(`/rest/MediaType/${project.id}`, {
+  let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Videos",
@@ -117,7 +117,7 @@ async function configureActivityRecognition(project) {
   console.log(response.message);
   const videoTypeId = response.id;
 
-  response = await fetchCredentials(`/rest/StateType/${project.id}`, {
+  response = await fetchCredentials(`/rest/StateTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
       name: "Activities",
