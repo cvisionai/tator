@@ -1221,7 +1221,6 @@ export class AnnotationPage extends TatorPage {
               this._browser.frameChange(evt.detail.frame);
               this._settings.setAttribute("frame", evt.detail.frame);
               this._currentFrame = evt.detail.frame;
-
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
             canvas.addEventListener("select", (evt) => {
@@ -1472,6 +1471,16 @@ export class AnnotationPage extends TatorPage {
                 this._closeModal(save);
               });
             }
+
+            // Event listener to dynamically update save-dialog frame attribute
+            canvas.addEventListener("frameChange", (evt) => {
+              this._currentFrame = evt.detail.frame;
+              for (let [type, saveDialog] of Object.entries(this._saves)) {
+                if (type !== "modifyTrack") {
+                  saveDialog.updateFrame(this._currentFrame);
+                } 
+              }
+            });
 
             canvas.addEventListener("create", (evt) => {
               const metaMode = evt.detail.metaMode;
