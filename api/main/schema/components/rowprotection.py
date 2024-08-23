@@ -37,13 +37,13 @@ del post_properties["created_by"]
 # The spec used by POST methods
 row_protection_spec = {
     "type": "object",
-    "required": ["name"],
+    "required": ["permission"],
     "properties": post_properties,
 }
 # The spec used by PATCH methods
 row_protection_update_spec = {
     "type": "object",
-    "properties": [row_protection_properties["permission"]],
+    "properties": {"permission": row_protection_properties["permission"]},
 }
 
 # The spec used by GET methods
