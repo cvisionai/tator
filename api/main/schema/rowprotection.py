@@ -18,6 +18,107 @@ A group is a collection of users that can be used to assign the same ACLs to mor
 """
 )
 
+search_filters = [
+    {
+        "in": "query",
+        "required": False,
+        "name": "project",
+        "description": "Filter on row protections that apply to a specific project.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "media",
+        "description": "Filter on row protections that apply to a specific media.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "file",
+        "description": "Filter on row protections that apply to a specific file.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "section",
+        "description": "Filter on row protections that apply to a specific section.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "algorithm",
+        "description": "Filter on row protections that apply to a specific algorithm.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "version",
+        "description": "Filter on row protections that apply to a specific version.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "target_organization",
+        "description": "Filter on row protections that apply to a specific organization.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "target_group",
+        "description": "Filter on row protections that apply to a specific group.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "job_cluster",
+        "description": "Filter on row protections that apply to a specific job cluster.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "bucket",
+        "description": "Filter on row protections that apply to a specific bucket.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "hosted_template",
+        "description": "Filter on row protections that apply to a specific hosted template.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "user",
+        "description": "Filter on row protections that describe a given user's permissions.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "organization",
+        "description": "Filter on row protections that describe a given organization's permissions.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+    {
+        "in": "query",
+        "required": False,
+        "name": "group",
+        "description": "Filter on row protections that describe a given group's permissions.",
+        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
+    },
+]
+
 
 class RowProtectionListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -49,108 +150,7 @@ class RowProtectionListSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method in ["GET", "PUT", "PATCH", "DELETE"]:
-            params.extend(
-                [
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "project",
-                        "description": "Filter on row protections that apply to a specific project.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "media",
-                        "description": "Filter on row protections that apply to a specific media.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "file",
-                        "description": "Filter on row protections that apply to a specific file.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "section",
-                        "description": "Filter on row protections that apply to a specific section.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "algorithm",
-                        "description": "Filter on row protections that apply to a specific algorithm.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "version",
-                        "description": "Filter on row protections that apply to a specific version.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "target_organization",
-                        "description": "Filter on row protections that apply to a specific organization.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "target_group",
-                        "description": "Filter on row protections that apply to a specific group.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "job_cluster",
-                        "description": "Filter on row protections that apply to a specific job cluster.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "bucket",
-                        "description": "Filter on row protections that apply to a specific bucket.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "hosted_template",
-                        "description": "Filter on row protections that apply to a specific hosted template.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "user",
-                        "description": "Filter on row protections that describe a given user's permissions.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "organization",
-                        "description": "Filter on row protections that describe a given organization's permissions.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                    {
-                        "in": "query",
-                        "required": False,
-                        "name": "group",
-                        "description": "Filter on row protections that describe a given group's permissions.",
-                        "schema": {"type": "integer", "minimum": 1, "maximum": 0xFFFFFFFFFFFFFFFF},
-                    },
-                ]
-            )
+            params.extend(search_filters)
         return params
 
     def get_request_body(self, path, method):
