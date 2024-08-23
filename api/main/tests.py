@@ -129,6 +129,14 @@ def create_test_affiliation(user, organization):
     )
 
 
+def create_test_member_affiliation(user, organization):
+    return Affiliation.objects.create(
+        user=user,
+        organization=organization,
+        permission="Member",
+    )
+
+
 def create_test_bucket(organization):
     return Bucket.objects.create(
         name=str(uuid1()),
@@ -6985,3 +6993,258 @@ class GroupTestCase(TatorTransactionTest):
         )
         assertResponse(self, resp, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
+
+if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+
+    class RowProtectionTestCase(TatorTransactionTest):
+        def setUp(self):
+            # Add 9 users from our previous
+            # logging.disable(logging.CRITICAL)
+
+            self.kirk = create_test_user(is_staff=False, username="Kirk")
+            self.red_shirt = create_test_user(is_staff=False, username="redshirt")
+            self.commandant = create_test_user(is_staff=False, username="Commandant")
+            self.starfleet = create_test_organization()
+            self.affilitation = create_test_member_affiliation(self.kirk, self.starfleet)
+            self.commandant_affilitation = create_test_affiliation(self.commandant, self.starfleet)
+
+            self.project = create_test_project(self.commandant, self.starfleet)
+
+            self.media_type = MediaType.objects.create(
+                name="video",
+                dtype="video",
+                project=self.project,
+                attribute_types=create_test_attribute_types(),
+            )
+
+            # Manually make a row protection to project so Kirk can upload media
+            RowProtection.objects.create(
+                project=self.project,
+                user=self.kirk,
+                permission=PermissionMask.CAN_MAKE_MEDIA_AND_SECTIONS,
+            )
+
+            # Make a localization, state type, and version
+            self.box_type = LocalizationType.objects.create(
+                name="boxes",
+                dtype="box",
+                project=self.project,
+            )
+            self.state_type = StateType.objects.create(
+                name="state_type",
+                dtype="state",
+                project=self.project,
+                association="Frame",
+            )
+            self.box_type.media.add(self.media_type)
+            self.box_type.save()
+            self.state_type.media.add(self.media_type)
+            self.state_type.save()
+
+            self.public_version = create_test_version("public", "", 0, self.project, None)
+            self.captains_log = create_test_version("captains_log", "", 0, self.project, None)
+
+            RowProtection.objects.create(
+                version=self.public_version,
+                user=self.kirk,
+                permission=PermissionMask.FULL_CONTROL | PermissionMask.FULL_CONTROL << 8,
+            )
+            RowProtection.objects.create(
+                version=self.captains_log,
+                user=self.kirk,
+                permission=PermissionMask.FULL_CONTROL | PermissionMask.FULL_CONTROL << 8,
+            )
+
+            RowProtection.objects.create(
+                version=self.public_version,
+                user=self.red_shirt,
+                permission=PermissionMask.OLD_READ | PermissionMask.OLD_READ << 8,
+            )
+
+            # Use affiliation logic to make organizational level row protections
+            affiliations_to_rowp(self.starfleet.pk, False, False)
+
+        def test_crud(self):
+            # Verify behavior if you are Captain Kirk
+            self.client.force_authenticate(user=self.kirk)
+            resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+
+            # The commandant, who didn't steal the klingon ship and get demoted can see all row permissions
+            self.client.force_authenticate(user=self.commandant)
+            resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Switch back to kirk
+            self.client.force_authenticate(user=self.kirk)
+            # Create a section
+            resp = self.client.post(
+                f"/rest/Sections/{self.project.pk}",
+                {"name": "Bridge", "path": "Bridge", "explicit_listing": True},
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            section_id = resp.data["id"]
+
+            # Create a media in the bridge
+            resp = self.client.post(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "name": "Captain's Chair",
+                    "type": self.media_type.pk,
+                    "md5": "8675309",
+                    "section_id": section_id,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            # Fetch row protections for the media in question (there are 0)
+            media_id = resp.data["id"]
+            resp = self.client.get(f"/rest/RowProtections?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 0)
+
+            # Fetch row protections for the section in question (there is 1)
+            resp = self.client.get(f"/rest/RowProtections?section={section_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            # Verify we only see one media thus far
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            # Create a second section
+            resp = self.client.post(
+                f"/rest/Sections/{self.project.pk}",
+                {"name": "Engineering", "path": "Engineering", "explicit_listing": True},
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            section_id = resp.data["id"]
+
+            # Add a media to this section
+            resp = self.client.post(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "name": "Warp Core",
+                    "type": self.media_type.pk,
+                    "md5": "1234567",
+                    "section_id": section_id,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            media_id = resp.data["id"]
+
+            # Add red shirt to engineering
+            # Post the row protection to the project
+            resp = self.client.post(
+                f"/rest/RowProtections",
+                {
+                    "section": section_id,
+                    "permission": PermissionMask.OLD_READ,
+                    "user": self.red_shirt.pk,
+                },
+                format="json",
+            )
+            print(f"Posted section-level permission of {PermissionMask.OLD_READ}")
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            # Get all row protections for engineering
+            resp = self.client.get(f"/rest/RowProtections?section={section_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # Fetch all the media for the project as kirk
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # Now switch to the redshift and verify they can only see the engineering section
+            self.client.force_authenticate(user=self.red_shirt)
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            # Go back to kirk
+            self.client.force_authenticate(user=self.kirk)
+
+            # Add localizations to the warp core
+            resp = self.client.post(
+                f"/rest/Localizations/{self.project.pk}",
+                {
+                    "type": self.box_type.pk,
+                    "media_id": media_id,
+                    "version": self.public_version.pk,
+                    "frame": 0,
+                    "x": 0.5,
+                    "y": 0.5,
+                    "width": 0.25,
+                    "height": 0.25,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            # Post another to the captains log
+            resp = self.client.post(
+                f"/rest/Localizations/{self.project.pk}",
+                {
+                    "type": self.box_type.pk,
+                    "media_id": media_id,
+                    "version": self.captains_log.pk,
+                    "frame": 0,
+                    "x": 0.5,
+                    "y": 0.5,
+                    "width": 0.25,
+                    "height": 0.25,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            # Fetch all localizations for the warp core
+            resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # Add some states
+            resp = self.client.post(
+                f"/rest/States/{self.project.pk}",
+                {
+                    "type": self.state_type.pk,
+                    "media_ids": [media_id],
+                    "version": self.public_version.pk,
+                    "frame": 0,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            resp = self.client.post(
+                f"/rest/States/{self.project.pk}",
+                {
+                    "type": self.state_type.pk,
+                    "media_ids": [media_id],
+                    "version": self.captains_log.pk,
+                    "frame": 0,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            # Assert we get two States from Kirk's permission
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # Switch back to the red shirt and verify we get 1 localization and 1 state
+            self.client.force_authenticate(user=self.red_shirt)
+            resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
