@@ -18,7 +18,7 @@ export class PasswordResetPage extends TatorElement {
 
     const img = document.createElement("img");
     img.setAttribute("class", "py-4");
-    img.setAttribute("src", "/static/images/tator-logo.png");
+    img.setAttribute("src", `${STATIC_PATH}/images/tator-logo.png`);
     img.setAttribute("width", "400");
     div.appendChild(img);
 

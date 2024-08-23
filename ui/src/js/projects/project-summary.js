@@ -25,7 +25,7 @@ export class ProjectSummary extends TatorElement {
       this._img.setAttribute("src", val.thumb);
       this._img.setAttribute("style", "object-fit:cover");
     } else {
-      this._img.setAttribute("src", "/static/images/tator-logo-symbol-only.png");
+      this._img.setAttribute("src", `${STATIC_PATH}/images/tator-logo-symbol-only.png`);
       this._img.setAttribute("style", "object-fit:contain");
     }
 

@@ -724,7 +724,7 @@ export class EntityCard extends TatorElement {
       ) {
         // Default to tator thumbnail
         // TODO: Have some visual indication if stream is active.
-        this._img.setAttribute("src", "/static/images/live-thumb.png");
+        this._img.setAttribute("src", `${STATIC_PATH}/images/live-thumb.png`);
       }
     }
 
