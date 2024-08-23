@@ -30,7 +30,7 @@ class RowProtectionListAPI(BaseListView):
 
     schema = RowProtectionListSchema()
     permission_classes = [OrganizationEditPermission]
-    http_method_names = ["get", "post"]
+    http_method_names = ["get", "post", "delete"]
 
     def _get(self, params: dict) -> dict:
         """
@@ -42,6 +42,9 @@ class RowProtectionListAPI(BaseListView):
         """
         Returns a queryset of organizations
         """
+        pass
+
+    def _delete(self, params: dict) -> dict:
         pass
 
     def _post(self, params: dict) -> dict:
