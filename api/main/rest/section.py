@@ -9,6 +9,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from ..models import Section
 from ..models import Project
 from ..models import database_qs
+from ..models import RowProtection
 from ..schema import SectionListSchema
 from ..schema import SectionDetailSchema
 from ..schema.components import section
@@ -135,6 +136,10 @@ class SectionListAPI(BaseListView):
             for media_id in media_list:
                 section.media.add(media_id)
             section.save()
+        # Automatically create row protection for newly created section based on the creator
+        RowProtection.objects.create(
+            section=section, user=self.request.user, permission=PermissionMask.FULL_CONTROL
+        )
         return {"message": f"Section {name} created!", "id": section.id}
 
     def _patch(self, params):

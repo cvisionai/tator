@@ -17,6 +17,7 @@ from ..models import Project
 from ..models import Affiliation
 from ..models import Algorithm
 from ..models import Organization
+from ..models import RowProtection
 from ..models import Group, GroupMembership, User
 from ..models import database_qs
 from ..schema import GroupListSchema, GroupDetailSchema
@@ -24,6 +25,7 @@ from ._base_views import BaseDetailView
 from ._base_views import BaseListView
 from ._permissions import OrganizationEditPermission
 from ..schema import parse
+from .._permission_util import PermissionMask
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,10 @@ class GroupListAPI(BaseListView):
         """
         organization = Organization.objects.get(pk=params["id"])
         group = Group.objects.create(name=params["name"], organization=organization)
+        # Create a row protection object such that a group can be modified by the creator
+        RowProtection.objects.create(
+            target_group=group, user=self.request.user, permission=PermissionMask.FULL_CONTROL
+        )
         if params.get("initial_members", None):
             for member in params["initial_members"]:
                 user = User.objects.get(pk=member)
