@@ -1478,7 +1478,7 @@ export class AnnotationPage extends TatorPage {
               for (let [type, saveDialog] of Object.entries(this._saves)) {
                 if (type !== "modifyTrack") {
                   saveDialog.updateFrame(this._currentFrame);
-                } 
+                }
               }
             });
 
