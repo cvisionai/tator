@@ -402,6 +402,8 @@ class OrganizationPermissionBase(BasePermission):
                 else:
                     logger.error(f"User {request.user} is not staff")
                     return False
+            if request.method == "GET":  # this is a get request, fine-grain will handle it later
+                return True
 
         return self._validate_organization(request, organization, view)
 
