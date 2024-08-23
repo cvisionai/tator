@@ -87,8 +87,10 @@ def get_parents_for_model(model):
 def shift_permission(model, source_model):
     if source_model in [Project, Organization]:
         shift = 0
-    elif source_model in [Section, Version]:
+    elif source_model in [Section]:
         shift = 1
+    elif source_model in [Version]:
+        shift = 2
     else:
         assert False, f"Unhandled source_model {source_model}"
 
@@ -134,6 +136,7 @@ def shift_permission(model, source_model):
 
 def augment_permission(user, qs):
     # Add effective_permission to the queryset
+    logger.info(f"Augmenting permissions. {qs.count()} {qs.model} for {user}")
     if qs.exists():
         model = qs.model
         # handle shift due to underlying model
@@ -214,6 +217,7 @@ def augment_permission(user, qs):
             project_permission=Value(project_permission >> bit_shift),
         )
 
+    logger.info("Appended project-level permissions, adding model specific permissions now.")
     if model in [Announcement]:
         # Everyone can read announcements
         qs = qs.annotate(effective_permission=Value(0x3))
@@ -463,8 +467,10 @@ def augment_permission(user, qs):
             entry["section"]: (entry["calc_perm"] >> CHILD_SHIFT)
             for entry in section_rp.values("section", "calc_perm")
         }
+        logger.info(f"MEDIA: SECTION_PERM_DICT = {section_perm_dict}")
         section_cases = [
-            When(section=section, then=Value(perm)) for section, perm in section_perm_dict.items()
+            When(primary_section=section, then=Value(perm))
+            for section, perm in section_perm_dict.items()
         ]
         qs = qs.annotate(
             effective_permission=Case(
@@ -517,7 +523,8 @@ def augment_permission(user, qs):
         }
 
         section_cases = [
-            When(section=section, then=Value(perm)) for section, perm in section_perm_dict.items()
+            When(media__primary_section=section, then=Value(perm))
+            for section, perm in section_perm_dict.items()
         ]
         version_cases = [
             When(version=version, then=Value(perm)) for version, perm in version_perm_dict.items()
@@ -610,14 +617,20 @@ class PermissionMask:
         OLD_EXECUTE | CREATE | MODIFY | DELETE | 0xFF | ACL << 8 | ACL << 16 | ACL << 24
     )
 
+    # This lets a user see and modify an organization, job cluster details, etc.
     OLD_AFFL_ADMIN = (
         (EXIST | READ | MODIFY | CREATE | DELETE | ACL) << shift_permission(Group, Organization)
         | (EXIST | READ | CREATE | MODIFY | DELETE | ACL)
         << shift_permission(JobCluster, Organization)
         | (FULL_CONTROL)
     )
+    # This lets users see a organization, see the existance of, but not configuration of job clusters and make groups
     OLD_AFFL_USER = (
         (EXIST | READ | CREATE | MODIFY | DELETE) << shift_permission(Group, Organization)
         | (EXIST) << shift_permission(JobCluster, Organization)
         | (READ | EXIST)
     )
+
+    # This level lets a user make sections they have full control over and eventually media upload priv
+    # If bit 16 was 0, they could make sections, but ultimately not media due to project-level restriction (AND bitwise logic)
+    CAN_MAKE_MEDIA_AND_SECTIONS = (CREATE | UPLOAD) << 16 | (CREATE) << 8 | (EXIST | READ)
