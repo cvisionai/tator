@@ -2352,7 +2352,6 @@ class Group(Model):
     """ Organization that the group belongs to """
     name = CharField(max_length=128)
     """ Descriptive name for the group """
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
 
 
 class GroupMembership(Model):
