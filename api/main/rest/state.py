@@ -46,6 +46,7 @@ from ._util import (
     compute_user,
 )
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -185,11 +186,13 @@ class StateListAPI(BaseListView):
         else:
             raise Exception("State creation requires list of states!")
 
-        # Get a default version.
-        membership = Membership.objects.get(user=self.request.user, project=params["project"])
-        if membership.default_version:
-            default_version = membership.default_version
-        else:
+        default_version = None
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+            # Get a default version.
+            membership = Membership.objects.get(user=self.request.user, project=params["project"])
+            if membership.default_version:
+                default_version = membership.default_version
+        if not default_version:
             default_version = Version.objects.filter(
                 project=params["project"], number__gte=0
             ).order_by("number")
@@ -385,6 +388,9 @@ class StateListAPI(BaseListView):
                     State.objects.bulk_create(objs)
 
         return {"message": f"Successfully deleted {count} states!"}
+
+    def get_model(self):
+        return State
 
     def _patch(self, params):
         if params.get("ids", []) != [] or params.get("user_elemental_id", None):

@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 LOCALIZATION_PROPERTIES = list(localization_schema["properties"].keys())
 
+import os
 
 class LocalizationListAPI(BaseListView):
     """Interact with list of localizations.
@@ -75,6 +76,9 @@ class LocalizationListAPI(BaseListView):
         return self.filter_only_viewables(
             get_annotation_queryset(self.params["project"], params, "localization")
         )
+
+    def get_model(self):
+        return Localization
 
     def _get(self, params):
         logger.info("PARAMS=%s", params)
@@ -121,11 +125,15 @@ class LocalizationListAPI(BaseListView):
 
         project = params["project"]
 
-        # Get a default version.
-        membership = Membership.objects.get(user=self.request.user, project=params["project"])
-        if membership.default_version:
-            default_version = membership.default_version
-        else:
+        default_version = None
+
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+            # Get a default version.
+            membership = Membership.objects.get(user=self.request.user, project=params["project"])
+            if membership.default_version:
+                default_version = membership.default_version
+
+        if not default_version:
             default_version = Version.objects.filter(
                 project=params["project"], number__gte=0
             ).order_by("number")
