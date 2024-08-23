@@ -124,7 +124,7 @@ class RowProtectionListAPI(BaseListView):
         Registers a new job cluster using the provided parameters
         """
 
-        originators = ["user", "organization", "group"]
+        originators = {"user": User, "organization": Organization, "group": Group}
 
         destination_type = []
         for target in target_objects.keys():
@@ -135,7 +135,7 @@ class RowProtectionListAPI(BaseListView):
         destination_type = destination_type[0]
 
         originator_type = []
-        for originator in originators:
+        for originator in originators.keys():
             if params.get(originator, None):
                 originator_type.append(originator)
         assert len(originator_type) == 1, f"Only one originator is allowed {self.params}"
@@ -156,10 +156,15 @@ class RowProtectionListAPI(BaseListView):
             )
 
         creation_dict = {
-            permission: params["permission"],
-            destination_type: None,
-            originator_type: None,
+            "permission": self.params["permission"],
+            destination_type: target_object_qs.first(),
+            originator_type: originators[originator_type].objects.get(
+                pk=self.params[originator_type]
+            ),
         }
+
+        logger.info(f"Creation dict = {creation_dict}")
+        rp = RowProtection.objects.create(**creation_dict)
 
         return {"message": "RowProtection created successfully!", "id": rp.id}
 
