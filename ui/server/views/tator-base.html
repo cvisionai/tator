@@ -16,8 +16,14 @@
           console.info("Prevent BF Cache #2");
       });
     </script>
+    <script type="importmap">
+      {
+        "imports": {
+          "uuid": "{{ static_path }}/ui/node_modules/uuid/dist/esm-browser/index.js"
+        }
+      }
+    </script>
     <script src="{{ static_path }}/require-login.js"></script>
-    <!-- script src="/static/tator-ui.js"></script -->
     <link rel="stylesheet" type="text/css" href="{{ static_path }}/ui/src/css/styles.css"/>
     {% block head %}
     {% endblock head %}

@@ -40,7 +40,7 @@ export class EntityCard extends TatorElement {
 
     // Image, spinner until SRC set
     this._img = document.createElement("img");
-    this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
+    this._img.setAttribute("src", `${STATIC_PATH}/ui/src/images/spinner-transparent.svg`);
     this._img.setAttribute("class", "entity-card__image rounded-1");
     this._img.setAttribute("crossorigin", "anonymous");
     this._link.appendChild(this._img);
@@ -432,11 +432,9 @@ export class EntityCard extends TatorElement {
       typeof this.cardObj.image !== "undefined" &&
       this.cardObj.image !== null
     ) {
-      //this.setAttribute("thumb", obj.image);
       this.setImageStatic(obj.image);
     } else if (!mediaInit) {
-      //this.setAttribute("thumb", Spinner);
-      this.setImageStatic("/static/images/spinner-transparent.svg");
+      this.setImageStatic(`${STATIC_PATH}/ui/src/images/spinner-transparent.svg`);
     }
 
     if (obj.posText) {
@@ -445,8 +443,6 @@ export class EntityCard extends TatorElement {
     }
 
     this._membershipMap = new Map();
-    // console.log("memberships");
-    // console.log(memberships);
     if (memberships !== null) {
       for (let member of memberships) {
         this._membershipMap.set(member.user, member.username);

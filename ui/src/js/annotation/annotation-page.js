@@ -11,7 +11,7 @@ export class AnnotationPage extends TatorPage {
 
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", "/static/images/tator_loading.gif");
+    this._loading.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator_loading.gif`);
     this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};

@@ -11,8 +11,7 @@ export class UploadElement extends TatorElement {
     this._cancel = false;
   }
 
-  init(api, store) {
-    this._api = api;
+  init(store) {
     this._store = store;
     store.subscribe(
       (state) => state.uploadCancelled,
@@ -204,7 +203,7 @@ export class UploadElement extends TatorElement {
               uploadChunkProgress: 0,
               uploadFilename: msg.file.name,
             });
-            return uploadMedia(this._api, msg.mediaType, msg.file, msg);
+            return uploadMedia(msg.mediaType, msg.file, msg);
           })
           .then(() => {
             this._store.setState({
