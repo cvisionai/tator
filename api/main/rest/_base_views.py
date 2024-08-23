@@ -96,11 +96,12 @@ class TatorAPIView(APIView):
 
     def filter_only_viewables(self, qs):
         # Convenience function for filtering out objects for most views
-        if os.getenv("TATOR_FINE_GRAINED_PERMISSIONS", None) == "true":
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
             qs = augment_permission(self.request.user, qs)
-            return qs.filter(effective_permission__gte=0)
-        else:
-            return qs
+            if qs.exists():
+                return qs.filter(effective_permission__gt=0)
+
+        return qs
 
 class GetMixin:
     # pylint: disable=redefined-builtin,unused-argument
