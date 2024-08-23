@@ -224,10 +224,13 @@ class ProjectEditPermission(ProjectPermissionBase):
 
     message = "Insufficient permission to modify this project."
     def get_required_mask(self):
+        # TODO: Make this a configruation flag?
         if self.request.method == "POST":
             return PermissionMask.CREATE
-        else:
+        elif self.request.method == "PATCH":
             return PermissionMask.MODIFY
+        elif self.request.method == "DELETE":
+            return PermissionMask.DELETE
 
 
 class ProjectTransferPermission(ProjectPermissionBase):
