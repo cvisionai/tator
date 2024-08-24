@@ -1,6 +1,6 @@
-import { TatorElement } from "../../components/tator-element";
-import { store } from "../store";
-import { AffiliationMembershipDialog } from "./new-membership-dialog";
+import { TatorElement } from "../../components/tator-element.js";
+import { store } from "../store.js";
+import { AffiliationMembershipDialog } from "./new-membership-dialog.js";
 
 export class AffiliationMembershipSidebar extends TatorElement {
   constructor() {
@@ -101,7 +101,7 @@ export class AffiliationMembershipSidebar extends TatorElement {
       if (project.thumb) {
         projectThumb.setAttribute("src", project.thumb);
       } else {
-        projectThumb.setAttribute("src", `${STATIC_PATH}/images/tator-logo-symbol-only.png`);
+        projectThumb.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.png`);
       }
 
       //

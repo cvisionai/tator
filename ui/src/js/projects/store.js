@@ -2,7 +2,7 @@ import create from '../../../node_modules/zustand/esm/vanilla.mjs';
 import { subscribeWithSelector } from '../../../node_modules/zustand/esm/middleware.js';
 import { fetchCredentials } from '../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
 
-async function configureImageClassification(project) {
+export async function configureImageClassification(project) {
   let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
@@ -21,7 +21,7 @@ async function configureImageClassification(project) {
   console.log(response.message);
 }
 
-async function configureObjectDetection(project) {
+export async function configureObjectDetection(project) {
   let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
@@ -63,7 +63,7 @@ async function configureObjectDetection(project) {
   console.log(response.message);
 }
 
-async function configureMultiObjectTracking(project) {
+export async function configureMultiObjectTracking(project) {
   let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({
@@ -105,7 +105,7 @@ async function configureMultiObjectTracking(project) {
   });
 }
 
-async function configureActivityRecognition(project) {
+export async function configureActivityRecognition(project) {
   let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
     method: "POST",
     body: JSON.stringify({

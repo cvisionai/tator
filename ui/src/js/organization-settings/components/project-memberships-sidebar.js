@@ -1,6 +1,6 @@
-import { TatorElement } from "../../components/tator-element";
+import { TatorElement } from "../../components/tator-element.js";
 import { store } from "../store.js";
-import { AffiliationMembershipDialog } from "./new-membership-dialog";
+import { AffiliationMembershipDialog } from "./new-membership-dialog.js";
 
 export class ProjectMembershipSidebar extends TatorElement {
   constructor() {

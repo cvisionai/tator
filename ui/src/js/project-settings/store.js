@@ -31,6 +31,11 @@ const detailResources = {
   "Applet": "Applet",
 };
 
+export async function fetchWithHttpInfo(url, options, retry = false) {
+  const response = await fetchCredentials(url, options);
+  return { response: response, data: await response.json() };
+}
+
 const store = create(
   subscribeWithSelector((set, get) => ({
     selection: {
@@ -273,9 +278,7 @@ const store = create(
       });
       try {
         const fn = async (projectId) => {
-          const response = await fetchCredentials(`/rest/${listResources[type]}/${projectId}`, {}, true);
-          const data = await response.json();
-          return { response: response, data: data };
+          return await fetchWithHttpInfo(`/rest/${listResources[type]}/${projectId}`, {}, true);
         };
         // Get all organizations this user has access to
         const orgList = get().organizationList;
@@ -320,9 +323,7 @@ const store = create(
       });
       try {
         const fn = async (projectId) => {
-          const response = await fetchCredentials(`/rest/${listResources[type]}/${projectId}`, {}, true);
-          const data = await response.json();
-          return { response: response, data: data };
+          return await fetchWithHttpInfo(`/rest/${listResources[type]}/${projectId}`, {}, true);
         };
         const projectId = get().projectId;
         const object = await fn(projectId);
@@ -385,12 +386,10 @@ const store = create(
     addType: async ({ type, data }) => {
       try {
         const fn = async (projectId, body) => {
-          const response = await fetchCredentials(`/rest/${listResources[type]}/${projectId}`, {
+          return await fetchWithHttpInfo(`/rest/${listResources[type]}/${projectId}`, {
             method: "POST",
             body: JSON.stringify(body),
           });
-          const data = await response.json();
-          return { response: response, data: data };
         };
         const projectId = get().projectId;
         const responseInfo = await fn(projectId, data);
@@ -471,12 +470,10 @@ const store = create(
       });
       try {
         const fn = async (id, body) => {
-          const response = await fetchCredentials(`/rest/${detailResources[type]}/${id}`, {
+          return await fetchWithHttpInfo(`/rest/${detailResources[type]}/${id}`, {
             method: "PATCH",
             body: JSON.stringify(body),
           });
-          const data = await response.json();
-          return { response: response, data: data };
         };
         const responseInfo = await fn(id, data);
 
@@ -504,11 +501,9 @@ const store = create(
       });
       try {
         const fn = async (id) => {
-          const response = await fetchCredentials(`/rest/${detailResources[type]}/${id}`, {
+          return await fetchWithHttpInfo(`/rest/${detailResources[type]}/${id}`, {
             method: "DELETE",
           });
-          const data = await response.json();
-          return { response: response, data: data };
         };
         const object = await fn(id);
 

@@ -1,158 +1,43 @@
-import create from "zustand/vanilla";
-import { subscribeWithSelector, devtools } from "zustand/middleware";
+import create from '../../../node_modules/zustand/esm/vanilla.mjs';
+import { subscribeWithSelector, devtools } from '../../../node_modules/zustand/esm/middleware.js';
+import { fetchCredentials } from '../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
+import { fetchWithHttpInfo } from '../project-settings/store.js';
 import {
-  ApiClient,
-  getApi,
-} from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+  configureImageClassification,
+  configureObjectDetection,
+  configureMultiObjectTracking,
+  configureActivityRecognition,
+} from '../projects/store.js';
 
-const api = getApi();
 const organizationId = Number(window.location.pathname.split("/")[1]);
 
-async function configureImageClassification(project) {
-  let response = await api.createMediaType(project.id, {
-    name: "Images",
-    dtype: "image",
-    attribute_types: [
-      {
-        name: "Label",
-        description: "Image classification label.",
-        dtype: "string",
-        order: 0,
-      },
-    ],
-  });
-}
+const listResources = {
+  "Organization": "Organization",
+  "Affiliation": "Affiliations",
+  "Bucket": "Buckets",
+  "Invitation": "Invitations",
+  "JobCluster": "JobClusters",
+  "HostedTemplate": "HostedTemplates",
+  "Membership": "Memberships",
+  "Project": "Projects",
+};
 
-async function configureObjectDetection(project) {
-  let response = await api.createMediaType(project.id, {
-    name: "Images",
-    dtype: "image",
-    attribute_types: [],
-  });
-  const imageTypeId = response.id;
-
-  response = await api.createMediaType(project.id, {
-    name: "Videos",
-    dtype: "video",
-    attribute_types: [],
-  });
-  const videoTypeId = response.id;
-
-  response = await api.createLocalizationType(project.id, {
-    name: "Boxes",
-    dtype: "box",
-    media_types: [imageTypeId, videoTypeId],
-    attribute_types: [
-      {
-        name: "Label",
-        description: "Object detection label.",
-        dtype: "string",
-        order: 0,
-      },
-    ],
-  });
-}
-
-async function configureMultiObjectTracking(project) {
-  let response = await api.createMediaType(project.id, {
-    name: "Videos",
-    dtype: "video",
-    attribute_types: [],
-  });
-  const videoTypeId = response.id;
-
-  response = await api.createStateType(project.id, {
-    name: "Tracks",
-    association: "Localization",
-    interpolation: "none",
-    media_types: [videoTypeId],
-    attribute_types: [
-      {
-        name: "Label",
-        description: "Track label.",
-        dtype: "string",
-        order: 0,
-      },
-    ],
-  });
-
-  response = await api.createLocalizationType(project.id, {
-    name: "Boxes",
-    dtype: "box",
-    media_types: [videoTypeId],
-    attribute_types: [],
-  });
-}
-
-async function configureActivityRecognition(project) {
-  let response = await api.createMediaType(project.id, {
-    name: "Videos",
-    dtype: "video",
-    attribute_types: [],
-  });
-  const videoTypeId = response.id;
-
-  response = await api.createStateType(project.id, {
-    name: "Activities",
-    association: "Frame",
-    interpolation: "latest",
-    media_types: [videoTypeId],
-    attribute_types: [
-      {
-        name: "Something in view",
-        description: "Whether something is happening in the video.",
-        dtype: "bool",
-        order: 0,
-      },
-    ],
-  });
-}
-
-const getMap = new Map();
-getMap
-  .set("Organization", api.getOrganizationWithHttpInfo.bind(api))
-  .set("Affiliation", api.getAffiliationListWithHttpInfo.bind(api))
-  .set("Bucket", api.getBucketListWithHttpInfo.bind(api))
-  .set("Invitation", api.getInvitationListWithHttpInfo.bind(api))
-  .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
-  .set("HostedTemplate", api.getHostedTemplateListWithHttpInfo.bind(api))
-  .set("Membership", api.getMembershipListWithHttpInfo.bind(api))
-  .set("Project", api.getProjectListWithHttpInfo.bind(api));
-
-const postMap = new Map();
-postMap
-  .set("Organization", api.createOrganizationWithHttpInfo.bind(api))
-  .set("Affiliation", api.createAffiliationWithHttpInfo.bind(api))
-  .set("Bucket", api.createBucketWithHttpInfo.bind(api))
-  .set("Invitation", api.createInvitationWithHttpInfo.bind(api))
-  .set("JobCluster", api.createJobClusterWithHttpInfo.bind(api))
-  .set("HostedTemplate", api.createHostedTemplateWithHttpInfo.bind(api));
-
-const patchMap = new Map();
-patchMap
-  .set("Organization", api.updateOrganizationWithHttpInfo.bind(api))
-  .set("Affiliation", api.updateAffiliationWithHttpInfo.bind(api))
-  .set("Bucket", api.updateBucketWithHttpInfo.bind(api))
-  .set("Invitation", api.updateInvitationWithHttpInfo.bind(api))
-  .set("JobCluster", api.updateJobClusterWithHttpInfo.bind(api))
-  .set("HostedTemplate", api.updateHostedTemplateWithHttpInfo.bind(api));
-
-const deleteMap = new Map();
-deleteMap
-  .set("Organization", api.deleteOrganizationWithHttpInfo.bind(api))
-  .set("Affiliation", api.deleteAffiliationWithHttpInfo.bind(api))
-  .set("Bucket", api.deleteBucketWithHttpInfo.bind(api))
-  .set("Invitation", api.deleteInvitationWithHttpInfo.bind(api))
-  .set("JobCluster", api.deleteJobClusterWithHttpInfo.bind(api))
-  .set("HostedTemplate", api.deleteHostedTemplateWithHttpInfo.bind(api))
-  .set("Project", api.deleteProjectWithHttpInfo.bind(api));
+const detailResources = {
+  "Organization": "Organization",
+  "Affiliation": "Affiliation",
+  "Bucket": "Bucket",
+  "Invitation": "Invitation",
+  "JobCluster": "JobCluster",
+  "HostedTemplate": "HostedTemplate",
+  "Project": "Project",
+};
 
 /**
  *
  */
 const store = create(
   subscribeWithSelector(
-    devtools((set, get) => ({
+    (set, get) => ({
       selection: {
         typeName: "",
         typeId: -1,
@@ -230,9 +115,12 @@ const store = create(
       isStaff: false,
       init: async () => {
         Promise.all([
-          api.whoami(),
-          api.getAnnouncementList(),
-          api.getOrganization(organizationId),
+          fetchCredentials(`/rest/User/GetCurrent`, {}, true)
+            .then((response) => response.json()),
+          fetchCredentials('/rest/Announcements', {}, true)
+            .then((response) => response.json()),
+          fetchCredentials(`/rest/Organization/${organizationId}`, {}, true)
+            .then((response) => response.json()),
         ]).then((values) => {
           set({
             user: values[0],
@@ -297,7 +185,7 @@ const store = create(
           },
         });
 
-        const object = await api.getOrganizationWithHttpInfo(id);
+        const object = await fetchWithHttpInfo(`/rest/Organization/${id}`, {}, true);
         const setList = get()["Organization"].setList;
         const map = get()["Organization"].map;
 
@@ -355,7 +243,7 @@ const store = create(
           if (get().Project.versionMap.has(projectId)) {
             return get().Project.versionMap.get(projectId);
           } else {
-            const object = await api.getVersionListWithHttpInfo(projectId);
+            const object = await fetchWithHttpInfo(`/rest/Versions/${projectId}`, {}, true);
 
             if (object.response.ok) {
               const map = get().Project.versionMap;
@@ -384,13 +272,18 @@ const store = create(
           },
         });
         try {
-          const fn = getMap.get(type);
+          const fn = async (organizationId) => {
+            let url;
+            if (type == "Project") {
+              url = `/rest/Projects?organization=${organizationId}`;
+            } else {
+              url = `/rest/${listResources[type]}/${organizationId}`;
+            }
+            return await fetchWithHttpInfo(url, {}, true);
+          };
           let orgId = organizationId;
 
-          const object =
-            type == "Project"
-              ? await fn({ organization: orgId })
-              : await fn(orgId);
+          const object = await fn(orgId);
           console.log(`DEBUG: fetchTypeByOrg ${type} response....`, object);
 
           if (object.response.ok) {
@@ -476,7 +369,10 @@ const store = create(
         await get().initType("Project");
         const projectList = get().Project.map;
         const currentUserId = get().currentUser.data.id;
-        const fn = getMap.get("Membership");
+        const fn = async (projectId) => {
+          const url = `/rest/Memberships/${projectId}`;
+          return await fetchWithHttpInfo(url, {}, true);
+        };
         const map = new Map();
         const currentUserMap = new Set();
         const usernameMembershipsMap = new Map();
@@ -569,9 +465,7 @@ const store = create(
         } else {
           try {
             const usernameToUserMap = new Map();
-            const responseInfo = await api.getUserListWithHttpInfo({
-              username,
-            });
+            const responseInfo = await fetchWithHttpInfo(`/rest/Users?username=${username}`, {}, true);
             const userData = responseInfo.data[0];
             usernameToUserMap.set(username, userData);
             set({ Affiliation: { ...get().Affiliation, usernameToUserMap } });
@@ -637,7 +531,13 @@ const store = create(
       },
       addType: async ({ type, data }) => {
         try {
-          const fn = postMap.get(type);
+          const fn = async (organizationId, body) => {
+            const url = `/rest/listResources[type]/${organizationId}`;
+            return await fetchWithHttpInfo(url, {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
+          };
           const organizationId = get().organizationId;
           return await fn(organizationId, data);
         } catch (err) {
@@ -654,7 +554,13 @@ const store = create(
           },
         });
         try {
-          const fn = patchMap.get(type);
+          const fn = async (id, body) => {
+            const url = `/rest/${detailResources[type]}/${id}`;
+            return await fetchWithHttpInfo(url, {
+              method: "PATCH",
+              body: JSON.stringify(body),
+            });
+          };
           const responseInfo = await fn(id, data);
 
           // Assume object isn't returned, refetch type
@@ -672,7 +578,12 @@ const store = create(
           status: { ...get().status, name: "pending", msg: "Delete type..." },
         });
         try {
-          const fn = deleteMap.get(type);
+          const fn = async (id) => {
+            const url = `/rest/${detailResources[type]}/${id}`;
+            return await fetchWithHttpInfo(url, {
+              method: "DELETE",
+            });
+          };
           const object = await fn(id);
 
           await get().fetchTypeByOrg(type);
@@ -694,10 +605,21 @@ const store = create(
         });
         try {
           const type = "Invitation";
-          const fn = deleteMap.get(type);
+          const fn = async (id) => {
+            const url = `/rest/Invitation/${id}`;
+            return await fetchWithHttpInfo(url, {
+              method: "DELETE",
+            });
+          };
           const object = await fn(inviteSpec.id);
 
-          const createFn = postMap.get(type);
+          const createFn = async (organizationId, body) => {
+            const url = `/rest/Invitations/${organizationId}`;
+            return await fetchWithHttpInfo(url, {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
+          }
           const objectCreate = await createFn(get().organizationId, {
             email: inviteSpec.email,
             permission: inviteSpec.permission,
@@ -739,8 +661,11 @@ const store = create(
         });
         try {
           if (newVersion) {
-            const info = await api.createVersionWithHttpInfo(projectId, {
-              name: newVersionName,
+            const info = await fetchWithHttpInfo(`/rest/Versions/${projectId}`, {
+              method: "POST",
+              body: JSON.stringify({
+                name: newVersionName,
+              }),
             });
             if (info.response.ok) {
               const newVersionId = info.data?.id ? info.data.id : null;
@@ -748,10 +673,10 @@ const store = create(
             }
           }
 
-          const info = await api.createMembershipWithHttpInfo(
-            projectId,
-            formData
-          );
+          const info = await fetchWithHttpInfo(`/rest/Memberships/${projectId}`, {
+            method: "POST",
+            body: JSON.stringify(formData),
+          });
 
           await get().fetchMemberships();
           return info;
@@ -817,7 +742,7 @@ const store = create(
 
         return info;
       },
-    }))
+    })
   )
 );
 

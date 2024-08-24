@@ -46,7 +46,7 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     if (this._data.thumb) {
       this._thumb.setAttribute("src", this._data.thumb);
     } else {
-      this._thumb.setAttribute("src", `${STATIC_PATH}/images/tator-logo-symbol-only.png`);
+      this._thumb.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.png`);
     }
 
     //  this._name.setValue(this._data.name);
