@@ -77,6 +77,10 @@ class TatorAPIView(APIView):
         except DrfPermissionDenied as e:
             self.permission_denied(request)
 
+    def get_model(self):
+        # this works for most views, but not States, Media, or Localization
+        return self.get_queryset().model
+
     def get_parent_objects(self):
         # Default to project as parents as that is usually the case
         project_id = self.params.get("project", None)
