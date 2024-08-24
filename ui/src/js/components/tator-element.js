@@ -39,6 +39,7 @@ export class TatorElement extends HTMLElement {
   constructor() {
     super();
     this._shadow = this.attachShadow({ mode: "open" });
+    // TODO: we could selectively adopt stylesheets based on the current view.
     this._shadow.adoptedStyleSheets.push(reset);
     this._shadow.adoptedStyleSheets.push(variables);
     this._shadow.adoptedStyleSheets.push(text);

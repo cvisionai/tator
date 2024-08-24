@@ -1,5 +1,5 @@
 .add-new {
-  border: 2px dashed var(--color-charcoal--light70);
+  border: 2px dashed var(--color-charcoal--light);
   height: 100px;
   transition-duration: 0.25s;
   transition-property: background-color, border-style, color;

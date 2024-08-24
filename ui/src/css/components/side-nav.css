@@ -33,6 +33,7 @@ settings-nav {
   text-align: left;
   background-color: transparent;
   border: 0;
+  font-size: 16px;
 }
 .SideNav-heading button[selected=true],
 .SideNav-item[selected=true] {
@@ -130,6 +131,7 @@ settings-nav {
   overflow: auto;
   max-height: 40vh;
   min-height: 10vh;
+  font-size: 14px;
 }
 .SubItems[hidden] {
   display: none;

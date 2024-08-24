@@ -105,7 +105,7 @@ export class UploadElement extends TatorElement {
     // Show loading gif.
     const loading = document.createElement("img");
     loading.setAttribute("class", "loading");
-    loading.setAttribute("src", `${STATIC_PATH}/images/tator_loading.gif`);
+    loading.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator_loading.gif`);
     page._projects.appendChild(loading);
     page.setAttribute("has-open-modal", "");
 
