@@ -20,6 +20,8 @@ from .._permission_util import augment_permission
 from ._permissions import *
 from main.models import *
 
+from ._attribute_query import supplied_name_to_field
+
 logger = logging.getLogger(__name__)
 
 
@@ -103,7 +105,18 @@ class TatorAPIView(APIView):
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
             qs = augment_permission(self.request.user, qs)
             if qs.exists():
-                return qs.filter(effective_permission__gt=0)
+                qs = qs.filter(effective_permission__gt=0)
+                if self.params.get("float_array", None) == None and self.request.method in [
+                    "GET",
+                    "PUT",
+                ]:
+                    if self.params.get("sort_by", None):
+                        sortables = [supplied_name_to_field(x) for x in self.params.get("sort_by")]
+                        qs = qs.order_by(*sortables)
+                    elif qs.model == Media:
+                        qs = qs.order_by("name", "id")
+                    else:
+                        qs = qs.order_by("id")
 
         return qs
 
