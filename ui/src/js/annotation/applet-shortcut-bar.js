@@ -18,11 +18,19 @@ export class AppletShortcutBar extends TatorElement {
   init(applets) {
     this._appletButtons = {};
 
+    const label = document.createElement("div");
+    label.setAttribute(
+      "class",
+      "d-flex flex-justify-center flex-items-center text-gray text-semibold f3 mr-1"
+    );
+    label.textContent = "Applets:";
+    this._wrapperDiv.appendChild(label);
+
     for (const wrapper of applets) {
       const button = document.createElement("button");
       button.setAttribute(
         "class",
-        "btn-clear d-flex px-2 py-2 rounded-2 box-border f2 text-gray hover-text-white mx-1"
+        "btn-clear d-flex flex-justify-center flex-items-center px-2 py-2 rounded-2 box-border f2 text-gray hover-text-white mx-1"
       );
       this._wrapperDiv.appendChild(button);
       button.innerHTML = wrapper.getIcon();

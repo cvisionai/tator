@@ -14,7 +14,10 @@ export class CanvasAppletWrapper extends TatorElement {
     super();
 
     this._applet = null; // Must call init()
-    this._lastFrameUpdate = -1; // Used to help determine if re-init is required
+
+    // Used to help determine if re-init is required
+    this._lastMediaUpdate = null;
+    this._lastFrameUpdate = null;
   }
 
   /**
@@ -111,6 +114,11 @@ export class CanvasAppletWrapper extends TatorElement {
     this._appletElement.show(data);
   }
 
+  async updateMedia(media) {
+    this._lastMediaUpdate = media;
+    await this._appletElement.updateMedia(media);
+  }
+
   /**
    * Update applet with current frame information
    * @precondition init() must have been called
@@ -130,7 +138,7 @@ export class CanvasAppletWrapper extends TatorElement {
    * @precondition init() must have been called
    */
   forceUpdateFrameOnLoad() {
-    this._lastFrameUpdate = -1;
+    this._lastFrameUpdate = null;
   }
 }
 
