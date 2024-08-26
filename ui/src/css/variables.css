@@ -132,21 +132,15 @@
 /**
 ** Layout
 **/
-// Breakpoint widths
-  --width-xs: 0 !default;
-// Small screen / phone
-  --width-sm: 544px !default;
-// Medium screen / tablet
-  --width-md: 768px !default;
-// Large screen / desktop (980 + (16 * 2)) <= container + gutters
-  --width-lg: 1012px !default;
-// Extra large screen / wide desktop
-  --width-xl: 1280px !default;
+  --width-xs: 0px;
+  --width-sm: 544px;
+  --width-md: 768px;
+  --width-lg: 1012px;
+  --width-xl: 1280px;
 
-// Responsive container widths
-  --container-sm: var(--width-sm) !default;
-  --container-md: var(--width-md) !default;
-  --container-lg: var(--width-lg) !default;
-  --container-xl: var(--width-xl) !default;
+  --container-sm: var(--width-sm);
+  --container-md: var(--width-md);
+  --container-lg: var(--width-lg);
+  --container-xl: var(--width-xl);
 
 }
