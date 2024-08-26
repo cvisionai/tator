@@ -6952,14 +6952,14 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 class GroupTestCase(TatorTransactionTest):
     def setUp(self):
         # Add 9 users
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         names = ["Kirk", "Spock", "McCoy", "Scotty", "Uhura", "Sulu", "Chekov", "Picard", "Data"]
         self.users = [create_test_user(is_staff=False, username=name) for name in names]
         self.starfleet = create_test_organization()
 
-        self.admin_user = create_test_user(is_staff=True, username="Admin")
-        self.affilitation = create_test_affiliation(self.admin_user, self.starfleet)
-        self.client.force_authenticate(user=self.admin_user)
+        self.regular_user = create_test_user(is_staff=False, username="regular_user")
+        self.affilitation = create_test_member_affiliation(self.regular_user, self.starfleet)
+        self.client.force_authenticate(user=self.regular_user)
         affiliations_to_rowp(self.starfleet.pk, False, False)
 
     def test_group_creation_and_manip(self):

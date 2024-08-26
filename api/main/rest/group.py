@@ -43,7 +43,7 @@ class GroupListAPI(BaseListView):
         """
         Returns the full database entries of groups for the organization
         """
-        organization = Organization.objects.get(pk=params["id"])
+        organization = Organization.objects.get(pk=params["organization"])
         if params.get("user", None):
             groups = organization.group_set.filter(groupmembership__user=params["user"])
         else:
@@ -59,13 +59,15 @@ class GroupListAPI(BaseListView):
         """
         Returns a queryset of organizations
         """
-        return self.filter_only_viewables(Organization.objects.filter(pk=self.params["id"]))
+        return self.filter_only_viewables(
+            Group.objects.filter(organization=self.params["organization"])
+        )
 
     def _post(self, params: dict) -> dict:
         """
         Registers a new job cluster using the provided parameters
         """
-        organization = Organization.objects.get(pk=params["id"])
+        organization = Organization.objects.get(pk=params["organization"])
         group = Group.objects.create(name=params["name"], organization=organization)
         # Create a row protection object such that a group can be modified by the creator
         RowProtection.objects.create(

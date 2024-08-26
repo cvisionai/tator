@@ -198,7 +198,7 @@ urlpatterns += [
         GetClipAPI.as_view(),
     ),
     path("rest/Group/<int:id>", GroupDetailAPI.as_view()),
-    path("rest/Groups/<int:id>", GroupListAPI.as_view()),
+    path("rest/Groups/<int:organization>", GroupListAPI.as_view()),
     path(
         "rest/HostedTemplates/<int:organization>",
         HostedTemplateListAPI.as_view(),
