@@ -6952,7 +6952,7 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 class GroupTestCase(TatorTransactionTest):
     def setUp(self):
         # Add 9 users
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         names = ["Kirk", "Spock", "McCoy", "Scotty", "Uhura", "Sulu", "Chekov", "Picard", "Data"]
         self.users = [create_test_user(is_staff=False, username=name) for name in names]
         self.starfleet = create_test_organization()

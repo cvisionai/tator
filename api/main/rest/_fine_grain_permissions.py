@@ -447,7 +447,7 @@ class OrganizationPermissionBase(BasePermission):
         if isinstance(request.user, AnonymousUser):
             granted = False
 
-        if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT", "POST"]:
+        if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
             perm_qs = view.get_queryset(override_params={"show_all_marks": 1})
             perm_qs = augment_permission(request.user, perm_qs)
@@ -508,6 +508,37 @@ class OrganizationPermissionBase(BasePermission):
 
                 if perm_qs.filter(granted=True).exists():
                     granted = True
+        elif request.method in ["POST"]:
+            ## If there are no objects to check or no permissions we have to go to the parent object
+            ## If we are permissive (reading) we can see if the user has read permissions to the parent
+            ## to avoid a 403, even if the set is empty
+            org_perm_qs = Organization.objects.filter(pk=organization.pk)
+            org_perm_qs = augment_permission(request.user, org_perm_qs)
+            model = view.get_model()
+            perm_qs = org_perm_qs.annotate(
+                bitand=ColBitAnd(
+                    F("effective_permission"),
+                    (self.required_mask << shift_permission(model, Organization)),
+                )
+            ).annotate(
+                granted=Case(
+                    When(
+                        bitand__exact=Value(
+                            self.required_mask << shift_permission(model, Organization)
+                        ),
+                        then=True,
+                    ),
+                    default=False,
+                    output_field=BooleanField(),
+                )
+            )
+
+            logger.info(
+                f"Org Query = required_mask={self.required_mask} model={model} shift={shift_permission(model,Organization)} {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+            )
+
+            if perm_qs.filter(granted=True).exists():
+                granted = True
         else:
             assert False, f"Unsupported method={request.method}"
 
