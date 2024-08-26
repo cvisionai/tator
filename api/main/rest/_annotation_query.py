@@ -193,6 +193,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                     media_localization_types,
                     related_object_search,
                 )
+            if section.explicit_listing:
+                media_qs = Media.objects.filter(pk__in=section.media.values("id"))
+                logger.info(f"Explicit listing: {media_ids}")
+
             media_ids.append(media_qs)
         query = Q(media__in=media_ids.pop())
         for m in media_ids:
