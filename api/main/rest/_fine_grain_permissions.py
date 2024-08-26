@@ -105,13 +105,12 @@ class ProjectPermissionBase(BasePermission):
             perm_qs = augment_permission(request.user, perm_qs)
             model = view.get_queryset().model
 
-            logger.info(f"original query = {perm_qs.query}")
-
             logger.info(
                 f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
-            logger.info(f"Query = {perm_qs.query}")
+            
             if perm_qs.exists():
+                logger.info(f"Query = {perm_qs.query}")
                 # See if any objects in the requested set DON'T have the required permission
                 perm_qs = perm_qs.annotate(
                     bitand=ColBitAnd(
