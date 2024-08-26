@@ -6120,12 +6120,28 @@ class UsernameTestCase(TatorTransactionTest):
 class SectionTestCase(TatorTransactionTest):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         memberships_to_rowp(self.project.pk, force=False, verbose=False)
+
+        self.media_type = MediaType.objects.create(
+            name="video",
+            dtype="video",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        wait_for_indices(self.media_type)
+
+        self.box_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype="box",
+            project=self.project,
+        )
+        self.box_type.media.add(self.media_type)
+        wait_for_indices(self.box_type)
 
     def test_unique_section_name(self):
         section_spec = {
@@ -6291,14 +6307,9 @@ class SectionTestCase(TatorTransactionTest):
         This test creates a media type, a section, and performs various operations on the section.
         It verifies the creation, retrieval, modification, and search functionality of sections.
         """
-        entity_type = MediaType.objects.create(
-            name="video",
-            dtype="video",
-            project=self.project,
-            attribute_types=create_test_attribute_types(),
-        )
-        wait_for_indices(entity_type)
-        media = create_test_video(self.user, "test.mp4", entity_type, self.project)
+
+        media = create_test_video(self.user, "test.mp4", self.media_type, self.project)
+
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
@@ -6513,6 +6524,38 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.get(f"{url}?encoded_search={search_blob.decode()}", format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+
+    def test_localization_lookup_on_explicit(self):
+
+        sections = []
+        for x in range(5):
+            media = create_test_video(self.user, f"test_{x}.mp4", self.media_type, self.project)
+
+            section_spec = {
+                "name": f"Test{x}",
+                "path": f"Foo.Test{x}",
+                "explicit_listing": True,
+                "media": [media.pk],
+            }
+            url = f"/rest/Sections/{self.project.pk}"
+            response = self.client.post(url, section_spec, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            section_id = response.data["id"]
+            sections.append(section_id)
+
+            # Create 10 boxes on each video
+            for y in range(10):
+                create_test_box(self.user, self.box_type, self.project, media, y)
+            media_resp = self.client.get(
+                f"/rest/Localizations/{self.project.pk}?media_id={media.pk}"
+            )
+            self.assertEqual(len(media_resp.data), 10)
+
+        assert len(sections) == 5
+        for section in sections:
+            url = f"/rest/Localizations/{self.project.pk}?section={section}"
+            response = self.client.get(url, format="json")
+            self.assertEqual(len(response.data), 10)
 
     def test_multi_section_lookup(self):
         """
