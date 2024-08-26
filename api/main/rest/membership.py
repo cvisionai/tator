@@ -10,8 +10,11 @@ from ..schema import MembershipDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _serialize_memberships(memberships):
     membership_data = database_qs(memberships)
@@ -44,8 +47,17 @@ class MembershipListAPI(BaseListView):
     """
 
     schema = MembershipListSchema()
-    permission_classes = [ProjectFullControlPermission]
     http_method_names = ["get", "post"]
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         members = Membership.objects.filter(project=params["project"])
@@ -87,7 +99,7 @@ class MembershipListAPI(BaseListView):
         membership.save()
         return {"message": f"Membership of {user} to {project} created!", "id": membership.id}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         project_id = self.kwargs["project"]
         members = Membership.objects.filter(project__id=project_id)
         return members
@@ -105,9 +117,19 @@ class MembershipDetailAPI(BaseDetailView):
     """
 
     schema = MembershipDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         memberships = Membership.objects.filter(pk=params["id"])
