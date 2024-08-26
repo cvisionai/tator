@@ -11,12 +11,13 @@ from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
 from django.conf import settings
+from django.db.models import F, Value
 
 from ..schema import parse
 
 from ..rest import _base_views
 from ._util import format_multiline
-from .._permission_util import augment_permission
+from .._permission_util import augment_permission, ColBitAnd
 from ._permissions import *
 from main.models import *
 
@@ -105,7 +106,10 @@ class TatorAPIView(APIView):
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
             qs = augment_permission(self.request.user, qs)
             if qs.exists():
-                qs = qs.filter(effective_permission__gt=0)
+                qs = qs.annotate(
+                    is_viewable=ColBitAnd(F("effective_permission"), PermissionMask.EXIST)
+                )
+                qs = qs.filter(is_viewable__gt=0)
                 if self.params.get("float_array", None) == None and self.request.method in [
                     "GET",
                     "PUT",
