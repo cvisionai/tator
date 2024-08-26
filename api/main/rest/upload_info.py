@@ -26,6 +26,9 @@ class UploadInfoAPI(BaseDetailView):
     permission_classes = [ProjectTransferPermission]
     http_method_names = ["get"]
 
+    def get_queryset(self, **kwargs):
+        return Project.objects.filter(pk=self.params.get('project'))
+
     def _get(self, params):
         # Parse parameters.
         expiration = params["expiration"]
