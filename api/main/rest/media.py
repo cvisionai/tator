@@ -309,6 +309,8 @@ def _create_media(project, params, user, use_rq=False):
             elemental_id=elemental_id,
         )
         media_obj.media_files = {}
+        media_obj.primary_section = section_obj
+        media_obj.save()
 
         # Set up S3 client.
         tator_store = get_tator_store(project_obj.bucket)
@@ -338,6 +340,8 @@ def _create_media(project, params, user, use_rq=False):
             source_url=url,
             elemental_id=elemental_id,
         )
+        media_obj.primary_section = section_obj
+        media_obj.save()
 
         # Add optional parameters.
         for opt_key in ["fps", "num_frames", "codec", "width", "height", "summary_level"]:
@@ -362,10 +366,6 @@ def _create_media(project, params, user, use_rq=False):
                 use_upload_bucket = upload and not bucket
                 tator_store = get_tator_store(bucket, upload=use_upload_bucket)
                 tator_store.put_media_id_tag(path, media_obj.id)
-
-    # update primary section of media object
-    media_obj.primary_section = section_obj
-    media_obj.save()
 
     msg = (
         f"Media object {media_obj.id} created for {media_type.dtype} {name} "
