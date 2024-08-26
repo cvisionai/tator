@@ -387,6 +387,7 @@ class TatorAlgorithm(JobManagerMixin):
             "sections": sections,
             "media_ids": media_ids,
             "name": self.alg.name,
+            "alg_id": str(self.alg.pk)
         }
 
         # Set any steps in the templates to disable eviction

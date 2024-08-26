@@ -5,8 +5,10 @@ from uuid import uuid1
 
 from django.http import Http404
 from rest_framework.authtoken.models import Token
-from django.db.models import Case
-from django.db.models import When
+from django.db.models import Case, F, When, Value
+from django.db.models.fields import BooleanField
+
+from rest_framework.exceptions import PermissionDenied
 
 from ..models import Algorithm
 from ..kube import get_jobs
@@ -20,10 +22,12 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._media_query import query_string_to_media_ids
 from ._permissions import ProjectExecutePermission
+from .._permission_util import PermissionMask, augment_permission, ColBitAnd
+
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectTransferPermission
+from ._permissions import ProjectTransferPermission, ProjectViewOnlyPermission
 from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
@@ -38,8 +42,51 @@ class JobListAPI(BaseListView):
     """Interact with list of background jobs."""
 
     schema = JobListSchema()
-    permission_classes = [ProjectExecutePermission]
     http_method_names = ["post", "get", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE"]:
+            self.permission_classes = [ProjectExecutePermission]
+        elif self.request.method in ["POST"]:
+            self.permission_classes = [] # We handle it in the POST method itself
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        jobs = self._get(self.params)
+        alg_ids = []
+        for j in jobs:
+            if j.get('alg_id',None):
+                alg_ids.append(int(j['alg_id']))
+        logger.info(f"JOBs ALG_IDS = {alg_ids}")
+        return self.filter_only_viewables(Algorithm.objects.filter(pk__in=alg_ids))
+
+    def check_acl_permission_algo_qs(self, user, algo_qs):
+        algo_qs = augment_permission(user, algo_qs)
+        algo_qs = algo_qs.annotate(
+            bitand=ColBitAnd(
+                F("effective_permission"),
+                (PermissionMask.EXECUTE),
+            )
+        ).annotate(
+            granted=Case(
+                When(bitand__exact=Value(PermissionMask.EXECUTE), then=True),
+                default=False,
+                output_field=BooleanField(),
+            )
+        )
+        logger.info(
+            f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+        )
+        if algo_qs.filter(granted=True).exists():
+            return True
+        else:
+            return False
 
     def _post(self, params):
         entityType = None
@@ -58,6 +105,12 @@ class JobListAPI(BaseListView):
 
         media_ids = params["media_ids"]
         media_ids = [str(a) for a in media_ids]
+
+        # Check permissions on alg object relative to user
+        algo_qs = Algorithm.objects.filter(pk=alg_obj.pk)
+        if self.check_acl_permission_algo_qs(self.request.user, algo_qs) is False:
+            raise PermissionDenied("User does not have permission to execute algorithm")
+
 
         # Harvest extra parameters to pass into the algorithm if requested
         extra_params = []
@@ -155,8 +208,17 @@ class JobDetailAPI(BaseDetailView):
     """
 
     schema = JobDetailSchema()
-    permission_classes = [ProjectExecutePermission]
     http_method_names = ["get", "delete"]
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectExecutePermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
+        return super().get_permissions()
 
     def _get(self, params):
         uid = params["uid"]
@@ -178,3 +240,12 @@ class JobDetailAPI(BaseDetailView):
             raise Http404
 
         return {"message": f"Job with UID {uid} deleted!"}
+
+    def get_queryset(self, **kwargs):
+        job = self._get(self.params)
+        jobs = [job]
+        alg_ids = []
+        for j in jobs:
+            if j.get('alg_id',None):
+                alg_ids.append(int(j['alg_id']))
+        return self.filter_only_viewables(Algorithm.objects.filter(pk__in=alg_ids))

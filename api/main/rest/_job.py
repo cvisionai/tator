@@ -31,6 +31,7 @@ def workflow_to_job(workflow):
     media_ids = [int(x) for x in media_ids_str.split(",")]
     if media_ids:
         job["media_ids"] = media_ids
+    job["alg_id"] = int(workflow["metadata"]["annotations"]["alg_id"])
     if "status" in workflow:
         status = workflow["status"]
         job["status"] = status["phase"]
