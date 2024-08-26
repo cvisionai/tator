@@ -237,12 +237,16 @@ class ProjectEditPermission(ProjectPermissionBase):
     message = "Insufficient permission to modify this project."
     def get_required_mask(self):
         # TODO: Make this a configruation flag?
-        if self.request.method == "POST":
+        if self.request.method in ["GET", "PUT", "HEAD"]:
+            return PermissionMask.READ | PermissionMask.EXIST
+        elif self.request.method == "POST":
             return PermissionMask.CREATE
         elif self.request.method == "PATCH":
             return PermissionMask.MODIFY
         elif self.request.method == "DELETE":
             return PermissionMask.DELETE
+        else:
+            assert False, f"Unsupported method={self.request.method}"
 
 
 class ProjectTransferPermission(ProjectPermissionBase):
