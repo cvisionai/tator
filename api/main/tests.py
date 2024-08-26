@@ -6120,7 +6120,7 @@ class UsernameTestCase(TatorTransactionTest):
 class SectionTestCase(TatorTransactionTest):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
