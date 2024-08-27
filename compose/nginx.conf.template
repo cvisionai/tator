@@ -38,13 +38,6 @@ server {
     alias /static/images/favicon.ico;
     add_header Cache-Control "max-age=3600, must-revalidate";
   }
-  location /static {
-    alias /static/;
-    autoindex off;
-    add_header Cache-Control "max-age=0, must-revalidate";
-    add_header Cross-Origin-Opener-Policy same-origin;
-    add_header Cross-Origin-Embedder-Policy credentialless;
-  }
   location /docs {
     return 301 https://tator.io/docs;
   }
