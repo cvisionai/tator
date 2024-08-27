@@ -1,4 +1,4 @@
-import create from '../../../../node_modules/zustand/esm/vanilla.mjs';
+import { createStore } from '../../../../node_modules/zustand/esm/vanilla.mjs';
 import { subscribeWithSelector } from '../../../../node_modules/zustand/esm/middleware.js';
 import { fetchCredentials } from '../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
 
