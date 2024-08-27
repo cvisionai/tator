@@ -122,11 +122,6 @@ app.use(argv.static_path + "/scripts", express.static("../scripts", { setHeaders
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
-app.use('/media', proxy(argv.backend, {
-  proxyReqPathResolver: function(req) {
-    return '/media' + req.url;
-  },
-}));
 
 if (params.backend) {
   let opts = {};
@@ -137,6 +132,11 @@ if (params.backend) {
       );
     });
   }
+  app.use('/media', proxy(argv.backend, {
+    proxyReqPathResolver: function(req) {
+      return '/media' + req.url;
+    },
+  }));
 }
 
 app.get('/', (req, res) => {

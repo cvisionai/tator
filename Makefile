@@ -217,7 +217,7 @@ api/main/version.py:
 	chmod +x api/main/version.py
 endif
 
-collect-static: webpack
+collect-static:
 	@scripts/collect-static.sh
 
 force-static:
