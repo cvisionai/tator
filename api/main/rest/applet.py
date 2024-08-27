@@ -46,7 +46,7 @@ class AppletListAPI(BaseListView):
                 obj[fields.rendered] = get_and_render(ht, obj)
         return out
 
-    def get_queryset(self) -> dict:
+    def get_queryset(self, **kwargs) -> dict:
         qs = Dashboard.objects.filter(project__id=self.params["project"])
         return self.filter_only_viewables(qs)
 
@@ -208,6 +208,6 @@ class AppletDetailAPI(BaseDetailView):
 
         return {"message": f"Applet {applet_id} successfully updated!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all registered applet files"""
-        return Dashboard.objects.filter(pk=self.params["id"])
+        return self.filter_only_viewables(Dashboard.objects.filter(pk=self.params["id"]))
