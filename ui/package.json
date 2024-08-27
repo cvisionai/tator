@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "serve": "nodemon -e js,html,json server/server.js",
     "build": "python3 scripts/make_index_files.py",
-    "postinstall": "./scripts/convert_deps_to_esm.sh"
+    "postinstall": "bash ./scripts/convert_deps_to_esm.sh && bash ./scripts/download_legacy_bundles.sh"
   },
   "keywords": [],
   "author": "CVision AI, Inc.",

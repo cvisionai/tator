@@ -93,10 +93,10 @@ nunjucks.configure('server/views', {
 });
 app.set('view engine', 'html');
 
-// We still bundle static files for applets for backward compatibility.
+// Serve legacy bundles for applets until they can be updated.
 app.use(
   '/static',
-  express.static("./dist", { setHeaders: addHeaders, maxAge: 0 })
+  express.static("./legacy", { setHeaders: addHeaders, maxAge: 0 })
 );
 
 app.use(
