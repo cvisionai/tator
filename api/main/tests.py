@@ -6968,6 +6968,10 @@ class GroupTestCase(TatorTransactionTest):
             {"name": "NCC-1701", "initial_members": [u.id for u in self.users[:6]]},
             format="json",
         )
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            return
+
         assertResponse(self, resp, status.HTTP_201_CREATED)
         group_id = resp.data["id"]
 
