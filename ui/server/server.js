@@ -92,6 +92,13 @@ nunjucks.configure('server/views', {
   autoescape: true
 });
 app.set('view engine', 'html');
+
+// We still bundle static files for applets for backward compatibility.
+app.use(
+  '/static',
+  express.static("./dist", { setHeaders: addHeaders, maxAge: 0 })
+);
+
 app.use(
   argv.static_path,
   express.static("./server/static", { setHeaders: addHeaders, maxAge: argv.max_age })
@@ -115,6 +122,11 @@ app.use(argv.static_path + "/scripts", express.static("../scripts", { setHeaders
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
+app.use('/media', proxy(argv.backend, {
+  proxyReqPathResolver: function(req) {
+    return '/media' + req.url;
+  },
+}));
 
 if (params.backend) {
   let opts = {};
