@@ -252,7 +252,7 @@ class ProjectTransferPermission(ProjectPermissionBase):
 
     message = "Insufficient permission to transfer media within this project."
     def get_required_mask(self):
-        return PermissionMask.UPLOAD | PermissionMask.CREATE
+        return PermissionMask.UPLOAD
 
 
 class ProjectExecutePermission(ProjectPermissionBase):
