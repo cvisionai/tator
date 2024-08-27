@@ -184,7 +184,8 @@ tator-image:
 	touch .token/tator_online_$(GIT_VERSION)
 
 .PHONY: ui-image
-ui-image: webpack
+ui-image:
+	cd ui && npm install && npm run build && cd ..
 	DOCKER_BUILDKIT=1 docker build --pull --build-arg GIT_VERSION=$(GIT_VERSION) --network host -t $(REGISTRY)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
 
 .PHONY: postgis-image
@@ -226,10 +227,6 @@ force-static:
 
 dev-push:
 	@scripts/dev-push.sh
-
-webpack:
-	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
-	cd ui && npm install && npm run build && cd ..
 
 .PHONY: superuser
 superuser:
