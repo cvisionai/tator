@@ -87,6 +87,8 @@ const params = {
   datadog_allowed_hosts: allowedHosts.join(","),
 };
 
+const maxAgeMilliseconds = argv.max_age * 1000;
+
 nunjucks.configure('server/views', {
   express: app,
   autoescape: true
@@ -101,24 +103,24 @@ app.use(
 
 app.use(
   argv.static_path,
-  express.static("./server/static", { setHeaders: addHeaders, maxAge: argv.max_age })
+  express.static("./server/static", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
 );
 app.use(
   argv.static_path,
   express.static("../scripts/packages/tator-js/src/annotator", {
     setHeaders: addHeaders,
-    maxAge: argv.max_age,
+    maxAge: maxAgeMilliseconds,
   })
 );
 app.use(
   argv.static_path + "/ui/src",
-  express.static("./src", { setHeaders: addHeaders, maxAge: argv.max_age })
+  express.static("./src", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
 );
 app.use(
   argv.static_path + "/ui/node_modules",
-  express.static("./node_modules", { setHeaders: addHeaders, maxAge: argv.max_age })
+  express.static("./node_modules", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
 );
-app.use(argv.static_path + "/scripts", express.static("../scripts", { setHeaders: addHeaders, maxAge: argv.max_age }));
+app.use(argv.static_path + "/scripts", express.static("../scripts", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds }));
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
