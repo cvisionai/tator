@@ -10,6 +10,7 @@ from ..models import Version
 from ..models import Project
 from ..models import State
 from ..models import Localization
+from ..models import RowProtection
 from ..serializers import VersionSerializer
 from ..search import TatorSearch
 from ..schema import VersionListSchema
@@ -18,6 +19,8 @@ from ..schema import VersionDetailSchema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
+
+from .._permission_util import PermissionMask
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +69,12 @@ class VersionListAPI(BaseListView):
             elemental_id=params.get("elemental_id", uuid.uuid4()),
         )
         obj.save()
+        RowProtection.objects.create(
+            version=obj,
+            user=self.request.user,
+            # Full permission for the Version and any metadata within it.
+            permission=PermissionMask.FULL_CONTROL << 8 | PermissionMask.FULL_CONTROL,
+        )
 
         if "bases" in params:
             qs = Version.objects.filter(pk__in=params["bases"])

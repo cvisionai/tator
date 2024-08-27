@@ -17,6 +17,8 @@ from ..models import Permission
 from ..models import Media
 from ..models import Bucket
 from ..models import safe_delete
+from ..models import RowProtection
+
 from .._permission_util import PermissionMask
 from ..models import User
 from ..schema import ProjectListSchema
@@ -26,7 +28,12 @@ from ..store import get_tator_store
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
-from .._permission_util import augment_permission, ColBitAnd, mask_to_old_permission_string
+from .._permission_util import (
+    augment_permission,
+    ColBitAnd,
+    mask_to_old_permission_string,
+    PermissionMask,
+)
 
 from ..schema.components.project import project_properties as project_schema
 
@@ -187,6 +194,16 @@ class ProjectListAPI(BaseListView):
             num_files=0,
         )
         project.save()
+        RowProtection.objects.create(
+            project=project,
+            user=self.request.user,
+            # Full permission for the project and all entities within it.
+            permission=PermissionMask.FULL_CONTROL << 32
+            | PermissionMask.FULL_CONTROL << 24
+            | PermissionMask.FULL_CONTROL << 16
+            | PermissionMask.FULL_CONTROL << 8
+            | PermissionMask.FULL_CONTROL,
+        )
 
         member_qs = Membership.objects.filter(project=project, user=self.request.user)
         if member_qs.count() > 1:

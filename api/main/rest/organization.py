@@ -4,13 +4,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 
 from ..cache import TatorCache
-from ..models import (
-    Affiliation,
-    database_qs,
-    Organization,
-    Permission,
-    safe_delete,
-)
+from ..models import Affiliation, database_qs, Organization, Permission, safe_delete, RowProtection
 from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
 from ..store import get_tator_store
@@ -18,6 +12,8 @@ from ..store import get_tator_store
 from ._permissions import OrganizationAdminPermission, OrganizationMemberPermission
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
+
+from .._permission_util import PermissionMask
 
 import logging
 
@@ -84,6 +80,16 @@ class OrganizationListAPI(BaseListView):
         )
         Affiliation.objects.create(
             organization=organization, user=self.request.user, permission="Admin"
+        )
+        RowProtection.objects.create(
+            target_organization=organization,
+            user=self.request.user,
+            # Full permission for the organization and all elements within it.
+            permission=PermissionMask.FULL_CONTROL << 32
+            | PermissionMask.FULL_CONTROL << 24
+            | PermissionMask.FULL_CONTROL << 16
+            | PermissionMask.FULL_CONTROL << 8
+            | PermissionMask.FULL_CONTROL,
         )
         return {"message": f"Organization {params['name']} created!", "id": organization.id}
 
