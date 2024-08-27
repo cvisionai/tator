@@ -1,6 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
-import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
-import { v1 as uuidv1 } from 'https://cdn.jsdelivr.net/npm/uuid@10.0.0/+esm';
+import '../../../node_modules/d3/d3.mjs';
+import { v1 as uuidv1 } from '../../../node_modules/uuid/dist/esm-browser/index.js';
 
 /**
  * Events dispatched from this element:

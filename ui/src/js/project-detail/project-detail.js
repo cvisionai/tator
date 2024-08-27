@@ -4,7 +4,7 @@ import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/util
 import { TatorData } from "../util/tator-data.js";
 import { svgNamespace } from "../components/tator-element.js";
 import { FilterData } from "../components/filter-data.js";
-import { v1 as uuidv1 } from 'https://cdn.jsdelivr.net/npm/uuid@10.0.0/+esm';
+import { v1 as uuidv1 } from '../../../node_modules/uuid/dist/esm-browser/index.js';
 import { store } from "./store.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
 import { SectionData } from "../util/section-utilities.js";
