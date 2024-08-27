@@ -216,8 +216,9 @@ class RowProtectionDetailAPI(BaseDetailView):
             )
 
         # Update the job cluster with the provided parameters
-        setattr(qs.first(), "permission", params["permission"])
-        qs.first().save()
+        rp = qs.first()
+        rp.permission = params["permission"]
+        rp.save()
 
         return {"message": "RowProtection updated successfully!", "id": params["id"]}
 
