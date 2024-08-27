@@ -35,7 +35,7 @@ def _fill_m2m(response_data):
         for obj in Section.media.through.objects.filter(section__in=section_ids)
         .values("section_id")
         .order_by("section_id")
-        .annotate(media=ArrayAgg("media_id"))
+        .annotate(media=ArrayAgg("media_id", default=[]))
         .iterator()
     }
     # Copy many to many fields into response data.

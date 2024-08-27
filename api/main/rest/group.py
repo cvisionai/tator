@@ -48,7 +48,7 @@ class GroupListAPI(BaseListView):
             groups = organization.group_set.filter(groupmembership__user=params["user"])
         else:
             groups = organization.group_set.all()
-        groups = groups.annotate(members=ArrayAgg("groupmembership__user"))
+        groups = groups.annotate(members=ArrayAgg("groupmembership__user", default=[]))
         groups_resp = list(groups.values("id", "organization__id", "name", "members"))
         for idx, group in enumerate(groups_resp):
             if group["members"] == [None]:
@@ -108,7 +108,7 @@ class GroupDetailAPI(BaseDetailView):
         if not group.exists():
             raise Http404("Group not found")
 
-        group = group.annotate(members=ArrayAgg("groupmembership__user")).first()
+        group = group.annotate(members=ArrayAgg("groupmembership__user", default=[])).first()
         group_dict = {
             "id": group.id,
             "name": group.name,

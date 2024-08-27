@@ -92,7 +92,7 @@ class LocalizationTypeListAPI(BaseListView):
             for obj in LocalizationType.media.through.objects.filter(localizationtype__in=loc_ids)
             .values("localizationtype_id")
             .order_by("localizationtype_id")
-            .annotate(media=ArrayAgg("mediatype_id"))
+            .annotate(media=ArrayAgg("mediatype_id", default=[]))
             .iterator()
         }
         # Copy many to many fields into response data.
@@ -167,7 +167,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
         # Get many to many fields.
         loc["media"] = list(
             LocalizationType.media.through.objects.filter(localizationtype_id=loc["id"]).aggregate(
-                media=ArrayAgg("mediatype_id")
+                media=ArrayAgg("mediatype_id", default=[])
             )["media"]
         )
         return loc

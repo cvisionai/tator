@@ -97,7 +97,7 @@ class StateTypeListAPI(BaseListView):
             for obj in StateType.media.through.objects.filter(statetype__in=state_ids)
             .values("statetype_id")
             .order_by("statetype_id")
-            .annotate(media=ArrayAgg("mediatype_id"))
+            .annotate(media=ArrayAgg("mediatype_id", default=[]))
             .iterator()
         }
         # Copy many to many fields into response data.
@@ -169,7 +169,7 @@ class StateTypeDetailAPI(BaseDetailView):
         # Get many to many fields.
         state["media"] = list(
             StateType.media.through.objects.filter(statetype_id=state["id"]).aggregate(
-                media=ArrayAgg("mediatype_id")
+                media=ArrayAgg("mediatype_id", default=[])
             )["media"]
         )
         return state

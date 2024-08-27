@@ -63,7 +63,7 @@ def _fill_m2m(response_data):
         for obj in State.localizations.through.objects.filter(state__in=state_ids)
         .values("state_id")
         .order_by("state_id")
-        .annotate(localizations=ArrayAgg("localization_id"))
+        .annotate(localizations=ArrayAgg("localization_id", default=[]))
         .iterator()
     }
     media = {
@@ -71,7 +71,7 @@ def _fill_m2m(response_data):
         for obj in State.media.through.objects.filter(state__in=state_ids)
         .values("state_id")
         .order_by("state_id")
-        .annotate(media=ArrayAgg("media_id"))
+        .annotate(media=ArrayAgg("media_id", default=[]))
         .iterator()
     }
     # Copy many to many fields into response data.
@@ -498,12 +498,12 @@ class StateDetailBaseAPI(BaseDetailView):
         # Get many to many fields.
         state["localizations"] = list(
             State.localizations.through.objects.filter(state_id=state["id"]).aggregate(
-                localizations=ArrayAgg("localization_id")
+                localizations=ArrayAgg("localization_id", default=[])
             )["localizations"]
         )
         state["media"] = list(
             State.media.through.objects.filter(state_id=state["id"]).aggregate(
-                media=ArrayAgg("media_id")
+                media=ArrayAgg("media_id", default=[])
             )["media"]
         )
         return state
