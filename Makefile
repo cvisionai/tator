@@ -227,19 +227,9 @@ force-static:
 dev-push:
 	@scripts/dev-push.sh
 
-ifeq ($(USE_MIN_JS),true)
-webpack: $(TATOR_JS_MODULE_FILE)
+webpack:
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
-	ln -s scripts/packages/tator-js/pkg/node_modules node_modules
-	cd ui && npm install && python3 make_index_files.py && npm run build && cd ..
-	unlink node_modules
-else
-webpack: $(TATOR_JS_MODULE_FILE)
-	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
-	ln -s scripts/packages/tator-js/pkg/node_modules node_modules
-	cd ui && npm install && python3 make_index_files.py && npm run buildDev && cd ..
-	unlink node_modules
-endif
+	cd ui && npm install && npm run build && cd ..
 
 .PHONY: superuser
 superuser:

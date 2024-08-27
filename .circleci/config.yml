@@ -92,7 +92,8 @@ jobs:
     - run:
         name: Publish tator-js
         command: |
-          ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js/pkg && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
+          ssh lightsail 'cd tator && make js-bindings';
+          ssh lightsail 'export NPM_TOKEN='"'$NPM_TOKEN'"';cd tator/scripts/packages/tator-js && npm set "//registry.npmjs.org/:_authToken" $NPM_TOKEN && npm publish';
   check-formatting:
     machine:
       image: default

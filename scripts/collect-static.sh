@@ -1,12 +1,9 @@
 #!/bin/bash
 
-for name in "ui"; do
-    echo "Updating ${name}"
-    echo "Copying ui"
-    docker cp ui ${name}:/tator_online
-    echo "Copying tator-js"
-    docker cp scripts/packages/tator-js/pkg/dist ${name}:/tator_online/scripts/packages/tator-js/pkg/dist
-done
+echo "Copying ui"
+docker cp ui ui:/tator_online/ui
+echo "Copying tator-js"
+docker cp scripts/packages/tator-js ui:/tator_online/scripts/packages/tator-js
 
 # Copy static files using an nginx container
 echo "Copying static files"
