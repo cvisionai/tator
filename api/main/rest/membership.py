@@ -102,7 +102,7 @@ class MembershipListAPI(BaseListView):
     def get_queryset(self, **kwargs):
         project_id = self.kwargs["project"]
         members = Membership.objects.filter(project__id=project_id)
-        return members
+        return self.filter_only_viewables(members)
 
 
 class MembershipDetailAPI(BaseDetailView):
@@ -149,5 +149,5 @@ class MembershipDetailAPI(BaseDetailView):
         Membership.objects.get(pk=params["id"]).delete()
         return {"message": f'Membership {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Membership.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Membership.objects.filter(pk=self.params["id"]))
