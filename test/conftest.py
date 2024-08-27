@@ -410,9 +410,17 @@ def referenced_image(request, base_url, token, page_factory, project, image_sect
     response = api.create_media_list(project, [media_spec])
     media_resp = api.get_media(response.id[0]).to_dict()
     attempts = 0
-    while (
-        media_resp["media_files"] is None or len(media_resp["media_files"].get("image", [])) < 1
-    ) and attempts < 30:
+    def is_image_ready(media_resp):
+        if media_resp["media_files"] is None:
+            return False
+        if media_resp["media_files"].get("image", []) == None:
+            return False
+        if len(media_resp["media_files"].get("image", [])) < 1:
+            return False
+        else:
+            return True
+
+    while (not is_image_ready(media_resp)) and attempts < 30:
         print(f"Waiting for async image job {attempts+1}/30")
         media_resp = api.get_media(response.id[0]).to_dict()
         time.sleep(1)
