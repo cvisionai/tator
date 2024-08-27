@@ -1,7 +1,7 @@
 import os
 import re
 import inspect
-
+import time
 from ._common import print_page_error
 
 def test_organization_settings(page_factory, project, launch_time, image_file, base_url):
@@ -28,8 +28,6 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('input[type="submit"]')
     page.wait_for_selector(f'text="Organization {organization_id} updated successfully!"')
     print(f'Organization {organization_id} updated successfully!')
-
-    
 
     # Invitation Tests
     print("Testing invitation create...")
@@ -91,7 +89,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('#nav-for-Invitation #sub-nav--plus-link')
     user_email1 = 'no-reply'+str(organization_id)+'1@cvisionai.com' # NEW
     user_email2 = 'no-reply'+str(organization_id)+'2@cvisionai.com' # NEW
-    #user_email = 'no-reply'+str(organization_id)+'@cvisionai.com' # DUPE
+    # user_email = 'no-reply'+str(organization_id)+'@cvisionai.com' # DUPE
     user_email3 = 'no-reply'+str(organization_id)+'3@cvisionai.com' # NEW
     user_email4 = 'no-reply'+str(organization_id)+'4@cvisionai.com' # NEW
     user_email5 = 'no-reply'+str(organization_id)+'5@cvisionai.com' # NEW
@@ -110,7 +108,6 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.wait_for_timeout(1000)
     page.wait_for_selector('text="Successfully added 5 Invitations."')
     print(f'Multiple invitations sent successfully! (Successfully added 5 Invitations. And Error for 1 pending did not interupt flow)')
-
 
     print("Testing affiliation create...")
     url = base_url + "/rest/Affiliations/" + str(organization_id)
@@ -153,6 +150,8 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     bucketId = respObject["id"]
     print(f"Created bucket id {bucketId}")
 
+    time.sleep(5)  # This is to allow the bucket to be created before testing the edit
+
     print(f'Testing bucket editing...')
     page.click('role=radio[name="Deep Archive"]')
     page.fill('org-type-form-container[form="bucket-edit"] text-area[name="Bucket access configuration JSON"] textarea', '{"aws_access_key_id": "NewKey654321", "aws_secret_access_key": "HIJKLMN", "endpoint_url": "https://www.bing.com", "region_name": "Southwest"}')
@@ -181,9 +180,9 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     print("Testing job cluster edit...")
     page.fill(f'org-type-form-container[form="job-cluster-edit"] text-input[name="Name"] input', 'Test Cluster Updated Name')
     url = base_url + "/rest/JobCluster/" + str(newClusterId)
-   
+
     with page.expect_response(lambda response: response.url == url) as response_info:
-         page.click(f'org-type-form-container[form="job-cluster-edit"] input[type="submit"]')
+        page.click(f'org-type-form-container[form="job-cluster-edit"] input[type="submit"]')
     page.wait_for_selector(f'text="Job Cluster {newClusterId} successfully updated!"')
 
     print(f"Cluster id {newClusterId} updated!")
