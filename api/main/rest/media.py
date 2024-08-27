@@ -27,6 +27,7 @@ from ..models import (
     Bucket,
     database_qs,
     database_query_ids,
+    Version,
 )
 from .._permission_util import PermissionMask
 
@@ -653,6 +654,35 @@ class MediaListAPI(BaseListView):
     def _put(self, params):
         """Retrieve list of media by ID."""
         return self._get(params)
+
+    def get_parent_objects(self):
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
+            return super().get_parent_objects()
+        elif self.request.method in ["POST"]:
+            # For POST Media we need to see what versions/sections are being impacted
+            specs = self.params["body"]
+            if not isinstance(specs, list):
+                specs = [specs]
+
+            sections = []
+            section_names = [s["section"] for s in specs if s.get("section", None)]
+            section_ids = [s["section_id"] for s in specs if s.get("section_id", None)]
+            sections_by_name = Section.objects.filter(
+                project=self.params["project"], name__in=section_names
+            )
+            sections_by_id = Section.objects.filter(pk__in=section_ids)
+            for section in sections_by_name:
+                sections.append(section)
+            for section in sections_by_id:
+                sections.append(section)
+
+            return {
+                "project": Project.objects.filter(pk=self.params["project"]),
+                "version": Version.objects.filter(pk=-1),  # Media don't have versions
+                "section": sections,
+            }
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
 
 
 class MediaDetailAPI(BaseDetailView):

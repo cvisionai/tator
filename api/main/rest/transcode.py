@@ -15,6 +15,7 @@ from ..models import MediaType
 from ..models import Media
 from ..schema import TranscodeListSchema
 from ..schema import TranscodeDetailSchema
+from ..models import Version
 from main.models import Section, Version
 from django.core.exceptions import PermissionDenied
 
@@ -307,18 +308,15 @@ class TranscodeListAPI(BaseListView):
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
             return super().get_parent_objects()
         elif self.request.method in ["POST"]:
-            # For POST Localizations/States we need to see what versions/sections are being impacted
-            specs = self.params["body"]
-            if not isinstance(specs, list):
-                specs = [specs]
+            # For POST Media we need to see what versions/sections are being impacted
             section_id = self.params.get("section_id", None)
+            section_name = self.params.get("section", None)
+            logger.info(f"Computing impacted sections for POST {self.params}")
             sections = Section.objects.filter(pk=-1)
             if section_id:
                 sections = Section.objects.filter(pk=section_id)
-            else:
-                section_name = self.params.get("section", None)
-                if section_name:
-                    sections = Section.objects.filter(name=section_name)
+            elif section_name:
+                sections = Section.objects.filter(project=self.params["project"], name=section_name)
             return {
                 "project": Project.objects.filter(pk=self.params["project"]),
                 "version": Version.objects.filter(pk=-1),  # Media don't have versions
