@@ -236,7 +236,9 @@ def augment_permission(user, qs):
     ]:
         qs = qs.annotate(effective_permission=F("project_permission"))
     elif model in [Membership]:
-        qs = qs.annotate(effective_permission=Value(0x3))  # disable mutability of these objects
+        qs = qs.annotate(
+            effective_permission=F("project_permission")
+        )  # match project-level permissions (for now)
     elif model in [Group]:
         group_rp = RowProtection.objects.filter(target_group__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
