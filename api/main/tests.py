@@ -7043,7 +7043,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
     class RowProtectionTestCase(TatorTransactionTest):
         def setUp(self):
             # Add 9 users from our previous
-            # logging.disable(logging.CRITICAL)
+            logging.disable(logging.CRITICAL)
 
             self.kirk = create_test_user(is_staff=False, username="Kirk")
             self.red_shirt = create_test_user(is_staff=False, username="redshirt")
@@ -7301,3 +7301,29 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
+
+            self.client.force_authenticate(user=self.kirk)
+
+            # Add a row protection to allow the commandant to see the warp core
+            resp = self.client.post(
+                f"/rest/RowProtections",
+                {
+                    "section": section_id,
+                    "permission": PermissionMask.OLD_READ,
+                    "user": self.commandant.pk,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            rp_id = resp.data["id"]
+
+            resp = self.client.patch(
+                f"/rest/RowProtection/{rp_id}",
+                {"permission": 0},
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Pull the value and make sure it was set to 0
+            rp = RowProtection.objects.get(pk=rp_id)
+            self.assertEqual(rp.permission, 0)
