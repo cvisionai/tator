@@ -112,13 +112,16 @@ def _serialize_projects(projects, user_id):
 def get_projects_for_user(user):
     if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
         all_projects = Project.objects.all()
-        all_projects = augment_permission(user, all_projects)
-        all_projects = all_projects.alias(
-            granted=ColBitAnd(
-                F("effective_permission"), PermissionMask.EXIST | PermissionMask.READ
-            ),
-        )
-        projects = all_projects.filter(granted__exact=(PermissionMask.EXIST | PermissionMask.READ))
+        if all_projects.exists():
+            all_projects = augment_permission(user, all_projects)
+            all_projects = all_projects.alias(
+                granted=ColBitAnd(
+                    F("effective_permission"), PermissionMask.EXIST | PermissionMask.READ
+                ),
+            )
+            projects = all_projects.filter(granted__exact=(PermissionMask.EXIST | PermissionMask.READ))
+        else:
+            projects = Project.objects.filter(pk=-1)
     else:
         projects = Project.objects.filter(membership__user=user)
     return projects
