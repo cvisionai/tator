@@ -32,8 +32,8 @@ class GetFrameAPI(BaseDetailView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def get_queryset(self):
-        return Media.objects.filter(pk=self.params["id"])
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))
 
     def handle_exception(self, exc):
         logger.error(f"Exception in request: {traceback.format_exc()}")
