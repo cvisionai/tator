@@ -108,7 +108,7 @@ class ProjectPermissionBase(BasePermission):
             logger.info(
                 f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
-            
+
             if perm_qs.exists():
                 logger.info(f"Query = {perm_qs.query}")
                 # See if any objects in the requested set DON'T have the required permission
@@ -133,21 +133,20 @@ class ProjectPermissionBase(BasePermission):
                     granted = True
             if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
-                ## If we are permissive (reading) we can see if the user has read permissions to the parent
+                ## If we are permissive (reading) we can see if the user has read permissions on the project itself
                 ## to avoid a 403, even if the set is empty
+                ## This handles the case if we do a MediaCount on a project we have READ to, but no READ access on any underlying media (yet)
                 proj_perm_qs = Project.objects.filter(pk=project.pk)
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
                 perm_qs = proj_perm_qs.annotate(
                     bitand=ColBitAnd(
                         F("effective_permission"),
-                        (self.required_mask << shift_permission(model, Project)),
+                        (self.required_mask),
                     )
                 ).annotate(
                     granted=Case(
                         When(
-                            bitand__exact=Value(
-                                self.required_mask << shift_permission(model, Project)
-                            ),
+                            bitand__exact=Value(self.required_mask),
                             then=True,
                         ),
                         default=False,

@@ -7121,6 +7121,15 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Switch back to kirk
             self.client.force_authenticate(user=self.kirk)
+
+            # Before we do anything, verify we get a media count of 0
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 0)
+
+            resp = self.client.get(f"/rest/MediaCount/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(resp.data, 0)
             # Create a section
             resp = self.client.post(
                 f"/rest/Sections/{self.project.pk}",
