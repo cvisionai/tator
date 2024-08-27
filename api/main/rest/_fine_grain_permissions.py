@@ -195,7 +195,7 @@ class ProjectPermissionBase(BasePermission):
             if parent_objs["section"]:
                 section_perms = []
                 for section in parent_objs["section"]:
-                    section_qs = Section.objects.filter(pk__in=parent_objs["section"])
+                    section_qs = Section.objects.filter(pk__in=[section.pk])
                     section_qs = augment_permission(request.user, section_qs)
                     agg_qs = section_qs.aggregate(
                         effective_permission_agg=BitAnd("effective_permission")
