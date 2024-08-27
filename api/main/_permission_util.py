@@ -156,7 +156,6 @@ def augment_permission(user, qs):
             HostedTemplate,
             Affiliation,
         ]:
-            logger.info("Appending project-level permissions.")
             # This assumes all checks are scoped to the same project (expensive to check in runtime)
             project = qs[0].project
 
@@ -178,7 +177,6 @@ def augment_permission(user, qs):
                 project_permission=Value(project_permission >> bit_shift),
             )
         elif model in [Group, JobCluster, Bucket, HostedTemplate, Affiliation]:
-            logger.info("Appending organizational-level permissions.")
             # This calculates the default permission for an object based on what organization it is in
             org_qs = qs.values("organization")
             org_rp = RowProtection.objects.filter(target_organization__in=org_qs).filter(
@@ -217,7 +215,6 @@ def augment_permission(user, qs):
             project_permission=Value(project_permission >> bit_shift),
         )
 
-    logger.info("Appended project-level permissions, adding model specific permissions now.")
     if model in [Announcement]:
         # Everyone can read announcements
         qs = qs.annotate(effective_permission=Value(0x3))
