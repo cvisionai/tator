@@ -1,6 +1,6 @@
-import create from '../../../node_modules/zustand/esm/vanilla.mjs';
-import { subscribeWithSelector } from '../../../node_modules/zustand/esm/middleware.js';
-import { fetchCredentials } from '../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
+import create from "../../../node_modules/zustand/esm/vanilla.mjs";
+import { subscribeWithSelector } from "../../../node_modules/zustand/esm/middleware.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export async function configureImageClassification(project) {
   let response = await fetchCredentials(`/rest/MediaTypes/${project.id}`, {
@@ -17,7 +17,7 @@ export async function configureImageClassification(project) {
         },
       ],
     }),
-  }).then(response => response.json());
+  }).then((response) => response.json());
   console.log(response.message);
 }
 
@@ -29,7 +29,7 @@ export async function configureObjectDetection(project) {
       dtype: "image",
       attribute_types: [],
     }),
-  }).then(response => response.json());
+  }).then((response) => response.json());
   console.log(response.message);
   const imageTypeId = response.id;
 
@@ -145,14 +145,18 @@ const store = create(
     organizations: [],
     init: async () => {
       Promise.all([
-        fetchCredentials(`/rest/User/GetCurrent`, {}, true)
-          .then((response) => response.json()),
-        fetchCredentials('/rest/Announcements', {}, true)
-          .then((response) => response.json()),
-        fetchCredentials('/rest/Projects', {}, true)
-          .then((response) => response.json()),
-        fetchCredentials('/rest/Organizations', {}, true)
-          .then((response) => response.json()),
+        fetchCredentials(`/rest/User/GetCurrent`, {}, true).then((response) =>
+          response.json()
+        ),
+        fetchCredentials("/rest/Announcements", {}, true).then((response) =>
+          response.json()
+        ),
+        fetchCredentials("/rest/Projects", {}, true).then((response) =>
+          response.json()
+        ),
+        fetchCredentials("/rest/Organizations", {}, true).then((response) =>
+          response.json()
+        ),
       ]).then((values) => {
         set({
           user: values[0],
@@ -166,7 +170,7 @@ const store = create(
       let response = await fetchCredentials(`/rest/Projects`, {
         method: "POST",
         body: JSON.stringify(projectSpec),
-      }).then(response => response.json());
+      }).then((response) => response.json());
       const project = response.object;
       console.log(response.message);
       switch (preset) {
@@ -192,8 +196,8 @@ const store = create(
     },
     removeProject: async (id) => {
       const response = await fetchCredentials(`/rest/Project/${id}`, {
-        method: "DELETE"
-      }).then(response => response.json());
+        method: "DELETE",
+      }).then((response) => response.json());
       console.log(response.message);
       set({ projects: get().projects.filter((project) => project.id != id) });
     },

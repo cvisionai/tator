@@ -62,7 +62,10 @@
 .analysis__table > tbody > tr:not(.analysis__nested-table-wrap).is-active {
   background-color: var(--color-charcoal--medium);
 }
-.analysis__table > tbody > tr:not(.analysis__nested-table-wrap).is-active + .analysis__nested-table-wrap {
+.analysis__table
+  > tbody
+  > tr:not(.analysis__nested-table-wrap).is-active
+  + .analysis__nested-table-wrap {
   background-color: var(--color-charcoal--medium);
   display: table-row;
 }
@@ -106,20 +109,24 @@
 .apps__table tr.even {
   background-color: var(--color-charcoal--medium);
 }
-.apps__table tr.even.selected, .apps__table tr.even:hover {
+.apps__table tr.even.selected,
+.apps__table tr.even:hover {
   background-color: var(--color-white) !important;
 }
 .apps__table tr.odd {
   background-color: var(--color-charcoal--light);
 }
-.apps__table tr.odd.selected, .apps__table tr.odd:hover {
+.apps__table tr.odd.selected,
+.apps__table tr.odd:hover {
   background-color: var(--color-white) !important;
 }
-.apps__table tr.selected, .apps__table tr:hover {
+.apps__table tr.selected,
+.apps__table tr:hover {
   background-color: var(--color-white);
   color: var(--color-charcoal--medium-dark) !important;
 }
-.apps__table tr.selected .sort-icon svg, .apps__table tr:hover .sort-icon svg {
+.apps__table tr.selected .sort-icon svg,
+.apps__table tr:hover .sort-icon svg {
   fill: var(--color-charcoal--medium-dark);
 }
 

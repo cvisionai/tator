@@ -35,8 +35,8 @@ settings-nav {
   border: 0;
   font-size: 16px;
 }
-.SideNav-heading button[selected=true],
-.SideNav-item[selected=true] {
+.SideNav-heading button[selected="true"],
+.SideNav-item[selected="true"] {
   color: var(--color-white);
 }
 .SideNav-heading button .SideNav-heading button,
@@ -110,10 +110,10 @@ settings-nav {
   background-color: var(--color-gray--light);
 }
 
-.SideNav-heading button[aria-current]:not([aria-current=false]),
-.SideNav-heading button[aria-selected=true],
-.SideNav-item[aria-current]:not([aria-current=false]),
-.SideNav-item[aria-selected=true] {
+.SideNav-heading button[aria-current]:not([aria-current="false"]),
+.SideNav-heading button[aria-selected="true"],
+.SideNav-item[aria-current]:not([aria-current="false"]),
+.SideNav-item[aria-selected="true"] {
   background-color: var(--color-charcoal--light70);
   color: var(--color-white);
 }
@@ -147,7 +147,7 @@ settings-nav {
   border: 0;
   width: fit-content;
 }
-.SideNav-subItem[selected=true] {
+.SideNav-subItem[selected="true"] {
   color: var(--color-white);
 }
 
@@ -155,22 +155,22 @@ settings-nav {
   color: var(--color-white);
 }
 
-.SideNav-subItem[aria-current]:not([aria-current=false]),
-.SideNav-subItem[aria-selected=true] {
+.SideNav-subItem[aria-current]:not([aria-current="false"]),
+.SideNav-subItem[aria-selected="true"] {
   font-weight: var(--weight-semibold);
   color: var(--color-white);
 }
 
-.SideNav-heading[selected=true] {
+.SideNav-heading[selected="true"] {
   background-color: var(--color-charcoal--light70);
 }
 
-.SideNav-heading[selected=true] button,
-.SideNav-item[selected=true] {
+.SideNav-heading[selected="true"] button,
+.SideNav-item[selected="true"] {
   color: white;
 }
-.SideNav-heading[selected=true] button::before,
-.SideNav-item[selected=true]::before {
+.SideNav-heading[selected="true"] button::before,
+.SideNav-item[selected="true"]::before {
   position: absolute;
   top: 0;
   bottom: 0;

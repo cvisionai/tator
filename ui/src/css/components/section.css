@@ -35,10 +35,12 @@
 .section:first-child {
   padding-top: 0;
 }
-.section:hover .section__name, .section:focus .section__name {
+.section:hover .section__name,
+.section:focus .section__name {
   color: var(--color-white);
 }
-.section:hover details, .section:focus details {
+.section:hover details,
+.section:focus details {
   opacity: 1;
 }
 .section.is-active .section__name {
@@ -93,7 +95,8 @@
 .section__link[href] {
   flex-grow: 1;
 }
-.section__link[href]:hover .section__name span:first-child, .section__link[href]:focus .section__name span:first-child {
+.section__link[href]:hover .section__name span:first-child,
+.section__link[href]:focus .section__name span:first-child {
   text-decoration: underline;
 }
 

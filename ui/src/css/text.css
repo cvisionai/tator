@@ -128,11 +128,13 @@
   text-decoration: underline;
 }
 
-.hover-text-white:hover, .hover-text-white:focus {
+.hover-text-white:hover,
+.hover-text-white:focus {
   color: var(--color-white);
 }
 
-.hover-text-underline:hover, .hover-text-underline:focus {
+.hover-text-underline:hover,
+.hover-text-underline:focus {
   text-decoration: underline;
 }
 
@@ -345,4 +347,3 @@
 .text-turquoise-500 {
   color: var(--color-turquoise-500) !important;
 }
-

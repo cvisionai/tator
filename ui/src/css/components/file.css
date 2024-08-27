@@ -38,10 +38,12 @@
   height: 57px;
 }
 
-.file:hover, .file:focus {
+.file:hover,
+.file:focus {
   background-color: var(--color-charcoal--light70);
 }
-.file:hover media-more, .file:focus media-more {
+.file:hover media-more,
+.file:focus media-more {
   opacity: 1;
 }
 .file media-more {
@@ -51,7 +53,8 @@
 .file__link[href] {
   flex-grow: 1;
 }
-.file__link[href]:hover .file__name span:first-child, .file__link[href]:focus .file__name span:first-child {
+.file__link[href]:hover .file__name span:first-child,
+.file__link[href]:focus .file__name span:first-child {
   text-decoration: underline;
 }
 

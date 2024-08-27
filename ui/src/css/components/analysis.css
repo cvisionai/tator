@@ -81,7 +81,8 @@ body.analysis-annotations-body {
   overflow: hidden;
   position: relative;
 }
-.analysis__collection:hover, .analysis__collection:focus,
+.analysis__collection:hover,
+.analysis__collection:focus,
 .analysis__annotation:hover,
 .analysis__annotation:focus {
   box-shadow: 0 0 0 3px var(--color-purple);
@@ -108,7 +109,16 @@ body.analysis-annotations-body {
   object-fit: cover;
   margin: 5px auto;
   width: 100%;
-  background-image: linear-gradient(to right, var(--color-charcoal--light) 1px, transparent 1px), linear-gradient(to bottom, var(--color-charcoal--light) 1px, transparent 1px);
+  background-image: linear-gradient(
+      to right,
+      var(--color-charcoal--light) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--color-charcoal--light) 1px,
+      transparent 1px
+    );
   background-size: 10px 10px;
 }
 .analysis__collection > span,
@@ -121,7 +131,8 @@ body.analysis-annotations-body {
 .analysis__collection {
   border: 2px solid transparent;
 }
-.analysis__collection:hover, .analysis__collection:focus {
+.analysis__collection:hover,
+.analysis__collection:focus {
   box-shadow: 0 0 0 3px var(--color-charcoal--light);
 }
 .analysis__collection.is-selected {

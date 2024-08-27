@@ -7,7 +7,10 @@ export class DashboardPortal extends TatorPage {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator_loading.gif`);
+    this._loading.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     this._shadow.appendChild(this._loading);
 
     //

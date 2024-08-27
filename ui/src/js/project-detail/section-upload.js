@@ -39,7 +39,7 @@ export class SectionUpload extends UploadElement {
   }
 
   connectedCallback() {
-    this.init( store);
+    this.init(store);
   }
 
   static get observedAttributes() {

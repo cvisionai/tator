@@ -12,7 +12,8 @@
 .projects__link {
   width: 60%;
 }
-.projects__link:hover h2, .projects__link:focus h2 {
+.projects__link:hover h2,
+.projects__link:focus h2 {
   text-decoration: underline;
 }
 
@@ -41,7 +42,8 @@
 .project__description {
   max-width: 480px;
 }
-.project__description summary:hover:after, .project__description summary:focus:after {
+.project__description summary:hover:after,
+.project__description summary:focus:after {
   text-decoration: underline;
 }
 .project__description summary:after {
@@ -87,7 +89,8 @@
 .project__collaborator--new {
   border: 2px dotted var(--color-charcoal--light70);
 }
-.project__collaborator--new:hover, .project__collaborator--new:focus {
+.project__collaborator--new:hover,
+.project__collaborator--new:focus {
   border-style: none;
 }
 
@@ -102,7 +105,8 @@
   padding: 6px;
   position: relative;
 }
-.project__file:hover details, .project__file:focus details {
+.project__file:hover details,
+.project__file:focus details {
   opacity: 1;
 }
 .project__file a > div {
@@ -193,7 +197,8 @@
   transition-property: color, opacity;
   width: 36px;
 }
-.project__delete-file:hover, .project__delete-file:focus {
+.project__delete-file:hover,
+.project__delete-file:focus {
   color: var(--color-white);
 }
 
@@ -266,7 +271,8 @@
   transition-duration: 0.25s;
   transition-property: background-color, color;
 }
-.project-topbar-button:hover, .project-topbar-button:focus {
+.project-topbar-button:hover,
+.project-topbar-button:focus {
   color: var(--color-white);
 }
 

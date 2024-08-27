@@ -1,34 +1,37 @@
-import create from '../../../node_modules/zustand/esm/vanilla.mjs';
-import { subscribeWithSelector, devtools } from '../../../node_modules/zustand/esm/middleware.js';
-import { fetchCredentials } from '../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js';
+import create from "../../../node_modules/zustand/esm/vanilla.mjs";
+import {
+  subscribeWithSelector,
+  devtools,
+} from "../../../node_modules/zustand/esm/middleware.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 const listResources = {
-  "Project": "Project",
-  "MediaType": "MediaTypes",
-  "LocalizationType": "LocalizationTypes",
-  "LeafType": "LeafTypes",
-  "Leaf": "Leaves",
-  "StateType": "StateTypes",
-  "Membership": "Memberships",
-  "Version": "Versions",
-  "Algorithm": "Algorithms",
-  "HostedTemplate": "HostedTemplates",
-  "JobCluster": "JobClusters",
-  "Applet": "Applets",
-  "User": "Users",
+  Project: "Project",
+  MediaType: "MediaTypes",
+  LocalizationType: "LocalizationTypes",
+  LeafType: "LeafTypes",
+  Leaf: "Leaves",
+  StateType: "StateTypes",
+  Membership: "Memberships",
+  Version: "Versions",
+  Algorithm: "Algorithms",
+  HostedTemplate: "HostedTemplates",
+  JobCluster: "JobClusters",
+  Applet: "Applets",
+  User: "Users",
 };
 
 const detailResources = {
-  "Project": "Project",
-  "MediaType": "MediaType",
-  "LocalizationType": "LocalizationType",
-  "LeafType": "LeafType",
-  "Leaf": "Leave",
-  "StateType": "StateType",
-  "Membership": "Membership",
-  "Version": "Version",
-  "Algorithm": "Algorithm",
-  "Applet": "Applet",
+  Project: "Project",
+  MediaType: "MediaType",
+  LocalizationType: "LocalizationType",
+  LeafType: "LeafType",
+  Leaf: "Leave",
+  StateType: "StateType",
+  Membership: "Membership",
+  Version: "Version",
+  Algorithm: "Algorithm",
+  Applet: "Applet",
 };
 
 export async function fetchWithHttpInfo(url, options, retry = false) {
@@ -206,10 +209,12 @@ const store = create(
 
     initHeader: async () => {
       Promise.all([
-        fetchCredentials(`/rest/User/GetCurrent`, {}, true)
-          .then((response) => response.json()),
-        fetchCredentials('/rest/Announcements', {}, true)
-          .then((response) => response.json()),
+        fetchCredentials(`/rest/User/GetCurrent`, {}, true).then((response) =>
+          response.json()
+        ),
+        fetchCredentials("/rest/Announcements", {}, true).then((response) =>
+          response.json()
+        ),
       ]).then((values) => {
         set({
           user: values[0],
@@ -228,7 +233,11 @@ const store = create(
         },
       });
 
-      const project = await fetchCredentials(`/rest/Project/${id}`, {}, true).then(response => response.json());
+      const project = await fetchCredentials(
+        `/rest/Project/${id}`,
+        {},
+        true
+      ).then((response) => response.json());
       const setList = get()["Project"].setList;
       const map = get()["Project"].map;
 
@@ -236,7 +245,13 @@ const store = create(
       map.set(project.id, project);
 
       set({ projectId: id });
-      set({ organizationList: await fetchCredentials(`/rest/Organizations`, {}, true).then(response => response.json())});
+      set({
+        organizationList: await fetchCredentials(
+          `/rest/Organizations`,
+          {},
+          true
+        ).then((response) => response.json()),
+      });
       set({
         Project: {
           ...get().Project,
@@ -278,7 +293,11 @@ const store = create(
       });
       try {
         const fn = async (projectId) => {
-          return await fetchWithHttpInfo(`/rest/${listResources[type]}/${projectId}`, {}, true);
+          return await fetchWithHttpInfo(
+            `/rest/${listResources[type]}/${projectId}`,
+            {},
+            true
+          );
         };
         // Get all organizations this user has access to
         const orgList = get().organizationList;
@@ -323,7 +342,11 @@ const store = create(
       });
       try {
         const fn = async (projectId) => {
-          return await fetchWithHttpInfo(`/rest/${listResources[type]}/${projectId}`, {}, true);
+          return await fetchWithHttpInfo(
+            `/rest/${listResources[type]}/${projectId}`,
+            {},
+            true
+          );
         };
         const projectId = get().projectId;
         const object = await fn(projectId);
@@ -386,10 +409,13 @@ const store = create(
     addType: async ({ type, data }) => {
       try {
         const fn = async (projectId, body) => {
-          return await fetchWithHttpInfo(`/rest/${listResources[type]}/${projectId}`, {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
+          return await fetchWithHttpInfo(
+            `/rest/${listResources[type]}/${projectId}`,
+            {
+              method: "POST",
+              body: JSON.stringify(body),
+            }
+          );
         };
         const projectId = get().projectId;
         const responseInfo = await fn(projectId, data);
@@ -470,10 +496,13 @@ const store = create(
       });
       try {
         const fn = async (id, body) => {
-          return await fetchWithHttpInfo(`/rest/${detailResources[type]}/${id}`, {
-            method: "PATCH",
-            body: JSON.stringify(body),
-          });
+          return await fetchWithHttpInfo(
+            `/rest/${detailResources[type]}/${id}`,
+            {
+              method: "PATCH",
+              body: JSON.stringify(body),
+            }
+          );
         };
         const responseInfo = await fn(id, data);
 
@@ -501,9 +530,12 @@ const store = create(
       });
       try {
         const fn = async (id) => {
-          return await fetchWithHttpInfo(`/rest/${detailResources[type]}/${id}`, {
-            method: "DELETE",
-          });
+          return await fetchWithHttpInfo(
+            `/rest/${detailResources[type]}/${id}`,
+            {
+              method: "DELETE",
+            }
+          );
         };
         const object = await fn(id);
 
@@ -527,10 +559,16 @@ const store = create(
      */
     getCountsForVersion: async (id) => {
       try {
-        const state = await fetchCredentials(`/rest/StateCount/${get().projectId}?version={id}`, {}, true)
-          .then(response => response.data());
-        const loc = await fetchCredentials(`/rest/LocalizationCount/${get().projectId}?version={id}`, {}, true)
-          .then(response => response.json());
+        const state = await fetchCredentials(
+          `/rest/StateCount/${get().projectId}?version={id}`,
+          {},
+          true
+        ).then((response) => response.data());
+        const loc = await fetchCredentials(
+          `/rest/LocalizationCount/${get().projectId}?version={id}`,
+          {},
+          true
+        ).then((response) => response.json());
         const counts = { state, loc };
         return counts;
       } catch (err) {

@@ -39,7 +39,16 @@ entity-gallery-aspect-ratio .radio-slide-wrap div {
   background-color: var(--color-charcoal--medium);
   height: 130px;
   width: 100%;
-  background-image: linear-gradient(to right, var(--color-charcoal--light) 1px, transparent 1px), linear-gradient(to bottom, var(--color-charcoal--light) 1px, transparent 1px);
+  background-image: linear-gradient(
+      to right,
+      var(--color-charcoal--light) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--color-charcoal--light) 1px,
+      transparent 1px
+    );
   background-size: 10px 10px;
   object-fit: cover;
 }
@@ -48,7 +57,8 @@ entity-gallery-aspect-ratio .radio-slide-wrap div {
   object-fit: contain !important;
   padding: 1px;
 }
-.entity-card:hover details, .entity-card:focus details {
+.entity-card:hover details,
+.entity-card:focus details {
   opacity: 1;
 }
 .entity-card a > div {
@@ -188,7 +198,16 @@ entity-gallery-aspect-ratio .radio-slide-wrap div {
   max-height: 350px;
   object-fit: contain;
   padding: 15px;
-  background-image: linear-gradient(to right, var(--color-charcoal--light) 1px, transparent 1px), linear-gradient(to bottom, var(--color-charcoal--light) 1px, transparent 1px);
+  background-image: linear-gradient(
+      to right,
+      var(--color-charcoal--light) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--color-charcoal--light) 1px,
+      transparent 1px
+    );
   background-size: 10px 10px;
 }
 .entity-panel > span {
@@ -257,14 +276,17 @@ collections-card {
 .entity-gallery-slider:hover .entity-gallery-slider--title {
   color: var(--color-white) !important;
 }
-.entity-gallery-slider:focus, .entity-gallery-slider.active {
+.entity-gallery-slider:focus,
+.entity-gallery-slider.active {
   border-color: var(--color-purple);
   background: var(--color-charcoal--medium-dark);
 }
-.entity-gallery-slider:focus .entity-gallery-slider--title, .entity-gallery-slider.active .entity-gallery-slider--title {
+.entity-gallery-slider:focus .entity-gallery-slider--title,
+.entity-gallery-slider.active .entity-gallery-slider--title {
   color: var(--color-white) !important;
 }
-.entity-gallery-slider:focus .enitity-gallery-slider__nav, .entity-gallery-slider.active .enitity-gallery-slider__nav {
+.entity-gallery-slider:focus .enitity-gallery-slider__nav,
+.entity-gallery-slider.active .enitity-gallery-slider__nav {
   display: block;
 }
 .entity-gallery-slider:not(.active) .entity-card-resize {

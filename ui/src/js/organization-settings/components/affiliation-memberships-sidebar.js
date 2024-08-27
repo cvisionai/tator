@@ -101,7 +101,10 @@ export class AffiliationMembershipSidebar extends TatorElement {
       if (project.thumb) {
         projectThumb.setAttribute("src", project.thumb);
       } else {
-        projectThumb.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.png`);
+        projectThumb.setAttribute(
+          "src",
+          `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.png`
+        );
       }
 
       //

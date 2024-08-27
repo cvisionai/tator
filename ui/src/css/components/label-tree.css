@@ -22,11 +22,23 @@
 }
 
 .label-tree__group:hover {
-  background-image: linear-gradient(to right, var(--color-charcoal--dark), var(--color-charcoal--medium70) 20%, var(--color-charcoal--medium70) 80%, var(--color-charcoal--dark));
+  background-image: linear-gradient(
+    to right,
+    var(--color-charcoal--dark),
+    var(--color-charcoal--medium70) 20%,
+    var(--color-charcoal--medium70) 80%,
+    var(--color-charcoal--dark)
+  );
 }
 
 .label-tree__groupinv:hover {
-  background-image: linear-gradient(to right, var(--color-charcoal--medium70), var(--color-charcoal--dark) 20%, var(--color-charcoal--dark) 80%, var(--color-charcoal--medium70));
+  background-image: linear-gradient(
+    to right,
+    var(--color-charcoal--medium70),
+    var(--color-charcoal--dark) 20%,
+    var(--color-charcoal--dark) 80%,
+    var(--color-charcoal--medium70)
+  );
 }
 
 .label-tree__subgroups {

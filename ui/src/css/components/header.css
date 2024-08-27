@@ -8,7 +8,8 @@
   z-index: 1;
 }
 
-.header__menu:hover, .header__menu:focus {
+.header__menu:hover,
+.header__menu:focus {
   color: var(--color-white);
 }
 

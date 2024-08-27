@@ -27,7 +27,8 @@
   transition-duration: 0.25s;
   transition-property: transform;
 }
-.new-project__card:hover, .new-project__card:focus {
+.new-project__card:hover,
+.new-project__card:focus {
   transform: scale(1.05);
 }
 
@@ -37,7 +38,7 @@
   margin-right: auto;
   width: 615px;
 }
-.new-project__form input[type=submit] {
+.new-project__form input[type="submit"] {
   border-bottom-left-radius: 3px;
   border-bottom-right-radius: 3px;
 }
@@ -58,7 +59,8 @@
 .new-project__config div:first-child {
   border-bottom: 1px solid var(--color-charcoal--light);
 }
-.new-project__config button:hover, .new-project__config button:focus {
+.new-project__config button:hover,
+.new-project__config button:focus {
   text-decoration: underline;
 }
 
@@ -73,7 +75,8 @@
   box-sizing: border-box;
   margin: 15px 0;
 }
-.edit-project__config button:hover, .edit-project__config button:focus {
+.edit-project__config button:hover,
+.edit-project__config button:focus {
   text-decoration: underline;
 }
 

@@ -1,5 +1,5 @@
 import { BaseTimeline } from "../annotation/base-timeline.js";
-import '../../../node_modules/d3/dist/d3.js';
+import "../../../node_modules/d3/dist/d3.js";
 
 /**
  * Web component that displays the video timeline axis in the annotator.
@@ -12,8 +12,8 @@ import '../../../node_modules/d3/dist/d3.js';
 export class VideoTimeline extends BaseTimeline {
   constructor() {
     super();
-  
-    console.log("VideoTimeline constructor"); 
+
+    console.log("VideoTimeline constructor");
     this._timelineDiv = document.createElement("div");
     this._timelineDiv.id = "video-timeline";
     this._shadow.appendChild(this._timelineDiv);

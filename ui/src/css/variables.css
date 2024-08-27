@@ -1,7 +1,8 @@
 /**
 ** Colors
 **/
-:host, :root {
+:host,
+:root {
   --color-purple: #696cff;
   --color-purple50: rgba(var(--color-purple), 0.5);
 
@@ -39,7 +40,10 @@
   --color-charcoal--medium: #151b28;
   --color-charcoal--medium70: rgba(var(--color-charcoal--medium), 0.7);
   --color-charcoal--medium-dark: #0d1320;
-  --color-charcoal--medium-dark70: rgba(var(--color-charcoal--medium-dark), 0.7);
+  --color-charcoal--medium-dark70: rgba(
+    var(--color-charcoal--medium-dark),
+    0.7
+  );
   --color-charcoal--dark: #00070d;
   --color-charcoal--dark70: rgba(var(--color-charcoal--dark), 0.7);
   --color-charcoal--brown: #2e2314;
@@ -47,7 +51,7 @@
   --color-steel--dark: #3d4147;
   --color-steel--medium: #5c626b;
 
-/**
+  /**
 ** Color ramps
 **
 ** The color chosen here are based on keeping a general theme of grays, blues, purples, and some green
@@ -110,14 +114,14 @@
   --color-turquoise-400: #79e9de;
   --color-turquoise-500: #66e6d9;
 
-/**
+  /**
 ** Font Weights
 **/
 
   --weight-regular: 400;
   --weight-semibold: 600;
 
-/**
+  /**
 ** Spacing
 **/
 
@@ -129,7 +133,7 @@
   --spacing-5: 32px;
   --spacing-6: 40px;
 
-/**
+  /**
 ** Layout
 **/
   --width-xs: 0px;
@@ -142,5 +146,4 @@
   --container-md: var(--width-md);
   --container-lg: var(--width-lg);
   --container-xl: var(--width-xl);
-
 }

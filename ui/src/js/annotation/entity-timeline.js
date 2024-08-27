@@ -1,5 +1,5 @@
-import '../../../node_modules/d3/dist/d3.js';
-import { v1 as uuidv1 } from '../../../node_modules/uuid/dist/esm-browser/index.js';
+import "../../../node_modules/d3/dist/d3.js";
+import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
 import { BaseTimeline } from "../annotation/base-timeline.js";
 
 export class EntityTimeline extends BaseTimeline {

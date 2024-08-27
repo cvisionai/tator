@@ -1,6 +1,6 @@
 .image-details__figure {
   grid-column: 1/2;
-  grid-row: 1/span 2;
+  grid-row: 1 / span 2;
   min-height: 150px;
   width: 100%;
 }
@@ -41,8 +41,14 @@
   width: calc(var(--image-width, 1920) * var(--figure-height-basis));
   height: calc(var(--image-height, 1080) * var(--figure-height-basis));
   /* Scale to fit the available width and height */
-  width: min(var(--image-width, 1920) * var(--figure-width-basis), var(--image-width, 1920) * var(--figure-height-basis));
-  height: min(var(--image-height, 1080) * var(--figure-width-basis), var(--image-height, 1080) * var(--figure-height-basis));
+  width: min(
+    var(--image-width, 1920) * var(--figure-width-basis),
+    var(--image-width, 1920) * var(--figure-height-basis)
+  );
+  height: min(
+    var(--image-height, 1080) * var(--figure-width-basis),
+    var(--image-height, 1080) * var(--figure-height-basis)
+  );
 }
 
 .concepts-figure__svg {

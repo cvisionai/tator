@@ -11,7 +11,10 @@
   top: calc(100% + 6px);
   width: 265px;
 }
-.load-parameters .more, .sections .more, .project__file .more, .files-wrap .more {
+.load-parameters .more,
+.sections .more,
+.project__file .more,
+.files-wrap .more {
   right: 0;
   top: calc(100% + 6px);
   width: 225px;

@@ -11,7 +11,10 @@ export class AnnotationPage extends TatorPage {
 
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator_loading.gif`);
+    this._loading.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
@@ -179,7 +182,6 @@ export class AnnotationPage extends TatorPage {
     this._progressDialog.addEventListener("jobsDone", (evt) => {
       evt.detail.job.callback(evt.detail.status);
     });
-
   }
 
   connectedCallback() {
@@ -193,12 +195,15 @@ export class AnnotationPage extends TatorPage {
 
     // Create store subscriptions
     const promises = [
-      fetchCredentials(`/rest/Project/${this._projectId}`, {}, true)
-        .then(response => response.json()),
-      fetchCredentials("/rest/Announcements", {}, true)
-        .then(response => response.json()),
-      fetchCredentials("/rest/User/GetCurrent", {}, true)
-        .then(response => response.json()),
+      fetchCredentials(`/rest/Project/${this._projectId}`, {}, true).then(
+        (response) => response.json()
+      ),
+      fetchCredentials("/rest/Announcements", {}, true).then((response) =>
+        response.json()
+      ),
+      fetchCredentials("/rest/User/GetCurrent", {}, true).then((response) =>
+        response.json()
+      ),
     ];
     Promise.all(promises).then(([project, announcements, user]) => {
       this._setUser(user);
@@ -2315,21 +2320,14 @@ export class AnnotationPage extends TatorPage {
     const uri = `${window.location.pathname}${window.location.search}`;
     const name = "Last visited";
     // Get the last visited, if it exists.
-    fetchCredentials(
-      `/rest/Bookmarks/${projectId}?name=${name}`,
-      {},
-      true
-    )
+    fetchCredentials(`/rest/Bookmarks/${projectId}?name=${name}`, {}, true)
       .then((response) => response.json())
       .then((data) => {
         if (data.length == 0) {
-          fetchCredentials(
-            `/rest/Bookmarks/${projectId}`,
-            {
-              method: "POST",
-              body: JSON.stringify({ name: name, uri: uri }),
-            }
-          );
+          fetchCredentials(`/rest/Bookmarks/${projectId}`, {
+            method: "POST",
+            body: JSON.stringify({ name: name, uri: uri }),
+          });
         } else {
           const id = data[0].id;
           fetchCredentials(

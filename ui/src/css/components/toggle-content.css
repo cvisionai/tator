@@ -2,7 +2,8 @@
   display: none;
 }
 
-.toggle-content__trigger:hover span, .toggle-content__trigger:focus span {
+.toggle-content__trigger:hover span,
+.toggle-content__trigger:focus span {
   text-decoration: underline;
 }
 

@@ -57,7 +57,8 @@
   right: 12px;
   top: 12px;
 }
-.modal__close:hover, .modal__close:focus {
+.modal__close:hover,
+.modal__close:focus {
   color: var(--color-white);
 }
 

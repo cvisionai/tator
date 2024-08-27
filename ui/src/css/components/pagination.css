@@ -10,17 +10,21 @@
   min-width: 30px;
   padding: 8px;
 }
-.pagination a.is-active, .pagination a:hover, .pagination a:focus {
+.pagination a.is-active,
+.pagination a:hover,
+.pagination a:focus {
   border-color: var(--color-purple);
 }
-.pagination a:first-child, .pagination a:last-child {
+.pagination a:first-child,
+.pagination a:last-child {
   font-weight: var(--weight-regular);
 }
 .pagination a.is-disabled {
   color: var(--color-gray--dark);
   cursor: not-allowed;
 }
-.pagination a.is-disabled:hover, .pagination a.is-disabled:focus {
+.pagination a.is-disabled:hover,
+.pagination a.is-disabled:focus {
   border-color: var(--color-charcoal--light);
 }
 

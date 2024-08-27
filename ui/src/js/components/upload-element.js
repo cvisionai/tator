@@ -1,5 +1,5 @@
 import { TatorElement } from "./tator-element.js";
-import { v1 as uuidv1 } from '../../../node_modules/uuid/dist/esm-browser/index.js';
+import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
 import { uploadMedia } from "../../../../scripts/packages/tator-js/src/utils/upload-media.js";
 
 export class UploadElement extends TatorElement {
@@ -105,7 +105,10 @@ export class UploadElement extends TatorElement {
     // Show loading gif.
     const loading = document.createElement("img");
     loading.setAttribute("class", "loading");
-    loading.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator_loading.gif`);
+    loading.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     page._projects.appendChild(loading);
     page.setAttribute("has-open-modal", "");
 

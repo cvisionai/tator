@@ -52,7 +52,8 @@ entity-gallery-bulk-edit {
   margin-bottom: var(--spacing-3);
   margin-left: -var(--spacing-1);
 }
-.bulk-edit--cancel:hover, .bulk-edit--cancel:focus {
+.bulk-edit--cancel:hover,
+.bulk-edit--cancel:focus {
   color: var(--color-white);
 }
 .bulk-edit--cancel.has-background svg {
@@ -64,7 +65,8 @@ entity-gallery-bulk-edit {
   display: block;
   font-size: 12px;
 }
-.bulk-edit--cancel:after:hover, .bulk-edit--cancel:after:focus {
+.bulk-edit--cancel:after:hover,
+.bulk-edit--cancel:after:focus {
   color: var(--color-white);
 }
 
@@ -134,7 +136,7 @@ entity-card:focus .entity-card.multi-select {
   height: 50px;
 }
 
-[class^=arr-] {
+[class^="arr-"] {
   border: solid var(--color-gray--light);
   border-width: 0 0.1em 0.1em 0;
   display: inline-block;

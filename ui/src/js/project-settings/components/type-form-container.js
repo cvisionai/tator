@@ -156,7 +156,10 @@ export class TypeFormContainer extends TatorElement {
       this._typeName === "Membership" ? data.username : data.name;
 
     // attribute section
-    if (!this._form._hideAttributes && typeof data.attribute_types !== "undefined") {
+    if (
+      !this._form._hideAttributes &&
+      typeof data.attribute_types !== "undefined"
+    ) {
       this.attributeTypes = data.attribute_types;
     } else {
       this.removeAttributeSection();
