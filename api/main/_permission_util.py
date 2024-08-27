@@ -116,6 +116,7 @@ def shift_permission(model, source_model):
         Bucket,
         JobCluster,
         Affiliation,
+        Invitation,
         HostedTemplate,
     ]:
         return CHILD_SHIFT * (1 - shift)
@@ -156,6 +157,7 @@ def augment_permission(user, qs):
             Bucket,
             HostedTemplate,
             Affiliation,
+            Invitation,
         ]:
             # This assumes all checks are scoped to the same project (expensive to check in runtime)
             project = qs[0].project
@@ -177,7 +179,7 @@ def augment_permission(user, qs):
             qs = qs.alias(
                 project_permission=Value(project_permission >> bit_shift),
             )
-        elif model in [Group, JobCluster, Bucket, HostedTemplate, Affiliation]:
+        elif model in [Group, JobCluster, Bucket, HostedTemplate, Affiliation, Invitation]:
             # This calculates the default permission for an object based on what organization it is in
             org_qs = qs.values("organization")
             org_rp = RowProtection.objects.filter(target_organization__in=org_qs).filter(
@@ -255,7 +257,7 @@ def augment_permission(user, qs):
                 output_field=BigIntegerField(),
             ),
         )
-    elif model in [Affiliation]:
+    elif model in [Affiliation, Invitation]:
         # Affiliations don't have per-row control, they are all scoped to the organization permission shifted
         qs = qs.annotate(effective_permission=F("org_permission"))
     elif model in [Project]:
@@ -353,7 +355,8 @@ def augment_permission(user, qs):
             calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("job_cluster")])
         )
         jc_perm_dict = {
-            entry["jc"]: entry["calc_perm"] for entry in jc_rp.values("job_cluster", "calc_perm")
+            entry["job_cluster"]: entry["calc_perm"]
+            for entry in jc_rp.values("job_cluster", "calc_perm")
         }
         jc_cases = [When(job_cluster=jc, then=Value(perm)) for jc, perm in jc_perm_dict.items()]
         qs = qs.annotate(

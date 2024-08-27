@@ -97,9 +97,11 @@ class InvitationListAPI(BaseListView):
             invite.save()
         return {"message": f"User can register at {url}", "id": invite.id}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         organization_id = self.kwargs["organization"]
-        invites = Invitation.objects.filter(organization=organization_id)
+        invites = self.filter_only_viewables(
+            Invitation.objects.filter(organization=organization_id)
+        )
         return invites
 
 
@@ -130,5 +132,5 @@ class InvitationDetailAPI(BaseDetailView):
         Invitation.objects.get(pk=params["id"]).delete()
         return {"message": f'Invitation {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Invitation.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Invitation.objects.filter(pk=self.params["id"]))
