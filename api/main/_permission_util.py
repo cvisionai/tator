@@ -630,4 +630,4 @@ class PermissionMask:
 
     # This level lets a user make sections they have full control over and eventually media upload priv
     # If bit 16 was 0, they could make sections, but ultimately not media due to project-level restriction (AND bitwise logic)
-    CAN_MAKE_MEDIA_AND_SECTIONS = (CREATE | UPLOAD) << 16 | (CREATE) << 8 | (EXIST | READ)
+    CAN_MAKE_MEDIA_AND_SECTIONS = (CREATE | UPLOAD) << 16 | (CREATE) << 8 | (EXIST | READ | UPLOAD)
