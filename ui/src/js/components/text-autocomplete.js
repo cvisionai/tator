@@ -366,7 +366,7 @@ export class TatorAutoComplete {
   }
 
   static enable(input_element, config) {
-    if (config == null || !"serviceUrl" in config) {
+    if (config == null || !("serviceUrl" in config)) {
       return;
     }
 
