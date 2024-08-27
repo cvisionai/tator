@@ -124,6 +124,7 @@ class TatorAPIView(APIView):
 
         return qs
 
+
 class GetMixin:
     # pylint: disable=redefined-builtin,unused-argument
     """TODO: add documentation for this"""

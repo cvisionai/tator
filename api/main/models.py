@@ -2366,6 +2366,7 @@ class GroupMembership(Model):
     name = CharField(max_length=128, blank=True, null=True)
     """ Descriptive name for the role of this user in the group """
 
+
 class RowProtection(Model):
     """
     Row  protection  models cascade in  two dimensions. The first dimension is
@@ -2390,6 +2391,7 @@ class RowProtection(Model):
     For Media Requests:
        - Find permission objects that match media+user
     """
+
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(
         User, on_delete=SET_NULL, null=True, blank=True, related_name="rp_created_by"

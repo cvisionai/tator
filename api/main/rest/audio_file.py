@@ -18,6 +18,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class AudioFileListAPI(BaseListView):
     schema = AudioFileListSchema()
     http_method_names = ["get", "post"]

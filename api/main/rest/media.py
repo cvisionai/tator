@@ -68,6 +68,7 @@ MEDIA_PROPERTIES = list(media_schema["properties"].keys())
 
 from .._permission_util import augment_permission, shift_permission
 
+
 def _get_next_archive_state(desired_archive_state, last_archive_state):
     if desired_archive_state == "to_live":
         if last_archive_state == "archived":

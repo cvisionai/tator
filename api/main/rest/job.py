@@ -51,7 +51,7 @@ class JobListAPI(BaseListView):
         elif self.request.method in ["PATCH", "DELETE"]:
             self.permission_classes = [ProjectExecutePermission]
         elif self.request.method in ["POST"]:
-            self.permission_classes = [] # We handle it in the POST method itself
+            self.permission_classes = []  # We handle it in the POST method itself
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
         logger.info(f"{self.request.method} permissions: {self.permission_classes}")
@@ -61,8 +61,8 @@ class JobListAPI(BaseListView):
         jobs = self._get(self.params)
         alg_ids = []
         for j in jobs:
-            if j.get('alg_id',None):
-                alg_ids.append(int(j['alg_id']))
+            if j.get("alg_id", None):
+                alg_ids.append(int(j["alg_id"]))
         logger.info(f"JOBs ALG_IDS = {alg_ids}")
         return self.filter_only_viewables(Algorithm.objects.filter(pk__in=alg_ids))
 
@@ -80,9 +80,7 @@ class JobListAPI(BaseListView):
                 output_field=BooleanField(),
             )
         )
-        logger.info(
-            f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-        )
+        logger.info(f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}")
         if algo_qs.filter(granted=True).exists():
             return True
         else:
@@ -110,7 +108,6 @@ class JobListAPI(BaseListView):
         algo_qs = Algorithm.objects.filter(pk=alg_obj.pk)
         if self.check_acl_permission_algo_qs(self.request.user, algo_qs) is False:
             raise PermissionDenied("User does not have permission to execute algorithm")
-
 
         # Harvest extra parameters to pass into the algorithm if requested
         extra_params = []
@@ -209,6 +206,7 @@ class JobDetailAPI(BaseDetailView):
 
     schema = JobDetailSchema()
     http_method_names = ["get", "delete"]
+
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
@@ -246,6 +244,6 @@ class JobDetailAPI(BaseDetailView):
         jobs = [job]
         alg_ids = []
         for j in jobs:
-            if j.get('alg_id',None):
-                alg_ids.append(int(j['alg_id']))
+            if j.get("alg_id", None):
+                alg_ids.append(int(j["alg_id"]))
         return self.filter_only_viewables(Algorithm.objects.filter(pk__in=alg_ids))

@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 CHILD_SHIFT = 8
 
+
 class ColBitAnd(Func):
     function = ""
     template = "(%(expressions)s & %(bitmask)s)"

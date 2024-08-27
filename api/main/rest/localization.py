@@ -44,6 +44,7 @@ LOCALIZATION_PROPERTIES = list(localization_schema["properties"].keys())
 
 import os
 
+
 class LocalizationListAPI(BaseListView):
     """Interact with list of localizations.
 
@@ -344,7 +345,6 @@ class LocalizationListAPI(BaseListView):
 
     def get_parent_objects(self):
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
-
             return super().get_parent_objects()
         elif self.request.method in ["POST"]:
             # For POST Localizations/States we need to see what versions/sections are being impacted
@@ -552,6 +552,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!",
             "id": obj_id,
         }
+
 
 class LocalizationDetailAPI(LocalizationDetailBaseAPI):
     """Interact with single localization.

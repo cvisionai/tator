@@ -16,6 +16,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def _serialize_memberships(memberships):
     membership_data = database_qs(memberships)
     for idx, membership in enumerate(memberships):
@@ -48,6 +49,7 @@ class MembershipListAPI(BaseListView):
 
     schema = MembershipListSchema()
     http_method_names = ["get", "post"]
+
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:

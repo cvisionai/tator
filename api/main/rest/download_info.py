@@ -26,7 +26,7 @@ class DownloadInfoAPI(BaseListView):
     http_method_names = ["post"]
 
     def get_queryset(self, **kwargs):
-        return Project.objects.filter(pk=self.params.get('project'))
+        return Project.objects.filter(pk=self.params.get("project"))
 
     def _post(self, params):
         # Parse parameters.

@@ -18,6 +18,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class AuxiliaryFileListAPI(BaseListView):
     schema = AuxiliaryFileListSchema()
     http_method_names = ["get", "post"]

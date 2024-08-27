@@ -775,7 +775,6 @@ class PermissionCreateTestMixin:
                 model = Media
                 required_permission = PermissionMask.UPLOAD
             else:
-
                 # iterate over all permission levels and change the underlying row protection object for this project
                 # to a given permission level and verify that the delete endpoint respects this
                 model = type(self.entities[0])
@@ -1296,6 +1295,7 @@ class PermissionDetailAffiliationTestMixin:
     def test_detail_delete_permissions(self):
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             from main._permission_util import shift_permission
+
             if type(self.entities[0]) != Organization:
                 rp = RowProtection.objects.get(
                     target_organization=self.entities[0].organization,
@@ -6526,7 +6526,6 @@ class SectionTestCase(TatorTransactionTest):
         self.assertEqual(len(response.data), 1)
 
     def test_localization_lookup_on_explicit(self):
-
         sections = []
         for x in range(5):
             media = create_test_video(self.user, f"test_{x}.mp4", self.media_type, self.project)
@@ -7041,6 +7040,7 @@ class GroupTestCase(TatorTransactionTest):
         )
         assertResponse(self, resp, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
+
 
 if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 

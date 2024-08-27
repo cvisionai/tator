@@ -225,6 +225,7 @@ class ProjectViewOnlyPermission(ProjectPermissionBase):
     """
 
     message = "Not a member of this project."
+
     def get_required_mask(self):
         return PermissionMask.EXIST | PermissionMask.READ
 
@@ -233,6 +234,7 @@ class ProjectEditPermission(ProjectPermissionBase):
     """Checks whether a user has edit access to a project."""
 
     message = "Insufficient permission to modify this project."
+
     def get_required_mask(self):
         # TODO: Make this a configruation flag?
         if self.request.method in ["GET", "PUT", "HEAD"]:
@@ -251,6 +253,7 @@ class ProjectTransferPermission(ProjectPermissionBase):
     """Checks whether a user has transfer access to a project."""
 
     message = "Insufficient permission to transfer media within this project."
+
     def get_required_mask(self):
         return PermissionMask.UPLOAD
 
@@ -259,6 +262,7 @@ class ProjectExecutePermission(ProjectPermissionBase):
     """Checks whether a user has execute access to a project."""
 
     message = "Insufficient permission to execute within this project."
+
     def get_required_mask(self):
         return PermissionMask.EXECUTE
 
@@ -267,6 +271,7 @@ class ProjectFullControlPermission(ProjectPermissionBase):
     """Checks if user has full control over a project."""
 
     message = "Insufficient permission to edit project settings."
+
     def get_required_mask(self):
         return PermissionMask.FULL_CONTROL
 
@@ -550,6 +555,7 @@ class OrganizationMemberPermission(OrganizationPermissionBase):
     """
 
     message = "Not a member of this organization."
+
     def get_required_mask(self):
         return PermissionMask.EXIST
 
@@ -580,5 +586,6 @@ class OrganizationAdminPermission(OrganizationPermissionBase):
     """
 
     message = "User does not have admin access to organization."
+
     def get_required_mask(self):
         return PermissionMask.FULL_CONTROL

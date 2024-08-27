@@ -37,6 +37,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class StateTypeListAPI(BaseListView):
     """Create or retrieve state types.
 

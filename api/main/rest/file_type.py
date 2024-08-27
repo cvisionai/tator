@@ -21,6 +21,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class FileTypeListAPI(BaseListView):
     """Create or retrieve file types.
     A file type is the metadata definition object for non-media File objects.

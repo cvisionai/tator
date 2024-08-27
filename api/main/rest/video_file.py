@@ -18,6 +18,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class VideoFileListAPI(BaseListView):
     schema = VideoFileListSchema()
     http_method_names = ["get", "post"]

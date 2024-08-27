@@ -566,6 +566,7 @@ class MediaUtil:
 
         x_bias = 60
         header = f"Error {code}"
+
         def textsize(text, font):
             im = Image.new(mode="P", size=(0, 0))
             draw = ImageDraw.Draw(im)

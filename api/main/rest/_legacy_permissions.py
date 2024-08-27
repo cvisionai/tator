@@ -24,6 +24,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def _for_schema_view(request, view):
     """Returns true if permission is being requested for the schema view. This is
     necessary since there is no way to check project based permissions when
@@ -275,6 +276,7 @@ class ClonePermission(ProjectPermissionBase):
 
     def has_object_permission(self, request, view, obj):
         return False
+
 
 class OrganizationPermissionBase(BasePermission):
     """Base class for requiring organization permissions."""

@@ -108,6 +108,7 @@ class RowProtectionListAPI(BaseListView):
                 )
 
         return qs
+
     def _delete(self, params: dict) -> dict:
         qs = self.get_queryset()
         for row_protection in qs:

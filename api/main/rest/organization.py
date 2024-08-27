@@ -19,6 +19,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def _serialize_organizations(organizations, user_id):
     ttl = 28800
     organization_data = database_qs(organizations)

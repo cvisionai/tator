@@ -18,10 +18,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ImageFileListAPI(BaseListView):
     schema = ImageFileListSchema()
 
     http_method_names = ["get", "post"]
+
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:

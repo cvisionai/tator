@@ -461,7 +461,6 @@ class StateListAPI(BaseListView):
 
     def get_parent_objects(self):
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
-
             return super().get_parent_objects()
         elif self.request.method in ["POST"]:
             # For POST Localizations/States we need to see what versions/sections are being impacted
