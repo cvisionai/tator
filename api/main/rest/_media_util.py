@@ -559,21 +559,25 @@ class MediaUtil:
         """TODO: add documentation for this"""
         font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
         font = ImageFont.truetype("DejaVuSans.ttf", 28)
-        img = Image.open(os.path.join(settings.STATIC_ROOT, "images/computer.jpg"))
+        img = Image.open("/images/computer.jpg")
         img = img.resize([1024, 1024])
         draw = ImageDraw.Draw(img)
         W, H = img.size  # pylint: disable=invalid-name
 
         x_bias = 60
         header = f"Error {code}"
-        w, h = draw.textsize(header)  # pylint: disable=invalid-name
+        def textsize(text, font):
+            im = Image.new(mode="P", size=(0, 0))
+            draw = ImageDraw.Draw(im)
+            _, _, width, height = draw.textbbox((0, 0), text=text, font=font)
+            return width, height
+
+        w, h = textsize(header, font)  # pylint: disable=invalid-name
         logger.info(f"{W}-{w}/2; {H}-{h}/2")
-        offset = font.getoffset(header)
-        logger.info(f"Offset = {offset}")
 
         draw.text((W / 2 - ((w / 2) + x_bias), 160), header, (255, 62, 29), font=font_bold)
 
-        _, line_height = draw.textsize(message)
+        _, line_height = textsize(message, font)
         line_height *= 3
         start_height = 300 - line_height
         lines = textwrap.wrap(message, 40)

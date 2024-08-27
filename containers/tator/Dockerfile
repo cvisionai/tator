@@ -58,6 +58,7 @@ COPY api/tator_online /tator_online/tator_online
 COPY scripts /tator_online/scripts
 COPY workflows /tator_online/workflows
 COPY manage.py /tator_online/manage.py
+COPY ui/src/images/computer.jpg /images/computer.jpg
 
 # Delete front end unit tests
 RUN rm -fr /tator_online/test
