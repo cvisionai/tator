@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import "../../../node_modules/d3/d3.mjs";
+import "../../../node_modules/d3/dist/d3.js";
 import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
 
 /**
