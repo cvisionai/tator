@@ -12,6 +12,7 @@ except Exception:
     pass
 
 from PIL import Image, ImageOps
+from PIL.ExifTags import TAGS
 import pillow_avif  # add AVIF support to pillow
 from pillow_heif import register_heif_opener
 
