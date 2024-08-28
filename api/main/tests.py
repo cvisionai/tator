@@ -493,6 +493,13 @@ affiliation_levels = [
 ]
 
 
+def check_schema_fields(keys, datum):
+    for key in keys:
+        if not key in datum:
+            print(f"Missing key {key}")
+            assert False, f"Missing key {key}"
+
+
 class AttributeRenameMixin:
     def test_attribute_rename(self):
         """Test that renaming an attribute works."""
@@ -6982,10 +6989,7 @@ class GroupTestCase(TatorTransactionTest):
         self.assertEqual(len(resp.data["members"]), 6)
 
         # Check schema
-        for key in group_properties.keys():
-            if not key in resp.data:
-                print(f"Missing key {key}")
-                assert False, f"Missing key {key}"
+        check_schema_fields(group_properties.keys(), resp.data)
 
         # Now add Chekov who joined us in the second season
         resp = self.client.patch(
@@ -7136,14 +7140,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify schema of the return RowProtection object
             assert type(resp.data) == list
             assert len(resp.data) > 0
-            datum = resp.data[0]
-            from pprint import pprint
-
-            pprint(datum)
-            for key in row_protection_properties.keys():
-                if not key in datum:
-                    print(f"Missing key {key}")
-                    assert False, f"Missing key {key}"
+            check_schema_fields(row_protection_properties.keys(), resp.data[0])
 
             # Switch back to kirk
             self.client.force_authenticate(user=self.kirk)
