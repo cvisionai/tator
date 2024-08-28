@@ -7142,6 +7142,11 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assert len(resp.data) > 0
             check_schema_fields(row_protection_properties.keys(), resp.data[0])
 
+            # Verify it on single GET too
+            resp = self.client.get(f"/rest/RowProtection/{resp.data[0]['id']}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            check_schema_fields(row_protection_properties.keys(), resp.data)
+
             # Switch back to kirk
             self.client.force_authenticate(user=self.kirk)
 
