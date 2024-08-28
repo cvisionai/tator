@@ -207,7 +207,7 @@ class RowProtectionDetailAPI(BaseDetailView):
                 "User does not have permission to delete this row protection set"
             )
 
-        return model_to_dict(qs.values(*PROPS).first())
+        return qs.values(*PROPS).first()
 
     @transaction.atomic
     def _patch(self, params) -> dict:
