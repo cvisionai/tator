@@ -21,6 +21,7 @@ from ._base_views import BaseListView
 from ._permissions import OrganizationEditPermission
 from ..schema import parse
 from ..schema.rowprotection import search_filters
+from ..schema.components.rowprotection import row_protection_properties
 from .._permission_util import PermissionMask, augment_permission, ColBitAnd
 
 
@@ -40,6 +41,7 @@ target_objects = {
     "hosted_template": HostedTemplate,
 }
 
+PROPS = [*row_protection_properties.keys()]
 
 def check_acl_permission_of_children(user, row_protection):
     for target in target_objects.keys():
@@ -89,7 +91,7 @@ class RowProtectionListAPI(BaseListView):
         Returns the full database entries of groups for the organization
         """
         qs = self.get_queryset()
-        return list(qs.values())
+        return list(qs.values(*PROPS))
 
     def get_queryset(self, **kwargs):
         """
@@ -205,7 +207,7 @@ class RowProtectionDetailAPI(BaseDetailView):
                 "User does not have permission to delete this row protection set"
             )
 
-        return model_to_dict(qs.first())
+        return model_to_dict(qs.values(*PROPS).first())
 
     @transaction.atomic
     def _patch(self, params) -> dict:
