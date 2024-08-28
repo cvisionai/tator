@@ -1,4 +1,3 @@
-import { TatorApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import { ModalDialog } from "../components/modal-dialog.js";
 
 /**

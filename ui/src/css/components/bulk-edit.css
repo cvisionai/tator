@@ -1,0 +1,160 @@
+.bulk-edit-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-charcoal--dark);
+  border-top: 5px solid var(--color-gray--light);
+  box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
+  resize: horizontal;
+  transition: height 500ms ease-out;
+}
+.bulk-edit-bar.minimized {
+  height: 30px;
+}
+
+.bulk-edit-bar_top {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  color: var(--color-white);
+  text-align: center;
+  padding: var(--spacing-3) var(--spacing-6);
+}
+
+kbd {
+  color: var(--color-white);
+  background: var(--color-purple50);
+  font-family: monospace;
+  border-radius: 3px;
+  padding: 2px;
+}
+
+.resizer {
+  width: 10px;
+  height: 10px;
+  background: blue;
+  position: absolute;
+  top: 0;
+}
+
+entity-gallery-bulk-edit {
+  position: fixed;
+  top: 0;
+  z-index: 50;
+}
+
+.bulk-edit--cancel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin-bottom: var(--spacing-3);
+  margin-left: -var(--spacing-1);
+}
+.bulk-edit--cancel:hover,
+.bulk-edit--cancel:focus {
+  color: var(--color-white);
+}
+.bulk-edit--cancel.has-background svg {
+  background-color: var(--color-charcoal--light);
+}
+.bulk-edit--cancel:after {
+  content: "[Esc]";
+  color: var(--color-gray--light);
+  display: block;
+  font-size: 12px;
+}
+.bulk-edit--cancel:after:hover,
+.bulk-edit--cancel:after:focus {
+  color: var(--color-white);
+}
+
+.entity-card.multi-select {
+  position: realtive;
+}
+.entity-card.multi-select:before {
+  content: " ";
+  width: 25px;
+  height: 25px;
+  background-color: var(--color-charcoal--medium-dark);
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 5px 0 5px 0;
+  border: 5px solid var(--color-charcoal--light);
+}
+.entity-card.multi-select.is-selected:before {
+  background-color: var(--color-purple);
+}
+
+.bulk-edit-bar--right_form {
+  padding-left: 5%;
+}
+
+.bulk-edit-attr-choices,
+.bulk-edit-form__panel-group {
+  background: var(--color-charcoal--medium-dark);
+  max-height: 300px;
+  overflow-y: scroll;
+}
+
+.bulk-edit-attr-choices_bulk-edit {
+  overflow: hidden;
+  max-height: 200px;
+  overflow-y: scroll;
+}
+.bulk-edit-attr-choices_bulk-edit .entity-gallery-labels {
+  background: var(--color-charcoal--medium-dark);
+}
+
+.scroll-comparison-panel {
+  overflow-y: scroll;
+}
+
+.annotation__panel-group_bulk-edit {
+  border-radius: 3px;
+  position: relative;
+}
+
+.bulk-edit-legend {
+  position: absolute;
+  left: 15px;
+  top: -9px;
+  background-color: var(--color-charcoal--medium-dark);
+  border-radius: 30px;
+  border: 1px solid var(--color-charcoal--light);
+  padding: 5px;
+}
+
+entity-card:focus .entity-card.multi-select {
+  border: 2px solid white;
+}
+
+.collapse-bulk-edit-bar {
+  height: 50px;
+}
+
+[class^="arr-"] {
+  border: solid var(--color-gray--light);
+  border-width: 0 0.1em 0.1em 0;
+  display: inline-block;
+  padding: 0.2em;
+}
+
+.arr-right {
+  transform: rotate(-45deg);
+}
+
+.arr-left {
+  transform: rotate(135deg);
+}
+
+.arr-down {
+  transform: rotate(45deg);
+}
+
+.arr-up {
+  transform: rotate(-135deg);
+}

@@ -686,7 +686,7 @@ export class LeafMain extends TatorElement {
         const info = await store
           .getState()
           .removeType({ type: "Leaf", id: id });
-        const message = JSON.parse(info.response.text).message;
+        const message = info.data.message;
         this.loading.hideSpinner();
         if (info.response.ok) {
           this._modal._success(message);

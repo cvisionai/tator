@@ -46,11 +46,15 @@ const argv = yargs(process.argv.slice(2))
     "r",
     `Redirect URI for auth code callback. Default is ${redirect_uri_default}.`
   )
+  .describe('static_path', 'URL path to static files')
+  .describe('max_age', 'Max age to cache static files in seconds')
   .default('h', 'localhost')
   .default('p', 3000)
   .default('b', '')
   .default('k', false)
   .default("r", redirect_uri_default)
+  .default('static_path', '/static')
+  .default('max_age', 0)
   .argv;
 
 function addHeaders(res, path, stat) {
@@ -74,6 +78,7 @@ const params = {
   email_enabled: argv.email_enabled,
   okta_enabled: argv.okta_enabled,
   keycloak_enabled: argv.keycloak_enabled,
+  static_path: argv.static_path,
   datadog_enabled: process.env.DD_LOGS_INJECTION == "true",
   datadog_client_token: process.env.DD_CLIENT_TOKEN || "",
   datadog_application_id: process.env.DD_APPLICATION_ID || "",
@@ -87,17 +92,33 @@ nunjucks.configure('server/views', {
   autoescape: true
 });
 app.set('view engine', 'html');
-app.use("/static", express.static("./dist", { setHeaders: addHeaders }));
+
+// Serve legacy bundles for applets until they can be updated.
 app.use(
-  "/static",
-  express.static("./server/static", { setHeaders: addHeaders })
+  '/static',
+  express.static("./legacy", { setHeaders: addHeaders, maxAge: 0 })
 );
-app.use(
-  "/static",
-  express.static("../scripts/packages/tator-js/src/annotator", {
-    setHeaders: addHeaders,
-  })
-);
+
+const maxAgeMilliseconds = argv.max_age * 1000;
+const staticMap = {
+  "./server/static": argv.static_path,
+  "../scripts/packages/tator-js/src/annotator": argv.static_path,
+  "./src": `${argv.static_path}/ui/src`,
+  "./node_modules/zustand/esm": `${argv.static_path}/ui/node_modules/zustand/esm`,
+  "./node_modules/uuid/dist/esm-browser": `${argv.static_path}/ui/node_modules/uuid/dist/esm-browser`,
+  "./node_modules/d3/dist": `${argv.static_path}/ui/node_modules/d3/dist`,
+  "./node_modules/autocompleter": `${argv.static_path}/ui/node_modules/autocompleter`,
+  "./node_modules/marked/lib": `${argv.static_path}/ui/node_modules/marked/lib`,
+  "./node_modules/libtess": `${argv.static_path}/ui/node_modules/libtess`,
+  "./node_modules/hls.js/dist": `${argv.static_path}/ui/node_modules/hls.js/dist`,
+  "./node_modules/earcut": `${argv.static_path}/ui/node_modules/earcut`,
+  "./node_modules/underwater-image-color-correction": `${argv.static_path}/ui/node_modules/underwater-image-color-correction`,
+  "./node_modules/spark-md5": `${argv.static_path}/ui/node_modules/spark-md5`,
+  "../scripts": `${argv.static_path}/scripts`,
+};
+for (const [dir, path] of Object.entries(staticMap)) {
+  app.use(path, express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds }));
+}
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
@@ -111,6 +132,11 @@ if (params.backend) {
       );
     });
   }
+  app.use('/media', proxy(argv.backend, {
+    proxyReqPathResolver: function(req) {
+      return '/media' + req.url;
+    },
+  }));
 }
 
 app.get('/', (req, res) => {

@@ -1,6 +1,6 @@
 import { UploadElement } from "../components/upload-element.js";
 import { svgNamespace } from "../components/tator-element.js";
-import { api, store } from "./store.js";
+import { store } from "./store.js";
 
 export class SectionUpload extends UploadElement {
   constructor() {
@@ -39,7 +39,7 @@ export class SectionUpload extends UploadElement {
   }
 
   connectedCallback() {
-    this.init(api, store);
+    this.init(store);
   }
 
   static get observedAttributes() {

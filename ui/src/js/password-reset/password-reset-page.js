@@ -1,6 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import TatorLogo from "../../images/tator-logo.png";
 
 export class PasswordResetPage extends TatorElement {
   constructor() {
@@ -19,7 +18,7 @@ export class PasswordResetPage extends TatorElement {
 
     const img = document.createElement("img");
     img.setAttribute("class", "py-4");
-    img.setAttribute("src", TatorLogo);
+    img.setAttribute("src", `${STATIC_PATH}/ui/src/images/tator-logo.png`);
     img.setAttribute("width", "400");
     div.appendChild(img);
 

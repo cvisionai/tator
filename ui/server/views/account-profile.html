@@ -2,9 +2,13 @@
 
 {% block head %}
 <title>Tator | Account Profile</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/account-profile/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("account-profile");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
-<account-profile>
-</account-profile>
 {% endblock body %}

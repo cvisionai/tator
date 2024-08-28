@@ -97,7 +97,7 @@ export class SaveDialog extends TatorElement {
     this._attributes = document.createElement("attribute-panel");
     attrDiv.appendChild(this._attributes);
     this._attributes.disableWidget("ID");
-    this._attributes.disableWidget("Frame");
+    // this._attributes.disableWidget("Frame");
     this._attributes.disableWidget("Elemental ID");
     this._attributes.disableWidget("Mark");
 
@@ -175,6 +175,8 @@ export class SaveDialog extends TatorElement {
 
     // Used for continuous track append.
     this._trackId = null;
+
+    this._frame = 0;
   }
 
   init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
@@ -290,6 +292,18 @@ export class SaveDialog extends TatorElement {
   set version(val) {
     this._version = val;
     this._attributes._versionWidget.setValue(this._version.name);
+  }
+
+  // Used to dynamically update frame attribute
+  updateFrame(val) {
+    // Update the frame, set widget value
+    this._frame = val;
+    this._attributes._frameWidget.setValue(this._frame);
+
+    // Update _requestObj's frame (object used to save)
+    if (this._requestObj) {
+      this._requestObj.frame = this._frame;
+    }
   }
 
   set canvasPosition(val) {

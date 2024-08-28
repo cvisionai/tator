@@ -83,7 +83,7 @@ export class FormFile extends TatorElement {
   }
 
   get file() {
-    const val = null;
+    let val = null;
     if (evt.target.files.length == 1) {
       val = this._input.file;
     }

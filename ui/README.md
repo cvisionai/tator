@@ -5,19 +5,17 @@
 Prerequisites:
 
 * Node
-* Docker
 * GNU Make
 * Python
 * Python modules `requests` and `PyYAML`.
 * curl
 * A Tator backend running Keycloak
 
-Build the client bundle:
+Generate index files and install NPM packages:
 
 ```shell
 npm install
-npm run codegen
-npm run buildDev # or `npm run build` for minified code
+npm run build
 ```
 
 Run the server:
@@ -27,14 +25,7 @@ Run the server:
 npm run serve -- --backend=https://earlyaccess.tator.io -k --port=8080 --redirect_uri=http://localhost:8080/callback
 ```
 
-You can now open your browser to http://localhost:3000.
-
-Enable hot reload:
-
-```shell
-# Run this from a separate terminal
-npm run watch
-```
+You can now open your browser to http://localhost:8080. Changes made locally only require a reload in the browser to be reflected.
 
 Autoformat your code (recommend integration with your editor):
 

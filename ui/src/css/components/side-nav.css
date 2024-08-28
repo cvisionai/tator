@@ -1,0 +1,198 @@
+settings-nav {
+  overflow-y: scroll;
+}
+
+.SideNav {
+  background-color: var(--color-charcoal--medium);
+  transition: background-color 500ms ease;
+  border-radius: 10px;
+  margin-bottom: 150px;
+  padding: 0;
+}
+.SideNav:first-child .SideNav-item {
+  border-radius: 10px 10px 0 0;
+  width: auto;
+}
+.SideNav:last-child {
+  border-radius: 0 0 10px 10px;
+}
+@media only screen and (var(--width-sm)) {
+  .SideNav {
+    position: relative;
+  }
+}
+
+.SideNav-heading button,
+.SideNav-item {
+  position: relative;
+  overflow: auto;
+  display: block;
+  max-height: 50vh;
+  padding: 12px var(--spacing-3);
+  color: var(--color-gray--light);
+  text-align: left;
+  background-color: transparent;
+  border: 0;
+  font-size: 16px;
+}
+.SideNav-heading button[selected="true"],
+.SideNav-item[selected="true"] {
+  color: var(--color-white);
+}
+.SideNav-heading button .SideNav-heading button,
+.SideNav-heading button .item-label,
+.SideNav-heading button .SideNav-icon,
+.SideNav-item .SideNav-heading button,
+.SideNav-item .item-label,
+.SideNav-item .SideNav-icon {
+  pointer-events: none;
+}
+.SideNav-heading button .item-label,
+.SideNav-heading button .SideNav-icon,
+.SideNav-item .item-label,
+.SideNav-item .SideNav-icon {
+  vertical-align: top;
+}
+
+.SideNav-item,
+.SideNav-heading {
+  border: 1px solid var(--color-charcoal--light70);
+}
+.SideNav-item:last-child,
+.SideNav-heading:last-child {
+  border-radius: 0 0 10px 10px;
+}
+
+.SideNav-heading button:hover,
+.SideNav-item:hover {
+  color: var(--color-white);
+}
+.SideNav-heading button:hover::before,
+.SideNav-item:hover::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: 4px;
+  pointer-events: none;
+  content: "";
+  background-color: var(--color-gray--light);
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.SideNav-heading:focus,
+.SideNav-heading button:focus,
+.SideNav-item:focus {
+  text-decoration: none;
+  color: var(--color-white);
+  outline: none;
+}
+.SideNav-heading:focus::before,
+.SideNav-heading button:focus::before,
+.SideNav-item:focus::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: 4px;
+  pointer-events: none;
+  content: "";
+  background-color: var(--color-purple);
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.SideNav-heading button:active,
+.SideNav-item:active {
+  background-color: var(--color-gray--light);
+}
+
+.SideNav-heading button[aria-current]:not([aria-current="false"]),
+.SideNav-heading button[aria-selected="true"],
+.SideNav-item[aria-current]:not([aria-current="false"]),
+.SideNav-item[aria-selected="true"] {
+  background-color: var(--color-charcoal--light70);
+  color: var(--color-white);
+}
+
+.SideNav-icon {
+  width: 16px;
+  margin-right: 15px;
+  color: auto;
+}
+
+.SubItems {
+  margin-bottom: 0;
+  border: 0;
+  position: relative;
+  overflow: auto;
+  max-height: 40vh;
+  min-height: 10vh;
+  font-size: 14px;
+}
+.SubItems[hidden] {
+  display: none;
+}
+
+.SideNav-subItem {
+  position: relative;
+  display: block;
+  margin: 15px 0 15px 44px;
+  color: var(--color-gray--light);
+  text-align: left;
+  background-color: transparent;
+  border: 0;
+  width: fit-content;
+}
+.SideNav-subItem[selected="true"] {
+  color: var(--color-white);
+}
+
+.SideNav-subItem:hover {
+  color: var(--color-white);
+}
+
+.SideNav-subItem[aria-current]:not([aria-current="false"]),
+.SideNav-subItem[aria-selected="true"] {
+  font-weight: var(--weight-semibold);
+  color: var(--color-white);
+}
+
+.SideNav-heading[selected="true"] {
+  background-color: var(--color-charcoal--light70);
+}
+
+.SideNav-heading[selected="true"] button,
+.SideNav-item[selected="true"] {
+  color: white;
+}
+.SideNav-heading[selected="true"] button::before,
+.SideNav-item[selected="true"]::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: 4px;
+  pointer-events: none;
+  content: "";
+  background-color: var(--color-purple);
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.Nav-action {
+  transition: color 0.2s ease-in-out;
+  font-weight: bold;
+  padding: 10px;
+  display: block;
+  box-sizing: border-box;
+}
+.Nav-action:hover {
+  color: var(--color-purple);
+}
+
+/*# sourceMappingURL=side-nav.css.map */

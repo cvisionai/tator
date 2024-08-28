@@ -1,5 +1,3 @@
-import { TatorApi } from "../../../../scripts/packages/tator-js/pkg/src";
-
 /**
  * Class used to encapsulate a condition for the data filtering interface
  */

@@ -1,7 +1,6 @@
 import { TatorElement } from "./tator-element.js";
-import { v1 as uuidv1 } from "uuid";
-import { uploadMedia } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
-import TatorLoading from "../../images/tator_loading.gif";
+import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
+import { uploadMedia } from "../../../../scripts/packages/tator-js/src/utils/upload-media.js";
 
 export class UploadElement extends TatorElement {
   constructor() {
@@ -12,8 +11,7 @@ export class UploadElement extends TatorElement {
     this._cancel = false;
   }
 
-  init(api, store) {
-    this._api = api;
+  init(store) {
     this._store = store;
     store.subscribe(
       (state) => state.uploadCancelled,
@@ -107,7 +105,10 @@ export class UploadElement extends TatorElement {
     // Show loading gif.
     const loading = document.createElement("img");
     loading.setAttribute("class", "loading");
-    loading.setAttribute("src", TatorLoading);
+    loading.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     page._projects.appendChild(loading);
     page.setAttribute("has-open-modal", "");
 
@@ -205,7 +206,7 @@ export class UploadElement extends TatorElement {
               uploadChunkProgress: 0,
               uploadFilename: msg.file.name,
             });
-            return uploadMedia(this._api, msg.mediaType, msg.file, msg);
+            return uploadMedia(msg.mediaType, msg.file, msg);
           })
           .then(() => {
             this._store.setState({

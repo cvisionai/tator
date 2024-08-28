@@ -1,5 +1,4 @@
 import { TatorElement } from "../components/tator-element.js";
-import Spinner from "../../images/spinner-transparent.svg";
 import { Utilities } from "../util/utilities.js";
 
 export class SectionFiles extends TatorElement {

@@ -2,6 +2,13 @@
 
 {% block head %}
 <title>Tator | Organization Settings</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/organization-settings/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("organization-settings");
+  page.setAttribute("email_enabled", "{{email_enabled}}");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
@@ -127,7 +134,4 @@
       </org-settings-nav-link>
    </div>
 </template>
-
-<organization-settings email_enabled="{{email_enabled}}">
-</organization-settings>
 {% endblock body %}

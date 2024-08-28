@@ -1,0 +1,57 @@
+.more {
+  background-color: var(--color-charcoal--medium);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px var(--color-charcoal--dark70);
+  position: absolute;
+  z-index: 1000;
+  box-shadow: rgba(0, 0, 0, 0.7) 3px 3px 15px 5px;
+}
+.main__header .more {
+  right: 8px;
+  top: calc(100% + 6px);
+  width: 265px;
+}
+.load-parameters .more,
+.sections .more,
+.project__file .more,
+.files-wrap .more {
+  right: 0;
+  top: calc(100% + 6px);
+  width: 225px;
+}
+.header__layout-wrap .more {
+  box-sizing: border-box;
+  left: -var(--spacing-4);
+  top: calc(100% + 10px);
+  width: 420px;
+}
+.add-parameter .more {
+  top: calc(100% + 6px);
+  width: 225px;
+}
+.annotation__panel--popup .more {
+  top: calc(100% + 6px);
+  width: 200px;
+}
+.label-tree__groups .more {
+  top: calc(100% - 2px);
+  width: 200px;
+  z-index: 2;
+}
+.analysis__export .more {
+  right: 0;
+  top: calc(100% - 6px);
+  width: 225px;
+}
+.project__search .more {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: 1px solid var(--color-charcoal--light);
+  box-sizing: border-box;
+  margin-left: 50px;
+  top: 100%;
+  width: calc(100% - 50px);
+}
+.more algorithm-menu:not(:last-child) {
+  border-bottom: 1px solid var(--color-charcoal--light);
+}

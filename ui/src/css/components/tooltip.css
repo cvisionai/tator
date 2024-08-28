@@ -1,0 +1,96 @@
+.tooltip-nav-preview {
+  background-color: var(--color-charcoal--medium);
+  box-shadow: rgba(0, 0, 0, 0.7) 3px 3px 15px 5px;
+  border-radius: 3px;
+  color: var(--color-gray--dark);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: var(--spacing-2);
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  width: auto;
+  max-width: 400px;
+  z-index: 3;
+}
+.tooltip-nav-preview img {
+  max-width: 200px;
+}
+
+.tooltip-seek-preview {
+  background-color: var(--color-charcoal--medium);
+  border-radius: 3px;
+  color: var(--color-gray--dark);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: var(--spacing-2);
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 16px);
+  width: auto;
+  max-width: 400px;
+  z-index: 1;
+}
+.tooltip-seek-preview img {
+  max-width: 200px;
+}
+
+[tooltip] {
+  position: relative;
+}
+[tooltip].tooltip-left:before {
+  margin-left: -100px;
+}
+[tooltip].tooltip-right:before {
+  margin-left: 100px;
+}
+[tooltip]:before {
+  background-color: var(--color-charcoal--medium);
+  border-radius: 3px;
+  box-shadow: rgba(0, 0, 0, 0.7) 3px 3px 15px 5px;
+  color: var(--color-gray--dark);
+  content: attr(tooltip);
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0;
+  padding: var(--spacing-2);
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  transition-duration: 0.25s;
+  transition-property: opacity;
+  top: calc(100% + 8px);
+  width: 100px;
+  z-index: 1;
+}
+[tooltip]:hover:before {
+  opacity: 1;
+}
+
+[wide-tooltip] {
+  position: relative;
+}
+[wide-tooltip].tooltip-left:before {
+  margin-left: -100px;
+}
+[wide-tooltip]:before {
+  background-color: var(--color-charcoal--medium);
+  border-radius: 3px;
+  color: var(--color-gray--dark);
+  content: attr(wide-tooltip);
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0;
+  padding: var(--spacing-2);
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  transition-duration: 0.25s;
+  transition-property: opacity;
+  top: calc(100% + 8px);
+  width: 200px;
+  z-index: 1;
+}
+[wide-tooltip]:hover:before {
+  opacity: 1;
+}

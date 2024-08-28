@@ -1,0 +1,132 @@
+.modal-wrap {
+  align-items: flex-start;
+  left: 0;
+  margin: auto;
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  position: fixed;
+  right: 0;
+  top: 20px;
+  bottom: 20px;
+  transform: scale(0.95);
+  transition-duration: 0.25s;
+  transition-property: transform, opacity;
+  width: 620px;
+  z-index: 100;
+  overflow: auto;
+  max-height: calc(100vh - 50px);
+}
+.modal-wrap.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: initial;
+  transform: scale(1);
+  display: flex;
+}
+.modal-wrap.is-wide {
+  width: 790px;
+}
+
+.modal-wide {
+  width: 968px;
+}
+
+.modal-extra-wide {
+  width: 1200px;
+}
+
+.modal-super-wide {
+  width: 1600px;
+}
+
+.modal {
+  background-color: var(--color-charcoal--medium);
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.modal .fixed-height-scroll {
+  max-height: 300px;
+  overflow-y: scroll;
+}
+
+.modal__close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+.modal__close:hover,
+.modal__close:focus {
+  color: var(--color-white);
+}
+
+.modal__header {
+  border-bottom: 1px solid var(--color-charcoal--light70);
+  box-sizing: border-box;
+  width: 100%;
+}
+.modal__header svg {
+  margin-bottom: var(--spacing-2);
+}
+.modal__header label {
+  margin-top: var(--spacing-4);
+}
+
+.modal__back {
+  margin-left: -45px;
+  position: absolute;
+}
+
+.modal__main {
+  box-sizing: border-box;
+  margin-bottom: var(--spacing-4);
+  width: 95%;
+}
+
+.modal__footer {
+  width: 100%;
+}
+.modal__footer .btn {
+  border-radius: 0;
+  flex-grow: 1;
+}
+
+.modal__text {
+  max-width: 350px;
+}
+
+.modal__map-header {
+  box-sizing: border-box;
+}
+.modal__map-header input {
+  margin-right: var(--spacing-1);
+  width: 120px;
+}
+
+.modal__map {
+  height: 50vh;
+  width: 100%;
+}
+
+.modal__errors {
+  margin-top: var(--spacing-2);
+}
+
+.loading {
+  position: fixed;
+  top: 150px;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  margin-left: -150px;
+  z-index: 100;
+}
+
+.modal__main .col-modal-12 {
+  width: 100%;
+}
+.modal__main .col-modal-5 {
+  width: 41.6666666667%;
+}
