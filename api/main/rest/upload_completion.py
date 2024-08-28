@@ -36,4 +36,4 @@ class UploadCompletionAPI(BaseListView):
         return {"message": f"Upload completion for {key} successful!"}
 
     def get_queryset(self, **kwargs):
-        return self.filter_only_viewables(Project.objects.filter(project=self.params["project"]))
+        return self.filter_only_viewables(Project.objects.filter(pk=self.params["project"]))
