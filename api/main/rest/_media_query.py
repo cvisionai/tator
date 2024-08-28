@@ -187,13 +187,15 @@ def _get_media_psql_queryset(project, filter_ops, params):
             raise Http404
 
         section_uuid = section[0].tator_user_sections
-        if section_uuid:
-            qs = _look_for_section_uuid(qs, section_uuid)
 
-        if section[0].object_search:
+        if section[0].explicit_listing:
+            qs = qs.filter(pk__in=section[0].media.all())
+        elif section_uuid:
+            qs = _look_for_section_uuid(qs, section_uuid)
+        elif section[0].object_search:
             qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
 
-        if section[0].related_object_search:
+        elif section[0].related_object_search:
             qs = _related_search(
                 qs,
                 project,
@@ -201,9 +203,8 @@ def _get_media_psql_queryset(project, filter_ops, params):
                 relevant_localization_type_ids,
                 section[0].related_object_search,
             )
-
-        if section[0].explicit_listing:
-            qs = qs.filter(pk__in=section[0].media.all())
+        else:
+            raise ValueError(f"Invalid Section value pk={section_id}")
 
     if multiple_section:
         sections = Section.objects.filter(pk__in=multiple_section)
@@ -211,13 +212,16 @@ def _get_media_psql_queryset(project, filter_ops, params):
         for section in sections:
             match_qs = qs.filter(pk=-1)
             section_uuid = section.tator_user_sections
-            if section_uuid:
+
+            if section.explicit_listing:
+                match_qs = qs.filter(pk__in=section.media.all())
+            elif section_uuid:
                 match_qs = _look_for_section_uuid(qs, section_uuid)
 
-            if section.object_search:
+            elif section.object_search:
                 match_qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
 
-            if section.related_object_search:
+            elif section.related_object_search:
                 match_qs = _related_search(
                     match_qs,
                     project,
@@ -225,9 +229,8 @@ def _get_media_psql_queryset(project, filter_ops, params):
                     relevant_localization_type_ids,
                     section.related_object_search,
                 )
-
-            if section.explicit_listing:
-                match_qs = qs.filter(pk__in=section.media.all())
+            else:
+                raise ValueError(f"Invalid Section value pk={section.pk}")
 
             if match_qs.exists():
                 match_list.append(match_qs)

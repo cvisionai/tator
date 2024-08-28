@@ -179,11 +179,14 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             object_search = section.object_search
             related_object_search = section.related_object_search
             media_qs = Media.objects.filter(project=project, type=media_type_id)
-            if section_uuid:
+            if section.explicit_listing:
+                media_qs = Media.objects.filter(pk__in=section.media.values("id"))
+                logger.info(f"Explicit listing: {media_ids}")
+            elif section_uuid:
                 media_qs = _look_for_section_uuid(media_qs, section_uuid)
-            if object_search:
+            elif object_search:
                 media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, object_search)
-            if related_object_search:
+            elif related_object_search:
                 media_state_types = StateType.objects.filter(project=project)
                 media_localization_types = Localization.objects.filter(project=project)
                 media_qs = _related_search(
@@ -193,9 +196,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                     media_localization_types,
                     related_object_search,
                 )
-            if section.explicit_listing:
-                media_qs = Media.objects.filter(pk__in=section.media.values("id"))
-                logger.info(f"Explicit listing: {media_ids}")
+            else:
+                raise ValueError(f"Invalid Section value pk={section.pk}")
 
             media_ids.append(media_qs)
         query = Q(media__in=media_ids.pop())
