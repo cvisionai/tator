@@ -102,6 +102,7 @@ app.use(
 const maxAgeMilliseconds = argv.max_age * 1000;
 const staticMap = {
   "./server/static": argv.static_path,
+  "../scripts/packages/tator-js/src/annotator": argv.static_path,
   "./src": `${argv.static_path}/ui/src`,
   "./node_modules/zustand/esm": `${argv.static_path}/ui/node_modules/zustand/esm`,
   "./node_modules/uuid/dist/esm-browser": `${argv.static_path}/ui/node_modules/uuid/dist/esm-browser`,
