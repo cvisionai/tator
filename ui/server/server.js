@@ -87,8 +87,6 @@ const params = {
   datadog_allowed_hosts: allowedHosts.join(","),
 };
 
-const maxAgeMilliseconds = argv.max_age * 1000;
-
 nunjucks.configure('server/views', {
   express: app,
   autoescape: true
@@ -101,26 +99,25 @@ app.use(
   express.static("./legacy", { setHeaders: addHeaders, maxAge: 0 })
 );
 
-app.use(
-  argv.static_path,
-  express.static("./server/static", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
-);
-app.use(
-  argv.static_path,
-  express.static("../scripts/packages/tator-js/src/annotator", {
-    setHeaders: addHeaders,
-    maxAge: maxAgeMilliseconds,
-  })
-);
-app.use(
-  argv.static_path + "/ui/src",
-  express.static("./src", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
-);
-app.use(
-  argv.static_path + "/ui/node_modules",
-  express.static("./node_modules", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
-);
-app.use(argv.static_path + "/scripts", express.static("../scripts", { setHeaders: addHeaders, maxAge: maxAgeMilliseconds }));
+const maxAgeMilliseconds = argv.max_age * 1000;
+const staticMap = {
+  "./server/static": argv.static_path,
+  "./src": `${argv.static_path}/ui/src`,
+  "./node_modules/zustand/esm": `${argv.static_path}/ui/node_modules/zustand/esm`,
+  "./node_modules/uuid/dist/esm-browser": `${argv.static_path}/ui/node_modules/uuid/dist/esm-browser`,
+  "./node_modules/d3/dist": `${argv.static_path}/ui/node_modules/d3/dist`,
+  "./node_modules/autocompleter": `${argv.static_path}/ui/node_modules/autocompleter`,
+  "./node_modules/marked/lib": `${argv.static_path}/ui/node_modules/marked/lib`,
+  "./node_modules/libtess": `${argv.static_path}/ui/node_modules/libtess`,
+  "./node_modules/hls.js/dist": `${argv.static_path}/ui/node_modules/hls.js/dist`,
+  "./node_modules/earcut": `${argv.static_path}/ui/node_modules/earcut`,
+  "./node_modules/underwater-image-color-correction": `${argv.static_path}/ui/node_modules/underwater-image-color-correction`,
+  "./node_modules/spark-md5": `${argv.static_path}/ui/node_modules/spark-md5`,
+  "../scripts": `${argv.static_path}/scripts`,
+};
+for (const [dir, path] of Object.entries(staticMap)) {
+  app.use(path, express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds }));
+}
 app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
