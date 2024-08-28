@@ -50,7 +50,8 @@ class LeafSuggestionAPI(BaseDetailView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def _get(self, params):
+    def get_queryset(self, **kwargs):
+        params = self.params
         project = params.get("project")
         min_level = int(params.get("min_level", 1))
         query = params.get("query", None)
@@ -58,8 +59,10 @@ class LeafSuggestionAPI(BaseDetailView):
 
         # Try to find root node for type
         root_node = Leaf.objects.filter(project=project, path=ancestor)
+        logger.info(f"root_node = {root_node} {ancestor}")
+        logger.info(f"all={Leaf.objects.filter(project=project).values('path')}")
         if root_node.count() == 0:
-            return []
+            return Leaf.objects.filter(pk=-1)
 
         if query.find("*") < 0:
             q_object = Q(name__istartswith=query)
@@ -85,6 +88,11 @@ class LeafSuggestionAPI(BaseDetailView):
             project=project, type=type_id, path__istartswith=ancestor, path__depth__gte=min_level
         ).filter(q_object)
 
+        logger.info(f"*******Query: {queryset.query}")
+        return self.filter_only_viewables(queryset)
+
+    def _get(self, params):
+        queryset = self.get_queryset()
         suggestions = []
         for idx, match in enumerate(queryset):
             group = params["ancestor"]

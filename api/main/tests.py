@@ -3984,6 +3984,58 @@ class LeafTestCase(
         response = self.client.get(f"/rest/LeafTypes/{project}?elemental_id={new_uuid}")
         assert len(response.data) == 1
 
+    def test_suggestion_api(self):
+        resp = self.client.delete(f"/rest/Leaves/{self.project.pk}")
+        assert resp.status_code == status.HTTP_200_OK
+
+        # Add some new leaves
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "Honda"},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+
+        parent = resp.data["id"][0]
+
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "Accord", "parent": parent},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        accord_id = resp.data["id"][0]
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "Civic", "parent": parent},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        civic_id = resp.data["id"][0]
+
+        resp = self.client.get(f"/rest/Leaves/Suggestion/asdf.Honda/{self.project.pk}?query=Accord")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        assert resp.data[0]["value"] == "Accord"
+        assert resp.data[0]["group"] == "Honda"
+        assert len(resp.data) == 1
+
+        # Add a trim-level
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "EX-L", "parent": accord_id},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "EX-L", "parent": civic_id},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        resp = self.client.get(f"/rest/Leaves/Suggestion/asdf.Honda/{self.project.pk}?query=*EX-L*")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        assert len(resp.data) == 2
+
 
 class LeafTypeTestCase(
     TatorTransactionTest,
