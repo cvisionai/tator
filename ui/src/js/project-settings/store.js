@@ -26,7 +26,7 @@ const detailResources = {
   MediaType: "MediaType",
   LocalizationType: "LocalizationType",
   LeafType: "LeafType",
-  Leaf: "Leave",
+  Leaf: "Leaf",
   StateType: "StateType",
   Membership: "Membership",
   Version: "Version",

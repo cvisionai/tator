@@ -548,7 +548,7 @@ const store = create(
     addType: async ({ type, data }) => {
       try {
         const fn = async (organizationId, body) => {
-          const url = `/rest/listResources[type]/${organizationId}`;
+          const url = `/rest/${listResources[type]}/${organizationId}`;
           return await fetchWithHttpInfo(url, {
             method: "POST",
             body: JSON.stringify(body),
