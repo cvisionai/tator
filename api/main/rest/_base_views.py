@@ -43,8 +43,9 @@ def process_exception(exc):
         logger.error(f"Permission denied error: {str(exc)}")
         resp = Response({"message": str(exc)}, status=status.HTTP_403_FORBIDDEN)
     else:
-        logger.error(f"Unhandled exception: {type(exc)}")
-        logger.error(traceback.format_exc())
+        logger.error(
+            format_multiline(f"Unhandled exception: {type(exc)}\nTrace:\n{traceback.format_exc()}")
+        )
         resp = Response(
             {"message": str(exc), "details": str(exc.__cause__)},
             status=status.HTTP_400_BAD_REQUEST,
