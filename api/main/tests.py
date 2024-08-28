@@ -7113,6 +7113,8 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             affiliations_to_rowp(self.starfleet.pk, False, False)
 
         def test_crud(self):
+            from main.schema.components.rowprotection import row_protection_properties
+
             # Verify behavior if you are Captain Kirk
             self.client.force_authenticate(user=self.kirk)
             resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
@@ -7122,6 +7124,18 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             self.client.force_authenticate(user=self.commandant)
             resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
             assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Verify schema of the return RowProtection object
+            assert type(resp.data) == list
+            assert len(resp.data) > 0
+            datum = resp.data[0]
+            from pprint import pprint
+
+            pprint(datum)
+            for key in row_protection_properties.keys():
+                if not key in datum:
+                    print(f"Missing key {key}")
+                    assert False, f"Missing key {key}"
 
             # Switch back to kirk
             self.client.force_authenticate(user=self.kirk)
