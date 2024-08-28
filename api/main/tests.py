@@ -6962,6 +6962,8 @@ class GroupTestCase(TatorTransactionTest):
         affiliations_to_rowp(self.starfleet.pk, False, False)
 
     def test_group_creation_and_manip(self):
+        from main.schema.components.group import group_properties
+
         resp = self.client.post(
             f"/rest/Groups/{self.starfleet.pk}",
             {"name": "NCC-1701", "initial_members": [u.id for u in self.users[:6]]},
@@ -6978,6 +6980,12 @@ class GroupTestCase(TatorTransactionTest):
         assertResponse(self, resp, status.HTTP_200_OK)
         self.assertEqual(resp.data["name"], "NCC-1701")
         self.assertEqual(len(resp.data["members"]), 6)
+
+        # Check schema
+        for key in group_properties.keys():
+            if not key in resp.data:
+                print(f"Missing key {key}")
+                assert False, f"Missing key {key}"
 
         # Now add Chekov who joined us in the second season
         resp = self.client.patch(
