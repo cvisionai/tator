@@ -7225,7 +7225,6 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
                 },
                 format="json",
             )
-            print(f"Posted section-level permission of {PermissionMask.OLD_READ}")
             assertResponse(self, resp, status.HTTP_201_CREATED)
 
             # Get all row protections for engineering
