@@ -6307,6 +6307,29 @@ class SectionTestCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
+    def test_adv_error(self):
+        # create a bogus section object and try to filter on it to get an error
+        bad_section = Section.objects.create(project=self.project, name="Test", path="Foo.Test")
+
+        # check media filter reports an error when attempting to use this section
+        url = f"/rest/Medias/{self.project.pk}?section={bad_section.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        url = f"/rest/Medias/{self.project.pk}?multi_section={bad_section.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # check state filter reports an error when attempting to use this section
+        url = f"/rest/States/{self.project.pk}?section={bad_section.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # check localization too
+        url = f"/rest/Localizations/{self.project.pk}?section={bad_section.pk}"
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_adv_sections(self):
         """
         Test case for performing advanced section operations.
