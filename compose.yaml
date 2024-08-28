@@ -121,7 +121,7 @@ services:
   ui:
     image: ${REGISTRY}/tator_ui:${GIT_VERSION}
     container_name: ui
-    entrypoint: npm run serve -- --backend='' --host=0.0.0.0
+    entrypoint: npm run serve -- --backend='' --host=0.0.0.0 --max_age=${STATIC_MAX_AGE} --static_path=/static/${GIT_VERSION}
     restart: always
     networks:
       - private

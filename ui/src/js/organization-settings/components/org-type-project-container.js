@@ -1,4 +1,4 @@
-import { OrgTypeFormContainer } from "./org-type-form-container";
+import { OrgTypeFormContainer } from "./org-type-form-container.js";
 import { store } from "../store.js";
 
 export class OrgTypeProjectContainer extends OrgTypeFormContainer {

@@ -1,0 +1,15 @@
+.progress {
+  -webkit-appearance: none;
+  height: 4px;
+  width: 100%;
+}
+.progress::-webkit-progress-bar {
+  background-color: var(--color-charcoal--light);
+}
+.progress::-webkit-progress-value {
+  background-color: var(--color-green);
+}
+.progress + label svg {
+  fill: var(--color-green);
+  margin-right: var(--spacing-3);
+}

@@ -1,4 +1,4 @@
-import { ModalDialog } from "../../components/modal-dialog";
+import { ModalDialog } from "../../components/modal-dialog.js";
 import { store, getCompiledList, getCompiledVersionList } from "../store.js";
 
 export class AffiliationMembershipDialog extends ModalDialog {

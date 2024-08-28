@@ -70,3 +70,6 @@ COMPOSE_DEPLOY=true
 STATSD_ENABLED=false
 
 AUDIT_ENABLED=false
+
+# How long in seconds static files should be cached by browsers (set to 0 to disable caching, as in development)
+STATIC_MAX_AGE=2592000

@@ -4,10 +4,9 @@ import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/util
 import { TatorData } from "../util/tator-data.js";
 import { svgNamespace } from "../components/tator-element.js";
 import { FilterData } from "../components/filter-data.js";
-import { v1 as uuidv1 } from "uuid";
+import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
 import { store } from "./store.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
-import Gear from "../../images/svg/gear.svg";
 import { SectionData } from "../util/section-utilities.js";
 
 /**
@@ -99,7 +98,7 @@ export class ProjectDetail extends TatorPage {
     this._settingsButton.appendChild(settingsSvg);
 
     const settingsPath = document.createElementNS(svgNamespace, "use");
-    settingsPath.setAttribute("href", `${Gear}#path`);
+    settingsPath.setAttribute("href", `${STATIC_PATH}/ui/src/images/gear.svg`);
     settingsSvg.appendChild(settingsPath);
 
     this._projectText = document.createTextNode("");

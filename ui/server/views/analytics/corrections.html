@@ -2,11 +2,15 @@
 
 {% block head %}
 <title>Tator | Analytics | Corrections</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/analytics/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("analytics-localizations-corrections");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
 {% include "includes/components/entity-panel-image.html" %}
 {% include "includes/components/entity-gallery-sort.html" %}
-<analytics-localizations-corrections>
-</analytics-localizations-corrections>
 {% endblock body %}

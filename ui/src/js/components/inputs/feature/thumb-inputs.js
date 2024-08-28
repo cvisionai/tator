@@ -3,7 +3,6 @@ import { hasPermission } from "../../../util/has-permission.js";
 import { InputValidation } from "../input-validation.js";
 import { InlineWarning } from "../../../components/inline-warning.js";
 import { SingleUpload } from "./single-upload.js";
-import TatorSymbol from "../../../../images/tator-logo-symbol-only.png";
 
 export class ThumbInput extends TatorElement {
   constructor() {
@@ -200,17 +199,17 @@ export class ThumbInput extends TatorElement {
       try {
         this._previewImg.src = URL.createObjectURL(img);
       } catch (e) {
-        this._previewImg.src = TatorSymbol;
+        this._previewImg.src = `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.png`;
       }
     } else if (img !== "") {
       const pattern = /^https?:\/\//i;
       if (!pattern.test(img)) {
         this._previewImg.src = encodeURI(img);
       } else {
-        this._previewImg.src = TatorSymbol;
+        this._previewImg.src = `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.png`;
       }
     } else {
-      this._previewImg.src = TatorSymbol;
+      this._previewImg.src = `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.png`;
     }
   }
 }

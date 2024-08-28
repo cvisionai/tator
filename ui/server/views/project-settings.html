@@ -2,6 +2,12 @@
 
 {% block head %}
 <title>Tator | Project Settings</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/project-settings/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("project-settings");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
@@ -162,10 +168,5 @@
     </settings-nav-link>
   </div>
 </template>
-
-
-<project-settings>
-</project-settings>
-
 
 {% endblock body %}

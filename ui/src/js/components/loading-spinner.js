@@ -1,11 +1,12 @@
-import TatorLoading from "../../images/tator_loading.gif";
-
 export class LoadingSpinner {
   constructor() {
     this.img = document.createElement("img");
     this.img.setAttribute("class", "loading");
     this.img.setAttribute("rel", "preload");
-    this.img.setAttribute("src", TatorLoading);
+    this.img.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     this.img.style.display = "none";
   }
 

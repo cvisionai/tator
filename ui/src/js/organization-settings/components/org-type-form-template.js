@@ -181,7 +181,7 @@ export class OrgTypeFormTemplate extends TatorElement {
           sCount++;
         } else {
           eCount++;
-          const message = JSON.parse(object.response.text).message;
+          const message = object.data.message;
           errors += `<br/><br/>${message}`; //${r.data.message}
         }
       }
@@ -269,7 +269,6 @@ export class OrgTypeFormTemplate extends TatorElement {
       port: "",
       token: "",
       cert: "",
-      name: "",
       config: "",
       external_host: null,
       archive_sc: "",

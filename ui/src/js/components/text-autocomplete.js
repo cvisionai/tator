@@ -1,5 +1,5 @@
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import autocomplete from "autocompleter";
+import autocompleter from "../../../node_modules/autocompleter/autocomplete.mjs";
 
 export class WormsAutoComplete {
   /// Construct a WormsAutocomplete handler based on
@@ -366,7 +366,7 @@ export class TatorAutoComplete {
   }
 
   static enable(input_element, config) {
-    if (config == null || !"serviceUrl" in config) {
+    if (config == null || !("serviceUrl" in config)) {
       return;
     }
 

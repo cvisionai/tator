@@ -38,13 +38,6 @@ server {
     alias /static/images/favicon.ico;
     add_header Cache-Control "max-age=3600, must-revalidate";
   }
-  location /static {
-    alias /static/;
-    autoindex off;
-    add_header Cache-Control "max-age=0, must-revalidate";
-    add_header Cross-Origin-Opener-Policy same-origin;
-    add_header Cross-Origin-Embedder-Policy credentialless;
-  }
   location /docs {
     return 301 https://tator.io/docs;
   }
@@ -102,7 +95,6 @@ server {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Host $server_name;
-    add_header Cache-Control "max-age=0, must-revalidate";
 
     gzip on;
     gzip_types application/json;

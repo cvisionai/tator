@@ -2,6 +2,12 @@
 
 {% block head %}
 <title>Tator | Organization Dashboard</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/organizations/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("organizations-dashboard");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
@@ -42,6 +48,4 @@
       </a>
    </div>
 </template>
-
-<organizations-dashboard></organizations-dashboard>
 {% endblock body %}

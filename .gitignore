@@ -11,6 +11,7 @@ ui/**/index.js
 ui/server/static/tator.js
 ui/server/static/tator.min.js
 ui/server/static/vid_downloader.js
+ui/legacy/*
 containers/nginx/nginx.conf
 examples/algorithms/groundfish_demo/fishtrackingdata
 api/main/version.py

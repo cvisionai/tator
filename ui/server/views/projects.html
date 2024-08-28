@@ -2,6 +2,12 @@
 
 {% block head %}
 <title>Tator | Project Dashboard</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/projects/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("projects-dashboard");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
@@ -72,6 +78,4 @@
     </details>
   </div>
 </template>
-
-<projects-dashboard></projects-dashboard>
 {% endblock body %}

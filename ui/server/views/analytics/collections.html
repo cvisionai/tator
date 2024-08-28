@@ -2,9 +2,14 @@
 
 {% block head %}
 <title>Tator | Analytics | Collections</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/analytics/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("analytics-collections");
+  document.body.appendChild(page);
+</script>
 {% endblock head %}
 
 {% block body %}
 {% include "includes/components/entity-panel-image.html" %}
-<analytics-collections></analytics-collections>
 {% endblock body %}

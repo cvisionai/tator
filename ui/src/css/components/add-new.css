@@ -1,0 +1,47 @@
+.add-new {
+  border: 2px dashed var(--color-charcoal--light);
+  height: 100px;
+  transition-duration: 0.25s;
+  transition-property: background-color, border-style, color;
+}
+.add-new:hover,
+.add-new:focus {
+  background-color: var(--color-charcoal--medium70);
+  color: var(--color-white);
+}
+.add-new:hover .add-new__icon,
+.add-new:focus .add-new__icon {
+  background-color: var(--color-white);
+  color: var(--color-charcoal--medium);
+}
+
+.add-new.add-new-in-form {
+  height: auto;
+}
+.add-new.add-new-in-form:hover,
+.add-new.add-new-in-form:focus {
+  background-color: var(--color-charcoal--light);
+}
+
+.add-new__icon {
+  background-color: var(--color-charcoal--medium);
+  height: 34px;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  width: 34px;
+}
+.add-new__icon:hover,
+.add-new__icon:focus {
+  background-color: var(--color-white);
+  color: var(--color-charcoal--medium);
+}
+.avatar + .add-new__icon {
+  margin-left: var(--spacing-1);
+}
+#js-invite-people .add-new__icon {
+  background-color: var(--color-charcoal--light70);
+}
+#js-invite-people .add-new__icon:hover,
+#js-invite-people .add-new__icon:focus {
+  background-color: var(--color-white);
+}
