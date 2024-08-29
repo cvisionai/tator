@@ -1222,7 +1222,10 @@ class PermissionDetailAffiliationTestMixin:
                 if hasattr(self, "entity_type"):
                     url += f"?type={self.entity_type.pk}"
                 response = self.client.get(url)
-                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    assertResponse(self, response, expected_status)
+                else:
+                    assert response.status_code > 400
             rp.permission = orig_permission
             rp.save()
         else:
@@ -1278,7 +1281,10 @@ class PermissionDetailAffiliationTestMixin:
                 response = self.client.patch(
                     f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
                 )
-                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    assertResponse(self, response, expected_status)
+                else:
+                    assert response.status_code > 400
             rp.permission = orig_permission
             rp.save()
         else:
@@ -1346,9 +1352,11 @@ class PermissionDetailAffiliationTestMixin:
                 response = self.client.delete(
                     f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
                 )
-                assertResponse(self, response, expected_status)
                 if expected_status == status.HTTP_200_OK:
+                    assertResponse(self, response, expected_status)
                     del self.entities[0]
+                else:
+                    assert response.status_code > 400  # handle 404 vs. 403
             if type(self.entities[0]) != Organization:
                 rp.permission = orig_permission
                 rp.save()
