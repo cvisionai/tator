@@ -138,7 +138,6 @@ def shift_permission(model, source_model):
 
 def augment_permission(user, qs):
     # Add effective_permission to the queryset
-    logger.info(f"Augmenting permissions. {qs.count()} {qs.model} for {user}")
     if qs.exists():
         model = qs.model
         # handle shift due to underlying model
@@ -470,7 +469,6 @@ def augment_permission(user, qs):
             entry["section"]: (entry["calc_perm"] >> CHILD_SHIFT)
             for entry in section_rp.values("section", "calc_perm")
         }
-        logger.info(f"MEDIA: SECTION_PERM_DICT = {section_perm_dict}")
         section_cases = [
             When(primary_section=section, then=Value(perm))
             for section, perm in section_perm_dict.items()
