@@ -16,7 +16,6 @@ from ._attribute_query import (
     get_attribute_psql_queryset_from_query_obj,
     supplied_name_to_field,
 )
-from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +93,6 @@ def _get_file_psql_queryset(project, filter_ops, params):
         qs = qs[start:]
     elif stop is not None:
         qs = qs[:stop]
-
-    logger.info(format_multiline(qs.query))
 
     return qs
 

@@ -16,7 +16,6 @@ from django.db.models import F, Value
 from ..schema import parse
 
 from ..rest import _base_views
-from ._util import format_multiline
 from .._permission_util import augment_permission, ColBitAnd, PermissionMask
 from ._permissions import *
 from main.models import *
@@ -43,9 +42,7 @@ def process_exception(exc):
         logger.error(f"Permission denied error: {str(exc)}")
         resp = Response({"message": str(exc)}, status=status.HTTP_403_FORBIDDEN)
     else:
-        logger.error(
-            format_multiline(f"Unhandled exception: {type(exc)}\nTrace:\n{traceback.format_exc()}")
-        )
+        logger.error(f"Unhandled exception: {type(exc)}\nTrace:\n{traceback.format_exc()}")
         resp = Response(
             {"message": str(exc), "details": str(exc.__cause__)},
             status=status.HTTP_400_BAD_REQUEST,

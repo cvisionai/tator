@@ -5,7 +5,6 @@ from ._base_views import TatorAPIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from ._util import format_multiline
 from ..notify import Notify
 from ..schema import NotifySchema
 from ..schema import parse
@@ -45,7 +44,7 @@ class NotifyAPI(TatorAPIView):
                     {"message": "Not Processed"}, status=status.HTTP_503_SERVICE_UNAVAILABLE
                 )
         except Exception as e:
-            logger.error(format_multiline(traceback.format_exc()))
+            logger.error(traceback.format_exc())
             response = Response(
                 {"message": "Failed to send notification!", "details": ""},
                 status=status.HTTP_400_BAD_REQUEST,

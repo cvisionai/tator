@@ -30,7 +30,6 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    format_multiline,
 )
 from ._permissions import ProjectViewOnlyPermission, ProjectFullControlPermission
 from ._permissions import ProjectFullControlPermission
