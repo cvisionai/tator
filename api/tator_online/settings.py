@@ -231,10 +231,7 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "main": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
+        "main": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
 
