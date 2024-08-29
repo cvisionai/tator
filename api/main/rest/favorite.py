@@ -39,7 +39,6 @@ class FavoriteListAPI(BaseListView):
             self.permission_classes = [ProjectEditPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
-        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def _get(self, params: dict) -> dict:
@@ -104,7 +103,6 @@ class FavoriteDetailAPI(BaseDetailView):
             self.permission_classes = [ProjectEditPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
-        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def _get(self, params):

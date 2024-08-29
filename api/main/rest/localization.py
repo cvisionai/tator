@@ -68,7 +68,6 @@ class LocalizationListAPI(BaseListView):
             self.permission_classes = [ProjectEditPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
-        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def get_queryset(self, override_params={}):
@@ -385,7 +384,6 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             self.permission_classes = [ProjectEditPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
-        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def get_qs(self, params, qs):
@@ -574,7 +572,6 @@ class LocalizationDetailAPI(LocalizationDetailBaseAPI):
             self.permission_classes = [ProjectEditPermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
-        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def get_queryset(self, **kwargs):

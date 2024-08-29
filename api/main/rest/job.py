@@ -54,7 +54,6 @@ class JobListAPI(BaseListView):
             self.permission_classes = []  # We handle it in the POST method itself
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
-        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def get_queryset(self, **kwargs):
@@ -212,7 +211,6 @@ class JobDetailAPI(BaseDetailView):
             self.permission_classes = [ProjectExecutePermission]
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
-        logger.info(f"{self.request.method} permissions: {self.permission_classes}")
         return super().get_permissions()
 
     def _get(self, params):
