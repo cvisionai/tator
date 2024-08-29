@@ -436,7 +436,6 @@ class MediaListAPI(BaseListView):
         meaning they can be described by user defined attributes.
         """
         qs = self.get_queryset()
-        logger.info(f"MediaListAPI GET: {qs.query}")
         fields = [*MEDIA_PROPERTIES]
         if params.get("encoded_related_search") == None:
             fields.remove("incident")

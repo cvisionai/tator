@@ -459,7 +459,6 @@ class OrganizationPermissionBase(BasePermission):
             logger.info(
                 f"OrganizationPermissionBase: {model} {organization.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
-            logger.info(f"Query = {perm_qs.query}")
             if perm_qs.exists():
                 # See if any objects in the requested set DON'T have the required permission
                 perm_qs = perm_qs.annotate(
