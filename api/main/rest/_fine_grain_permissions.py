@@ -110,7 +110,6 @@ class ProjectPermissionBase(BasePermission):
             )
 
             if perm_qs.exists():
-                logger.info(f"Query = {perm_qs.query}")
                 # See if any objects in the requested set DON'T have the required permission
                 perm_qs = perm_qs.annotate(
                     bitand=ColBitAnd(
