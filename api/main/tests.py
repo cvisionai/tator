@@ -2722,6 +2722,22 @@ class VideoTestCase(
             self.assertEqual(second_hit.get("incident", None), 1)
             self.assertEqual(second_hit["id"], self.entities[1].pk)
 
+            # Check the same thing with pagination
+            response = self.client.get(
+                f"/rest/Medias/{self.project.pk}?start=0&stop=10&encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
+                format="json",
+            )
+            assertResponse(self, response, status.HTTP_200_OK)
+            matches = len(response.data)
+            self.assertEqual(matches, 2)
+
+            first_hit = response.data[0]
+            second_hit = response.data[1]
+            self.assertEqual(first_hit.get("incident", None), 3)
+            self.assertEqual(first_hit["id"], self.entities[0].pk)
+            self.assertEqual(second_hit.get("incident", None), 1)
+            self.assertEqual(second_hit["id"], self.entities[1].pk)
+
             # reverse it
             response = self.client.get(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=$incident",
