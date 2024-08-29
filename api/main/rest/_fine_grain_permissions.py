@@ -105,10 +105,6 @@ class ProjectPermissionBase(BasePermission):
             perm_qs = augment_permission(request.user, perm_qs)
             model = view.get_queryset().model
 
-            logger.info(
-                f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
-            )
-
             if perm_qs.exists():
                 # See if any objects in the requested set DON'T have the required permission
                 perm_qs = perm_qs.annotate(
@@ -130,6 +126,14 @@ class ProjectPermissionBase(BasePermission):
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
                     granted = True
+                else:
+                    logger.warn(
+                        f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
+                    )
+                    logger.warn(
+                        f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                    )
+
             if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
                 ## If we are permissive (reading) we can see if the user has read permissions on the project itself
@@ -153,12 +157,16 @@ class ProjectPermissionBase(BasePermission):
                     )
                 )
 
-                logger.info(
-                    f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                )
-
                 if perm_qs.filter(granted=True).exists():
                     granted = True
+                else:
+                    logger.warn(
+                        f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
+                    )
+                    logger.warn(
+                        f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                    )
+
         elif request.method in ["POST"]:
             ### POST gets permission from a model's parent object permission
             parent_objs = view.get_parent_objects()
@@ -206,10 +214,10 @@ class ProjectPermissionBase(BasePermission):
             # POST requires CREATE permission on the parent object
             if grand_permission & self.required_mask == self.required_mask:
                 granted = True
-
-            logger.info(
-                f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {grand_permission} GRANTED={granted}"
-            )
+            else:
+                logger.warn(
+                    f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {grand_permission} GRANTED={granted}"
+                )
         else:
             assert False, f"Unsupported method={request.method}"
 
