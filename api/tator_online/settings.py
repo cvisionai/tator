@@ -197,6 +197,8 @@ RAW_ROOT = "/data/raw"
 
 ASGI_APPLICATION = "tator_online.routing.application"
 
+if os.getenv("DD_LOGS_INJECTION"):
+    import ddtrace.auto
 
 class TatorLogFormatter(logging.Formatter):
     def format_multiline(self, message):
@@ -208,11 +210,13 @@ class TatorLogFormatter(logging.Formatter):
 
     def format(self, record):
         dd_log_inject = ""
+        dt = datetime.fromtimestamp(record.created)
+        time_str = formatted_dt = (
+            dt.strftime("%Y-%m-%d %H:%M:%S") + "," + f"{dt.microsecond // 1000:03}"
+        )
         if os.getenv("DD_LOGS_INJECTION"):
-            import ddtrace.auto
-
-            dd_log_inject = f"[dd.service={record.dd.service} dd.env={record.dd.env} dd.version={record.dd.version} dd.trace_id={record.dd.trace_id} dd.span_id={record.dd.span_id}]"
-        message = f"{datetime.fromtimestamp(record.created)} {record.levelname} [{record.name}] [{record.filename}:{record.lineno}] {dd_log_inject} - {self.format_multiline(record.getMessage())}"
+            dd_log_inject = f"[dd.service={getattr(record,'dd.service', None)} dd.env={getattr(record,'dd.env', None)} dd.version={getattr(record,'dd.version', None)} dd.trace_id={getattr(record,'dd.trace_id', None)} dd.span_id={getattr(record,'dd.span_id', None)}]"
+        message = f"{time_str} {record.levelname} [{record.name}] [{record.filename}:{record.lineno}] {dd_log_inject} - {self.format_multiline(record.getMessage())}"
         if record.exc_info:
             message += "| " + format_multiline(record.exc_info)
         return message
