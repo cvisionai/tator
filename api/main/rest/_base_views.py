@@ -17,7 +17,7 @@ from ..schema import parse
 
 from ..rest import _base_views
 from ._util import format_multiline
-from .._permission_util import augment_permission, ColBitAnd
+from .._permission_util import augment_permission, ColBitAnd, PermissionMask
 from ._permissions import *
 from main.models import *
 
@@ -102,15 +102,13 @@ class TatorAPIView(APIView):
             "section": Section.objects.filter(pk=-1),
         }
 
-    def filter_only_viewables(self, qs):
+    def filter_only_viewables(self, qs, required_mask=PermissionMask.EXIST | PermissionMask.READ):
         # Convenience function for filtering out objects for most views
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
             qs = augment_permission(self.request.user, qs)
             if qs.exists():
-                qs = qs.annotate(
-                    is_viewable=ColBitAnd(F("effective_permission"), PermissionMask.EXIST)
-                )
-                qs = qs.filter(is_viewable__gt=0)
+                qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
+                qs = qs.filter(is_viewable__exact=required_mask)
                 if self.params.get("float_array", None) == None and self.request.method in [
                     "GET",
                     "PUT",
