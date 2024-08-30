@@ -134,22 +134,27 @@ class ProjectPermissionBase(BasePermission):
                         f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                     )
 
-            if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT"]:
+            if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT", "DELETE"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
                 ## If we are permissive (reading) we can see if the user has read permissions on the project itself
                 ## to avoid a 403, even if the set is empty
                 ## This handles the case if we do a MediaCount on a project we have READ to, but no READ access on any underlying media (yet)
+
+                mask = self.required_mask
+                # To know 403 vs. 200 when there is nothing to delete
+                if request.method == "DELETE":
+                    mask = PermissionMask.READ | PermissionMask.EXIST
                 proj_perm_qs = Project.objects.filter(pk=project.pk)
                 proj_perm_qs = augment_permission(request.user, proj_perm_qs)
                 perm_qs = proj_perm_qs.annotate(
                     bitand=ColBitAnd(
                         F("effective_permission"),
-                        (self.required_mask),
+                        (mask),
                     )
                 ).annotate(
                     granted=Case(
                         When(
-                            bitand__exact=Value(self.required_mask),
+                            bitand__exact=Value(mask),
                             then=True,
                         ),
                         default=False,

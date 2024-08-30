@@ -7254,6 +7254,9 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 0)
 
+            resp = self.client.delete(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+
             resp = self.client.get(f"/rest/MediaCount/{self.project.pk}")
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(resp.data, 0)
