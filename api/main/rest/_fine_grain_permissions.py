@@ -127,10 +127,10 @@ class ProjectPermissionBase(BasePermission):
                 if not perm_qs.filter(granted=False).exists():
                     granted = True
                 else:
-                    logger.warn(
+                    logger.warning(
                         f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
                     )
-                    logger.warn(
+                    logger.warning(
                         f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                     )
 
@@ -165,10 +165,10 @@ class ProjectPermissionBase(BasePermission):
                 if perm_qs.filter(granted=True).exists():
                     granted = True
                 else:
-                    logger.warn(
+                    logger.warning(
                         f"ProjectPermissionBase: {request.user.username} {model} {project.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
                     )
-                    logger.warn(
+                    logger.warning(
                         f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                     )
 
@@ -220,7 +220,7 @@ class ProjectPermissionBase(BasePermission):
             if grand_permission & self.required_mask == self.required_mask:
                 granted = True
             else:
-                logger.warn(
+                logger.warning(
                     f"ProjectPermissionBase: {model} {project.pk} {request.method} {hex(self.required_mask)} {grand_permission} GRANTED={granted}"
                 )
         else:
