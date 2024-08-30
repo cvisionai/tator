@@ -1325,3 +1325,39 @@ def migrate_tator_sections(project):
             project=project, attributes__tator_user_sections=folder.tator_user_sections
         )
         effected_media.update(primary_section=folder.pk)
+
+
+def cull_low_used_indices(project_id, dry_run=True, population_limit=10000):
+    from main.search import TatorSearch
+
+    ts = TatorSearch()
+    localization_types = LocalizationType.objects.filter(project=project_id)
+    state_types = StateType.objects.filter(project=project_id)
+    media_types = MediaType.objects.filter(project=project_id)
+    types_to_cull = []
+    for lt in localization_types:
+        localizations = Localization.objects.filter(project=project_id, type=lt.pk)
+        print(f"Checking {lt.name} {lt.id} {localizations.count()}")
+        if localizations.count() < population_limit:
+            types_to_cull.append(lt)
+    for st in state_types:
+        states = State.objects.filter(project=project_id, type=st.pk)
+        print(f"Checking {st.name} {st.id} {states.count()}")
+        if states.count() < population_limit:
+            types_to_cull.append(st)
+    for mt in media_types:
+        media = Media.objects.filter(project=project_id, type=mt.pk)
+        print(f"Checking {mt.name} {mt.id} {media.count()}")
+        if media.count() < population_limit:
+            types_to_cull.append(mt)
+    print("Types to cull:")
+    for t in types_to_cull:
+        print(f"\t - {t.id} {t.name} attr_count={len(t.attribute_types)}")
+    for t in types_to_cull:
+        for attr in t.attribute_types:
+            if ts.is_index_present(t, attr):
+                if dry_run:
+                    print(f"Would delete index for {t.name} {attr['name']/attr['dtype']}")
+                    continue
+                print(f"Deleting index for {t.name} {attr['name']}/{attr['dtype']}")
+                ts.delete_index(t, attr)
