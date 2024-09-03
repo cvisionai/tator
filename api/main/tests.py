@@ -1382,7 +1382,6 @@ class PermissionDetailAffiliationTestMixin:
                 if expected_status == status.HTTP_200_OK:
                     del self.entities[0]
 
-
 class AttributeMediaTestMixin:
     def test_media_with_attr(self):
         response = self.client.get(
@@ -2498,6 +2497,12 @@ class VideoTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, media=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.media.pk == e.pk
+
         self.media_entities = self.entities
         self.list_uri = "Medias"
         self.detail_uri = "Media"
@@ -2988,6 +2993,12 @@ class ImageTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, media=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.media.pk == e.pk
+
         self.media_entities = self.entities
         self.list_uri = "Medias"
         self.detail_uri = "Media"
