@@ -1167,7 +1167,6 @@ def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.from
             )
             find_bad_marks(potential_states)
 
-
 def memberships_to_rowp(project_id, force=False, verbose=True):
     from main._permission_util import shift_permission, PermissionMask
 
@@ -1375,3 +1374,33 @@ def update_primary_section(project_ids=None):
             )
             media_list.update(primary_section=section)
     print("Finished updating primary section!")
+
+def fill_lookup_table(project_id, dry_run=False):
+    unhandled_media = Media.objects.filter(project=project_id, projectlookup__isnull=True)
+    unhandled_localizations = Localization.objects.filter(
+        project=project_id, projectlookup__isnull=True
+    )
+    unhandled_states = State.objects.filter(project=project_id, projectlookup__isnull=True)
+
+    print(
+        "For {project_id}, need to add:\n\t{unhandled_media.count()} media to lookup table\n\t{unhandled_localizations.count()} localizations to lookup table\n\t{unhandled_states.count()} states to lookup table"
+    )
+
+    if dry_run:
+        return
+
+    # Break into 500-element chunks
+    for chunk in unhandled_media.iterator(chunk_size=500):
+        ProjectLookup.objects.bulk_create(
+            [ProjectLookUp(project=project_id, media_id=m.id) for m in chunk]
+        )
+
+    for chunk in unhandled_localizations.iterator(chunk_size=500):
+        ProjectLookup.objects.bulk_create(
+            [ProjectLookUp(project=project_id, localization_id=l.id) for l in chunk]
+        )
+
+    for chunk in unhandled_states.iterator(chunk_size=500):
+        ProjectLookup.objects.bulk_create(
+            [ProjectLookUp(project=project_id, state_id=s.id) for s in chunk]
+        )
