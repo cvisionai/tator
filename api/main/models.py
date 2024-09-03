@@ -2463,6 +2463,22 @@ class RowProtection(Model):
         ]
 
 
+class ProjectLookup(Model):
+    """This Table defines an easy way to look up the project associated with a given object"""
+
+    media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=["project", "media", "localization", "state"],
+                name="lookup_uniqueness_check",
+            )
+        ]
+
+
 # Structure to handle identifying columns with project-scoped indices
 # e.g. Not relaying solely on `db_index=True` in django.
 BUILT_IN_INDICES = {
