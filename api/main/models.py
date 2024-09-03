@@ -115,6 +115,12 @@ END  IF;
 RETURN NEW;
 """
 
+UPDATE_LOOKUP_TRIGGER_FUNC = """
+SET plan_cache_mode=force_generic_plan;
+EXECUTE format('EXECUTE update_lookup_{0}(%s,%s)', NEW.project::integer, NEW.id::integer);
+SET plan_cache_mode=auto;
+RETURN NEW;
+"""
 
 # Register prepared statements for the triggers to optimize performance on creation of a database  connection
 @receiver(connection_created)
@@ -1396,6 +1402,15 @@ class Media(Model, ModelDiffMixin):
 
 
     """
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name="post_media_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("media"),
+            ),
+        ]
 
     project = ForeignKey(
         Project,
@@ -1868,6 +1883,12 @@ class Localization(Model, ModelDiffMixin):
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC.format("localization"),
             ),
+            pgtrigger.Trigger(
+                name="post_localization_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("localization"),
+            ),
         ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
@@ -1972,6 +1993,12 @@ class State(Model, ModelDiffMixin):
                 condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC.format("state"),
+            ),
+            pgtrigger.Trigger(
+                name="post_state_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("state"),
             ),
         ]
 
