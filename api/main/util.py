@@ -1371,24 +1371,40 @@ def fill_lookup_table(project_id, dry_run=False):
     unhandled_states = State.objects.filter(project=project_id, projectlookup__isnull=True)
 
     print(
-        "For {project_id}, need to add:\n\t{unhandled_media.count()} media to lookup table\n\t{unhandled_localizations.count()} localizations to lookup table\n\t{unhandled_states.count()} states to lookup table"
+        f"For {project_id}, need to add:\n\t{unhandled_media.count()} media to lookup table\n\t{unhandled_localizations.count()} localizations to lookup table\n\t{unhandled_states.count()} states to lookup table"
     )
 
     if dry_run:
         return
 
     # Break into 500-element chunks
-    for chunk in unhandled_media.iterator(chunk_size=500):
-        ProjectLookup.objects.bulk_create(
-            [ProjectLookUp(project=project_id, media_id=m.id) for m in chunk]
-        )
+    data = []
+    for m in unhandled_media.iterator(chunk_size=500):
+        data.append(ProjectLookup(project_id=project_id, media_id=m.id))
+        if len(data) == 500:
+            ProjectLookup.objects.bulk_create(data)
+            data = []
+    if data:
+        ProjectLookup.objects.bulk_create(data)
+    data = []
 
-    for chunk in unhandled_localizations.iterator(chunk_size=500):
-        ProjectLookup.objects.bulk_create(
-            [ProjectLookUp(project=project_id, localization_id=l.id) for l in chunk]
-        )
+    print(f"Completed media for {project_id}")
+    for l in unhandled_localizations.iterator(chunk_size=500):
+        data.append(ProjectLookup(project_id=project_id, media_id=l.id))
+        if len(data) == 500:
+            ProjectLookup.objects.bulk_create(data)
+            data = []
+    if data:
+        ProjectLookup.objects.bulk_create(data)
+    data = []
+    print(f"Completed localizations for {project_id}")
 
-    for chunk in unhandled_states.iterator(chunk_size=500):
-        ProjectLookup.objects.bulk_create(
-            [ProjectLookUp(project=project_id, state_id=s.id) for s in chunk]
-        )
+    for s in unhandled_states.iterator(chunk_size=500):
+        data.append(ProjectLookup(project_id=project_id, state_id=s.id))
+        if len(data) == 500:
+            ProjectLookup.objects.bulk_create(data)
+            data = []
+    if data:
+        ProjectLookup.objects.bulk_create(data)
+    print(f"Completed states for {project_id}")
+    data = []
