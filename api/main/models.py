@@ -155,6 +155,18 @@ def create_prepared_statements(cursor):
         "PREPARE update_latest_mark_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
     )
 
+    cursor.execute(
+        "PREPARE update_lookup_media(INT, INT) AS INSERT INTO main_projectlookup (project_id, media_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_localization(INT, INT) AS INSERT INTO main_projectlookup (project_id, localization_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_state(INT, INT) AS INSERT INTO main_projectlookup (project_id, state_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
+    )
+
 
 class ModelDiffMixin(object):
     """
