@@ -44,8 +44,9 @@ TEST_IMAGE = (
 class TatorTransactionTest(APITransactionTestCase):
     """Handle cases when test runner flushes DB and indices are still being made."""
 
-    def setUp(self):
-        # Need to do this for first test in a test db instance
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
         with connection.cursor() as cursor:
             create_prepared_statements(cursor)
 
