@@ -98,7 +98,10 @@ export class ProjectDetail extends TatorPage {
     this._settingsButton.appendChild(settingsSvg);
 
     const settingsPath = document.createElementNS(svgNamespace, "use");
-    settingsPath.setAttribute("href", `${STATIC_PATH}/ui/src/images/svg/gear.svg#path`);
+    settingsPath.setAttribute(
+      "href",
+      `${STATIC_PATH}/ui/src/images/svg/gear.svg#path`
+    );
     settingsSvg.appendChild(settingsPath);
 
     this._projectText = document.createTextNode("");
