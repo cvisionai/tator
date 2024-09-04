@@ -6801,6 +6801,7 @@ class SectionTestCase(TatorTransactionTest):
 
 class AdvancedPermissionTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         # Add 9 users
         names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"]
