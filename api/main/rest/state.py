@@ -17,6 +17,7 @@ from ..models import Localization
 from ..models import Project
 from ..models import Membership
 from ..models import Version
+from ..models import ProjectLookup
 from ..models import User
 from ..models import InterpolationMethods
 from ..models import Section
@@ -798,7 +799,13 @@ class StateDetailAPI(StateDetailBaseAPI):
         return super().get_permissions()
 
     def get_queryset(self, **kwargs):
-        return self.filter_only_viewables(State.objects.filter(pk=self.params["id"], deleted=False))
+        return self.filter_only_viewables(
+            State.objects.filter(
+                project=ProjectLookup.objects.get(state=self.params["id"]).project,
+                pk=self.params["id"],
+                deleted=False,
+            )
+        )
 
     def _get(self, params):
         return self.get_qs(params, self.get_queryset())
@@ -839,7 +846,12 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
         include_deleted = False
         if params.get("prune", None) == 1:
             include_deleted = True
-        qs = State.objects.filter(elemental_id=params["elemental_id"], version=params["version"])
+        version_obj = Version.objects.get(pk=params["version"])
+        qs = State.objects.filter(
+            project=version_obj.project,
+            elemental_id=params["elemental_id"],
+            version=params["version"],
+        )
         if include_deleted is False:
             qs = qs.filter(deleted=False)
 

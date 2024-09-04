@@ -28,6 +28,7 @@ from ..models import (
     database_qs,
     database_query_ids,
     Version,
+    ProjectLookup,
 )
 from .._permission_util import PermissionMask
 
@@ -919,4 +920,8 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
-        return Media.objects.filter(pk=self.params["id"], deleted=False)
+        return Media.objects.filter(
+            project=ProjectLookup.objects.get(media=self.params["id"]).project,
+            pk=self.params["id"],
+            deleted=False,
+        )
