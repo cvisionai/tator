@@ -3068,6 +3068,10 @@ class LocalizationBoxTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3153,6 +3157,10 @@ class LocalizationLineTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3238,6 +3246,10 @@ class LocalizationDotTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3321,6 +3333,10 @@ class LocalizationPolyTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3406,6 +3422,10 @@ class StateTestCase(
             for media in random.choices(self.media_entities):
                 state.media.add(media)
             self.entities.append(state)
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, state=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.state.pk == e.pk
         self.list_uri = "States"
         self.detail_uri = "State"
         self.create_entity = functools.partial(
