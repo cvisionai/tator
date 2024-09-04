@@ -2177,6 +2177,7 @@ class FileMixin:
 
 class CurrentUserTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2301,6 +2302,7 @@ class CurrentUserTestCase(TatorTransactionTest):
 
 class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2368,6 +2370,7 @@ class AlgorithmLaunchTestCase(
 
 class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2385,6 +2388,7 @@ class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin)
 
 class AnonymousAccessTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.random_user = create_test_user()
@@ -2471,6 +2475,7 @@ class VideoTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2969,6 +2974,7 @@ class ImageTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3109,6 +3115,7 @@ class LocalizationLineTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3193,6 +3200,7 @@ class LocalizationDotTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3275,6 +3283,7 @@ class LocalizationPolyTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3356,6 +3365,7 @@ class StateTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         # logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3469,6 +3479,7 @@ class StateTestCase(
 
 class LocalizationMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3749,6 +3760,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
 
 class StateMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3965,6 +3977,7 @@ class LeafTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4088,6 +4101,7 @@ class LeafTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4115,6 +4129,7 @@ class StateTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4162,6 +4177,7 @@ class MediaTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4205,6 +4221,7 @@ class LocalizationTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4277,6 +4294,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
         TatorTransactionTest, PermissionListMembershipTestMixin, PermissionDetailTestMixin
     ):
         def setUp(self):
+            super().setUp()
             print(f"\n{self.__class__.__name__}=", end="", flush=True)
             logging.disable(logging.CRITICAL)
             self.user = create_test_user()
@@ -4300,6 +4318,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
 
 class ProjectTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4464,6 +4483,7 @@ class ProjectTestCase(TatorTransactionTest):
 
 class TranscodeTestCase(TatorTransactionTest, PermissionCreateTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4499,6 +4519,7 @@ class VersionTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4595,6 +4616,7 @@ class FavoriteStateTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -4644,6 +4666,7 @@ class FavoriteLocalizationTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4691,6 +4714,7 @@ class BookmarkTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4725,6 +4749,7 @@ class AffiliationTestCase(
     PermissionDetailAffiliationTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4758,6 +4783,7 @@ class AffiliationTestCase(
 
 class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user(is_staff=True)
@@ -4855,6 +4881,7 @@ class BucketTestCase(
     TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4903,6 +4930,7 @@ class BucketTestCase(
 
 class ImageFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4937,6 +4965,7 @@ class ImageFileTestCase(TatorTransactionTest, FileMixin):
 
 class VideoFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4978,6 +5007,7 @@ class VideoFileTestCase(TatorTransactionTest, FileMixin):
 
 class AudioFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5006,6 +5036,7 @@ class AudioFileTestCase(TatorTransactionTest, FileMixin):
 
 class AuxiliaryFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5044,6 +5075,7 @@ class ResourceTestCase(TatorTransactionTest):
     }
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5611,6 +5643,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
     """This runs the same tests as `ResourceTestCase` but adds project-specific buckets"""
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5643,6 +5676,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
 
 class AttributeTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5858,6 +5892,7 @@ class MutateAliasTestCase(TatorTransactionTest):
     """Tests alias mutation."""
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6038,6 +6073,7 @@ class JobClusterTestCase(TatorTransactionTest):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6115,6 +6151,7 @@ class HostedTemplateTestCase(TatorTransactionTest):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6179,6 +6216,7 @@ class HostedTemplateTestCase(TatorTransactionTest):
 
 class UsernameTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         self.list_uri = "Users"
         self.detail_uri = "User"
 
@@ -6221,6 +6259,7 @@ class UsernameTestCase(TatorTransactionTest):
 
 class SectionTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
