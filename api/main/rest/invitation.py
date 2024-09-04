@@ -18,7 +18,7 @@ from ..mail import get_email_service
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class InvitationListAPI(BaseListView):
     """Create or retrieve a list of project invitations."""
 
     schema = InvitationListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params):
@@ -97,9 +97,11 @@ class InvitationListAPI(BaseListView):
             invite.save()
         return {"message": f"User can register at {url}", "id": invite.id}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         organization_id = self.kwargs["organization"]
-        invites = Invitation.objects.filter(organization=organization_id)
+        invites = self.filter_only_viewables(
+            Invitation.objects.filter(organization=organization_id)
+        )
         return invites
 
 
@@ -107,7 +109,7 @@ class InvitationDetailAPI(BaseDetailView):
     """Interact with an individual invitation."""
 
     schema = InvitationDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
@@ -130,5 +132,5 @@ class InvitationDetailAPI(BaseDetailView):
         Invitation.objects.get(pk=params["id"]).delete()
         return {"message": f'Invitation {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Invitation.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Invitation.objects.filter(pk=self.params["id"]))

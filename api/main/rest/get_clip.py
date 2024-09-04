@@ -24,13 +24,13 @@ class GetClipAPI(BaseDetailView):
         """This allows the AutoSchema to fill in the response details nicely"""
         return TemporaryFileSerializer()
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))
 
     def _get(self, params):
         """Facility to get a clip from the server. Returns a temporary file object that expires in 24 hours."""
         # upon success we can return an image
-        video = Media.objects.get(pk=params["id"])
+        video = self.get_queryset().first()
         project = video.project
         frame_ranges_str = params.get("frame_ranges", None)
         frame_ranges_tuple = [frame_range.split(":") for frame_range in frame_ranges_str]

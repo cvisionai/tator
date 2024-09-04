@@ -19,7 +19,7 @@ from ..schema import JobClusterDetailSchema
 from ..schema import JobClusterListSchema
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 from ..schema import parse
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class JobClusterListAPI(BaseListView):
     """
 
     schema = JobClusterListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params: dict) -> dict:
@@ -42,28 +42,28 @@ class JobClusterListAPI(BaseListView):
         Returns the full database entries of registered job clusters for the given organization
         """
         user = self.request.user
-        org_id = params["id"]
+        org_id = params["organization"]
         affiliations = Affiliation.objects.filter(user=user, permission="Admin")
         organization_ids = affiliations.values_list("organization", flat=True)
         if org_id not in organization_ids:
             raise PermissionDenied(
                 f"User {user} does not have Admin permissions for organization {org_id}"
             )
-        return list(
-            JobCluster.objects.filter(organization__id=org_id).values(*JOB_CLUSTER_PROPERTIES)
-        )
+        return list(self.get_queryset().values(*JOB_CLUSTER_PROPERTIES))
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """
         Returns a queryset of organizations
         """
-        return Organization.objects.all()
+        return self.filter_only_viewables(
+            JobCluster.objects.filter(organization__id=self.params["organization"])
+        )
 
     def _post(self, params: dict) -> dict:
         """
         Registers a new job cluster using the provided parameters
         """
-        organization = Organization.objects.get(pk=params["id"])
+        organization = Organization.objects.get(pk=params["organization"])
 
         # Is the name unique?
         job_cluster_name = params["name"]
@@ -92,7 +92,7 @@ class JobClusterDetailAPI(BaseDetailView):
     """
 
     schema = JobClusterDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "patch", "delete"]
 
     def _delete(self, params: dict) -> dict:
@@ -109,7 +109,7 @@ class JobClusterDetailAPI(BaseDetailView):
     def _get(self, params):
         """Retrieve the requested algortihm entry by ID"""
         user = self.request.user
-        job_cluster = JobCluster.objects.get(pk=params["id"])
+        job_cluster = self.get_queryset().first()
         org_id = job_cluster.organization.id
         affiliations = Affiliation.objects.filter(user=user, permission="Admin")
         organization_ids = affiliations.values_list("organization", flat=True)
@@ -144,7 +144,7 @@ class JobClusterDetailAPI(BaseDetailView):
 
         return {"message": f"Job Cluster {jc_id} successfully updated!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all job clusters"""
         params = parse(self.request)
-        return JobCluster.objects.filter(pk=params["id"])
+        return self.filter_only_viewables(JobCluster.objects.filter(pk=params["id"]))

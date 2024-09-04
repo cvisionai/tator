@@ -6,6 +6,7 @@ from ..schema import MediaCountSchema
 from ._base_views import BaseListView
 from ._media_query import get_media_count
 from ._permissions import ProjectViewOnlyPermission
+from ._media_query import get_media_queryset
 
 
 class MediaCountAPI(BaseListView):
@@ -19,9 +20,12 @@ class MediaCountAPI(BaseListView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get", "put"]
 
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(get_media_queryset(self.params["project"], self.params))
+
     def _get(self, params):
         """Retrieve number of media in list of media."""
-        return get_media_count(params["project"], params)
+        return self.get_queryset().count()
 
     def _put(self, params):
         return self._get(params)

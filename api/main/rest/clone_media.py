@@ -104,6 +104,9 @@ class CloneMediaListAPI(BaseListView):
         ids = [media.id for media in medias]
         return {"message": f"Successfully cloned {len(ids)} medias!", "id": ids}
 
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(get_media_queryset(self.kwargs["project"], self.params))
+
 
 class GetClonedMediaAPI(BaseDetailView):
     """Clone a list of media without copying underlying files."""
@@ -119,5 +122,5 @@ class GetClonedMediaAPI(BaseDetailView):
         ids = [clone_info["original"]["media"].id] + list(clone_info["clones"])
         return {"message": f"Found {len(ids)} clones", "ids": ids}
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))

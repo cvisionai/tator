@@ -26,7 +26,7 @@ from ._base_views import BaseDetailView
 from ._file_query import get_file_queryset
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
-from ._permissions import ProjectExecutePermission
+from ._permissions import ProjectExecutePermission, ProjectViewOnlyPermission
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._util import check_file_resource_prefix
@@ -39,9 +39,18 @@ FILE_PROPERTIES = list(file["properties"].keys())
 
 class FileListAPI(BaseListView):
     schema = FileListSchema()
-    permission_classes = [ProjectExecutePermission]
     http_method_names = ["get", "post"]
     entity_type = FileType
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectExecutePermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params: dict) -> dict:
         qs = get_file_queryset(params["project"], params)
@@ -115,11 +124,23 @@ class FileListAPI(BaseListView):
 
         return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(get_file_queryset(self.params["project"], self.params))
+
 
 class FileDetailAPI(BaseDetailView):
     schema = FileDetailSchema()
-    permission_classes = [ProjectExecutePermission]
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectExecutePermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _delete(self, params: dict) -> dict:
         # Grab the file object and delete it from the database
@@ -186,6 +207,6 @@ class FileDetailAPI(BaseDetailView):
 
         return {"message": f"File {file_id} successfully updated!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all registered file files"""
-        return File.objects.all()
+        return self.filter_only_viewables(File.objects.filter(pk=self.params["id"]))

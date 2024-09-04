@@ -14,9 +14,13 @@ from ..schema import LocalizationTypeDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 fields = [
     "id",
@@ -42,11 +46,21 @@ class LocalizationTypeListAPI(BaseListView):
     types associated with it.
     """
 
-    permission_classes = [ProjectFullControlPermission]
     schema = LocalizationTypeListSchema()
     http_method_names = ["get", "post"]
 
-    def _get(self, params):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        params = self.params
         media_id = params.get("media_id", None)
         if media_id != None:
             if len(media_id) != 1:
@@ -59,14 +73,15 @@ class LocalizationTypeListAPI(BaseListView):
             qs = localizations
         else:
             qs = LocalizationType.objects.filter(project=params["project"])
+        return self.filter_only_viewables(qs)
+
+    def _get(self, params):
+        qs = self.get_queryset()
 
         elemental_id = params.get("elemental_id", None)
         if elemental_id is not None:
-            # Django 3.X has a bug where UUID fields aren't escaped properly
-            # Use .extra to manually validate the input is UUID
-            # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
-            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+            qs = qs.filter(elemental_id=safe)
 
         response_data = qs.order_by("name").values(*fields)
         # Get many to many fields.
@@ -76,7 +91,7 @@ class LocalizationTypeListAPI(BaseListView):
             for obj in LocalizationType.media.through.objects.filter(localizationtype__in=loc_ids)
             .values("localizationtype_id")
             .order_by("localizationtype_id")
-            .annotate(media=ArrayAgg("mediatype_id"))
+            .annotate(media=ArrayAgg("mediatype_id", default=[]))
             .iterator()
         }
         # Copy many to many fields into response data.
@@ -126,9 +141,18 @@ class LocalizationTypeDetailAPI(BaseDetailView):
     """
 
     schema = LocalizationTypeDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Retrieve a localization type.
@@ -137,11 +161,11 @@ class LocalizationTypeDetailAPI(BaseDetailView):
         shape, name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        loc = LocalizationType.objects.filter(pk=params["id"]).values(*fields)[0]
+        loc = self.get_queryset().values(*fields)[0]
         # Get many to many fields.
         loc["media"] = list(
             LocalizationType.media.through.objects.filter(localizationtype_id=loc["id"]).aggregate(
-                media=ArrayAgg("mediatype_id")
+                media=ArrayAgg("mediatype_id", default=[])
             )["media"]
         )
         return loc
@@ -198,5 +222,5 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             "message": f"Localization type {params['id']} (and {count} instances) deleted successfully!"
         }
 
-    def get_queryset(self):
-        return LocalizationType.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(LocalizationType.objects.filter(pk=self.params["id"]))

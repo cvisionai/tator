@@ -34,3 +34,6 @@ class UploadCompletionAPI(BaseListView):
         if not success:
             raise Exception(f"Upload completion for {key} failed!")
         return {"message": f"Upload completion for {key} successful!"}
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Project.objects.filter(pk=self.params["project"]))

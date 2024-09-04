@@ -500,7 +500,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
         url = base_url + "/rest/MediaTypes/" + str(project)
         # with page.expect_response(url) as response_info:
         page.click('modal-dialog input[type="submit"]')
-        page.wait_for_selector(f'text="New attribute type \'{dtype} Type\' added"')
+        page.wait_for_selector(f"text=\"New attribute type '{dtype} Type' added\"", timeout=60000)
 
         # Get data for Assert statements
         # media_types = response_info.value.json()

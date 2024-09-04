@@ -12,9 +12,13 @@ from ..schema import MediaTypeDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 fields = [
     "id",
@@ -45,17 +49,26 @@ class MediaTypeListAPI(BaseListView):
     """
 
     schema = MediaTypeListSchema()
-    permission_classes = [ProjectFullControlPermission]
-    queryset = MediaType.objects.all()
     http_method_names = ["get", "post"]
 
-    def _get(self, params):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
         """Retrieve media types.
 
         A media type is the metadata definition object for media. It includes file format,
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
+        params = self.params
         media_id = params.get("media_id", None)
         if media_id != None:
             if len(media_id) != 1:
@@ -69,11 +82,12 @@ class MediaTypeListAPI(BaseListView):
 
         elemental_id = params.get("elemental_id", None)
         if elemental_id is not None:
-            # Django 3.X has a bug where UUID fields aren't escaped properly
-            # Use .extra to manually validate the input is UUID
-            # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
-            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+            qs = qs.filter(elemental_id=safe)
+        return self.filter_only_viewables(qs)
+
+    def _get(self, params):
+        qs = self.get_queryset()
         return list(qs.order_by("name").values(*fields))
 
     def _post(self, params):
@@ -123,9 +137,18 @@ class MediaTypeDetailAPI(BaseDetailView):
     """
 
     schema = MediaTypeDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Get media type.
@@ -134,7 +157,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        return MediaType.objects.filter(pk=params["id"]).values(*fields)[0]
+        return self.get_queryset().values(*fields)[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -203,12 +226,12 @@ class MediaTypeDetailAPI(BaseDetailView):
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        media_type = MediaType.objects.get(pk=params["id"])
+        media_type = self.get_queryset()[0]
         count = delete_instances(media_type, Media, self.request.user, "media")
         media_type.delete()
         return {
             "message": f"Media type {params['id']} (and {count} instances) deleted successfully!"
         }
 
-    def get_queryset(self):
-        return MediaType.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(MediaType.objects.filter(pk=self.params["id"]))

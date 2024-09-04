@@ -17,7 +17,7 @@ from ..schema import HostedTemplateDetailSchema
 from ..schema import HostedTemplateListSchema
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission, OrganizationMemberPermission
 from ..schema import parse
 
 logger = logging.getLogger(__name__)
@@ -45,8 +45,17 @@ class HostedTemplateListAPI(BaseListView):
     """
 
     schema = HostedTemplateListSchema()
-    permission_classes = [OrganizationAdminPermission]
     http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [OrganizationMemberPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [OrganizationEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params: dict) -> dict:
         """
@@ -66,11 +75,15 @@ class HostedTemplateListAPI(BaseListView):
             )
         )
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """
         Returns a queryset of hosted templates
         """
-        return HostedTemplate.objects.all()
+        return self.filter_only_viewables(
+            HostedTemplate.objects.filter(organization__id=self.params["organization"]).values(
+                *HOSTED_TEMPLATE_PROPERTIES
+            )
+        )
 
     def _post(self, params: dict) -> dict:
         """
@@ -97,8 +110,17 @@ class HostedTemplateDetailAPI(BaseDetailView):
     """
 
     schema = HostedTemplateDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [OrganizationMemberPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [OrganizationEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _delete(self, params: dict) -> dict:
         """
@@ -146,7 +168,6 @@ class HostedTemplateDetailAPI(BaseDetailView):
 
         return {"message": f"Hosted template {obj_id} successfully updated!"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Returns a queryset of all hosted templates"""
-        params = parse(self.request)
-        return HostedTemplate.objects.filter(pk=params["id"])
+        return self.filter_only_viewables(HostedTemplate.objects.filter(pk=self.params["id"]))

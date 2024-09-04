@@ -14,7 +14,6 @@ from ._attribute_query import (
     get_attribute_psql_queryset,
     supplied_name_to_field,
 )
-from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 

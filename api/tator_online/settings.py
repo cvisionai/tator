@@ -14,6 +14,9 @@ import os
 from django.contrib.messages import constants as messages
 import yaml
 import sys
+from datetime import datetime
+
+import logging
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -178,8 +181,6 @@ TIME_ZONE = "EST"
 
 USE_I18N = True
 
-USE_L10N = True
-
 USE_TZ = True
 
 
@@ -196,32 +197,43 @@ RAW_ROOT = "/data/raw"
 
 ASGI_APPLICATION = "tator_online.routing.application"
 
-
-# Turn on logging
 if os.getenv("DD_LOGS_INJECTION"):
     import ddtrace.auto
 
-    FORMAT = (
-        "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] "
-        "[dd.service=%(dd.service)s dd.env=%(dd.env)s "
-        "dd.version=%(dd.version)s "
-        "dd.trace_id=%(dd.trace_id)s dd.span_id=%(dd.span_id)s] "
-        "- %(message)s"
-    )
-else:
-    FORMAT = "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] " "- %(message)s"
+class TatorLogFormatter(logging.Formatter):
+    def format_multiline(self, message):
+        """Formats multi-line message for single log entry"""
+        if os.getenv("TATOR_LOG_MULTI_LINE", None) == "true":
+            return message
+        else:
+            return str(message).replace("\n", " \\n ").replace("\t", "    ")
+
+    def format(self, record):
+        dd_log_inject = ""
+        dt = datetime.fromtimestamp(record.created)
+        time_str = formatted_dt = (
+            dt.strftime("%Y-%m-%d %H:%M:%S") + "," + f"{dt.microsecond // 1000:03}"
+        )
+        if os.getenv("DD_LOGS_INJECTION"):
+            dd_log_inject = f"[dd.service={getattr(record,'dd.service', None)} dd.env={getattr(record,'dd.env', None)} dd.version={getattr(record,'dd.version', None)} dd.trace_id={getattr(record,'dd.trace_id', None)} dd.span_id={getattr(record,'dd.span_id', None)}]"
+        message = f"{time_str} {record.levelname} [{record.name}] [{record.filename}:{record.lineno}] {dd_log_inject} - {self.format_multiline(record.getMessage())}"
+        if record.exc_info:
+            message += "| " + format_multiline(record.exc_info)
+        return message
+
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "verbose": {
-            "format": FORMAT,
+        "custom": {
+            "()": TatorLogFormatter,
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "verbose",
+            "formatter": "custom",
         },
     },
     "loggers": {
@@ -233,10 +245,7 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "main": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
+        "main": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
 

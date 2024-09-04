@@ -63,10 +63,10 @@ class TemporaryFileListAPI(BaseListView):
 
         return response
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         params = parse(self.request)
         qs = TemporaryFile.objects.filter(project__id=params["project"])
-        if params["expired"] is None:
+        if params.get("expired", None) is None:
             expired = 0
         else:
             expired = params["expired"]
@@ -74,7 +74,7 @@ class TemporaryFileListAPI(BaseListView):
         if expired > 0:
             qs = qs.filter(eol_datetime__lte=datetime.datetime.now())
 
-        return qs
+        return self.filter_only_viewables(qs)
 
 
 class TemporaryFileDetailAPI(BaseDetailView):
@@ -96,5 +96,5 @@ class TemporaryFileDetailAPI(BaseDetailView):
         TemporaryFile.objects.get(pk=params["id"]).delete()
         return {"message": f'Temporary file {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return TemporaryFile.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(TemporaryFile.objects.filter(pk=self.params["id"]))

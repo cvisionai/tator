@@ -15,6 +15,9 @@ from ..models import MediaType
 from ..models import Media
 from ..schema import TranscodeListSchema
 from ..schema import TranscodeDetailSchema
+from ..models import Version
+from main.models import Section, Version
+from django.core.exceptions import PermissionDenied
 
 from .media import _create_media
 from ._util import url_to_key
@@ -25,6 +28,8 @@ from ._media_query import get_media_queryset
 from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
+
+from .._permission_util import PermissionMask, shift_permission, augment_permission
 
 HOST = "http://gunicorn-svc:8000"
 GUNICORN_HOST = os.getenv("GUNICORN_HOST")
@@ -226,6 +231,19 @@ class TranscodeListAPI(BaseListView):
         logger.info(f"JOB LIST: {job_list}")
         for job in job_list:
             assert job["project"] == project
+        section_name = params.pop("section", None)
+        if section_name:
+            section = Section.objects.filter(project=project, name=section_name)
+            if section.exists():
+                section = augment_permission(self.request.user, section)
+                if not (
+                    section[0].effective_permission & PermissionMask.EXIST == PermissionMask.EXIST
+                ):
+                    logger.info(
+                        f"Section Perm={section[0].effective_permission}, must have {PermissionMask.EXIST}"
+                    )
+                    raise PermissionDenied
+                params["section_id"] = section.pk
         job_list = _filter_jobs_by_media(project, params, job_list)
         return [_job_to_transcode(job) for job in job_list]
 
@@ -249,6 +267,63 @@ class TranscodeListAPI(BaseListView):
 
     def _put(self, params):
         return self._get(params)
+
+    def get_queryset(self, **kwargs):
+        # HACK: work around Redis cache issue + REST grammar issues
+        if self.request.method == "POST":
+            section_name = self.params.get("section", None)
+            section_id = self.params.get("section_id", None)
+            section = Section.objects.filter(pk=-1)
+            if section_name:
+                section = Section.objects.filter(project=self.params["project"], name=section_name)
+            if section_id:
+                section = Section.objects.filter(pk=section_id)
+
+            # Check if the section exists and if it does, whether we have permission
+            # if it doesn't check if we can create it
+            if section.exists():
+                section = augment_permission(self.request.user, section)
+                if section[0].effective_permission & PermissionMask.CREATE == PermissionMask.CREATE:
+                    return Media.objects.filter(pk=-1)
+                else:
+                    raise PermissionDenied
+            else:
+                proj = Project.objects.filter(pk=self.params["project"])
+                proj = augment_permission(self.request.user, proj)
+                can_create = (
+                    (proj[0].effective_permission >> shift_permission(Section, Project))
+                    & PermissionMask.CREATE
+                ) == PermissionMask.CREATE
+                if not can_create:
+                    raise PermissionDenied
+
+        jobs = self._get({**self.params})
+        if jobs:
+            media_ids = [job["spec"]["media_id"] for job in jobs]
+            return Media.objects.filter(pk__in=media_ids)
+        else:
+            return Media.objects.filter(pk=-1)
+
+    def get_parent_objects(self):
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
+            return super().get_parent_objects()
+        elif self.request.method in ["POST"]:
+            # For POST Media we need to see what versions/sections are being impacted
+            section_id = self.params.get("section_id", None)
+            section_name = self.params.get("section", None)
+            logger.info(f"Computing impacted sections for POST {self.params}")
+            sections = Section.objects.filter(pk=-1)
+            if section_id:
+                sections = Section.objects.filter(pk=section_id)
+            elif section_name:
+                sections = Section.objects.filter(project=self.params["project"], name=section_name)
+            return {
+                "project": Project.objects.filter(pk=self.params["project"]),
+                "version": Version.objects.filter(pk=-1),  # Media don't have versions
+                "section": sections,
+            }
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
 
 
 class TranscodeDetailAPI(BaseDetailView):
@@ -274,3 +349,10 @@ class TranscodeDetailAPI(BaseDetailView):
             raise Http404
         response = requests.delete(ENDPOINT, json=[uid])
         return {"message": response.json()["message"]}
+
+    def get_queryset(self, **kwargs):
+        ## This is awful because we store jobs in redis and not in the database
+        ## HACK: fetch jobs from redis then find media objects to get their permissions
+        job = self._get(self.params)
+        media_id = job["spec"]["media_id"]
+        return Media.objects.filter(pk=media_id)

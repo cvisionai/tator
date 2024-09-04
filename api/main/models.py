@@ -2357,7 +2357,8 @@ class Group(Model):
 class GroupMembership(Model):
     """Associates a user to a group"""
 
-    project = ForeignKey(Project, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    """ Project that the group membership belongs to (DISREGARD THIS FIELD)"""
     user = ForeignKey(User, on_delete=CASCADE)
     group = ForeignKey(Group, on_delete=CASCADE)
     group_admin = BooleanField(default=False)
@@ -2367,6 +2368,30 @@ class GroupMembership(Model):
 
 
 class RowProtection(Model):
+    """
+    Row  protection  models cascade in  two dimensions. The first dimension is
+    the type of object being protected. The second dimension is the type of
+    object, or the subject, who is doing the action.
+
+    Permissions are encoded as a bitmask. If multiple permissions apply the most
+    specific applies. Specifically permission masks are NOT OR'd together. Examples:
+
+    A project row permission project grants a user permission to read/write/execute. For
+    a specific algorithm, the user does not have permission to execute. Therefore the can
+    not execute this particular algorithm.
+
+    Similarly, if  a project is set  to be read-only for all organization members; then
+    an override object can be set for a user or group to supply write permissions for certain
+    groups.
+
+    For ease of use of this system, it is recommended to utilize Groups to manage permissions
+    for sets of users.
+
+
+    For Media Requests:
+       - Find permission objects that match media+user
+    """
+
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(
         User, on_delete=SET_NULL, null=True, blank=True, related_name="rp_created_by"
@@ -2376,12 +2401,30 @@ class RowProtection(Model):
     # Note: Currently type objects are protected by project membership status
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
-    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
-    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)  # not used
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)  # not used
     file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
     section = ForeignKey(Section, on_delete=CASCADE, null=True, blank=True)
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
+
+    # These objects fall under the Organization heirarchy
+    # This is a pointer to the organization the permissions are describing
+    target_organization = ForeignKey(
+        Organization, on_delete=CASCADE, null=True, blank=True, related_name="target_organization"
+    )
+    target_group = ForeignKey(
+        Group, on_delete=CASCADE, null=True, blank=True, related_name="target_group"
+    )
+    job_cluster = ForeignKey(
+        JobCluster, on_delete=CASCADE, null=True, blank=True, related_name="job_cluster"
+    )
+    bucket = ForeignKey(
+        Bucket, on_delete=CASCADE, null=True, blank=True, related_name="target_bucket"
+    )
+    hosted_template = ForeignKey(
+        HostedTemplate, on_delete=CASCADE, null=True, blank=True, related_name="hosted_template"
+    )
 
     # One of the following must be non-null
     user = ForeignKey(User, on_delete=CASCADE, null=True, blank=True)
@@ -2393,12 +2436,8 @@ class RowProtection(Model):
 
     permission = BigIntegerField(default=0, db_index=True)
     """ Permission bitmask for the row in question
-        0 - Can not see
-        0x1 - Exist
-        0x2 - Read
-        0x4 - Write
-        0x8 - Full control (ability to delete)
-        bits above this are reserved for future use.
+
+        See PermissionMask for definition
     """
 
     class Meta:
@@ -2410,6 +2449,11 @@ class RowProtection(Model):
                     "localization",
                     "state",
                     "file",
+                    "section",
+                    "algorithm",
+                    "version",
+                    "target_organization",
+                    "target_group",
                     "user",
                     "organization",
                     "group",

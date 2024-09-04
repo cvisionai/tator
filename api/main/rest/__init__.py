@@ -28,6 +28,7 @@ from .file_type import FileTypeListAPI
 from .file_type import FileTypeDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
+from .group import GroupListAPI, GroupDetailAPI
 from .hosted_template import HostedTemplateListAPI
 from .hosted_template import HostedTemplateDetailAPI
 from .image_file import ImageFileListAPI
@@ -99,3 +100,4 @@ from .video_file import VideoFileListAPI
 from .video_file import VideoFileDetailAPI
 from .jwt import JwtGatewayAPI
 from .anonymous import AnonymousGatewayAPI
+from .rowprotection import RowProtectionListAPI, RowProtectionDetailAPI

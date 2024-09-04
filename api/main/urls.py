@@ -197,6 +197,8 @@ urlpatterns += [
         "rest/GetClip/<int:id>",
         GetClipAPI.as_view(),
     ),
+    path("rest/Group/<int:id>", GroupDetailAPI.as_view()),
+    path("rest/Groups/<int:organization>", GroupListAPI.as_view()),
     path(
         "rest/HostedTemplates/<int:organization>",
         HostedTemplateListAPI.as_view(),
@@ -230,7 +232,7 @@ urlpatterns += [
         JobDetailAPI.as_view(),
     ),
     path(
-        "rest/JobClusters/<int:id>",
+        "rest/JobClusters/<int:organization>",
         JobClusterListAPI.as_view(),
     ),
     path(
@@ -351,6 +353,14 @@ urlpatterns += [
     path(
         "rest/Project/<int:id>",
         ProjectDetailAPI.as_view(),
+    ),
+    path(
+        "rest/RowProtections",
+        RowProtectionListAPI.as_view(),
+    ),
+    path(
+        "rest/RowProtection/<int:id>",
+        RowProtectionDetailAPI.as_view(),
     ),
     path(
         "rest/SaveGenericFile/<int:project>",

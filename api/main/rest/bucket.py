@@ -14,7 +14,7 @@ from ..store import ObjectStore
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class BucketListAPI(BaseListView):
     """List endpoint for Buckets."""
 
     schema = BucketListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params):
@@ -58,7 +58,7 @@ class BucketListAPI(BaseListView):
             raise PermissionDenied
         if affiliation[0].permission != "Admin":
             raise PermissionDenied
-        buckets = Bucket.objects.filter(organization=params["organization"])
+        buckets = self.get_queryset()
         return [serialize_bucket(bucket) for bucket in buckets]
 
     def _post(self, params):
@@ -75,12 +75,17 @@ class BucketListAPI(BaseListView):
         bucket = Bucket.objects.create(**params)
         return {"message": f"Bucket {bucket.name} created!", "id": bucket.id}
 
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(
+            Bucket.objects.filter(organization=self.params["organization"])
+        )
+
 
 class BucketDetailAPI(BaseDetailView):
     """Detail endpoint for Buckets."""
 
     schema = BucketDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
@@ -136,5 +141,5 @@ class BucketDetailAPI(BaseDetailView):
         bucket.delete()
         return {"message": f'Bucket {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         return Bucket.objects.all()

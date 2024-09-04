@@ -1200,3 +1200,164 @@ def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.from
                 modified_datetime__gte=since_when,
             )
             find_bad_marks(potential_states)
+
+
+def memberships_to_rowp(project_id, force=False, verbose=True):
+    from main._permission_util import shift_permission, PermissionMask
+
+    if force == False and os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+        return
+
+    memberships = Membership.objects.filter(project=project_id)
+    if verbose:
+        print("This tool will convert membership objects to row permissions.")
+        print(
+            "It does so in a way that retains all legacy permissions. It may not be the most optimal."
+        )
+        print("Example: Groups can span multiple projects, but this makes 1 group per project.")
+        print("Manual migration of permissions would be preferable in some situations.")
+        print(
+            "This tool will not delete membership objects, but is designed to make them redundant in  terms of  permission level"
+        )
+        print(
+            "This tool will not delete any row permissions; if doing this on migration, confirm you deleted all row protection prior."
+        )
+
+        print(f"Processing memberships for {project_id}")
+        print("There are {len(memberships)} memberships to convert.")
+
+    """
+    class Permission(Enum):
+    NO_ACCESS = "n"
+    VIEW_ONLY = "r"
+    CAN_EDIT = "w"
+    CAN_TRANSFER = "t"
+    CAN_EXECUTE = "x"
+    FULL_CONTROL = "a"
+    """
+
+    def group_for_project(project, permission):
+        """This subfunction will create a group for a project based on the permission level"""
+        permission_str = str(permission)
+
+        compat_map = {
+            "Full Control": PermissionMask.OLD_FULL_CONTROL,
+            "Can Execute": PermissionMask.OLD_EXECUTE,
+            "Can Transfer": PermissionMask.OLD_TRANSFER,
+            "Can Edit": PermissionMask.OLD_WRITE,
+            "View Only": PermissionMask.OLD_READ,
+        }
+
+        if permission_str in compat_map:
+            new_permission = compat_map[permission_str]
+        else:
+            raise Exception(f"Unknown permission {permission_str}")
+
+        group_name = f"{project.name} {permission_str}"
+        org_group = Group.objects.filter(organization=project.organization).filter(name=group_name)
+        if org_group.exists():
+            return org_group.first()
+        else:
+            group = Group.objects.create(name=group_name, organization=project.organization)
+            rp = RowProtection.objects.create(
+                project=project, group=group, permission=new_permission
+            )
+            return group
+
+    for membership in memberships:
+        project = membership.project
+        user = membership.user
+        permission = membership.permission
+        group = group_for_project(project, permission)
+
+        # Check if the user is already in the group
+        membership = GroupMembership.objects.filter(group=group, user=user)
+        if membership.exists():
+            if verbose:
+                print(f"User {user.username} already in group {group.name}")
+        else:
+            if verbose:
+                print(f"Adding user {user.username} to group {group.name}")
+            GroupMembership.objects.create(group=group, user=user)
+
+
+def affiliations_to_rowp(org_id, force=False, verbose=False):
+    """Idempotently make rowprotections for an organization based on legacy affiliations"""
+    from main._permission_util import shift_permission, PermissionMask
+
+    org = Organization.objects.get(pk=org_id)
+
+    affiliations = Affiliation.objects.filter(organization=org)
+    # Make org admin + user groups first
+    admin_permission = PermissionMask.OLD_AFFL_ADMIN
+    user_permission = PermissionMask.OLD_AFFL_USER
+
+    admin_group = Group.objects.filter(organization=org).filter(name=f"{org.name} Admin")
+    if not admin_group.exists():
+        admin_group = Group.objects.create(name=f"{org.name} Admin", organization=org)
+        rp = RowProtection.objects.create(
+            target_organization=org, group=admin_group, permission=admin_permission
+        )
+
+    user_group = Group.objects.filter(organization=org).filter(name=f"{org.name} User")
+    if not user_group.exists():
+        user_group = Group.objects.create(name=f"{org.name} User", organization=org)
+        RowProtection.objects.create(
+            target_organization=org, group=user_group, permission=user_permission
+        )
+
+    for affl in affiliations.iterator():
+        if affl.permission == "Admin":
+            group = admin_group
+        else:
+            group = user_group
+
+        membership = GroupMembership.objects.filter(group=group, user=affl.user)
+        if not membership.exists():
+            GroupMembership.objects.create(group=group, user=affl.user)
+
+
+def migrate_tator_sections(project):
+    folders = Section.objects.filter(project=project, tator_user_sections__isnull=False)
+    print(f"Found {folders.count()} folders to migrate")
+    for folder in progressbar(folders.iterator()):
+        effected_media = Media.objects.filter(
+            project=project, attributes__tator_user_sections=folder.tator_user_sections
+        )
+        effected_media.update(primary_section=folder.pk)
+
+
+def cull_low_used_indices(project_id, dry_run=True, population_limit=10000):
+    from main.search import TatorSearch
+
+    ts = TatorSearch()
+    localization_types = LocalizationType.objects.filter(project=project_id)
+    state_types = StateType.objects.filter(project=project_id)
+    media_types = MediaType.objects.filter(project=project_id)
+    types_to_cull = []
+    for lt in localization_types:
+        localizations = Localization.objects.filter(project=project_id, type=lt.pk)
+        print(f"Checking {lt.name} {lt.id} {localizations.count()}")
+        if localizations.count() < population_limit:
+            types_to_cull.append(lt)
+    for st in state_types:
+        states = State.objects.filter(project=project_id, type=st.pk)
+        print(f"Checking {st.name} {st.id} {states.count()}")
+        if states.count() < population_limit:
+            types_to_cull.append(st)
+    for mt in media_types:
+        media = Media.objects.filter(project=project_id, type=mt.pk)
+        print(f"Checking {mt.name} {mt.id} {media.count()}")
+        if media.count() < population_limit:
+            types_to_cull.append(mt)
+    print("Types to cull:")
+    for t in types_to_cull:
+        print(f"\t - {t.id} {t.name} attr_count={len(t.attribute_types)}")
+    for t in types_to_cull:
+        for attr in t.attribute_types:
+            if ts.is_index_present(t, attr):
+                if dry_run:
+                    print(f"Would delete index for {t.name} {attr['name']/attr['dtype']}")
+                    continue
+                print(f"Deleting index for {t.name} {attr['name']}/{attr['dtype']}")
+                ts.delete_index(t, attr)

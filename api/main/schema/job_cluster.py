@@ -39,7 +39,7 @@ class JobClusterListSchema(AutoSchema):
     def get_path_parameters(self, path, method):
         return [
             {
-                "name": "id",
+                "name": "organization",
                 "in": "path",
                 "required": True,
                 "description": "A unique integer identifying an organization.",

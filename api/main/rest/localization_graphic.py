@@ -32,10 +32,10 @@ class LocalizationGraphicAPI(BaseDetailView):
     http_method_names = ["get"]
     lookup_field = "id"
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Overridden method. Please refer to parent's documentation."""
 
-        return Localization.objects.all()
+        return self.filter_only_viewables(Localization.objects.filter(pk=self.params["id"]))
 
     def handle_exception(self, exc):
         """Overridden method. Please refer to parent's documentation."""

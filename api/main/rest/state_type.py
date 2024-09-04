@@ -13,7 +13,7 @@ from ..schema import StateTypeDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 from ._attribute_keywords import attribute_keywords
 from ._types import delete_instances
 
@@ -33,6 +33,10 @@ fields = [
     "elemental_id",
 ]
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class StateTypeListAPI(BaseListView):
     """Create or retrieve state types.
@@ -42,17 +46,21 @@ class StateTypeListAPI(BaseListView):
     types associated with it.
     """
 
-    permission_classes = [ProjectFullControlPermission]
     schema = StateTypeListSchema()
     http_method_names = ["get", "post"]
 
-    def _get(self, params):
-        """Retrieve state types.
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
-        A state type is the metadata definition object for a state. It includes association
-        type, name, description, and (like other entity types) may have any number of attribute
-        types associated with it.
-        """
+    def get_queryset(self, **kwargs):
+        params = self.params
         media_id = params.get("media_id", None)
         if media_id != None:
             if len(media_id) != 1:
@@ -68,11 +76,18 @@ class StateTypeListAPI(BaseListView):
 
         elemental_id = params.get("elemental_id", None)
         if elemental_id is not None:
-            # Django 3.X has a bug where UUID fields aren't escaped properly
-            # Use .extra to manually validate the input is UUID
-            # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
-            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+            qs = qs.filter(elemental_id=safe)
+        return qs
+
+    def _get(self, params):
+        """Retrieve state types.
+
+        A state type is the metadata definition object for a state. It includes association
+        type, name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+        """
+        qs = self.get_queryset()
 
         response_data = qs.order_by("name").values(*fields)
         # Get many to many fields.
@@ -82,7 +97,7 @@ class StateTypeListAPI(BaseListView):
             for obj in StateType.media.through.objects.filter(statetype__in=state_ids)
             .values("statetype_id")
             .order_by("statetype_id")
-            .annotate(media=ArrayAgg("mediatype_id"))
+            .annotate(media=ArrayAgg("mediatype_id", default=[]))
             .iterator()
         }
         # Copy many to many fields into response data.
@@ -130,8 +145,17 @@ class StateTypeDetailAPI(BaseDetailView):
     """
 
     schema = StateTypeDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Retrieve state type.
@@ -140,11 +164,11 @@ class StateTypeDetailAPI(BaseDetailView):
         type, name, description, and (like other entity types) may have any number of attribute
         types associated with it.
         """
-        state = StateType.objects.filter(pk=params["id"]).values(*fields)[0]
+        state = self.get_queryset().values(*fields)[0]
         # Get many to many fields.
         state["media"] = list(
             StateType.media.through.objects.filter(statetype_id=state["id"]).aggregate(
-                media=ArrayAgg("mediatype_id")
+                media=ArrayAgg("mediatype_id", default=[])
             )["media"]
         )
         return state
@@ -205,5 +229,5 @@ class StateTypeDetailAPI(BaseDetailView):
             "message": f"State type {params['id']} (and {count} instances) deleted successfully!"
         }
 
-    def get_queryset(self):
-        return StateType.objects.all()
+    def get_queryset(self, **kwargs):
+        return StateType.objects.filter(pk=self.params["id"])

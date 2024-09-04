@@ -32,8 +32,8 @@ class GetFrameAPI(BaseDetailView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))
 
     def handle_exception(self, exc):
         logger.error(f"Exception in request: {traceback.format_exc()}")
@@ -49,7 +49,7 @@ class GetFrameAPI(BaseDetailView):
 
     def _get(self, params):
         # upon success we can return an image
-        video = Media.objects.get(pk=params["id"])
+        video = self.get_queryset().first()
         frames = params.get("frames", "0")
         tile = params.get("tile", None)
         animate = params.get("animate", None)

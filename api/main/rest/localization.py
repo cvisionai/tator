@@ -11,6 +11,7 @@ from ..models import Membership
 from ..models import User
 from ..models import Project
 from ..models import Version
+from ..models import Section
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema, LocalizationByElementalIdSchema
 from ..schema.components import localization as localization_schema
@@ -33,13 +34,15 @@ from ._util import (
     construct_parent_from_spec,
     compute_user,
 )
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 import uuid
 
 logger = logging.getLogger(__name__)
 
 LOCALIZATION_PROPERTIES = list(localization_schema["properties"].keys())
+
+import os
 
 
 class LocalizationListAPI(BaseListView):
@@ -54,13 +57,32 @@ class LocalizationListAPI(BaseListView):
     """
 
     schema = LocalizationListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = LocalizationType  # Needed by attribute filter mixin
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, override_params={}):
+        params = {**self.params}
+        params.update(override_params)
+        return self.filter_only_viewables(
+            get_annotation_queryset(self.params["project"], params, "localization")
+        )
+
+    def get_model(self):
+        return Localization
+
     def _get(self, params):
         logger.info("PARAMS=%s", params)
-        qs = get_annotation_queryset(self.kwargs["project"], params, "localization")
+        qs = self.get_queryset()
         response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
 
         # Adjust fields for csv output.
@@ -103,11 +125,15 @@ class LocalizationListAPI(BaseListView):
 
         project = params["project"]
 
-        # Get a default version.
-        membership = Membership.objects.get(user=self.request.user, project=params["project"])
-        if membership.default_version:
-            default_version = membership.default_version
-        else:
+        default_version = None
+
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+            # Get a default version.
+            membership = Membership.objects.get(user=self.request.user, project=params["project"])
+            if membership.default_version:
+                default_version = membership.default_version
+
+        if not default_version:
             default_version = Version.objects.filter(
                 project=params["project"], number__gte=0
             ).order_by("number")
@@ -218,7 +244,7 @@ class LocalizationListAPI(BaseListView):
         return {"message": f"Successfully created {len(ids)} localizations!", "id": ids}
 
     def _delete(self, params):
-        qs = get_annotation_queryset(params["project"], params, "localization")
+        qs = self.get_queryset()
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
@@ -255,7 +281,7 @@ class LocalizationListAPI(BaseListView):
         if params.get("ids", []) != [] or params.get("user_elemental_id", None):
             params["show_all_marks"] = 1
             params["in_place"] = 1
-        qs = get_annotation_queryset(params["project"], params, "localization")
+        qs = self.get_queryset()
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
@@ -316,6 +342,27 @@ class LocalizationListAPI(BaseListView):
         """Retrieve list of localizations by ID."""
         return self._get(params)
 
+    def get_parent_objects(self):
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
+            return super().get_parent_objects()
+        elif self.request.method in ["POST"]:
+            # For POST Localizations/States we need to see what versions/sections are being impacted
+            specs = self.params["body"]
+            if not isinstance(specs, list):
+                specs = [specs]
+            version_ids = set([spec.get("version", None) for spec in specs])
+            media_ids = set([spec.get("media_id", None) for spec in specs])
+            versions = Version.objects.filter(pk__in=version_ids)
+            primary_sections = Media.objects.filter(pk__in=media_ids).values("primary_section")
+            sections = Section.objects.filter(pk__in=primary_sections)
+            return {
+                "project": Project.objects.filter(pk=self.params["project"]),
+                "version": versions,
+                "section": sections,
+            }
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+
 
 class LocalizationDetailBaseAPI(BaseDetailView):
     """Interact with single localization.
@@ -326,9 +373,18 @@ class LocalizationDetailBaseAPI(BaseDetailView):
     """
 
     schema = LocalizationDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def get_qs(self, params, qs):
         if not qs.exists():
@@ -495,9 +551,6 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             "id": obj_id,
         }
 
-    def get_queryset(self):
-        return Localization.objects.all()
-
 
 class LocalizationDetailAPI(LocalizationDetailBaseAPI):
     """Interact with single localization.
@@ -508,22 +561,33 @@ class LocalizationDetailAPI(LocalizationDetailBaseAPI):
     """
 
     schema = LocalizationDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(
+            Localization.objects.filter(pk=self.params["id"], deleted=False)
+        )
+
     def _get(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())
 
 
 class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
@@ -539,7 +603,8 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
-    def calculate_queryset(self, params):
+    def get_queryset(self, **kwargs):
+        params = self.params
         include_deleted = False
         if params.get("prune", None) == 1:
             include_deleted = True
@@ -556,17 +621,14 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
         else:
             latest_mark = qs.aggregate(value=Max("mark"))
             qs = qs.filter(mark=latest_mark["value"])
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _get(self, params):
-        qs = self.calculate_queryset(params)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = self.calculate_queryset(params)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = self.calculate_queryset(params)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())

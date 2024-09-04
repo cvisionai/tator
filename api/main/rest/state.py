@@ -19,6 +19,7 @@ from ..models import Membership
 from ..models import Version
 from ..models import User
 from ..models import InterpolationMethods
+from ..models import Section
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema, StateByElementalIdSchema
 from ..schema import MergeStatesSchema
@@ -44,7 +45,8 @@ from ._util import (
     construct_parent_from_spec,
     compute_user,
 )
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ def _fill_m2m(response_data):
         for obj in State.localizations.through.objects.filter(state__in=state_ids)
         .values("state_id")
         .order_by("state_id")
-        .annotate(localizations=ArrayAgg("localization_id"))
+        .annotate(localizations=ArrayAgg("localization_id", default=[]))
         .iterator()
     }
     media = {
@@ -69,7 +71,7 @@ def _fill_m2m(response_data):
         for obj in State.media.through.objects.filter(state__in=state_ids)
         .values("state_id")
         .order_by("state_id")
-        .annotate(media=ArrayAgg("media_id"))
+        .annotate(media=ArrayAgg("media_id", default=[]))
         .iterator()
     }
     # Copy many to many fields into response data.
@@ -97,13 +99,29 @@ class StateListAPI(BaseListView):
     """
 
     schema = StateListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = StateType  # Needed by attribute filter mixin
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, override_params={}):
+        params = {**self.params}
+        params.update(override_params)
+        return self.filter_only_viewables(
+            get_annotation_queryset(self.params["project"], params, "state")
+        )
+
     def _get(self, params):
         t0 = datetime.datetime.now()
-        qs = get_annotation_queryset(self.kwargs["project"], params, "state")
+        qs = self.get_queryset()
         response_data = list(qs.values(*STATE_PROPERTIES))
 
         t1 = datetime.datetime.now()
@@ -167,11 +185,13 @@ class StateListAPI(BaseListView):
         else:
             raise Exception("State creation requires list of states!")
 
-        # Get a default version.
-        membership = Membership.objects.get(user=self.request.user, project=params["project"])
-        if membership.default_version:
-            default_version = membership.default_version
-        else:
+        default_version = None
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+            # Get a default version.
+            membership = Membership.objects.get(user=self.request.user, project=params["project"])
+            if membership.default_version:
+                default_version = membership.default_version
+        if not default_version:
             default_version = Version.objects.filter(
                 project=params["project"], number__gte=0
             ).order_by("number")
@@ -337,7 +357,7 @@ class StateListAPI(BaseListView):
         return {"message": f"Successfully created {len(ids)} states!", "id": ids}
 
     def _delete(self, params):
-        qs = get_annotation_queryset(params["project"], params, "state")
+        qs = self.get_queryset()
         count = qs.count()
         expected_count = params.get("count")
         if expected_count is not None and expected_count != count:
@@ -368,11 +388,14 @@ class StateListAPI(BaseListView):
 
         return {"message": f"Successfully deleted {count} states!"}
 
+    def get_model(self):
+        return State
+
     def _patch(self, params):
         if params.get("ids", []) != [] or params.get("user_elemental_id", None):
             params["show_all_marks"] = 1
             params["in_place"] = 1
-        qs = get_annotation_queryset(params["project"], params, "state")
+        qs = self.get_queryset()
         patched_version = params.pop("new_version", None)
         count = qs.count()
         expected_count = params.get("count")
@@ -435,6 +458,27 @@ class StateListAPI(BaseListView):
         """Retrieve list of states by ID."""
         return self._get(params)
 
+    def get_parent_objects(self):
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
+            return super().get_parent_objects()
+        elif self.request.method in ["POST"]:
+            # For POST Localizations/States we need to see what versions/sections are being impacted
+            specs = self.params["body"]
+            if not isinstance(specs, list):
+                specs = [specs]
+            version_ids = set([spec.get("version", None) for spec in specs])
+            media_ids = set([spec.get("media_id", None) for spec in specs])
+            versions = Version.objects.filter(pk__in=version_ids)
+            primary_sections = Media.objects.filter(pk__in=media_ids).values("primary_section")
+            sections = Section.objects.filter(pk__in=primary_sections)
+            return {
+                "project": Project.objects.filter(pk=self.params["project"]),
+                "version": versions,
+                "section": sections,
+            }
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+
 
 class StateDetailBaseAPI(BaseDetailView):
     """Interact with an individual state.
@@ -452,12 +496,12 @@ class StateDetailBaseAPI(BaseDetailView):
         # Get many to many fields.
         state["localizations"] = list(
             State.localizations.through.objects.filter(state_id=state["id"]).aggregate(
-                localizations=ArrayAgg("localization_id")
+                localizations=ArrayAgg("localization_id", default=[])
             )["localizations"]
         )
         state["media"] = list(
             State.media.through.objects.filter(state_id=state["id"]).aggregate(
-                media=ArrayAgg("media_id")
+                media=ArrayAgg("media_id", default=[])
             )["media"]
         )
         return state
@@ -740,22 +784,31 @@ class StateDetailAPI(StateDetailBaseAPI):
     """
 
     schema = StateDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(State.objects.filter(pk=self.params["id"], deleted=False))
+
     def _get(self, params):
-        qs = State.objects.filter(pk=params["id"], deleted=False)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = State.objects.filter(pk=params["id"], deleted=False)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = State.objects.filter(pk=params["id"], deleted=False)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())
 
 
 class StateDetailByElementalIdAPI(StateDetailBaseAPI):
@@ -768,11 +821,21 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
     """
 
     schema = StateByElementalIdSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "elemental_id"
     http_method_names = ["get", "patch", "delete"]
 
-    def calculate_queryset(self, params):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        params = self.params
         include_deleted = False
         if params.get("prune", None) == 1:
             include_deleted = True
@@ -790,14 +853,11 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
         return qs
 
     def _get(self, params):
-        qs = self.calculate_queryset(params)
-        return self.get_qs(params, qs)
+        return self.get_qs(params, self.get_queryset())
 
     @transaction.atomic
     def _patch(self, params):
-        qs = self.calculate_queryset(params)
-        return self.patch_qs(params, qs)
+        return self.patch_qs(params, self.get_queryset())
 
     def _delete(self, params):
-        qs = self.calculate_queryset(params)
-        return self.delete_qs(params, qs)
+        return self.delete_qs(params, self.get_queryset())
