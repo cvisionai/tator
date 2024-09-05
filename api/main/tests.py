@@ -1255,6 +1255,14 @@ class AttributeTestMixin:
             this_mark = response.data["mark"]
             last_mark = this_mark
 
+            new_response = self.client.get(fetch_url + f"&mark={this_mark}")
+            assert new_response.data["mark"] == this_mark
+
+            # Verify mark 0
+            zero_response = self.client.get(fetch_url + f"&mark=0")
+            assert zero_response.data["mark"] == 0
+            assert zero_response.data["id"] == response.data["id"]
+
         # Access via the UUID accessor + verify we got a new mark on the version
         # Use fetch_url which is the pk-based method for elements with out mark-based versioning
         response = self.client.get(fetch_url)
