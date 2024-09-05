@@ -544,7 +544,7 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
 
         # Get the latest mark or the one that is supplied by the user
         mark_version = params.get("mark", None)
-        if mark_version:
+        if mark_version is not None:
             qs = qs.filter(mark=mark_version)
         else:
             latest_mark = qs.aggregate(value=Max("mark"))
