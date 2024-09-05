@@ -1390,7 +1390,7 @@ def fill_lookup_table(project_id, dry_run=False):
 
     print(f"Completed media for {project_id}")
     for l in unhandled_localizations.iterator(chunk_size=500):
-        data.append(ProjectLookup(project_id=project_id, media_id=l.id))
+        data.append(ProjectLookup(project_id=project_id, localization_id=l.id))
         if len(data) == 500:
             ProjectLookup.objects.bulk_create(data)
             data = []
