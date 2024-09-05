@@ -2551,3 +2551,12 @@ BUILT_IN_INDICES = {
         {"name": "$path", "dtype": "upper_string"},
     ],
 }
+
+if os.getenv("TATOR_EXT_MODELS", None):
+    import importlib
+    for module in os.getenv("TATOR_EXT_MODELS").split(","):
+        try:
+            importlib.import_module(module)
+        except Exception as e:
+            logger.error(f"Failed to import module {module}: {e}")
+            assert False
