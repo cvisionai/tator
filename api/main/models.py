@@ -1924,7 +1924,14 @@ class Localization(Model, ModelDiffMixin):
         db_column="modified_by",
     )
     user = ForeignKey(User, on_delete=PROTECT, db_column="user")
-    media = ForeignKey(Media, on_delete=SET_NULL, null=True, blank=True, db_column="media")
+    media_id = IntegerField(null=True, blank=True, db_column="media")
+    media = ForeignObject(
+        Media,
+        on_delete=CASCADE,
+        to_fields=["project", "id"],
+        from_fields=["project", "media"],
+        null=True,
+    )
     frame = PositiveIntegerField(null=True, blank=True)
     thumbnail_image = ForeignKey(
         Media,
