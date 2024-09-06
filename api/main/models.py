@@ -9,6 +9,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
+from django.contrib.gis.db.models import ForeignObject
 from django.contrib.gis.db.models import ManyToManyField
 from django.contrib.gis.db.models import OneToOneField
 from django.contrib.gis.db.models import CharField
