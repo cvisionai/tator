@@ -17,7 +17,7 @@ jobs:
         command: |
           ssh lightsail 'wget -O get_docker.sh https://get.docker.com';
           ssh lightsail 'chmod +x get_docker.sh';
-          ssh lightsail 'VERSION=25.0.5 ./get_docker.sh';
+          ssh lightsail 'VERSION=27.2.0 ./get_docker.sh';
           ssh lightsail 'sudo usermod -aG docker ubuntu';
           ssh lightsail 'docker --version';
     - run:
