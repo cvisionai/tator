@@ -294,7 +294,7 @@ def create_test_box(user, entity_type, project, media, frame, attributes={}, ver
         type=entity_type,
         project=project,
         version=version,
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x,
         y=y,
@@ -316,7 +316,7 @@ def make_box_obj(user, entity_type, project, media, frame, attributes={}):
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x,
         y=y,
@@ -345,7 +345,7 @@ def create_test_line(user, entity_type, project, media, frame, attributes={}):
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x0,
         y=y0,
@@ -365,7 +365,7 @@ def create_test_dot(user, entity_type, project, media, frame, attributes={}):
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x,
         y=y,
@@ -3032,7 +3032,7 @@ class LocalizationBoxTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()

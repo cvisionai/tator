@@ -212,7 +212,7 @@ class LocalizationListAPI(BaseListView):
             Localization(
                 project=project,
                 type=metas[loc_spec["type"]],
-                media=medias[loc_spec["media_id"]],
+                media=medias[loc_spec["media_id"]].pk,
                 user=compute_user(
                     project, self.request.user, loc_spec.get("user_elemental_id", None)
                 ),
