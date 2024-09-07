@@ -117,6 +117,8 @@ services:
     restart: always
     networks:
       - private
+    extra_hosts:
+      - ${USE_FAKE_LOCALHOST:+localhost:${LOCAL_IP}}
 
   ui:
     image: ${REGISTRY}/tator_ui:${GIT_VERSION}
