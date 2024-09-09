@@ -93,6 +93,8 @@ services:
       - ${DATA_DIR}/migrations:/tator_online/main/migrations
       - ${DATA_DIR}/media:/media
       - ${DATA_DIR}/backup:/backup
+    extra_hosts:
+      - localhost:${MASQUARADE_LOCALHOST_IP}
 
   transcode:
     image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
@@ -117,6 +119,8 @@ services:
     restart: always
     networks:
       - private
+    extra_hosts:
+      - localhost:${MASQUARADE_LOCALHOST_IP}
 
   ui:
     image: ${REGISTRY}/tator_ui:${GIT_VERSION}
