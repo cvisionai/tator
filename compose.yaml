@@ -93,6 +93,8 @@ services:
       - ${DATA_DIR}/migrations:/tator_online/main/migrations
       - ${DATA_DIR}/media:/media
       - ${DATA_DIR}/backup:/backup
+    extra_hosts:
+      - ${USE_FAKE_LOCALHOST:+localhost:${LOCAL_IP}}
 
   transcode:
     image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
