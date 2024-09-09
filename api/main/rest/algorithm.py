@@ -17,6 +17,9 @@ from ..models import HostedTemplate
 from ..models import Affiliation
 from ..models import User
 from ..models import JobCluster
+from ..models import RowProtection
+from .._permission_utils import PermissionMask
+
 from ..schema import AlgorithmDetailSchema
 from ..schema import AlgorithmListSchema
 from ..schema.components.algorithm import alg_fields as fields
@@ -211,6 +214,9 @@ class AlgorithmListAPI(BaseListView):
             tparams=tparams,
         )
         alg_obj.save()
+        RowProtection.objects.create(
+            user=self.request.user, algorithm=alg_obj, permission=PermissionMask.FULL_CONTROL
+        )
 
         return {"message": "Successfully registered algorithm argo workflow.", "id": alg_obj.id}
 
