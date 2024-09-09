@@ -13,6 +13,9 @@ from ..models import Affiliation
 from ..models import Organization
 from ..models import HostedTemplate
 from ..models import database_qs
+from ..models import RowProtection
+from .._permission_util import PermissionMask
+
 from ..schema import HostedTemplateDetailSchema
 from ..schema import HostedTemplateListSchema
 from ._base_views import BaseDetailView
@@ -100,6 +103,9 @@ class HostedTemplateListAPI(BaseListView):
             tparams=params.get("tparams"),
         )
         obj.save()
+        RowProtection.objects.create(
+            user=self.request.user, hosted_template=obj, permission=PermissionMask.FULL_CONTROL
+        )
 
         return {"message": "Successfully registered hosted template.", "id": obj.id}
 

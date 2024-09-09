@@ -18,7 +18,7 @@ from ..models import Affiliation
 from ..models import User
 from ..models import JobCluster
 from ..models import RowProtection
-from .._permission_utils import PermissionMask
+from .._permission_util import PermissionMask
 
 from ..schema import AlgorithmDetailSchema
 from ..schema import AlgorithmListSchema
