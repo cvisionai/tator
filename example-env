@@ -74,7 +74,7 @@ AUDIT_ENABLED=false
 # How long in seconds static files should be cached by browsers (set to 0 to disable caching, as in development)
 STATIC_MAX_AGE=2592000
 
-# If using localhost it is recommended to use the following settings (uncommented)
+# If using localhost it is recommended to use the following setting
 # This allows for docker containers to utilize localhost to mean the host machine
-#USE_FAKE_LOCALHOST=true
-#LOCAL_IP=<LAN_IP>
+#MASQUARADE_LOCALHOST_IP=<LAN_IP>
+MASQUARADE_LOCALHOST_IP=127.0.0.1
