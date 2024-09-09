@@ -94,7 +94,7 @@ services:
       - ${DATA_DIR}/media:/media
       - ${DATA_DIR}/backup:/backup
     extra_hosts:
-      - localhost:${MASQUARADE_LOCALHOST_IP}
+      - localhost:${MASQUERADE_LOCALHOST_IP:-127.0.0.1}
 
   transcode:
     image: ${REGISTRY}/tator_transcode:${GIT_VERSION}
@@ -120,7 +120,7 @@ services:
     networks:
       - private
     extra_hosts:
-      - localhost:${MASQUARADE_LOCALHOST_IP}
+      - localhost:${MASQUERADE_LOCALHOST_IP:-127.0.0.1}
 
   ui:
     image: ${REGISTRY}/tator_ui:${GIT_VERSION}

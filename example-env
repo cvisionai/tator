@@ -77,4 +77,3 @@ STATIC_MAX_AGE=2592000
 # If using localhost it is recommended to use the following setting
 # This allows for docker containers to utilize localhost to mean the host machine
 #MASQUARADE_LOCALHOST_IP=<LAN_IP>
-MASQUARADE_LOCALHOST_IP=127.0.0.1
