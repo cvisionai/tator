@@ -2429,8 +2429,12 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         self.test_bucket = create_test_bucket(None)
         resource = Resource(path="fake_key.txt", bucket=self.test_bucket)
         resource.save()
-        resource.media.add(self.public_video)
-        resource.media.add(self.private_video)
+        ResourceMedia.objects.create(
+            resource=resource, media=self.public_video, project=self.public_video.project
+        )
+        ResourceMedia.objects.create(
+            resource=resource, media=self.private_video, project=self.private_video.project
+        )
         resource.save()
 
     def test_random_user(self):
