@@ -1682,9 +1682,10 @@ class File(Model, ModelDiffMixin):
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
-    media = ManyToManyField(
+    media = ManyToManyField(Media, related_name="resource_media")
+    media_proj = ManyToManyField(
         Media,
-        related_name="resource_media",
+        related_name="resource_media_proj",
         through="ResourceMedia",
         through_fields=("resource", "media_proj"),
     )
