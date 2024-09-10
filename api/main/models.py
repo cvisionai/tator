@@ -1682,7 +1682,8 @@ class File(Model, ModelDiffMixin):
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
-    media = ManyToManyField(Media, related_name="resource_media")
+    # Comment this out to find all usages
+    # media = ManyToManyField(Media, related_name="resource_media")
     media_proj = ManyToManyField(
         Media,
         related_name="resource_media_proj",
@@ -1720,7 +1721,7 @@ class Resource(Model):
             if created:
                 obj.bucket = media.project.bucket
                 obj.save()
-            obj.media.add(media)
+            ResourceMedia.objects.create(resource=obj, media=media, project=media.project)
 
     @staticmethod
     @transaction.atomic
@@ -1733,7 +1734,7 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
 
         # If any media or generic files still reference this resource, don't delete it
-        if obj.media.all().count() > 0 or obj.generic_files.all().count() > 0:
+        if obj.media_proj.all().count() > 0 or obj.generic_files.all().count() > 0:
             return
 
         logger.info(f"Deleting object {path}")
@@ -1856,7 +1857,8 @@ def drop_media_from_resource(path, media):
     try:
         logger.info(f"Dropping media {media} from resource {path}")
         obj = Resource.objects.get(path=path)
-        obj.media.remove(media)
+        matches = ResourceMedia.objects.filter(resource=obj, media=media)
+        matches.delete()
     except:
         logger.warning(f"Could not remove {media} from {path}", exc_info=True)
 
