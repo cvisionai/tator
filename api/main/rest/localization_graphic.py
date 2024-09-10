@@ -256,7 +256,7 @@ class LocalizationGraphicAPI(BaseDetailView):
         # By reaching here, it's expected that the graphics mode is to create a new
         # thumbnail using the provided parameters. That new thumbnail is returned
         with tempfile.TemporaryDirectory() as temp_dir:
-            media_util = MediaUtil(video=obj.media, temp_dir=temp_dir)
+            media_util = MediaUtil(video=obj.media_proj, temp_dir=temp_dir)
 
             roi = self._getRoi(
                 obj=obj,
