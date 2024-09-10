@@ -1687,7 +1687,7 @@ class Resource(Model):
     media_proj = ManyToManyField(
         Media,
         related_name="resource_media_proj",
-        through="ResourceMedia",
+        through="ResourceMediaM2M",
         through_fields=("resource", "media_proj"),
     )
     generic_files = ManyToManyField(File, related_name="resource_files")
@@ -1806,7 +1806,7 @@ class Resource(Model):
         return TatorBackupManager().finish_restore_resource(path, project, domain)
 
 
-class ResourceMedia(Model):
+class ResourceMediaM2M(Model):
     resource = ForeignKey(Resource, on_delete=CASCADE)
     media = ForeignKey(Media, on_delete=CASCADE)
     project = ForeignKey(Project, on_delete=CASCADE)
@@ -1817,6 +1817,10 @@ class ResourceMedia(Model):
         to_fields=("project", "id"),
         related_name="media_proj",
     )
+    class Meta:
+        constraints = [
+            UniqueConstraint(name="resourcem2m", fields=["resource", "project", "media"])
+        ]
 
 
 @receiver(post_save, sender=Media)

@@ -1415,7 +1415,7 @@ def migrate_old_many_to_many():
 
     with connection.cursor() as cursor:
         # Handle resource many to many first
-        cursor.execute("DELETE FROM main_resourcemedia")
+        cursor.execute("DELETE FROM main_resourcemediam2m")
         cursor.execute(
-            'INSERT INTO main_resourcemedia (resource_id, media_id, project_id) SELECT resource_id, "main_media".id, "main_media".project FROM main_resource_media LEFT OUTER JOIN "main_media" ON ("main_resource_media"."media_id" = "main_media"."id")'
+            'INSERT INTO main_resourcemediam2m (resource_id, media_id, project_id) SELECT resource_id, "main_media".id, "main_media".project FROM main_resource_media LEFT OUTER JOIN "main_media" ON ("main_resource_media"."media_id" = "main_media"."id")'
         )
