@@ -1680,10 +1680,14 @@ class File(Model, ModelDiffMixin):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
-
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
-    media = ManyToManyField(Media, related_name="resource_media")
+    media = ManyToManyField(
+        Media,
+        related_name="resource_media",
+        through="ResourceMedia",
+        through_fields=("resource", "media_proj"),
+    )
     generic_files = ManyToManyField(File, related_name="resource_files")
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name="bucket")
     backup_bucket = ForeignKey(
@@ -1798,6 +1802,19 @@ class Resource(Model):
         project = Resource.get_project_from_path(path)
         logger.info(f"Restoring object {path}")
         return TatorBackupManager().finish_restore_resource(path, project, domain)
+
+
+class ResourceMedia(Model):
+    resource = ForeignKey(Resource, on_delete=CASCADE)
+    media = ForeignKey(Media, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media_proj = ForeignObject(
+        to=Media,
+        on_delete=CASCADE,
+        from_fields=("project", "media"),
+        to_fields=("project", "id"),
+        related_name="media_proj",
+    )
 
 
 @receiver(post_save, sender=Media)
