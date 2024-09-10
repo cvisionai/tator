@@ -1721,6 +1721,10 @@ class Resource(Model):
             if created:
                 obj.bucket = media.project.bucket
                 obj.save()
+            existing = ResourceMediaM2M.objects.filter(
+                resource=obj, media=media, project=media.project
+            )
+            if not existing:
                 ResourceMediaM2M.objects.create(resource=obj, media=media, project=media.project)
 
     @staticmethod
