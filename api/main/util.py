@@ -1414,9 +1414,8 @@ def migrate_old_many_to_many():
     from django.db import connection
 
     with connection.cursor() as cursor:
-
         # Handle resource many to many first
-        cursor.execute("DELETE * FROM main_resourcemedia")
+        cursor.execute("DELETE FROM main_resourcemedia")
         cursor.execute(
             'INSERT INTO main_resourcemedia (resource_id, media_id, project_id) SELECT "main_resource".id, "main_media".id, "main_media".project FROM main_resource_media LEFT OUTER JOIN "main_media" ON ("main_resource_media"."media_id" = "main_media"."id") LEFT OUTER JOIN "main_resource" ON ("main_resource_media"."resource_id" = "main_resource"."id")'
         )
