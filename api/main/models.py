@@ -2243,7 +2243,29 @@ class Section(Model):
     attributes = JSONField(null=True, blank=True, default=dict)
 
     explicit_listing = BooleanField(default=False, null=True, blank=True)
-    media = ManyToManyField(Media)
+    # media = ManyToManyField(Media)
+    media_proj = ManyToManyField(
+        Media,
+        related_name="section_media_proj",
+        through="SectionMediaM2M",
+        through_fields=("section", "media_proj"),
+    )
+
+
+class SectionMediaM2M(Model):
+    section = ForeignKey(Section, on_delete=CASCADE)
+    media = ForeignKey(Media, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media_proj = ForeignObject(
+        to=Media,
+        on_delete=CASCADE,
+        from_fields=("project", "media"),
+        to_fields=("project", "id"),
+        related_name="media_proj",
+    )
+
+    class Meta:
+        constraints = [UniqueConstraint(name="sectionm2m", fields=["section", "project", "media"])]
 
 
 class Favorite(Model):
