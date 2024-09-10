@@ -10,6 +10,7 @@ from ..models import Section
 from ..models import Project
 from ..models import database_qs
 from ..models import RowProtection
+from ..models import SectionMediaM2M
 from ..schema import SectionListSchema
 from ..schema import SectionDetailSchema
 from ..schema.components import section
@@ -32,7 +33,7 @@ def _fill_m2m(response_data):
     section_ids = [section["id"] for section in response_data]
     media = {
         obj["section_id"]: obj["media"]
-        for obj in Section.media.through.objects.filter(section__in=section_ids)
+        for obj in Section.media_proj.through.objects.filter(section__in=section_ids)
         .values("section_id")
         .order_by("section_id")
         .annotate(media=ArrayAgg("media_id", default=[]))
@@ -137,7 +138,9 @@ class SectionListAPI(BaseListView):
         )
         if media_list:
             for media_id in media_list:
-                section.media.add(media_id)
+                SectionMediaM2M.objects.create(
+                    section=section, media_id=media_id, project_id=project.id
+                )
             section.save()
         # Automatically create row protection for newly created section based on the creator
         RowProtection.objects.create(
@@ -221,9 +224,14 @@ class SectionDetailAPI(BaseDetailView):
         media_add = params.get("media_add", [])
         media_del = params.get("media_del", [])
         for m in media_add:
-            section.media.add(m)
+            SectionMediaM2M.objects.create(
+                section=section, media_id=media_id, project_id=project.id
+            )
         for m in media_del:
-            section.media.remove(m)
+            matching = SectionMediaM2M.objects.filter(
+                section=section, media_id=m, project_id=section.project.id
+            )
+            matching.delete()
 
         # Handle attributes
         new_attrs = validate_attributes(params, section, section.project.attribute_types)
