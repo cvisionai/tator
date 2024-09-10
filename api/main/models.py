@@ -2248,7 +2248,7 @@ class Section(Model):
     attributes = JSONField(null=True, blank=True, default=dict)
 
     explicit_listing = BooleanField(default=False, null=True, blank=True)
-    # media = ManyToManyField(Media)
+    media = ManyToManyField(Media)
     media_proj = ManyToManyField(
         Media,
         related_name="section_media_proj",
