@@ -1547,7 +1547,7 @@ class Media(Model, ModelDiffMixin):
             media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
             return all(media.is_backed_up() for media in media_qs.iterator())
 
-        resource_qs = Resource.objects.filter(media=self)
+        resource_qs = Resource.objects.filter(media_proj=self)
         return all(resource.backed_up for resource in resource_qs.iterator())
 
     def media_def_iterator(self, keys: List[str] = None) -> Generator[Tuple[str, dict], None, None]:

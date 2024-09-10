@@ -26,7 +26,7 @@ class MediaUtil:
         # If available we only attempt to fetch
         # the part of the file we need to
         self._segment_info = None
-        resources = Resource.objects.filter(media__in=[video])
+        resources = Resource.objects.filter(media_proj__in=[video])
         store_lookup = get_storage_lookup(resources)
 
         if "streaming" in video.media_files:

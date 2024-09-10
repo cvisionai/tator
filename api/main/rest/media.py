@@ -107,7 +107,8 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
         "attachment",
     ]
     media_ids = set([media["id"] for media in medias])
-    resources = Resource.objects.filter(media__in=media_ids)
+    media_objs = Media.objects.filter(pk__in=media_ids)
+    resources = Resource.objects.filter(media_proj__in=media_objs)
     store_lookup = get_storage_lookup(resources)
     cache = TatorCache()
     ttl = expiration - 3600

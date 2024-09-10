@@ -20,7 +20,7 @@ class Command(BaseCommand):
     help = "Backs up any resource objects with `backed_up==False`."
 
     def handle(self, **options):
-        resource_qs = Resource.objects.filter(media__deleted=False, backed_up=False)
+        resource_qs = Resource.objects.filter(media_proj__deleted=False, backed_up=False)
 
         # Check for existence of default backup store
         default_backup_store = get_tator_store(backup=True)
