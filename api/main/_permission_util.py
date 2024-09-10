@@ -499,7 +499,7 @@ def augment_permission(user, qs):
         #
 
         if model == Localization:
-            qs = qs.annotate(section=F("media__primary_section__pk"))
+            qs = qs.annotate(section=F("media_proj__primary_section__pk"))
         elif model == State:
             sb = Subquery(
                 Media.objects.filter(state__pk=OuterRef("pk")).values("primary_section__pk")[:1]
@@ -507,7 +507,7 @@ def augment_permission(user, qs):
             qs = qs.annotate(section=sb)
 
         # Calculate a dictionary for permissions by section and version in this set
-        effected_media = qs.values("media__pk")
+        effected_media = qs.values("media_proj__pk")
         effected_sections = (
             Section.objects.filter(project=project, media__in=effected_media)
             .values("pk")
@@ -538,7 +538,7 @@ def augment_permission(user, qs):
         }
 
         section_cases = [
-            When(media__primary_section=section, then=Value(perm))
+            When(media_proj__primary_section=section, then=Value(perm))
             for section, perm in section_perm_dict.items()
         ]
         version_cases = [

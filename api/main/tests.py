@@ -7109,7 +7109,9 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
             # Test effective permission for boxes in media match expected result
             for media in media_qs:
-                localization_qs = Localization.objects.filter(project=self.project, media=media)
+                localization_qs = Localization.objects.filter(
+                    project=self.project, media_proj=media
+                )
                 localization_qs = augment_permission(user, localization_qs)
                 if media.primary_section:
                     media_primary_section_pk = media.primary_section.pk
