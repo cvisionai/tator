@@ -1419,3 +1419,10 @@ def migrate_old_many_to_many():
         cursor.execute(
             'INSERT INTO main_resourcemediam2m (resource_id, media_id, project_id) SELECT resource_id, "main_media".id, "main_media".project FROM main_resource_media LEFT OUTER JOIN "main_media" ON ("main_resource_media"."media_id" = "main_media"."id")'
         )
+
+        # Now sections
+        # Handle resource many to many first
+        cursor.execute("DELETE FROM main_sectionmediam2m")
+        cursor.execute(
+            'INSERT INTO main_sectionmediam2m (section_id, media_id, project_id) SELECT section_id, "main_media".id, "main_media".project FROM main_section_media LEFT OUTER JOIN "main_media" ON ("main_section_media"."media_id" = "main_media"."id")'
+        )
