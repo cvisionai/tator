@@ -1928,8 +1928,8 @@ class Localization(Model, ModelDiffMixin):
     media_proj = ForeignObject(
         to=Media,
         on_delete=CASCADE,
-        to_fields=["project", "id"],
-        from_fields=["project", "media"],
+        to_fields=("project", "id"),
+        from_fields=("project", "media"),
         null=True,
         name="media_proj",
     )
