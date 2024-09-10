@@ -212,7 +212,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
             section_uuid = section.tator_user_sections
 
             if section.explicit_listing:
-                match_qs = qs.filter(pk__in=section.media.all())
+                match_qs = qs.filter(pk__in=section.media_proj.all())
             elif section_uuid:
                 match_qs = _look_for_section_uuid(qs, section_uuid)
 

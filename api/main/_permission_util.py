@@ -509,8 +509,8 @@ def augment_permission(user, qs):
         # Calculate a dictionary for permissions by section and version in this set
         effected_media = qs.values("media_proj__pk")
         effected_sections = (
-            Section.objects.filter(project=project, media__in=effected_media)
-            .values("pk")
+            SectionMediaM2M.objects.filter(project=project, media__in=effected_media)
+            .values("section")
             .distinct()
         )
         effected_versions = qs.values("version__pk")

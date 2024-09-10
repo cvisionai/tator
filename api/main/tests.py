@@ -2429,10 +2429,10 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         self.test_bucket = create_test_bucket(None)
         resource = Resource(path="fake_key.txt", bucket=self.test_bucket)
         resource.save()
-        ResourceMedia.objects.create(
+        ResourceMediaM2M.objects.create(
             resource=resource, media=self.public_video, project=self.public_video.project
         )
-        ResourceMedia.objects.create(
+        ResourceMediaM2M.objects.create(
             resource=resource, media=self.private_video, project=self.private_video.project
         )
         resource.save()
@@ -6806,7 +6806,7 @@ class SectionTestCase(TatorTransactionTest):
 class AdvancedPermissionTestCase(TatorTransactionTest):
     def setUp(self):
         super().setUp()
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         # Add 9 users
         names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"]
         self.users = [create_test_user(is_staff=False, username=name) for name in names]
@@ -6895,13 +6895,17 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         self.private_media = [v.pk for v in self.videos[3:6]]
 
         for media in self.videos[:3]:
-            self.public_section.media.add(media)
+            SectionMediaM2M.objects.create(
+                section=self.public_section, media=media, project=media.project
+            )
             self.public_section.save()
             media.primary_section = self.public_section
             media.save()
 
         for media in self.videos[3:6]:
-            self.private_section.media.add(media)
+            SectionMediaM2M.objects.create(
+                section=self.private_section, media=media, project=media.project
+            )
             self.private_section.save()
             media.primary_section = self.private_section
             media.save()
@@ -7116,6 +7120,7 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                 localization_qs = Localization.objects.filter(
                     project=self.project, media_proj=media
                 )
+                logger.info(f"Checking localizations for {media.pk}")
                 localization_qs = augment_permission(user, localization_qs)
                 if media.primary_section:
                     media_primary_section_pk = media.primary_section.pk

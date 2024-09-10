@@ -1721,7 +1721,7 @@ class Resource(Model):
             if created:
                 obj.bucket = media.project.bucket
                 obj.save()
-            ResourceMedia.objects.create(resource=obj, media=media, project=media.project)
+                ResourceMediaM2M.objects.create(resource=obj, media=media, project=media.project)
 
     @staticmethod
     @transaction.atomic
@@ -1816,6 +1816,7 @@ class ResourceMediaM2M(Model):
         from_fields=("project", "media"),
         to_fields=("project", "id"),
         related_name="media_proj",
+        null=True,
     )
     class Meta:
         constraints = [
@@ -1861,7 +1862,7 @@ def drop_media_from_resource(path, media):
     try:
         logger.info(f"Dropping media {media} from resource {path}")
         obj = Resource.objects.get(path=path)
-        matches = ResourceMedia.objects.filter(resource=obj, media=media)
+        matches = ResourceMediaM2M.objects.filter(resource=obj, media=media)
         matches.delete()
     except:
         logger.warning(f"Could not remove {media} from {path}", exc_info=True)
@@ -2261,7 +2262,8 @@ class SectionMediaM2M(Model):
         on_delete=CASCADE,
         from_fields=("project", "media"),
         to_fields=("project", "id"),
-        related_name="media_proj",
+        related_name="sm_media_proj",
+        null=True,
     )
 
     class Meta:
