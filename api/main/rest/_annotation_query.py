@@ -179,7 +179,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             related_object_search = section.related_object_search
             media_qs = Media.objects.filter(project=project, type=media_type_id)
             if section.explicit_listing:
-                media_qs = Media.objects.filter(pk__in=section.media.values("id"))
+                media_qs = Media.objects.filter(pk__in=section.media_proj.values("id"))
                 logger.info(f"Explicit listing: {media_ids}")
             elif section_uuid:
                 media_qs = _look_for_section_uuid(media_qs, section_uuid)
