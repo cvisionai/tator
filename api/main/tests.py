@@ -5436,8 +5436,8 @@ class ResourceTestCase(TatorTransactionTest):
 
         self.assertTrue(self._store_obj_exists(image_key))
         self.assertTrue(self._store_obj_exists(thumb_key))
-        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
-        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=image_key).media_proj.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media_proj.all()[0].pk, image_id)
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{image_id}", format="json")
@@ -5468,8 +5468,8 @@ class ResourceTestCase(TatorTransactionTest):
 
         self.assertTrue(self._store_obj_exists(image_key))
         self.assertTrue(self._store_obj_exists(thumb_key))
-        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
-        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=image_key).media_proj.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media_proj.all()[0].pk, image_id)
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{image_id}", format="json")
@@ -5499,8 +5499,8 @@ class ResourceTestCase(TatorTransactionTest):
         gif_key = video.media_files["thumbnail_gif"][0]["path"]
         self.assertTrue(self._store_obj_exists(thumb_key))
         self.assertTrue(self._store_obj_exists(gif_key))
-        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, video_id)
-        self.assertEqual(Resource.objects.get(path=gif_key).media.all()[0].pk, video_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media_proj.all()[0].pk, video_id)
+        self.assertEqual(Resource.objects.get(path=gif_key).media_proj.all()[0].pk, video_id)
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{video_id}", format="json")

@@ -853,7 +853,7 @@ def get_clone_info(media: Media) -> dict:
         media_dict["original"]["media"] = Media.objects.get(pk=media_id)
 
         # Shared base queryset
-        media_qs = Media.objects.filter(resource_media__path__in=paths)
+        media_qs = Media.objects.filter(resource_media_proj__path__in=paths)
         media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
         media_dict["clones"].remove(media_dict["original"]["media"].id)
     else:
