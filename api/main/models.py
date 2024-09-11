@@ -335,6 +335,7 @@ class Organization(Model):
     thumb = CharField(max_length=1024, null=True, blank=True)
     # TODO Reinstate the `default=Permission.NO_ACCESS` after the next release
     default_membership_permission = EnumField(Permission, max_length=1, blank=True, null=True)
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def user_permission(self, user_id):
         permission = None
@@ -604,6 +605,7 @@ class Affiliation(Model):
     permission = CharField(
         max_length=16, choices=[("Member", "Member"), ("Admin", "Admin")], default="Member"
     )
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user} | {self.organization}"
@@ -783,6 +785,7 @@ class Project(Model):
     attribute_types = JSONField(default=list, null=True, blank=True)
     """ Defines the attribute types that can be used to filter sections for this project
     """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
@@ -837,6 +840,7 @@ class Version(Model):
         primary_key=False, db_index=True, editable=True, null=True, blank=True, default=uuid.uuid4
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         out = f"{self.name}"
@@ -904,6 +908,7 @@ class Membership(Model):
     user = ForeignKey(User, on_delete=PROTECT, db_column="user")
     permission = EnumField(Permission, max_length=1, default=Permission.CAN_EDIT)
     default_version = ForeignKey(Version, null=True, blank=True, on_delete=SET_NULL)
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user} | {self.permission} | {self.project}"
@@ -966,6 +971,7 @@ class JobCluster(Model):
     port = PositiveIntegerField()
     token = CharField(max_length=1024)
     cert = TextField(max_length=2048)
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -986,6 +992,7 @@ class HostedTemplate(Model):
     """ Headers to be used in the GET request. """
     tparams = JSONField(default=list, null=True)
     """ Template parameters used to substitute values in the jinja2 template. """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -1016,6 +1023,7 @@ class Algorithm(Model):
     """ Request headers for hosted template, any values set here override 
         default values in the HostedTemplate object.
     """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -1159,6 +1167,7 @@ class MediaType(Model):
         primary_key=False, db_index=True, editable=True, null=True, blank=True, default=uuid.uuid4
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} | {self.project}"
@@ -1214,6 +1223,7 @@ class LocalizationType(Model):
         primary_key=False, db_index=True, editable=True, null=True, blank=True, default=uuid.uuid4
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} | {self.project}"
@@ -1277,6 +1287,7 @@ class StateType(Model):
         primary_key=False, db_index=True, editable=True, null=True, blank=True, default=uuid.uuid4
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} | {self.project}"
@@ -1323,6 +1334,7 @@ class LeafType(Model):
         primary_key=False, db_index=True, editable=True, null=True, blank=True, default=uuid.uuid4
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} | {self.project}"
@@ -1602,6 +1614,7 @@ class FileType(Model):
         primary_key=False, db_index=True, editable=True, null=True, blank=True, default=uuid.uuid4
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
 
 @receiver(post_save, sender=FileType)
@@ -2167,6 +2180,7 @@ class Section(Model):
     """ Time in which the section was created """
 
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, db_column="created_by")
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
     attributes = JSONField(null=True, blank=True, default=dict)
 
@@ -2191,6 +2205,7 @@ class Favorite(Model):
         null=True,
         blank=True,
     )
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
 
 class Bookmark(Model):
@@ -2201,6 +2216,7 @@ class Bookmark(Model):
     name = CharField(max_length=128)
     uri = CharField(max_length=1024)
     """ Unique ID for a to facilitate cross-cluster sync operations """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
 
 class ChangeLog(Model):
@@ -2286,6 +2302,7 @@ class Dashboard(Model):
     """ Request headers for hosted template, any values set here override 
         default values in the HostedTemplate object.
     """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
 
 
 def type_to_obj(typeObj):
