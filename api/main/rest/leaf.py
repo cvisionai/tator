@@ -14,6 +14,7 @@ from ..schema import LeafSuggestionSchema
 from ..schema import LeafListSchema
 from ..schema import LeafDetailSchema
 from ..schema.components import leaf as leaf_schema
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -41,6 +42,7 @@ LEAF_PROPERTIES = list(leaf_schema["properties"].keys())
 def _clear_cache(project_id):
     cache = TatorCache()
     cache.clear_last_modified(f"/rest/Leaves/{project_id}*")
+    cache.clear_last_modified(f"/rest/LeafCount/{project_id}*")
     cache.clear_last_modified(f"/rest/Leaves/Suggestion/*/{project_id}*")
 
 class LeafSuggestionAPI(BaseDetailView):

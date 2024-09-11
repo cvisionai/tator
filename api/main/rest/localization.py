@@ -15,6 +15,7 @@ from ..models import Section
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema, LocalizationByElementalIdSchema
 from ..schema.components import localization as localization_schema
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -43,6 +44,13 @@ logger = logging.getLogger(__name__)
 LOCALIZATION_PROPERTIES = list(localization_schema["properties"].keys())
 
 import os
+
+def _clear_cache(project_id, pk=None):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Localizations/{project_id}*")
+    cache.clear_last_modified(f"/rest/LocalizationCount/{project_id}*")
+    if pk is not None:
+        cache.clear_last_modified(f"/rest/LocalizationGraphic/{pk}")
 
 
 class LocalizationListAPI(BaseListView):
@@ -239,6 +247,7 @@ class LocalizationListAPI(BaseListView):
         localizations = bulk_create_from_generator(objs, Localization)
 
         ids = bulk_log_creation(localizations, project, self.request.user)
+        _clear_cache(project.id)
 
         # Return created IDs.
         return {"message": f"Successfully created {len(ids)} localizations!", "id": ids}
@@ -272,6 +281,7 @@ class LocalizationListAPI(BaseListView):
                         original.variant_deleted = True
                         objs.append(original)
                     Localization.objects.bulk_create(objs)
+        _clear_cache(params["project"])
 
         return {"message": f"Successfully deleted {count} localizations!"}
 
@@ -335,6 +345,7 @@ class LocalizationListAPI(BaseListView):
                     found_it = Localization.objects.get(pk=new_obj.pk)
                     found_it.created_datetime = origin_datetime
                     found_it.save()
+        _clear_cache(params["project"])
 
         return {"message": f"Successfully updated {count} localizations!"}
 
@@ -515,6 +526,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             # Do a double save to keep original creation time
             found_it.created_datetime = origin_datetime
             found_it.save()
+        _clear_cache(obj.project.id, obj.pk)
 
         return {
             "message": f"Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
@@ -546,6 +558,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             b.save()
             obj_id = b.id
             log_changes(b, b.model_dict, b.project, self.request.user)
+        _clear_cache(obj.project.id, obj_id)
         return {
             "message": f"Localization {version_id}/{elemental_id}@@{mark} successfully deleted!",
             "id": obj_id,
