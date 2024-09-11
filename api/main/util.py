@@ -1435,5 +1435,5 @@ def migrate_old_many_to_many():
         # state-localization
         cursor.execute("DELETE FROM main_statelocalizationm2m")
         cursor.execute(
-            'INSERT INTO main_statelocalizationm2m (state_id, localization_id, project_id) SELECT state_id, "main_localization".id, "main_localization".project FROM main_localization_media LEFT OUTER JOIN "main_localization" ON ("main_state_localization"."localization_id" = "main_localization"."id")'
+            'INSERT INTO main_statelocalizationm2m (state_id, localization_id, project_id) SELECT state_id, "main_localization".id, "main_localization".project FROM main_state_localizations LEFT OUTER JOIN "main_localization" ON ("main_state_localizations"."localization_id" = "main_localization"."id")'
         )
