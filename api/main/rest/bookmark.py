@@ -12,6 +12,7 @@ from ..models import database_qs
 from ..schema import BookmarkDetailSchema
 from ..schema import BookmarkListSchema
 from ..schema import parse
+from ..schema import TatorCache
 
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
@@ -37,6 +38,11 @@ class BookmarkListAPI(BaseListView):
             raise ValueError(f"Unsupported method {self.request.method}")
         return super().get_permissions()
 
+    def _clear_cache(self, pk, project_id):
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Bookmark/{pk}*")
+        cache.clear_last_modified(f"/rest/Bookmarks/{project_id}*")
+
     def _get(self, params: dict) -> dict:
         """Returns the full database entries of bookmarks registered with this project
         and user.
@@ -61,6 +67,7 @@ class BookmarkListAPI(BaseListView):
             user=self.request.user,
             uri=params["uri"],
         )
+        self._clear_cache(bookmark.id, bookmark.project.id)
         return {"message": f"Successfully created bookmark {bookmark.id}!.", "id": bookmark.id}
 
 
@@ -95,11 +102,14 @@ class BookmarkDetailAPI(BaseDetailView):
         if uri is not None:
             obj.uri = uri
         obj.save()
+        self._clear_cache(obj.id, obj.project.id)
         return {"message": f"Bookmark {obj.id} updated successfully!"}
 
     def _delete(self, params: dict) -> dict:
         """Deletes the provided bookmark."""
-        self.get_queryset().delete()
+        bookmarks = self.get_queryset()
+        self._clear_cache(bookmarks[0].id, bookmarks[0].project.id)
+        bookmarks.delete()
         return {"message": f"Bookmark with ID {params['id']} deleted successfully!"}
 
     def get_queryset(self, **kwargs):

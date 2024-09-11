@@ -17,6 +17,7 @@ from ..schema import AppletDetailSchema
 from ..schema import parse
 from ..schema.components.applet import applet_fields as fields
 from ..schema.components.applet import applet as applet_schema
+from ..cache import TatorCache
 
 from .hosted_template import get_and_render
 from ._base_views import BaseListView
@@ -124,6 +125,9 @@ class AppletListAPI(BaseListView):
             tparams=tparams,
         )
 
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Applets/{project_id}*")
+
         return {"message": f"Successfully created applet {new_applet.id}!", "id": new_applet.id}
 
 
@@ -143,6 +147,9 @@ class AppletDetailAPI(BaseDetailView):
         # Grab the applet object and delete it from the database
         applet = self.get_queryset().first()
         html_file = applet.html_file
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Applets/{applet.project.pk}*")
+        cache.clear_last_modified(f"/rest/Applet/{applet.pk}*")
         applet.delete()
 
         # Delete the correlated file
@@ -205,6 +212,10 @@ class AppletDetailAPI(BaseDetailView):
             obj.tparams = tparams
 
         obj.save()
+
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Applets/{obj.project.pk}*")
+        cache.clear_last_modified(f"/rest/Applet/{obj.pk}*")
 
         return {"message": f"Applet {applet_id} successfully updated!"}
 

@@ -8,6 +8,7 @@ from ..models import drop_media_from_resource
 from ..schema import AuxiliaryFileListSchema
 from ..schema import AuxiliaryFileDetailSchema
 from ..search import TatorSearch
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -32,6 +33,13 @@ class AuxiliaryFileListAPI(BaseListView):
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
         return super().get_permissions()
+
+    def _clear_cache(self, media_id, project_id):
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Media/{media_id}*")
+        cache.clear_last_modified(f"/rest/Medias/{project_id}*")
+        cache.clear_last_modified(f"/rest/AuxiliaryFile/{media_id}*")
+        cache.clear_last_modified(f"/rest/AuxiliaryFiles/{media_id}*")
 
     def _get(self, params):
         media = Media.objects.get(pk=params["id"])
@@ -66,6 +74,7 @@ class AuxiliaryFileListAPI(BaseListView):
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params["id"])
         Resource.add_resource(body["path"], media)
+        self._clear_cache(media.id, media.project.id)
         return {"message": f"Media file in media object {media.id} created!"}
 
     def get_queryset(self, **kwargs):
@@ -127,6 +136,7 @@ class AuxiliaryFileDetailAPI(BaseDetailView):
             drop_media_from_resource(old_path, media)
             safe_delete(old_path, media.project.id)
             Resource.add_resource(new_path, media)
+        self._clear_cache(media.id, media.project.id)
         return {"message": f"Media file in media object {media.id} successfully updated!"}
 
     def _delete(self, params):
@@ -150,6 +160,7 @@ class AuxiliaryFileDetailAPI(BaseDetailView):
         media = Media.objects.get(pk=params["id"])
         drop_media_from_resource(deleted["path"], media)
         safe_delete(deleted["path"], media.project.id)
+        self._clear_cache(media.id, media.project.id)
         return {"message": f'Media file in media object {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
