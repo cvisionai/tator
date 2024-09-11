@@ -2117,7 +2117,9 @@ class StateMediaM2M(Model):
     )
 
     class Meta:
-        constraints = [UniqueConstraint(name="sectionm2m", fields=["state", "project", "media"])]
+        constraints = [
+            UniqueConstraint(name="state_media_m2m", fields=["state", "project", "media"])
+        ]
 
 
 class StateLocalizationM2M(Model):
@@ -2135,7 +2137,9 @@ class StateLocalizationM2M(Model):
 
     class Meta:
         constraints = [
-            UniqueConstraint(name="sectionm2m", fields=["state", "project", "localization"])
+            UniqueConstraint(
+                name="state_localization_m2m", fields=["state", "project", "localization"]
+            )
         ]
 
 
