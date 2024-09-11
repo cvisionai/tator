@@ -27,6 +27,7 @@ fields = [
     "attribute_types",
     "visible",
     "elemental_id",
+    "modified_datetime",
 ]
 
 

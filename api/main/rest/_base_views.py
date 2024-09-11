@@ -2,7 +2,8 @@
 import traceback
 import sys
 import logging
-from datetime import datetime
+import datetime
+from collections.abc import Iterable
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,8 +14,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
 from django.conf import settings
 from django.db.models import F, Value
-from django.utils.http import http_date
-from django.utils.dateparse import parse_http_date
+from django.utils.http import http_date, parse_http_date
 
 from ..schema import parse
 from ..cache import TatorCache
@@ -135,15 +135,17 @@ class GetMixin:
         if isinstance(self, BaseDetailView) and if_modified_since:
             cache = TatorCache()
             if_modified_since = parse_http_date(if_modified_since)
+            if_modified_since = datetime.datetime.fromtimestamp(if_modified_since)
             last_modified = cache.get_last_modified(request.path)
             if last_modified and last_modified > if_modified_since:
                 return Response(status=status.HTTP_304_NOT_MODIFIED)
         resp = Response({})
         response_data = self._get(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
-        if "modified_datetime" in response_data:
+        if isinstance(response_data, Iterable) and "modified_datetime" in response_data:
             modified = response_data["modified_datetime"]
-            if isinstance(modified, datetime):
+            logger.info(f"DATETIME: {datetime.datetime}")
+            if isinstance(modified, datetime.datetime):
                 resp["Last-Modified"] = http_date(modified.timestamp())
                 cache = TatorCache()
                 cache.set_last_modified(request.path, modified)

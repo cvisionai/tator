@@ -48,6 +48,7 @@ PROJECT_PROPERTIES.append("usernames")
 PROJECT_PROPERTIES.append("id")
 PROJECT_PROPERTIES.append("num_files")
 PROJECT_PROPERTIES.append("duration")
+PROJECT_PROPERTIES.append("modified_datetime")
 
 
 def _serialize_projects(projects, user_id):

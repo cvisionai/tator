@@ -90,4 +90,5 @@ class VersionSerializer(serializers.ModelSerializer):
             "show_empty",
             "bases",
             "elemental_id",
+            "modified_datetime",
         ]

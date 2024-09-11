@@ -9,6 +9,7 @@ from redis.exceptions import (
 import json
 import os
 import logging
+import datetime
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 
@@ -167,7 +168,7 @@ class TatorCache:
         """Retrieves last modified time for a row."""
         timestamp = self.rds.get(f"last_modified__{path}")
         if timestamp is not None:
-            last_modified = datetime.fromtimestamp(float(timestamp))
+            last_modified = datetime.datetime.fromtimestamp(float(timestamp))
         return last_modified
 
     def clear_last_modified(self, path):

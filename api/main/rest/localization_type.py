@@ -35,6 +35,7 @@ fields = [
     "drawable",
     "grouping_default",
     "elemental_id",
+    "modified_datetime",
 ]
 
 
