@@ -6,6 +6,7 @@ from main.models import Announcement
 from main.models import AnnouncementToUser
 from main.models import User
 from main.models import Membership
+from main.cache import TatorCache
 
 logger = logging.getLogger(__name__)
 
@@ -59,4 +60,6 @@ class Command(BaseCommand):
             users = User.objects.filter(pk=options["user"])
         to_users = [AnnouncementToUser(announcement=announcement, user=user) for user in users]
         AnnouncementToUser.objects.bulk_create(to_users)
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Announcements*")
         logger.info(f"Created announcement {announcement.id}, sent to {len(to_users)} users.")

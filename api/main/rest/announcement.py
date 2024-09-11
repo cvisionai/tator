@@ -7,6 +7,7 @@ from ..models import AnnouncementToUser
 from ..models import database_qs
 from ..schema import AnnouncementListSchema
 from ..schema import AnnouncementDetailSchema
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -53,6 +54,8 @@ class AnnouncementDetailAPI(BaseDetailView):
     def _delete(self, params):
         # This only deletes the announcement for the user.
         unread = AnnouncementToUser.objects.get(user=self.request.user, announcement=params["id"])
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Announcements*")
         unread.delete()
         return {"message": f'Announcement {params["id"]} successfully deleted!'}
 
