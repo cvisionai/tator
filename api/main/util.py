@@ -1421,8 +1421,19 @@ def migrate_old_many_to_many():
         )
 
         # Now sections
-        # Handle resource many to many first
         cursor.execute("DELETE FROM main_sectionmediam2m")
         cursor.execute(
             'INSERT INTO main_sectionmediam2m (section_id, media_id, project_id) SELECT section_id, "main_media".id, "main_media".project FROM main_section_media LEFT OUTER JOIN "main_media" ON ("main_section_media"."media_id" = "main_media"."id")'
+        )
+
+        # state-media
+        cursor.execute("DELETE FROM main_statemediam2m")
+        cursor.execute(
+            'INSERT INTO main_statemediam2m (state_id, media_id, project_id) SELECT state_id, "main_media".id, "main_media".project FROM main_state_media LEFT OUTER JOIN "main_media" ON ("main_state_media"."media_id" = "main_media"."id")'
+        )
+
+        # state-localization
+        cursor.execute("DELETE FROM main_statelocalizationm2m")
+        cursor.execute(
+            'INSERT INTO main_statelocalizationm2m (state_id, localization_id, project_id) SELECT state_id, "main_localization".id, "main_localization".project FROM main_localization_media LEFT OUTER JOIN "main_localization" ON ("main_state_localization"."localization_id" = "main_localization"."id")'
         )
