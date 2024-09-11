@@ -2103,6 +2103,42 @@ class State(Model, ModelDiffMixin):
         return State.objects.filter(media__in=media_id)
 
 
+class StateMediaM2M(Model):
+    state = ForeignKey(State, on_delete=CASCADE)
+    media = ForeignKey(Media, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media_proj = ForeignObject(
+        to=Media,
+        on_delete=CASCADE,
+        from_fields=("project", "media"),
+        to_fields=("project", "id"),
+        related_name="stm_media_proj",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [UniqueConstraint(name="sectionm2m", fields=["state", "project", "media"])]
+
+
+class StateLocalizationM2M(Model):
+    state = ForeignKey(State, on_delete=CASCADE)
+    localization = ForeignKey(Localization, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    localization_proj = ForeignObject(
+        to=Localization,
+        on_delete=CASCADE,
+        from_fields=("project", "localization"),
+        to_fields=("project", "id"),
+        related_name="stm_localization_proj",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(name="sectionm2m", fields=["state", "project", "localization"])
+        ]
+
+
 @receiver(m2m_changed, sender=State.localizations.through)
 def calc_segments(sender, **kwargs):
     instance = kwargs["instance"]
