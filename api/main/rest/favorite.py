@@ -15,6 +15,7 @@ from ..models import database_qs
 from ..schema import FavoriteDetailSchema
 from ..schema import FavoriteListSchema
 from ..schema import parse
+from ..cache import TatorCache
 
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
@@ -22,6 +23,11 @@ from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
+
+def _clear_cache(pk, project_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Favorite/{pk}*")
+    cache.clear_last_modified(f"/rest/Favorites/{project_id}*")
 
 class FavoriteListAPI(BaseListView):
     """Retrieves favorites saved by a user."""
@@ -84,6 +90,7 @@ class FavoriteListAPI(BaseListView):
                 values=params["values"],
                 entity_type_name=entityTypeName,
             )
+        _clear_cache(fave.id, fave.project.id)
 
         # Save the favorite.
         return {"message": f"Successfully created favorite {fave.id}!.", "id": fave.id}
@@ -130,12 +137,15 @@ class FavoriteDetailAPI(BaseDetailView):
             obj.state_type = metaObj
             obj.localization_type = None
 
+        _clear_cache(obj.id, obj.project.id)
         obj.save()
         return {"message": f"Favorite {obj.id} updated successfully!"}
 
     def _delete(self, params: dict) -> dict:
         """Deletes the provided favorite."""
-        self.get_queryset().delete()
+        faves = self.get_queryset()
+        _clear_cache(faves[0].id, faves[0].project.id)
+        faves.delete()
         return {"message": f"Favorite with ID {params['id']} deleted successfully!"}
 
     def get_queryset(self, **kwargs):

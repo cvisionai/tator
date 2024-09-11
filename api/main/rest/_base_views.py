@@ -28,6 +28,7 @@ from ._attribute_query import supplied_name_to_field
 
 logger = logging.getLogger(__name__)
 
+NO_CACHE_VIEWS = ["ChangeLog", "GetClonedMedia"]
 
 import os
 
@@ -142,9 +143,10 @@ class GetMixin:
         resp = Response({})
         response_data = self._get(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
-        modified = int(datetime.datetime.now().timestamp())
-        resp["Last-Modified"] = http_date(modified)
-        cache.set_last_modified(path, modified)
+        if path.split("/")[2] not in NO_CACHE_VIEWS:
+            modified = int(datetime.datetime.now().timestamp())
+            resp["Last-Modified"] = http_date(modified)
+            cache.set_last_modified(path, modified)
         return resp
 
 

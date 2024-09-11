@@ -41,6 +41,11 @@ ENTITY_TYPES = {
     "Section": (Project, Section),
 }
 
+def _clear_cache(entity_type, params):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/{params['entity_type']}s/{entity_type.project.pk}*")
+    cache.clear_last_modified(f"/rest/{params['entity_type']}/{entity_type.pk}*")
+
 
 class AttributeTypeListAPI(BaseListView):
     """Interact with attributes on an individual type."""
@@ -143,7 +148,7 @@ class AttributeTypeListAPI(BaseListView):
         # Get the old and new dtypes
         with transaction.atomic():
             entity_type, obj_qs = cls._get_objects(params)
-            cls._clear_cache(entity_type, params)
+            _clear_cache(entity_type, params)
 
             for attribute_type in entity_type.attribute_types:
                 if attribute_type["name"] == old_name:
@@ -231,12 +236,6 @@ class AttributeTypeListAPI(BaseListView):
 
         return {"message": "\n".join(messages)}
 
-    @classmethod
-    def _clear_cache(cls, entity_type, params):
-        cache = TatorCache()
-        cache.clear_last_modified(f"/rest/{params['entity_type']}s/{entity_type.project.pk}*")
-        cache.clear_last_modified(f"/rest/{params['entity_type']}/{entity_type.pk}*")
-
     def _delete(self, params: Dict) -> Dict:
         """Delete an existing attribute on a type."""
         name = params["name"]
@@ -254,7 +253,7 @@ class AttributeTypeListAPI(BaseListView):
                     del entity_type.attribute_types[found_idx]
                     entity_type.save()
 
-        self._clear_cache(entity_type, params)
+        _clear_cache(entity_type, params)
 
         if obj_qs.exists():
             bulk_delete_attributes([name], obj_qs)
@@ -275,7 +274,7 @@ class AttributeTypeListAPI(BaseListView):
         new_name = attribute_type_update["name"]
         with transaction.atomic():
             entity_type, obj_qs = self._get_objects(params)
-            self._clear_cache(entity_type, params)
+            _clear_cache(entity_type, params)
 
             # Check that the attribute type is valid and it is valid to add it to the desired entity
             # type

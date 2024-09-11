@@ -20,6 +20,10 @@ from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
+def _clear_cache(self, pk, project_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Bookmark/{pk}*")
+    cache.clear_last_modified(f"/rest/Bookmarks/{project_id}*")
 
 class BookmarkListAPI(BaseListView):
     """Retrieves bookmarks saved by a user"""
@@ -37,11 +41,6 @@ class BookmarkListAPI(BaseListView):
         else:
             raise ValueError(f"Unsupported method {self.request.method}")
         return super().get_permissions()
-
-    def _clear_cache(self, pk, project_id):
-        cache = TatorCache()
-        cache.clear_last_modified(f"/rest/Bookmark/{pk}*")
-        cache.clear_last_modified(f"/rest/Bookmarks/{project_id}*")
 
     def _get(self, params: dict) -> dict:
         """Returns the full database entries of bookmarks registered with this project
@@ -67,7 +66,7 @@ class BookmarkListAPI(BaseListView):
             user=self.request.user,
             uri=params["uri"],
         )
-        self._clear_cache(bookmark.id, bookmark.project.id)
+        _clear_cache(bookmark.id, bookmark.project.id)
         return {"message": f"Successfully created bookmark {bookmark.id}!.", "id": bookmark.id}
 
 
@@ -102,13 +101,13 @@ class BookmarkDetailAPI(BaseDetailView):
         if uri is not None:
             obj.uri = uri
         obj.save()
-        self._clear_cache(obj.id, obj.project.id)
+        _clear_cache(obj.id, obj.project.id)
         return {"message": f"Bookmark {obj.id} updated successfully!"}
 
     def _delete(self, params: dict) -> dict:
         """Deletes the provided bookmark."""
         bookmarks = self.get_queryset()
-        self._clear_cache(bookmarks[0].id, bookmarks[0].project.id)
+        _clear_cache(bookmarks[0].id, bookmarks[0].project.id)
         bookmarks.delete()
         return {"message": f"Bookmark with ID {params['id']} deleted successfully!"}
 

@@ -38,6 +38,10 @@ ALGORITHM_GET_FIELDS = [
     k for k in alg_schema["properties"].keys() if k not in ["rendered", "manifest"]
 ] + ["manifest_url"]
 
+def _clear_cache(alg_id, project_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Algorithms/{alg.project.pk}*")
+    cache.clear_last_modified(f"/rest/Algorithm/{alg.pk}*")
 
 class AlgorithmListAPI(BaseListView):
     """Retrieves registered algorithms and register new algorithm workflows"""
@@ -218,8 +222,7 @@ class AlgorithmListAPI(BaseListView):
         RowProtection.objects.create(
             user=self.request.user, algorithm=alg_obj, permission=PermissionMask.FULL_CONTROL
         )
-        cache = TatorCache()
-        cache.clear_last_modified(f"/rest/Algorithms/{params['project']}*")
+        _clear_cache(alg_obj.pk, project_id)
 
         return {"message": "Successfully registered algorithm argo workflow.", "id": alg_obj.id}
 
@@ -266,11 +269,7 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         # Grab the algorithm object and delete it from the database
         alg = Algorithm.objects.get(pk=params["id"])
-
-        cache = TatorCache()
-        cache.clear_last_modified(f"/rest/Algorithms/{alg.project.pk}*")
-        cache.clear_last_modified(f"/rest/Algorithm/{alg.pk}*")
-
+        _clear_cache(alg.pk, alg.project.pk)
         manifest = alg.manifest
         alg.delete()
 
@@ -352,9 +351,7 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         obj.save()
 
-        cache = TatorCache()
-        cache.clear_last_modified(f"/rest/Algorithms/{obj.project.pk}*")
-        cache.clear_last_modified(f"/rest/Algorithm/{alg_id}*")
+        _clear_cache(obj.pk, obj.project.pk)
 
         return {"message": f"Algorithm {alg_id} successfully updated!"}
 

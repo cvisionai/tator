@@ -11,6 +11,7 @@ from ..models import Bucket
 from ..schema import BucketListSchema
 from ..schema import BucketDetailSchema
 from ..store import ObjectStore
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -27,6 +28,12 @@ def _get_endpoint_url(bucket):
     if bucket.store_type == ObjectStore.OCI:
         return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
     raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
+
+
+def _clear_cache(pk, organization_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Bucket/{pk}*")
+    cache.clear_last_modified(f"/rest/Buckets/{organization_id}*")
 
 
 def serialize_bucket(bucket):
@@ -73,6 +80,7 @@ class BucketListAPI(BaseListView):
 
         # Create the bucket
         bucket = Bucket.objects.create(**params)
+        _clear_cache(bucket.id, bucket.organization.id)
         return {"message": f"Bucket {bucket.name} created!", "id": bucket.id}
 
     def get_queryset(self, **kwargs):
@@ -134,10 +142,12 @@ class BucketDetailAPI(BaseDetailView):
             bucket.external_host = params["external_host"]
         if mutated:
             bucket.save()
+        _clear_cache(bucket.id, bucket.organization.id)
         return {"message": f"Bucket {params['id']} updated successfully!"}
 
     def _delete(self, params):
         bucket = Bucket.objects.get(pk=params["id"])
+        _clear_cache(bucket.id, bucket.organization.id)
         bucket.delete()
         return {"message": f'Bucket {params["id"]} deleted successfully!'}
 
