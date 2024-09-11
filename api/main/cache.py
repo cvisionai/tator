@@ -159,25 +159,25 @@ class TatorCache:
             url = url.decode()
         return url
 
-    def set_last_modified(self, path, last_modified):
-        """Stores last modified time for a row."""
-        timestamp = str(last_modified.timestamp())
-        self.rds.set(f"last_modified__{path}", timestamp, ex=EXPIRE_TIME)
+    def set_last_modified(self, path, timestamp):
+        """Stores last modified time for a path."""
+        self.rds.set(f"last_modified__{path}", str(timestamp), ex=EXPIRE_TIME)
 
     def get_last_modified(self, path):
-        """Retrieves last modified time for a row."""
+        """Retrieves last modified time for a path."""
         timestamp = self.rds.get(f"last_modified__{path}")
-        if timestamp is not None:
-            last_modified = datetime.datetime.fromtimestamp(float(timestamp))
-        return last_modified
+        if timestamp:
+            timestamp = int(timestamp.decode())
+        return timestamp
 
-    def clear_last_modified(self, path):
-        """Clears last modified time for a row."""
-        self.rds.delete(f"last_modified__{path}")
+    def clear_last_modified(self, pattern):
+        """Clears last modified time for a pattern."""
+        for key in self.rds.scan_iter(match=f"last_modified__{pattern}"):
+            self.rds.delete(key)
 
     def invalidate_all(self):
         """Invalidates all caches."""
-        for prefix in ["creds_"]:
+        for prefix in ["creds_", "last_modified__"]:
             for key in self.rds.scan_iter(match=prefix + "*"):
                 logger.info(f"Deleting cache key {key}...")
                 self.rds.delete(key)

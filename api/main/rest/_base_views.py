@@ -132,23 +132,19 @@ class GetMixin:
     def get(self, request, format=None, **kwargs):
         """TODO: add documentation for this"""
         if_modified_since = request.META.get("HTTP_IF_MODIFIED_SINCE", None)
-        if isinstance(self, BaseDetailView) and if_modified_since:
-            cache = TatorCache()
+        path = self.get_path(request)
+        cache = TatorCache()
+        if if_modified_since:
             if_modified_since = parse_http_date(if_modified_since)
-            if_modified_since = datetime.datetime.fromtimestamp(if_modified_since)
-            last_modified = cache.get_last_modified(request.path)
-            if last_modified and last_modified > if_modified_since:
+            last_modified = cache.get_last_modified(path)
+            if last_modified and last_modified <= if_modified_since:
                 return Response(status=status.HTTP_304_NOT_MODIFIED)
         resp = Response({})
         response_data = self._get(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
-        if isinstance(response_data, Iterable) and "modified_datetime" in response_data:
-            modified = response_data["modified_datetime"]
-            logger.info(f"DATETIME: {datetime.datetime}")
-            if isinstance(modified, datetime.datetime):
-                resp["Last-Modified"] = http_date(modified.timestamp())
-                cache = TatorCache()
-                cache.set_last_modified(request.path, modified)
+        modified = int(datetime.datetime.now().timestamp())
+        resp["Last-Modified"] = http_date(modified)
+        cache.set_last_modified(path, modified)
         return resp
 
 
@@ -161,9 +157,6 @@ class PostMixin:
         resp = Response({})
         response_data = self._post(self.params)
         resp = Response(response_data, status=status.HTTP_201_CREATED)
-        if isinstance(self, BaseDetailView):
-            cache = TatorCache()
-            cache.clear_last_modified(request.path)
         return resp
 
 
@@ -175,9 +168,6 @@ class PatchMixin:
         """TODO: add documentation for this"""
         response_data = self._patch(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
-        if isinstance(self, BaseDetailView):
-            cache = TatorCache()
-            cache.clear_last_modified(request.path)
         return resp
 
 
@@ -189,9 +179,6 @@ class DeleteMixin:
         """TODO: add documentation for this"""
         response_data = self._delete(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
-        if isinstance(self, BaseDetailView):
-            cache = TatorCache()
-            cache.clear_last_modified(request.path)
         return resp
 
 
@@ -207,6 +194,9 @@ class BaseListView(TatorAPIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, P
 
     http_method_names = ["get", "post", "patch", "delete", "put"]
 
+    def get_path(self, request):
+        return request.get_full_path()
+
     def handle_exception(self, exc):
         return process_exception(exc)
 
@@ -215,6 +205,9 @@ class BaseDetailView(TatorAPIView, GetMixin, PatchMixin, DeleteMixin):
     """Base class for detail views."""
 
     http_method_names = ["get", "patch", "delete"]
+
+    def get_path(self, request):
+        return request.path
 
     def handle_exception(self, exc):
         return process_exception(exc)

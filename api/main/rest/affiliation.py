@@ -7,6 +7,7 @@ from ..models import User
 from ..models import database_qs
 from ..schema import AffiliationListSchema
 from ..schema import AffiliationDetailSchema
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -62,6 +63,9 @@ class AffiliationListAPI(BaseListView):
         )
         affiliation.save()
 
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Affiliations/{organization}*")
+
         return {
             "message": f"Affiliation of {user} to {organization} created!",
             "id": affiliation.id,
@@ -96,13 +100,25 @@ class AffiliationDetailAPI(BaseDetailView):
         if "permission" in params:
             affiliation.permission = params["permission"]
         affiliation.save()
+
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Affiliations/{affiliation.organization.pk}*")
+        cache.clear_last_modified(f"/rest/Affiliation/{affiliation.pk}*")
+
         return {
             "message": f"Affiliation of {affiliation.user} to {affiliation.organization} "
             f"permissions updated to {params['permission']}!"
         }
 
     def _delete(self, params):
-        Affiliation.objects.get(pk=params["id"]).delete()
+        affiliation = Affiliation.objects.get(pk=params["id"])
+
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Affiliations/{affiliation.organization.pk}*")
+        cache.clear_last_modified(f"/rest/Affiliation/{affiliation.pk}*")
+
+        affiliation.delete()
+
         return {"message": f'Affiliation {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):

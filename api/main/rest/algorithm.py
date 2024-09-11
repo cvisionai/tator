@@ -30,6 +30,7 @@ from ._base_views import BaseDetailView
 from ._base_views import BaseListView
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 from ..schema import parse
+from ..cache import TatorCache
 
 logger = logging.getLogger(__name__)
 
@@ -217,6 +218,8 @@ class AlgorithmListAPI(BaseListView):
         RowProtection.objects.create(
             user=self.request.user, algorithm=alg_obj, permission=PermissionMask.FULL_CONTROL
         )
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Algorithms/{params['project']}*")
 
         return {"message": "Successfully registered algorithm argo workflow.", "id": alg_obj.id}
 
@@ -263,6 +266,11 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         # Grab the algorithm object and delete it from the database
         alg = Algorithm.objects.get(pk=params["id"])
+
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Algorithms/{alg.project.pk}*")
+        cache.clear_last_modified(f"/rest/Algorithm/{alg.pk}*")
+
         manifest = alg.manifest
         alg.delete()
 
@@ -343,6 +351,10 @@ class AlgorithmDetailAPI(BaseDetailView):
             obj.tparams = tparams
 
         obj.save()
+
+        cache = TatorCache()
+        cache.clear_last_modified(f"/rest/Algorithms/{obj.project.pk}*")
+        cache.clear_last_modified(f"/rest/Algorithm/{alg_id}*")
 
         return {"message": f"Algorithm {alg_id} successfully updated!"}
 
