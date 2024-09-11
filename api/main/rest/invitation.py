@@ -15,6 +15,7 @@ from ..schema import InvitationListSchema
 from ..schema import InvitationDetailSchema
 from ..schema.components import invitation as invitation_schema
 from ..mail import get_email_service
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -24,6 +25,10 @@ logger = logging.getLogger(__name__)
 
 INVITATION_PROPERTIES = list(invitation_schema["properties"].keys()).remove("created_username")
 
+def _clear_cache(pk, organization_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Invitation/{pk}*")
+    cache.clear_last_modified(f"/rest/Invitations/{organization_id}*")
 
 def _serialize_invitations(invitations):
     invitation_data = database_qs(invitations)
@@ -95,6 +100,7 @@ class InvitationListAPI(BaseListView):
                     raise_on_failure=f"Unable to send email to {email}! Invitation creation failed.",
                 )
             invite.save()
+            _clear_cache(invite.id, organization.id)
         return {"message": f"User can register at {url}", "id": invite.id}
 
     def get_queryset(self, **kwargs):
@@ -126,10 +132,13 @@ class InvitationDetailAPI(BaseDetailView):
         if "status" in params:
             invitation.status = params["status"]
         invitation.save()
+        _clear_cache(invitation.id, invitation.organization.id)
         return {"message": f"Invitation {params['id']} successfully updated!"}
 
     def _delete(self, params):
-        Invitation.objects.get(pk=params["id"]).delete()
+        invite = Invitation.objects.get(pk=params["id"])
+        _clear_cache(invite.id, invite.organization.id)
+        invite.delete()
         return {"message": f'Invitation {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):

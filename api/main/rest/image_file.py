@@ -18,6 +18,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def _clear_cache(media_id, project_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Media/{media_id}*")
+    cache.clear_last_modified(f"/rest/Medias/{project_id}*")
+    cache.clear_last_modified(f"/rest/ImageFile/{media_id}*")
+    cache.clear_last_modified(f"/rest/ImageFiles/{media_id}*")
+    cache.clear_last_modified(f"/rest/GetFrame/{media_id}*")
 
 class ImageFileListAPI(BaseListView):
     schema = ImageFileListSchema()
@@ -69,6 +76,7 @@ class ImageFileListAPI(BaseListView):
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params["id"])
         Resource.add_resource(body["path"], media)
+        _clear_cache(media.id, media.project.id)
         return {"message": f"Media file in media object {media.id} created!"}
 
     def get_queryset(self, **kwargs):
@@ -132,6 +140,7 @@ class ImageFileDetailAPI(BaseDetailView):
             drop_media_from_resource(old_path, media)
             safe_delete(old_path, media.project.id)
             Resource.add_resource(new_path, media)
+        _clear_cache(media.id, media.project.id)
         return {"message": f"Media file in media object {media.id} successfully updated!"}
 
     def _delete(self, params):
@@ -156,6 +165,7 @@ class ImageFileDetailAPI(BaseDetailView):
         media = Media.objects.get(pk=params["id"])
         drop_media_from_resource(deleted["path"], media)
         safe_delete(deleted["path"], media.project.id)
+        _clear_cache(media.id, media.project.id)
         return {"message": f'Media file in media object {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):

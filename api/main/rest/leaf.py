@@ -38,6 +38,10 @@ logger = logging.getLogger(__name__)
 
 LEAF_PROPERTIES = list(leaf_schema["properties"].keys())
 
+def _clear_cache(project_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/Leaves/{project_id}*")
+    cache.clear_last_modified(f"/rest/Leaves/Suggestion/*/{project_id}*")
 
 class LeafSuggestionAPI(BaseDetailView):
     """Rest Endpoint compatible with devbridge suggestion format.
@@ -207,6 +211,7 @@ class LeafListAPI(BaseListView):
         create_buffer = []
 
         ids = bulk_log_creation(leaves, project, self.request.user)
+        _clear_cache(project.id)
 
         # Return created IDs.
         if len(ids) == 1:
@@ -224,6 +229,7 @@ class LeafListAPI(BaseListView):
             )
         if count > 0:
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+        _clear_cache(params["project"])
 
         if count == 1:
             return {"message": f"Successfully deleted {count} leaf!"}
@@ -248,6 +254,7 @@ class LeafListAPI(BaseListView):
                 qs, params["project"], self.request.user, new_attributes=new_attrs
             )
             bulk_patch_attributes(new_attrs, qs)
+        _clear_cache(params["project"])
 
         if count == 1:
             return {"message": f"Successfully updated {count} leaf!"}
@@ -316,6 +323,7 @@ class LeafDetailAPI(BaseDetailView):
 
         obj.save()
         log_changes(obj, model_dict, obj.project, self.request.user)
+        _clear_cache(obj.project.id)
         return {"message": f'Leaf {params["id"]} successfully updated!'}
 
     def _delete(self, params):
@@ -334,6 +342,7 @@ class LeafDetailAPI(BaseDetailView):
         # todo figure out syntax for this query
         # query = get_leaf_es_query(params)
         # TatorSearch().delete(project, query)
+        _clear_cache(project.id)
 
         if len(ids) == 2:
             return {

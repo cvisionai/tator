@@ -12,7 +12,7 @@ from ..models import database_qs
 from ..schema import BookmarkDetailSchema
 from ..schema import BookmarkListSchema
 from ..schema import parse
-from ..schema import TatorCache
+from ..cache import TatorCache
 
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
@@ -20,7 +20,7 @@ from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
-def _clear_cache(self, pk, project_id):
+def _clear_cache(pk, project_id):
     cache = TatorCache()
     cache.clear_last_modified(f"/rest/Bookmark/{pk}*")
     cache.clear_last_modified(f"/rest/Bookmarks/{project_id}*")

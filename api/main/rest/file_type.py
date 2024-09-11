@@ -8,6 +8,7 @@ from ..models import Project
 from ..models import database_qs
 from ..schema import FileTypeListSchema
 from ..schema import FileTypeDetailSchema
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -21,6 +22,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _clear_cache(pk, project_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/FileType/{pk}*")
+    cache.clear_last_modified(f"/rest/FileTypes/{project_id}*")
 
 class FileTypeListAPI(BaseListView):
     """Create or retrieve file types.
@@ -67,6 +73,7 @@ class FileTypeListAPI(BaseListView):
             params["elemental_id"] = uuid.uuid4()
         obj = FileType(**params)
         obj.save()
+        _clear_cache(obj.id, obj.project.id)
         return {"id": obj.id, "message": "File type created successfully!"}
 
 
@@ -119,6 +126,7 @@ class FileTypeDetailAPI(BaseDetailView):
             obj.elemental_id = elemental_id
 
         obj.save()
+        _clear_cache(obj.id, obj.project.id)
         return {"message": "File type updated successfully!"}
 
     def _delete(self, params):
@@ -129,6 +137,7 @@ class FileTypeDetailAPI(BaseDetailView):
         """
         file_type = FileType.objects.get(pk=params["id"])
         count = delete_instances(file_type, File, self.request.user, "file")
+        _clear_cache(file_type.id, file_type.project.id)
         file_type.delete()
         return {
             "message": f"File type {params['id']} (and {count} instances) deleted successfully!"

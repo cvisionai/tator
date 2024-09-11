@@ -28,7 +28,16 @@ from ._attribute_query import supplied_name_to_field
 
 logger = logging.getLogger(__name__)
 
-NO_CACHE_VIEWS = ["ChangeLog", "GetClonedMedia"]
+NO_CACHE_VIEWS = [
+    "ChangeLog",
+    "GetClonedMedia",
+    "Job",
+    "Jobs",
+    "Media",
+    "Localization",
+    "State",
+    "Leaf",
+]
 
 import os
 

@@ -21,12 +21,17 @@ from ._base_views import BaseDetailView
 from ._base_views import BaseListView
 from ._permissions import OrganizationEditPermission
 from ..schema import parse
+from ..cache import TatorCache
 
 logger = logging.getLogger(__name__)
 
 
 JOB_CLUSTER_PROPERTIES = ["id", "name", "organization", "host", "port", "token", "cert"]
 
+def _clear_cache(pk, organization_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/JobCluster/{pk}*")
+    cache.clear_last_modified(f"/rest/JobClusters/{organization_id}*")
 
 class JobClusterListAPI(BaseListView):
     """
@@ -82,6 +87,7 @@ class JobClusterListAPI(BaseListView):
             cert=params["cert"],
         )
         jc_obj.save()
+        _clear_cache(jc_obj.id, organization.id)
 
         return {"message": "Successfully registered job cluster.", "id": jc_obj.id}
 
@@ -103,6 +109,7 @@ class JobClusterDetailAPI(BaseDetailView):
         # Grab the job cluster's object and delete it from the database
         jc_obj = JobCluster.objects.get(pk=params["id"])
         jc_obj.delete()
+        _clear_cache(jc_obj.id, jc_obj.organization.id)
 
         return {"message": "Job cluster deleted successfully!"}
 
@@ -140,6 +147,7 @@ class JobClusterDetailAPI(BaseDetailView):
         if "cert" in params:
             obj.cert = params["cert"]
 
+        _clear_cache(obj.id, obj.organization.id)
         obj.save()
 
         return {"message": f"Job Cluster {jc_id} successfully updated!"}

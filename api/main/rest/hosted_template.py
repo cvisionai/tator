@@ -15,6 +15,7 @@ from ..models import HostedTemplate
 from ..models import database_qs
 from ..models import RowProtection
 from .._permission_util import PermissionMask
+from ..cache import TatorCache
 
 from ..schema import HostedTemplateDetailSchema
 from ..schema import HostedTemplateListSchema
@@ -25,6 +26,10 @@ from ..schema import parse
 
 logger = logging.getLogger(__name__)
 
+def _clear_cache(pk, organization_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/HostedTemplate/{pk}*")
+    cache.clear_last_modified(f"/rest/HostedTemplates/{organization_id}*")
 
 def to_dict(param_list):
     return {p["name"]: p["value"] for p in param_list}
@@ -106,6 +111,7 @@ class HostedTemplateListAPI(BaseListView):
         RowProtection.objects.create(
             user=self.request.user, hosted_template=obj, permission=PermissionMask.FULL_CONTROL
         )
+        _clear_cache(obj.id, organization.id)
 
         return {"message": "Successfully registered hosted template.", "id": obj.id}
 
@@ -135,6 +141,7 @@ class HostedTemplateDetailAPI(BaseDetailView):
 
         # Grab the hosted template's object and delete it from the database
         obj = HostedTemplate.objects.get(pk=params["id"])
+        _clear_cache(obj.id, obj.organization.id)
         obj.delete()
 
         return {"message": "Hosted template deleted successfully!"}
@@ -171,6 +178,7 @@ class HostedTemplateDetailAPI(BaseDetailView):
             obj.tparams = params["tparams"]
 
         obj.save()
+        _clear_cache(obj.id, obj.organization.id)
 
         return {"message": f"Hosted template {obj_id} successfully updated!"}
 

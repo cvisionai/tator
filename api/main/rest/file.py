@@ -20,6 +20,7 @@ from ..schema import FileDetailSchema
 from ..schema import parse
 from ..schema.components.file import file
 from ..schema.components.file import file_fields as fields
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -36,6 +37,10 @@ logger = logging.getLogger(__name__)
 
 FILE_PROPERTIES = list(file["properties"].keys())
 
+def _clear_cache(pk, project_id):
+    cache = TatorCache()
+    cache.clear_last_modified(f"/rest/File/{pk}*")
+    cache.clear_last_modified(f"/rest/Files/{project_id}*")
 
 class FileListAPI(BaseListView):
     schema = FileListSchema()
@@ -122,6 +127,8 @@ class FileListAPI(BaseListView):
             elemental_id=elemental_id,
         )
 
+        _clear_cache(new_file.id, project.id)
+
         return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
     def get_queryset(self, **kwargs):
@@ -153,6 +160,7 @@ class FileDetailAPI(BaseDetailView):
             else:
                 drop_file_from_resource(obj.path.name, obj)
                 safe_delete(obj.path.name, obj.project.id)
+        _clear_cache(obj.id, obj.project.id)
 
         msg = f"Registered file deleted successfully!"
 
@@ -202,6 +210,7 @@ class FileDetailAPI(BaseDetailView):
 
         obj.modified_by = self.request.user
         obj.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+        _clear_cache(obj.id, obj.project.id)
 
         obj.save()
 
