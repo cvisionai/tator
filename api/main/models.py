@@ -2074,8 +2074,20 @@ class State(Model, ModelDiffMixin):
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column="version")
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True, db_column="parent")
     """ Pointer to localization in which this one was generated from """
-    media = ManyToManyField(Media, related_name="state")
-    localizations = ManyToManyField(Localization)
+    # media = ManyToManyField(Media, related_name="state")
+    # localizations = ManyToManyField(Localization)
+    media_proj = ManyToManyField(
+        Media,
+        related_name="state_media_proj",
+        through="StateMediaM2M",
+        through_fields=("state", "media_proj"),
+    )
+    localization_proj = ManyToManyField(
+        Localization,
+        related_name="state_localization_proj",
+        through="StateLocalizationM2M",
+        through_fields=("state", "localization_proj"),
+    )
     segments = JSONField(null=True, blank=True)
     color = CharField(null=True, blank=True, max_length=8)
     frame = PositiveIntegerField(null=True, blank=True)
@@ -2143,7 +2155,7 @@ class StateLocalizationM2M(Model):
         ]
 
 
-@receiver(m2m_changed, sender=State.localizations.through)
+@receiver(m2m_changed, sender=State.localization_proj.through)
 def calc_segments(sender, **kwargs):
     instance = kwargs["instance"]
     sortedLocalizations = Localization.objects.filter(pk__in=instance.localizations.all()).order_by(
