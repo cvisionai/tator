@@ -37,6 +37,7 @@ fields = [
     "default_line",
     "default_dot",
     "elemental_id",
+    "modified_datetime",
 ]
 
 

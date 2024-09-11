@@ -158,6 +158,22 @@ class TatorCache:
             url = url.decode()
         return url
 
+    def set_last_modified(self, path, last_modified):
+        """Stores last modified time for a row."""
+        timestamp = str(last_modified.timestamp())
+        self.rds.set(f"last_modified__{path}", timestamp, ex=EXPIRE_TIME)
+
+    def get_last_modified(self, path):
+        """Retrieves last modified time for a row."""
+        timestamp = self.rds.get(f"last_modified__{path}")
+        if timestamp is not None:
+            last_modified = datetime.fromtimestamp(float(timestamp))
+        return last_modified
+
+    def clear_last_modified(self, path):
+        """Clears last modified time for a row."""
+        self.rds.delete(f"last_modified__{path}")
+
     def invalidate_all(self):
         """Invalidates all caches."""
         for prefix in ["creds_"]:
