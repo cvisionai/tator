@@ -2339,7 +2339,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         ]
         for state in self.states:
             for media in random.choices(self.videos):
-                state.media.add(media)
+                add_media_to_state(state, media)
 
     def test_delete(self):
         self.client.delete(f"/rest/Project/{self.project.pk}")
@@ -2429,12 +2429,8 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         self.test_bucket = create_test_bucket(None)
         resource = Resource(path="fake_key.txt", bucket=self.test_bucket)
         resource.save()
-        ResourceMediaM2M.objects.create(
-            resource=resource, media=self.public_video, project=self.public_video.project
-        )
-        ResourceMediaM2M.objects.create(
-            resource=resource, media=self.private_video, project=self.private_video.project
-        )
+        add_media_to_resource(resource, self.public_video)
+        add_media_to_resource(resource, self.private_video)
         resource.save()
 
     def test_random_user(self):
@@ -2656,7 +2652,7 @@ class VideoTestCase(
             frame=10,
             version=self.project.version_set.all()[0],
         )
-        state.media.add(self.entities[1])
+        add_media_to_state(state, self.entities[1])
         state.save()
 
         state_2 = State.objects.create(
@@ -2667,7 +2663,7 @@ class VideoTestCase(
             frame=100,
             version=self.project.version_set.all()[0],
         )
-        state_2.media.add(self.entities[1])
+        add_media_to_state(state_2, self.entities[1])
         state_2.save()
 
         # Do a frame_state lookup and find the localization at
@@ -3387,7 +3383,7 @@ class StateTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
@@ -3424,7 +3420,7 @@ class StateTestCase(
                 attributes={"Float Test": random.random() * 1000},
             )
             for media in random.choices(self.media_entities):
-                state.media.add(media)
+                add_media_to_state(state, media)
             self.entities.append(state)
         for e in self.entities:
             lookup = ProjectLookup.objects.get(project=e.project, state=e.pk)
@@ -6895,17 +6891,13 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         self.private_media = [v.pk for v in self.videos[3:6]]
 
         for media in self.videos[:3]:
-            SectionMediaM2M.objects.create(
-                section=self.public_section, media=media, project=media.project
-            )
+            add_media_to_section(self.public_section, media)
             self.public_section.save()
             media.primary_section = self.public_section
             media.save()
 
         for media in self.videos[3:6]:
-            SectionMediaM2M.objects.create(
-                section=self.private_section, media=media, project=media.project
-            )
+            add_media_to_section(self.private_section, media)
             self.private_section.save()
             media.primary_section = self.private_section
             media.save()

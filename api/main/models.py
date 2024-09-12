@@ -1721,11 +1721,7 @@ class Resource(Model):
             if created:
                 obj.bucket = media.project.bucket
                 obj.save()
-            existing = ResourceMediaM2M.objects.filter(
-                resource=obj, media=media, project=media.project
-            )
-            if not existing:
-                ResourceMediaM2M.objects.create(resource=obj, media=media, project=media.project)
+            add_media_to_resource(obj, media)
 
     @staticmethod
     @transaction.atomic
@@ -1826,6 +1822,13 @@ class ResourceMediaM2M(Model):
         constraints = [
             UniqueConstraint(name="resourcem2m", fields=["resource", "project", "media"])
         ]
+
+
+@transaction.atomic
+def add_media_to_resource(resource, media):
+    obj, created = ResourceMediaM2M.objects.get_or_create(
+        resource=resource, media=media, project=media.project
+    )
 
 
 @receiver(post_save, sender=Media)
@@ -2134,6 +2137,31 @@ class StateMediaM2M(Model):
         ]
 
 
+@transaction.atomic
+def add_media_id_to_state(state, media_id, project_id):
+    if type(media_id) == int:
+        obj, created = StateMediaM2M.objects.get_or_create(
+            state=state, media_id=media_id, project_id=project_id
+        )
+    else:
+        existing = list(
+            StateMediaM2M.objects.filter(
+                state=state, media_id__in=media_id, project=project_id
+            ).values_list("media_id", flat=True)
+        )
+        blk = []
+        for media in media_id:
+            if media not in existing:
+                blk.append(StateMediaM2M(state=state, media_id=media, project_id=project_id))
+
+        if blk:
+            StateMediaM2M.objects.bulk_create(blk)
+
+
+def add_media_to_state(state, media):
+    return add_media_id_to_state(state, media.id, media.project.id)
+
+
 class StateLocalizationM2M(Model):
     state = ForeignKey(State, on_delete=CASCADE)
     localization = ForeignKey(Localization, on_delete=CASCADE)
@@ -2153,6 +2181,33 @@ class StateLocalizationM2M(Model):
                 name="state_localization_m2m", fields=["state", "project", "localization"]
             )
         ]
+
+
+@transaction.atomic
+def add_localization_id_to_state(state, localization_id, project_id):
+    if type(localization_id) == int:
+        obj, created = StateLocalizationM2M.objects.get_or_create(
+            state=state, localization_id=localization_id, project_id=project_id
+        )
+    else:
+        existing = list(
+            StateLocalizationM2M.objects.filter(
+                state=state, localization_id__in=localization_id, project=project_id
+            ).values_list("localization_id", flat=True)
+        )
+        blk = []
+        for local in localization_id:
+            if local not in existing:
+                blk.append(
+                    StateLocalizationM2M(state=state, localization_id=local, project_id=project_id)
+                )
+
+        if blk:
+            StateLocalizationM2M.objects.bulk_create(blk)
+
+
+def add_localization_to_state(state, localization):
+    return add_localization_id_to_state(state, localization.id, localization.project.id)
 
 
 @receiver(m2m_changed, sender=State.localization_proj.through)
@@ -2324,6 +2379,17 @@ class SectionMediaM2M(Model):
 
     class Meta:
         constraints = [UniqueConstraint(name="sectionm2m", fields=["section", "project", "media"])]
+
+
+@transaction.atomic
+def add_media_id_to_section(section, media_id, project_id):
+    obj, created = SectionMediaM2M.objects.get_or_create(
+        section=section, media_id=media, project_id=project_id
+    )
+
+
+def add_media_to_section(section, media):
+    return add_media_id_to_section(section, media.id, media.project.id)
 
 
 class Favorite(Model):

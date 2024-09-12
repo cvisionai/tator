@@ -521,10 +521,10 @@ class MediaListAPI(BaseListView):
 
             # Any states that are only associated to deleted media should also be marked
             # for deletion.
-            not_deleted = State.objects.filter(project=project, media__deleted=False).values_list(
-                "id", flat=True
-            )
-            deleted = State.objects.filter(project=project, media__deleted=True).values_list(
+            not_deleted = State.objects.filter(
+                project=project, media_proj__deleted=False
+            ).values_list("id", flat=True)
+            deleted = State.objects.filter(project=project, media_proj__deleted=True).values_list(
                 "id", flat=True
             )
             all_deleted = set(deleted) - set(not_deleted)
@@ -904,10 +904,10 @@ class MediaDetailAPI(BaseDetailView):
 
         # Any states that are only associated to deleted media should also be marked
         # for deletion.
-        not_deleted = State.objects.filter(project=project, media__deleted=False).values_list(
+        not_deleted = State.objects.filter(project=project, media_proj__deleted=False).values_list(
             "id", flat=True
         )
-        deleted = State.objects.filter(project=project, media__deleted=True).values_list(
+        deleted = State.objects.filter(project=project, media_proj__deleted=True).values_list(
             "id", flat=True
         )
         all_deleted = set(deleted) - set(not_deleted)

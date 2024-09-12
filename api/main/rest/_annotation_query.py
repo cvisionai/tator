@@ -74,7 +74,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if media_id is not None:
         media_ids += media_id
     if media_ids:
-        qs = qs.filter(media__in=set(media_ids))
+        qs = qs.filter(media_proj__pk__in=set(media_ids))
         if len(media_ids) > 1:
             qs = qs.distinct()
 
@@ -99,13 +99,15 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if frame_state_ids and (annotation_type == "localization"):
         # Combine media and frame from states then find localizations that match
         expression = ExpressionWrapper(
-            Cast("media", output_field=BigIntegerField()).bitleftshift(32).bitor(F("frame")),
+            Cast("media_proj__pk", output_field=BigIntegerField())
+            .bitleftshift(32)
+            .bitor(F("frame")),
             output_field=BigIntegerField(),
         )
         media_frames = (
             State.objects.filter(
                 pk__in=set(frame_state_ids),
-                media__isnull=False,
+                media_proj__isnull=False,
                 frame__isnull=False,
                 variant_deleted=False,
             )

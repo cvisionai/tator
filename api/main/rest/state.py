@@ -21,6 +21,10 @@ from ..models import ProjectLookup
 from ..models import User
 from ..models import InterpolationMethods
 from ..models import Section
+from ..models import StateMediaM2M
+from ..models import StateLocalizationM2M
+from ..models import add_media_to_state, add_media_id_to_state
+from ..models import add_localization_to_state, add_localization_id_to_state
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema, StateByElementalIdSchema
 from ..schema import MergeStatesSchema
@@ -61,7 +65,7 @@ def _fill_m2m(response_data):
     state_ids = set([state["id"] for state in response_data])
     localizations = {
         obj["state_id"]: obj["localizations"]
-        for obj in State.localizations.through.objects.filter(state__in=state_ids)
+        for obj in State.localization_proj.through.objects.filter(state__in=state_ids)
         .values("state_id")
         .order_by("state_id")
         .annotate(localizations=ArrayAgg("localization_id", default=[]))
@@ -69,7 +73,7 @@ def _fill_m2m(response_data):
     }
     media = {
         obj["state_id"]: obj["media"]
-        for obj in State.media.through.objects.filter(state__in=state_ids)
+        for obj in State.media_proj.through.objects.filter(state__in=state_ids)
         .values("state_id")
         .order_by("state_id")
         .annotate(media=ArrayAgg("media_id", default=[]))
@@ -307,33 +311,14 @@ class StateListAPI(BaseListView):
         # Create media relations.
         media_relations = []
         for state, state_spec in zip(states, state_specs):
-            for media_id in state_spec["media_ids"]:
-                media_states = State.media.through(
-                    state_id=state.id,
-                    media_id=media_id,
-                )
-                media_relations.append(media_states)
-                if len(media_relations) > 1000:
-                    State.media.through.objects.bulk_create(media_relations, ignore_conflicts=True)
-                    media_relations = []
-        State.media.through.objects.bulk_create(media_relations, ignore_conflicts=True)
+            if "media_ids" in state_spec:
+                add_media_id_to_state(state, state_spec["media_ids"], project.pk)
 
         # Create localization relations.
         loc_relations = []
         for state, state_spec in zip(states, state_specs):
             if "localization_ids" in state_spec:
-                for localization_id in state_spec["localization_ids"]:
-                    loc_states = State.localizations.through(
-                        state_id=state.id,
-                        localization_id=localization_id,
-                    )
-                    loc_relations.append(loc_states)
-                    if len(loc_relations) > 1000:
-                        State.localizations.through.objects.bulk_create(
-                            loc_relations, ignore_conflicts=True
-                        )
-                        loc_relations = []
-        State.localizations.through.objects.bulk_create(loc_relations, ignore_conflicts=True)
+                add_localization_id_to_state(state, state_spec["localization_ids"], project.pk)
 
         # Calculate segments (this is not triggered for bulk created m2m).
         localization_ids = set(
@@ -435,7 +420,9 @@ class StateListAPI(BaseListView):
                 origin_datetimes = []
 
                 for original in qs.iterator():
-                    many_to_many.append((original.media.all(), original.localizations.all()))
+                    many_to_many.append(
+                        (original.media_proj.all(), original.localization_proj.all())
+                    )
                     original.pk = None
                     original.id = None
                     for key, value in update_kwargs.items():
@@ -445,8 +432,12 @@ class StateListAPI(BaseListView):
                     origin_datetimes.append(original.created_datetime)
                 new_objs = State.objects.bulk_create(objs)
                 for p_obj, m2m, origin_datetime in zip(new_objs, many_to_many, origin_datetimes):
-                    p_obj.media.set(m2m[0])
-                    p_obj.localizations.set(m2m[1])
+                    add_localization_id_to_state(
+                        p_obj, list(m2m[1].values_list("id", flat=True)), p_obj.project.pk
+                    )
+                    add_media_id_to_state(
+                        p_obj, list(m2m[0].values_list("id", flat=True)), p_obj.project.pk
+                    )
 
                     # Django doesn't let you fix created_datetime unless you fetch the object again
                     found_it = State.objects.get(pk=p_obj.pk)
@@ -494,17 +485,11 @@ class StateDetailBaseAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         state = qs.values(*STATE_PROPERTIES)[0]
+        local_qs = StateLocalizationM2M.objects.filter(state=state["id"])
+        media_qs = StateMediaM2M.objects.filter(state=state["id"])
         # Get many to many fields.
-        state["localizations"] = list(
-            State.localizations.through.objects.filter(state_id=state["id"]).aggregate(
-                localizations=ArrayAgg("localization_id", default=[])
-            )["localizations"]
-        )
-        state["media"] = list(
-            State.media.through.objects.filter(state_id=state["id"]).aggregate(
-                media=ArrayAgg("media_id", default=[])
-            )["media"]
-        )
+        state["localizations"] = list(local_qs.values_list("localization_id", flat=True))
+        state["media"] = list(media_qs.values_list("media_id", flat=True))
         return state
 
     def patch_qs(self, params, qs):
@@ -537,40 +522,41 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.frame = params["frame"]
 
         if "media_ids" in params:
-            media_elements = Media.objects.filter(pk__in=params["media_ids"])
-            obj.media.set(media_elements)
             if association_type != "Media":
                 logger.warning(
                     f"Media set on state {obj.id} of type {association_type}."
                     "This is not a Media type state."
                 )
 
+            obj.media_proj.all().delete()
+
+            add_media_id_to_state(obj, params["media_ids"], obj.project.pk)
+
         if "localization_ids" in params:
-            localizations = Localization.objects.filter(pk__in=params["localization_ids"])
-            obj.localizations.set(localizations)
             if association_type != "Localization":
                 logger.warning(
                     f"Media set on state {obj.id} of type {association_type}."
                     "This is not a Media type state."
                 )
+            obj.localization_proj.all().delete()
+            add_localization_id_to_state(obj, params["localization_ids"], obj.project.pk)
 
         if "localization_ids_add" in params:
-            localizations = Localization.objects.filter(pk__in=params["localization_ids_add"])
-            obj.localizations.add(*list(localizations))
             if association_type != "Localization":
                 logger.warning(
                     f"Media set on state {obj.id} of type {association_type}."
                     "This is not a Media type state."
                 )
+            add_localization_id_to_state(obj, params["localization_ids_add"], obj.project.pk)
 
         if "localization_ids_remove" in params:
-            localizations = Localization.objects.filter(pk__in=params["localization_ids_remove"])
-            obj.localizations.remove(*list(localizations))
             if association_type != "Localization":
                 logger.warning(
                     f"Media set on state {obj.id} of type {association_type}."
                     "This is not a Media type state."
                 )
+            local_qs = obj.localization_proj.filter(pk__in=params["localization_ids_remove"])
+            local_qs.delete()
 
         if params.get("user_elemental_id", None):
             params["in_place"] = 1
@@ -580,11 +566,11 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.created_by = computed_author
 
         # Make sure media and localizations are part of this project.
-        media_qs = Media.objects.filter(pk__in=obj.media.all())
-        localization_qs = Localization.objects.filter(pk__in=obj.localizations.all())
+        media_qs = Media.objects.filter(pk__in=obj.media_proj.all())
+        localization_qs = obj.localization_proj.all()
         media_projects = list(media_qs.values_list("project", flat=True).distinct())
         localization_projects = list(localization_qs.values_list("project", flat=True).distinct())
-        if obj.localizations.count() > 0:
+        if obj.localization_proj.count() > 0:
             if len(localization_projects) != 1:
                 raise Exception(
                     f"Localizations must be part of project {obj.project.id}, got projects "
@@ -595,7 +581,7 @@ class StateDetailBaseAPI(BaseDetailView):
                     f"Localizations must be part of project {obj.project.id}, got project "
                     f"{localization_projects[0]}!"
                 )
-        if obj.media.count() > 0:
+        if obj.media_proj.count() > 0:
             if len(media_projects) != 1:
                 raise Exception(
                     f"Media must be part of project {obj.project.id}, got projects "
@@ -625,8 +611,8 @@ class StateDetailBaseAPI(BaseDetailView):
                     f"Object is mark {obj.mark} of {obj.latest_mark} for {obj.version.name}/{obj.elemental_id}"
                 )
 
-            old_media = obj.media.all()
-            old_localizations = obj.localizations.all()
+            old_media = list(obj.media_proj.all().values_list("id", flat=True))
+            old_localizations = list(obj.localization_proj.all().values_list("id", flat=True))
             # Save edits as new object, mark is calculated in trigger
             obj.id = None
             obj.pk = None
@@ -636,8 +622,10 @@ class StateDetailBaseAPI(BaseDetailView):
             # Keep original creation time
             found_it.created_datetime = origin_datetime
             found_it.save()
-            found_it.media.set(old_media)
-            found_it.localizations.set(old_localizations)
+
+            # Add by list
+            add_media_id_to_state(found_it, old_media, obj.project.pk)
+            add_localization_id_to_state(found_it, old_localizations, obj.project.pk)
 
         return {
             "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
@@ -738,7 +726,7 @@ class TrimStateEndAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params: dict) -> dict:
         obj = State.objects.get(pk=params["id"], deleted=False)
-        localizations = obj.localizations.order_by("frame")
+        localizations = obj.localization_proj.order_by("frame")
 
         if params["endpoint"] == "start":
             keep_localization = lambda frame: frame >= params["frame"]

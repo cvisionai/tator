@@ -11,6 +11,7 @@ from ..models import Project
 from ..models import database_qs
 from ..models import RowProtection
 from ..models import SectionMediaM2M
+from ..models import add_media_to_section
 from ..schema import SectionListSchema
 from ..schema import SectionDetailSchema
 from ..schema.components import section
@@ -138,9 +139,7 @@ class SectionListAPI(BaseListView):
         )
         if media_list:
             for media_id in media_list:
-                SectionMediaM2M.objects.create(
-                    section=section, media_id=media_id, project_id=project.id
-                )
+                add_media_id_to_section(section, media_id, project.pk)
             section.save()
         # Automatically create row protection for newly created section based on the creator
         RowProtection.objects.create(
@@ -223,6 +222,7 @@ class SectionDetailAPI(BaseDetailView):
         # Handle removing/adding media
         media_add = params.get("media_add", [])
         media_del = params.get("media_del", [])
+        # This is already in an atomic block so we are good to go.
         for m in media_add:
             SectionMediaM2M.objects.create(
                 section=section, media_id=media_id, project_id=project.id

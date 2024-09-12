@@ -77,7 +77,9 @@ OPERATOR_SUFFIXES = {
 class MediaFieldExpression:
     def get_wrapper():
         return ExpressionWrapper(
-            Cast("media", output_field=BigIntegerField()).bitleftshift(32).bitor(F("frame")),
+            Cast("media_proj__pk", output_field=BigIntegerField())
+            .bitleftshift(32)
+            .bitor(F("frame")),
             output_field=BigIntegerField(),
         )
 
