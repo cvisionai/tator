@@ -712,7 +712,9 @@ class MergeStatesAPI(BaseDetailView):
         }
 
     def get_queryset(self):
-        return State.objects.all()
+        return self.filter_only_viewables(
+            State.objects.objects.filter(pk__in=[self.params["id"], self.params["merge_state_id"]])
+        )
 
 
 class TrimStateEndAPI(BaseDetailView):
@@ -760,7 +762,7 @@ class TrimStateEndAPI(BaseDetailView):
         }
 
     def get_queryset(self):
-        return State.objects.all()
+        return self.filter_only_viewables(State.objects.filter(pk=self.params["id"]))
 
 
 class StateDetailAPI(StateDetailBaseAPI):
