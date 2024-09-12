@@ -528,9 +528,7 @@ class StateDetailBaseAPI(BaseDetailView):
                     "This is not a Media type state."
                 )
 
-            obj.media_proj.all().delete()
-
-            add_media_id_to_state(obj, params["media_ids"], obj.project.pk)
+            add_media_id_to_state(obj, params["media_ids"], obj.project.pk, clear=True)
 
         if "localization_ids" in params:
             if association_type != "Localization":
@@ -538,8 +536,10 @@ class StateDetailBaseAPI(BaseDetailView):
                     f"Media set on state {obj.id} of type {association_type}."
                     "This is not a Media type state."
                 )
-            obj.localization_proj.all().delete()
-            add_localization_id_to_state(obj, params["localization_ids"], obj.project.pk)
+
+            add_localization_id_to_state(
+                obj, params["localization_ids"], obj.project.pk, clear=True
+            )
 
         if "localization_ids_add" in params:
             if association_type != "Localization":

@@ -2138,17 +2138,18 @@ class StateMediaM2M(Model):
 
 
 @transaction.atomic
-def add_media_id_to_state(state, media_id, project_id):
+def add_media_id_to_state(state, media_id, project_id, clear=False):
     if type(media_id) == int:
         obj, created = StateMediaM2M.objects.get_or_create(
             state=state, media_id=media_id, project_id=project_id
         )
     else:
-        existing = list(
-            StateMediaM2M.objects.filter(
-                state=state, media_id__in=media_id, project=project_id
-            ).values_list("media_id", flat=True)
+        existing = StateMediaM2M.objects.filter(
+            state=state, media_id__in=media_id, project=project_id
         )
+        if clear:
+            existing.delete()
+        existing = list(existing.values_list("media_id", flat=True))
         blk = []
         for media in media_id:
             if media not in existing:
@@ -2184,17 +2185,18 @@ class StateLocalizationM2M(Model):
 
 
 @transaction.atomic
-def add_localization_id_to_state(state, localization_id, project_id):
+def add_localization_id_to_state(state, localization_id, project_id, clear=False):
     if type(localization_id) == int:
         obj, created = StateLocalizationM2M.objects.get_or_create(
             state=state, localization_id=localization_id, project_id=project_id
         )
     else:
-        existing = list(
-            StateLocalizationM2M.objects.filter(
-                state=state, localization_id__in=localization_id, project=project_id
-            ).values_list("localization_id", flat=True)
+        existing = StateLocalizationM2M.objects.filter(
+            state=state, localization_id__in=localization_id, project=project_id
         )
+        if clear:
+            existing.delete()
+        existing = list(existing.values_list("localization_id", flat=True))
         blk = []
         for local in localization_id:
             if local not in existing:
