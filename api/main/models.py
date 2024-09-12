@@ -2077,8 +2077,8 @@ class State(Model, ModelDiffMixin):
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=False, db_column="version")
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True, db_column="parent")
     """ Pointer to localization in which this one was generated from """
-    # media = ManyToManyField(Media, related_name="state")
-    # localizations = ManyToManyField(Localization)
+    media = ManyToManyField(Media, related_name="state")
+    localizations = ManyToManyField(Localization)
     media_proj = ManyToManyField(
         Media,
         related_name="state_media_proj",
