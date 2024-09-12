@@ -115,7 +115,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             .distinct()
         )
         qs = (
-            qs.filter(media__isnull=False, frame__isnull=False)
+            qs.filter(media_proj__isnull=False, frame__isnull=False)
             .alias(media_frame=expression)
             .filter(media_frame__in=media_frames)
         )
@@ -201,9 +201,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 raise ValueError(f"Invalid Section value pk={section.pk}")
 
             media_ids.append(media_qs)
-        query = Q(media__in=media_ids.pop())
+        query = Q(media_proj__pk__in=media_ids.pop())
         for m in media_ids:
-            query = query | Q(media__in=m)
+            query = query | Q(media_proj__pk__in=m)
         qs = qs.filter(query)
 
     # Do a related query
@@ -226,9 +226,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 )
         if related_matches:
             related_match = related_matches.pop()
-            query = Q(media__in=related_match)
+            query = Q(media_proj__in=related_match)
             for r in related_matches:
-                query = query | Q(media__in=r)
+                query = query | Q(media_proj__in=r)
             qs = qs.filter(query).distinct()
 
     if params.get("encoded_related_search"):
@@ -244,9 +244,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 related_matches.append(media_qs)
         if related_matches:
             related_match = related_matches.pop()
-            query = Q(media__in=related_match)
+            query = Q(media_proj__in=related_match)
             for r in related_matches:
-                query = query | Q(media__in=r)
+                query = query | Q(media_proj__in=r)
             qs = qs.filter(query).distinct()
         else:
             qs = qs.filter(pk=-1)

@@ -3945,11 +3945,11 @@ class StateMediaDeleteCase(TatorTransactionTest):
         self.assertEqual(len(response.data), 2)
 
         not_deleted = State.objects.filter(
-            project=self.project.pk, media__deleted=False
+            project=self.project.pk, media_proj__deleted=False
         ).values_list("id", flat=True)
-        deleted = State.objects.filter(project=self.project.pk, media__deleted=True).values_list(
-            "id", flat=True
-        )
+        deleted = State.objects.filter(
+            project=self.project.pk, media_proj__deleted=True
+        ).values_list("id", flat=True)
 
         response = self.client.delete(
             f"/rest/Medias/{self.project.pk}?attribute={attr_search}", format="json"
@@ -3968,11 +3968,11 @@ class StateMediaDeleteCase(TatorTransactionTest):
             "id", flat=True
         )
         not_deleted = State.objects.filter(
-            project=self.project.pk, media__deleted=False
+            project=self.project.pk, media_proj__deleted=False
         ).values_list("id", flat=True)
-        deleted = State.objects.filter(project=self.project.pk, media__deleted=True).values_list(
-            "id", flat=True
-        )
+        deleted = State.objects.filter(
+            project=self.project.pk, media_proj__deleted=True
+        ).values_list("id", flat=True)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 0)

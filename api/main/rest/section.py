@@ -11,7 +11,7 @@ from ..models import Project
 from ..models import database_qs
 from ..models import RowProtection
 from ..models import SectionMediaM2M
-from ..models import add_media_to_section
+from ..models import add_media_to_section, add_media_id_to_section
 from ..schema import SectionListSchema
 from ..schema import SectionDetailSchema
 from ..schema.components import section

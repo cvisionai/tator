@@ -2384,7 +2384,7 @@ class SectionMediaM2M(Model):
 @transaction.atomic
 def add_media_id_to_section(section, media_id, project_id):
     obj, created = SectionMediaM2M.objects.get_or_create(
-        section=section, media_id=media, project_id=project_id
+        section=section, media_id=media_id, project_id=project_id
     )
 
 
