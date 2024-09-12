@@ -11,7 +11,16 @@ from django.http import Http404
 from django.db.models.functions import Cast
 from django.db.models import UUIDField, TextField, F
 
-from ..models import LocalizationType, Media, MediaType, Localization, Section, State, StateType
+from ..models import (
+    LocalizationType,
+    Media,
+    MediaType,
+    Localization,
+    Section,
+    State,
+    StateType,
+    StateMediaM2M,
+)
 
 from ..schema._attributes import related_keys
 from ._attribute_query import (
@@ -71,7 +80,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
         media_ids += media_id
     if state_ids is not None:
         media_ids += list(
-            State.media.through.objects.filter(state__in=set(state_ids))
+            StateMediaM2M.objects.filter(state__in=set(state_ids), project=project)
             .values_list("media_id", flat=True)
             .distinct()
         )
@@ -174,9 +183,9 @@ def _get_media_psql_queryset(project, filter_ops, params):
                 )
         if related_matches:
             related_match = related_matches.pop()
-            query = Q(pk__in=related_match.values("media"))
+            query = Q(pk__in=related_match.values("media_proj__pk"))
             for r in related_matches:
-                query = query | Q(pk__in=r.values("media"))
+                query = query | Q(pk__in=r.values("media_proj__pk"))
             qs = qs.filter(query).distinct()
 
     if section_id:
@@ -187,7 +196,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
         section_uuid = section[0].tator_user_sections
 
         if section[0].explicit_listing:
-            qs = qs.filter(pk__in=section[0].media.all())
+            qs = qs.filter(pk__in=section[0].media_proj.all().values("pk"))
         elif section_uuid:
             qs = _look_for_section_uuid(qs, section_uuid)
         elif section[0].object_search:
@@ -212,7 +221,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
             section_uuid = section.tator_user_sections
 
             if section.explicit_listing:
-                match_qs = qs.filter(pk__in=section.media_proj.all())
+                match_qs = qs.filter(pk__in=section.media_proj.all().values("pk"))
             elif section_uuid:
                 match_qs = _look_for_section_uuid(qs, section_uuid)
 

@@ -10,7 +10,17 @@ from django.db.models.functions import Coalesce, Cast
 from django.db.models import Q, F
 from django.db.models import BigIntegerField, ExpressionWrapper
 
-from ..models import Localization, LocalizationType, Media, MediaType, Section, State, StateType
+from ..models import (
+    Localization,
+    LocalizationType,
+    Media,
+    MediaType,
+    Section,
+    State,
+    StateType,
+    StateLocalizationM2M,
+    StateMediaM2M,
+)
 
 from ..schema._attributes import related_keys
 
@@ -83,7 +93,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         localization_ids += localization_id_put
     if state_ids and (annotation_type == "localization"):
         localization_ids += list(
-            State.localizations.through.objects.filter(state__in=set(state_ids))
+            StateLocalizationM2M.objects.filter(state__in=set(state_ids), project=project)
             .values_list("localization_id", flat=True)
             .distinct()
         )
@@ -91,7 +101,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         if annotation_type == "localization":
             qs = qs.filter(pk__in=set(localization_ids))
         elif annotation_type == "state":
-            qs = qs.filter(localizations__in=set(localization_ids)).distinct()
+            qs = qs.filter(localization_proj__pk__in=set(localization_ids)).distinct()
 
     if state_ids and (annotation_type == "state"):
         qs = qs.filter(pk__in=set(state_ids))
@@ -257,7 +267,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             state_qs = State.objects.filter(pk__in=set(params.get("related_id")))
             qs = qs.filter(pk__in=state_qs.values("localizations").distinct())
         elif annotation_type == "state":
-            qs = qs.filter(localizations__in=set(params.get("related_id")))
+            qs = qs.filter(localization_proj__pk__in=set(params.get("related_id")))
 
     if apply_merge:
         # parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
