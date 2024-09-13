@@ -5,6 +5,7 @@ import traceback
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import response
+from django.utils.http import parse_http_date_safe, http_date
 
 from ..models import State
 from ..renderers import PngRenderer
