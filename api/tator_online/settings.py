@@ -218,7 +218,7 @@ class TatorLogFormatter(logging.Formatter):
             dd_log_inject = f"[dd.service={getattr(record,'dd.service', None)} dd.env={getattr(record,'dd.env', None)} dd.version={getattr(record,'dd.version', None)} dd.trace_id={getattr(record,'dd.trace_id', None)} dd.span_id={getattr(record,'dd.span_id', None)}]"
         message = f"{time_str} {record.levelname} [{record.name}] [{record.filename}:{record.lineno}] {dd_log_inject} - {self.format_multiline(record.getMessage())}"
         if record.exc_info:
-            message += "| " + format_multiline(record.exc_info)
+            message += "| " + self.format_multiline(record.exc_info)
         return message
 
 
