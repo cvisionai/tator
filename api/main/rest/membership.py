@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Case, When, Value, CharField
 
 from ..models import Membership
 from ..models import Project
@@ -18,7 +18,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-MEMBERSHIP_FIELDS = membership_schema["properties"].keys()
+MEMBERSHIP_FIELDS = list(membership_schema["properties"].keys())
+MEMBERSHIP_FIELDS.remove("permission")
+permission_display = Case(
+    When(permission="r", then=Value("View Only")),
+    When(permission="w", then=Value("Can Edit")),
+    When(permission="t", then=Value("Can Transfer")),
+    When(permission="x", then=Value("Can Execute")),
+    When(permission="a", then=Value("Full Control")),
+    output_field=CharField(),
+)
 
 def _serialize_memberships(memberships):
     memberships = memberships.annotate(
@@ -27,9 +36,9 @@ def _serialize_memberships(memberships):
         last_name=F("user__last_name"),
         email=F("user__email"),
     ).order_by("last_name", "username")
-    membership_data = list(memberships.values(*MEMBERSHIP_FIELDS))
-    for membership in membership_data:
-        membership["permission"] = str(membership["permission"])
+    memberships = memberships.values(*MEMBERSHIP_FIELDS)
+    memberships = memberships.annotate(permission=permission_display)
+    membership_data = list(memberships)
     return membership_data
 
 

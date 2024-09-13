@@ -30,11 +30,11 @@ VERSION_FIELDS = list(version_schema["properties"].keys())
 VERSION_FIELDS.remove("bases")
 
 def _serialize_versions(versions):
-    version_data = list(versions.annotate(
+    versions = versions.values(*VERSION_FIELDS)
+    versions = versions.annotate(
         bases_list=ArrayAgg("bases__id", distinct=True, filter=Q(bases__id__isnull=False))
-    ).values(*VERSION_FIELDS, "bases_list"))
-    for version in version_data:
-        version["bases"] = version.pop("bases_list")
+    ).order_by("number")
+    version_data = list(versions)
     return version_data
 
 
