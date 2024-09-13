@@ -1,8 +1,9 @@
 import logging
 from collections import defaultdict
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
+from django.contrib.postgres.aggregates import ArrayAgg
 import datetime
 import uuid
 
@@ -25,10 +26,15 @@ from .._permission_util import PermissionMask
 logger = logging.getLogger(__name__)
 
 
-VERSION_FIELDS = version_schema["properties"].keys()
+VERSION_FIELDS = list(version_schema["properties"].keys())
+VERSION_FIELDS.remove("bases")
 
 def _serialize_versions(versions):
-    version_data = list(versions.values(*VERSION_FIELDS))
+    version_data = list(versions.annotate(
+        bases_list=ArrayAgg("bases__id", distinct=True, filter=Q(bases__id__isnull=False))
+    ).values(*VERSION_FIELDS, "bases_list"))
+    for version in version_data:
+        version["bases"] = version.pop("bases_list")
     return version_data
 
 
