@@ -7,6 +7,7 @@ from ..models import User
 from ..models import Version
 from ..schema import MembershipListSchema
 from ..schema import MembershipDetailSchema
+from ..schema.components import membership as membership_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -17,6 +18,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+MEMBERSHIP_FIELDS = membership_schema["properties"].keys()
+
 def _serialize_memberships(memberships):
     memberships = memberships.annotate(
         username=F("user__username"),
@@ -24,7 +27,7 @@ def _serialize_memberships(memberships):
         last_name=F("user__last_name"),
         email=F("user__email"),
     ).order_by("last_name", "username")
-    membership_data = list(memberships.values())
+    membership_data = list(memberships.values(*MEMBERSHIP_FIELDS))
     for membership in membership_data:
         membership["permission"] = str(membership["permission"])
     return membership_data

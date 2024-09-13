@@ -11,10 +11,10 @@ from ..models import Project
 from ..models import State
 from ..models import Localization
 from ..models import RowProtection
-from ..serializers import VersionSerializer
 from ..search import TatorSearch
 from ..schema import VersionListSchema
 from ..schema import VersionDetailSchema
+from ..schema.components import version as version_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -23,6 +23,13 @@ from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 from .._permission_util import PermissionMask
 
 logger = logging.getLogger(__name__)
+
+
+VERSION_FIELDS = version_schema["properties"].keys()
+
+def _serialize_versions(versions):
+    version_data = list(versions.values(*VERSION_FIELDS))
+    return version_data
 
 
 class VersionListAPI(BaseListView):
@@ -90,11 +97,7 @@ class VersionListAPI(BaseListView):
         project = params["project"]
 
         qs = self.get_queryset().order_by("number")
-        return VersionSerializer(
-            qs,
-            context=self.get_renderer_context(),
-            many=True,
-        ).data
+        return _serialize_versions(qs)
 
 
 class VersionDetailAPI(BaseDetailView):
@@ -122,8 +125,8 @@ class VersionDetailAPI(BaseDetailView):
         return super().get_permissions()
 
     def _get(self, params):
-        version = self.get_queryset()[0]
-        return VersionSerializer(version).data
+        version = self.get_queryset()
+        return _serialize_versions(version)[0]
 
     @transaction.atomic
     def _patch(self, params):
