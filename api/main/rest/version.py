@@ -32,7 +32,7 @@ VERSION_FIELDS.remove("bases")
 def _serialize_versions(versions):
     versions = versions.values(*VERSION_FIELDS)
     versions = versions.annotate(
-        bases_list=ArrayAgg("bases__id", distinct=True, filter=Q(bases__id__isnull=False))
+        bases=ArrayAgg("bases__id", distinct=True, filter=Q(bases__id__isnull=False))
     ).order_by("number")
     version_data = list(versions)
     return version_data
