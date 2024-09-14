@@ -1,12 +1,13 @@
 from django.db import transaction
+from django.db.models import F, Case, When, Value, CharField
 
 from ..models import Membership
 from ..models import Project
 from ..models import User
 from ..models import Version
-from ..models import database_qs
 from ..schema import MembershipListSchema
 from ..schema import MembershipDetailSchema
+from ..schema.components import membership as membership_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -17,22 +18,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+MEMBERSHIP_FIELDS = list(membership_schema["properties"].keys())
+MEMBERSHIP_FIELDS.remove("permission")
+permission_display = Case(
+    When(permission="r", then=Value("View Only")),
+    When(permission="w", then=Value("Can Edit")),
+    When(permission="t", then=Value("Can Transfer")),
+    When(permission="x", then=Value("Can Execute")),
+    When(permission="a", then=Value("Full Control")),
+    output_field=CharField(),
+)
+
 def _serialize_memberships(memberships):
-    membership_data = database_qs(memberships)
-    for idx, membership in enumerate(memberships):
-        membership_data[idx]["permission"] = str(membership.permission)
-        membership_data[idx]["username"] = membership.user.username
-        membership_data[idx]["first_name"] = membership.user.first_name
-        membership_data[idx]["last_name"] = membership.user.last_name
-        membership_data[idx]["email"] = membership.user.email
-        membership_data[idx]["default_version"] = (
-            membership.default_version.pk if membership.default_version else None
-        )
-    membership_data.sort(
-        key=lambda membership: membership["last_name"].lower()
-        if membership["last_name"]
-        else membership["username"].lower()
-    )
+    memberships = memberships.annotate(
+        username=F("user__username"),
+        first_name=F("user__first_name"),
+        last_name=F("user__last_name"),
+        email=F("user__email"),
+    ).order_by("last_name", "username")
+    memberships = memberships.values(*MEMBERSHIP_FIELDS)
+    memberships = memberships.annotate(permission=permission_display)
+    membership_data = list(memberships)
     return membership_data
 
 
