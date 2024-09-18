@@ -120,7 +120,7 @@ RETURN NEW;
 @receiver(connection_created)
 def on_connection_created(sender, connection, **kwargs):
     http_method = get_http_method()
-    if http_method in ["PATCH", "POST"]:
+    if http_method in ["PATCH", "POST", "DELETE"]:
         logger.info(
             f"{http_method} detected, creating prepared statements."
         )  # useful for testing purposes
