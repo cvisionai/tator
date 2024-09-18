@@ -374,7 +374,7 @@ class StateListAPI(BaseListView):
                         qs,
                         params["project"],
                         self.request.user,
-                        update_kwargs={"variant_deleted": True},
+                        update_kwargs={"variant_deleted": True, "modifed_by": self.request.user},
                         new_attributes=None,
                     )
                 else:
@@ -383,6 +383,7 @@ class StateListAPI(BaseListView):
                         original.pk = None
                         original.id = None
                         original.variant_deleted = True
+                        original.modified_by = self.request.user
                         objs.append(original)
                     State.objects.bulk_create(objs)
 
@@ -630,6 +631,7 @@ class StateDetailBaseAPI(BaseDetailView):
             obj.id = None
             obj.pk = None
             origin_datetime = obj.created_datetime
+            obj.modified_by = self.request.user
             obj.save()
             found_it = State.objects.get(pk=obj.pk)
             # Keep original creation time

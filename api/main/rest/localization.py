@@ -261,7 +261,7 @@ class LocalizationListAPI(BaseListView):
                         qs,
                         params["project"],
                         self.request.user,
-                        update_kwargs={"variant_deleted": True},
+                        update_kwargs={"modified_by": self.request.user, "variant_deleted": True},
                         new_attributes=None,
                     )
                 else:
@@ -269,6 +269,7 @@ class LocalizationListAPI(BaseListView):
                     for original in qs.iterator():
                         original.pk = None
                         original.id = None
+                        original.modified_by = self.request.user
                         original.variant_deleted = True
                         objs.append(original)
                     Localization.objects.bulk_create(objs)
@@ -543,6 +544,7 @@ class LocalizationDetailBaseAPI(BaseDetailView):
             b = qs[0]
             b.pk = None
             b.variant_deleted = True
+            b.modified_by = self.request.user
             b.save()
             obj_id = b.id
             log_changes(b, b.model_dict, b.project, self.request.user)
