@@ -9,6 +9,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
+from django.contrib.gis.db.models import ForeignObject
 from django.contrib.gis.db.models import ManyToManyField
 from django.contrib.gis.db.models import OneToOneField
 from django.contrib.gis.db.models import CharField
@@ -115,12 +116,18 @@ END  IF;
 RETURN NEW;
 """
 
+UPDATE_LOOKUP_TRIGGER_FUNC = """
+SET plan_cache_mode=force_generic_plan;
+EXECUTE format('EXECUTE update_lookup_{0}(%s,%s)', NEW.project::integer, NEW.id::integer);
+SET plan_cache_mode=auto;
+RETURN NEW;
+"""
 
 # Register prepared statements for the triggers to optimize performance on creation of a database  connection
 @receiver(connection_created)
 def on_connection_created(sender, connection, **kwargs):
     http_method = get_http_method()
-    if http_method in ["PATCH", "POST"]:
+    if http_method in ["PATCH", "POST", "DELETE"]:
         logger.info(
             f"{http_method} detected, creating prepared statements."
         )  # useful for testing purposes
@@ -153,6 +160,18 @@ def create_prepared_statements(cursor):
     )
     cursor.execute(
         "PREPARE update_latest_mark_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_media(INT, INT) AS INSERT INTO main_projectlookup (project_id, media_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_localization(INT, INT) AS INSERT INTO main_projectlookup (project_id, localization_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_state(INT, INT) AS INSERT INTO main_projectlookup (project_id, state_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
     )
 
 
@@ -1389,6 +1408,15 @@ class Media(Model, ModelDiffMixin):
 
 
     """
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name="post_media_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("media"),
+            ),
+        ]
 
     project = ForeignKey(
         Project,
@@ -1519,7 +1547,7 @@ class Media(Model, ModelDiffMixin):
             media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
             return all(media.is_backed_up() for media in media_qs.iterator())
 
-        resource_qs = Resource.objects.filter(media=self)
+        resource_qs = Resource.objects.filter(media_proj=self)
         return all(resource.backed_up for resource in resource_qs.iterator())
 
     def media_def_iterator(self, keys: List[str] = None) -> Generator[Tuple[str, dict], None, None]:
@@ -1652,10 +1680,16 @@ class File(Model, ModelDiffMixin):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
-
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
+    # Comment this out to find all usages
     media = ManyToManyField(Media, related_name="resource_media")
+    media_proj = ManyToManyField(
+        Media,
+        related_name="resource_media_proj",
+        through="ResourceMediaM2M",
+        through_fields=("resource", "media_proj"),
+    )
     generic_files = ManyToManyField(File, related_name="resource_files")
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True, related_name="bucket")
     backup_bucket = ForeignKey(
@@ -1687,7 +1721,7 @@ class Resource(Model):
             if created:
                 obj.bucket = media.project.bucket
                 obj.save()
-            obj.media.add(media)
+            add_media_to_resource(obj, media)
 
     @staticmethod
     @transaction.atomic
@@ -1700,7 +1734,7 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
 
         # If any media or generic files still reference this resource, don't delete it
-        if obj.media.all().count() > 0 or obj.generic_files.all().count() > 0:
+        if obj.media_proj.all().count() > 0 or obj.generic_files.all().count() > 0:
             return
 
         logger.info(f"Deleting object {path}")
@@ -1772,6 +1806,31 @@ class Resource(Model):
         return TatorBackupManager().finish_restore_resource(path, project, domain)
 
 
+class ResourceMediaM2M(Model):
+    resource = ForeignKey(Resource, on_delete=CASCADE)
+    media = ForeignKey(Media, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media_proj = ForeignObject(
+        to=Media,
+        on_delete=CASCADE,
+        from_fields=("project", "media"),
+        to_fields=("project", "id"),
+        related_name="media_proj",
+        null=True,
+    )
+    class Meta:
+        constraints = [
+            UniqueConstraint(name="resourcem2m", fields=["resource", "project", "media"])
+        ]
+
+
+@transaction.atomic
+def add_media_to_resource(resource, media):
+    obj, created = ResourceMediaM2M.objects.get_or_create(
+        resource=resource, media=media, project=media.project
+    )
+
+
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     if instance.media_files and created:
@@ -1810,7 +1869,8 @@ def drop_media_from_resource(path, media):
     try:
         logger.info(f"Dropping media {media} from resource {path}")
         obj = Resource.objects.get(path=path)
-        obj.media.remove(media)
+        matches = ResourceMediaM2M.objects.filter(resource=obj, media=media)
+        matches.delete()
     except:
         logger.warning(f"Could not remove {media} from {path}", exc_info=True)
 
@@ -1861,6 +1921,12 @@ class Localization(Model, ModelDiffMixin):
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC.format("localization"),
             ),
+            pgtrigger.Trigger(
+                name="post_localization_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("localization"),
+            ),
         ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
@@ -1890,7 +1956,15 @@ class Localization(Model, ModelDiffMixin):
         db_column="modified_by",
     )
     user = ForeignKey(User, on_delete=PROTECT, db_column="user")
-    media = ForeignKey(Media, on_delete=SET_NULL, null=True, blank=True, db_column="media")
+    media = IntegerField(null=True, blank=True, db_column="media")
+    media_proj = ForeignObject(
+        to=Media,
+        on_delete=CASCADE,
+        to_fields=("project", "id"),
+        from_fields=("project", "media"),
+        null=True,
+        name="media_proj",
+    )
     frame = PositiveIntegerField(null=True, blank=True)
     thumbnail_image = ForeignKey(
         Media,
@@ -1966,6 +2040,12 @@ class State(Model, ModelDiffMixin):
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC.format("state"),
             ),
+            pgtrigger.Trigger(
+                name="post_state_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("state"),
+            ),
         ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
@@ -1999,6 +2079,18 @@ class State(Model, ModelDiffMixin):
     """ Pointer to localization in which this one was generated from """
     media = ManyToManyField(Media, related_name="state")
     localizations = ManyToManyField(Localization)
+    media_proj = ManyToManyField(
+        Media,
+        related_name="state_media_proj",
+        through="StateMediaM2M",
+        through_fields=("state", "media_proj"),
+    )
+    localization_proj = ManyToManyField(
+        Localization,
+        related_name="state_localization_proj",
+        through="StateLocalizationM2M",
+        through_fields=("state", "localization_proj"),
+    )
     segments = JSONField(null=True, blank=True)
     color = CharField(null=True, blank=True, max_length=8)
     frame = PositiveIntegerField(null=True, blank=True)
@@ -2026,7 +2118,101 @@ class State(Model, ModelDiffMixin):
         return State.objects.filter(media__in=media_id)
 
 
-@receiver(m2m_changed, sender=State.localizations.through)
+class StateMediaM2M(Model):
+    state = ForeignKey(State, on_delete=CASCADE)
+    media = ForeignKey(Media, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media_proj = ForeignObject(
+        to=Media,
+        on_delete=CASCADE,
+        from_fields=("project", "media"),
+        to_fields=("project", "id"),
+        related_name="stm_media_proj",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(name="state_media_m2m", fields=["state", "project", "media"])
+        ]
+
+
+@transaction.atomic
+def add_media_id_to_state(state, media_id, project_id, clear=False):
+    if type(media_id) == int:
+        obj, created = StateMediaM2M.objects.get_or_create(
+            state=state, media_id=media_id, project_id=project_id
+        )
+    else:
+        existing = StateMediaM2M.objects.filter(
+            state=state, media_id__in=media_id, project=project_id
+        )
+        if clear:
+            existing.delete()
+        existing = list(existing.values_list("media_id", flat=True))
+        blk = []
+        for media in media_id:
+            if media not in existing:
+                blk.append(StateMediaM2M(state=state, media_id=media, project_id=project_id))
+
+        if blk:
+            StateMediaM2M.objects.bulk_create(blk)
+
+
+def add_media_to_state(state, media):
+    return add_media_id_to_state(state, media.id, media.project.id)
+
+
+class StateLocalizationM2M(Model):
+    state = ForeignKey(State, on_delete=CASCADE)
+    localization = ForeignKey(Localization, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    localization_proj = ForeignObject(
+        to=Localization,
+        on_delete=CASCADE,
+        from_fields=("project", "localization"),
+        to_fields=("project", "id"),
+        related_name="stm_localization_proj",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                name="state_localization_m2m", fields=["state", "project", "localization"]
+            )
+        ]
+
+
+@transaction.atomic
+def add_localization_id_to_state(state, localization_id, project_id, clear=False):
+    if type(localization_id) == int:
+        obj, created = StateLocalizationM2M.objects.get_or_create(
+            state=state, localization_id=localization_id, project_id=project_id
+        )
+    else:
+        existing = StateLocalizationM2M.objects.filter(
+            state=state, localization_id__in=localization_id, project=project_id
+        )
+        if clear:
+            existing.delete()
+        existing = list(existing.values_list("localization_id", flat=True))
+        blk = []
+        for local in localization_id:
+            if local not in existing:
+                blk.append(
+                    StateLocalizationM2M(state=state, localization_id=local, project_id=project_id)
+                )
+
+        if blk:
+            StateLocalizationM2M.objects.bulk_create(blk)
+
+
+def add_localization_to_state(state, localization):
+    return add_localization_id_to_state(state, localization.id, localization.project.id)
+
+
+@receiver(m2m_changed, sender=State.localization_proj.through)
 def calc_segments(sender, **kwargs):
     instance = kwargs["instance"]
     sortedLocalizations = Localization.objects.filter(pk__in=instance.localizations.all()).order_by(
@@ -2172,6 +2358,40 @@ class Section(Model):
 
     explicit_listing = BooleanField(default=False, null=True, blank=True)
     media = ManyToManyField(Media)
+    media_proj = ManyToManyField(
+        Media,
+        related_name="section_media_proj",
+        through="SectionMediaM2M",
+        through_fields=("section", "media_proj"),
+    )
+
+
+class SectionMediaM2M(Model):
+    section = ForeignKey(Section, on_delete=CASCADE)
+    media = ForeignKey(Media, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media_proj = ForeignObject(
+        to=Media,
+        on_delete=CASCADE,
+        from_fields=("project", "media"),
+        to_fields=("project", "id"),
+        related_name="sm_media_proj",
+        null=True,
+    )
+
+    class Meta:
+        constraints = [UniqueConstraint(name="sectionm2m", fields=["section", "project", "media"])]
+
+
+@transaction.atomic
+def add_media_id_to_section(section, media_id, project_id):
+    obj, created = SectionMediaM2M.objects.get_or_create(
+        section=section, media_id=media_id, project_id=project_id
+    )
+
+
+def add_media_to_section(section, media):
+    return add_media_id_to_section(section, media.id, media.project.id)
 
 
 class Favorite(Model):
@@ -2463,6 +2683,22 @@ class RowProtection(Model):
         ]
 
 
+class ProjectLookup(Model):
+    """This Table defines an easy way to look up the project associated with a given object"""
+
+    media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=["project", "media", "localization", "state"],
+                name="lookup_uniqueness_check",
+            )
+        ]
+
+
 # Structure to handle identifying columns with project-scoped indices
 # e.g. Not relaying solely on `db_index=True` in django.
 BUILT_IN_INDICES = {
@@ -2496,3 +2732,12 @@ BUILT_IN_INDICES = {
         {"name": "$path", "dtype": "upper_string"},
     ],
 }
+
+if os.getenv("TATOR_EXT_MODELS", None):
+    import importlib
+    for module in os.getenv("TATOR_EXT_MODELS").split(","):
+        try:
+            importlib.import_module(module)
+        except Exception as e:
+            logger.error(f"Failed to import module {module}: {e}")
+            assert False

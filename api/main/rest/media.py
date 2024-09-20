@@ -28,6 +28,7 @@ from ..models import (
     database_qs,
     database_query_ids,
     Version,
+    ProjectLookup,
 )
 from .._permission_util import PermissionMask
 
@@ -106,7 +107,8 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
         "attachment",
     ]
     media_ids = set([media["id"] for media in medias])
-    resources = Resource.objects.filter(media__in=media_ids)
+    media_objs = Media.objects.filter(pk__in=media_ids)
+    resources = Resource.objects.filter(media_proj__in=media_objs)
     store_lookup = get_storage_lookup(resources)
     cache = TatorCache()
     ttl = expiration - 3600
@@ -519,10 +521,10 @@ class MediaListAPI(BaseListView):
 
             # Any states that are only associated to deleted media should also be marked
             # for deletion.
-            not_deleted = State.objects.filter(project=project, media__deleted=False).values_list(
-                "id", flat=True
-            )
-            deleted = State.objects.filter(project=project, media__deleted=True).values_list(
+            not_deleted = State.objects.filter(
+                project=project, media_proj__deleted=False
+            ).values_list("id", flat=True)
+            deleted = State.objects.filter(project=project, media_proj__deleted=True).values_list(
                 "id", flat=True
             )
             all_deleted = set(deleted) - set(not_deleted)
@@ -902,10 +904,10 @@ class MediaDetailAPI(BaseDetailView):
 
         # Any states that are only associated to deleted media should also be marked
         # for deletion.
-        not_deleted = State.objects.filter(project=project, media__deleted=False).values_list(
+        not_deleted = State.objects.filter(project=project, media_proj__deleted=False).values_list(
             "id", flat=True
         )
-        deleted = State.objects.filter(project=project, media__deleted=True).values_list(
+        deleted = State.objects.filter(project=project, media_proj__deleted=True).values_list(
             "id", flat=True
         )
         all_deleted = set(deleted) - set(not_deleted)
@@ -919,4 +921,8 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
-        return Media.objects.filter(pk=self.params["id"], deleted=False)
+        return Media.objects.filter(
+            project=ProjectLookup.objects.get(media=self.params["id"]).project,
+            pk=self.params["id"],
+            deleted=False,
+        )

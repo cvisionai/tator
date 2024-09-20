@@ -853,7 +853,7 @@ def get_clone_info(media: Media) -> dict:
         media_dict["original"]["media"] = Media.objects.get(pk=media_id)
 
         # Shared base queryset
-        media_qs = Media.objects.filter(resource_media__path__in=paths)
+        media_qs = Media.objects.filter(resource_media_proj__path__in=paths)
         media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
         media_dict["clones"].remove(media_dict["original"]["media"].id)
     else:
@@ -1361,3 +1361,79 @@ def cull_low_used_indices(project_id, dry_run=True, population_limit=10000):
                     continue
                 print(f"Deleting index for {t.name} {attr['name']}/{attr['dtype']}")
                 ts.delete_index(t, attr)
+
+
+def fill_lookup_table(project_id, dry_run=False):
+    unhandled_media = Media.objects.filter(project=project_id, projectlookup__isnull=True)
+    unhandled_localizations = Localization.objects.filter(
+        project=project_id, projectlookup__isnull=True
+    )
+    unhandled_states = State.objects.filter(project=project_id, projectlookup__isnull=True)
+
+    print(
+        f"For {project_id}, need to add:\n\t{unhandled_media.count()} media to lookup table\n\t{unhandled_localizations.count()} localizations to lookup table\n\t{unhandled_states.count()} states to lookup table"
+    )
+
+    if dry_run:
+        return
+
+    # Break into 500-element chunks
+    data = []
+    for m in unhandled_media.iterator(chunk_size=500):
+        data.append(ProjectLookup(project_id=project_id, media_id=m.id))
+        if len(data) == 500:
+            ProjectLookup.objects.bulk_create(data)
+            data = []
+    if data:
+        ProjectLookup.objects.bulk_create(data)
+    data = []
+
+    print(f"Completed media for {project_id}")
+    for l in unhandled_localizations.iterator(chunk_size=500):
+        data.append(ProjectLookup(project_id=project_id, localization_id=l.id))
+        if len(data) == 500:
+            ProjectLookup.objects.bulk_create(data)
+            data = []
+    if data:
+        ProjectLookup.objects.bulk_create(data)
+    data = []
+    print(f"Completed localizations for {project_id}")
+
+    for s in unhandled_states.iterator(chunk_size=500):
+        data.append(ProjectLookup(project_id=project_id, state_id=s.id))
+        if len(data) == 500:
+            ProjectLookup.objects.bulk_create(data)
+            data = []
+    if data:
+        ProjectLookup.objects.bulk_create(data)
+    print(f"Completed states for {project_id}")
+    data = []
+
+
+def migrate_old_many_to_many():
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        # Handle resource many to many first
+        cursor.execute("DELETE FROM main_resourcemediam2m")
+        cursor.execute(
+            'INSERT INTO main_resourcemediam2m (resource_id, media_id, project_id) SELECT resource_id, "main_media".id, "main_media".project FROM main_resource_media LEFT OUTER JOIN "main_media" ON ("main_resource_media"."media_id" = "main_media"."id")'
+        )
+
+        # Now sections
+        cursor.execute("DELETE FROM main_sectionmediam2m")
+        cursor.execute(
+            'INSERT INTO main_sectionmediam2m (section_id, media_id, project_id) SELECT section_id, "main_media".id, "main_media".project FROM main_section_media LEFT OUTER JOIN "main_media" ON ("main_section_media"."media_id" = "main_media"."id")'
+        )
+
+        # state-media
+        cursor.execute("DELETE FROM main_statemediam2m")
+        cursor.execute(
+            'INSERT INTO main_statemediam2m (state_id, media_id, project_id) SELECT state_id, "main_media".id, "main_media".project FROM main_state_media LEFT OUTER JOIN "main_media" ON ("main_state_media"."media_id" = "main_media"."id")'
+        )
+
+        # state-localization
+        cursor.execute("DELETE FROM main_statelocalizationm2m")
+        cursor.execute(
+            'INSERT INTO main_statelocalizationm2m (state_id, localization_id, project_id) SELECT state_id, "main_localization".id, "main_localization".project FROM main_state_localizations LEFT OUTER JOIN "main_localization" ON ("main_state_localizations"."localization_id" = "main_localization"."id")'
+        )

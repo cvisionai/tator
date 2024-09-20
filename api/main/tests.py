@@ -294,7 +294,7 @@ def create_test_box(user, entity_type, project, media, frame, attributes={}, ver
         type=entity_type,
         project=project,
         version=version,
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x,
         y=y,
@@ -316,7 +316,7 @@ def make_box_obj(user, entity_type, project, media, frame, attributes={}):
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x,
         y=y,
@@ -345,7 +345,7 @@ def create_test_line(user, entity_type, project, media, frame, attributes={}):
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x0,
         y=y0,
@@ -365,7 +365,7 @@ def create_test_dot(user, entity_type, project, media, frame, attributes={}):
         type=entity_type,
         project=project,
         version=project.version_set.all()[0],
-        media=media,
+        media=media.pk,
         frame=frame,
         x=x,
         y=y,
@@ -1381,7 +1381,6 @@ class PermissionDetailAffiliationTestMixin:
                 if expected_status == status.HTTP_200_OK:
                     del self.entities[0]
 
-
 class AttributeMediaTestMixin:
     def test_media_with_attr(self):
         response = self.client.get(
@@ -2178,6 +2177,7 @@ class FileMixin:
 
 class CurrentUserTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2302,6 +2302,7 @@ class CurrentUserTestCase(TatorTransactionTest):
 
 class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2338,7 +2339,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         ]
         for state in self.states:
             for media in random.choices(self.videos):
-                state.media.add(media)
+                add_media_to_state(state, media)
 
     def test_delete(self):
         self.client.delete(f"/rest/Project/{self.project.pk}")
@@ -2369,6 +2370,7 @@ class AlgorithmLaunchTestCase(
 
 class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2386,6 +2388,7 @@ class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin)
 
 class AnonymousAccessTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.random_user = create_test_user()
@@ -2426,8 +2429,8 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         self.test_bucket = create_test_bucket(None)
         resource = Resource(path="fake_key.txt", bucket=self.test_bucket)
         resource.save()
-        resource.media.add(self.public_video)
-        resource.media.add(self.private_video)
+        add_media_to_resource(resource, self.public_video)
+        add_media_to_resource(resource, self.private_video)
         resource.save()
 
     def test_random_user(self):
@@ -2472,6 +2475,7 @@ class VideoTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2497,6 +2501,12 @@ class VideoTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, media=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.media.pk == e.pk
+
         self.media_entities = self.entities
         self.list_uri = "Medias"
         self.detail_uri = "Media"
@@ -2642,7 +2652,7 @@ class VideoTestCase(
             frame=10,
             version=self.project.version_set.all()[0],
         )
-        state.media.add(self.entities[1])
+        add_media_to_state(state, self.entities[1])
         state.save()
 
         state_2 = State.objects.create(
@@ -2653,7 +2663,7 @@ class VideoTestCase(
             frame=100,
             version=self.project.version_set.all()[0],
         )
-        state_2.media.add(self.entities[1])
+        add_media_to_state(state_2, self.entities[1])
         state_2.save()
 
         # Do a frame_state lookup and find the localization at
@@ -2964,6 +2974,7 @@ class ImageTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2987,6 +2998,12 @@ class ImageTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, media=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.media.pk == e.pk
+
         self.media_entities = self.entities
         self.list_uri = "Medias"
         self.detail_uri = "Media"
@@ -3015,7 +3032,7 @@ class LocalizationBoxTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
@@ -3051,6 +3068,10 @@ class LocalizationBoxTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3098,6 +3119,7 @@ class LocalizationLineTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3135,6 +3157,10 @@ class LocalizationLineTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3182,6 +3208,7 @@ class LocalizationDotTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3219,6 +3246,10 @@ class LocalizationDotTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3264,6 +3295,7 @@ class LocalizationPolyTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3301,6 +3333,10 @@ class LocalizationPolyTestCase(
             )
             for idx in range(random.randint(6, 10))
         ]
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, localization=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.localization.pk == e.pk
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
         self.create_entity = functools.partial(
@@ -3345,8 +3381,9 @@ class StateTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
@@ -3383,8 +3420,12 @@ class StateTestCase(
                 attributes={"Float Test": random.random() * 1000},
             )
             for media in random.choices(self.media_entities):
-                state.media.add(media)
+                add_media_to_state(state, media)
             self.entities.append(state)
+        for e in self.entities:
+            lookup = ProjectLookup.objects.get(project=e.project, state=e.pk)
+            assert lookup.project.pk == e.project.pk
+            assert lookup.state.pk == e.pk
         self.list_uri = "States"
         self.detail_uri = "State"
         self.create_entity = functools.partial(
@@ -3458,6 +3499,7 @@ class StateTestCase(
 
 class LocalizationMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3738,6 +3780,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
 
 class StateMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3902,11 +3945,11 @@ class StateMediaDeleteCase(TatorTransactionTest):
         self.assertEqual(len(response.data), 2)
 
         not_deleted = State.objects.filter(
-            project=self.project.pk, media__deleted=False
+            project=self.project.pk, media_proj__deleted=False
         ).values_list("id", flat=True)
-        deleted = State.objects.filter(project=self.project.pk, media__deleted=True).values_list(
-            "id", flat=True
-        )
+        deleted = State.objects.filter(
+            project=self.project.pk, media_proj__deleted=True
+        ).values_list("id", flat=True)
 
         response = self.client.delete(
             f"/rest/Medias/{self.project.pk}?attribute={attr_search}", format="json"
@@ -3925,11 +3968,11 @@ class StateMediaDeleteCase(TatorTransactionTest):
             "id", flat=True
         )
         not_deleted = State.objects.filter(
-            project=self.project.pk, media__deleted=False
+            project=self.project.pk, media_proj__deleted=False
         ).values_list("id", flat=True)
-        deleted = State.objects.filter(project=self.project.pk, media__deleted=True).values_list(
-            "id", flat=True
-        )
+        deleted = State.objects.filter(
+            project=self.project.pk, media_proj__deleted=True
+        ).values_list("id", flat=True)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 0)
@@ -3954,6 +3997,7 @@ class LeafTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4077,6 +4121,7 @@ class LeafTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4104,6 +4149,7 @@ class StateTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4151,6 +4197,7 @@ class MediaTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4194,6 +4241,7 @@ class LocalizationTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4266,6 +4314,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
         TatorTransactionTest, PermissionListMembershipTestMixin, PermissionDetailTestMixin
     ):
         def setUp(self):
+            super().setUp()
             print(f"\n{self.__class__.__name__}=", end="", flush=True)
             logging.disable(logging.CRITICAL)
             self.user = create_test_user()
@@ -4289,6 +4338,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
 
 class ProjectTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4453,6 +4503,7 @@ class ProjectTestCase(TatorTransactionTest):
 
 class TranscodeTestCase(TatorTransactionTest, PermissionCreateTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4488,6 +4539,7 @@ class VersionTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4584,6 +4636,7 @@ class FavoriteStateTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -4633,6 +4686,7 @@ class FavoriteLocalizationTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4680,6 +4734,7 @@ class BookmarkTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4714,6 +4769,7 @@ class AffiliationTestCase(
     PermissionDetailAffiliationTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4747,6 +4803,7 @@ class AffiliationTestCase(
 
 class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user(is_staff=True)
@@ -4844,6 +4901,7 @@ class BucketTestCase(
     TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4892,6 +4950,7 @@ class BucketTestCase(
 
 class ImageFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4926,6 +4985,7 @@ class ImageFileTestCase(TatorTransactionTest, FileMixin):
 
 class VideoFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4967,6 +5027,7 @@ class VideoFileTestCase(TatorTransactionTest, FileMixin):
 
 class AudioFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4995,6 +5056,7 @@ class AudioFileTestCase(TatorTransactionTest, FileMixin):
 
 class AuxiliaryFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5033,6 +5095,7 @@ class ResourceTestCase(TatorTransactionTest):
     }
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5373,8 +5436,8 @@ class ResourceTestCase(TatorTransactionTest):
 
         self.assertTrue(self._store_obj_exists(image_key))
         self.assertTrue(self._store_obj_exists(thumb_key))
-        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
-        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=image_key).media_proj.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media_proj.all()[0].pk, image_id)
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{image_id}", format="json")
@@ -5405,8 +5468,8 @@ class ResourceTestCase(TatorTransactionTest):
 
         self.assertTrue(self._store_obj_exists(image_key))
         self.assertTrue(self._store_obj_exists(thumb_key))
-        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
-        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=image_key).media_proj.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media_proj.all()[0].pk, image_id)
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{image_id}", format="json")
@@ -5436,8 +5499,8 @@ class ResourceTestCase(TatorTransactionTest):
         gif_key = video.media_files["thumbnail_gif"][0]["path"]
         self.assertTrue(self._store_obj_exists(thumb_key))
         self.assertTrue(self._store_obj_exists(gif_key))
-        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, video_id)
-        self.assertEqual(Resource.objects.get(path=gif_key).media.all()[0].pk, video_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media_proj.all()[0].pk, video_id)
+        self.assertEqual(Resource.objects.get(path=gif_key).media_proj.all()[0].pk, video_id)
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{video_id}", format="json")
@@ -5600,6 +5663,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
     """This runs the same tests as `ResourceTestCase` but adds project-specific buckets"""
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5632,6 +5696,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
 
 class AttributeTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5847,6 +5912,7 @@ class MutateAliasTestCase(TatorTransactionTest):
     """Tests alias mutation."""
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6027,6 +6093,7 @@ class JobClusterTestCase(TatorTransactionTest):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6104,6 +6171,7 @@ class HostedTemplateTestCase(TatorTransactionTest):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6168,6 +6236,7 @@ class HostedTemplateTestCase(TatorTransactionTest):
 
 class UsernameTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         self.list_uri = "Users"
         self.detail_uri = "User"
 
@@ -6210,6 +6279,7 @@ class UsernameTestCase(TatorTransactionTest):
 
 class SectionTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6731,7 +6801,8 @@ class SectionTestCase(TatorTransactionTest):
 
 class AdvancedPermissionTestCase(TatorTransactionTest):
     def setUp(self):
-        logging.disable(logging.CRITICAL)
+        super().setUp()
+        # logging.disable(logging.CRITICAL)
         # Add 9 users
         names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"]
         self.users = [create_test_user(is_staff=False, username=name) for name in names]
@@ -6820,13 +6891,13 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         self.private_media = [v.pk for v in self.videos[3:6]]
 
         for media in self.videos[:3]:
-            self.public_section.media.add(media)
+            add_media_to_section(self.public_section, media)
             self.public_section.save()
             media.primary_section = self.public_section
             media.save()
 
         for media in self.videos[3:6]:
-            self.private_section.media.add(media)
+            add_media_to_section(self.private_section, media)
             self.private_section.save()
             media.primary_section = self.private_section
             media.save()
@@ -7038,7 +7109,10 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
             # Test effective permission for boxes in media match expected result
             for media in media_qs:
-                localization_qs = Localization.objects.filter(project=self.project, media=media)
+                localization_qs = Localization.objects.filter(
+                    project=self.project, media_proj=media
+                )
+                logger.info(f"Checking localizations for {media.pk}")
                 localization_qs = augment_permission(user, localization_qs)
                 if media.primary_section:
                     media_primary_section_pk = media.primary_section.pk

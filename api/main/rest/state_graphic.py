@@ -72,8 +72,8 @@ class StateGraphicAPI(TatorAPIView):
         if typeObj.association != "Localization":
             raise Exception("Not a localization association state")
 
-        video = state.media.all()[0]
-        localizations = state.localizations.order_by("frame")[offset : offset + length]
+        video = state.media_proj.all()[0]
+        localizations = state.localization_proj.order_by("frame")[offset : offset + length]
         frames = [l.frame for l in localizations]
         roi = [(l.width, l.height, l.x, l.y) for l in localizations]
         with tempfile.TemporaryDirectory() as temp_dir:
