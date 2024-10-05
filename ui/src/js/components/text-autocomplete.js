@@ -37,33 +37,111 @@ export class WormsAutoComplete {
       });
   }
 
+  /// Filters out matches based on configuration options.
+  /// View worms_fetch for more information about configuration options.
+  createFilteredMatches(scientific_matches, only_accepted, ignore_extinct) {
+    var filtered_matches = [];
+    for (const match of scientific_matches) {
+      if (only_accepted && match["status"] != "accepted") {
+        continue;
+      }
+      if (ignore_extinct && match["isExtinct"] == 1) {
+        continue;
+      }
+      filtered_matches.push(match);
+    }
+    return filtered_matches;
+  }
+
   /// Implementation to process results from WoRMs marine database.
   /// This routine calls the autocomplete callback with a list of formatted
   /// suggestions per the API requirements (https://github.com/kraaden/autocomplete)
+  ///
+  /// Configuration options:
+  /// marine_only = 0/1 (default 0)
+  /// ignore_extinct = 0/1 (default 0, 1 ignores extinct species)
+  /// only_accepted = 0/1 (default 0, 1 only returns accepted species)
+  /// max_name_results = 50 (default 50, maximum number of name results to fetch
+  ///
+  /// Note: These options may not be in the configuration. Will default.
+  ///       Also may be ignored if the configuration value is incorrect.
   worms_fetch(config, text, callback) {
     text = text.trim();
     if (text == "") {
       callback([]);
       return false;
     }
+
+    var marine_only_param_str = "marine_only=false";
+    if (config?.marine_only == 1) {
+      marine_only_param_str = "marine_only=true";
+    }
+
+    var ignore_extinct = false;
+    if (config?.ignore_extinct == 1) {
+      ignore_extinct = true;
+    }
+
+    var only_accepted = false;
+    if (config?.only_accepted == 1) {
+      only_accepted = true;
+    }
+
+    // Note: The maximum number of results returned is 50 for the name and vernacular endpoints.
+    //       Thus we will need to paginate if we want more than 50 results. Determine the number
+    //       of fetches we need here.
+    const max_worms_results_per_fetch = 50;
+    var max_name_results = max_worms_results_per_fetch;
+    if (config?.max_name_results) {
+      max_name_results = config.max_name_results;
+    }
+    var num_fetches = Math.ceil(max_name_results / max_worms_results_per_fetch);
+
     const worms_service_url = "https://www.marinespecies.org/rest";
     if (this._useCommon == false) {
       let name_url = worms_service_url;
       name_url += "/AphiaRecordsByName/";
       name_url += text;
-      name_url += "?like=true&marine_only=false";
-      let name_request = new Request(name_url);
-      fetch(name_request).then((resp) => {
-        if (resp.status == 204) {
+      name_url += "?like=true";
+      name_url += "&";
+      name_url += marine_only_param_str;
+
+      var requests = [];
+      for (let i = 0; i < num_fetches; i++) {
+        let offset = 1 + i * max_worms_results_per_fetch;
+        let current_url = name_url + "&offset=" + offset;
+        let name_request = new Request(current_url);
+        requests.push(fetch(name_request));
+      }
+
+      Promise.all(requests).then((nameResponses) => {
+        // Check responses for 200. 200 indicates a result was returned
+        // 204 indicates no results were returned.
+        var jsonResults = [];
+        for (let response of nameResponses) {
+          if (response.status == 200) {
+            jsonResults.push(response.json());
+          }
+        }
+
+        // If no results were returned, call the callback with an empty list
+        if (jsonResults.length == 0) {
           document.body.style.cursor = null;
           this._input_element.style.cursor = null;
           callback([]);
           return false;
         }
-        resp.json().then((scientific_matches) => {
-          this.finalize_worms_result(text, callback, scientific_matches, []);
+
+        // Process all the results
+        Promise.all(jsonResults).then((nameMatches) => {
+          var filtered_matches = this.createFilteredMatches(
+            nameMatches.flat(),
+            only_accepted,
+            ignore_extinct
+          );
+          this.finalize_worms_result(text, callback, filtered_matches, []);
+          return true;
         });
-        return true;
       });
     } else {
       let vernacular_url = worms_service_url;
@@ -72,116 +150,154 @@ export class WormsAutoComplete {
       vernacular_url += "?like=true";
       let vernacular_request = new Request(vernacular_url);
 
+      let vernacular_detail_url = worms_service_url;
+      vernacular_detail_url += "/AphiaVernacularsByAphiaID/";
+      let vernacular_promise = fetch(vernacular_request);
+
       let name_url = worms_service_url;
       name_url += "/AphiaRecordsByName/";
       name_url += text;
-      name_url += "?like=true&marine_only=false";
-      let name_request = new Request(name_url);
+      name_url += "?like=true";
+      name_url += "&";
+      name_url += marine_only_param_str;
 
-      let vernacular_detail_url = worms_service_url;
-      vernacular_detail_url += "/AphiaVernacularsByAphiaID/";
+      var nameRequests = [];
+      for (let i = 0; i < num_fetches; i++) {
+        let offset = 1 + i * max_worms_results_per_fetch;
+        let current_url = name_url + "&offset=" + offset;
+        let name_request = new Request(current_url);
+        nameRequests.push(fetch(name_request));
+      }
 
-      let vernacular_promise = fetch(vernacular_request);
-      let name_promise = fetch(name_request);
-
-      // Handle all the respones and subrequests in parallel
-      Promise.all([vernacular_promise, name_promise]).then(
-        (topLevel_responses) => {
-          // Response 0 is vernaculars, response 1 is scientific name matches
-          if (
-            topLevel_responses[0].status == 204 &&
-            topLevel_responses[1].status == 204
-          ) {
-            document.body.style.cursor = null;
-            this._input_element.style.cursor = null;
-            callback([]);
-            return false;
+      Promise.all(nameRequests).then((nameResponses) => {
+        // Check responses for 200. 200 indicates a result was returned
+        // 204 indicates no results were returned.
+        var nameJsonResults = [];
+        for (let response of nameResponses) {
+          if (response.status == 200) {
+            nameJsonResults.push(response.json());
           }
+        }
 
-          // response 0 is empty, so we just have scientific matches
-          if (topLevel_responses[0].status == 204) {
-            topLevel_responses[1].json().then((scientific_matches) => {
-              this.finalize_worms_result(
-                text,
-                callback,
-                scientific_matches,
-                []
-              );
-            });
-            return true;
-          }
-          topLevel_responses[0].json().then((vernacular_response) => {
-            let vernacular_requests = [];
-            let vernacular_matches = [];
-
-            let common_matches = 0;
-            // Process the JSON of the vernacular response to build a match list
-            for (const aphiaRecord of vernacular_response) {
-              if (aphiaRecord["taxonRankID"] >= this._minLevel) {
-                vernacular_matches.push(aphiaRecord);
-                vernacular_requests.push(
-                  fetch(
-                    new Request(vernacular_detail_url + aphiaRecord["AphiaID"])
-                  )
-                );
-                common_matches += 1;
-              }
-
-              // Limit common matches to 5 for performance
-              // reasons.
-              if (common_matches >= 5) {
-                break;
-              }
+        vernacular_promise.then((initialVernacularResponse) => {
+          if (initialVernacularResponse.status == 204) {
+            // No vernaculars found, check the scientific names
+            if (nameJsonResults.length == 0) {
+              // Got no results from both endpoints.
+              document.body.style.cursor = null;
+              this._input_element.style.cursor = null;
+              callback([]);
+              return false;
             }
 
-            Promise.all(vernacular_requests).then((vernacular_responses) => {
-              let json_promises = [];
-              let count = 0;
-              for (const response of vernacular_responses) {
-                if (response.status == 200) {
-                  json_promises.push(response.json());
-                } else {
-                  // If we get a 204 back for vernaculars we need to specify there are
-                  // no vernaculars
-                  json_promises.push(
-                    new Promise((resolve) => {
-                      resolve(null);
-                    })
+            // Got no vernaculars, but we have at least one scientific name match
+            Promise.all(nameJsonResults).then((nameMatches) => {
+              var filtered_matches = this.createFilteredMatches(
+                nameMatches.flat(),
+                only_accepted,
+                ignore_extinct
+              );
+              this.finalize_worms_result(text, callback, filtered_matches, []);
+              return true;
+            });
+          } else {
+            // We at least have vernaculars. Send out corresponding fetches.
+            initialVernacularResponse.json().then((initialVernacularResult) => {
+              let secondVernacularRequests = [];
+              let vernacular_matches = [];
+
+              let common_matches = 0;
+              // Process the JSON of the vernacular response to build a match list
+              for (const aphiaRecord of initialVernacularResult) {
+                if (only_accepted && aphiaRecord?.["status"] != "accepted") {
+                  continue;
+                }
+                if (ignore_extinct && aphiaRecord?.["isExtinct"] == 1) {
+                  continue;
+                }
+
+                if (aphiaRecord["taxonRankID"] >= this._minLevel) {
+                  vernacular_matches.push(aphiaRecord);
+                  secondVernacularRequests.push(
+                    fetch(
+                      new Request(
+                        vernacular_detail_url + aphiaRecord["AphiaID"]
+                      )
+                    )
                   );
+                  common_matches += 1;
+                }
+
+                // Limit common matches to 5 for performance
+                // reasons.
+                if (common_matches >= 5) {
+                  break;
                 }
               }
 
-              Promise.all(json_promises).then((each_result) => {
-                for (const response of each_result) {
-                  // Augment each aphia record with the list of vernaculars
-                  vernacular_matches[count]["vernaculars"] = response;
-                  count += 1;
-                }
+              Promise.all(secondVernacularRequests).then(
+                (secondVernacularResponses) => {
+                  let json_promises = [];
+                  let count = 0;
+                  for (const response of secondVernacularResponses) {
+                    if (response.status == 200) {
+                      json_promises.push(response.json());
+                    } else {
+                      // If we get a 204 back for vernaculars we need to specify there are
+                      // no vernaculars
+                      json_promises.push(
+                        new Promise((resolve) => {
+                          resolve(null);
+                        })
+                      );
+                    }
+                  }
 
-                if (topLevel_responses[1].status == 204) {
-                  this.finalize_worms_result(
-                    text,
-                    callback,
-                    [],
-                    vernacular_matches
-                  );
-                } else {
-                  // Finally have all the vernaculars loaded up, we can get the scientific match
-                  // and call the finalize function
-                  topLevel_responses[1].json().then((scientific_matches) => {
-                    this.finalize_worms_result(
-                      text,
-                      callback,
-                      scientific_matches,
-                      vernacular_matches
-                    );
+                  Promise.all(json_promises).then((each_result) => {
+                    for (const response of each_result) {
+                      // Augment each aphia record with the list of vernaculars
+                      if (only_accepted && response?.["status"] != "accepted") {
+                        continue;
+                      }
+                      if (ignore_extinct && response?.["isExtinct"] == 1) {
+                        continue;
+                      }
+
+                      vernacular_matches[count]["vernaculars"] = response;
+                      count += 1;
+                    }
+
+                    if (nameJsonResults.length == 0) {
+                      // We have no scientific name matches, process only vernacular matches
+                      this.finalize_worms_result(
+                        text,
+                        callback,
+                        [],
+                        vernacular_matches
+                      );
+                    } else {
+                      // We have scientific name matches, process both scientific and vernacular matches
+                      Promise.all(nameJsonResults).then((nameMatches) => {
+                        var filtered_matches = this.createFilteredMatches(
+                          nameMatches.flat(),
+                          only_accepted,
+                          ignore_extinct
+                        );
+                        this.finalize_worms_result(
+                          text,
+                          callback,
+                          filtered_matches,
+                          vernacular_matches
+                        );
+                      });
+                    }
                   });
                 }
-              });
+              );
             });
-          });
-        }
-      );
+          }
+        });
+      });
     }
     return true;
   }
@@ -284,6 +400,11 @@ export class WormsAutoComplete {
       suggestions.push(obj);
     }
     callback(suggestions);
+
+    if (suggestions.length == 0) {
+      document.body.style.cursor = null;
+      this._input_element.style.cursor = null;
+    }
   }
 }
 
