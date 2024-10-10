@@ -1631,7 +1631,14 @@ export class AnnotationPage extends TatorPage {
             // Add the applet to the dialog
             this._menuAppletDialog.saveApplet(applet);
             canvas.addAppletToMenu(applet.name, applet.categories);
-          } else if (applet.categories.includes("annotator-canvas")) {
+          } 
+          
+          if (applet.categories.includes("track-applet")) {
+            this._menuAppletDialog.saveApplet(applet);
+            canvas.addAppletToMenu(applet.name, applet.categories);
+          }
+
+          else if (applet.categories.includes("annotator-canvas")) {
             // #TODO Future work. Enable canvas applets for multiview.
             if (this._player.mediaType.dtype == "multi") {
               continue;

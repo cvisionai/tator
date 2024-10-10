@@ -367,8 +367,12 @@ export class EntityBrowser extends TatorElement {
                   newObject.type = Number(state.type.split("_")[1]);
                   newObject.media_ids = state.media;
                   newObject.elemental_id = state.elemental_id;
-                  newObject.frame = state.frame;
-                  newObject.localization_ids = state.localizations;
+                  if (state.frame !== null) {
+                    newObject.frame = state.frame;
+                  }
+                  if (state.localizations !== null) {
+                    newObject.localization_ids = state.localizations;
+                  }
                   console.info(JSON.stringify(newObject));
                   this._undo.post("States", newObject, this._dataType);
                 } else {
