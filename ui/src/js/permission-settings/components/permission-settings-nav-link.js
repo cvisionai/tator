@@ -39,9 +39,11 @@ export class PermissionSettingsNavLink extends TatorElement {
   }
 
   connectedCallback() {
+    this._headingGroup.addEventListener("click", this._goTo.bind(this));
+
     store.subscribe(
       (state) => state.selectedType,
-      this.showSelection.bind(this)
+      this.toggleHighlight.bind(this)
     );
   }
 
@@ -50,21 +52,18 @@ export class PermissionSettingsNavLink extends TatorElement {
    * @param {string} newSelection
    * @param {string} oldSelection
    */
-  async showSelection(newType, oldType) {
-    if (![newType, oldType].includes(this._type)) {
-      // Nothing applies to me, do nothing
-      return true;
-    }
+  async toggleHighlight(newSelectedType, oldSelectedType) {
+    const affectsMe =
+      this._type == newSelectedType || this._type == oldSelectedType;
 
-    // Variables for handling selection state
-    const myTypeIsNew = this._type === newType;
-
-    if (selectedTypeIsNew) {
-      // IF: Something changed, then Check Heading highlight
-      if (myTypeIsNew) {
-        this.highlightHeading();
-      } else {
+    if (affectsMe) {
+      if (
+        oldSelectedType === this._type &&
+        oldSelectedType !== newSelectedType
+      ) {
         this.unhighlightHeading();
+      } else {
+        this.highlightHeading();
       }
     }
   }
@@ -81,6 +80,10 @@ export class PermissionSettingsNavLink extends TatorElement {
     if (this._headingGroup) {
       this._headingGroup.setAttribute("selected", "false");
     }
+  }
+
+  _goTo() {
+    window.location.hash = this._type;
   }
 }
 

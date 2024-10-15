@@ -58,10 +58,10 @@ export class PermissionSettings extends TatorPage {
       this._selectedType = "Group";
     } else {
       const type = val.replace("#", "");
-      if (listResources.keys().includes(type)) {
+      if (Object.keys(listResources).includes(type)) {
         this._selectedType = type;
       } else {
-        this._selectedType = type;
+        this._selectedType = null;
       }
     }
 

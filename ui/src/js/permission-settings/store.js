@@ -47,9 +47,9 @@ const store = create(
     },
 
     /* */
-    setSelection: (newSelection) => {
+    setSelection: (type) => {
       set({
-        selection: newSelection,
+        selectedType: type,
       });
     },
   }))
