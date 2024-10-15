@@ -26,7 +26,7 @@
   </div>
 </template> -->
 
-{% include "includes/components/form-container.html" %}
+{% include "includes/permission-settings/table-view.html" %}
 <template id="permission-settings">
   <main id="permission-settings--main" class="position-relative">
     <div id="settings-nav--div" class="py-6 clearfix position-relative px-md-6">
@@ -38,8 +38,14 @@
         id="settings-nav--item-container"
         class="NavItem float-left col-md-9 col-xl-10 col-xs-12"
       >
-        <type-form-container form="group-edit" hidden></type-form-container>
-        <type-form-container form="policy-edit" hidden></type-form-container>
+        <permission-settings-table-view
+          type="Group"
+          hidden
+        ></permission-settings-table-view>
+        <permission-settings-table-view
+          type="Policy"
+          hidden
+        ></permission-settings-table-view>
       </div>
     </div>
   </main>
