@@ -276,3 +276,36 @@
   border: 1px solid #a2afcd;
   overflow-wrap: break-word;
 }
+
+.permission-table {
+  background-color: #00070d;
+  width: 100%;
+}
+.permission-table tr.selected,
+.permission-table tr:hover {
+  background-color: #1e2129;
+  color: #ffffff;
+  fill: #a2afcd;
+}
+.permission-table th {
+  text-align: center;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  border: 1px solid #a2afcd;
+  background-color: #696cff;
+  overflow-wrap: break-word;
+}
+.permission-table td {
+  vertical-align: middle;
+  text-align: center;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  border: 1px solid #a2afcd;
+  overflow-wrap: break-word;
+}
+.permission-table td > *,
+.permission-table th > * {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

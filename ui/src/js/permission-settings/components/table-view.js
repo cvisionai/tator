@@ -36,10 +36,7 @@ export class PermissionSettingsTableView extends TatorElement {
     this._tableDiv.appendChild(this._table);
 
     // Once we know what type, listen to changes
-    store.subscribe(
-      (state) => state[this._actions.typeName],
-      this._newData.bind(this)
-    );
+    store.subscribe((state) => state[this._type], this._newData.bind(this));
   }
 
   async _updateTypeSelection(newSelectedType, oldSelectedType) {

@@ -35,7 +35,13 @@ export class PermissionSettings extends TatorPage {
     store.getState().initHeader();
 
     // Organization List
-    await store.getState().getOrganizationList();
+    const organizationList = await store.getState().getOrganizationList();
+
+    if (organizationList && organizationList.length) {
+      for (const org of organizationList) {
+        await store.getState().getGroupList(org.id);
+      }
+    }
 
     // Project id
     // this.projectId = store.getState().projectId;
@@ -48,6 +54,7 @@ export class PermissionSettings extends TatorPage {
 
     // this handles back button, and some pushes to this to trigger selection change
     window.addEventListener("hashchange", this.moveToCurrentHash.bind(this));
+    console.log("😇 ~ _init ~ store.getState():", store.getState());
   }
 
   /**
