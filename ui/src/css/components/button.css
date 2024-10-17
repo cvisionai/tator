@@ -219,3 +219,8 @@
 .background-purple {
   background-color: var(--color-purple) !important;
 }
+
+.btn.selected {
+  color: var(--color-white);
+  background-color: var(--color-purple);
+}

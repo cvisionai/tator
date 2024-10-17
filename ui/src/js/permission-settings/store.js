@@ -30,6 +30,7 @@ const store = create(
       groupIdUserIdMap: null,
       userIdGroupIdMap: null,
     },
+    groupViewBy: "Group",
 
     initHeader: async () => {
       Promise.all([
@@ -146,9 +147,12 @@ const store = create(
       });
     },
 
-    /* */
     setSelection: (selectedType) => {
       set({ selectedType });
+    },
+
+    setGroupViewBy: (groupViewBy) => {
+      set({ groupViewBy });
     },
   }))
 );

@@ -54,6 +54,12 @@ export class TableViewActions extends TatorElement {
     this._buttonsForItems.forEach((btn) => {
       btn.style.display = "";
     });
+
+    this._init();
+  }
+
+  _init() {
+    // Override by child class
   }
 
   _newSelectedType() {}
