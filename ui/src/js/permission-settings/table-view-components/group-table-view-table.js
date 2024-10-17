@@ -1,10 +1,16 @@
 import { TableViewTable } from "../components/table-view-table.js";
 import { store } from "../store.js";
 
-const COLUMN = [
+const COLUMN_BY_GROUP = [
   ["Checkbox", "Checkbox"],
   ["Group Name", "name"],
   ["User IDs", "members"],
+  ["Actions", "Actions"],
+];
+const COLUMN_BY_USER = [
+  ["Checkbox", "Checkbox"],
+  ["User ID", "id"],
+  ["Group IDs", "groupIds"],
   ["Actions", "Actions"],
 ];
 
@@ -19,15 +25,55 @@ export class GroupTableViewTable extends TableViewTable {
   }
 
   _newData(groupObj) {
-    console.log("😇 ~ _newData ~ groupObj:", groupObj);
-
     if (!groupObj.init) return;
 
-    // View by Group
-
+    // View by User
     // Head
     const tr = document.createElement("tr");
-    COLUMN.map((val) => {
+    COLUMN_BY_USER.map((val) => {
+      const th = document.createElement("th");
+      if (val[0] === "Checkbox") {
+        const check = document.createElement("checkbox-input");
+        check.setAttribute("type", "number");
+        // check.setAttribute("id", "checkbox--select-all");
+        th.appendChild(check);
+      } else {
+        th.innerText = val[0];
+      }
+      return th;
+    }).forEach((th) => {
+      tr.appendChild(th);
+    });
+    this._tableHead.appendChild(tr);
+    // Body
+    for (let [userId, groupIds] of store.getState().Group.userIdGroupIdMap) {
+      const tr = document.createElement("tr");
+      COLUMN_BY_USER.map((val) => {
+        const td = document.createElement("td");
+        if (val[1] === "Checkbox") {
+          const check = document.createElement("checkbox-input");
+          check.setAttribute("type", "number");
+          td.appendChild(check);
+        } else if (val[1] === "id") {
+          td.innerText = userId;
+        } else if (val[1] === "groupIds") {
+          td.innerText = groupIds;
+        } else if (val[1] === "Actions") {
+          const edit = document.createElement("edit-button");
+          td.appendChild(edit);
+        }
+        return td;
+      }).forEach((td) => {
+        tr.appendChild(td);
+      });
+      this._tableBody.appendChild(tr);
+    }
+
+    /*
+    // View by Group
+    // Head
+    const tr = document.createElement("tr");
+    COLUMN_BY_GROUP.map((val) => {
       const th = document.createElement("th");
       if (val[0] === "Checkbox") {
         const check = document.createElement("checkbox-input");
@@ -46,7 +92,7 @@ export class GroupTableViewTable extends TableViewTable {
     // Body
     groupObj.data.forEach((gr) => {
       const tr = document.createElement("tr");
-      COLUMN.map((val) => {
+      COLUMN_BY_GROUP.map((val) => {
         const td = document.createElement("td");
         if (val[1] === "Checkbox") {
           const check = document.createElement("checkbox-input");
@@ -65,6 +111,7 @@ export class GroupTableViewTable extends TableViewTable {
 
       this._tableBody.appendChild(tr);
     });
+    */
   }
 }
 

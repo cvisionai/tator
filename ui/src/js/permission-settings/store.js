@@ -21,8 +21,7 @@ const store = create(
     User: {
       init: false,
       data: null,
-      idMap: null,
-      idNameMap: null,
+      map: null,
     },
     Group: {
       init: false,
@@ -61,7 +60,7 @@ const store = create(
       return organizationList;
     },
 
-    getGroupList: async (organizationId) => {
+    setGroupData: async (organizationId) => {
       let data = [];
       let map = new Map();
       let groupIdUserIdMap = new Map();
@@ -113,6 +112,36 @@ const store = create(
           map,
           groupIdUserIdMap,
           userIdGroupIdMap,
+        },
+      });
+    },
+
+    setUserData: async () => {
+      if (!get().Group.map || !get().Group.map.size) return;
+
+      let data = [];
+      let map = new Map();
+
+      const { userIdGroupIdMap } = get().Group;
+
+      if (get().User.map && get().User.map.size) {
+        map = new Map(get().User.map);
+      }
+      for (const userId of userIdGroupIdMap.keys()) {
+        const userData = await fetchCredentials(
+          `/rest/User/${userId}`,
+          {},
+          true
+        ).then((response) => response.json());
+        data.push(userData);
+        map.set(userId, userData);
+      }
+
+      set({
+        User: {
+          init: true,
+          data,
+          map,
         },
       });
     },

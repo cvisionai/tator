@@ -39,9 +39,11 @@ export class PermissionSettings extends TatorPage {
 
     if (organizationList && organizationList.length) {
       for (const org of organizationList) {
-        await store.getState().getGroupList(org.id);
+        await store.getState().setGroupData(org.id);
       }
     }
+
+    // await store.getState().setUserData();
 
     // Project id
     // this.projectId = store.getState().projectId;
