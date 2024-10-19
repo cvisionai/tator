@@ -28,9 +28,32 @@ const store = create(
       data: null,
       map: null,
       groupIdUserIdMap: null,
+      groupIdGroupNameMap: null,
       userIdGroupIdMap: null,
     },
+    tabularGroup: {
+      Group: {
+        count: 0,
+        data: null,
+      },
+      User: {
+        count: 0,
+        userIdGroupIdMap: null,
+      },
+    },
     groupViewBy: "Group",
+    groupSearchParams: {
+      Group: {
+        filter: {},
+        sortBy: {},
+        pagination: {},
+      },
+      User: {
+        filter: {},
+        sortBy: {},
+        pagination: {},
+      },
+    },
 
     initHeader: async () => {
       Promise.all([
@@ -65,6 +88,7 @@ const store = create(
       let data = [];
       let map = new Map();
       let groupIdUserIdMap = new Map();
+      let groupIdGroupNameMap = new Map();
       let userIdGroupIdMap = new Map();
 
       const Group = get().Group;
@@ -74,6 +98,7 @@ const store = create(
         {},
         true
       ).then((response) => response.json());
+      // const groupList = [];
 
       if (Group.data && Group.data.length) {
         data = [...Group.data];
@@ -94,6 +119,13 @@ const store = create(
         groupIdUserIdMap.set(gr.id, gr.members);
       });
 
+      if (Group.groupIdGroupNameMap && Group.groupIdGroupNameMap.size) {
+        groupIdGroupNameMap = new Map(Group.groupIdGroupNameMap);
+      }
+      groupList.forEach((gr) => {
+        groupIdGroupNameMap.set(gr.id, gr.name);
+      });
+
       if (Group.userIdGroupIdMap && Group.userIdGroupIdMap.size) {
         userIdGroupIdMap = new Map(Group.userIdGroupIdMap);
       }
@@ -112,7 +144,106 @@ const store = create(
           data,
           map,
           groupIdUserIdMap,
+          groupIdGroupNameMap,
           userIdGroupIdMap,
+        },
+      });
+    },
+
+    setTabularData: (groupViewBy) => {
+      if (groupViewBy === "Group") {
+        get().setViewByGroupData();
+      } else if (groupViewBy === "User") {
+        get().setViewByUserData();
+      }
+    },
+
+    setViewByGroupData: () => {
+      const { Group: viewByGroupSearchParams } = get().groupSearchParams;
+
+      const { groupIdGroupNameMap } = get().Group;
+      // Filter
+      //
+      const count = groupIdGroupNameMap.size;
+
+      // Sort
+      let sortedUserIdGroupIdMap = null;
+      if (viewByGroupSearchParams.sortBy.groupName === "ascending") {
+        sortedUserIdGroupIdMap = new Map(
+          [...groupIdGroupNameMap.entries()].sort((a, b) =>
+            a[1].localeCompare(b[1])
+          )
+        );
+      } else {
+        sortedUserIdGroupIdMap = new Map(
+          [...groupIdGroupNameMap.entries()].sort((a, b) =>
+            b[1].localeCompare(a[1])
+          )
+        );
+      }
+
+      // Paginate
+      const paginatedEntries = new Map(
+        [...sortedUserIdGroupIdMap.entries()].slice(
+          viewByGroupSearchParams.pagination.start,
+          viewByGroupSearchParams.pagination.stop
+        )
+      );
+
+      // Set data
+      const { map } = get().Group;
+      const data = [];
+      for (let [groupId, groupName] of paginatedEntries) {
+        data.push(map.get(groupId));
+      }
+
+      set({
+        tabularGroup: {
+          ...get().tabularGroup,
+          Group: {
+            count,
+            data,
+          },
+        },
+      });
+    },
+
+    setViewByUserData: () => {
+      const { User: viewByUserSearchParams } = get().groupSearchParams;
+
+      const { userIdGroupIdMap } = get().Group;
+      // Filter
+      //
+      const count = userIdGroupIdMap.size;
+
+      // Sort
+      let sortedUserIdGroupIdMap = null;
+      if (viewByUserSearchParams.sortBy.userId === "ascending") {
+        sortedUserIdGroupIdMap = new Map(
+          [...userIdGroupIdMap.entries()].sort((a, b) => a[0] - b[0])
+        );
+      } else {
+        sortedUserIdGroupIdMap = new Map(
+          [...userIdGroupIdMap.entries()].sort((a, b) => b[0] - a[0])
+        );
+      }
+
+      // Paginate
+      const paginatedEntries = new Map(
+        [...sortedUserIdGroupIdMap.entries()].slice(
+          viewByUserSearchParams.pagination.start,
+          viewByUserSearchParams.pagination.stop
+        )
+      );
+
+      // Set data
+      set({
+        tabularGroup: {
+          ...get().tabularGroup,
+          User: {
+            count,
+            userIdGroupIdMap: paginatedEntries,
+          },
         },
       });
     },
@@ -153,6 +284,18 @@ const store = create(
 
     setGroupViewBy: (groupViewBy) => {
       set({ groupViewBy });
+    },
+
+    setViewByGroupSearchParams: (viewByGroupSearchParams) => {
+      set({ viewByGroupSearchParams });
+    },
+
+    setViewByUserSearchParams: (viewByUserSearchParams) => {
+      set({ viewByUserSearchParams });
+    },
+
+    setGroupSearchParams: (groupSearchParams) => {
+      set({ groupSearchParams });
     },
   }))
 );
