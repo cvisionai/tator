@@ -29,23 +29,128 @@ const COLGROUP_BY_USER = `
 export class GroupTableViewTable extends TableViewTable {
   constructor() {
     super();
-    this.type = "Group";
+
+    this._searchParams = {
+      Group: {
+        filter: {},
+        sortBy: {
+          groupName: "ascending",
+        },
+        pagination: {
+          start: 0,
+          stop: 10,
+          page: 1,
+          pageSize: 10,
+        },
+      },
+      User: {
+        filter: {},
+        sortBy: {
+          userId: "ascending",
+        },
+        pagination: {
+          start: 0,
+          stop: 10,
+          page: 1,
+          pageSize: 10,
+        },
+      },
+    };
   }
 
   connectedCallback() {
-    this._displayTable(store.getState().groupViewBy);
     store.subscribe(
       (state) => state.groupViewBy,
-      this._displayTable.bind(this)
+      this._changeGroupViewBy.bind(this)
     );
-    store.subscribe((state) => state[this.type], this._newData.bind(this));
+
+    store.subscribe((state) => state.tabularGroup, this._newData.bind(this));
+
+    this._paginator.addEventListener("selectPage", this._changePage.bind(this));
   }
 
-  _newData(groupObj) {
-    this._displayTable(store.getState().groupViewBy);
+  _initPaginator() {
+    this._paginator.setupElements();
+    const { groupViewBy } = store.getState();
+
+    store.getState().setGroupSearchParams(this._searchParams);
+    store.getState().setTabularData(groupViewBy);
+
+    // After we know the total number of data, then we can set up paginator
+    // Note: not total number of items fetched from DB, but total number of FILTERED items
+    const numData = store.getState().tabularGroup[groupViewBy].count;
+    this._paginator.init(numData, this._searchParams[groupViewBy].pagination);
+  }
+
+  _changePage(evt) {
+    console.log("😇 ~ _changePage ~ evt:", evt);
+
+    const { groupViewBy } = store.getState();
+    this._searchParams = {
+      ...this._searchParams,
+      [groupViewBy]: {
+        ...this._searchParams[groupViewBy],
+        pagination: { ...evt.detail },
+      },
+    };
+
+    // this._pagination = { ...evt.detail };
+    store.getState().setGroupSearchParams(this._searchParams);
+    store.getState().setTabularData(groupViewBy);
+  }
+
+  _newData(tabularGroup) {
+    console.log("😇 ~ _newData ~ tabularGroup:", tabularGroup);
+    const { groupViewBy } = store.getState();
+
+    if (
+      !tabularGroup?.[groupViewBy]?.data?.length &&
+      !tabularGroup?.[groupViewBy]?.userIdGroupIdMap?.size
+    ) {
+      this._tableNoData.classList.remove("hidden");
+      this._pagePosition.classList.add("hidden");
+      this._table.classList.add("hidden");
+      this._paginatorDiv.classList.add("hidden");
+    } else {
+      this._tableNoData.classList.add("hidden");
+      this._pagePosition.classList.remove("hidden");
+      this._table.classList.remove("hidden");
+      this._paginatorDiv.classList.remove("hidden");
+      this._displayPagePosition();
+      this._displayTable();
+    }
+  }
+
+  _displayPagePosition() {
+    const { groupViewBy } = store.getState();
+
+    if (groupViewBy !== "Group" && groupViewBy !== "User") return;
+
+    const { count } = store.getState().tabularGroup[groupViewBy];
+    const { page, pageSize } =
+      store.getState().groupSearchParams[groupViewBy].pagination;
+    const tatolPageCount = Math.ceil(count / pageSize);
+
+    this._totalItemCount.innerText = count;
+    this._currentPage.innerText = page;
+    this._totalPageCount.innerText = tatolPageCount;
+  }
+
+  _changeGroupViewBy(groupViewBy) {
+    if (groupViewBy !== "Group" && groupViewBy !== "User") return;
+
+    store.getState().setTabularData(groupViewBy);
+
+    // Adapt paginator to new data
+    const numData = store.getState().tabularGroup[groupViewBy].count;
+    this._paginator.init(numData, this._searchParams[groupViewBy].pagination);
   }
 
   _displayTable(groupViewBy) {
+    if (!groupViewBy) {
+      groupViewBy = store.getState().groupViewBy;
+    }
+
     if (groupViewBy !== "Group" && groupViewBy !== "User") return;
 
     this._tableHead.innerHTML = "";
@@ -61,9 +166,7 @@ export class GroupTableViewTable extends TableViewTable {
   }
 
   _displayTableByGroup() {
-    //
-    const groupObj = store.getState().Group;
-    if (!groupObj.init) return;
+    const { data } = store.getState().tabularGroup.Group;
 
     // Head
     const tr = document.createElement("tr");
@@ -84,7 +187,7 @@ export class GroupTableViewTable extends TableViewTable {
     this._tableHead.appendChild(tr);
 
     // Body
-    groupObj.data.forEach((gr) => {
+    data.forEach((gr) => {
       const tr = document.createElement("tr");
       COLUMN_BY_GROUP.map((val) => {
         const td = document.createElement("td");
@@ -107,9 +210,7 @@ export class GroupTableViewTable extends TableViewTable {
   }
 
   _displayTableByUser() {
-    //
-    const groupObj = store.getState().Group;
-    if (!groupObj.init) return;
+    const { userIdGroupIdMap } = store.getState().tabularGroup.User;
 
     // Head
     const tr = document.createElement("tr");
@@ -129,7 +230,7 @@ export class GroupTableViewTable extends TableViewTable {
     });
     this._tableHead.appendChild(tr);
     // Body
-    for (let [userId, groupIds] of groupObj.userIdGroupIdMap) {
+    for (let [userId, groupIds] of userIdGroupIdMap) {
       const tr = document.createElement("tr");
       COLUMN_BY_USER.map((val) => {
         const td = document.createElement("td");

@@ -188,10 +188,24 @@
 
 <template id="table-view-table">
   <div class="my-3">
-    <table class="table permission-table">
+    <div id="permission-table--no-data" class="text-center hidden">
+      There is no data.
+    </div>
+
+    <div id="permission-table-page-position" class="text-gray my-3 hidden">
+      <span id="page-position--total-item">0</span> Rows (Page
+      <span id="page-position--current-page">0</span> of
+      <span id="page-position--total-page">0</span>)
+    </div>
+
+    <table id="permission-table" class="table permission-table hidden">
       <colgroup id="permission-table--colgroup"></colgroup>
       <thead id="permission-table--head"></thead>
       <tbody id="permission-table--body"></tbody>
     </table>
+
+    <div id="permission-table-paginator-div" class="my-3 hidden">
+      <!-- PAGINATOR COMPONENT HERE -->
+    </div>
   </div>
 </template>

@@ -24,12 +24,15 @@ export class PermissionSettingsTableView extends TatorElement {
       this._updateTypeSelection.bind(this)
     );
 
-    // Create actions component
     this._type = this.getAttribute("type");
+
+    // Create actions component
     this._actions = document.createElement(
       `${this._type.toLowerCase()}-table-view-actions`
     );
     this._actionsDiv.appendChild(this._actions);
+
+    // Create table component
     this._table = document.createElement(
       `${this._type.toLowerCase()}-table-view-table`
     );
@@ -53,14 +56,27 @@ export class PermissionSettingsTableView extends TatorElement {
       } else {
         this.hidden = false; // Otherwise Show
       }
-
-      /* Clear container in any other case */
-      // ie. NEW form (data is null), or no data from store
-      // this.resetToNew();
     }
   }
 
-  _newData() {}
+  _newData(groupObj) {
+    if (!groupObj.init) return;
+
+    // Only after knowing how many items are there can we init the paginator
+    this._table._initPaginator();
+  }
+
+  _getTabularData() {
+    //
+  }
+
+  _changeFilter() {
+    //
+  }
+
+  _changeSort() {
+    //
+  }
 }
 
 customElements.define(
