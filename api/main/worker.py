@@ -14,6 +14,9 @@ import argparse
 import logging
 
 REDIS_USE_SSL = os.getenv("REDIS_USE_SSL", "FALSE").lower() == "true"
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
 if os.getenv("DD_LOGS_INJECTION"):
     import ddtrace.auto
@@ -37,9 +40,12 @@ def push_job(queue, function, *args, **kwargs):
     """
     retry = Retry(ExponentialBackoff(), 3)
     redis = Redis(
-        host=os.getenv("REDIS_HOST"),
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        password=REDIS_PASSWORD,
         retry=retry,
         retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
+        health_check_interval=30,
         ssl=REDIS_USE_SSL,
     )
     queue = Queue(queue, connection=redis)
