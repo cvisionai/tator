@@ -32,16 +32,9 @@ export class PermissionSettings extends TatorPage {
   }
 
   async _init() {
-    store.getState().initHeader();
+    await store.getState().initHeader();
 
-    // Organization List
-    const organizationList = await store.getState().getOrganizationList();
-
-    if (organizationList && organizationList.length) {
-      for (const org of organizationList) {
-        await store.getState().setGroupData(org.id);
-      }
-    }
+    this._getUserData();
 
     // await store.getState().setUserData();
 
@@ -56,6 +49,19 @@ export class PermissionSettings extends TatorPage {
 
     // this handles back button, and some pushes to this to trigger selection change
     window.addEventListener("hashchange", this.moveToCurrentHash.bind(this));
+  }
+
+  // Get current user, user's groups, user's organizations
+  async _getUserData() {
+    // Current User's Organization List
+    await store.getState().getOrganizationList();
+    // Current User's Group List
+    await store.getState().getCurrentUserGroupList();
+    // All Group data
+    await store.getState().setGroupData();
+    // Policy data that are associated to this user, this user's groups, this user's organizations
+    await store.getState().setPolicyData();
+
     console.log("😇 ~ _init ~ store.getState():", store.getState());
   }
 

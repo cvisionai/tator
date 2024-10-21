@@ -1,7 +1,7 @@
-import { TatorElement } from "./tator-element.js";
-import { svgNamespace } from "./tator-element.js";
+import { TatorElement } from "../../components/tator-element.js";
+import { svgNamespace } from "../../components/tator-element.js";
 
-export class EditButton extends TatorElement {
+export class EditLineButton extends TatorElement {
   constructor() {
     super();
 
@@ -39,4 +39,4 @@ export class EditButton extends TatorElement {
   }
 }
 
-customElements.define("edit-button", EditButton);
+customElements.define("edit-line-button", EditLineButton);

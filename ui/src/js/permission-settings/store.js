@@ -12,17 +12,45 @@ const detailResources = {
   Policy: "RowProtection",
 };
 
+const POLICY_ENTITY_NAME = {
+  user: "User",
+  organization: "Organization",
+  group: "Group",
+};
+const POLICY_TARGET_NAME = {
+  project: "Project",
+  media: "Media",
+  localization: "Localization",
+  state: "State",
+  file: "File",
+  section: "Section",
+  algorithm: "Algorithm",
+  version: "Version",
+  target_organization: "Organization",
+  target_group: "Group",
+  job_cluster: "Job Cluster",
+  bucket: "Bucket",
+  hosted_template: "Hosted Template",
+};
+const POLICY_ENTITY_TYPE = Object.keys(POLICY_ENTITY_NAME);
+const POLICY_TARGET_TYPE = Object.keys(POLICY_TARGET_NAME);
+
 const store = create(
   subscribeWithSelector((set, get) => ({
-    user: null,
     announcements: [],
+
+    user: null,
+    groupList: [],
     organizationList: [],
+
     selectedType: "",
+
     User: {
       init: false,
       data: null,
       map: null,
     },
+
     Group: {
       init: false,
       data: null,
@@ -55,6 +83,23 @@ const store = create(
       },
     },
 
+    Policy: {
+      init: false,
+      data: null,
+      processedData: null,
+      map: null,
+      processedMap: null,
+    },
+    tabularPolicy: {
+      count: 0,
+      data: null,
+    },
+    policySearchParams: {
+      filter: {},
+      sortBy: {},
+      pagination: {},
+    },
+
     initHeader: async () => {
       Promise.all([
         fetchCredentials(`/rest/User/GetCurrent`, {}, true).then((response) =>
@@ -72,6 +117,23 @@ const store = create(
       });
     },
 
+    getCurrentUserGroupList: async () => {
+      let groupList = [];
+
+      const { organizationList, user } = get();
+
+      for (const org of organizationList) {
+        const data = await fetchCredentials(
+          `/rest/Groups/${org.id}?user=${user.id}`,
+          {},
+          true
+        ).then((response) => response.json());
+        groupList.push(...data);
+      }
+
+      set({ groupList });
+    },
+
     getOrganizationList: async () => {
       const organizationList = await fetchCredentials(
         `/rest/Organizations`,
@@ -80,56 +142,33 @@ const store = create(
       ).then((response) => response.json());
 
       set({ organizationList });
-
-      return organizationList;
     },
 
-    setGroupData: async (organizationId) => {
+    setGroupData: async () => {
       let data = [];
       let map = new Map();
       let groupIdUserIdMap = new Map();
       let groupIdGroupNameMap = new Map();
       let userIdGroupIdMap = new Map();
 
-      const Group = get().Group;
+      const { organizationList } = get();
 
-      const groupList = await fetchCredentials(
-        `/rest/Groups/${organizationId}`,
-        {},
-        true
-      ).then((response) => response.json());
-      // const groupList = [];
-
-      if (Group.data && Group.data.length) {
-        data = [...Group.data];
+      for (const org of organizationList) {
+        const groupList = await fetchCredentials(
+          `/rest/Groups/${org.id}`,
+          {},
+          true
+        ).then((response) => response.json());
+        data.push(...groupList);
       }
-      data.push(...groupList);
 
-      if (Group.map && Group.map.size) {
-        map = new Map(Group.map);
-      }
-      groupList.forEach((gr) => {
+      data.forEach((gr) => {
         map.set(gr.id, gr);
-      });
-
-      if (Group.groupIdUserIdMap && Group.groupIdUserIdMap.size) {
-        groupIdUserIdMap = new Map(Group.groupIdUserIdMap);
-      }
-      groupList.forEach((gr) => {
         groupIdUserIdMap.set(gr.id, gr.members);
-      });
-
-      if (Group.groupIdGroupNameMap && Group.groupIdGroupNameMap.size) {
-        groupIdGroupNameMap = new Map(Group.groupIdGroupNameMap);
-      }
-      groupList.forEach((gr) => {
         groupIdGroupNameMap.set(gr.id, gr.name);
       });
 
-      if (Group.userIdGroupIdMap && Group.userIdGroupIdMap.size) {
-        userIdGroupIdMap = new Map(Group.userIdGroupIdMap);
-      }
-      groupList.forEach((gr) => {
+      data.forEach((gr) => {
         gr.members.forEach((userId) => {
           if (!userIdGroupIdMap.has(userId)) {
             userIdGroupIdMap.set(userId, []);
@@ -150,7 +189,7 @@ const store = create(
       });
     },
 
-    setTabularData: (groupViewBy) => {
+    setTabularGroup: (groupViewBy) => {
       if (groupViewBy === "Group") {
         get().setViewByGroupData();
       } else if (groupViewBy === "User") {
@@ -248,6 +287,114 @@ const store = create(
       });
     },
 
+    setPolicyData: async () => {
+      let data = [];
+      let processedData = [];
+      let map = new Map();
+      let processedMap = new Map();
+
+      const { user, groupList, organizationList } = get();
+
+      const userPolicyList = await fetchCredentials(
+        `/rest/RowProtections?user=${user.id}`,
+        {}
+      ).then((response) => response.json());
+      data.push(...userPolicyList);
+
+      for (const gr of groupList) {
+        const groupPolicyList = await fetchCredentials(
+          `/rest/RowProtections?group=${gr.id}`,
+          {}
+        ).then((response) => response.json());
+        if (!Array.isArray(groupPolicyList)) {
+          continue;
+        }
+        data.push(...groupPolicyList);
+      }
+
+      for (const org of organizationList) {
+        const organizationPolicyList = await fetchCredentials(
+          `/rest/RowProtections?organization=${org.id}`,
+          {}
+        ).then((response) => response.json());
+        if (!Array.isArray(organizationPolicyList)) {
+          continue;
+        }
+        data.push(...organizationPolicyList);
+      }
+
+      data.forEach((policy) => {
+        const entityType = POLICY_ENTITY_TYPE.find(
+          (en) => policy[en] != undefined
+        );
+        const targetType = POLICY_TARGET_TYPE.find(
+          (ta) => policy[ta] != undefined
+        );
+        const entityName = `${POLICY_ENTITY_NAME[entityType]} ${policy[entityType]}`;
+        const targetName = `${POLICY_TARGET_NAME[targetType]} ${policy[targetType]}`;
+
+        const processedObj = {
+          id: policy.id,
+          entityName,
+          targetName,
+          permission: policy.permission,
+        };
+        map.set(policy.id, policy);
+        processedData.push(processedObj);
+        processedMap.set(policy.id, processedObj);
+      });
+
+      set({
+        Policy: {
+          init: true,
+          data,
+          processedData,
+          map,
+          processedMap,
+        },
+      });
+    },
+
+    setTabularPolicy: () => {
+      const { policySearchParams } = get();
+
+      const { processedData } = get().Policy;
+
+      // Filter
+      //
+      const count = processedData.length;
+
+      // Sort
+      let sortedProcessedData = null;
+      sortedProcessedData = [...processedData].sort((a, b) => {
+        const sortBy = policySearchParams.sortBy;
+
+        if (sortBy.entityName === "ascending") {
+          return a.entityName.localeCompare(b.entityName);
+        } else if (sortBy.entityName === "descending") {
+          return b.entityName.localeCompare(a.entityName);
+        } else if (sortBy.targetName === "ascending") {
+          return a.targetName.localeCompare(b.targetName);
+        } else if (sortBy.targetName === "descending") {
+          return b.targetName.localeCompare(a.targetName);
+        }
+      });
+
+      // Paginate
+      const paginatedData = [...sortedProcessedData].slice(
+        policySearchParams.pagination.start,
+        policySearchParams.pagination.stop
+      );
+
+      // Set data
+      set({
+        tabularPolicy: {
+          count,
+          data: paginatedData,
+        },
+      });
+    },
+
     setUserData: async () => {
       if (!get().Group.map || !get().Group.map.size) return;
 
@@ -286,16 +433,12 @@ const store = create(
       set({ groupViewBy });
     },
 
-    setViewByGroupSearchParams: (viewByGroupSearchParams) => {
-      set({ viewByGroupSearchParams });
-    },
-
-    setViewByUserSearchParams: (viewByUserSearchParams) => {
-      set({ viewByUserSearchParams });
-    },
-
     setGroupSearchParams: (groupSearchParams) => {
       set({ groupSearchParams });
+    },
+
+    setPolicySearchParams: (policySearchParams) => {
+      set({ policySearchParams });
     },
   }))
 );

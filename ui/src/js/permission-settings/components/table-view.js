@@ -59,8 +59,8 @@ export class PermissionSettingsTableView extends TatorElement {
     }
   }
 
-  _newData(groupObj) {
-    if (!groupObj.init) return;
+  _newData(dataObj) {
+    if (!dataObj.init) return;
 
     // Only after knowing how many items are there can we init the paginator
     this._table._initPaginator();

@@ -74,7 +74,7 @@ export class GroupTableViewTable extends TableViewTable {
     const { groupViewBy } = store.getState();
 
     store.getState().setGroupSearchParams(this._searchParams);
-    store.getState().setTabularData(groupViewBy);
+    store.getState().setTabularGroup(groupViewBy);
 
     // After we know the total number of data, then we can set up paginator
     // Note: not total number of items fetched from DB, but total number of FILTERED items
@@ -83,8 +83,6 @@ export class GroupTableViewTable extends TableViewTable {
   }
 
   _changePage(evt) {
-    console.log("😇 ~ _changePage ~ evt:", evt);
-
     const { groupViewBy } = store.getState();
     this._searchParams = {
       ...this._searchParams,
@@ -96,11 +94,10 @@ export class GroupTableViewTable extends TableViewTable {
 
     // this._pagination = { ...evt.detail };
     store.getState().setGroupSearchParams(this._searchParams);
-    store.getState().setTabularData(groupViewBy);
+    store.getState().setTabularGroup(groupViewBy);
   }
 
   _newData(tabularGroup) {
-    console.log("😇 ~ _newData ~ tabularGroup:", tabularGroup);
     const { groupViewBy } = store.getState();
 
     if (
@@ -139,7 +136,7 @@ export class GroupTableViewTable extends TableViewTable {
   _changeGroupViewBy(groupViewBy) {
     if (groupViewBy !== "Group" && groupViewBy !== "User") return;
 
-    store.getState().setTabularData(groupViewBy);
+    store.getState().setTabularGroup(groupViewBy);
 
     // Adapt paginator to new data
     const numData = store.getState().tabularGroup[groupViewBy].count;
@@ -196,7 +193,7 @@ export class GroupTableViewTable extends TableViewTable {
           check.setAttribute("type", "number");
           td.appendChild(check);
         } else if (val[1] === "Actions") {
-          const edit = document.createElement("edit-button");
+          const edit = document.createElement("edit-line-button");
           td.appendChild(edit);
         } else {
           td.innerText = gr[val[1]];
@@ -243,7 +240,7 @@ export class GroupTableViewTable extends TableViewTable {
         } else if (val[1] === "groupIds") {
           td.innerText = groupIds;
         } else if (val[1] === "Actions") {
-          const edit = document.createElement("edit-button");
+          const edit = document.createElement("edit-line-button");
           td.appendChild(edit);
         }
         return td;
