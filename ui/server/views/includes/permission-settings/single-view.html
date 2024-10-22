@@ -1,0 +1,152 @@
+<template id="group-single-view">
+  <div class="d-flex flex-column pl-md-6 px-6">
+    <div
+      id="title-div"
+      class="d-flex flex-row flex-justify-between flex-items-center mb-3"
+    >
+      <a
+        class="btn btn-width btn-outline text-gray my-3 px-2"
+        href="#Group-All"
+      >
+        <svg
+          slot="icon"
+          class="mr-2"
+          xmlns="http://www.w3.org/2000/svg"
+          width="1em"
+          height="1em"
+          viewBox="0 0 512 512"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M176.1 103C181.7 107.7 184 113.8 184 120S181.7 132.3 176.1 136.1L81.94 232H488C501.3 232 512 242.8 512 256s-10.75 24-24 24H81.94l95.03 95.03c9.375 9.375 9.375 24.56 0 33.94s-24.56 9.375-33.94 0l-136-136c-9.375-9.375-9.375-24.56 0-33.94l136-136C152.4 93.66 167.6 93.66 176.1 103z"
+          />
+        </svg>
+        <span> Back </span>
+      </a>
+      <h2 class="h2"><span id="title-type"></span> Group</h2>
+      <span></span>
+    </div>
+
+    <form id="group-form">
+      <text-input id="group-name" name="Group name" type="string"></text-input>
+
+      <div id="group-member-list" class="my-4 group-member-list"></div>
+
+      <!-- New Group -->
+      <div id="new-group-actions" class="hidden">
+        <div class="d-flex flex-column">
+          <text-area
+            id="new-group--username-list-input"
+            name="Username list"
+            type="string"
+          >
+          </text-area>
+          <button
+            id="group-single-view-save"
+            class="btn btn-small btn-outline"
+            style="align-self: end"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Edit Group -->
+      <div id="edit-group-actions" class="hidden">
+        <!-- Bulk action button -->
+        <button class="btn btn-width btn-outline text-gray my-3 px-2">
+          <svg
+            slot="icon"
+            class="mr-2"
+            xmlns="http://www.w3.org/2000/svg"
+            width="1em"
+            height="1em"
+            viewBox="0 0 512 512"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M342.4 247.7L280 314.9V144c0-13.25-10.75-24-24-24S232 130.8 232 144v170.9L169.6 247.7C160.5 237.9 145.4 237.4 135.7 246.4C125.1 255.4 125.4 270.6 134.4 280.3l104 112C242.1 397.2 249.3 400 256 400s13.03-2.781 17.59-7.656l104-112c9-9.719 8.438-24.91-1.25-33.94C366.6 237.4 351.5 237.9 342.4 247.7zM256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM256 464c-114.7 0-208-93.31-208-208S141.3 48 256 48s208 93.31 208 208S370.7 464 256 464z"
+            />
+          </svg>
+          <svg
+            slot="icon"
+            class="mr-2"
+            xmlns="http://www.w3.org/2000/svg"
+            width="1em"
+            height="1em"
+            viewBox="0 0 512 512"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M273.6 119.7C269 114.8 262.7 112 256 112S242.1 114.8 238.4 119.7l-104 112c-9 9.719-8.438 24.91 1.25 33.94c9.719 9 24.88 8.469 33.94-1.25L232 197.1V368c0 13.25 10.75 24 24 24s24-10.75 24-24V197.1l62.41 67.21c9.062 9.719 24.22 10.25 33.94 1.25c9.688-9.031 10.25-24.22 1.25-33.94L273.6 119.7zM256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM256 464c-114.7 0-208-93.31-208-208S141.3 48 256 48s208 93.31 208 208S370.7 464 256 464z"
+            />
+          </svg>
+          <span> Bulk Action </span>
+        </button>
+
+        <div class="d-flex flex-column">
+          <text-area
+            id="edit-group--username-list-input"
+            name="Username list"
+            type="string"
+          >
+          </text-area>
+
+          <div class="d-flex flex-row" style="align-self: end">
+            <button
+              id="edit-group--username-list-add"
+              class="btn btn-small btn-outline"
+            >
+              Add
+            </button>
+            <button
+              id="edit-group--username-list-delete"
+              class="btn btn-small btn-outline"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div
+      id="group-single-view--save-cancel-section"
+      class="d-flex flex-items-center flex-justify-center my-4"
+    >
+      <input
+        id="group-single-view-save"
+        type="submit"
+        value="Save"
+        class="btn btn-clear f1 text-semibold"
+      />
+      <a
+        href="#Group-All"
+        id="group-single-view-cancel"
+        class="px-5 f1 text-gray hover-text-white"
+      >
+        Cancel
+      </a>
+    </div>
+  </div>
+</template>
+
+<template id="policy-calculator-view">
+  <div>2</div>
+</template>
+
+<template id="group-member-card">
+  <div>card</div>
+</template>

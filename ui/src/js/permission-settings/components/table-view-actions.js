@@ -40,11 +40,6 @@ export class TableViewActions extends TatorElement {
   }
 
   connectedCallback() {
-    // store.subscribe(
-    //   (state) => state.selectedType,
-    //   this._newSelectedType.bind(this)
-    // );
-
     this._buttons.forEach((btn) => {
       btn.style.display = "none";
     });
@@ -61,8 +56,6 @@ export class TableViewActions extends TatorElement {
   _init() {
     // Override by child class
   }
-
-  _newSelectedType() {}
 
   _unhideButton() {}
 

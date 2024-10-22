@@ -1,0 +1,5 @@
+.group-member-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-2);
+}

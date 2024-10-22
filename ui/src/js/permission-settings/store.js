@@ -43,7 +43,10 @@ const store = create(
     groupList: [],
     organizationList: [],
 
-    selectedType: "",
+    selectedType: {
+      typeName: "Group",
+      typeId: "All",
+    },
 
     User: {
       init: false,
@@ -425,7 +428,7 @@ const store = create(
       });
     },
 
-    setSelection: (selectedType) => {
+    setSelectedType: (selectedType) => {
       set({ selectedType });
     },
 

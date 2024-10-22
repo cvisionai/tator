@@ -26,7 +26,8 @@
   </div>
 </template> -->
 
-{% include "includes/permission-settings/table-view.html" %}
+{% include "includes/permission-settings/table-view.html" %} {% include
+"includes/permission-settings/single-view.html" %}
 <template id="permission-settings">
   <main id="permission-settings--main" class="position-relative">
     <div id="settings-nav--div" class="py-6 clearfix position-relative px-md-6">
@@ -39,13 +40,23 @@
         class="NavItem float-left col-md-9 col-xl-10 col-xs-12"
       >
         <permission-settings-table-view
+          id="group-tabel-view"
           type="Group"
           hidden
         ></permission-settings-table-view>
         <permission-settings-table-view
+          id="policy-tabel-view"
           type="Policy"
           hidden
         ></permission-settings-table-view>
+        <permission-settings-group-single-view
+          id="group-single-view"
+          hidden
+        ></permission-settings-group-single-view>
+        <permission-settings-policy-calculator-view
+          id="policy-calculator-view"
+          hidden
+        ></permission-settings-policy-calculator-view>
       </div>
     </div>
   </main>
