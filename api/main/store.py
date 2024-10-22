@@ -810,7 +810,7 @@ class AzureStorage(TatorStorage):
             container_name=self.bucket_name,
             blob_name=key,
             account_key=self.client.credential.account_key,
-            permission=BlobSasPermissions(write=True, create=True),
+            permission=BlobSasPermissions(write=True, create=True, add=True),
             expiry=datetime.utcnow() + timedelta(seconds=expiration),
         )
         blob_client = self.client.get_blob_client(container=self.bucket_name, blob=key)
@@ -827,7 +827,7 @@ class AzureStorage(TatorStorage):
             container_name=self.bucket_name,
             blob_name=key,
             account_key=self.client.credential.account_key,
-            permission=BlobSasPermissions(write=True, create=True),
+            permission=BlobSasPermissions(write=True, create=True, add=True),
             expiry=datetime.utcnow() + timedelta(seconds=expiration),
         )
         blob_client = self.client.get_blob_client(container=self.bucket_name, blob=key)
