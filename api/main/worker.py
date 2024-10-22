@@ -59,9 +59,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     retry = Retry(ExponentialBackoff(), 3)
     redis = Redis(
-        host=os.getenv("REDIS_HOST"),
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        password=REDIS_PASSWORD,
         retry=retry,
         retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
+        health_check_interval=30,
         ssl=REDIS_USE_SSL,
     )
     queue = Queue(args.queue, connection=redis)
