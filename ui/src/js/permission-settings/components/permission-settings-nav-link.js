@@ -54,12 +54,13 @@ export class PermissionSettingsNavLink extends TatorElement {
    */
   async toggleHighlight(newSelectedType, oldSelectedType) {
     const affectsMe =
-      this._type == newSelectedType || this._type == oldSelectedType;
+      this._type == newSelectedType.typeName ||
+      this._type == oldSelectedType.typeName;
 
     if (affectsMe) {
       if (
-        oldSelectedType === this._type &&
-        oldSelectedType !== newSelectedType
+        oldSelectedType.typeName === this._type &&
+        oldSelectedType.typeName !== newSelectedType.typeName
       ) {
         this.unhighlightHeading();
       } else {
@@ -83,7 +84,7 @@ export class PermissionSettingsNavLink extends TatorElement {
   }
 
   _goTo() {
-    window.location.hash = this._type;
+    window.location.hash = this._type + "-All";
   }
 }
 

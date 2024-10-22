@@ -18,12 +18,6 @@ export class PermissionSettingsTableView extends TatorElement {
   }
 
   connectedCallback() {
-    // Subscribe to selection
-    store.subscribe(
-      (state) => state.selectedType,
-      this._updateTypeSelection.bind(this)
-    );
-
     this._type = this.getAttribute("type");
 
     // Create actions component
@@ -40,23 +34,6 @@ export class PermissionSettingsTableView extends TatorElement {
 
     // Once we know what type, listen to changes
     store.subscribe((state) => state[this._type], this._newData.bind(this));
-  }
-
-  async _updateTypeSelection(newSelectedType, oldSelectedType) {
-    const affectsMe =
-      this._type == newSelectedType || this._type == oldSelectedType;
-
-    if (affectsMe) {
-      if (
-        oldSelectedType === this._type &&
-        oldSelectedType !== newSelectedType
-      ) {
-        this.hidden = true;
-        return; // If container type was the old type, and not the new one hide and end
-      } else {
-        this.hidden = false; // Otherwise Show
-      }
-    }
   }
 
   _newData(dataObj) {
