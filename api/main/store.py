@@ -794,7 +794,10 @@ class AzureStorage(TatorStorage):
             parsed = urlsplit(url)
             external = urlsplit(self.external_host, scheme=self.proto)
             parsed = parsed._replace(
-                netloc=external.netloc + external.path, scheme=external.scheme
+                netloc=external.netloc,
+                scheme=external.scheme,
+                # Keep the original path to avoid missing the blob path
+                path=parsed.path
             )
             url = urlunsplit(parsed)
         return url
@@ -810,7 +813,8 @@ class AzureStorage(TatorStorage):
             permission=BlobSasPermissions(write=True, create=True),
             expiry=datetime.utcnow() + timedelta(seconds=expiration),
         )
-        url = f"{self.client.primary_endpoint}/{self.bucket_name}/{key}?{sas_token}"
+        blob_client = self.client.get_blob_client(container=self.bucket_name, blob=key)
+        url = f"{blob_client.url}?{sas_token}"
         urls = [url] * num_parts
         upload_id = ""  # Azure does not use upload IDs in the same way
         return urls, upload_id
@@ -826,7 +830,8 @@ class AzureStorage(TatorStorage):
             permission=BlobSasPermissions(write=True, create=True),
             expiry=datetime.utcnow() + timedelta(seconds=expiration),
         )
-        url = f"{self.client.primary_endpoint}/{self.bucket_name}/{key}?{sas_token}"
+        blob_client = self.client.get_blob_client(container=self.bucket_name, blob=key)
+        url = f"{blob_client.url}?{sas_token}"
         return [url], ""
 
     def _list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> list:
