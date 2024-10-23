@@ -3,3 +3,8 @@
   grid-template-columns: 1fr 1fr 1fr;
   gap: var(--spacing-2);
 }
+
+.table-cell-padding {
+  padding-left: var(--spacing-3);
+  padding-right: var(--spacing-3);
+}

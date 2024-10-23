@@ -72,6 +72,7 @@ const store = create(
         userIdGroupIdMap: null,
       },
     },
+    selectedGroupIds: [],
     groupViewBy: "Group",
     groupSearchParams: {
       Group: {
@@ -438,6 +439,10 @@ const store = create(
 
     setGroupSearchParams: (groupSearchParams) => {
       set({ groupSearchParams });
+    },
+
+    setSelectedGroupIds: (selectedGroupIds) => {
+      set({ selectedGroupIds });
     },
 
     setPolicySearchParams: (policySearchParams) => {

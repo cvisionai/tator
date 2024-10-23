@@ -19,10 +19,15 @@ export class GroupTableViewActions extends TableViewActions {
   }
 
   _init() {
+    this._delete.setAttribute("disabled", "");
     this.styleViewByButtons(store.getState().groupViewBy);
     store.subscribe(
       (state) => state.groupViewBy,
       this.styleViewByButtons.bind(this)
+    );
+    store.subscribe(
+      (state) => state.selectedGroupIds,
+      this._newSelectedGroupIds.bind(this)
     );
   }
 
@@ -30,9 +35,19 @@ export class GroupTableViewActions extends TableViewActions {
     if (groupViewBy === "Group") {
       this._viewByGroup.classList.add("selected");
       this._viewByUser.classList.remove("selected");
+      this._delete.style.display = "";
     } else if (groupViewBy === "User") {
       this._viewByGroup.classList.remove("selected");
       this._viewByUser.classList.add("selected");
+      this._delete.style.display = "none";
+    }
+  }
+
+  _newSelectedGroupIds(selectedGroupIds) {
+    if (selectedGroupIds.length === 0) {
+      this._delete.setAttribute("disabled", "");
+    } else {
+      this._delete.removeAttribute("disabled");
     }
   }
 }
