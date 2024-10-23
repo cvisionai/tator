@@ -1,18 +1,8 @@
 import { TableViewTable } from "../components/table-view-table.js";
 import { store } from "../store.js";
 
-const COLUMN_BY_GROUP = [
-  ["Checkbox", "Checkbox"],
-  ["Group Name", "name"],
-  ["User IDs", "members"],
-  ["Actions", "Actions"],
-];
-const COLUMN_BY_USER = [
-  ["Checkbox", "Checkbox"],
-  ["User ID", "id"],
-  ["Group IDs", "groupIds"],
-  ["Actions", "Actions"],
-];
+const COLUMN_BY_GROUP = ["Checkbox", "Group Name", "User IDs", "Actions"];
+const COLUMN_BY_USER = ["User ID", "Group IDs", "Actions"];
 const COLGROUP_BY_GROUP = `
 <col style="width: 10%" />
 <col style="width: 30%" />
@@ -20,9 +10,8 @@ const COLGROUP_BY_GROUP = `
 <col style="width: 10%" />
 `;
 const COLGROUP_BY_USER = `
-<col style="width: 10%" />
-<col style="width: 20%" />
-<col style="width: 60%" />
+<col style="width: 15%" />
+<col style="width: 75%" />
 <col style="width: 10%" />
 `;
 
@@ -56,6 +45,8 @@ export class GroupTableViewTable extends TableViewTable {
         },
       },
     };
+
+    this._checkboxes = [];
   }
 
   connectedCallback() {
@@ -65,6 +56,11 @@ export class GroupTableViewTable extends TableViewTable {
     );
 
     store.subscribe((state) => state.tabularGroup, this._newData.bind(this));
+
+    store.subscribe(
+      (state) => state.selectedGroupIds,
+      this._newSelectedGroupIds.bind(this)
+    );
 
     this._paginator.addEventListener("selectPage", this._changePage.bind(this));
   }
@@ -154,8 +150,10 @@ export class GroupTableViewTable extends TableViewTable {
     this._tableBody.innerHTML = "";
 
     if (groupViewBy === "Group") {
+      this._checkboxes = [];
       this._colgroup.innerHTML = COLGROUP_BY_GROUP;
       this._displayTableByGroup();
+      store.getState().setSelectedGroupIds([]);
     } else if (groupViewBy === "User") {
       this._colgroup.innerHTML = COLGROUP_BY_USER;
       this._displayTableByUser();
@@ -169,13 +167,18 @@ export class GroupTableViewTable extends TableViewTable {
     const tr = document.createElement("tr");
     COLUMN_BY_GROUP.map((val) => {
       const th = document.createElement("th");
-      if (val[0] === "Checkbox") {
+      if (val === "Checkbox") {
         const check = document.createElement("checkbox-input");
         check.setAttribute("type", "number");
         // check.setAttribute("id", "checkbox--select-all");
+        check.addEventListener("change", (event) => {
+          this._changeAllCheckboxes();
+        });
+
+        this._checkAll = check;
         th.appendChild(check);
       } else {
-        th.innerText = val[0];
+        th.innerText = val;
       }
       return th;
     }).forEach((th) => {
@@ -188,15 +191,25 @@ export class GroupTableViewTable extends TableViewTable {
       const tr = document.createElement("tr");
       COLUMN_BY_GROUP.map((val) => {
         const td = document.createElement("td");
-        if (val[1] === "Checkbox") {
+        if (val === "Checkbox") {
           const check = document.createElement("checkbox-input");
           check.setAttribute("type", "number");
+          check.setValue({ id: gr.id, checked: false });
+
+          check.addEventListener("change", (event) => {
+            this._changeCheckboxes();
+          });
+
+          this._checkboxes.push(check);
           td.appendChild(check);
-        } else if (val[1] === "Actions") {
+        } else if (val === "Group Name") {
+          td.innerText = gr.name;
+        } else if (val === "User IDs") {
+          td.classList.add("table-cell-padding");
+          td.innerText = gr.members;
+        } else if (val === "Actions") {
           const edit = document.createElement("edit-line-button");
           td.appendChild(edit);
-        } else {
-          td.innerText = gr[val[1]];
         }
         return td;
       }).forEach((td) => {
@@ -213,14 +226,7 @@ export class GroupTableViewTable extends TableViewTable {
     const tr = document.createElement("tr");
     COLUMN_BY_USER.map((val) => {
       const th = document.createElement("th");
-      if (val[0] === "Checkbox") {
-        const check = document.createElement("checkbox-input");
-        check.setAttribute("type", "number");
-        // check.setAttribute("id", "checkbox--select-all");
-        th.appendChild(check);
-      } else {
-        th.innerText = val[0];
-      }
+      th.innerText = val;
       return th;
     }).forEach((th) => {
       tr.appendChild(th);
@@ -231,15 +237,12 @@ export class GroupTableViewTable extends TableViewTable {
       const tr = document.createElement("tr");
       COLUMN_BY_USER.map((val) => {
         const td = document.createElement("td");
-        if (val[1] === "Checkbox") {
-          const check = document.createElement("checkbox-input");
-          check.setAttribute("type", "number");
-          td.appendChild(check);
-        } else if (val[1] === "id") {
+        if (val === "User ID") {
           td.innerText = userId;
-        } else if (val[1] === "groupIds") {
+        } else if (val === "Group IDs") {
+          td.classList.add("table-cell-padding");
           td.innerText = groupIds;
-        } else if (val[1] === "Actions") {
+        } else if (val === "Actions") {
           const edit = document.createElement("edit-line-button");
           td.appendChild(edit);
         }
@@ -249,6 +252,32 @@ export class GroupTableViewTable extends TableViewTable {
       });
       this._tableBody.appendChild(tr);
     }
+  }
+
+  _newSelectedGroupIds(selectedGroupIds) {
+    console.log(
+      "😇 ~ _newSelectedGroupIds ~ selectedGroupIds:",
+      selectedGroupIds
+    );
+  }
+
+  _changeCheckboxes() {
+    const ids = this._checkboxes
+      .filter((check) => check.getChecked())
+      .map((checked) => checked.getValue());
+
+    store.getState().setSelectedGroupIds(ids);
+  }
+
+  _changeAllCheckboxes() {
+    const val =
+      store.getState().selectedGroupIds.length < this._checkboxes.length;
+    this._checkboxes.forEach((check) => {
+      check._checked = val;
+    });
+    this._checkAll._checked = val;
+
+    this._changeCheckboxes();
   }
 }
 
