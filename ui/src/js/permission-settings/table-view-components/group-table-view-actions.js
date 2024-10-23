@@ -19,7 +19,6 @@ export class GroupTableViewActions extends TableViewActions {
   }
 
   _init() {
-    this._delete.setAttribute("disabled", "");
     this.styleViewByButtons(store.getState().groupViewBy);
     store.subscribe(
       (state) => state.groupViewBy,

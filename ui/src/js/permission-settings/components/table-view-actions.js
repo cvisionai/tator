@@ -40,6 +40,8 @@ export class TableViewActions extends TatorElement {
   }
 
   connectedCallback() {
+    this._delete.setAttribute("disabled", "");
+
     this._buttons.forEach((btn) => {
       btn.style.display = "none";
     });

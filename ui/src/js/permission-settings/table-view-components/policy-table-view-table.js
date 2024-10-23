@@ -27,10 +27,17 @@ export class PolicyTableViewTable extends TableViewTable {
         pageSize: 10,
       },
     };
+
+    this._checkboxes = [];
   }
 
   connectedCallback() {
     store.subscribe((state) => state.tabularPolicy, this._newData.bind(this));
+
+    store.subscribe(
+      (state) => state.selectedPolicyIds,
+      this._newSelectedPolicyIds.bind(this)
+    );
 
     this._paginator.addEventListener("selectPage", this._changePage.bind(this));
   }
@@ -88,6 +95,7 @@ export class PolicyTableViewTable extends TableViewTable {
     this._tableHead.innerHTML = "";
     this._tableBody.innerHTML = "";
     this._colgroup.innerHTML = COLGROUP;
+    this._checkboxes = [];
 
     const { data } = store.getState().tabularPolicy;
 
@@ -99,6 +107,11 @@ export class PolicyTableViewTable extends TableViewTable {
         const check = document.createElement("checkbox-input");
         check.setAttribute("type", "number");
         // check.setAttribute("id", "checkbox--select-all");
+        check.addEventListener("change", (event) => {
+          this._changeAllCheckboxes();
+        });
+
+        this._checkAll = check;
         th.appendChild(check);
       } else {
         th.innerText = val;
@@ -117,6 +130,13 @@ export class PolicyTableViewTable extends TableViewTable {
         if (val === "Checkbox") {
           const check = document.createElement("checkbox-input");
           check.setAttribute("type", "number");
+          check.setValue({ id: policy.id, checked: false });
+
+          check.addEventListener("change", (event) => {
+            this._changeCheckboxes();
+          });
+
+          this._checkboxes.push(check);
           td.appendChild(check);
         } else if (val === "Entity") {
           td.innerText = policy.entityName;
@@ -134,6 +154,34 @@ export class PolicyTableViewTable extends TableViewTable {
       });
       this._tableBody.appendChild(tr);
     });
+
+    store.getState().setSelectedPolicyIds([]);
+  }
+
+  _newSelectedPolicyIds(selectedPolicyIds) {
+    console.log(
+      "😇 ~ _newSelectedPolicyIds ~ selectedPolicyIds:",
+      selectedPolicyIds
+    );
+  }
+
+  _changeCheckboxes() {
+    const ids = this._checkboxes
+      .filter((check) => check.getChecked())
+      .map((checked) => checked.getValue());
+
+    store.getState().setSelectedPolicyIds(ids);
+  }
+
+  _changeAllCheckboxes() {
+    const val =
+      store.getState().selectedPolicyIds.length < this._checkboxes.length;
+    this._checkboxes.forEach((check) => {
+      check._checked = val;
+    });
+    this._checkAll._checked = val;
+
+    this._changeCheckboxes();
   }
 }
 

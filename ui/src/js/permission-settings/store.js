@@ -1,6 +1,7 @@
 import create from "../../../node_modules/zustand/esm/vanilla.mjs";
 import { subscribeWithSelector } from "../../../node_modules/zustand/esm/middleware.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { data as policy } from "./test.js";
 
 const listResources = {
   Group: "Groups",
@@ -98,6 +99,7 @@ const store = create(
       count: 0,
       data: null,
     },
+    selectedPolicyIds: [],
     policySearchParams: {
       filter: {},
       sortBy: {},
@@ -299,33 +301,36 @@ const store = create(
 
       const { user, groupList, organizationList } = get();
 
-      const userPolicyList = await fetchCredentials(
-        `/rest/RowProtections?user=${user.id}`,
-        {}
-      ).then((response) => response.json());
-      data.push(...userPolicyList);
+      // const userPolicyList = await fetchCredentials(
+      //   `/rest/RowProtections?user=${user.id}`,
+      //   {}
+      // ).then((response) => response.json());
+      // data.push(...userPolicyList);
 
-      for (const gr of groupList) {
-        const groupPolicyList = await fetchCredentials(
-          `/rest/RowProtections?group=${gr.id}`,
-          {}
-        ).then((response) => response.json());
-        if (!Array.isArray(groupPolicyList)) {
-          continue;
-        }
-        data.push(...groupPolicyList);
-      }
+      // for (const gr of groupList) {
+      //   const groupPolicyList = await fetchCredentials(
+      //     `/rest/RowProtections?group=${gr.id}`,
+      //     {}
+      //   ).then((response) => response.json());
+      //   // When user is not allowed to get a permission item, the data sent back is not an array
+      //   if (!Array.isArray(groupPolicyList)) {
+      //     continue;
+      //   }
+      //   data.push(...groupPolicyList);
+      // }
 
-      for (const org of organizationList) {
-        const organizationPolicyList = await fetchCredentials(
-          `/rest/RowProtections?organization=${org.id}`,
-          {}
-        ).then((response) => response.json());
-        if (!Array.isArray(organizationPolicyList)) {
-          continue;
-        }
-        data.push(...organizationPolicyList);
-      }
+      // for (const org of organizationList) {
+      //   const organizationPolicyList = await fetchCredentials(
+      //     `/rest/RowProtections?organization=${org.id}`,
+      //     {}
+      //   ).then((response) => response.json());
+      //   // When user is not allowed to get a permission item, the data sent back is not an array
+      //   if (!Array.isArray(organizationPolicyList)) {
+      //     continue;
+      //   }
+      //   data.push(...organizationPolicyList);
+      // }
+      data = policy;
 
       data.forEach((policy) => {
         const entityType = POLICY_ENTITY_TYPE.find(
@@ -443,6 +448,10 @@ const store = create(
 
     setSelectedGroupIds: (selectedGroupIds) => {
       set({ selectedGroupIds });
+    },
+
+    setSelectedPolicyIds: (selectedPolicyIds) => {
+      set({ selectedPolicyIds });
     },
 
     setPolicySearchParams: (policySearchParams) => {
