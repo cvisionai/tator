@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from datetime import datetime, timedelta
 from enum import Enum, unique
+import base64
+import uuid
 import json
 import logging
 from oci.object_storage import ObjectStorageClient
@@ -18,6 +20,7 @@ from azure.storage.blob import (
     BlobClient,
     BlobSasPermissions,
     BlobServiceClient,
+    BlobBlock,
     generate_blob_sas,
 )
 
@@ -810,14 +813,20 @@ class AzureStorage(TatorStorage):
             container_name=self.bucket_name,
             blob_name=key,
             account_key=self.client.credential.account_key,
-            permission=BlobSasPermissions(write=True, create=True, add=True),
+            permission=BlobSasPermissions(write=True),
             expiry=datetime.utcnow() + timedelta(seconds=expiration),
         )
-        blob_client = self.client.get_blob_client(container=self.bucket_name, blob=key)
-        url = f"{blob_client.url}?{sas_token}"
-        urls = [url] * num_parts
-        upload_id = ""  # Azure does not use upload IDs in the same way
-        return urls, upload_id
+        urls = []
+        block_ids = []
+        for i in range(1, num_parts + 1):
+            # Generate a unique block ID for each part
+            block_id = uuid.uuid4().hex
+            block_ids.append(block_id)
+            blob_client = self.client.get_blob_client(container=self.bucket_name, blob=key)
+            encoded_block_id = base64.b64encode(block_id.encode()).decode()
+            url = f"{blob_client.url}?comp=block&blockid={encoded_block_id}&{sas_token}"
+            urls.append(url)
+        return urls, ','.join(block_ids)
 
     def _get_single_upload_url(
         self, key: str, expiration: int, domain: str
@@ -857,12 +866,8 @@ class AzureStorage(TatorStorage):
             container=self.bucket_name, blob=self.path_to_key(path)
         )
         # In Azure, parts are blocks identified by block IDs
-        block_list = [f"{i:06d}" for i in range(1, parts + 1)]
-        try:
-            blob_client.commit_block_list(block_list)
-        except Exception as excep:
-            logger.info(f"Multipart failed: {excep}")
-            return False
+        block_list = upload_id.split(',')
+        blob_client.commit_block_list(block_list)
         return True
 
     def put_object(self, path: str, body: IO):
