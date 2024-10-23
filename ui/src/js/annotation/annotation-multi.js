@@ -927,7 +927,12 @@ export class AnnotationMulti extends TatorElement {
           promises.push(video.seekFrame(this_frame, cb, false, "scrub-only"));
         } else {
           if (video.currentFrame() < video.length - MAGIC_PAD) {
-            const seekPromise = video.seekFrame(video.length - MAGIC_PAD, cb, false, "scrub-only");
+            const seekPromise = video.seekFrame(
+              video.length - MAGIC_PAD,
+              cb,
+              false,
+              "scrub-only"
+            );
             promises.push(seekPromise);
           }
         }
