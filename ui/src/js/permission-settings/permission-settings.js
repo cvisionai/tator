@@ -79,7 +79,7 @@ export class PermissionSettings extends TatorPage {
     // All Group data
     await store.getState().setGroupData();
     // Policy data that are associated to this user, this user's groups, this user's organizations
-    // await store.getState().setPolicyData();
+    await store.getState().setPolicyData();
 
     console.log("😇 ~ _init ~ store.getState():", store.getState());
   }
