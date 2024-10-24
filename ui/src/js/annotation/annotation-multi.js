@@ -886,7 +886,7 @@ export class AnnotationMulti extends TatorElement {
   }
 
   /**
-   * Callback used when user clicks on one of the seek bar sliders
+   * Callback used when user slides on one of the seek bar sliders
    */
   handleSliderInput(evt) {
     // Along allow a scrub display as the user is going
@@ -924,10 +924,10 @@ export class AnnotationMulti extends TatorElement {
           video.updateOffscreenBuffer(frameIdx, source, width, height);
         };
         if (this_frame < video.length) {
-          promises.push(video.seekFrame(this_frame, cb));
+          promises.push(video.seekFrame(this_frame, cb, false, "scrub-only"));
         } else {
           if (video.currentFrame() < video.length - MAGIC_PAD) {
-            const seekPromise = video.seekFrame(video.length - MAGIC_PAD, cb);
+            const seekPromise = video.seekFrame(video.length - MAGIC_PAD, cb, false, "scrub-only");
             promises.push(seekPromise);
           }
         }
@@ -945,7 +945,7 @@ export class AnnotationMulti extends TatorElement {
   }
 
   /**
-   * Callback used when user slides one of the seek bars
+   * Callback used when user clicks one of the seek bars
    */
   handleSliderChange(evt) {
     this._play.setAttribute("is-paused", "");
