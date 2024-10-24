@@ -1,4 +1,5 @@
 import { TatorElement } from "../../components/tator-element.js";
+import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { store } from "../store.js";
 
 export class PermissionSettingsGroupSingleView extends TatorElement {
@@ -10,8 +11,14 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
     this._titleType = this._shadow.getElementById("title-type");
 
+    this._noData = this._shadow.getElementById("no-data");
+    this._noDataId = this._shadow.getElementById("no-data--group-id");
+    this._form = this._shadow.getElementById("group-form");
+
     this._groupNameInput = this._shadow.getElementById("group-name");
     this._groupMemberListDiv = this._shadow.getElementById("group-member-list");
+
+    this._memberCount = this._shadow.getElementById("group-member-count");
 
     this._newGroupActions = this._shadow.getElementById("new-group-actions");
     this._newGroupUsernameList = this._shadow.getElementById(
@@ -40,6 +47,14 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     this._editGroupWarning = this._shadow.getElementById(
       "edit-group--username-list-warning"
     );
+
+    this._saveCancel = this._shadow.getElementById(
+      "group-single-view--save-cancel-section"
+    );
+
+    // // loading spinner
+    this.loading = new LoadingSpinner();
+    this._shadow.appendChild(this.loading.getImg());
   }
 
   connectedCallback() {
@@ -74,6 +89,9 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       this._newGroupActions.classList.remove("hidden");
       this._editGroupActions.classList.add("hidden");
     } else {
+      this.showDimmer();
+      this.loading.showSpinner();
+
       this._titleType.innerText = "Edit";
       this._newGroupActions.classList.add("hidden");
       this._editGroupActions.classList.remove("hidden");
@@ -81,15 +99,12 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     }
   }
 
-  set data(val) {
-    this._data = val;
-  }
-
   _setData() {
     if (this._show) {
       const Group = store.getState().Group;
       if (Group.init) {
         this._groupMemberListDiv.innerHTML = "";
+        this._editGroupUsernameList.setValue("");
         this.data = Group.map.get(this._id);
         this._userToBeAdded.reset();
         this._userToBeDeleted.reset();
@@ -97,6 +112,24 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       } else {
         console.log("Group data not ready");
       }
+    }
+  }
+
+  set data(val) {
+    if (val) {
+      this._noData.setAttribute("hidden", "");
+      this._form.removeAttribute("hidden");
+      this._saveCancel.style.display = "";
+      this._groupNameInput.setValue(val.name);
+      this._memberCount.innerText = `${val.members.length} Member${
+        val.members.length === 1 ? "" : "s"
+      }`;
+      this._data = val;
+    } else {
+      this._noData.removeAttribute("hidden");
+      this._form.setAttribute("hidden", "");
+      this._saveCancel.style.display = "none";
+      this._noDataId.innerText = this._id;
     }
   }
 
@@ -123,6 +156,10 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       }
 
       this._groupMemberListDiv.replaceChildren(...cards);
+    }
+    if (this.hasAttribute("has-open-modal")) {
+      this.hideDimmer();
+      this.loading.hideSpinner();
     }
   }
 
@@ -215,6 +252,18 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     setTimeout(() => {
       this._editGroupWarning.classList.add("hidden");
     }, 4000);
+  }
+
+  /**
+   * Modal for this page, and handler
+   * @returns sets page attribute that changes dimmer
+   */
+  showDimmer() {
+    return this.setAttribute("has-open-modal", "");
+  }
+
+  hideDimmer() {
+    return this.removeAttribute("has-open-modal");
   }
 }
 
