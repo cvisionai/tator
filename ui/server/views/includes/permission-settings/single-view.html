@@ -34,7 +34,10 @@
     <form id="group-form">
       <text-input id="group-name" name="Group name" type="string"></text-input>
 
-      <div id="group-member-list" class="my-4 group-member-list"></div>
+      <div class="mt-4 mb-2">
+        Total <span id="group-member-count">4 Members</span>
+      </div>
+      <div id="group-member-list" class="mb-5 group-member-list"></div>
 
       <!-- New Group -->
       <div id="new-group-actions" class="hidden">
@@ -105,6 +108,7 @@
           </text-area>
 
           <div class="d-flex flex-row" style="align-self: end">
+            <div class="f3 mr-4" id="edit-group--username-list-warning"></div>
             <button
               id="edit-group--username-list-add"
               class="btn btn-small btn-outline"
@@ -148,5 +152,11 @@
 </template>
 
 <template id="group-member-card">
-  <div>card</div>
+  <div class="group-member-card px-2 py-2" id="group-member-card-div">
+    <h3
+      id="group-member-card--username"
+      class="h3 pb-2 group-member-card--username"
+    ></h3>
+    <p id="group-member-card--email" class="f3 group-member-card--email"></p>
+  </div>
 </template>
