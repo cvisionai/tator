@@ -41,52 +41,22 @@
       <div class="mt-4 mb-2">
         Total <span id="group-member-count">4 Members</span>
       </div>
-      <div id="group-member-list" class="mb-5 group-member-list"></div>
-
-      <!-- New Group -->
-      <div id="new-group-actions" class="hidden">
-        <div class="d-flex flex-column">
-          <text-area
-            id="new-group--username-list-input"
-            name="Username list"
-            type="string"
-          >
-          </text-area>
-          <button
-            id="group-single-view-save"
-            class="btn btn-small btn-outline"
-            style="align-self: end"
-          >
-            Add
-          </button>
-        </div>
+      <div id="group-member-list" class="mb-5 group-member-list">
+        <!-- MEMBER CARDS -->
       </div>
 
-      <!-- Edit Group -->
-      <div id="edit-group-actions" class="hidden">
-        <div class="d-flex flex-column">
-          <text-area
-            id="edit-group--username-list-input"
-            name="Username list"
-            type="string"
-          >
-          </text-area>
+      <div class="d-flex flex-column">
+        <text-area id="username-list-input" name="Username list" type="string">
+        </text-area>
 
-          <div class="d-flex flex-row" style="align-self: end">
-            <div class="f3 mr-4" id="edit-group--username-list-warning"></div>
-            <button
-              id="edit-group--username-list-add"
-              class="btn btn-small btn-outline"
-            >
-              Add
-            </button>
-            <button
-              id="edit-group--username-list-delete"
-              class="btn btn-small btn-outline"
-            >
-              Delete
-            </button>
-          </div>
+        <div class="d-flex flex-row" style="align-self: end">
+          <div class="f3 mr-4" id="username-list-warning"></div>
+          <button id="username-list-add" class="btn btn-small btn-outline">
+            Add
+          </button>
+          <button id="username-list-delete" class="btn btn-small btn-outline">
+            Delete
+          </button>
         </div>
       </div>
     </form>
