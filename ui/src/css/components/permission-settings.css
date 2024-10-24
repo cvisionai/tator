@@ -4,9 +4,13 @@
 }
 
 .group-member-list {
+  border: 1px solid var(--color-charcoal--light);
+  padding: var(--spacing-3);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--spacing-2);
+  height: 150px;
+  overflow-y: auto;
 }
 
 .group-member-card {
