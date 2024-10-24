@@ -1,10 +1,27 @@
-.group-member-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--spacing-2);
-}
-
 .table-cell-padding {
   padding-left: var(--spacing-3);
   padding-right: var(--spacing-3);
+}
+
+.group-member-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-2);
+}
+
+.group-member-card {
+  border: 1px solid var(--color-charcoal--light);
+  border-radius: 5%;
+}
+.group-member-card.to-be-added {
+  border: 1px dashed var(--color-parakeet-green);
+}
+.group-member-card.to-be-deleted {
+  border: 1px dashed var(--color-coral);
+}
+.group-member-card--username,
+.group-member-card--email {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Show "..." for overflowing text */
 }
