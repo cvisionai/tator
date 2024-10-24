@@ -49,10 +49,17 @@ export class SingleUpload {
 
   // Uploads using a single request.
   uploadSingle(info) {
+    let headers = {};
+    if ("blob.core.windows.net" in info.urls[0]) {
+      headers = {
+        "x-ms-blob-type": "BlockBlob",
+      };
+    }
     return fetch(info.urls[0], {
       method: "PUT",
       signal: this.controller.signal,
       credentials: "omit",
+      headers: headers,
       body: this.file.slice(0, this.file.size),
     }).then(() => {
       self.postMessage({
