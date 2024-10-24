@@ -20,33 +20,16 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
     this._memberCount = this._shadow.getElementById("group-member-count");
 
-    this._newGroupActions = this._shadow.getElementById("new-group-actions");
-    this._newGroupUsernameList = this._shadow.getElementById(
-      "new-group--username-list-input"
-    );
-    this._newGroupUsernameList._input.setAttribute(
+    this._usernameInput = this._shadow.getElementById("username-list-input");
+    this._usernameInput._input.setAttribute(
       "placeholder",
       "Ensure that each username or email is on a separate line."
     );
-    this._newGroupUsernameInput = "";
-
-    this._editGroupActions = this._shadow.getElementById("edit-group-actions");
-    this._editGroupUsernameList = this._shadow.getElementById(
-      "edit-group--username-list-input"
+    this._usernameInputWarning = this._shadow.getElementById(
+      "username-list-warning"
     );
-    this._editGroupUsernameList._input.setAttribute(
-      "placeholder",
-      "Ensure that each username or email is on a separate line."
-    );
-    this._editGroupAdd = this._shadow.getElementById(
-      "edit-group--username-list-add"
-    );
-    this._editGroupDelete = this._shadow.getElementById(
-      "edit-group--username-list-delete"
-    );
-    this._editGroupWarning = this._shadow.getElementById(
-      "edit-group--username-list-warning"
-    );
+    this._usernameAdd = this._shadow.getElementById("username-list-add");
+    this._usernameDelete = this._shadow.getElementById("username-list-delete");
 
     this._saveCancel = this._shadow.getElementById(
       "group-single-view--save-cancel-section"
@@ -60,13 +43,13 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
   connectedCallback() {
     this._initUserInput();
 
-    this._editGroupUsernameList.addEventListener("change", () => {
-      const value = this._editGroupUsernameList.getValue();
-      this._editGroupUsernameInput = value;
+    this._usernameInput.addEventListener("change", () => {
+      const value = this._usernameInput.getValue();
+      this._usernameInputString = value;
     });
 
-    this._editGroupAdd.addEventListener("click", this._addMembers.bind(this));
-    this._editGroupDelete.addEventListener(
+    this._usernameAdd.addEventListener("click", this._addMembers.bind(this));
+    this._usernameDelete.addEventListener(
       "click",
       this._deleteMembers.bind(this)
     );
@@ -83,35 +66,41 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
    * @param {string} val
    */
   set id(val) {
-    this._id = +val;
+    if (val !== "New") {
+      this._id = +val;
+    } else {
+      this._id = val;
+    }
+
     if (val === "New") {
       this._titleType.innerText = "New";
-      this._newGroupActions.classList.remove("hidden");
-      this._editGroupActions.classList.add("hidden");
+      this._usernameDelete.style.display = "none";
     } else {
       this.showDimmer();
       this.loading.showSpinner();
 
       this._titleType.innerText = "Edit";
-      this._newGroupActions.classList.add("hidden");
-      this._editGroupActions.classList.remove("hidden");
-      this._setData();
+      this._usernameDelete.style.display = "";
     }
+    this._groupMemberListDiv.innerHTML = "";
+    this._setData();
   }
 
   _setData() {
     if (this._show) {
       const Group = store.getState().Group;
-      if (Group.init) {
-        this._groupMemberListDiv.innerHTML = "";
-        this._editGroupUsernameList.setValue("");
+      if (this._id !== "New" && !Group.init) return;
+
+      if (this._id !== "New" && Group.init) {
         this.data = Group.map.get(this._id);
-        this._userToBeAdded.reset();
-        this._userToBeDeleted.reset();
-        this._renderData();
       } else {
-        console.log("Group data not ready");
+        this.data = {};
       }
+
+      this._usernameInput.setValue("");
+      this._userToBeAdded.reset();
+      this._userToBeDeleted.reset();
+      this._renderData();
     }
   }
 
@@ -120,12 +109,22 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       this._noData.setAttribute("hidden", "");
       this._form.removeAttribute("hidden");
       this._saveCancel.style.display = "";
-      this._groupNameInput.setValue(val.name);
-      this._memberCount.innerText = `${val.members.length} Member${
-        val.members.length === 1 ? "" : "s"
-      }`;
       this._data = val;
-    } else {
+      // New group
+      if (Object.keys(val).length === 0) {
+        this._groupNameInput.setValue("");
+        this._memberCount.innerText = "0 Members";
+      }
+      // Has group data
+      else {
+        this._groupNameInput.setValue(val.name);
+        this._memberCount.innerText = `${val.members.length} Member${
+          val.members.length === 1 ? "" : "s"
+        }`;
+      }
+    }
+    // group id is invalid or no group data
+    else {
       this._noData.removeAttribute("hidden");
       this._form.setAttribute("hidden", "");
       this._saveCancel.style.display = "none";
@@ -134,8 +133,8 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
   }
 
   async _renderData() {
+    const cards = [];
     if (this._data?.members && this._data?.members?.length) {
-      const cards = [];
       for (const memberId of this._data.members) {
         const userData = await this._userToBeAdded.getUserById(memberId);
         const card = document.createElement("group-member-card");
@@ -146,17 +145,24 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
         }
         cards.push(card);
       }
-      for (let [userId, userData] of this._userToBeAdded.getUsers()) {
-        if (this._data.members.includes(userId)) continue;
-        const card = document.createElement("group-member-card");
-        card.setAttribute("username", userData.username);
-        card.setAttribute("email", userData.email);
-        card.setAttribute("type", "to-be-added");
-        cards.push(card);
-      }
-
-      this._groupMemberListDiv.replaceChildren(...cards);
     }
+    for (let [userId, userData] of this._userToBeAdded.getUsers()) {
+      if (
+        this._data?.members &&
+        this._data?.members?.length &&
+        this._data.members.includes(userId)
+      ) {
+        continue;
+      }
+      const card = document.createElement("group-member-card");
+      card.setAttribute("username", userData.username);
+      card.setAttribute("email", userData.email);
+      card.setAttribute("type", "to-be-added");
+      cards.push(card);
+    }
+
+    this._groupMemberListDiv.replaceChildren(...cards);
+
     if (this.hasAttribute("has-open-modal")) {
       this.hideDimmer();
       this.loading.hideSpinner();
@@ -192,7 +198,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
   _addMembers(evt) {
     evt.preventDefault();
-    const trimmedInput = this._editGroupUsernameInput.trim();
+    const trimmedInput = this._usernameInputString.trim();
     if (!trimmedInput) {
       return;
     }
@@ -220,7 +226,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
   _deleteMembers(evt) {
     evt.preventDefault();
-    const trimmedInput = this._editGroupUsernameInput.trim();
+    const trimmedInput = this._usernameInputString.trim();
     if (!trimmedInput) {
       return;
     }
@@ -247,10 +253,10 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
   }
 
   _editGroupShowWarning(str) {
-    this._editGroupWarning.innerText = str;
-    this._editGroupWarning.classList.remove("hidden");
+    this._usernameInputWarning.innerText = str;
+    this._usernameInputWarning.classList.remove("hidden");
     setTimeout(() => {
-      this._editGroupWarning.classList.add("hidden");
+      this._usernameInputWarning.classList.add("hidden");
     }, 4000);
   }
 

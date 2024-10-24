@@ -9,7 +9,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--spacing-2);
-  height: 150px;
+  height: minmax(fit-content, 150px);
   overflow-y: auto;
 }
 
