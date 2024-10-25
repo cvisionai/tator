@@ -1101,13 +1101,18 @@ export class AnnotationPage extends TatorPage {
                 )[0];
               }
             }
+            // Only allow non-track state updates if primary video index
+            let allowNonTrackStateUpdates = !block_signals;
+            if (this._player.mediaType.dtype == "multi") {
+                allowNonTrackStateUpdates = this._mediaIds[canvas._primaryVideoIndex] == mediaId;
+            }
             this._data.init(
               dataTypes,
               this._version,
               projectId,
               mediaId,
               update,
-              !block_signals,
+              allowNonTrackStateUpdates,
               versions,
               memberships
             );
