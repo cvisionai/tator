@@ -5,7 +5,7 @@ export class EditLineButton extends TatorElement {
   constructor() {
     super();
 
-    this._button = document.createElement("button");
+    this._button = document.createElement("a");
     this._button.setAttribute(
       "class",
       "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
@@ -36,6 +36,18 @@ export class EditLineButton extends TatorElement {
       "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
     );
     svg.appendChild(path2);
+  }
+
+  static get observedAttributes() {
+    return ["href"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "href":
+        this._button.setAttribute("href", newValue);
+        break;
+    }
   }
 }
 

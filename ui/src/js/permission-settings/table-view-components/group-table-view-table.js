@@ -209,6 +209,7 @@ export class GroupTableViewTable extends TableViewTable {
           td.innerText = gr.members;
         } else if (val === "Actions") {
           const edit = document.createElement("edit-line-button");
+          edit.setAttribute("href", `#Group-${gr.id}`);
           td.appendChild(edit);
         }
         return td;

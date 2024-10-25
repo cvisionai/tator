@@ -1,6 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
-import { listResources, detailResources, store } from "./store.js";
+import { store } from "./store.js";
 import { hasPermission } from "../util/has-permission.js";
 
 export class PermissionSettings extends TatorPage {

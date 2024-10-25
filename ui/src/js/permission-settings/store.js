@@ -1,16 +1,15 @@
 import create from "../../../node_modules/zustand/esm/vanilla.mjs";
 import { subscribeWithSelector } from "../../../node_modules/zustand/esm/middleware.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import { data as policy } from "./test.js";
+import { data as policy, noPer } from "./test.js";
 
 const listResources = {
-  Group: "Groups",
-  Policy: "RowProtections",
+  section: "Sections",
+  project: "Projects",
 };
-
 const detailResources = {
-  Group: "Group",
-  Policy: "RowProtection",
+  section: "Section",
+  project: "Project",
 };
 
 const POLICY_ENTITY_NAME = {
@@ -94,6 +93,7 @@ const store = create(
       processedData: null,
       map: null,
       processedMap: null,
+      noPermissionEntities: [],
     },
     tabularPolicy: {
       count: 0,
@@ -298,6 +298,7 @@ const store = create(
       let processedData = [];
       let map = new Map();
       let processedMap = new Map();
+      let noPermissionEntities = [];
 
       const { user, groupList, organizationList } = get();
 
@@ -314,6 +315,7 @@ const store = create(
       //   ).then((response) => response.json());
       //   // When user is not allowed to get a permission item, the data sent back is not an array
       //   if (!Array.isArray(groupPolicyList)) {
+      //     noPermissionEntities.push(["group", gr.id]);
       //     continue;
       //   }
       //   data.push(...groupPolicyList);
@@ -326,31 +328,21 @@ const store = create(
       //   ).then((response) => response.json());
       //   // When user is not allowed to get a permission item, the data sent back is not an array
       //   if (!Array.isArray(organizationPolicyList)) {
+      //     noPermissionEntities.push(["group", gr.id]);
       //     continue;
       //   }
       //   data.push(...organizationPolicyList);
       // }
       data = policy;
+      noPermissionEntities = noPer;
 
       data.forEach((policy) => {
-        const entityType = POLICY_ENTITY_TYPE.find(
-          (en) => policy[en] != undefined
-        );
-        const targetType = POLICY_TARGET_TYPE.find(
-          (ta) => policy[ta] != undefined
-        );
-        const entityName = `${POLICY_ENTITY_NAME[entityType]} ${policy[entityType]}`;
-        const targetName = `${POLICY_TARGET_NAME[targetType]} ${policy[targetType]}`;
-
-        const processedObj = {
-          id: policy.id,
-          entityName,
-          targetName,
-          permission: policy.permission,
-        };
         map.set(policy.id, policy);
-        processedData.push(processedObj);
-        processedMap.set(policy.id, processedObj);
+      });
+
+      processedData = get().processPolicyData(data);
+      processedData.forEach((pd) => {
+        processedMap.set(pd.id, pd);
       });
 
       set({
@@ -360,6 +352,7 @@ const store = create(
           processedData,
           map,
           processedMap,
+          noPermissionEntities,
         },
       });
     },
@@ -434,6 +427,57 @@ const store = create(
       });
     },
 
+    getCalculatorPolicies: async (targets) => {
+      // Only fetching policies with entities that are not allowed in setPolicyData()
+      // Because for example, maybe /RowProtections?group=1 can get 403 error but /RowProtections?section=720&group=1 will get some data
+
+      const policies = [];
+      const { noPermissionEntities } = get().Policy;
+      for (const target of targets) {
+        for (const entity of noPermissionEntities) {
+          const policyList = await fetchCredentials(
+            `/rest/RowProtections?${target[0]}=${target[1]}&${entity[0]}=${entity[1]}`,
+            {}
+          ).then((response) => response.json());
+          // When user is not allowed to get a permission item, the data sent back is not an array
+          if (!Array.isArray(policyList)) {
+            continue;
+          }
+          policies.push(...policyList);
+        }
+      }
+
+      const processedPolicies = get().processPolicyData(policies);
+
+      return processedPolicies;
+    },
+
+    processPolicyData: (data) => {
+      return data.map((policy) => {
+        const entityType = POLICY_ENTITY_TYPE.find(
+          (en) => policy[en] != undefined
+        );
+        const targetType = POLICY_TARGET_TYPE.find(
+          (ta) => policy[ta] != undefined
+        );
+        const entityName = `${POLICY_ENTITY_NAME[entityType]} ${policy[entityType]}`;
+        const targetName = `${POLICY_TARGET_NAME[targetType]} ${policy[targetType]}`;
+
+        const processedObj = {
+          id: policy.id,
+          entityName,
+          targetName,
+          permission: policy.permission,
+          entityType,
+          targetType,
+          entityId: policy[entityType],
+          targetId: policy[targetType],
+        };
+
+        return processedObj;
+      });
+    },
+
     setSelectedType: (selectedType) => {
       set({ selectedType });
     },
@@ -460,4 +504,4 @@ const store = create(
   }))
 );
 
-export { listResources, detailResources, store };
+export { store };
