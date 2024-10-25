@@ -29,3 +29,7 @@
   overflow: hidden;
   text-overflow: ellipsis; /* Show "..." for overflowing text */
 }
+
+.calculator-table {
+  font-size: 12px;
+}

@@ -146,6 +146,7 @@ export class PolicyTableViewTable extends TableViewTable {
           td.innerText = policy.permission;
         } else {
           const edit = document.createElement("edit-line-button");
+          edit.setAttribute("href", `#Policy-${policy.id}`);
           td.appendChild(edit);
         }
         return td;
