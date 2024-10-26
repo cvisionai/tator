@@ -45,5 +45,5 @@ slackclient==2.9.4
 tzdata==2024.1
 ujson==5.9.0
 uritemplate==4.1.1
-werkzeug==3.0.3
+werkzeug==3.0.6
 wheel==0.43.0
