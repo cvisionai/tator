@@ -504,4 +504,4 @@ const store = create(
   }))
 );
 
-export { store };
+export { POLICY_ENTITY_NAME, POLICY_TARGET_NAME, store };

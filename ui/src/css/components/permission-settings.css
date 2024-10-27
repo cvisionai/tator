@@ -30,6 +30,23 @@
   text-overflow: ellipsis; /* Show "..." for overflowing text */
 }
 
+.calculator-table-div {
+  max-height: 500px;
+  overflow-y: auto;
+}
 .calculator-table {
   font-size: 12px;
+}
+.calculator-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.calculator-table tr.ord-row {
+  font-weight: bold;
+  color: var(--color-purple-400);
+}
+.calculator-table tr.final-row {
+  font-weight: bold;
+  color: var(--color-purple);
 }

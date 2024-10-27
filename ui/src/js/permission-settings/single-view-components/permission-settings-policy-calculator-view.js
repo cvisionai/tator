@@ -1,5 +1,5 @@
 import { TatorElement } from "../../components/tator-element.js";
-import { store } from "../store.js";
+import { POLICY_ENTITY_NAME, POLICY_TARGET_NAME, store } from "../store.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 const COLUMN = [
@@ -16,8 +16,8 @@ const COLUMN = [
   "Actions",
 ];
 const COLGROUP = `
-<col style="width: 14%" />
-<col style="width: 14%" />
+<col style="width: 13%" />
+<col style="width: 13%" />
 <col style="width: 8%" />
 <col style="width: 8%" />
 <col style="width: 8%" />
@@ -26,7 +26,7 @@ const COLGROUP = `
 <col style="width: 8%" />
 <col style="width: 8%" />
 <col style="width: 8%" />
-<col style="width: 8%" />
+<col style="width: 10%" />
 `;
 
 const ENTITY_TYPE_CHOICES = [
@@ -141,6 +141,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._tableBody.innerHTML = "";
 
     const requestedEntityName = `${this._entityTypeInput.getValue()} ${this._entityIdInput.getValue()}`;
+    const requestedTargetName = `${this._targetTypeInput.getValue()} ${this._targetIdInput.getValue()}`;
 
     const {
       user,
@@ -149,7 +150,32 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       Policy: { processedData },
     } = store.getState();
 
+    // Fetch Policy
+    const targets = await this._getCalculatorTargets();
+    const entities = this._getCalculatorEntities();
+    const calculatorPolicies = await store
+      .getState()
+      .getCalculatorPolicies(targets);
+    const policies = [...processedData, ...calculatorPolicies];
+
+    const tableBodyData = this._getTableBodyData(entities, targets, policies);
+
+    console.log("😇 ~ _renderData ~ tableBodyData:", tableBodyData);
+
     // Head
+    this._renderTableHead();
+
+    // Body
+    this._ordRowPermissionStrings = [];
+    Object.entries(tableBodyData).forEach(([targetName, policies]) => {
+      this._renderTableBodyTarget(targetName, policies);
+    });
+
+    // Final Effective Permission Row
+    this._renderTableBodyFinalRow();
+  }
+
+  _renderTableHead() {
     const tr = document.createElement("tr");
     COLUMN.map((val) => {
       const th = document.createElement("th");
@@ -159,183 +185,156 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       tr.appendChild(th);
     });
     this._tableHead.appendChild(tr);
+  }
 
-    // Fetch Policy
-    const targets = await this._getCalculatorTargets();
-    const calculatorPolicies = await store
-      .getState()
-      .getCalculatorPolicies(targets);
+  _renderTableBodyTarget(targetName, policies) {
+    const requestedEntityName = `${this._entityTypeInput.getValue()} ${this._entityIdInput.getValue()}`;
 
-    const entities = this._getCalculatorEntities();
-    const policies = [...processedData, ...calculatorPolicies];
+    const permissionStrings = Object.values(policies);
+    const entityCount = permissionStrings.length;
 
-    const tableBodyData = this._getTableBodyData(entities, targets, policies);
-
-    // Body
-    Object.entries(tableBodyData).forEach(([targetName, policies]) => {
-      const permissionStrings = Object.values(policies);
-      const entityCount = permissionStrings.length;
-
-      Object.entries(policies).forEach(([entityName, permission], index) => {
-        const tr = document.createElement("tr");
-
-        const tdEntity = document.createElement("td");
-        tdEntity.innerText = entityName;
-        tr.appendChild(tdEntity);
-
-        if (index === 0) {
-          const tdTarget = document.createElement("td");
-          tdTarget.innerText = targetName;
-          tdTarget.setAttribute("rowspan", entityCount);
-          tr.appendChild(tdTarget);
-        }
-
-        if (permission) {
-          permission.split("").forEach((char) => {
-            const td = document.createElement("td");
-            td.innerText = char;
-            tr.appendChild(td);
-          });
-        } else {
-          "12345678".split("").forEach((char) => {
-            const td = document.createElement("td");
-            tr.appendChild(td);
-          });
-        }
-
-        const tdActions = document.createElement("td");
-        const edit = document.createElement("edit-line-button");
-        edit.setAttribute("href", ``);
-        tdActions.appendChild(edit);
-        tr.appendChild(tdActions);
-
-        this._tableBody.appendChild(tr);
-      });
-
-      // OR'd row
+    Object.entries(policies).forEach(([entityName, permission], index) => {
       const tr = document.createElement("tr");
 
-      const td = document.createElement("td");
-      td.innerText = `${requestedEntityName}'s effective permission against ${targetName}`;
-      td.setAttribute("colspan", 2);
-      tr.appendChild(td);
+      const tdEntity = document.createElement("td");
+      tdEntity.innerText = entityName;
+      tr.appendChild(tdEntity);
 
-      const effectivePermission =
-        this._bitwiseOrBinaryStrings(permissionStrings);
+      if (index === 0) {
+        const tdTarget = document.createElement("td");
+        tdTarget.innerText = targetName;
+        tdTarget.setAttribute("rowspan", entityCount);
+        tr.appendChild(tdTarget);
+      }
 
-      if (effectivePermission) {
-        effectivePermission.split("").forEach((char) => {
+      if (permission) {
+        permission.split("").forEach((char) => {
           const td = document.createElement("td");
-          td.innerText = char;
+          if (char === "0") {
+            const xmark = document.createElement("no-permission-button");
+            td.appendChild(xmark);
+          } else if (char === "1") {
+            const check = document.createElement("has-permission-button");
+            td.appendChild(check);
+          }
           tr.appendChild(td);
         });
+
+        const tdActions = document.createElement("td");
+        const div = document.createElement("div");
+        div.classList.add("d-flex", "flex-row", "flex-justify-center");
+        div.style.gap = "5px";
+        tdActions.appendChild(div);
+        const disallow = document.createElement("disallow-all-button");
+        const back = document.createElement("change-back-button");
+        div.appendChild(disallow);
+        div.appendChild(back);
+        tr.appendChild(tdActions);
       } else {
         "12345678".split("").forEach((char) => {
           const td = document.createElement("td");
           tr.appendChild(td);
         });
+
+        const tdActions = document.createElement("td");
+        const grant = document.createElement("grant-all-button");
+        tdActions.appendChild(grant);
+        tr.appendChild(tdActions);
       }
 
-      const tdActions = document.createElement("td");
-      const edit = document.createElement("edit-line-button");
-      edit.setAttribute("href", ``);
-      tdActions.appendChild(edit);
-      tr.appendChild(tdActions);
-
       this._tableBody.appendChild(tr);
     });
 
-    //
-    //
-    /*
-    targets.forEach((target) => {
-      entities.forEach((entity, index) => {
-        const tr = document.createElement("tr");
+    // OR'd row
+    const tr = document.createElement("tr");
+    tr.classList.add("ord-row");
 
-        const tds = [];
-        let binaryShiftedPermission = "";
-        const policy = policyList.find(
-          (policy) =>
-            policy.entityId === entity[1] &&
-            policy.targetId === target[1] &&
-            policy.entityType === entity[0] &&
-            policy.targetType === target[0]
-        );
-        if (policy) {
-          const permission = BigInt(policy.permission);
-          const shiftedPermission = permission >> BigInt(target[2]);
-          binaryShiftedPermission = this._getRightmost8Bits(
-            shiftedPermission.toString(2)
-          );
-        }
+    const td = document.createElement("td");
+    td.innerText = `${requestedEntityName}'s effective permission against ${targetName}`;
+    td.setAttribute("colspan", 2);
+    tr.appendChild(td);
 
-        for (let i = 0; i < COLUMN.length; i++) {
-          const td = document.createElement("td");
-          if (i === 0) {
-            td.innerText = `${this._capitalizeString(entity[0])} ${entity[1]}`;
-          } else if (i === 1) {
-            if (index === 0) {
-              td.innerText = `${this._capitalizeString(target[0])} ${
-                target[1]
-              }`;
-              td.setAttribute("rowspan", entities.length);
-            } else {
-              continue;
-            }
-          } else if (i === 10) {
-            const edit = document.createElement("edit-line-button");
-            edit.setAttribute("href", ``);
-            td.appendChild(edit);
-          } else if (binaryShiftedPermission) {
-            td.innerText = binaryShiftedPermission[i - 2];
-          }
-          tds.push(td);
-        }
-        tds.forEach((td) => {
-          tr.appendChild(td);
-        });
-        this._tableBody.appendChild(tr);
-      });
-    });
-    /*
-    [...processedData].forEach((policy) => {
-      const match = targets.findIndex(
-        (target) =>
-          policy.targetId === target[1] && policy.targetType === target[0]
-      );
-      if (match === -1) return;
+    const ordPermission = this._bitwiseOrBinaryStrings(permissionStrings);
+    this._ordRowPermissionStrings.push(ordPermission);
 
-      const tr = document.createElement("tr");
-      COLUMN.map((val) => {
+    if (ordPermission) {
+      ordPermission.split("").forEach((char) => {
         const td = document.createElement("td");
-        if (val === "Policy Entity") {
-          td.innerText = policy.entityName;
-        } else if (val === "Policy Target") {
-          td.innerText = policy.targetName;
-        } else if (val === "Actions") {
-          const edit = document.createElement("edit-line-button");
-          edit.setAttribute("href", ``);
-          td.appendChild(edit);
-        } else {
-          td.innerText = policy.permission;
+        if (char === "0") {
+          const xmark = document.createElement("no-permission-button");
+          xmark.setAttribute("disabled", "");
+          td.appendChild(xmark);
+        } else if (char === "1") {
+          const check = document.createElement("has-permission-button");
+          check.setAttribute("disabled", "");
+          td.appendChild(check);
         }
-        return td;
-      }).forEach((td) => {
         tr.appendChild(td);
       });
-      this._tableBody.appendChild(tr);
-    });
-    */
+    } else {
+      "12345678".split("").forEach((char) => {
+        const td = document.createElement("td");
+        tr.appendChild(td);
+      });
+    }
+
+    const tdActions = document.createElement("td");
+    tr.appendChild(tdActions);
+
+    this._tableBody.appendChild(tr);
+  }
+
+  _renderTableBodyFinalRow() {
+    const requestedEntityName = `${this._entityTypeInput.getValue()} ${this._entityIdInput.getValue()}`;
+    const requestedTargetName = `${this._targetTypeInput.getValue()} ${this._targetIdInput.getValue()}`;
+
+    const trLast = document.createElement("tr");
+    trLast.classList.add("final-row");
+
+    const td = document.createElement("td");
+    td.innerText = `${requestedEntityName}'s final effective permission against ${requestedTargetName}`;
+    td.setAttribute("colspan", 2);
+    trLast.appendChild(td);
+
+    const finalPermission = this._bitwiseOrBinaryStrings(
+      this._ordRowPermissionStrings
+    );
+
+    if (finalPermission) {
+      finalPermission.split("").forEach((char) => {
+        const td = document.createElement("td");
+        if (char === "0") {
+          const xmark = document.createElement("no-permission-button");
+          xmark.setAttribute("disabled", "");
+          td.appendChild(xmark);
+        } else if (char === "1") {
+          const check = document.createElement("has-permission-button");
+          check.setAttribute("disabled", "");
+          td.appendChild(check);
+        }
+        trLast.appendChild(td);
+      });
+    } else {
+      "12345678".split("").forEach((char) => {
+        const td = document.createElement("td");
+        trLast.appendChild(td);
+      });
+    }
+
+    const tdActions = document.createElement("td");
+    trLast.appendChild(tdActions);
+
+    this._tableBody.appendChild(trLast);
   }
 
   _getTableBodyData(entities, targets, policies) {
     const tableBodyData = {};
     targets.forEach((target) => {
-      const targetName = `${this._capitalizeString(target[0])} ${target[1]}`;
+      const targetName = `${POLICY_TARGET_NAME[target[0]]} ${target[1]}`;
       tableBodyData[targetName] = {};
 
       entities.forEach((entity) => {
-        const entityName = `${this._capitalizeString(entity[0])} ${entity[1]}`;
+        const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
 
         let binaryShiftedPermission = "";
         const policy = policies.find(
@@ -357,16 +356,28 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   }
 
   _getCalculatorEntities() {
+    const requestedEntityType = this._entityTypeInput.getValue();
+    const requestedEntityId = this._entityIdInput.getValue();
+
     const { user, groupList, organizationList } = store.getState();
+
     const entities = [];
 
-    entities.push(["user", user.id]);
-    groupList.forEach((gr) => {
-      entities.push(["group", gr.id]);
-    });
-    organizationList.forEach((org) => {
-      entities.push(["organization", org.id]);
-    });
+    if (requestedEntityType === "organization") {
+      entities.push(["organization", requestedEntityId]);
+    } else if (requestedEntityType === "group") {
+      const group = groupList.find((gr) => gr.id === requestedEntityId);
+      entities.push(["organization", group.organization__id]);
+      entities.push(["group", requestedEntityId]);
+    } else if (requestedEntityType === "user") {
+      organizationList.forEach((org) => {
+        entities.push(["organization", org.id]);
+      });
+      groupList.forEach((gr) => {
+        entities.push(["group", gr.id]);
+      });
+      entities.push(["user", user.id]);
+    }
 
     return entities;
   }
@@ -393,14 +404,6 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   _initInputs() {
     this._entityTypeInput.choices = ENTITY_TYPE_CHOICES;
     this._targetTypeInput.choices = TARGET_TYPE_CHOICES;
-  }
-
-  _capitalizeString(str) {
-    // Split by " " or "_"
-    return str
-      .split(/[\s_]+/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
   }
 
   _bitwiseOrBinaryStrings(binaryStrings) {
