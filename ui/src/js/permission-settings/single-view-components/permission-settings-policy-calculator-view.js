@@ -140,13 +140,14 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._tableHead.innerHTML = "";
     this._tableBody.innerHTML = "";
 
+    const requestedEntityName = `${this._entityTypeInput.getValue()} ${this._entityIdInput.getValue()}`;
+
     const {
       user,
       groupList,
       organizationList,
       Policy: { processedData },
     } = store.getState();
-    const COUNT = 1 + groupList.length + organizationList.length;
 
     // Head
     const tr = document.createElement("tr");
@@ -166,9 +167,87 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       .getCalculatorPolicies(targets);
 
     const entities = this._getCalculatorEntities();
-    const policyList = [...processedData, ...calculatorPolicies];
+    const policies = [...processedData, ...calculatorPolicies];
+
+    const tableBodyData = this._getTableBodyData(entities, targets, policies);
 
     // Body
+    Object.entries(tableBodyData).forEach(([targetName, policies]) => {
+      const permissionStrings = Object.values(policies);
+      const entityCount = permissionStrings.length;
+
+      Object.entries(policies).forEach(([entityName, permission], index) => {
+        const tr = document.createElement("tr");
+
+        const tdEntity = document.createElement("td");
+        tdEntity.innerText = entityName;
+        tr.appendChild(tdEntity);
+
+        if (index === 0) {
+          const tdTarget = document.createElement("td");
+          tdTarget.innerText = targetName;
+          tdTarget.setAttribute("rowspan", entityCount);
+          tr.appendChild(tdTarget);
+        }
+
+        if (permission) {
+          permission.split("").forEach((char) => {
+            const td = document.createElement("td");
+            td.innerText = char;
+            tr.appendChild(td);
+          });
+        } else {
+          "12345678".split("").forEach((char) => {
+            const td = document.createElement("td");
+            tr.appendChild(td);
+          });
+        }
+
+        const tdActions = document.createElement("td");
+        const edit = document.createElement("edit-line-button");
+        edit.setAttribute("href", ``);
+        tdActions.appendChild(edit);
+        tr.appendChild(tdActions);
+
+        this._tableBody.appendChild(tr);
+      });
+
+      // OR'd row
+      const tr = document.createElement("tr");
+
+      const td = document.createElement("td");
+      td.innerText = `${requestedEntityName}'s effective permission against ${targetName}`;
+      td.setAttribute("colspan", 2);
+      tr.appendChild(td);
+
+      const effectivePermission =
+        this._bitwiseOrBinaryStrings(permissionStrings);
+
+      if (effectivePermission) {
+        effectivePermission.split("").forEach((char) => {
+          const td = document.createElement("td");
+          td.innerText = char;
+          tr.appendChild(td);
+        });
+      } else {
+        "12345678".split("").forEach((char) => {
+          const td = document.createElement("td");
+          tr.appendChild(td);
+        });
+      }
+
+      const tdActions = document.createElement("td");
+      const edit = document.createElement("edit-line-button");
+      edit.setAttribute("href", ``);
+      tdActions.appendChild(edit);
+      tr.appendChild(tdActions);
+
+      this._tableBody.appendChild(tr);
+    });
+
+    //
+    //
+    /*
     targets.forEach((target) => {
       entities.forEach((entity, index) => {
         const tr = document.createElement("tr");
@@ -218,7 +297,6 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         this._tableBody.appendChild(tr);
       });
     });
-
     /*
     [...processedData].forEach((policy) => {
       const match = targets.findIndex(
@@ -248,6 +326,34 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       this._tableBody.appendChild(tr);
     });
     */
+  }
+
+  _getTableBodyData(entities, targets, policies) {
+    const tableBodyData = {};
+    targets.forEach((target) => {
+      const targetName = `${this._capitalizeString(target[0])} ${target[1]}`;
+      tableBodyData[targetName] = {};
+
+      entities.forEach((entity) => {
+        const entityName = `${this._capitalizeString(entity[0])} ${entity[1]}`;
+
+        let binaryShiftedPermission = "";
+        const policy = policies.find(
+          (policy) =>
+            policy.entityName === entityName && policy.targetName === targetName
+        );
+        if (policy) {
+          const permission = BigInt(policy.permission);
+          const shiftedPermission = permission >> BigInt(target[2]);
+          binaryShiftedPermission = this._getRightmost8Bits(
+            shiftedPermission.toString(2)
+          );
+        }
+
+        tableBodyData[targetName][entityName] = binaryShiftedPermission;
+      });
+    });
+    return tableBodyData;
   }
 
   _getCalculatorEntities() {
@@ -284,6 +390,41 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     return targets;
   }
 
+  _initInputs() {
+    this._entityTypeInput.choices = ENTITY_TYPE_CHOICES;
+    this._targetTypeInput.choices = TARGET_TYPE_CHOICES;
+  }
+
+  _capitalizeString(str) {
+    // Split by " " or "_"
+    return str
+      .split(/[\s_]+/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  _bitwiseOrBinaryStrings(binaryStrings) {
+    const validBinaryStrings = binaryStrings.filter((str) => str !== "");
+
+    if (validBinaryStrings.length === 0) return "";
+
+    let result = parseInt(validBinaryStrings[0], 2);
+
+    for (let i = 1; i < validBinaryStrings.length; i++) {
+      result |= parseInt(validBinaryStrings[i], 2);
+    }
+
+    return result.toString(2).padStart(8, "0");
+  }
+
+  _getRightmost8Bits(binaryStr) {
+    // If the binary string is shorter than 8 bits, pad it with leading zeros
+    const paddedBinaryStr = binaryStr.padStart(8, "0");
+
+    // Return the rightmost 8 bits
+    return paddedBinaryStr.slice(-8);
+  }
+
   _updateSelectedType(newSelectedType, oldSelectedType) {
     if (
       newSelectedType.typeName !== "Policy" ||
@@ -295,23 +436,6 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
     this._show = true;
     this.id = newSelectedType.typeId;
-  }
-
-  _initInputs() {
-    this._entityTypeInput.choices = ENTITY_TYPE_CHOICES;
-    this._targetTypeInput.choices = TARGET_TYPE_CHOICES;
-  }
-
-  _capitalizeString(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  _getRightmost8Bits(binaryStr) {
-    // If the binary string is shorter than 8 bits, pad it with leading zeros
-    const paddedBinaryStr = binaryStr.padStart(8, "0");
-
-    // Return the rightmost 8 bits
-    return paddedBinaryStr.slice(-8);
   }
 }
 
