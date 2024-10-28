@@ -153,6 +153,36 @@ class NoPermissionButton extends PermissionSettingsButton {
     );
   }
 }
+class SortButton extends PermissionSettingsButton {
+  constructor() {
+    super();
+    this.init(
+      "Sort",
+      "M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H288C305.7 224 320 238.3 320 256C320 273.7 305.7 288 288 288H32C14.33 288 0 273.7 0 256zM160 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H160C177.7 384 192 398.3 192 416C192 433.7 177.7 448 160 448z",
+      "0 0 448 512"
+    );
+  }
+}
+class SortAscendingButton extends PermissionSettingsButton {
+  constructor() {
+    super();
+    this.init(
+      "Go Descending",
+      "M544 416h-223.1c-17.67 0-32 14.33-32 32s14.33 32 32 32H544c17.67 0 32-14.33 32-32S561.7 416 544 416zM320 96h32c17.67 0 31.1-14.33 31.1-32s-14.33-32-31.1-32h-32c-17.67 0-32 14.33-32 32S302.3 96 320 96zM320 224H416c17.67 0 32-14.33 32-32s-14.33-32-32-32h-95.1c-17.67 0-32 14.33-32 32S302.3 224 320 224zM320 352H480c17.67 0 32-14.33 32-32s-14.33-32-32-32h-159.1c-17.67 0-32 14.33-32 32S302.3 352 320 352zM151.6 41.95c-12.12-13.26-35.06-13.26-47.19 0l-87.1 96.09C4.475 151.1 5.35 171.4 18.38 183.3c6.141 5.629 13.89 8.414 21.61 8.414c8.672 0 17.3-3.504 23.61-10.39L96 145.9v302C96 465.7 110.3 480 128 480s32-14.33 32-32.03V145.9L192.4 181.3C204.4 194.3 224.6 195.3 237.6 183.3c13.03-11.95 13.9-32.22 1.969-45.27L151.6 41.95z",
+      "0 0 576 512"
+    );
+  }
+}
+class SortDescendingButton extends PermissionSettingsButton {
+  constructor() {
+    super();
+    this.init(
+      "Go Ascending",
+      "M320 224H416c17.67 0 32-14.33 32-32s-14.33-32-32-32h-95.1c-17.67 0-32 14.33-32 32S302.3 224 320 224zM320 352H480c17.67 0 32-14.33 32-32s-14.33-32-32-32h-159.1c-17.67 0-32 14.33-32 32S302.3 352 320 352zM320 96h32c17.67 0 31.1-14.33 31.1-32s-14.33-32-31.1-32h-32c-17.67 0-32 14.33-32 32S302.3 96 320 96zM544 416h-223.1c-17.67 0-32 14.33-32 32s14.33 32 32 32H544c17.67 0 32-14.33 32-32S561.7 416 544 416zM192.4 330.7L160 366.1V64.03C160 46.33 145.7 32 128 32S96 46.33 96 64.03v302L63.6 330.7c-6.312-6.883-14.94-10.38-23.61-10.38c-7.719 0-15.47 2.781-21.61 8.414c-13.03 11.95-13.9 32.22-1.969 45.27l87.1 96.09c12.12 13.26 35.06 13.26 47.19 0l87.1-96.09c11.94-13.05 11.06-33.31-1.969-45.27C224.6 316.8 204.4 317.7 192.4 330.7z",
+      "0 0 576 512"
+    );
+  }
+}
 
 customElements.define("permission-settings-button", PermissionSettingsButton);
 customElements.define("edit-line-button", EditLineButton);
@@ -161,3 +191,6 @@ customElements.define("remove-permission-button", RemovePermissionButton);
 customElements.define("change-back-button", ChangeBackButton);
 customElements.define("has-permission-button", HasPermissionButton);
 customElements.define("no-permission-button", NoPermissionButton);
+customElements.define("sort-button", SortButton);
+customElements.define("sort-ascending-button", SortAscendingButton);
+customElements.define("sort-descending-button", SortDescendingButton);

@@ -18,7 +18,8 @@ export class PolicyTableViewTable extends TableViewTable {
     this._searchParams = {
       filter: {},
       sortBy: {
-        entityName: "ascending",
+        entityName: "",
+        targetName: "",
       },
       pagination: {
         start: 0,
@@ -106,13 +107,16 @@ export class PolicyTableViewTable extends TableViewTable {
       if (val === "Checkbox") {
         const check = document.createElement("checkbox-input");
         check.setAttribute("type", "number");
-        // check.setAttribute("id", "checkbox--select-all");
         check.addEventListener("change", (event) => {
           this._changeAllCheckboxes();
         });
 
         this._checkAll = check;
         th.appendChild(check);
+      } else if (val === "Entity") {
+        this._setupTableHeadCellWithSort(val, th);
+      } else if (val === "Target") {
+        this._setupTableHeadCellWithSort(val, th);
       } else {
         th.innerText = val;
       }
@@ -146,7 +150,8 @@ export class PolicyTableViewTable extends TableViewTable {
           td.innerText = policy.permission;
         } else {
           const edit = document.createElement("edit-line-button");
-          edit.setAttribute("href", `#Policy-${policy.id}`);
+          edit.setAttribute("data-id", `Policy-${policy.id}`);
+          edit.addEventListener("click", this._goTo.bind(this));
           td.appendChild(edit);
         }
         return td;
@@ -157,6 +162,45 @@ export class PolicyTableViewTable extends TableViewTable {
     });
 
     store.getState().setSelectedPolicyIds([]);
+  }
+
+  _setupTableHeadCellWithSort(text, th) {
+    const {
+      policySearchParams: { sortBy },
+    } = store.getState();
+    const sortByKey = text === "Entity" ? "entityName" : "targetName";
+
+    const div = document.createElement("div");
+    div.classList.add("d-flex", "flex-row");
+    div.style.gap = "5px";
+    th.appendChild(div);
+    const span = document.createElement("span");
+    span.innerText = text;
+    div.appendChild(span);
+    const sortDiv = document.createElement("div");
+    sortDiv.classList.add("d-flex", "flex-row");
+    div.appendChild(sortDiv);
+    const sort = document.createElement("sort-button");
+    const sortAscending = document.createElement("sort-ascending-button");
+    const sortDescending = document.createElement("sort-descending-button");
+
+    sort.setAttribute("data-id", `${sortByKey}--`);
+    sortAscending.setAttribute("data-id", `${sortByKey}--ascending`);
+    sortDescending.setAttribute("data-id", `${sortByKey}--descending`);
+    sort.addEventListener("click", this._clickSort.bind(this));
+    sortAscending.addEventListener("click", this._clickSort.bind(this));
+    sortDescending.addEventListener("click", this._clickSort.bind(this));
+
+    sortDiv.appendChild(sort);
+    sortDiv.appendChild(sortAscending);
+    sortDiv.appendChild(sortDescending);
+    const sorts = {
+      "": sort,
+      ascending: sortAscending,
+      descending: sortDescending,
+    };
+    Object.values(sorts).forEach((sort) => sort.setAttribute("hidden", ""));
+    sorts[sortBy[sortByKey]].removeAttribute("hidden");
   }
 
   _newSelectedPolicyIds(selectedPolicyIds) {
@@ -183,6 +227,45 @@ export class PolicyTableViewTable extends TableViewTable {
     this._checkAll._checked = val;
 
     this._changeCheckboxes();
+  }
+
+  _clickSort(evt) {
+    const id = evt.target.dataset.id;
+
+    if (id) {
+      const val = id.split("--");
+      if (val.length === 2) {
+        let newSortVal = "";
+        if (!val[1]) {
+          newSortVal = "ascending";
+        } else if (val[1] === "ascending") {
+          newSortVal = "descending";
+        } else if (val[1] === "descending") {
+          newSortVal = "ascending";
+        }
+
+        const newSortBy = { ...this._searchParams.sortBy };
+        Object.keys(newSortBy).forEach((key) => {
+          newSortBy[key] = "";
+        });
+        newSortBy[val[0]] = newSortVal;
+
+        this._searchParams = {
+          ...this._searchParams,
+          sortBy: { ...newSortBy },
+        };
+
+        store.getState().setPolicySearchParams(this._searchParams);
+        store.getState().setTabularPolicy();
+      }
+    }
+  }
+
+  _goTo(evt) {
+    const id = evt.target.dataset.id;
+    if (id) {
+      window.location.hash = `#${id}`;
+    }
   }
 }
 
