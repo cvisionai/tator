@@ -126,6 +126,13 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         this._entityIdInput.setValue(val.entityId);
         this._targetTypeInput.setValue(val.targetType);
         this._targetIdInput.setValue(val.targetId);
+
+        this._requestedEntityName = `${
+          POLICY_ENTITY_NAME[this._entityTypeInput.getValue()]
+        } ${this._entityIdInput.getValue()}`;
+        this._requestedTargetName = `${
+          POLICY_TARGET_NAME[this._targetTypeInput.getValue()]
+        } ${this._targetIdInput.getValue()}`;
       }
     }
     // policy id is invalid or no policy data
@@ -140,13 +147,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._tableHead.innerHTML = "";
     this._tableBody.innerHTML = "";
 
-    const requestedEntityName = `${this._entityTypeInput.getValue()} ${this._entityIdInput.getValue()}`;
-    const requestedTargetName = `${this._targetTypeInput.getValue()} ${this._targetIdInput.getValue()}`;
-
     const {
-      user,
-      groupList,
-      organizationList,
       Policy: { processedData },
     } = store.getState();
 
@@ -158,104 +159,127 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       .getCalculatorPolicies(targets);
     const policies = [...processedData, ...calculatorPolicies];
 
-    const tableBodyData = this._getTableBodyData(entities, targets, policies);
+    this._getTableBodyData(entities, targets, policies);
 
-    console.log("😇 ~ _renderData ~ tableBodyData:", tableBodyData);
+    this._ordRowPermissionStrings = new Map();
 
     // Head
     this._renderTableHead();
 
-    // Body
-    this._ordRowPermissionStrings = [];
-    Object.entries(tableBodyData).forEach(([targetName, policies]) => {
-      this._renderTableBodyTarget(targetName, policies);
-    });
+    // Body -- Create Row
+    Array.from(this._tableBodyData.entries()).forEach(
+      ([targetName, policies]) => {
+        Array.from(policies.keys()).forEach((entityName) => {
+          // single policy row
+          const tr = document.createElement("tr");
+          tr.id = `${targetName}--${entityName}`;
+          this._tableBody.appendChild(tr);
+        });
 
-    // Final Effective Permission Row
+        // OR'd row
+        const tr = document.createElement("tr");
+        tr.id = `${targetName}--ord`;
+        this._tableBody.appendChild(tr);
+      }
+    );
+    //// final effective permission Row
+    const tr = document.createElement("tr");
+    tr.id = `final-row`;
+    this._tableBody.appendChild(tr);
+
+    // Body -- Fill in data
+    Array.from(this._tableBodyData.entries()).forEach(
+      ([targetName, policies]) => {
+        Array.from(policies.keys()).forEach((entityName) => {
+          this._renderTableBodyRow(targetName, entityName);
+        });
+        this._renderTableBodyOrdRow(targetName);
+      }
+    );
     this._renderTableBodyFinalRow();
   }
 
-  _renderTableHead() {
+  _renderTableBodyRow(targetName, entityName) {
+    const id = `${targetName}--${entityName}`;
     const tr = document.createElement("tr");
-    COLUMN.map((val) => {
-      const th = document.createElement("th");
-      th.innerText = val;
-      return th;
-    }).forEach((th) => {
-      tr.appendChild(th);
-    });
-    this._tableHead.appendChild(tr);
+    tr.id = id;
+
+    const tdEntity = document.createElement("td");
+    tdEntity.innerText = entityName;
+    tr.appendChild(tdEntity);
+
+    const isFirstRow =
+      Array.from(this._tableBodyData.get(targetName).keys()).indexOf(
+        entityName
+      ) === 0;
+    if (isFirstRow) {
+      const entityCount = this._tableBodyData.get(targetName).size;
+      const tdTarget = document.createElement("td");
+      tdTarget.innerText = targetName;
+      tdTarget.setAttribute("rowspan", entityCount);
+      tr.appendChild(tdTarget);
+    }
+
+    const permission = this._tableBodyData.get(targetName).get(entityName);
+    if (permission) {
+      permission.split("").forEach((char, index) => {
+        const td = document.createElement("td");
+        if (char === "0") {
+          const xmark = document.createElement("no-permission-button");
+          xmark.setAttribute("data-id", `${id}--${index}`);
+          xmark.addEventListener("click", this._changeTableBodyData.bind(this));
+          td.appendChild(xmark);
+        } else if (char === "1") {
+          const check = document.createElement("has-permission-button");
+          check.setAttribute("data-id", `${id}--${index}`);
+          check.addEventListener("click", this._changeTableBodyData.bind(this));
+          td.appendChild(check);
+        }
+        tr.appendChild(td);
+      });
+
+      const tdActions = document.createElement("td");
+      const div = document.createElement("div");
+      div.classList.add("d-flex", "flex-row", "flex-justify-center");
+      div.style.gap = "5px";
+      tdActions.appendChild(div);
+      const disallow = document.createElement("disallow-all-button");
+      const back = document.createElement("change-back-button");
+      div.appendChild(disallow);
+      div.appendChild(back);
+      tr.appendChild(tdActions);
+    } else {
+      "12345678".split("").forEach((char) => {
+        const td = document.createElement("td");
+        tr.appendChild(td);
+      });
+
+      const tdActions = document.createElement("td");
+      const grant = document.createElement("grant-all-button");
+      tdActions.appendChild(grant);
+      tr.appendChild(tdActions);
+    }
+
+    const trOld = this._shadow.getElementById(id);
+    this._tableBody.replaceChild(tr, trOld);
   }
 
-  _renderTableBodyTarget(targetName, policies) {
-    const requestedEntityName = `${this._entityTypeInput.getValue()} ${this._entityIdInput.getValue()}`;
-
-    const permissionStrings = Object.values(policies);
-    const entityCount = permissionStrings.length;
-
-    Object.entries(policies).forEach(([entityName, permission], index) => {
-      const tr = document.createElement("tr");
-
-      const tdEntity = document.createElement("td");
-      tdEntity.innerText = entityName;
-      tr.appendChild(tdEntity);
-
-      if (index === 0) {
-        const tdTarget = document.createElement("td");
-        tdTarget.innerText = targetName;
-        tdTarget.setAttribute("rowspan", entityCount);
-        tr.appendChild(tdTarget);
-      }
-
-      if (permission) {
-        permission.split("").forEach((char) => {
-          const td = document.createElement("td");
-          if (char === "0") {
-            const xmark = document.createElement("no-permission-button");
-            td.appendChild(xmark);
-          } else if (char === "1") {
-            const check = document.createElement("has-permission-button");
-            td.appendChild(check);
-          }
-          tr.appendChild(td);
-        });
-
-        const tdActions = document.createElement("td");
-        const div = document.createElement("div");
-        div.classList.add("d-flex", "flex-row", "flex-justify-center");
-        div.style.gap = "5px";
-        tdActions.appendChild(div);
-        const disallow = document.createElement("disallow-all-button");
-        const back = document.createElement("change-back-button");
-        div.appendChild(disallow);
-        div.appendChild(back);
-        tr.appendChild(tdActions);
-      } else {
-        "12345678".split("").forEach((char) => {
-          const td = document.createElement("td");
-          tr.appendChild(td);
-        });
-
-        const tdActions = document.createElement("td");
-        const grant = document.createElement("grant-all-button");
-        tdActions.appendChild(grant);
-        tr.appendChild(tdActions);
-      }
-
-      this._tableBody.appendChild(tr);
-    });
-
-    // OR'd row
+  _renderTableBodyOrdRow(targetName) {
+    const id = `${targetName}--ord`;
     const tr = document.createElement("tr");
+    tr.id = id;
     tr.classList.add("ord-row");
 
     const td = document.createElement("td");
-    td.innerText = `${requestedEntityName}'s effective permission against ${targetName}`;
+    td.innerText = `${this._requestedEntityName}'s effective permission against ${targetName}`;
     td.setAttribute("colspan", 2);
     tr.appendChild(td);
 
+    const permissionStrings = Array.from(
+      this._tableBodyData.get(targetName).values()
+    );
     const ordPermission = this._bitwiseOrBinaryStrings(permissionStrings);
-    this._ordRowPermissionStrings.push(ordPermission);
+    this._ordRowPermissionStrings.set(targetName, ordPermission);
 
     if (ordPermission) {
       ordPermission.split("").forEach((char) => {
@@ -281,23 +305,23 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     const tdActions = document.createElement("td");
     tr.appendChild(tdActions);
 
-    this._tableBody.appendChild(tr);
+    const trOld = this._shadow.getElementById(id);
+    this._tableBody.replaceChild(tr, trOld);
   }
 
   _renderTableBodyFinalRow() {
-    const requestedEntityName = `${this._entityTypeInput.getValue()} ${this._entityIdInput.getValue()}`;
-    const requestedTargetName = `${this._targetTypeInput.getValue()} ${this._targetIdInput.getValue()}`;
-
-    const trLast = document.createElement("tr");
-    trLast.classList.add("final-row");
+    const id = `final-row`;
+    const tr = document.createElement("tr");
+    tr.id = id;
+    tr.classList.add("final-row");
 
     const td = document.createElement("td");
-    td.innerText = `${requestedEntityName}'s final effective permission against ${requestedTargetName}`;
+    td.innerText = `${this._requestedEntityName}'s final effective permission against ${this._requestedTargetName}`;
     td.setAttribute("colspan", 2);
-    trLast.appendChild(td);
+    tr.appendChild(td);
 
     const finalPermission = this._bitwiseOrBinaryStrings(
-      this._ordRowPermissionStrings
+      Array.from(this._ordRowPermissionStrings.values())
     );
 
     if (finalPermission) {
@@ -312,26 +336,40 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
           check.setAttribute("disabled", "");
           td.appendChild(check);
         }
-        trLast.appendChild(td);
+        tr.appendChild(td);
       });
     } else {
       "12345678".split("").forEach((char) => {
         const td = document.createElement("td");
-        trLast.appendChild(td);
+        tr.appendChild(td);
       });
     }
 
     const tdActions = document.createElement("td");
-    trLast.appendChild(tdActions);
+    tr.appendChild(tdActions);
 
-    this._tableBody.appendChild(trLast);
+    const trOld = this._shadow.getElementById(id);
+    this._tableBody.replaceChild(tr, trOld);
+  }
+
+  _renderTableHead() {
+    const tr = document.createElement("tr");
+    COLUMN.map((val) => {
+      const th = document.createElement("th");
+      th.innerText = val;
+      return th;
+    }).forEach((th) => {
+      tr.appendChild(th);
+    });
+    this._tableHead.appendChild(tr);
   }
 
   _getTableBodyData(entities, targets, policies) {
-    const tableBodyData = {};
+    this._tableBodyData = new Map();
+
     targets.forEach((target) => {
       const targetName = `${POLICY_TARGET_NAME[target[0]]} ${target[1]}`;
-      tableBodyData[targetName] = {};
+      this._tableBodyData.set(targetName, new Map());
 
       entities.forEach((entity) => {
         const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
@@ -349,10 +387,39 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
           );
         }
 
-        tableBodyData[targetName][entityName] = binaryShiftedPermission;
+        this._tableBodyData
+          .get(targetName)
+          .set(entityName, binaryShiftedPermission);
       });
     });
-    return tableBodyData;
+
+    console.log(
+      "😇 ~ _getTableBodyData ~ this._tableBodyData :",
+      this._tableBodyData
+    );
+  }
+
+  _changeTableBodyData(evt) {
+    const id = evt.target.dataset.id;
+    if (id) {
+      const val = id.split("--");
+      if (val.length === 3) {
+        const permission = this._tableBodyData.get(val[0]).get(val[1]);
+        const index = +val[2];
+        const bit = permission[index];
+
+        const newPermission =
+          permission.slice(0, index) +
+          (bit === "1" ? "0" : "1") +
+          permission.slice(index + 1);
+
+        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+
+        this._renderTableBodyRow(val[0], val[1]);
+        this._renderTableBodyOrdRow(val[0]);
+        this._renderTableBodyFinalRow();
+      }
+    }
   }
 
   _getCalculatorEntities() {
