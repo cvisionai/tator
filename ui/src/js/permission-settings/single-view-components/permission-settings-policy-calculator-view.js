@@ -220,6 +220,16 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       tr.appendChild(tdTarget);
     }
 
+    const tdActions = document.createElement("td");
+    const div = document.createElement("div");
+    div.classList.add("d-flex", "flex-row", "flex-justify-center");
+    div.style.gap = "5px";
+    tdActions.appendChild(div);
+    const back = document.createElement("change-back-button");
+    back.setAttribute("data-id", `${targetName}--${entityName}`);
+    back.addEventListener("click", this._changeRowBack.bind(this));
+    div.appendChild(back);
+
     const permission = this._tableBodyData.get(targetName).get(entityName);
     if (permission) {
       permission.split("").forEach((char, index) => {
@@ -227,26 +237,22 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         if (char === "0") {
           const xmark = document.createElement("no-permission-button");
           xmark.setAttribute("data-id", `${id}--${index}`);
-          xmark.addEventListener("click", this._changeTableBodyData.bind(this));
+          xmark.addEventListener("click", this._changeRowCell.bind(this));
           td.appendChild(xmark);
         } else if (char === "1") {
           const check = document.createElement("has-permission-button");
           check.setAttribute("data-id", `${id}--${index}`);
-          check.addEventListener("click", this._changeTableBodyData.bind(this));
+          check.addEventListener("click", this._changeRowCell.bind(this));
           td.appendChild(check);
         }
         tr.appendChild(td);
       });
 
-      const tdActions = document.createElement("td");
-      const div = document.createElement("div");
-      div.classList.add("d-flex", "flex-row", "flex-justify-center");
-      div.style.gap = "5px";
-      tdActions.appendChild(div);
-      const disallow = document.createElement("disallow-all-button");
-      const back = document.createElement("change-back-button");
-      div.appendChild(disallow);
-      div.appendChild(back);
+      const remove = document.createElement("remove-permission-button");
+      remove.setAttribute("data-id", `${targetName}--${entityName}`);
+      remove.addEventListener("click", this._removeRow.bind(this));
+      div.appendChild(remove);
+
       tr.appendChild(tdActions);
     } else {
       "12345678".split("").forEach((char) => {
@@ -254,9 +260,11 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         tr.appendChild(td);
       });
 
-      const tdActions = document.createElement("td");
       const grant = document.createElement("grant-all-button");
-      tdActions.appendChild(grant);
+      grant.setAttribute("data-id", `${targetName}--${entityName}`);
+      grant.addEventListener("click", this._grantRow.bind(this));
+      div.appendChild(grant);
+
       tr.appendChild(tdActions);
     }
 
@@ -366,10 +374,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
   _getTableBodyData(entities, targets, policies) {
     this._tableBodyData = new Map();
+    this._originalTableBodyData = new Map();
 
     targets.forEach((target) => {
       const targetName = `${POLICY_TARGET_NAME[target[0]]} ${target[1]}`;
       this._tableBodyData.set(targetName, new Map());
+      this._originalTableBodyData.set(targetName, new Map());
 
       entities.forEach((entity) => {
         const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
@@ -390,6 +400,9 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         this._tableBodyData
           .get(targetName)
           .set(entityName, binaryShiftedPermission);
+        this._originalTableBodyData
+          .get(targetName)
+          .set(entityName, binaryShiftedPermission);
       });
     });
 
@@ -399,7 +412,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     );
   }
 
-  _changeTableBodyData(evt) {
+  _changeRowCell(evt) {
     const id = evt.target.dataset.id;
     if (id) {
       const val = id.split("--");
@@ -412,6 +425,56 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
           permission.slice(0, index) +
           (bit === "1" ? "0" : "1") +
           permission.slice(index + 1);
+
+        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+
+        this._renderTableBodyRow(val[0], val[1]);
+        this._renderTableBodyOrdRow(val[0]);
+        this._renderTableBodyFinalRow();
+      }
+    }
+  }
+
+  _changeRowBack(evt) {
+    const id = evt.target.dataset.id;
+    if (id) {
+      const val = id.split("--");
+      if (val.length === 2) {
+        const newPermission = this._originalTableBodyData
+          .get(val[0])
+          .get(val[1]);
+
+        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+
+        this._renderTableBodyRow(val[0], val[1]);
+        this._renderTableBodyOrdRow(val[0]);
+        this._renderTableBodyFinalRow();
+      }
+    }
+  }
+
+  _grantRow(evt) {
+    const id = evt.target.dataset.id;
+    if (id) {
+      const val = id.split("--");
+      if (val.length === 2) {
+        const newPermission = "11111111";
+
+        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+
+        this._renderTableBodyRow(val[0], val[1]);
+        this._renderTableBodyOrdRow(val[0]);
+        this._renderTableBodyFinalRow();
+      }
+    }
+  }
+
+  _removeRow(evt) {
+    const id = evt.target.dataset.id;
+    if (id) {
+      const val = id.split("--");
+      if (val.length === 2) {
+        const newPermission = "";
 
         this._tableBodyData.get(val[0]).set(val[1], newPermission);
 
