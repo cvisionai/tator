@@ -77,12 +77,16 @@ const store = create(
     groupSearchParams: {
       Group: {
         filter: {},
-        sortBy: {},
+        sortBy: {
+          groupName: "",
+        },
         pagination: {},
       },
       User: {
         filter: {},
-        sortBy: {},
+        sortBy: {
+          userId: "",
+        },
         pagination: {},
       },
     },
@@ -102,7 +106,10 @@ const store = create(
     selectedPolicyIds: [],
     policySearchParams: {
       filter: {},
-      sortBy: {},
+      sortBy: {
+        entityName: "",
+        targetName: "",
+      },
       pagination: {},
     },
 
@@ -219,12 +226,14 @@ const store = create(
             a[1].localeCompare(b[1])
           )
         );
-      } else {
+      } else if (viewByGroupSearchParams.sortBy.groupName === "descending") {
         sortedUserIdGroupIdMap = new Map(
           [...groupIdGroupNameMap.entries()].sort((a, b) =>
             b[1].localeCompare(a[1])
           )
         );
+      } else {
+        sortedUserIdGroupIdMap = new Map([...groupIdGroupNameMap.entries()]);
       }
 
       // Paginate
@@ -267,10 +276,12 @@ const store = create(
         sortedUserIdGroupIdMap = new Map(
           [...userIdGroupIdMap.entries()].sort((a, b) => a[0] - b[0])
         );
-      } else {
+      } else if (viewByUserSearchParams.sortBy.userId === "descending") {
         sortedUserIdGroupIdMap = new Map(
           [...userIdGroupIdMap.entries()].sort((a, b) => b[0] - a[0])
         );
+      } else {
+        sortedUserIdGroupIdMap = new Map([...userIdGroupIdMap.entries()]);
       }
 
       // Paginate
@@ -379,6 +390,8 @@ const store = create(
           return a.targetName.localeCompare(b.targetName);
         } else if (sortBy.targetName === "descending") {
           return b.targetName.localeCompare(a.targetName);
+        } else {
+          return 0;
         }
       });
 

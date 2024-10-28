@@ -23,7 +23,7 @@ export class GroupTableViewTable extends TableViewTable {
       Group: {
         filter: {},
         sortBy: {
-          groupName: "ascending",
+          groupName: "",
         },
         pagination: {
           start: 0,
@@ -35,7 +35,7 @@ export class GroupTableViewTable extends TableViewTable {
       User: {
         filter: {},
         sortBy: {
-          userId: "ascending",
+          userId: "",
         },
         pagination: {
           start: 0,
@@ -170,13 +170,14 @@ export class GroupTableViewTable extends TableViewTable {
       if (val === "Checkbox") {
         const check = document.createElement("checkbox-input");
         check.setAttribute("type", "number");
-        // check.setAttribute("id", "checkbox--select-all");
         check.addEventListener("change", (event) => {
           this._changeAllCheckboxes();
         });
 
         this._checkAll = check;
         th.appendChild(check);
+      } else if (val === "Group Name") {
+        this._setupTableHeadCellWithSort(val, th);
       } else {
         th.innerText = val;
       }
@@ -209,7 +210,8 @@ export class GroupTableViewTable extends TableViewTable {
           td.innerText = gr.members;
         } else if (val === "Actions") {
           const edit = document.createElement("edit-line-button");
-          edit.setAttribute("href", `#Group-${gr.id}`);
+          edit.setAttribute("data-id", `Group-${gr.id}`);
+          edit.addEventListener("click", this._goTo.bind(this));
           td.appendChild(edit);
         }
         return td;
@@ -227,7 +229,11 @@ export class GroupTableViewTable extends TableViewTable {
     const tr = document.createElement("tr");
     COLUMN_BY_USER.map((val) => {
       const th = document.createElement("th");
-      th.innerText = val;
+      if (val === "User ID") {
+        this._setupTableHeadCellWithSort(val, th);
+      } else {
+        th.innerText = val;
+      }
       return th;
     }).forEach((th) => {
       tr.appendChild(th);
@@ -255,6 +261,49 @@ export class GroupTableViewTable extends TableViewTable {
     }
   }
 
+  _setupTableHeadCellWithSort(text, th) {
+    const { groupViewBy, groupSearchParams } = store.getState();
+    const { sortBy } = groupSearchParams[groupViewBy];
+    const sortByKey = Object.keys(sortBy)[0];
+
+    const div = document.createElement("div");
+    div.classList.add("d-flex", "flex-row");
+    div.style.gap = "5px";
+    th.appendChild(div);
+    const span = document.createElement("span");
+    span.innerText = text;
+    div.appendChild(span);
+    const sortDiv = document.createElement("div");
+    sortDiv.classList.add("d-flex", "flex-row");
+    div.appendChild(sortDiv);
+    const sort = document.createElement("sort-button");
+    const sortAscending = document.createElement("sort-ascending-button");
+    const sortDescending = document.createElement("sort-descending-button");
+
+    sort.setAttribute("data-id", `${sortByKey}--`);
+    sortAscending.setAttribute("data-id", `${sortByKey}--ascending`);
+    sortDescending.setAttribute("data-id", `${sortByKey}--descending`);
+    sort.addEventListener("click", this._clickSort.bind(this));
+    sortAscending.addEventListener("click", this._clickSort.bind(this));
+    sortDescending.addEventListener("click", this._clickSort.bind(this));
+
+    sortDiv.appendChild(sort);
+    sortDiv.appendChild(sortAscending);
+    sortDiv.appendChild(sortDescending);
+    const sorts = {
+      "": sort,
+      ascending: sortAscending,
+      descending: sortDescending,
+    };
+    Object.values(sorts).forEach((sort) => sort.setAttribute("hidden", ""));
+
+    if (groupViewBy === "Group") {
+      sorts[sortBy.groupName].removeAttribute("hidden");
+    } else if (groupViewBy === "User") {
+      sorts[sortBy.userId].removeAttribute("hidden");
+    }
+  }
+
   _newSelectedGroupIds(selectedGroupIds) {
     console.log(
       "😇 ~ _newSelectedGroupIds ~ selectedGroupIds:",
@@ -279,6 +328,43 @@ export class GroupTableViewTable extends TableViewTable {
     this._checkAll._checked = val;
 
     this._changeCheckboxes();
+  }
+
+  _clickSort(evt) {
+    const id = evt.target.dataset.id;
+
+    if (id) {
+      const val = id.split("--");
+      if (val.length === 2) {
+        let newSortVal = "";
+        if (!val[1]) {
+          newSortVal = "ascending";
+        } else if (val[1] === "ascending") {
+          newSortVal = "descending";
+        } else if (val[1] === "descending") {
+          newSortVal = "ascending";
+        }
+
+        const { groupViewBy } = store.getState();
+        this._searchParams = {
+          ...this._searchParams,
+          [groupViewBy]: {
+            ...this._searchParams[groupViewBy],
+            sortBy: { [val[0]]: newSortVal },
+          },
+        };
+
+        store.getState().setGroupSearchParams(this._searchParams);
+        store.getState().setTabularGroup(groupViewBy);
+      }
+    }
+  }
+
+  _goTo(evt) {
+    const id = evt.target.dataset.id;
+    if (id) {
+      window.location.hash = `#${id}`;
+    }
   }
 }
 
