@@ -695,6 +695,7 @@ class GCPStorage(TatorStorage):
         # TODO determine if we need to update the `current_time` field
         self._update_storage_class(path, desired_storage_class)
 
+
 class AzureStorage(TatorStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
@@ -765,9 +766,7 @@ class AzureStorage(TatorStorage):
                 tags = extra_args.get("Tagging", {})
                 dest_blob.set_blob_tags(tags)
 
-    def restore_object(
-        self, path: str, desired_storage_class: str, min_exp_days: int
-    ):
+    def restore_object(self, path: str, desired_storage_class: str, min_exp_days: int):
         blob_client = self.client.get_blob_client(
             container=self.bucket_name, blob=self.path_to_key(path)
         )
@@ -800,7 +799,7 @@ class AzureStorage(TatorStorage):
                 netloc=external.netloc,
                 scheme=external.scheme,
                 # Keep the original path to avoid missing the blob path
-                path=parsed.path
+                path=parsed.path,
             )
             url = urlunsplit(parsed)
         return url
@@ -826,7 +825,7 @@ class AzureStorage(TatorStorage):
             encoded_block_id = base64.b64encode(block_id.encode()).decode()
             url = f"{blob_client.url}?comp=block&blockid={encoded_block_id}&{sas_token}"
             urls.append(url)
-        return urls, ','.join(block_ids)
+        return urls, ",".join(block_ids)
 
     def _get_single_upload_url(
         self, key: str, expiration: int, domain: str
@@ -859,14 +858,12 @@ class AzureStorage(TatorStorage):
             )
         return contents
 
-    def complete_multipart_upload(
-        self, path: str, parts: int, upload_id: str
-    ) -> bool:
+    def complete_multipart_upload(self, path: str, parts: int, upload_id: str) -> bool:
         blob_client = self.client.get_blob_client(
             container=self.bucket_name, blob=self.path_to_key(path)
         )
         # In Azure, parts are blocks identified by block IDs
-        block_list = upload_id.split(',')
+        block_list = upload_id.split(",")
         blob_client.commit_block_list(block_list)
         return True
 

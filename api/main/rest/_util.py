@@ -20,6 +20,7 @@ from ._attributes import bulk_patch_attributes, convert_attribute
 
 logger = logging.getLogger(__name__)
 
+
 class Array(Subquery):
     """Class to expose ARRAY SQL function to ORM"""
 

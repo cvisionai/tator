@@ -76,5 +76,3 @@ class UserSerializerBasic(serializers.ModelSerializer):
             "elemental_id",
             "profile",
         ]
-
-

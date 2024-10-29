@@ -22,8 +22,9 @@ class EmailAPI(BaseListView):
     schema = EmailSchema()
     permission_classes = [ProjectExecutePermission]
     http_method_names = ["post"]
+
     def get_queryset(self, **kwargs):
-        return self.filter_only_viewables(Project.objects.filter(pk=self.params['project']))
+        return self.filter_only_viewables(Project.objects.filter(pk=self.params["project"]))
 
     def _post(self, params):
         """Sends an email message via the configured mail service"""
