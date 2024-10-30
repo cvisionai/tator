@@ -75,66 +75,69 @@ def _wait_for_frame(canvas, frame, timeout=30):
 
 @pytest.mark.flaky(reruns=2)
 def test_playback_accuracy(page_factory, project, count_test):
-  print("[Video] Going to annotation view...")
-  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720", wait_until='networkidle')
-  page.on("pageerror", print_page_error)
-  page.wait_for_selector('video-canvas')
-  canvas = page.query_selector('video-canvas')
-  page.wait_for_timeout(10000)
-  play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .range-handle')
-  display_div = page.query_selector('#frame_num_display')
-  display_ctrl = page.query_selector('#frame_num_ctrl')
+    print("[Video] Going to annotation view...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440})  # Annotation decent screen
+    page.goto(
+        f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720",
+        wait_until="networkidle",
+    )
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector("video-canvas")
+    canvas = page.query_selector("video-canvas")
+    page.wait_for_timeout(10000)
+    play_button = page.query_selector("play-button")
+    seek_handle = page.query_selector("seek-bar .range-handle")
+    display_div = page.query_selector("#frame_num_display")
+    display_ctrl = page.query_selector("#frame_num_ctrl")
 
-  # Something times out in the unit test, avoid doing this
-  #_wait_for_frame(canvas, 0)
-  #canvas_frame = _get_canvas_frame(canvas)
-  #assert(canvas_frame == 0)
-  #assert(int(display_div.inner_text())==0)
+    # Something times out in the unit test, avoid doing this
+    # _wait_for_frame(canvas, 0)
+    # canvas_frame = _get_canvas_frame(canvas)
+    # assert(canvas_frame == 0)
+    # assert(int(display_div.inner_text())==0)
 
-  play_button.click() # play the video
-  page.wait_for_timeout(5000) # This is simulating the user watching, not dependent on any events.
-  play_button.click() # pause the video
-  canvas_frame = _get_canvas_frame(canvas)
-  assert(canvas_frame > 0)
-  assert(int(display_div.inner_text())==canvas_frame)
+    play_button.click()  # play the video
+    page.wait_for_timeout(
+        5000
+    )  # This is simulating the user watching, not dependent on any events.
+    play_button.click()  # pause the video
+    canvas_frame = _get_canvas_frame(canvas)
+    assert canvas_frame > 0
+    assert int(display_div.inner_text()) == canvas_frame
 
-  # Click the scrub handle
-  seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=10)
-  page.mouse.down()
+    # Click the scrub handle
+    seek_x, seek_y = _get_element_center(seek_handle)
+    page.mouse.move(seek_x, seek_y, steps=10)
+    page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=10)
-  canvas_frame = _get_canvas_frame(canvas)
-  assert(int(display_div.inner_text())==canvas_frame)
-  page.mouse.up()
+    page.mouse.move(seek_x + 500, seek_y, steps=10)
+    canvas_frame = _get_canvas_frame(canvas)
+    assert int(display_div.inner_text()) == canvas_frame
+    page.mouse.up()
 
-  # Complete scrub
-  page.wait_for_timeout(5000)
-  canvas_frame = _get_canvas_frame(canvas)
-  assert(int(display_div.inner_text())==canvas_frame)
+    # Complete scrub
+    page.wait_for_timeout(5000)
+    canvas_frame = _get_canvas_frame(canvas)
+    assert int(display_div.inner_text()) == canvas_frame
 
-  rate_ctrl = page.query_selector('rate-control .form-select')
-  assert rate_ctrl.input_value() == "1"
-  page.keyboard.press("4")
-  assert rate_ctrl.input_value() == "4"
-  page.keyboard.press("Control+ArrowDown")
-  assert rate_ctrl.input_value() == "3.5"
-  page.keyboard.press("Control+ArrowUp")
-  assert rate_ctrl.input_value() == "4"
-  page.keyboard.press("1")
-  assert rate_ctrl.input_value() == "1"
+    rate_ctrl = page.query_selector("rate-control .form-select")
+    assert rate_ctrl.input_value() == "1"
+    page.keyboard.press("4")
+    assert rate_ctrl.input_value() == "4"
+    page.keyboard.press("Control+ArrowDown")
+    assert rate_ctrl.input_value() == "3.5"
+    page.keyboard.press("Control+ArrowUp")
+    assert rate_ctrl.input_value() == "4"
+    page.keyboard.press("1")
+    assert rate_ctrl.input_value() == "1"
 
-  page.keyboard.press("Space")
-  page.wait_for_timeout(5000)
-  page.keyboard.press("Space")
-  new_frame = _get_canvas_frame(canvas)
-  assert(new_frame > canvas_frame)
-  page.close()
-
-
+    page.keyboard.press("Space")
+    page.wait_for_timeout(5000)
+    page.keyboard.press("Space")
+    new_frame = _get_canvas_frame(canvas)
+    assert new_frame > canvas_frame
+    page.close()
 
 
 @pytest.mark.flaky(reruns=2)
@@ -300,63 +303,64 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
 @pytest.mark.flaky(reruns=2)
 def test_buffer_usage_multi(page_factory, project, multi_rgb):
-  # Tests play, scrub, and seek buffer usage
-  print("[Multi] Going to annotation view...")
-  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{multi_rgb}?scrubQuality=360&seekQuality=1080&playQuality=720", wait_until='networkidle')
-  page.on("pageerror", print_page_error)
-  page.wait_for_selector('video-canvas')
-  canvas = page.query_selector_all('video-canvas')
-  display_ctrl = page.query_selector('#frame_num_ctrl')
-  play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .range-handle')
+    # Tests play, scrub, and seek buffer usage
+    print("[Multi] Going to annotation view...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440})  # Annotation decent screen
+    page.goto(
+        f"/{project}/annotation/{multi_rgb}?scrubQuality=360&seekQuality=1080&playQuality=720",
+        wait_until="networkidle",
+    )
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector("video-canvas")
+    canvas = page.query_selector_all("video-canvas")
+    display_ctrl = page.query_selector("#frame_num_ctrl")
+    play_button = page.query_selector("play-button")
+    seek_handle = page.query_selector("seek-bar .range-handle")
 
+    # Wait for hq buffer and verify it is red
+    print("Waiting 15 seconds for video to load")
+    page.wait_for_timeout(15000)  # this takes forever with the weird color video
+    print("Waiting for page load colors")
+    _wait_for_color(page, canvas[0], 0, timeout=30)
+    _wait_for_color(page, canvas[1], 0, timeout=30)
 
-  # Wait for hq buffer and verify it is red
-  print("Waiting 15 seconds for video to load")
-  page.wait_for_timeout(15000) # this takes forever with the weird color video
-  print("Waiting for page load colors")
-  _wait_for_color(page, canvas[0], 0, timeout=30)
-  _wait_for_color(page, canvas[1], 0, timeout=30)
+    print("Pressing play...")
+    play_button.click()
+    print("Waiting for play colors")
+    _wait_for_color(page, canvas[0], 1, timeout=30)
+    _wait_for_color(page, canvas[1], 1, timeout=30)
+    # Pause the video
+    print("Pressing pause...")
+    play_button.click()
+    print("Waiting for pause colors")
+    _wait_for_color(page, canvas[0], 0, timeout=30)
+    _wait_for_color(page, canvas[1], 0, timeout=30)
 
-  print("Pressing play...")
-  play_button.click()
-  print("Waiting for play colors")
-  _wait_for_color(page, canvas[0], 1, timeout=30)
-  _wait_for_color(page, canvas[1], 1, timeout=30)
-  # Pause the video
-  print("Pressing pause...")
-  play_button.click()
-  print("Waiting for pause colors")
-  _wait_for_color(page, canvas[0], 0, timeout=30)
-  _wait_for_color(page, canvas[1], 0, timeout=30)
+    # Click the scrub handle
+    print("Moving scrub bar")
+    seek_x, seek_y = _get_element_center(seek_handle)
+    page.mouse.move(seek_x, seek_y, steps=10)
+    page.mouse.down()
 
+    # Small scrubs in multi don't use play buffer anymore
+    print("Testing small scrub")
+    page.mouse.move(seek_x + 5, seek_y, steps=10)
+    _wait_for_color(page, canvas[0], 2, timeout=30, name="small scrub")
+    _wait_for_color(page, canvas[0], 2, timeout=30, name="small scrub")
 
-  # Click the scrub handle
-  print("Moving scrub bar")
-  seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=10)
-  page.mouse.down()
+    print("Testing large scrub")
+    page.mouse.move(seek_x + 1900, seek_y, steps=10)
+    _wait_for_color(page, canvas[0], [1, 2], timeout=30)  # play buffer is OK here too
+    _wait_for_color(page, canvas[0], [1, 2], timeout=30)  # play buffer is OK here too
 
-  print("Testing small scrub")
-  page.mouse.move(seek_x+5, seek_y, steps=10)
-  _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
-  _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
-
-  print("Testing large scrub")
-  page.mouse.move(seek_x+1900, seek_y, steps=10)
-  _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
-  _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
-
-  # Release the scrub
-  print("Stopping scrub")
-  page.mouse.up()
-  _wait_for_color(page, canvas[0], 0, timeout=30)
-  _wait_for_color(page, canvas[1], 0, timeout=30)
-  print("Closing page")
-  page.close()
-
+    # Release the scrub
+    print("Stopping scrub")
+    page.mouse.up()
+    _wait_for_color(page, canvas[0], 0, timeout=30)
+    _wait_for_color(page, canvas[1], 0, timeout=30)
+    print("Closing page")
+    page.close()
 
 
 @pytest.mark.skip(reason="Too flaky")
