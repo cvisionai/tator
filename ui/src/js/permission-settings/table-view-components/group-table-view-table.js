@@ -61,12 +61,14 @@ export class GroupTableViewTable extends TableViewTable {
       (state) => state.selectedGroupIds,
       this._newSelectedGroupIds.bind(this)
     );
-
-    this._paginator.addEventListener("selectPage", this._changePage.bind(this));
   }
 
   _initPaginator() {
+    this._paginator = document.createElement("entity-gallery-paginator");
+    this._paginator.addEventListener("selectPage", this._changePage.bind(this));
+    this._paginatorDiv.replaceChildren(this._paginator);
     this._paginator.setupElements();
+
     const { groupViewBy } = store.getState();
 
     store.getState().setGroupSearchParams(this._searchParams);
@@ -247,8 +249,11 @@ export class GroupTableViewTable extends TableViewTable {
         if (val === "User ID") {
           td.innerText = userId;
         } else if (val === "Group IDs") {
-          td.classList.add("table-cell-padding");
-          td.innerText = groupIds;
+          td.classList.add("table-cell-padding", "long-text-td");
+          const span = document.createElement("span");
+          span.innerText = groupIds;
+          td.appendChild(span);
+          td.setAttribute("data-tooltip", groupIds);
         } else if (val === "Actions") {
           const edit = document.createElement("edit-line-button");
           td.appendChild(edit);

@@ -64,12 +64,15 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._targetTypeInput = this._shadow.getElementById("target-type-input");
     this._targetIdInput = this._shadow.getElementById("target-id-input");
 
-    this._table = this._shadow.getElementById("permission-table");
-    this._colgroup = this._shadow.getElementById("permission-table--colgroup");
-    this._tableHead = this._shadow.getElementById("permission-table--head");
-    this._tableBody = this._shadow.getElementById("permission-table--body");
-
+    this._table = this._shadow.getElementById("calculator-table");
+    this._colgroup = this._shadow.getElementById("calculator-table--colgroup");
+    this._tableHead = this._shadow.getElementById("calculator-table--head");
+    this._tableBody = this._shadow.getElementById("calculator-table--body");
     this._colgroup.innerHTML = COLGROUP;
+
+    this._form = this._shadow.getElementById("calculator-table-form");
+    this._saveButton = this._shadow.getElementById("calculator-table-save");
+    this._resetButton = this._shadow.getElementById("calculator-table-reset");
   }
 
   connectedCallback() {
@@ -81,6 +84,8 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     );
 
     store.subscribe((state) => state.Policy, this._setData.bind(this));
+
+    this._saveButton.addEventListener("click", this._saveForm.bind(this));
   }
 
   /**
@@ -230,7 +235,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     back.addEventListener("click", this._changeRowBack.bind(this));
     div.appendChild(back);
 
-    const permission = this._tableBodyData.get(targetName).get(entityName);
+    const { permission } = this._tableBodyData.get(targetName).get(entityName);
     if (permission) {
       permission.split("").forEach((char, index) => {
         const td = document.createElement("td");
@@ -285,7 +290,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
     const permissionStrings = Array.from(
       this._tableBodyData.get(targetName).values()
-    );
+    ).map((obj) => obj.permission);
     const ordPermission = this._bitwiseOrBinaryStrings(permissionStrings);
     this._ordRowPermissionStrings.set(targetName, ordPermission);
 
@@ -374,35 +379,35 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
   _getTableBodyData(entities, targets, policies) {
     this._tableBodyData = new Map();
-    this._originalTableBodyData = new Map();
 
     targets.forEach((target) => {
       const targetName = `${POLICY_TARGET_NAME[target[0]]} ${target[1]}`;
       this._tableBodyData.set(targetName, new Map());
-      this._originalTableBodyData.set(targetName, new Map());
 
       entities.forEach((entity) => {
         const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
 
         let binaryShiftedPermission = "";
+        let policyId = null;
         const policy = policies.find(
           (policy) =>
             policy.entityName === entityName && policy.targetName === targetName
         );
         if (policy) {
+          policyId = policy.id;
           const permission = BigInt(policy.permission);
           const shiftedPermission = permission >> BigInt(target[2]);
           binaryShiftedPermission = this._getRightmost8Bits(
             shiftedPermission.toString(2)
           );
         }
+        const obj = {
+          policyId,
+          permission: binaryShiftedPermission,
+          originalPermission: binaryShiftedPermission,
+        };
 
-        this._tableBodyData
-          .get(targetName)
-          .set(entityName, binaryShiftedPermission);
-        this._originalTableBodyData
-          .get(targetName)
-          .set(entityName, binaryShiftedPermission);
+        this._tableBodyData.get(targetName).set(entityName, obj);
       });
     });
 
@@ -417,7 +422,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     if (id) {
       const val = id.split("--");
       if (val.length === 3) {
-        const permission = this._tableBodyData.get(val[0]).get(val[1]);
+        const { permission } = this._tableBodyData.get(val[0]).get(val[1]);
         const index = +val[2];
         const bit = permission[index];
 
@@ -426,7 +431,10 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
           (bit === "1" ? "0" : "1") +
           permission.slice(index + 1);
 
-        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+        const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
+        this._tableBodyData
+          .get(val[0])
+          .set(val[1], { ...oldObj, permission: newPermission });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -440,11 +448,14 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     if (id) {
       const val = id.split("--");
       if (val.length === 2) {
-        const newPermission = this._originalTableBodyData
+        const newPermission = this._tableBodyData
           .get(val[0])
-          .get(val[1]);
+          .get(val[1]).originalPermission;
 
-        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+        const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
+        this._tableBodyData
+          .get(val[0])
+          .set(val[1], { ...oldObj, permission: newPermission });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -460,7 +471,10 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       if (val.length === 2) {
         const newPermission = "11111111";
 
-        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+        const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
+        this._tableBodyData
+          .get(val[0])
+          .set(val[1], { ...oldObj, permission: newPermission });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -476,7 +490,10 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       if (val.length === 2) {
         const newPermission = "";
 
-        this._tableBodyData.get(val[0]).set(val[1], newPermission);
+        const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
+        this._tableBodyData
+          .get(val[0])
+          .set(val[1], { ...oldObj, permission: newPermission });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -529,6 +546,18 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     }
 
     return targets;
+  }
+
+  _saveForm(evt) {
+    evt.preventDefault();
+
+    for (const [targetName, policies] of this._tableBodyData) {
+      for (const [entityName, obj] of policies) {
+        if (obj.permission !== obj.originalPermission) {
+          console.log(targetName, entityName, obj);
+        }
+      }
+    }
   }
 
   _initInputs() {
