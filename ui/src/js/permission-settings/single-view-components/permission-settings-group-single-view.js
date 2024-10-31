@@ -15,9 +15,10 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     this._noDataId = this._shadow.getElementById("no-data--group-id");
     this._form = this._shadow.getElementById("group-form");
 
+    this._orgIdInput = this._shadow.getElementById("organization-id-input");
     this._groupNameInput = this._shadow.getElementById("group-name");
-    this._groupMemberListDiv = this._shadow.getElementById("group-member-list");
 
+    this._groupMemberListDiv = this._shadow.getElementById("group-member-list");
     this._memberCount = this._shadow.getElementById("group-member-count");
 
     this._usernameInput = this._shadow.getElementById("username-list-input");
@@ -39,6 +40,9 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     // // loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
+
+    this.modal = document.createElement("modal-dialog");
+    this._shadow.appendChild(this.modal);
   }
 
   connectedCallback() {
@@ -63,6 +67,11 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     );
 
     store.subscribe((state) => state.Group, this._setData.bind(this));
+
+    store.subscribe(
+      (state) => state.status,
+      this.handleStatusChange.bind(this)
+    );
   }
 
   /**
@@ -77,12 +86,14 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
     if (val === "New") {
       this._titleType.innerText = "New";
+      this._orgIdInput.removeAttribute("hidden");
       this._usernameDelete.style.display = "none";
     } else {
       this.showDimmer();
       this.loading.showSpinner();
 
       this._titleType.innerText = "Edit";
+      this._orgIdInput.setAttribute("hidden", "");
       this._usernameDelete.style.display = "";
     }
     this._groupMemberListDiv.innerHTML = "";
@@ -97,6 +108,18 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       if (this._id !== "New" && Group.init) {
         this.data = Group.map.get(this._id);
       } else if (this._id === "New") {
+        const { organizationList } = store.getState();
+        const orgIdInputChoices = organizationList.map((org, index) => {
+          const choice = {
+            label: `ID: ${org.id} - ${org.name}`,
+            value: org.id,
+          };
+          if (index === 0) {
+            choice.selected = true;
+          }
+          return choice;
+        });
+        this._orgIdInput.choices = orgIdInputChoices;
         this.data = {};
       }
 
@@ -286,38 +309,74 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     evt.preventDefault();
 
     const newGroupName = this._groupNameInput.getValue();
-    console.log("", this._userToBeAdded);
-    console.log("", this._userToBeDeleted);
 
     if (this._id === "New") {
-      const original = this._data.members ? this._data.members : [];
-      const toBeAdded = Array.from(this._userToBeAdded.keys());
-      const toBeDeleted = Array.from(this._userToBeDeleted.keys());
-      const members = new Set([...original, ...toBeAdded]);
-      toBeDeleted.forEach((id) => members.delete(id));
-
-      if (members.size) {
-        const responseInfo = await store
-          .getState()
-          .createGroup(store.getState().organizationList[0].id, {
-            name: newGroupName,
-            initial_members: [...members],
-          });
-
-        console.log("😇 ~ _saveForm ~ responseInfo:", responseInfo);
-        console.log("", store.getState().status);
+      const orgId = this._orgIdInput.getValue();
+      if (!orgId) {
+        this.modal._error(
+          "Please specify an organization that the new group is in."
+        );
+        return;
       }
+      if (!newGroupName) {
+        this.modal._error("Please specify a group name.");
+        return;
+      }
+      if (!this._userToBeAdded.size) {
+        this.modal._error("There is no member added.");
+        return;
+      }
+
+      const info = await store.getState().createGroup(orgId, {
+        name: newGroupName,
+        initial_members: Array.from(this._userToBeAdded.keys()),
+      });
+
+      this.handleResponse(info);
     } else {
-      const repsonseInfo = await store.getState().updateGroup(this._data.id, {
+      if (
+        newGroupName === this._data.name &&
+        !this._userToBeAdded.size &&
+        !this._userToBeDeleted.size
+      ) {
+        this.modal._success("Nothing new to save!");
+        return;
+      }
+
+      const info = await store.getState().updateGroup(this._data.id, {
         name: newGroupName,
         add_members: Array.from(this._userToBeAdded.keys()),
         remove_members: Array.from(this._userToBeDeleted.keys()),
       });
 
-      if (repsonseInfo && repsonseInfo.ok) {
-        store.getState().setGroupData();
+      this.handleResponse(info);
+    }
+  }
+
+  handleResponse(info) {
+    let message = info.data?.message ? info.data.message : "";
+    if (info.response?.ok) {
+      store.getState().setGroupData();
+      return this.modal._success(message);
+    } else {
+      if (info.response?.status && info.response?.statusText) {
+        return this.modal._error(
+          `<strong>${info.response.status} ${info.response.statusText}</strong><br/><br/>${message}`
+        );
       } else {
-        console.log("", store.getState().status);
+        return this.modal._error(`Error: Could not process request.`);
+      }
+    }
+  }
+
+  handleStatusChange(status) {
+    if (status.name == "pending") {
+      this.showDimmer();
+      this.loading.showSpinner();
+    } else {
+      if (this.hasAttribute("has-open-modal")) {
+        this.hideDimmer();
+        this.loading.hideSpinner();
       }
     }
   }

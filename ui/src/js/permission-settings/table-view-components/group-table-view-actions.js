@@ -28,6 +28,11 @@ export class GroupTableViewActions extends TableViewActions {
       (state) => state.selectedGroupIds,
       this._newSelectedGroupIds.bind(this)
     );
+
+    this._delete.addEventListener(
+      "click",
+      this._openDeleteGroupsModal.bind(this)
+    );
   }
 
   styleViewByButtons(groupViewBy) {
@@ -47,6 +52,101 @@ export class GroupTableViewActions extends TableViewActions {
       this._delete.setAttribute("disabled", "");
     } else {
       this._delete.removeAttribute("disabled");
+    }
+  }
+
+  setUpWarningDeleteMsg() {
+    const {
+      selectedGroupIds,
+      Group: { map },
+    } = store.getState();
+
+    this._warningDeleteMessage = `
+    Pressing confirm will delete these groups:<br/><br/>
+    ${selectedGroupIds
+      .map((id) => {
+        return `ID: ${id}: ${map.get(id).name}`;
+      })
+      .join("<br/>")}
+    <br/>
+    <br/><br/>
+    Do you want to continue?
+    `;
+    return this._warningDeleteMessage;
+  }
+
+  async _openDeleteGroupsModal() {
+    const button = document.createElement("button");
+    button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
+
+    let confirmText = document.createTextNode("Confirm");
+    button.appendChild(confirmText);
+
+    button.addEventListener("click", this._deleteGroups.bind(this));
+    this.setUpWarningDeleteMsg();
+
+    this.modal._confirm({
+      titleText: `Delete Confirmation`,
+      mainText: this._warningDeleteMessage,
+      buttonSave: button,
+    });
+  }
+
+  async _deleteGroups() {
+    const { selectedGroupIds } = store.getState();
+
+    this.modal._modalCloseAndClear();
+    try {
+      const responses = [];
+      for (const id of selectedGroupIds) {
+        const respData = await store.getState().deleteGroup(id);
+        responses.push(respData);
+      }
+      console.log("😇 ~ _deleteGroups ~ responses:", responses);
+      this.handleResponseList(responses);
+
+      // store.getState.setGroupData();
+    } catch (err) {
+      this.modal._error(err);
+    }
+  }
+
+  handleResponseList(responses) {
+    if (responses && Array.isArray(responses)) {
+      let sCount = 0;
+      let eCount = 0;
+      let errors = "";
+
+      for (let object of responses) {
+        if (object.response?.ok) {
+          sCount++;
+        } else {
+          eCount++;
+          const message = object?.data?.message || "";
+          errors += `<br/><br/>${message}`;
+        }
+      }
+
+      console.log("", sCount, eCount, errors);
+
+      if (sCount > 0 && eCount === 0) {
+        return this.modal._success(
+          `Successfully deleted ${sCount} group${sCount == 1 ? "" : "s"}.`
+        );
+      } else if (sCount > 0 && eCount > 0) {
+        return this.modal._complete(
+          `Successfully deleted ${sCount} group${
+            sCount == 1 ? "" : "s"
+          }.<br/><br/>
+          Error deleting ${eCount} group${eCount == 1 ? "" : "s"}.<br/><br/>
+          Error message${eCount == 1 ? "" : "s"}:<br/><br/>${errors}`
+        );
+      } else {
+        return this.modal._error(
+          `Error deleting ${eCount} group${eCount == 1 ? "" : "s"}.<br/><br/>
+          Error message${eCount == 1 ? "" : "s"}:<br/><br/>${errors}`
+        );
+      }
     }
   }
 }

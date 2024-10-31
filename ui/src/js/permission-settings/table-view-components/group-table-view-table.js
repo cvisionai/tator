@@ -23,7 +23,7 @@ export class GroupTableViewTable extends TableViewTable {
       Group: {
         filter: {},
         sortBy: {
-          groupName: "",
+          groupName: "ascending",
         },
         pagination: {
           start: 0,

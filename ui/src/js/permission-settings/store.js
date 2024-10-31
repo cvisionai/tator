@@ -35,6 +35,11 @@ const POLICY_TARGET_NAME = {
 const POLICY_ENTITY_TYPE = Object.keys(POLICY_ENTITY_NAME);
 const POLICY_TARGET_TYPE = Object.keys(POLICY_TARGET_NAME);
 
+export async function fetchWithHttpInfo(url, options, retry = false) {
+  const response = await fetchCredentials(url, options);
+  return { response: response, data: await response.json() };
+}
+
 const store = create(
   subscribeWithSelector((set, get) => ({
     announcements: [],
@@ -531,7 +536,7 @@ const store = create(
     createGroup: async (orgId, data) => {
       try {
         const fn = async (orgId, body) => {
-          return await fetchCredentials(`/rest/Groups/${orgId}`, {
+          return await fetchWithHttpInfo(`/rest/Groups/${orgId}`, {
             method: "POST",
             body: JSON.stringify(body),
           });
@@ -549,12 +554,30 @@ const store = create(
     updateGroup: async (groupId, data) => {
       try {
         const fn = async (groupId, body) => {
-          return await fetchCredentials(`/rest/Group/${groupId}`, {
+          return await fetchWithHttpInfo(`/rest/Group/${groupId}`, {
             method: "PATCH",
             body: JSON.stringify(body),
           });
         };
         const responseInfo = await fn(groupId, data);
+
+        // This includes the reponse so error handling can happen in ui
+        return responseInfo;
+      } catch (err) {
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+        return err;
+      }
+    },
+
+    deleteGroup: async (groupId) => {
+      if (groupId < 590) return;
+      try {
+        const fn = async (groupId) => {
+          return await fetchWithHttpInfo(`/rest/Group/${groupId}`, {
+            method: "DELETE",
+          });
+        };
+        const responseInfo = await fn(groupId);
 
         // This includes the reponse so error handling can happen in ui
         return responseInfo;
