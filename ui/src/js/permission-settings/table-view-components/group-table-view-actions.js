@@ -127,20 +127,20 @@ export class GroupTableViewActions extends TableViewActions {
         }
       }
 
-      console.log("", sCount, eCount, errors);
-
       if (sCount > 0 && eCount === 0) {
-        return this.modal._success(
+        this.modal._success(
           `Successfully deleted ${sCount} group${sCount == 1 ? "" : "s"}.`
         );
+        store.getState().setGroupData();
       } else if (sCount > 0 && eCount > 0) {
-        return this.modal._complete(
+        this.modal._complete(
           `Successfully deleted ${sCount} group${
             sCount == 1 ? "" : "s"
           }.<br/><br/>
           Error deleting ${eCount} group${eCount == 1 ? "" : "s"}.<br/><br/>
           Error message${eCount == 1 ? "" : "s"}:<br/><br/>${errors}`
         );
+        store.getState().setGroupData();
       } else {
         return this.modal._error(
           `Error deleting ${eCount} group${eCount == 1 ? "" : "s"}.<br/><br/>

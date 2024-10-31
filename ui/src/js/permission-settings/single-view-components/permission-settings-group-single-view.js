@@ -9,17 +9,22 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     const template = document.getElementById("group-single-view").content;
     this._shadow.appendChild(template.cloneNode(true));
 
-    this._titleType = this._shadow.getElementById("title-type");
+    this._title = this._shadow.getElementById("title");
 
     this._noData = this._shadow.getElementById("no-data");
-    this._noDataId = this._shadow.getElementById("no-data--group-id");
     this._form = this._shadow.getElementById("group-form");
+    this._formInputForGroup = this._shadow.getElementById(
+      "form-input-for-group"
+    );
 
     this._orgIdInput = this._shadow.getElementById("organization-id-input");
     this._groupNameInput = this._shadow.getElementById("group-name");
 
-    this._groupMemberListDiv = this._shadow.getElementById("group-member-list");
-    this._memberCount = this._shadow.getElementById("group-member-count");
+    this._itemCount = this._shadow.getElementById("item-count");
+    this._cardListDiv = this._shadow.getElementById("card-list");
+    this._groupInputWarning = this._shadow.getElementById(
+      "group-input-warning"
+    );
 
     this._usernameInput = this._shadow.getElementById("username-list-input");
     this._usernameInput._input.setAttribute(
@@ -78,90 +83,218 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
    * @param {string} val
    */
   set id(val) {
-    if (val !== "New") {
-      this._id = +val;
-    } else {
-      this._id = val;
-    }
+    this._id = val;
 
+    // New group
     if (val === "New") {
-      this._titleType.innerText = "New";
+      this._title.innerText = "New Group";
       this._orgIdInput.removeAttribute("hidden");
+      this._groupNameInput.removeAttribute("hidden");
+      this._formInputForGroup.style.display = "";
       this._usernameDelete.style.display = "none";
-    } else {
+    }
+    // Edit group
+    else if (!val.includes("user")) {
       this.showDimmer();
       this.loading.showSpinner();
 
-      this._titleType.innerText = "Edit";
+      this._title.innerText = "Edit Group";
       this._orgIdInput.setAttribute("hidden", "");
+      this._groupNameInput.removeAttribute("hidden");
+      this._formInputForGroup.style.display = "";
       this._usernameDelete.style.display = "";
     }
-    this._groupMemberListDiv.innerHTML = "";
+    // Edit user's groups
+    else if (val.includes("user")) {
+      this.showDimmer();
+      this.loading.showSpinner();
+
+      this._title.innerText = "Edit Groups of User";
+      this._orgIdInput.setAttribute("hidden", "");
+      this._groupNameInput.setAttribute("hidden", "");
+      this._formInputForGroup.style.display = "none";
+    }
+
+    this._cardListDiv.innerHTML = "";
     this._setData();
   }
 
   _setData() {
-    if (this._show) {
-      const Group = store.getState().Group;
-      if (this._id !== "New" && !Group.init) return;
+    if (!this._show) return;
 
-      if (this._id !== "New" && Group.init) {
-        this.data = Group.map.get(this._id);
-      } else if (this._id === "New") {
-        const { organizationList } = store.getState();
-        const orgIdInputChoices = organizationList.map((org, index) => {
-          const choice = {
-            label: `ID: ${org.id} - ${org.name}`,
-            value: org.id,
-          };
-          if (index === 0) {
-            choice.selected = true;
-          }
-          return choice;
-        });
-        this._orgIdInput.choices = orgIdInputChoices;
-        this.data = {};
+    // New group
+    if (this._id === "New") {
+      const { organizationList } = store.getState();
+      const orgIdInputChoices = organizationList.map((org, index) => {
+        const choice = {
+          label: `ID: ${org.id} - ${org.name}`,
+          value: org.id,
+        };
+        if (index === 0) {
+          choice.selected = true;
+        }
+        return choice;
+      });
+      this._orgIdInput.choices = orgIdInputChoices;
+      this._initByData("group", {});
+    }
+    // Edit group
+    else if (!this._id.includes("user")) {
+      const { Group } = store.getState();
+      if (!Group.init) {
+        return;
+      } else {
+        this._initByData("group", Group.map.get(+this._id));
       }
-
-      this._usernameInput.setValue("");
-      this._userToBeAdded = new Map();
-      this._userToBeDeleted = new Map();
-      this._renderData();
+    }
+    // Edit user's groups
+    else if (this._id.includes("user")) {
+      const { Group } = store.getState();
+      if (!Group.init) {
+        return;
+      } else {
+        const userId = +this._id.replace("user", "");
+        const groupIds = Group.userIdGroupIdMap.get(userId);
+        this._initByData("user", { id: userId, groups: groupIds });
+      }
     }
   }
 
-  set data(val) {
-    if (val) {
-      this._noData.setAttribute("hidden", "");
-      this._form.removeAttribute("hidden");
-      this._saveCancel.style.display = "";
-      this._data = val;
-      // This _userData is just used for storing users' data, to reduce number of rest calls
-      this._userData = new Map();
+  /**
+   * @param {string} type -- define the page is for user's groups or group's users
+   * @param {string} object
+   */
+  _initByData(type, val) {
+    if (type === "group") {
+      if (val) {
+        this._noData.setAttribute("hidden", "");
+        this._form.removeAttribute("hidden");
+        this._saveCancel.style.display = "";
+        this._data = val;
 
-      // New group
-      if (Object.keys(val).length === 0) {
-        this._groupNameInput.setValue("");
-        this._memberCount.innerText = "0 Members";
+        // This _userData is just used for storing users' data, to reduce number of rest calls
+        this._userData = new Map();
+
+        // New group
+        if (Object.keys(val).length === 0) {
+          this._groupNameInput.setValue("");
+          this._itemCount.innerText = "0 Members";
+        }
+        // Has group data (members count can be zero)
+        else {
+          this._groupNameInput.setValue(val.name);
+          this._itemCount.innerText = `${val.members.length} Member${
+            val.members.length === 1 ? "" : "s"
+          }`;
+        }
+
+        this._userToBeAdded = new Map();
+        this._userToBeDeleted = new Map();
+        this._renderMemberCards();
       }
-      // Has group data
+      // group id is invalid or no group data
       else {
-        this._groupNameInput.setValue(val.name);
-        this._memberCount.innerText = `${val.members.length} Member${
-          val.members.length === 1 ? "" : "s"
-        }`;
+        this._noData.removeAttribute("hidden");
+        this._form.setAttribute("hidden", "");
+        this._saveCancel.style.display = "none";
+        this._noData.innerText = `There is no member data for Group ${this._id}.`;
+
+        if (this.hasAttribute("has-open-modal")) {
+          this.hideDimmer();
+          this.loading.hideSpinner();
+        }
       }
-    }
-    // group id is invalid or no group data
-    else {
-      this._noData.removeAttribute("hidden");
-      this._form.setAttribute("hidden", "");
-      this._saveCancel.style.display = "none";
-      this._noDataId.innerText = this._id;
+    } else if (type === "user") {
+      if (val.id) {
+        this._initAddGroupInput();
+
+        this._noData.setAttribute("hidden", "");
+        this._form.removeAttribute("hidden");
+        this._saveCancel.style.display = "";
+        this._data = val;
+
+        if (val.groups) {
+          this._itemCount.innerText = `${val.groups.length} Group${
+            val.groups.length === 1 ? "" : "s"
+          }`;
+        } else {
+          this._data.groups = [];
+          this._itemCount.innerText = `0 Groups`;
+        }
+
+        this._groupToBeAdded = new Map();
+        this._groupToBeDeleted = new Map();
+        this._renderGroupCards();
+      }
+      // user id is invalid or no user data
+      else {
+        this._noData.removeAttribute("hidden");
+        this._form.setAttribute("hidden", "");
+        this._saveCancel.style.display = "none";
+        this._noData.innerText = `There is no group data for User ${this._id.replace(
+          "user",
+          ""
+        )}.`;
+
+        if (this.hasAttribute("has-open-modal")) {
+          this.hideDimmer();
+          this.loading.hideSpinner();
+        }
+      }
     }
   }
 
-  async _renderData() {
+  _renderGroupCards() {
+    const cards = [];
+
+    const { map } = store.getState().Group;
+
+    if (this._data.groups && this._data.groups.length) {
+      for (const groupId of this._data.groups) {
+        const groupData = map.get(groupId);
+        if (groupData) {
+          const card = document.createElement("user-group-card");
+          card.setAttribute("id", groupData.id);
+          card.setAttribute("name", groupData.name);
+          if (this._groupToBeDeleted.has(groupId)) {
+            card.setAttribute("type", "to-be-deleted");
+          }
+          card.addEventListener("remove", () => {
+            this._processToBeDeletedGroup(groupId, groupData);
+          });
+          cards.push(card);
+        }
+      }
+    }
+    for (let [groupId, groupData] of this._groupToBeAdded) {
+      if (
+        this._data?.groups &&
+        this._data?.groups?.length &&
+        this._data.groups.includes(groupId)
+      ) {
+        continue;
+      }
+      const card = document.createElement("user-group-card");
+      card.setAttribute("id", groupData.id);
+      card.setAttribute("name", groupData.name);
+      card.setAttribute("type", "to-be-added");
+      card.addEventListener("remove", () => {
+        this._processToBeDeletedGroup(groupId, groupData);
+      });
+      cards.push(card);
+    }
+    // Input card
+    cards.push(this._addGroupInput);
+
+    this._cardListDiv.replaceChildren(...cards);
+
+    if (this.hasAttribute("has-open-modal")) {
+      this.hideDimmer();
+      this.loading.hideSpinner();
+    }
+  }
+
+  async _renderMemberCards() {
     const cards = [];
 
     if (this._data?.members && this._data?.members?.length) {
@@ -199,7 +332,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       cards.push(card);
     }
 
-    this._groupMemberListDiv.replaceChildren(...cards);
+    this._cardListDiv.replaceChildren(...cards);
 
     if (this.hasAttribute("has-open-modal")) {
       this.hideDimmer();
@@ -226,6 +359,8 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
   }
 
   async _addMembers(evt) {
+    console.log("😇 ~ _addMembers ~ evt:", evt);
+
     evt.preventDefault();
     const trimmedInput = this._usernameInputString.trim();
     if (!trimmedInput) {
@@ -255,7 +390,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
           this._userToBeAdded.set(userId, user);
         }
       }
-      this._renderData();
+      this._renderMemberCards();
     }
   }
 
@@ -270,7 +405,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     const notFound = [];
     // Find elements directly
     inputList.forEach((input) => {
-      const el = this._groupMemberListDiv.querySelector(
+      const el = this._cardListDiv.querySelector(
         `[${input.indexOf("@") > -1 ? "email" : "username"}="${input}"]`
       );
       if (el) {
@@ -294,23 +429,15 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       this._usernameInputShowWarning(warningStr);
     }
 
-    this._renderData();
-  }
-
-  _usernameInputShowWarning(str) {
-    this._usernameInputWarning.innerText = str;
-    this._usernameInputWarning.classList.remove("hidden");
-    setTimeout(() => {
-      this._usernameInputWarning.classList.add("hidden");
-    }, 4000);
+    this._renderMemberCards();
   }
 
   async _saveForm(evt) {
     evt.preventDefault();
 
-    const newGroupName = this._groupNameInput.getValue();
-
+    // New group
     if (this._id === "New") {
+      const newGroupName = this._groupNameInput.getValue();
       const orgId = this._orgIdInput.getValue();
       if (!orgId) {
         this.modal._error(
@@ -333,7 +460,10 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       });
 
       this.handleResponse(info);
-    } else {
+    }
+    // Edit group
+    else if (!this._id.includes("user")) {
+      const newGroupName = this._groupNameInput.getValue();
       if (
         newGroupName === this._data.name &&
         !this._userToBeAdded.size &&
@@ -350,6 +480,29 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       });
 
       this.handleResponse(info);
+    }
+    // Edit user's groups
+    else if (this._id.includes("user")) {
+      if (!this._groupToBeAdded.size && !this._groupToBeDeleted.size) {
+        this.modal._success("Nothing new to save!");
+        return;
+      }
+
+      const responses = [];
+      for (const [groupId, group] of this._groupToBeAdded) {
+        const info = await store.getState().updateGroup(groupId, {
+          add_members: [this._data.id],
+        });
+        responses.push(info);
+      }
+      for (const [groupId, group] of this._groupToBeDeleted) {
+        const info = await store.getState().updateGroup(groupId, {
+          remove_members: [this._data.id],
+        });
+        responses.push(info);
+      }
+
+      this.handleResponseList(responses);
     }
   }
 
@@ -369,6 +522,49 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     }
   }
 
+  handleResponseList(responses) {
+    if (responses && Array.isArray(responses)) {
+      let sCount = 0;
+      let eCount = 0;
+      let errors = "";
+
+      for (let object of responses) {
+        if (object.response?.ok) {
+          sCount++;
+        } else {
+          eCount++;
+          const message = object?.data?.message || "";
+          errors += `<br/><br/>${message}`;
+        }
+      }
+
+      if (sCount > 0 && eCount === 0) {
+        this.modal._success(
+          `Successfully updated association with ${sCount} group${
+            sCount == 1 ? "" : "s"
+          }.`
+        );
+        store.getState().setGroupData();
+      } else if (sCount > 0 && eCount > 0) {
+        this.modal._complete(
+          `Successfully updated association with ${sCount} group${
+            sCount == 1 ? "" : "s"
+          }.<br/><br/>
+          Error updating association with ${eCount} group${
+            eCount == 1 ? "" : "s"
+          }.<br/><br/>
+          Error message${eCount == 1 ? "" : "s"}:<br/><br/>${errors}`
+        );
+        store.getState().setGroupData();
+      } else {
+        return this.modal._error(
+          `Error deleting ${eCount} group${eCount == 1 ? "" : "s"}.<br/><br/>
+          Error message${eCount == 1 ? "" : "s"}:<br/><br/>${errors}`
+        );
+      }
+    }
+  }
+
   handleStatusChange(status) {
     if (status.name == "pending") {
       this.showDimmer();
@@ -379,6 +575,73 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
         this.loading.hideSpinner();
       }
     }
+  }
+
+  _usernameInputShowWarning(str) {
+    this._usernameInputWarning.innerText = str;
+    this._usernameInputWarning.classList.remove("hidden");
+    setTimeout(() => {
+      this._usernameInputWarning.classList.add("hidden");
+    }, 4000);
+  }
+
+  _groupInputShowWarning(str) {
+    this._groupInputWarning.innerText = str;
+    this._groupInputWarning.classList.remove("hidden");
+    setTimeout(() => {
+      this._groupInputWarning.classList.add("hidden");
+    }, 4000);
+  }
+
+  _initAddGroupInput() {
+    this._addGroupInput = document.createElement("input");
+    this._addGroupInput.setAttribute("class", "form-control");
+    this._addGroupInput.setAttribute("type", "number");
+    this._addGroupInput.style.height = "100%";
+    this._addGroupInput.setAttribute("placeholder", "Hit Enter to add an ID");
+    this._addGroupInput.value = null;
+
+    this._addGroupInput.addEventListener("keydown", this._addGroup.bind(this));
+  }
+
+  _addGroup(evt) {
+    if (evt.key === "Enter") {
+      evt.preventDefault();
+      const id = +this._addGroupInput.value;
+      const { map } = store.getState().Group;
+      const group = map.get(id);
+      if (!group) {
+        this._groupInputShowWarning(`Can't find group by ID ${id}.`);
+      } else {
+        this._processToBeAddedGroup(id, group);
+        this._addGroupInput.value = null;
+        this._addGroupInput.focus();
+      }
+    }
+  }
+
+  _processToBeAddedGroup(groupId, group) {
+    if (this._groupToBeDeleted.has(groupId)) {
+      this._groupToBeDeleted.delete(groupId);
+    }
+    // If not an original group, then add to _groupToBeAdded
+    if (!this._data.groups.includes(groupId)) {
+      this._groupToBeAdded.set(groupId, group);
+    }
+
+    this._renderGroupCards();
+  }
+
+  _processToBeDeletedGroup(groupId, group) {
+    if (this._groupToBeAdded.has(groupId)) {
+      this._groupToBeAdded.delete(groupId);
+    }
+    // If is an original group, then add to _groupToBeDeleted
+    if (this._data.groups.includes(groupId)) {
+      this._groupToBeDeleted.set(groupId, group);
+    }
+
+    this._renderGroupCards();
   }
 
   /**

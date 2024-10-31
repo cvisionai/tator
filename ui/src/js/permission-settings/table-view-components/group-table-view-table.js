@@ -256,6 +256,8 @@ export class GroupTableViewTable extends TableViewTable {
           td.setAttribute("data-tooltip", groupIds);
         } else if (val === "Actions") {
           const edit = document.createElement("edit-line-button");
+          edit.setAttribute("data-id", `Group-user${userId}`);
+          edit.addEventListener("click", this._goTo.bind(this));
           td.appendChild(edit);
         }
         return td;

@@ -27,13 +27,11 @@
         </svg>
         <span> Back </span>
       </a>
-      <h2 class="h2"><span id="title-type"></span> Group</h2>
+      <h2 class="h2" id="title"></h2>
       <span></span>
     </div>
 
-    <div id="no-data" class="text-center" hidden>
-      There is no data for Group <span id="no-data--group-id"></span>.
-    </div>
+    <div id="no-data" class="text-center" hidden></div>
 
     <form id="group-form" hidden>
       <enum-input
@@ -42,19 +40,25 @@
         name="Organization ID"
         type="int"
       ></enum-input>
-      <text-input id="group-name" name="Group name" type="string"></text-input>
+      <text-input
+        id="group-name"
+        name="Group name"
+        type="string"
+        hidden
+      ></text-input>
 
-      <div class="mt-4 mb-2">Total <span id="group-member-count"></span></div>
-      <div id="group-member-list" class="mb-5 group-member-list">
-        <!-- MEMBER CARDS -->
+      <div class="mt-4 mb-2">Total <span id="item-count"></span></div>
+      <div id="card-list" class="mb-5 card-list">
+        <!-- MEMBER/GROUP CARDS -->
       </div>
+      <div class="f3 text-center hidden" id="group-input-warning"></div>
 
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column" id="form-input-for-group">
         <text-area id="username-list-input" name="Username list" type="string">
         </text-area>
 
         <div class="d-flex flex-row" style="align-self: end">
-          <div class="f3 mr-4" id="username-list-warning"></div>
+          <div class="f3 mr-4 hidden" id="username-list-warning"></div>
           <button id="username-list-add" class="btn btn-small btn-outline">
             Add
           </button>
@@ -171,5 +175,15 @@
       id="group-member-card--username"
     ></h3>
     <p id="group-member-card--email" class="f3 group-member-card--email"></p>
+  </div>
+</template>
+
+<template id="user-group-card">
+  <div class="user-group-card px-2 py-2" id="user-group-card-div">
+    <h3 class="h3 pb-2 d-flex flex-row flex-justify-between">
+      <span id="user-group-card--id"></span>
+      <x-mark-button id="remove-group-button"></x-mark-button>
+    </h3>
+    <p id="user-group-card--name" class="f3 user-group-card--name"></p>
   </div>
 </template>
