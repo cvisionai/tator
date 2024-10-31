@@ -34,6 +34,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
     this._saveCancel = this._shadow.getElementById(
       "group-single-view--save-cancel-section"
     );
+    this._save = this._shadow.getElementById("group-single-view-save");
 
     // // loading spinner
     this.loading = new LoadingSpinner();
@@ -53,6 +54,8 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       "click",
       this._deleteMembers.bind(this)
     );
+
+    this._save.addEventListener("click", this._saveForm.bind(this));
 
     store.subscribe(
       (state) => state.selectedType,
@@ -93,13 +96,13 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
       if (this._id !== "New" && Group.init) {
         this.data = Group.map.get(this._id);
-      } else {
+      } else if (this._id === "New") {
         this.data = {};
       }
 
       this._usernameInput.setValue("");
-      this._userToBeAdded.reset();
-      this._userToBeDeleted.reset();
+      this._userToBeAdded = new Map();
+      this._userToBeDeleted = new Map();
       this._renderData();
     }
   }
@@ -110,6 +113,9 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       this._form.removeAttribute("hidden");
       this._saveCancel.style.display = "";
       this._data = val;
+      // This _userData is just used for storing users' data, to reduce number of rest calls
+      this._userData = new Map();
+
       // New group
       if (Object.keys(val).length === 0) {
         this._groupNameInput.setValue("");
@@ -134,19 +140,27 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
   async _renderData() {
     const cards = [];
+
     if (this._data?.members && this._data?.members?.length) {
       for (const memberId of this._data.members) {
-        const userData = await this._userToBeAdded.getUserById(memberId);
-        const card = document.createElement("group-member-card");
-        card.setAttribute("username", userData.username);
-        card.setAttribute("email", userData.email);
-        if (this._userToBeDeleted.getUsers().has(memberId)) {
-          card.setAttribute("type", "to-be-deleted");
+        if (!this._userData.has(memberId)) {
+          const data = await store.getState().findUserById(memberId);
+          this._userData.set(memberId, data);
         }
-        cards.push(card);
+        const userData = this._userData.get(memberId);
+        if (userData) {
+          const card = document.createElement("group-member-card");
+          card.setAttribute("username", userData.username);
+          card.setAttribute("email", userData.email);
+          card.setAttribute("data-id", userData.id);
+          if (this._userToBeDeleted.has(memberId)) {
+            card.setAttribute("type", "to-be-deleted");
+          }
+          cards.push(card);
+        }
       }
     }
-    for (let [userId, userData] of this._userToBeAdded.getUsers()) {
+    for (let [userId, userData] of this._userToBeAdded) {
       if (
         this._data?.members &&
         this._data?.members?.length &&
@@ -157,6 +171,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       const card = document.createElement("group-member-card");
       card.setAttribute("username", userData.username);
       card.setAttribute("email", userData.email);
+      card.setAttribute("data-id", userData.id);
       card.setAttribute("type", "to-be-added");
       cards.push(card);
     }
@@ -183,41 +198,38 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
   }
 
   _initUserInput() {
-    this._userToBeAdded = document.createElement("user-data");
-    this._userToBeAdded.addEventListener(
-      "users",
-      this._processToBeAddedUsers.bind(this)
-    );
-
-    this._userToBeDeleted = document.createElement("user-data");
-    this._userToBeDeleted.addEventListener(
-      "users",
-      this._processToBeDeletedUsers.bind(this)
-    );
+    this._userToBeAdded = new Map();
+    this._userToBeDeleted = new Map();
   }
 
-  _addMembers(evt) {
+  async _addMembers(evt) {
     evt.preventDefault();
     const trimmedInput = this._usernameInputString.trim();
     if (!trimmedInput) {
       return;
     }
     const inputList = trimmedInput.split("\n");
-    this._userToBeAdded.findUsers(inputList);
+    const result = await store.getState().findUsers(inputList);
+    console.log("😇 ~ _addMembers ~ result:", result);
+    this._processToBeAddedUsers(result);
   }
 
-  _processToBeAddedUsers(evt) {
-    console.log("😇 ~ _processToBeAddedUsers ~ evt.detail:", evt.detail);
-    if (evt.detail.missing?.length) {
-      const warningStr = `Cannot find user information for these: ${evt.detail.missing.join(
+  _processToBeAddedUsers({ found, notFound }) {
+    if (notFound.length) {
+      const warningStr = `Cannot find user information for these: ${notFound.join(
         ", "
       )}.`;
-      this._editGroupShowWarning(warningStr);
+      this._usernameInputShowWarning(warningStr);
     }
-    if (evt.detail.users.size) {
-      for (let [userId, user] of evt.detail.users) {
-        if (this._userToBeDeleted.getUsers().has(userId)) {
-          this._userToBeDeleted.removeUser(userId);
+
+    if (found.size) {
+      for (let [userId, user] of found) {
+        if (this._userToBeDeleted.has(userId)) {
+          this._userToBeDeleted.delete(userId);
+        }
+        // If not an original member, then add to _userToBeAdded
+        if (!this._data.members || !this._data.members.includes(userId)) {
+          this._userToBeAdded.set(userId, user);
         }
       }
       this._renderData();
@@ -231,33 +243,83 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
       return;
     }
     const inputList = trimmedInput.split("\n");
-    this._userToBeDeleted.findUsers(inputList);
-  }
 
-  _processToBeDeletedUsers(evt) {
-    console.log("😇 ~ _processToBeDeletedUsers ~ evt.detail:", evt.detail);
-    if (evt.detail.missing?.length) {
-      const warningStr = `Cannot find user information for these: ${evt.detail.missing.join(
+    const notFound = [];
+    // Find elements directly
+    inputList.forEach((input) => {
+      const el = this._groupMemberListDiv.querySelector(
+        `[${input.indexOf("@") > -1 ? "email" : "username"}="${input}"]`
+      );
+      if (el) {
+        const type = el.getAttribute("type");
+        const id = +el.dataset.id;
+        if (type === "to-be-added") {
+          this._userToBeAdded.delete(id);
+        } else {
+          const userData = this._userData.get(id);
+          this._userToBeDeleted.set(id, userData);
+        }
+      } else {
+        notFound.push(input);
+      }
+    });
+
+    if (notFound.length) {
+      const warningStr = `Cannot find user information for these: ${notFound.join(
         ", "
       )}.`;
-      this._editGroupShowWarning(warningStr);
+      this._usernameInputShowWarning(warningStr);
     }
-    if (evt.detail.users.size) {
-      for (let [userId, user] of evt.detail.users) {
-        if (this._userToBeAdded.getUsers().has(userId)) {
-          this._userToBeAdded.removeUser(userId);
-        }
-      }
-      this._renderData();
-    }
+
+    this._renderData();
   }
 
-  _editGroupShowWarning(str) {
+  _usernameInputShowWarning(str) {
     this._usernameInputWarning.innerText = str;
     this._usernameInputWarning.classList.remove("hidden");
     setTimeout(() => {
       this._usernameInputWarning.classList.add("hidden");
     }, 4000);
+  }
+
+  async _saveForm(evt) {
+    evt.preventDefault();
+
+    const newGroupName = this._groupNameInput.getValue();
+    console.log("", this._userToBeAdded);
+    console.log("", this._userToBeDeleted);
+
+    if (this._id === "New") {
+      const original = this._data.members ? this._data.members : [];
+      const toBeAdded = Array.from(this._userToBeAdded.keys());
+      const toBeDeleted = Array.from(this._userToBeDeleted.keys());
+      const members = new Set([...original, ...toBeAdded]);
+      toBeDeleted.forEach((id) => members.delete(id));
+
+      if (members.size) {
+        const responseInfo = await store
+          .getState()
+          .createGroup(store.getState().organizationList[0].id, {
+            name: newGroupName,
+            initial_members: [...members],
+          });
+
+        console.log("😇 ~ _saveForm ~ responseInfo:", responseInfo);
+        console.log("", store.getState().status);
+      }
+    } else {
+      const repsonseInfo = await store.getState().updateGroup(this._data.id, {
+        name: newGroupName,
+        add_members: Array.from(this._userToBeAdded.keys()),
+        remove_members: Array.from(this._userToBeDeleted.keys()),
+      });
+
+      if (repsonseInfo && repsonseInfo.ok) {
+        store.getState().setGroupData();
+      } else {
+        console.log("", store.getState().status);
+      }
+    }
   }
 
   /**

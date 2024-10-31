@@ -39,11 +39,12 @@ export class PolicyTableViewTable extends TableViewTable {
       (state) => state.selectedPolicyIds,
       this._newSelectedPolicyIds.bind(this)
     );
-
-    this._paginator.addEventListener("selectPage", this._changePage.bind(this));
   }
 
   _initPaginator() {
+    this._paginator = document.createElement("entity-gallery-paginator");
+    this._paginator.addEventListener("selectPage", this._changePage.bind(this));
+    this._paginatorDiv.replaceChildren(this._paginator);
     this._paginator.setupElements();
 
     store.getState().setPolicySearchParams(this._searchParams);

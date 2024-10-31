@@ -33,12 +33,10 @@ export class TableViewTable extends TatorElement {
     this._tableHead = this._shadow.getElementById("permission-table--head");
     this._tableBody = this._shadow.getElementById("permission-table--body");
 
-    // PAGINATOR
+    // PAGINATION
     this._paginatorDiv = this._shadow.getElementById(
       "permission-table-paginator-div"
     );
-    this._paginator = document.createElement("entity-gallery-paginator");
-    this._paginatorDiv.appendChild(this._paginator);
   }
 }
 

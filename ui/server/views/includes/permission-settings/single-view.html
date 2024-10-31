@@ -38,9 +38,7 @@
     <form id="group-form" hidden>
       <text-input id="group-name" name="Group name" type="string"></text-input>
 
-      <div class="mt-4 mb-2">
-        Total <span id="group-member-count">4 Members</span>
-      </div>
+      <div class="mt-4 mb-2">Total <span id="group-member-count"></span></div>
       <div id="group-member-list" class="mb-5 group-member-list">
         <!-- MEMBER CARDS -->
       </div>
@@ -116,26 +114,46 @@
       <span></span>
     </div>
 
-    <div id="" class="d-flex flex-row flex-justify-between">
-      <div class="d-flex flex-column">
-        <enum-input id="entity-type-input" name="Entity"></enum-input>
-        <text-input id="entity-id-input" name="ID" type="int"></text-input>
+    <form id="calculator-table-form">
+      <div class="d-flex flex-row flex-justify-between">
+        <div class="d-flex flex-column">
+          <enum-input id="entity-type-input" name="Entity"></enum-input>
+          <text-input id="entity-id-input" name="ID" type="int"></text-input>
+        </div>
+        <div class="d-flex flex-column">
+          <enum-input id="target-type-input" name="Target"></enum-input>
+          <text-input id="target-id-input" name="ID" type="int"></text-input>
+        </div>
       </div>
-      <div class="d-flex flex-column">
-        <enum-input id="target-type-input" name="Target"></enum-input>
-        <text-input id="target-id-input" name="ID" type="int"></text-input>
-      </div>
-    </div>
 
-    <div class="my-4 calculator-table-div">
-      <table
-        id="permission-table"
-        class="table permission-table calculator-table"
+      <div class="my-4 px-3 calculator-table-div">
+        <table
+          id="calculator-table"
+          class="table permission-table calculator-table"
+        >
+          <colgroup id="calculator-table--colgroup"></colgroup>
+          <thead id="calculator-table--head"></thead>
+          <tbody id="calculator-table--body"></tbody>
+        </table>
+      </div>
+    </form>
+
+    <div
+      id="calculator-table--save-reset-section"
+      class="d-flex flex-items-center flex-justify-center my-4"
+    >
+      <input
+        id="calculator-table-save"
+        type="submit"
+        value="Save"
+        class="btn btn-clear f1 text-semibold"
+      />
+      <button
+        id="calculator-table-reset"
+        class="btn btn-width btn-outline text-gray my-3 px-4"
       >
-        <colgroup id="permission-table--colgroup"></colgroup>
-        <thead id="permission-table--head"></thead>
-        <tbody id="permission-table--body"></tbody>
-      </table>
+        Reset
+      </button>
     </div>
   </div>
 </template>
@@ -143,8 +161,8 @@
 <template id="group-member-card">
   <div class="group-member-card px-2 py-2" id="group-member-card-div">
     <h3
-      id="group-member-card--username"
       class="h3 pb-2 group-member-card--username"
+      id="group-member-card--username"
     ></h3>
     <p id="group-member-card--email" class="f3 group-member-card--email"></p>
   </div>

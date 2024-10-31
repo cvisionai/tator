@@ -491,6 +491,79 @@ const store = create(
       });
     },
 
+    findUsers: async (inputList) => {
+      const notFound = [];
+      const found = new Map();
+
+      for (let input of inputList) {
+        const users = await fetchCredentials(
+          `/rest/Users?${
+            input.indexOf("@") > -1 ? "email" : "username"
+          }=${encodeURIComponent(input)}`,
+          {},
+          true
+        ).then((response) => response.json());
+
+        if (users.length) {
+          for (const user of users) {
+            found.set(user.id, user);
+          }
+        } else {
+          notFound.push(input);
+        }
+      }
+
+      return { found, notFound };
+    },
+
+    findUserById: async (id) => {
+      const user = await fetchCredentials(`/rest/User/${id}`, {}, true).then(
+        (response) => response.json()
+      );
+
+      if (user.id && !user.message) {
+        return user;
+      } else {
+        return null;
+      }
+    },
+
+    createGroup: async (orgId, data) => {
+      try {
+        const fn = async (orgId, body) => {
+          return await fetchCredentials(`/rest/Groups/${orgId}`, {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
+        };
+        const responseInfo = await fn(orgId, data);
+
+        // This includes the reponse so error handling can happen in ui
+        return responseInfo;
+      } catch (err) {
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+        return err;
+      }
+    },
+
+    updateGroup: async (groupId, data) => {
+      try {
+        const fn = async (groupId, body) => {
+          return await fetchCredentials(`/rest/Group/${groupId}`, {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          });
+        };
+        const responseInfo = await fn(groupId, data);
+
+        // This includes the reponse so error handling can happen in ui
+        return responseInfo;
+      } catch (err) {
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+        return err;
+      }
+    },
+
     setSelectedType: (selectedType) => {
       set({ selectedType });
     },
