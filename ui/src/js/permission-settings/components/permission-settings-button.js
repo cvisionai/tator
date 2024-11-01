@@ -194,6 +194,16 @@ class XMarkButton extends PermissionSettingsButton {
     this._button.classList.remove("py-2");
   }
 }
+class FilterAddButton extends PermissionSettingsButton {
+  constructor() {
+    super();
+    this.init(
+      "Remove",
+      "M432 256c0 17.69-14.33 32.01-32 32.01H256v144c0 17.69-14.33 31.99-32 31.99s-32-14.3-32-31.99v-144H48c-17.67 0-32-14.32-32-32.01s14.33-31.99 32-31.99H192v-144c0-17.69 14.33-32.01 32-32.01s32 14.32 32 32.01v144h144C417.7 224 432 238.3 432 256z",
+      "0 0 448 512"
+    );
+  }
+}
 
 customElements.define("permission-settings-button", PermissionSettingsButton);
 customElements.define("edit-line-button", EditLineButton);
@@ -206,3 +216,4 @@ customElements.define("sort-button", SortButton);
 customElements.define("sort-ascending-button", SortAscendingButton);
 customElements.define("sort-descending-button", SortDescendingButton);
 customElements.define("x-mark-button", XMarkButton);
+customElements.define("filter-add-button", FilterAddButton);

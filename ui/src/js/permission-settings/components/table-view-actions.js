@@ -37,6 +37,9 @@ export class TableViewActions extends TatorElement {
 
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild(this.modal);
+
+    this._filterWindow = document.createElement("table-view-filter");
+    this._shadow.appendChild(this._filterWindow);
   }
 
   connectedCallback() {
@@ -52,7 +55,17 @@ export class TableViewActions extends TatorElement {
       btn.style.display = "";
     });
 
+    this._filter.addEventListener("click", this._toggleFilterWindow.bind(this));
+
     this._init();
+  }
+
+  _toggleFilterWindow() {
+    if (this._filterWindow.getAttribute("hidden") === null) {
+      this._filterWindow.setAttribute("hidden", "");
+    } else {
+      this._filterWindow.removeAttribute("hidden");
+    }
   }
 
   _init() {
