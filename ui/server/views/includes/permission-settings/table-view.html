@@ -211,3 +211,21 @@
     </div>
   </div>
 </template>
+
+<template id="table-view-filter">
+  <div class="my-3 px-3 py-4 col-12 rounded-2 table-view-filter">
+    <div class="d-flex flex-items-center text-semibold text-gray f2 mb-1">
+      <span class="mr-2"> Add Condition </span>
+      <filter-add-button id="add-condition-button"></filter-add-button>
+    </div>
+
+    <div id="condition-group"></div>
+
+    <div class="modal__footer d-flex mt-6">
+      <button class="btn btn-clear f2" style="height: 32px">Search</button>
+      <button class="btn btn-clear btn-charcoal f2" style="height: 32px">
+        Cancel
+      </button>
+    </div>
+  </div>
+</template>

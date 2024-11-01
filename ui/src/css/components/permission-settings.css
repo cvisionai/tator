@@ -137,3 +137,8 @@
   scrollbar-width: thin;
   scrollbar-color: #888 #e0e0e0;
 }
+
+.table-view-filter {
+  background-color: var(--color-charcoal--medium);
+  box-sizing: border-box;
+}

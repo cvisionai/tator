@@ -33,6 +33,16 @@ export class GroupTableViewActions extends TableViewActions {
       "click",
       this._openDeleteGroupsModal.bind(this)
     );
+
+    this._filterWindow._addConditionButton.addEventListener(
+      "click",
+      this._addCondition.bind(this)
+    );
+  }
+
+  _addCondition() {
+    const condition = document.createElement("group-filter-condition");
+    this._filterWindow._conditionGroup.appendChild(condition);
   }
 
   styleViewByButtons(groupViewBy) {
