@@ -50,7 +50,7 @@ export class SingleUpload {
   // Uploads using a single request.
   uploadSingle(info) {
     let headers = {};
-    if ("blob.core.windows.net" in info.urls[0]) {
+    if (info.urls[0].includes("blob.core.windows.net")) {
       headers = {
         "x-ms-blob-type": "BlockBlob",
       };
