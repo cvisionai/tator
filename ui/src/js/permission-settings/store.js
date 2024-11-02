@@ -81,14 +81,14 @@ const store = create(
     groupViewBy: "Group",
     groupSearchParams: {
       Group: {
-        filter: {},
+        filter: [],
         sortBy: {
           groupName: "",
         },
         pagination: {},
       },
       User: {
-        filter: {},
+        filter: [],
         sortBy: {
           userId: "",
         },
@@ -110,7 +110,7 @@ const store = create(
     },
     selectedPolicyIds: [],
     policySearchParams: {
-      filter: {},
+      filter: [],
       sortBy: {
         entityName: "",
         targetName: "",
@@ -218,32 +218,165 @@ const store = create(
     setViewByGroupData: () => {
       const { Group: viewByGroupSearchParams } = get().groupSearchParams;
 
-      const { groupIdGroupNameMap } = get().Group;
+      const { groupIdGroupNameMap, groupIdUserIdMap } = get().Group;
+      let filteredGroupIdGroupNameMap = new Map(groupIdGroupNameMap);
+      let filteredGroupIdUserIdMap = new Map(groupIdUserIdMap);
+
       // Filter
-      //
-      const count = groupIdGroupNameMap.size;
+      viewByGroupSearchParams.filter.forEach((con) => {
+        switch (con.category) {
+          case "groupName":
+            switch (con.modifier) {
+              case "includes":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (!groupName.includes(con.value)) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "equals":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupName !== con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "starts with":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (!groupName.startsWith(con.value)) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "ends with":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (!groupName.endsWith(con.value)) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "not equal":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupName === con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+            }
+            break;
+          case "groupId":
+            switch (con.modifier) {
+              case "==":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupId !== con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "!=":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupId === con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case ">=":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupId < con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "<=":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupId > con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "in":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (!con.value.includes(groupId)) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+            }
+            break;
+          case "userId":
+            switch (con.modifier) {
+              case "==":
+                for (let [groupId, userIds] of filteredGroupIdUserIdMap) {
+                  if (!userIds.includes(con.value)) {
+                    filteredGroupIdUserIdMap.delete(groupId);
+                  }
+                }
+                break;
+              case "!=":
+                for (let [groupId, userIds] of filteredGroupIdUserIdMap) {
+                  if (userIds.includes(con.value)) {
+                    filteredGroupIdUserIdMap.delete(groupId);
+                  }
+                }
+                break;
+              case ">=":
+                for (let [groupId, userIds] of filteredGroupIdUserIdMap) {
+                  if (userIds.every((id) => id < con.value)) {
+                    filteredGroupIdUserIdMap.delete(groupId);
+                  }
+                }
+                break;
+              case "<=":
+                for (let [groupId, userIds] of filteredGroupIdUserIdMap) {
+                  if (userIds.every((id) => id > con.value)) {
+                    filteredGroupIdUserIdMap.delete(groupId);
+                  }
+                }
+                break;
+              case "in":
+                for (let [groupId, userIds] of filteredGroupIdUserIdMap) {
+                  if (userIds.every((id) => !con.value.includes(id))) {
+                    filteredGroupIdUserIdMap.delete(groupId);
+                  }
+                }
+                break;
+            }
+            break;
+        }
+      });
+      // a group id must be in both filteredGroupIdGroupNameMap and filteredGroupIdUserIdMap
+      // So that it meets all filter conditions
+      for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+        if (!filteredGroupIdUserIdMap.has(groupId)) {
+          filteredGroupIdGroupNameMap.delete(groupId);
+        }
+      }
+      // Now filteredGroupIdGroupNameMap meets all filter conditions
+      const count = filteredGroupIdGroupNameMap.size;
 
       // Sort
-      let sortedUserIdGroupIdMap = null;
+      let sortedGroupIdGroupNameMap = null;
       if (viewByGroupSearchParams.sortBy.groupName === "ascending") {
-        sortedUserIdGroupIdMap = new Map(
-          [...groupIdGroupNameMap.entries()].sort((a, b) =>
+        sortedGroupIdGroupNameMap = new Map(
+          [...filteredGroupIdGroupNameMap.entries()].sort((a, b) =>
             a[1].localeCompare(b[1])
           )
         );
       } else if (viewByGroupSearchParams.sortBy.groupName === "descending") {
-        sortedUserIdGroupIdMap = new Map(
-          [...groupIdGroupNameMap.entries()].sort((a, b) =>
+        sortedGroupIdGroupNameMap = new Map(
+          [...filteredGroupIdGroupNameMap.entries()].sort((a, b) =>
             b[1].localeCompare(a[1])
           )
         );
       } else {
-        sortedUserIdGroupIdMap = new Map([...groupIdGroupNameMap.entries()]);
+        sortedGroupIdGroupNameMap = new Map([
+          ...filteredGroupIdGroupNameMap.entries(),
+        ]);
       }
 
       // Paginate
       const paginatedEntries = new Map(
-        [...sortedUserIdGroupIdMap.entries()].slice(
+        [...sortedGroupIdGroupNameMap.entries()].slice(
           viewByGroupSearchParams.pagination.start,
           viewByGroupSearchParams.pagination.stop
         )
@@ -270,23 +403,162 @@ const store = create(
     setViewByUserData: () => {
       const { User: viewByUserSearchParams } = get().groupSearchParams;
 
-      const { userIdGroupIdMap } = get().Group;
+      const { groupIdGroupNameMap, userIdGroupIdMap } = get().Group;
+      let filteredGroupIdGroupNameMap = new Map(groupIdGroupNameMap);
+      let filteredUserIdGroupIdMap = new Map(userIdGroupIdMap);
+
       // Filter
-      //
-      const count = userIdGroupIdMap.size;
+      viewByUserSearchParams.filter.forEach((con) => {
+        switch (con.category) {
+          case "groupName":
+            switch (con.modifier) {
+              case "includes":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (!groupName.includes(con.value)) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "equals":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupName !== con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "starts with":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (!groupName.startsWith(con.value)) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "ends with":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (!groupName.endsWith(con.value)) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+              case "not equal":
+                for (let [groupId, groupName] of filteredGroupIdGroupNameMap) {
+                  if (groupName === con.value) {
+                    filteredGroupIdGroupNameMap.delete(groupId);
+                  }
+                }
+                break;
+            }
+            break;
+          case "groupId":
+            switch (con.modifier) {
+              case "==":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (!groupIds.includes(con.value)) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case "!=":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (groupIds.includes(con.value)) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case ">=":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (groupIds.every((id) => id < con.value)) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case "<=":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (groupIds.every((id) => id > con.value)) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case "in":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (groupIds.every((id) => !con.value.includes(id))) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+            }
+            break;
+          case "userId":
+            switch (con.modifier) {
+              case "==":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (userId !== con.value) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case "!=":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (userId === con.value) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case ">=":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (userId < con.value) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case "<=":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (userId > con.value) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+              case "in":
+                for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+                  if (!con.value.includes(userId)) {
+                    filteredUserIdGroupIdMap.delete(userId);
+                  }
+                }
+                break;
+            }
+            break;
+        }
+      });
+      // a group id must be in both filteredGroupIdGroupNameMap and filteredUserIdGroupIdMap
+      // So that it meets all filter conditions
+      const groupIdWithFilteredName = Array.from(
+        filteredGroupIdGroupNameMap.keys()
+      );
+      for (let [userId, groupIds] of filteredUserIdGroupIdMap) {
+        const hasSameGroupId = groupIds.some((id) =>
+          groupIdWithFilteredName.includes(id)
+        );
+        if (!hasSameGroupId) {
+          filteredUserIdGroupIdMap.delete(userId);
+        }
+      }
+      // Now filteredUserIdGroupIdMap meets all filter conditions
+      const count = filteredUserIdGroupIdMap.size;
 
       // Sort
       let sortedUserIdGroupIdMap = null;
       if (viewByUserSearchParams.sortBy.userId === "ascending") {
         sortedUserIdGroupIdMap = new Map(
-          [...userIdGroupIdMap.entries()].sort((a, b) => a[0] - b[0])
+          [...filteredUserIdGroupIdMap.entries()].sort((a, b) => a[0] - b[0])
         );
       } else if (viewByUserSearchParams.sortBy.userId === "descending") {
         sortedUserIdGroupIdMap = new Map(
-          [...userIdGroupIdMap.entries()].sort((a, b) => b[0] - a[0])
+          [...filteredUserIdGroupIdMap.entries()].sort((a, b) => b[0] - a[0])
         );
       } else {
-        sortedUserIdGroupIdMap = new Map([...userIdGroupIdMap.entries()]);
+        sortedUserIdGroupIdMap = new Map([
+          ...filteredUserIdGroupIdMap.entries(),
+        ]);
       }
 
       // Paginate
@@ -376,41 +648,113 @@ const store = create(
     setTabularPolicy: () => {
       const { policySearchParams } = get();
 
-      const { processedData } = get().Policy;
+      const { processedMap } = get().Policy;
+      let filteredProcessedMap = new Map(processedMap);
 
       // Filter
-      //
-      const count = processedData.length;
-
-      // Sort
-      let sortedProcessedData = null;
-      sortedProcessedData = [...processedData].sort((a, b) => {
-        const sortBy = policySearchParams.sortBy;
-
-        if (sortBy.entityName === "ascending") {
-          return a.entityName.localeCompare(b.entityName);
-        } else if (sortBy.entityName === "descending") {
-          return b.entityName.localeCompare(a.entityName);
-        } else if (sortBy.targetName === "ascending") {
-          return a.targetName.localeCompare(b.targetName);
-        } else if (sortBy.targetName === "descending") {
-          return b.targetName.localeCompare(a.targetName);
-        } else {
-          return 0;
+      policySearchParams.filter.forEach((con) => {
+        switch (con.category) {
+          case "entityType":
+          case "targetType":
+            switch (con.modifier) {
+              case "equals":
+                for (let [policyId, policy] of filteredProcessedMap) {
+                  if (policy[con.category] !== con.value) {
+                    filteredProcessedMap.delete(policyId);
+                  }
+                }
+                break;
+              case "not equal":
+                for (let [policyId, policy] of filteredProcessedMap) {
+                  if (policy[con.category] === con.value) {
+                    filteredProcessedMap.delete(policyId);
+                  }
+                }
+                break;
+            }
+            break;
+          case "entityId":
+          case "targetId":
+            switch (con.modifier) {
+              case "==":
+                for (let [policyId, policy] of filteredProcessedMap) {
+                  if (policy[con.category] !== con.value) {
+                    filteredProcessedMap.delete(policyId);
+                  }
+                }
+                break;
+              case "!=":
+                for (let [policyId, policy] of filteredProcessedMap) {
+                  if (policy[con.category] === con.value) {
+                    filteredProcessedMap.delete(policyId);
+                  }
+                }
+                break;
+              case ">=":
+                for (let [policyId, policy] of filteredProcessedMap) {
+                  if (policy[con.category] < con.value) {
+                    filteredProcessedMap.delete(policyId);
+                  }
+                }
+                break;
+              case "<=":
+                for (let [policyId, policy] of filteredProcessedMap) {
+                  if (policy[con.category] > con.value) {
+                    filteredProcessedMap.delete(policyId);
+                  }
+                }
+                break;
+              case "in":
+                for (let [policyId, policy] of filteredProcessedMap) {
+                  if (!con.value.includes(policy[con.category])) {
+                    filteredProcessedMap.delete(policyId);
+                  }
+                }
+                break;
+            }
+            break;
         }
       });
+      const count = filteredProcessedMap.size;
+
+      // Sort
+      let sortedProcessedMap = null;
+      sortedProcessedMap = new Map(
+        [...filteredProcessedMap.entries()].sort((a, b) => {
+          const sortBy = policySearchParams.sortBy;
+
+          if (sortBy.entityName === "ascending") {
+            return a[1].entityName.localeCompare(b[1].entityName);
+          } else if (sortBy.entityName === "descending") {
+            return b[1].entityName.localeCompare(a[1].entityName);
+          } else if (sortBy.targetName === "ascending") {
+            return a[1].targetName.localeCompare(b[1].targetName);
+          } else if (sortBy.targetName === "descending") {
+            return b[1].targetName.localeCompare(a[1].targetName);
+          } else {
+            return 0;
+          }
+        })
+      );
 
       // Paginate
-      const paginatedData = [...sortedProcessedData].slice(
-        policySearchParams.pagination.start,
-        policySearchParams.pagination.stop
+      const paginatedEntries = new Map(
+        [...sortedProcessedMap.entries()].slice(
+          policySearchParams.pagination.start,
+          policySearchParams.pagination.stop
+        )
       );
 
       // Set data
+      const data = [];
+      for (let [policyId, policy] of paginatedEntries) {
+        data.push(policy);
+      }
+
       set({
         tabularPolicy: {
           count,
-          data: paginatedData,
+          data,
         },
       });
     },

@@ -20,6 +20,7 @@ export class GroupTableViewActions extends TableViewActions {
 
   _init() {
     this.styleViewByButtons(store.getState().groupViewBy);
+
     store.subscribe(
       (state) => state.groupViewBy,
       this.styleViewByButtons.bind(this)
@@ -27,6 +28,10 @@ export class GroupTableViewActions extends TableViewActions {
     store.subscribe(
       (state) => state.selectedGroupIds,
       this._newSelectedGroupIds.bind(this)
+    );
+    store.subscribe(
+      (state) => state.groupSearchParams,
+      this._newGroupSearchParams.bind(this)
     );
 
     this._delete.addEventListener(
@@ -38,6 +43,16 @@ export class GroupTableViewActions extends TableViewActions {
       "click",
       this._addCondition.bind(this)
     );
+  }
+
+  _newGroupSearchParams(groupSearchParams) {
+    const { groupViewBy } = store.getState();
+    // Check if have filters applied
+    if (groupSearchParams[groupViewBy].filter.length) {
+      this._filterAppliedSignal.removeAttribute("hidden");
+    } else {
+      this._filterAppliedSignal.setAttribute("hidden", "");
+    }
   }
 
   _addCondition() {

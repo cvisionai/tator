@@ -10,24 +10,24 @@ const COLGROUP = `
 <col style="width: 10%" />
 `;
 
+const INITIAL_SEARCH_PARAMS = {
+  filter: [],
+  sortBy: {
+    entityName: "",
+    targetName: "",
+  },
+  pagination: {
+    start: 0,
+    stop: 10,
+    page: 1,
+    pageSize: 10,
+  },
+};
+
 export class PolicyTableViewTable extends TableViewTable {
   constructor() {
     super();
     this.type = "Policy";
-
-    this._searchParams = {
-      filter: {},
-      sortBy: {
-        entityName: "",
-        targetName: "",
-      },
-      pagination: {
-        start: 0,
-        stop: 10,
-        page: 1,
-        pageSize: 10,
-      },
-    };
 
     this._checkboxes = [];
   }
@@ -36,8 +36,8 @@ export class PolicyTableViewTable extends TableViewTable {
     store.subscribe((state) => state.tabularPolicy, this._newData.bind(this));
 
     store.subscribe(
-      (state) => state.selectedPolicyIds,
-      this._newSelectedPolicyIds.bind(this)
+      (state) => state.policySearchParams,
+      this._newPolicySearchParams.bind(this)
     );
   }
 
@@ -47,27 +47,35 @@ export class PolicyTableViewTable extends TableViewTable {
     this._paginatorDiv.replaceChildren(this._paginator);
     this._paginator.setupElements();
 
-    store.getState().setPolicySearchParams(this._searchParams);
+    store.getState().setPolicySearchParams(INITIAL_SEARCH_PARAMS);
+  }
+
+  _newPolicySearchParams() {
+    // Count what data should be displayed
     store.getState().setTabularPolicy();
+  }
+
+  _changePage(evt) {
+    console.log("😇 ~ _changePage ~ evt:", evt);
+
+    const { policySearchParams } = store.getState();
+
+    const newPolicySearchParams = {
+      ...policySearchParams,
+      pagination: { ...evt.detail },
+    };
+
+    store.getState().setPolicySearchParams(newPolicySearchParams);
+  }
+
+  _newData(tabularPolicy) {
+    const { policySearchParams } = store.getState();
 
     // After we know the total number of data, then we can set up paginator
     // Note: not total number of items fetched from DB, but total number of FILTERED items
     const numData = store.getState().tabularPolicy.count;
-    this._paginator.init(numData, this._searchParams.pagination);
-  }
+    this._paginator.init(numData, policySearchParams.pagination);
 
-  _changePage(evt) {
-    this._searchParams = {
-      ...this._searchParams,
-      pagination: { ...evt.detail },
-    };
-
-    // this._pagination = { ...evt.detail };
-    store.getState().setPolicySearchParams(this._searchParams);
-    store.getState().setTabularPolicy();
-  }
-
-  _newData(tabularPolicy) {
     if (!tabularPolicy?.data?.length) {
       this._tableNoData.classList.remove("hidden");
       this._pagePosition.classList.add("hidden");
@@ -204,13 +212,6 @@ export class PolicyTableViewTable extends TableViewTable {
     sorts[sortBy[sortByKey]].removeAttribute("hidden");
   }
 
-  _newSelectedPolicyIds(selectedPolicyIds) {
-    console.log(
-      "😇 ~ _newSelectedPolicyIds ~ selectedPolicyIds:",
-      selectedPolicyIds
-    );
-  }
-
   _changeCheckboxes() {
     const ids = this._checkboxes
       .filter((check) => check.getChecked())
@@ -245,19 +246,16 @@ export class PolicyTableViewTable extends TableViewTable {
           newSortVal = "ascending";
         }
 
-        const newSortBy = { ...this._searchParams.sortBy };
-        Object.keys(newSortBy).forEach((key) => {
-          newSortBy[key] = "";
-        });
+        const { policySearchParams } = store.getState();
+        const newSortBy = { ...INITIAL_SEARCH_PARAMS.sortBy };
         newSortBy[val[0]] = newSortVal;
 
-        this._searchParams = {
-          ...this._searchParams,
+        const newPolicySearchParams = {
+          ...policySearchParams,
           sortBy: { ...newSortBy },
         };
 
-        store.getState().setPolicySearchParams(this._searchParams);
-        store.getState().setTabularPolicy();
+        store.getState().setPolicySearchParams(newPolicySearchParams);
       }
     }
   }
