@@ -15,37 +15,36 @@ const COLGROUP_BY_USER = `
 <col style="width: 10%" />
 `;
 
+const INITIAL_SEARCH_PARAMS = {
+  Group: {
+    filter: [],
+    sortBy: {
+      groupName: "ascending",
+    },
+    pagination: {
+      start: 0,
+      stop: 10,
+      page: 1,
+      pageSize: 10,
+    },
+  },
+  User: {
+    filter: [],
+    sortBy: {
+      userId: "",
+    },
+    pagination: {
+      start: 0,
+      stop: 10,
+      page: 1,
+      pageSize: 10,
+    },
+  },
+};
+
 export class GroupTableViewTable extends TableViewTable {
   constructor() {
     super();
-
-    this._searchParams = {
-      Group: {
-        filter: {},
-        sortBy: {
-          groupName: "ascending",
-        },
-        pagination: {
-          start: 0,
-          stop: 10,
-          page: 1,
-          pageSize: 10,
-        },
-      },
-      User: {
-        filter: {},
-        sortBy: {
-          userId: "",
-        },
-        pagination: {
-          start: 0,
-          stop: 10,
-          page: 1,
-          pageSize: 10,
-        },
-      },
-    };
-
     this._checkboxes = [];
   }
 
@@ -55,12 +54,12 @@ export class GroupTableViewTable extends TableViewTable {
       this._changeGroupViewBy.bind(this)
     );
 
-    store.subscribe((state) => state.tabularGroup, this._newData.bind(this));
-
     store.subscribe(
-      (state) => state.selectedGroupIds,
-      this._newSelectedGroupIds.bind(this)
+      (state) => state.groupSearchParams,
+      this._newGroupSearchParams.bind(this)
     );
+
+    store.subscribe((state) => state.tabularGroup, this._newData.bind(this));
   }
 
   _initPaginator() {
@@ -69,34 +68,38 @@ export class GroupTableViewTable extends TableViewTable {
     this._paginatorDiv.replaceChildren(this._paginator);
     this._paginator.setupElements();
 
+    store.getState().setGroupSearchParams(INITIAL_SEARCH_PARAMS);
+  }
+
+  _newGroupSearchParams() {
     const { groupViewBy } = store.getState();
-
-    store.getState().setGroupSearchParams(this._searchParams);
+    // Count what data should be displayed
     store.getState().setTabularGroup(groupViewBy);
-
-    // After we know the total number of data, then we can set up paginator
-    // Note: not total number of items fetched from DB, but total number of FILTERED items
-    const numData = store.getState().tabularGroup[groupViewBy].count;
-    this._paginator.init(numData, this._searchParams[groupViewBy].pagination);
   }
 
   _changePage(evt) {
-    const { groupViewBy } = store.getState();
-    this._searchParams = {
-      ...this._searchParams,
+    console.log("😇 ~ _changePage ~ evt:", evt);
+
+    const { groupViewBy, groupSearchParams } = store.getState();
+
+    const newGroupSearchParams = {
+      ...groupSearchParams,
       [groupViewBy]: {
-        ...this._searchParams[groupViewBy],
+        ...groupSearchParams[groupViewBy],
         pagination: { ...evt.detail },
       },
     };
 
-    // this._pagination = { ...evt.detail };
-    store.getState().setGroupSearchParams(this._searchParams);
-    store.getState().setTabularGroup(groupViewBy);
+    store.getState().setGroupSearchParams(newGroupSearchParams);
   }
 
   _newData(tabularGroup) {
-    const { groupViewBy } = store.getState();
+    const { groupViewBy, groupSearchParams } = store.getState();
+
+    // After we know the total number of data, then we can set up paginator
+    // Note: not total number of items fetched from DB, but total number of FILTERED items
+    const numData = tabularGroup[groupViewBy].count;
+    this._paginator.init(numData, groupSearchParams[groupViewBy].pagination);
 
     if (
       !tabularGroup?.[groupViewBy]?.data?.length &&
@@ -133,12 +136,7 @@ export class GroupTableViewTable extends TableViewTable {
 
   _changeGroupViewBy(groupViewBy) {
     if (groupViewBy !== "Group" && groupViewBy !== "User") return;
-
     store.getState().setTabularGroup(groupViewBy);
-
-    // Adapt paginator to new data
-    const numData = store.getState().tabularGroup[groupViewBy].count;
-    this._paginator.init(numData, this._searchParams[groupViewBy].pagination);
   }
 
   _displayTable(groupViewBy) {
@@ -311,13 +309,6 @@ export class GroupTableViewTable extends TableViewTable {
     }
   }
 
-  _newSelectedGroupIds(selectedGroupIds) {
-    console.log(
-      "😇 ~ _newSelectedGroupIds ~ selectedGroupIds:",
-      selectedGroupIds
-    );
-  }
-
   _changeCheckboxes() {
     const ids = this._checkboxes
       .filter((check) => check.getChecked())
@@ -352,17 +343,16 @@ export class GroupTableViewTable extends TableViewTable {
           newSortVal = "ascending";
         }
 
-        const { groupViewBy } = store.getState();
-        this._searchParams = {
-          ...this._searchParams,
+        const { groupViewBy, groupSearchParams } = store.getState();
+        const newGroupSearchParams = {
+          ...groupSearchParams,
           [groupViewBy]: {
-            ...this._searchParams[groupViewBy],
+            ...groupSearchParams[groupViewBy],
             sortBy: { [val[0]]: newSortVal },
           },
         };
 
-        store.getState().setGroupSearchParams(this._searchParams);
-        store.getState().setTabularGroup(groupViewBy);
+        store.getState().setGroupSearchParams(newGroupSearchParams);
       }
     }
   }

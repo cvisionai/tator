@@ -35,10 +35,15 @@ export class TableViewActions extends TatorElement {
       this._newPolicy,
     ];
 
+    this._filterAppliedSignal = this._shadow.getElementById(
+      "filter-applied-signal"
+    );
+
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild(this.modal);
 
     this._filterWindow = document.createElement("table-view-filter");
+    this._filterWindow.setAttribute("hidden", "");
     this._shadow.appendChild(this._filterWindow);
   }
 
@@ -55,6 +60,7 @@ export class TableViewActions extends TatorElement {
       btn.style.display = "";
     });
 
+    this._filterWindow.setAttribute("type", this.type);
     this._filter.addEventListener("click", this._toggleFilterWindow.bind(this));
 
     this._init();

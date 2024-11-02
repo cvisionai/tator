@@ -16,6 +16,29 @@ export class PolicyTableViewActions extends TableViewActions {
       (state) => state.selectedPolicyIds,
       this._newSelectedPolicyIds.bind(this)
     );
+    store.subscribe(
+      (state) => state.policySearchParams,
+      this._newPolicySearchParams.bind(this)
+    );
+
+    this._filterWindow._addConditionButton.addEventListener(
+      "click",
+      this._addCondition.bind(this)
+    );
+  }
+
+  _newPolicySearchParams(policySearchParams) {
+    // Check if have filters applied
+    if (policySearchParams.filter.length) {
+      this._filterAppliedSignal.removeAttribute("hidden");
+    } else {
+      this._filterAppliedSignal.setAttribute("hidden", "");
+    }
+  }
+
+  _addCondition() {
+    const condition = document.createElement("policy-filter-condition");
+    this._filterWindow._conditionGroup.appendChild(condition);
   }
 
   _newSelectedPolicyIds(selectedPolicyIds) {
