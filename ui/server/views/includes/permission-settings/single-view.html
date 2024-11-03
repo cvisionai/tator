@@ -120,21 +120,41 @@
         </svg>
         <span> Back </span>
       </a>
-      <h2 class="h2">Effective Permission Calculator</h2>
+      <h2 class="h2" id="title"></h2>
       <span></span>
     </div>
 
     <form id="calculator-table-form">
       <div class="d-flex flex-row flex-justify-between">
         <div class="d-flex flex-column">
-          <enum-input id="entity-type-input" name="Entity"></enum-input>
-          <text-input id="entity-id-input" name="ID" type="int"></text-input>
+          <enum-input
+            id="entity-type-input"
+            name="Entity"
+            data-key="entityType"
+          ></enum-input>
+          <text-input
+            id="entity-id-input"
+            name="ID"
+            type="int"
+            data-key="entityId"
+          ></text-input>
         </div>
         <div class="d-flex flex-column">
-          <enum-input id="target-type-input" name="Target"></enum-input>
-          <text-input id="target-id-input" name="ID" type="int"></text-input>
+          <enum-input
+            id="target-type-input"
+            name="Target"
+            data-key="targetType"
+          ></enum-input>
+          <text-input
+            id="target-id-input"
+            name="ID"
+            type="int"
+            data-key="targetId"
+          ></text-input>
         </div>
       </div>
+
+      <div id="no-data" class="text-center" hidden></div>
 
       <div class="my-4 px-3 calculator-table-div">
         <table
@@ -151,6 +171,7 @@
     <div
       id="calculator-table--save-reset-section"
       class="d-flex flex-items-center flex-justify-center my-4"
+      style="display: none"
     >
       <input
         id="calculator-table-save"

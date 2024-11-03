@@ -107,10 +107,19 @@
   font-size: 12px;
 }
 .calculator-table th {
+  vertical-align: middle;
   position: sticky;
   top: 0;
   z-index: 1;
 }
+.calculator-table thead tr {
+  height: 30px;
+}
+/* Second header row to make header's 2 rows are both sticky */
+.calculator-table thead tr:nth-child(2) th {
+  top: 30px;
+}
+
 .calculator-table tr.ord-row {
   font-weight: bold;
   color: var(--color-purple-400);
