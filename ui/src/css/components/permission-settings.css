@@ -74,7 +74,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--spacing-2);
-  height: minmax(fit-content, 150px);
+  max-height: 330px;
   overflow-y: auto;
 }
 .group-member-card,
@@ -127,6 +127,12 @@
 .calculator-table tr.final-row {
   font-weight: bold;
   color: var(--color-purple);
+}
+
+.ord-row td:nth-child(1),
+.final-row td:nth-child(1) {
+  text-align: left;
+  padding-left: 3px;
 }
 
 /* Webkit scrollbar styling for .calculator-table-div */

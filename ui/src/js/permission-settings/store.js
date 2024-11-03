@@ -790,22 +790,20 @@ const store = create(
     },
 
     getCalculatorPolicies: async (targets) => {
-      // Only fetching policies with entities that are not allowed in setPolicyData()
-      // Because for example, maybe /RowProtections?group=1 can get 403 error but /RowProtections?section=720&group=1 will get some data
-
       const policies = [];
-      const { noPermissionEntities } = get().Policy;
       for (const target of targets) {
-        for (const entity of noPermissionEntities) {
-          const policyList = await fetchCredentials(
-            `/rest/RowProtections?${target[0]}=${target[1]}&${entity[0]}=${entity[1]}`,
-            {}
-          ).then((response) => response.json());
-          // When user is not allowed to get a permission item, the data sent back is not an array
-          if (!Array.isArray(policyList)) {
-            continue;
+        try {
+          const info = await fetchWithHttpInfo(
+            `/rest/RowProtections?${target[0]}=${target[1]}`
+          );
+
+          if (info.response.ok) {
+            policies.push(...info.data);
+          } else if (!info.response.ok && info.response.status === 403) {
+            policies.push({ [target[0]]: target[1], permission: -1 });
           }
-          policies.push(...policyList);
+        } catch (error) {
+          console.error(error);
         }
       }
 
@@ -816,6 +814,8 @@ const store = create(
 
     processPolicyData: (data) => {
       return data.map((policy) => {
+        let processedObj = null;
+
         const entityType = POLICY_ENTITY_TYPE.find(
           (en) => policy[en] != undefined
         );
@@ -825,16 +825,29 @@ const store = create(
         const entityName = `${POLICY_ENTITY_NAME[entityType]} ${policy[entityType]}`;
         const targetName = `${POLICY_TARGET_NAME[targetType]} ${policy[targetType]}`;
 
-        const processedObj = {
-          id: policy.id,
-          entityName,
-          targetName,
-          permission: policy.permission,
-          entityType,
-          targetType,
-          entityId: policy[entityType],
-          targetId: policy[targetType],
-        };
+        if (policy.permission === -1) {
+          processedObj = {
+            id: null,
+            entityName: "ALL",
+            targetName,
+            permission: policy.permission,
+            entityType: "ALL",
+            targetType,
+            entityId: "ALL",
+            targetId: policy[targetType],
+          };
+        } else {
+          processedObj = {
+            id: policy.id,
+            entityName,
+            targetName,
+            permission: policy.permission,
+            entityType,
+            targetType,
+            entityId: policy[entityType],
+            targetId: policy[targetType],
+          };
+        }
 
         return processedObj;
       });

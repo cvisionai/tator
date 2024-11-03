@@ -251,9 +251,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     const calculatorPolicies = await store
       .getState()
       .getCalculatorPolicies(targets);
-    const policies = [...processedData, ...calculatorPolicies];
-
-    this._getTableBodyData(entities, targets, policies);
+    this._getTableBodyData(entities, targets, calculatorPolicies);
 
     this._ordRowPermissionStrings = new Map();
 
@@ -320,52 +318,52 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       tr.appendChild(tdTarget);
     }
 
+    const { permission } = this._tableBodyData.get(targetName).get(entityName);
+    const noACL = permission === "-------0";
+    permission.split("").forEach((char, index) => {
+      const td = document.createElement("td");
+      if (char === "0") {
+        if (!noACL) {
+          const xmark = document.createElement("no-permission-button");
+          xmark.setAttribute("data-id", `${id}--${index}`);
+          xmark.addEventListener("click", this._changeRowCell.bind(this));
+          td.appendChild(xmark);
+        }
+      } else if (char === "1") {
+        const check = document.createElement("has-permission-button");
+        check.setAttribute("data-id", `${id}--${index}`);
+        check.addEventListener("click", this._changeRowCell.bind(this));
+        td.appendChild(check);
+      }
+      tr.appendChild(td);
+    });
+
     const tdActions = document.createElement("td");
     const div = document.createElement("div");
     div.classList.add("d-flex", "flex-row", "flex-justify-center");
     div.style.gap = "5px";
     tdActions.appendChild(div);
+    tr.appendChild(tdActions);
+
     const back = document.createElement("change-back-button");
     back.setAttribute("data-id", `${targetName}--${entityName}`);
     back.addEventListener("click", this._changeRowBack.bind(this));
     div.appendChild(back);
-
-    const { permission } = this._tableBodyData.get(targetName).get(entityName);
-    if (permission) {
-      permission.split("").forEach((char, index) => {
-        const td = document.createElement("td");
-        if (char === "0") {
-          const xmark = document.createElement("no-permission-button");
-          xmark.setAttribute("data-id", `${id}--${index}`);
-          xmark.addEventListener("click", this._changeRowCell.bind(this));
-          td.appendChild(xmark);
-        } else if (char === "1") {
-          const check = document.createElement("has-permission-button");
-          check.setAttribute("data-id", `${id}--${index}`);
-          check.addEventListener("click", this._changeRowCell.bind(this));
-          td.appendChild(check);
-        }
-        tr.appendChild(td);
-      });
-
-      const remove = document.createElement("remove-permission-button");
-      remove.setAttribute("data-id", `${targetName}--${entityName}`);
-      remove.addEventListener("click", this._removeRow.bind(this));
-      div.appendChild(remove);
-
-      tr.appendChild(tdActions);
-    } else {
-      "12345678".split("").forEach((char) => {
-        const td = document.createElement("td");
-        tr.appendChild(td);
-      });
-
+    if (permission === "--------") {
       const grant = document.createElement("grant-all-button");
       grant.setAttribute("data-id", `${targetName}--${entityName}`);
       grant.addEventListener("click", this._grantRow.bind(this));
       div.appendChild(grant);
-
-      tr.appendChild(tdActions);
+    } else {
+      const remove = document.createElement("remove-permission-button");
+      remove.setAttribute("data-id", `${targetName}--${entityName}`);
+      remove.addEventListener("click", this._removeRow.bind(this));
+      div.appendChild(remove);
+    }
+    if (noACL) {
+      for (const child of div.children) {
+        child.setAttribute("disabled", "");
+      }
     }
 
     const trOld = this._shadow.getElementById(id);
@@ -383,32 +381,37 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     td.setAttribute("colspan", 2);
     tr.appendChild(td);
 
+    let ordPermission = "";
     const permissionStrings = Array.from(
       this._tableBodyData.get(targetName).values()
     ).map((obj) => obj.permission);
-    const ordPermission = this._bitwiseOrBinaryStrings(permissionStrings);
+
+    if (permissionStrings[0] === "-------0") {
+      ordPermission = "-------0";
+      td.innerText += `\nYou don't have permission to fetch data of ${targetName}.`;
+    } else {
+      ordPermission = this._bitwiseOrBinaryStrings(permissionStrings);
+    }
+
     this._ordRowPermissionStrings.set(targetName, ordPermission);
 
-    if (ordPermission) {
-      ordPermission.split("").forEach((char) => {
-        const td = document.createElement("td");
-        if (char === "0") {
-          const xmark = document.createElement("no-permission-button");
-          xmark.setAttribute("disabled", "");
-          td.appendChild(xmark);
-        } else if (char === "1") {
-          const check = document.createElement("has-permission-button");
-          check.setAttribute("disabled", "");
-          td.appendChild(check);
-        }
-        tr.appendChild(td);
-      });
-    } else {
-      "12345678".split("").forEach((char) => {
-        const td = document.createElement("td");
-        tr.appendChild(td);
-      });
-    }
+    ordPermission.split("").forEach((char) => {
+      const td = document.createElement("td");
+      if (char === "0") {
+        const xmark = document.createElement("no-permission-button");
+        xmark.setAttribute("disabled", "");
+        td.appendChild(xmark);
+      } else if (char === "1") {
+        const check = document.createElement("has-permission-button");
+        check.setAttribute("disabled", "");
+        td.appendChild(check);
+      } else if (char === "-") {
+        const question = document.createElement("question-mark-button");
+        question.setAttribute("disabled", "");
+        td.appendChild(question);
+      }
+      tr.appendChild(td);
+    });
 
     const tdActions = document.createElement("td");
     tr.appendChild(tdActions);
@@ -428,30 +431,27 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     td.setAttribute("colspan", 2);
     tr.appendChild(td);
 
-    const finalPermission = this._bitwiseOrBinaryStrings(
-      Array.from(this._ordRowPermissionStrings.values())
-    );
+    const finalPermission = Array.from(
+      this._ordRowPermissionStrings.values()
+    ).at(-1);
 
-    if (finalPermission) {
-      finalPermission.split("").forEach((char) => {
-        const td = document.createElement("td");
-        if (char === "0") {
-          const xmark = document.createElement("no-permission-button");
-          xmark.setAttribute("disabled", "");
-          td.appendChild(xmark);
-        } else if (char === "1") {
-          const check = document.createElement("has-permission-button");
-          check.setAttribute("disabled", "");
-          td.appendChild(check);
-        }
-        tr.appendChild(td);
-      });
-    } else {
-      "12345678".split("").forEach((char) => {
-        const td = document.createElement("td");
-        tr.appendChild(td);
-      });
-    }
+    finalPermission.split("").forEach((char) => {
+      const td = document.createElement("td");
+      if (char === "0") {
+        const xmark = document.createElement("no-permission-button");
+        xmark.setAttribute("disabled", "");
+        td.appendChild(xmark);
+      } else if (char === "1") {
+        const check = document.createElement("has-permission-button");
+        check.setAttribute("disabled", "");
+        td.appendChild(check);
+      } else if (char === "-") {
+        const question = document.createElement("question-mark-button");
+        question.setAttribute("disabled", "");
+        td.appendChild(question);
+      }
+      tr.appendChild(td);
+    });
 
     const tdActions = document.createElement("td");
     tr.appendChild(tdActions);
@@ -501,41 +501,64 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   }
 
   _getTableBodyData(entities, targets, policies) {
+    console.log("😇 ~ _getTableBodyData ~ policies:", policies);
+
     this._tableBodyData = new Map();
 
     targets.forEach((target) => {
       const targetName = `${POLICY_TARGET_NAME[target[0]]} ${target[1]}`;
       this._tableBodyData.set(targetName, new Map());
 
-      entities.forEach((entity) => {
-        const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
-
-        let binaryShiftedPermission = "";
-        let policyId = null;
-        const policy = policies.find(
+      if (
+        policies.findIndex(
           (policy) =>
-            policy.entityName === entityName && policy.targetName === targetName
-        );
-        if (policy) {
-          policyId = policy.id;
-          const permission = BigInt(policy.permission);
-          const shiftedPermission = permission >> BigInt(target[2]);
-          // .split("").reverse().join(""): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
-          binaryShiftedPermission = this._getRightmost8Bits(
-            shiftedPermission.toString(2)
-          )
-            .split("")
-            .reverse()
-            .join("");
-        }
-        const obj = {
-          policyId,
-          permission: binaryShiftedPermission,
-          originalPermission: binaryShiftedPermission,
-        };
+            policy.entityName === "ALL" && policy.targetName === targetName
+        ) > -1
+      ) {
+        entities.forEach((entity) => {
+          const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
 
-        this._tableBodyData.get(targetName).set(entityName, obj);
-      });
+          let binaryShiftedPermission = "-------0";
+          const obj = {
+            policyId: null,
+            permission: binaryShiftedPermission,
+            originalPermission: binaryShiftedPermission,
+          };
+
+          this._tableBodyData.get(targetName).set(entityName, obj);
+        });
+      } else {
+        entities.forEach((entity) => {
+          const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
+
+          let binaryShiftedPermission = "--------";
+          let policyId = null;
+          const policy = policies.find(
+            (policy) =>
+              policy.entityName === entityName &&
+              policy.targetName === targetName
+          );
+          if (policy) {
+            policyId = policy.id;
+            const permission = BigInt(policy.permission);
+            const shiftedPermission = permission >> BigInt(target[2]);
+            // .split("").reverse().join(""): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
+            binaryShiftedPermission = this._getRightmost8Bits(
+              shiftedPermission.toString(2)
+            )
+              .split("")
+              .reverse()
+              .join("");
+          }
+          const obj = {
+            policyId,
+            permission: binaryShiftedPermission,
+            originalPermission: binaryShiftedPermission,
+          };
+
+          this._tableBodyData.get(targetName).set(entityName, obj);
+        });
+      }
     });
 
     console.log(
@@ -633,7 +656,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     const requestedEntityType = this._entityTypeInput.getValue();
     const requestedEntityId = this._entityIdInput.getValue();
 
-    const { user, groupList, organizationList } = store.getState();
+    const {
+      user,
+      groupList,
+      organizationList,
+      Group: { userIdGroupIdMap },
+    } = store.getState();
 
     const entities = [];
 
@@ -647,10 +675,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       organizationList.forEach((org) => {
         entities.push(["organization", org.id]);
       });
-      groupList.forEach((gr) => {
-        entities.push(["group", gr.id]);
-      });
-      entities.push(["user", user.id]);
+      if (userIdGroupIdMap.has(requestedEntityId)) {
+        userIdGroupIdMap.get(requestedEntityId).forEach((groupId) => {
+          entities.push(["group", groupId]);
+        });
+      }
+      entities.push(["user", requestedEntityId]);
     }
 
     return entities;
