@@ -162,7 +162,7 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
 
   /**
    * @param {string} type -- define the page is for user's groups or group's users
-   * @param {string} object
+   * @param {object} val
    */
   _initByData(type, val) {
     if (type === "group") {

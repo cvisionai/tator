@@ -1,6 +1,11 @@
 import { TatorElement } from "../../components/tator-element.js";
-import { POLICY_ENTITY_NAME, POLICY_TARGET_NAME, store } from "../store.js";
-import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import {
+  POLICY_ENTITY_NAME,
+  POLICY_TARGET_NAME,
+  store,
+  fetchWithHttpInfo,
+} from "../store.js";
+import { LoadingSpinner } from "../../components/loading-spinner.js";
 
 const COLUMN = [
   "Policy Entity",
@@ -59,10 +64,19 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     const template = document.getElementById("policy-calculator-view").content;
     this._shadow.appendChild(template.cloneNode(true));
 
+    this._title = this._shadow.getElementById("title");
+    this._noData = this._shadow.getElementById("no-data");
+
     this._entityTypeInput = this._shadow.getElementById("entity-type-input");
     this._entityIdInput = this._shadow.getElementById("entity-id-input");
     this._targetTypeInput = this._shadow.getElementById("target-type-input");
     this._targetIdInput = this._shadow.getElementById("target-id-input");
+    this._inputs = [
+      this._entityTypeInput,
+      this._entityIdInput,
+      this._targetTypeInput,
+      this._targetIdInput,
+    ];
 
     this._table = this._shadow.getElementById("calculator-table");
     this._colgroup = this._shadow.getElementById("calculator-table--colgroup");
@@ -71,12 +85,26 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._colgroup.innerHTML = COLGROUP;
 
     this._form = this._shadow.getElementById("calculator-table-form");
+    this._saveReset = this._shadow.getElementById(
+      "calculator-table--save-reset-section"
+    );
     this._saveButton = this._shadow.getElementById("calculator-table-save");
     this._resetButton = this._shadow.getElementById("calculator-table-reset");
+
+    // // loading spinner
+    this.loading = new LoadingSpinner();
+    this._shadow.appendChild(this.loading.getImg());
+
+    this.modal = document.createElement("modal-dialog");
+    this._shadow.appendChild(this.modal);
   }
 
   connectedCallback() {
     this._initInputs();
+
+    this._inputs.forEach((input) => {
+      input.addEventListener("change", this._inputChange.bind(this));
+    });
 
     store.subscribe(
       (state) => state.selectedType,
@@ -88,45 +116,89 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._saveButton.addEventListener("click", this._saveForm.bind(this));
   }
 
+  _updateSelectedType(newSelectedType, oldSelectedType) {
+    if (
+      newSelectedType.typeName !== "Policy" ||
+      newSelectedType.typeId === "All"
+    ) {
+      this._show = false;
+      return;
+    }
+
+    this._show = true;
+    this.id = newSelectedType.typeId;
+  }
+
   /**
    * @param {string} val
    */
   set id(val) {
-    if (val !== "New" && val !== "Cal") {
-      this._id = +val;
-    } else {
-      this._id = val;
+    this._id = val;
+
+    // New policy
+    if (this._id === "New") {
+      this._title.innerText = "New Policy";
     }
+    // Calculator (with no entity and target info preset)
+    else if (this._id === "Cal") {
+      this._entityTypeInput.permission = "Can Edit";
+      this._entityIdInput.permission = "Can Edit";
+      this._targetTypeInput.permission = "Can Edit";
+      this._targetIdInput.permission = "Can Edit";
+      this._title.innerText = "Effective Permission Calculator";
+    }
+    // Calculator (with entity and target info preset)
+    else {
+      this._entityTypeInput.permission = "View Only";
+      this._entityIdInput.permission = "View Only";
+      this._targetTypeInput.permission = "View Only";
+      this._targetIdInput.permission = "View Only";
+      this._title.innerText = "Effective Permission Calculator";
+    }
+
     this._setData();
   }
 
   _setData() {
-    if (this._show) {
-      const Policy = store.getState().Policy;
-      if (this._id !== "New" && this._id !== "Cal" && !Policy.init) return;
+    if (!this._show) return;
+    const { Policy } = store.getState();
+    if (!Policy.init) return;
 
-      if (this._id !== "New" && this._id !== "Cal" && Policy.init) {
-        this.data = Policy.processedMap.get(this._id);
-      } else {
-        this.data = {};
-      }
-
-      this._renderData();
+    // New policy
+    if (this._id === "New") {
+    }
+    // Calculator (with no entity and target info preset)
+    else if (this._id === "Cal") {
+      this._initByData({});
+    }
+    // Calculator (with entity and target info preset)
+    else {
+      this._initByData(Policy.processedMap.get(+this._id));
     }
   }
 
-  set data(val) {
-    console.log("😇 ~ setdata ~ val:", val);
+  /**
+   * @param {object} val
+   */
+  _initByData(val) {
+    this._noData.setAttribute("hidden", "");
+    this._saveReset.style.display = "none";
+    this._tableHead.innerHTML = "";
+    this._tableBody.innerHTML = "";
 
     if (val) {
-      // this._noData.setAttribute("hidden", "");
-      // this._saveCancel.style.display = "";
       this._data = val;
-      // New policy
+
+      // Calculator
       if (Object.keys(val).length === 0) {
+        this._entityIdInput.setValue(null);
+        this._targetIdInput.setValue(null);
       }
-      // Has policy data
+      // Calculator (with entity and target info)
       else {
+        this.showDimmer();
+        this.loading.showSpinner();
+
         this._entityTypeInput.setValue(val.entityType);
         this._entityIdInput.setValue(val.entityId);
         this._targetTypeInput.setValue(val.targetType);
@@ -138,26 +210,43 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         this._requestedTargetName = `${
           POLICY_TARGET_NAME[this._targetTypeInput.getValue()]
         } ${this._targetIdInput.getValue()}`;
+
+        this._renderData();
       }
     }
     // policy id is invalid or no policy data
     else {
-      // this._noData.removeAttribute("hidden");
-      // this._saveCancel.style.display = "none";
-      // this._noDataId.innerText = this._id;
+      this._noData.removeAttribute("hidden");
+      this._noData.innerText = `There is no data for Policy ${this._id}.`;
+
+      if (this.hasAttribute("has-open-modal")) {
+        this.hideDimmer();
+        this.loading.hideSpinner();
+      }
     }
   }
 
   async _renderData() {
-    this._tableHead.innerHTML = "";
-    this._tableBody.innerHTML = "";
-
     const {
       Policy: { processedData },
     } = store.getState();
 
     // Fetch Policy
-    const targets = await this._getCalculatorTargets();
+    let targets = null;
+    try {
+      targets = await this._getCalculatorTargets();
+    } catch (error) {
+      console.error(error);
+
+      if (this.hasAttribute("has-open-modal")) {
+        this.hideDimmer();
+        this.loading.hideSpinner();
+      }
+      this._noData.removeAttribute("hidden");
+      this._noData.innerText = error;
+      return;
+    }
+
     const entities = this._getCalculatorEntities();
     const calculatorPolicies = await store
       .getState()
@@ -202,6 +291,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       }
     );
     this._renderTableBodyFinalRow();
+
+    this._saveReset.style.display = "";
+    if (this.hasAttribute("has-open-modal")) {
+      this.hideDimmer();
+      this.loading.hideSpinner();
+    }
   }
 
   _renderTableBodyRow(targetName, entityName) {
@@ -366,15 +461,43 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   }
 
   _renderTableHead() {
-    const tr = document.createElement("tr");
-    COLUMN.map((val) => {
-      const th = document.createElement("th");
-      th.innerText = val;
-      return th;
-    }).forEach((th) => {
-      tr.appendChild(th);
-    });
-    this._tableHead.appendChild(tr);
+    // Head row 1
+    const tr1 = document.createElement("tr");
+
+    const th0 = document.createElement("th");
+    th0.innerText = COLUMN[0];
+    th0.setAttribute("rowspan", 2);
+    tr1.appendChild(th0);
+
+    const th1 = document.createElement("th");
+    th1.innerText = COLUMN[1];
+    th1.setAttribute("rowspan", 2);
+    tr1.appendChild(th1);
+
+    const ths = document.createElement("th");
+    ths.innerText = `Each policy's permission on ${this._requestedTargetName} (with corresponding bit shift)`;
+    ths.setAttribute("colspan", 8);
+    tr1.appendChild(ths);
+
+    const thLast = document.createElement("th");
+    thLast.innerText = COLUMN.at(-1);
+    thLast.setAttribute("rowspan", 2);
+    tr1.appendChild(thLast);
+
+    this._tableHead.appendChild(tr1);
+
+    // Head row 2
+    const tr2 = document.createElement("tr");
+    COLUMN.slice(2, COLUMN.length - 1)
+      .map((val) => {
+        const th = document.createElement("th");
+        th.innerText = val;
+        return th;
+      })
+      .forEach((th) => {
+        tr2.appendChild(th);
+      });
+    this._tableHead.appendChild(tr2);
   }
 
   _getTableBodyData(entities, targets, policies) {
@@ -397,9 +520,13 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
           policyId = policy.id;
           const permission = BigInt(policy.permission);
           const shiftedPermission = permission >> BigInt(target[2]);
+          // .split("").reverse().join(""): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
           binaryShiftedPermission = this._getRightmost8Bits(
             shiftedPermission.toString(2)
-          );
+          )
+            .split("")
+            .reverse()
+            .join("");
         }
         const obj = {
           policyId,
@@ -534,15 +661,35 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     const targetId = this._targetIdInput.getValue();
     const targets = [];
 
-    if (targetType === "section") {
-      const section = await fetchCredentials(
-        `/rest/Section/${targetId}`,
-        {},
-        true
-      ).then((response) => response.json());
+    if (targetType === "project") {
+      const response = await fetchWithHttpInfo(`/rest/Project/${targetId}`);
 
-      targets.push(["project", section.project, 8]);
-      targets.push(["section", section.id, 0]);
+      if (response.response?.ok) {
+        const project = response.data;
+        targets.push(["project", project.id, 0]);
+      } else {
+        throw new Error(response.data?.message || "Could not fetch data.");
+      }
+    } else if (targetType === "section") {
+      const response = await fetchWithHttpInfo(`/rest/Section/${targetId}`);
+
+      if (response.response?.ok) {
+        const section = response.data;
+        targets.push(["project", section.project, 8]);
+        targets.push(["section", section.id, 0]);
+      } else {
+        throw new Error(response.data?.message || "Could not fetch data.");
+      }
+    } else if (targetType === "version") {
+      const response = await fetchWithHttpInfo(`/rest/Version/${targetId}`);
+
+      if (response.response?.ok) {
+        const version = response.data;
+        targets.push(["project", version.project, 8]);
+        targets.push(["version", version.id, 0]);
+      } else {
+        throw new Error(response.data?.message || "Could not fetch data.");
+      }
     }
 
     return targets;
@@ -563,6 +710,16 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   _initInputs() {
     this._entityTypeInput.choices = ENTITY_TYPE_CHOICES;
     this._targetTypeInput.choices = TARGET_TYPE_CHOICES;
+  }
+
+  _inputChange() {
+    const values = this._inputs.map((input) => {
+      return [input.dataset.key, input.getValue()];
+    });
+
+    if (values.some((value) => !value[1])) return;
+
+    this._initByData(Object.fromEntries(values));
   }
 
   _bitwiseOrBinaryStrings(binaryStrings) {
@@ -587,17 +744,16 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     return paddedBinaryStr.slice(-8);
   }
 
-  _updateSelectedType(newSelectedType, oldSelectedType) {
-    if (
-      newSelectedType.typeName !== "Policy" ||
-      newSelectedType.typeId === "All"
-    ) {
-      this._show = false;
-      return;
-    }
+  /**
+   * Modal for this page, and handler
+   * @returns sets page attribute that changes dimmer
+   */
+  showDimmer() {
+    return this.setAttribute("has-open-modal", "");
+  }
 
-    this._show = true;
-    this.id = newSelectedType.typeId;
+  hideDimmer() {
+    return this.removeAttribute("has-open-modal");
   }
 }
 
