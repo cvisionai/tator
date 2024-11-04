@@ -9,7 +9,7 @@
   transition-duration: 0.25s;
   transition-property: transform;
   width: 420px;
-  z-index: 3;
+  z-index: 100;
 }
 .nav.is-open {
   transform: translateX(100%);

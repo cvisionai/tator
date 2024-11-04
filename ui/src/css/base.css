@@ -98,7 +98,7 @@ summary::marker {
   opacity: 0;
   transition-duration: 0.15s;
   transition-property: opacity;
-  z-index: 1;
+  z-index: 5;
 }
 .background-dimmer.has-open-modal {
   opacity: 100;

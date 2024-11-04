@@ -276,3 +276,29 @@
   border: 1px solid #a2afcd;
   overflow-wrap: break-word;
 }
+
+.version-table {
+  table-layout: fixed;
+  background-color: var(--color-charcoal--medium-dark);
+}
+.version-table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background-color: var(--color-charcoal--light70);
+}
+.version-table thead {
+  border: 1px solid var(--color-charcoal--light70);
+}
+.version-table tbody tr {
+  border: 1px solid var(--color-charcoal--light70);
+}
+.version-table tbody tr.selected {
+  background-color: var(--color-charcoal--light70);
+}
+.version-table tbody tr:hover {
+  background-color: var(--color-charcoal--light70);
+}
+.version-table td {
+  height: 70px;
+  vertical-align: middle;
+}
