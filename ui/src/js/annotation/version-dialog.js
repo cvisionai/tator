@@ -111,8 +111,14 @@ export class VersionDialog extends ModalDialog {
 
       const tdName = document.createElement("td");
       tdName.setAttribute("class", "px-3");
-      tdName.setAttribute("title", version.description);
-      tdName.innerHTML = `<div class="d-flex flex-column"><div class="text-semibold">${version.name}</div><div class="mt-1 text-dark-gray f4">(ID: ${version.id})</div></div>`;
+
+      var versionHTML = ``;
+      versionHTML += `<div class="d-flex flex-column"><div class="text-semibold">${version.name}</div>`;
+      if (version.description != "" && version.description != null) {
+        versionHTML += `<div class="mt-1 text-gray f3">${version.description}</div>`;
+      }
+      versionHTML += `<div class="mt-1 text-dark-gray f4">(ID: ${version.id})</div></div>`;
+      tdName.innerHTML = versionHTML;
       tr.appendChild(tdName);
 
       const tdViewable = document.createElement("td");

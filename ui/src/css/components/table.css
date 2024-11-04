@@ -286,17 +286,12 @@
   padding-bottom: 12px;
   background-color: var(--color-charcoal--light70);
 }
+.version-table thead {
+  border: 1px solid var(--color-charcoal--light70);
+}
 .version-table tbody tr {
   border: 1px solid var(--color-charcoal--light70);
 }
-/*
-.version-table tbody tr:nth-child(odd) {
-  background-color: var(--color-charcoal--dark70);
-}
-.version-table tbody tr:nth-child(even) {
-  background-color: var(--color-charcoal--medium-dark);
-}
-  */
 .version-table tbody tr.selected {
   background-color: var(--color-charcoal--light70);
 }
@@ -304,6 +299,6 @@
   background-color: var(--color-charcoal--light70);
 }
 .version-table td {
-  height: 50px;
+  height: 70px;
   vertical-align: middle;
 }
