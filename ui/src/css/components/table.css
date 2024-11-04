@@ -290,6 +290,9 @@
 .version-table thead {
   border: 1px solid #353b49;
 }
+.version-table thead {
+  border: 1px solid var(--color-charcoal--light70);
+}
 .version-table tbody tr {
   border: 1px solid #1f2635;
 }
