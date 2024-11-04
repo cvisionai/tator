@@ -1719,13 +1719,14 @@ class MainPage extends TatorPage {
     this._selectedMediaIds = [];
 
     var urlParams = new URLSearchParams(window.location.search);
-    var sectionIds = urlParams.get("section");
-    if (sectionIds) {
-      this._selectedSectionIds = sectionIds.split(",").map(Number);
+
+    var mediaIds = urlParams.get("media_id");
+    if (mediaIds) {
+      this._selectedMediaIds = mediaIds.split(",").map(Number);
     } else {
-      var mediaIds = urlParams.get("media_id");
-      if (mediaIds) {
-        this._selectedMediaIds = mediaIds.split(",").map(Number);
+      var sectionIds = urlParams.get("section");
+      if (sectionIds) {
+        this._selectedSectionIds = sectionIds.split(",").map(Number);
       }
     }
 
