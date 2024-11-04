@@ -17,11 +17,6 @@ export class AnnotationPage extends TatorPage {
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
 
-    this._modalDimmer = document.createElement("div");
-    this._modalDimmer.setAttribute("class", "background-dimmer");
-    this._modalDimmer.style.zIndex = 101;
-    this._shadow.appendChild(this._modalDimmer);
-
     document.body.setAttribute("class", "no-padding-bottom");
 
     const header = document.createElement("div");
@@ -841,7 +836,6 @@ export class AnnotationPage extends TatorPage {
 
     this._versionDialog.addEventListener("versionSelect", (evt) => {
       this._loading.style.display = "block";
-      this._modalDimmer.classList.add("has-open-modal");
       this._data
         .setVersion(evt.detail.version, evt.detail.viewables)
         .then(() => {
@@ -849,7 +843,6 @@ export class AnnotationPage extends TatorPage {
           this._canvas.refresh();
           this._updateURL();
           this._loading.style.display = "none";
-          this._modalDimmer.classList.remove("has-open-modal");
         });
       this._browser.version = evt.detail.version;
       this._versionButton.text = evt.detail.version.name;
@@ -1049,18 +1042,18 @@ export class AnnotationPage extends TatorPage {
               }
             }
 
-            // Finde the index of the default version.
-            let selected_version_idx = 0;
+            // Find the index of the default version.
+            let selected_version_id = 0;
             for (const [idx, version] of versions.entries()) {
               if (version.id == default_version) {
                 this._version = this._versionLookup[default_version];
-                selected_version_idx = idx;
+                selected_version_id = idx;
                 this._canvasAppletHeader.version = this._version;
               }
             }
 
             // Initialize version dialog.
-            this._versionDialog.init(versions, selected_version_idx);
+            this._versionDialog.init(versions, selected_version_id);
             if (versions.length == 0) {
               this._versionButton.style.display = "none";
             } else {
