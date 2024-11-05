@@ -84,6 +84,7 @@ const store = create(
         filter: [],
         sortBy: {
           groupName: "",
+          groupId: "",
         },
         pagination: {},
       },
@@ -356,6 +357,7 @@ const store = create(
 
       // Sort
       let sortedGroupIdGroupNameMap = null;
+
       if (viewByGroupSearchParams.sortBy.groupName === "ascending") {
         sortedGroupIdGroupNameMap = new Map(
           [...filteredGroupIdGroupNameMap.entries()].sort((a, b) =>
@@ -367,6 +369,14 @@ const store = create(
           [...filteredGroupIdGroupNameMap.entries()].sort((a, b) =>
             b[1].localeCompare(a[1])
           )
+        );
+      } else if (viewByGroupSearchParams.sortBy.groupId === "ascending") {
+        sortedGroupIdGroupNameMap = new Map(
+          [...filteredGroupIdGroupNameMap.entries()].sort((a, b) => a[0] - b[0])
+        );
+      } else if (viewByGroupSearchParams.sortBy.groupId === "descending") {
+        sortedGroupIdGroupNameMap = new Map(
+          [...filteredGroupIdGroupNameMap.entries()].sort((a, b) => b[0] - a[0])
         );
       } else {
         sortedGroupIdGroupNameMap = new Map([
