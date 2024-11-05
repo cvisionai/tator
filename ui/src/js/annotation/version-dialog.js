@@ -14,7 +14,7 @@ export class VersionDialog extends ModalDialog {
     const searchDiv = document.createElement("div");
     searchDiv.setAttribute(
       "class",
-      "d-flex flex-row flex-grow flex-justify-between py-3 px-2 rounded-2 mt-3"
+      "d-flex flex-row flex-grow flex-justify-between py-3 px-2 rounded-2 mt-2 mb-3"
     );
     this._header.appendChild(searchDiv);
 
@@ -30,7 +30,8 @@ export class VersionDialog extends ModalDialog {
     searchDiv.appendChild(this._searchInput);
 
     const tableDiv = document.createElement("div");
-    tableDiv.setAttribute("class", "py-4 annotation__version-list");
+    tableDiv.style.overflowY = "auto";
+    tableDiv.style.maxHeight = `${window.innerHeight - 300}px`;
     this._header.appendChild(tableDiv);
 
     this._table = document.createElement("table");
@@ -38,6 +39,9 @@ export class VersionDialog extends ModalDialog {
     tableDiv.appendChild(this._table);
 
     const thead = document.createElement("thead");
+    thead.style.position = "sticky";
+    thead.style.top = "-1px";
+    thead.style.zIndex = "1";
     thead.setAttribute(
       "class",
       "f3 text-left text-gray text-uppercase text-semibold"
@@ -59,7 +63,7 @@ export class VersionDialog extends ModalDialog {
 
     const thSelect = document.createElement("th");
     thSelect.setAttribute("class", "text-center");
-    thSelect.style.width = "120px";
+    thSelect.style.width = "160px";
     thSelect.textContent = "Editable";
     tr.appendChild(thSelect);
 
@@ -163,8 +167,6 @@ export class VersionDialog extends ModalDialog {
         let version = this._versionMap[this._tableOrder[idx]];
         if (version.name == "Baseline") {
           this._selected_idx = idx;
-          this._tableRows[idx].classList.add("selected");
-          this._tableRows[idx].scrollIntoView();
           break;
         }
       }
@@ -173,10 +175,20 @@ export class VersionDialog extends ModalDialog {
     this._buttons[this._selected_idx].select(true);
     this._viewables[this._selected_idx].setValue(true);
     this._viewables[this._selected_idx].setDisable(true);
+    this._tableRows[this._selected_idx].classList.add("selected");
     this._updatedDependentLayers(this._selected_idx);
 
     this._searchInput.value = "";
     this.filterVersionTable();
+  }
+
+  showSelectedVersion() {
+    if (this._selected_idx != null) {
+      this._tableRows[this._selected_idx].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
   }
 
   filterVersionTable() {
@@ -280,6 +292,7 @@ export class VersionDialog extends ModalDialog {
         },
       })
     );
+    this.removeAttribute("is-open");
   }
 }
 
