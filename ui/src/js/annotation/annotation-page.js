@@ -835,6 +835,7 @@ export class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", (evt) => {
+      this.setAttribute("has-open-modal", "");
       this._loading.style.display = "block";
       this._data
         .setVersion(evt.detail.version, evt.detail.viewables)
@@ -843,6 +844,7 @@ export class AnnotationPage extends TatorPage {
           this._canvas.refresh();
           this._updateURL();
           this._loading.style.display = "none";
+          this.removeAttribute("has-open-modal", "");
         });
       this._browser.version = evt.detail.version;
       this._versionButton.text = evt.detail.version.name;
@@ -856,6 +858,7 @@ export class AnnotationPage extends TatorPage {
 
     this._versionButton.addEventListener("click", () => {
       this._versionDialog.setAttribute("is-open", "");
+      this._versionDialog.showSelectedVersion();
       this.setAttribute("has-open-modal", "");
       document.body.classList.add("shortcuts-disabled");
     });
@@ -1043,17 +1046,14 @@ export class AnnotationPage extends TatorPage {
             }
 
             // Find the index of the default version.
-            let selected_version_id = 0;
-            for (const [idx, version] of versions.entries()) {
+            for (const version of versions) {
               if (version.id == default_version) {
-                this._version = this._versionLookup[default_version];
-                selected_version_id = idx;
-                this._canvasAppletHeader.version = this._version;
+                this._version = version;
               }
             }
 
             // Initialize version dialog.
-            this._versionDialog.init(versions, selected_version_id);
+            this._versionDialog.init(versions, this._version.id);
             if (versions.length == 0) {
               this._versionButton.style.display = "none";
             } else {
