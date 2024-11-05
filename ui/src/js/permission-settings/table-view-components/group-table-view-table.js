@@ -1,12 +1,19 @@
 import { TableViewTable } from "../components/table-view-table.js";
 import { store } from "../store.js";
 
-const COLUMN_BY_GROUP = ["Checkbox", "Group Name", "User IDs", "Actions"];
+const COLUMN_BY_GROUP = [
+  "Checkbox",
+  "Group ID",
+  "Group Name",
+  "User IDs",
+  "Actions",
+];
 const COLUMN_BY_USER = ["User ID", "Group IDs", "Actions"];
 const COLGROUP_BY_GROUP = `
 <col style="width: 10%" />
+<col style="width: 15%" />
 <col style="width: 30%" />
-<col style="width: 50%" />
+<col style="width: 45%" />
 <col style="width: 10%" />
 `;
 const COLGROUP_BY_USER = `
@@ -19,7 +26,8 @@ const INITIAL_SEARCH_PARAMS = {
   Group: {
     filter: [],
     sortBy: {
-      groupName: "ascending",
+      groupName: "",
+      groupId: "",
     },
     pagination: {
       start: 0,
@@ -176,7 +184,7 @@ export class GroupTableViewTable extends TableViewTable {
 
         this._checkAll = check;
         th.appendChild(check);
-      } else if (val === "Group Name") {
+      } else if (val === "Group ID" || val === "Group Name") {
         this._setupTableHeadCellWithSort(val, th);
       } else {
         th.innerText = val;
@@ -203,6 +211,8 @@ export class GroupTableViewTable extends TableViewTable {
 
           this._checkboxes.push(check);
           td.appendChild(check);
+        } else if (val === "Group ID") {
+          td.innerText = gr.id;
         } else if (val === "Group Name") {
           td.innerText = gr.name;
         } else if (val === "User IDs") {
@@ -269,7 +279,11 @@ export class GroupTableViewTable extends TableViewTable {
   _setupTableHeadCellWithSort(text, th) {
     const { groupViewBy, groupSearchParams } = store.getState();
     const { sortBy } = groupSearchParams[groupViewBy];
-    const sortByKey = Object.keys(sortBy)[0];
+
+    let sortByKey = "";
+    if (text === "Group ID") sortByKey = "groupId";
+    else if (text === "Group Name") sortByKey = "groupName";
+    else sortByKey = "userId";
 
     const div = document.createElement("div");
     div.classList.add("d-flex", "flex-row");
@@ -300,13 +314,9 @@ export class GroupTableViewTable extends TableViewTable {
       ascending: sortAscending,
       descending: sortDescending,
     };
-    Object.values(sorts).forEach((sort) => sort.setAttribute("hidden", ""));
 
-    if (groupViewBy === "Group") {
-      sorts[sortBy.groupName].removeAttribute("hidden");
-    } else if (groupViewBy === "User") {
-      sorts[sortBy.userId].removeAttribute("hidden");
-    }
+    Object.values(sorts).forEach((sort) => sort.setAttribute("hidden", ""));
+    sorts[sortBy[sortByKey]].removeAttribute("hidden");
   }
 
   _changeCheckboxes() {
@@ -344,11 +354,14 @@ export class GroupTableViewTable extends TableViewTable {
         }
 
         const { groupViewBy, groupSearchParams } = store.getState();
+        const newSortBy = { ...INITIAL_SEARCH_PARAMS[groupViewBy].sortBy };
+        newSortBy[val[0]] = newSortVal;
+
         const newGroupSearchParams = {
           ...groupSearchParams,
           [groupViewBy]: {
             ...groupSearchParams[groupViewBy],
-            sortBy: { [val[0]]: newSortVal },
+            sortBy: { ...newSortBy },
           },
         };
 
