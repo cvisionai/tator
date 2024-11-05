@@ -823,6 +823,7 @@ export class AnnotationPage extends TatorPage {
         .then(() => {
           this._settings.setAttribute("version", evt.detail.version.id);
           this._canvas.refresh();
+          this._updateURL();
           this._loading.style.display = "none";
           this.removeAttribute("has-open-modal", "");
         });
