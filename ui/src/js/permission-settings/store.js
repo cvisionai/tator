@@ -927,7 +927,6 @@ const store = create(
     },
 
     deleteGroup: async (groupId) => {
-      if (groupId < 590) return;
       try {
         const fn = async (groupId) => {
           return await fetchWithHttpInfo(`/rest/Group/${groupId}`, {
@@ -935,6 +934,59 @@ const store = create(
           });
         };
         const responseInfo = await fn(groupId);
+
+        // This includes the reponse so error handling can happen in ui
+        return responseInfo;
+      } catch (err) {
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+        return err;
+      }
+    },
+
+    createPolicy: async (data) => {
+      try {
+        const fn = async (body) => {
+          return await fetchWithHttpInfo(`/rest/RowProtections`, {
+            method: "POST",
+            body: JSON.stringify(body),
+          });
+        };
+        const responseInfo = await fn(data);
+
+        // This includes the reponse so error handling can happen in ui
+        return responseInfo;
+      } catch (err) {
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+        return err;
+      }
+    },
+
+    updatePolicy: async (policyId, data) => {
+      try {
+        const fn = async (policyId, body) => {
+          return await fetchWithHttpInfo(`/rest/RowProtection/${policyId}`, {
+            method: "PATCH",
+            body: JSON.stringify(body),
+          });
+        };
+        const responseInfo = await fn(policyId, data);
+
+        // This includes the reponse so error handling can happen in ui
+        return responseInfo;
+      } catch (err) {
+        set({ status: { ...get().status, name: "idle", msg: "" } });
+        return err;
+      }
+    },
+
+    deletePolicy: async (policyId) => {
+      try {
+        const fn = async (policyId) => {
+          return await fetchWithHttpInfo(`/rest/RowProtection/${policyId}`, {
+            method: "DELETE",
+          });
+        };
+        const responseInfo = await fn(policyId);
 
         // This includes the reponse so error handling can happen in ui
         return responseInfo;

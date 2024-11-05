@@ -117,6 +117,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     store.subscribe((state) => state.Policy, this._setData.bind(this));
 
     this._saveButton.addEventListener("click", this._saveForm.bind(this));
+    this._resetButton.addEventListener("click", this._resetTable.bind(this));
   }
 
   _updateSelectedType(newSelectedType, oldSelectedType) {
@@ -141,6 +142,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     // New policy
     if (this._id === "New") {
       this._title.innerText = "New Policy";
+      this._table.setAttribute("hidden", "");
       this._permissionInput.removeAttribute("hidden");
     }
     // Calculator (with no entity and target info preset)
@@ -150,6 +152,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       this._targetTypeInput.permission = "Can Edit";
       this._targetIdInput.permission = "Can Edit";
       this._title.innerText = "Effective Permission Calculator";
+      this._table.removeAttribute("hidden");
       this._noPermission.setAttribute("hidden", "");
       this._permissionInput.setAttribute("hidden", "");
     }
@@ -160,6 +163,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       this._targetTypeInput.permission = "View Only";
       this._targetIdInput.permission = "View Only";
       this._title.innerText = "Effective Permission Calculator";
+      this._table.removeAttribute("hidden");
       this._noPermission.setAttribute("hidden", "");
       this._permissionInput.setAttribute("hidden", "");
     }
@@ -243,9 +247,8 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     } = store.getState();
 
     // Fetch Policy
-    let targets = null;
     try {
-      targets = await this._getCalculatorTargets();
+      await this._getCalculatorTargets();
     } catch (error) {
       console.error(error);
 
@@ -257,14 +260,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       this._noData.innerText = error;
       return;
     }
-    this._saveReset.style.display = "";
 
-    const entities = this._getCalculatorEntities();
+    this._getCalculatorEntities();
     const calculatorPolicies = await store
       .getState()
-      .getCalculatorPolicies(targets);
-    this._getTableBodyData(entities, targets, calculatorPolicies);
-    this._checkPermissionOnCreatePolicy(calculatorPolicies);
+      .getCalculatorPolicies(this.targets);
+    this._getTableBodyData(this.entities, this.targets, calculatorPolicies);
 
     this._ordRowPermissionStrings = new Map();
 
@@ -303,6 +304,8 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     );
     this._renderTableBodyFinalRow();
 
+    this._saveReset.style.display = "";
+    this._checkPermissionOnOperatePolicy();
     if (this.hasAttribute("has-open-modal")) {
       this.hideDimmer();
       this.loading.hideSpinner();
@@ -330,25 +333,31 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       tr.appendChild(tdTarget);
     }
 
-    const { permission } = this._tableBodyData.get(targetName).get(entityName);
-    const noACL = permission === "-------0";
-    permission.split("").forEach((char, index) => {
-      const td = document.createElement("td");
-      if (char === "0") {
-        if (!noACL) {
-          const xmark = document.createElement("no-permission-button");
-          xmark.setAttribute("data-id", `${id}--${index}`);
-          xmark.addEventListener("click", this._changeRowCell.bind(this));
-          td.appendChild(xmark);
+    const { permissionBits } = this._tableBodyData
+      .get(targetName)
+      .get(entityName);
+    const noACL = permissionBits === "0-------";
+    // .split("").reverse(): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
+    permissionBits
+      .split("")
+      .reverse()
+      .forEach((char, index) => {
+        const td = document.createElement("td");
+        if (char === "0") {
+          if (!noACL) {
+            const xmark = document.createElement("no-permission-button");
+            xmark.setAttribute("data-id", `${id}--${index}`);
+            xmark.addEventListener("click", this._changeRowCell.bind(this));
+            td.appendChild(xmark);
+          }
+        } else if (char === "1") {
+          const check = document.createElement("has-permission-button");
+          check.setAttribute("data-id", `${id}--${index}`);
+          check.addEventListener("click", this._changeRowCell.bind(this));
+          td.appendChild(check);
         }
-      } else if (char === "1") {
-        const check = document.createElement("has-permission-button");
-        check.setAttribute("data-id", `${id}--${index}`);
-        check.addEventListener("click", this._changeRowCell.bind(this));
-        td.appendChild(check);
-      }
-      tr.appendChild(td);
-    });
+        tr.appendChild(td);
+      });
 
     const tdActions = document.createElement("td");
     const div = document.createElement("div");
@@ -361,7 +370,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     back.setAttribute("data-id", `${targetName}--${entityName}`);
     back.addEventListener("click", this._changeRowBack.bind(this));
     div.appendChild(back);
-    if (permission === "--------") {
+    if (permissionBits === "--------") {
       const grant = document.createElement("grant-all-button");
       grant.setAttribute("data-id", `${targetName}--${entityName}`);
       grant.addEventListener("click", this._grantRow.bind(this));
@@ -372,11 +381,11 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       remove.addEventListener("click", this._removeRow.bind(this));
       div.appendChild(remove);
     }
-    if (noACL) {
-      for (const child of div.children) {
-        child.setAttribute("disabled", "");
-      }
-    }
+    // if (noACL) {
+    //   for (const child of div.children) {
+    //     child.setAttribute("disabled", "");
+    //   }
+    // }
 
     const trOld = this._shadow.getElementById(id);
     this._tableBody.replaceChild(tr, trOld);
@@ -396,10 +405,10 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     let ordPermission = "";
     const permissionStrings = Array.from(
       this._tableBodyData.get(targetName).values()
-    ).map((obj) => obj.permission);
+    ).map((obj) => obj.permissionBits);
 
-    if (permissionStrings[0] === "-------0") {
-      ordPermission = "-------0";
+    if (permissionStrings[0] === "0-------") {
+      ordPermission = "0-------";
       td.innerText += `\nYou don't have permission to fetch data of ${targetName}.`;
     } else {
       ordPermission = this._bitwiseOrBinaryStrings(permissionStrings);
@@ -407,23 +416,27 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
     this._ordRowPermissionStrings.set(targetName, ordPermission);
 
-    ordPermission.split("").forEach((char) => {
-      const td = document.createElement("td");
-      if (char === "0") {
-        const xmark = document.createElement("no-permission-button");
-        xmark.setAttribute("disabled", "");
-        td.appendChild(xmark);
-      } else if (char === "1") {
-        const check = document.createElement("has-permission-button");
-        check.setAttribute("disabled", "");
-        td.appendChild(check);
-      } else if (char === "-") {
-        const question = document.createElement("question-mark-button");
-        question.setAttribute("disabled", "");
-        td.appendChild(question);
-      }
-      tr.appendChild(td);
-    });
+    // .split("").reverse(): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
+    ordPermission
+      .split("")
+      .reverse()
+      .forEach((char) => {
+        const td = document.createElement("td");
+        if (char === "0") {
+          const xmark = document.createElement("no-permission-button");
+          xmark.setAttribute("disabled", "");
+          td.appendChild(xmark);
+        } else if (char === "1") {
+          const check = document.createElement("has-permission-button");
+          check.setAttribute("disabled", "");
+          td.appendChild(check);
+        } else if (char === "-") {
+          const question = document.createElement("question-mark-button");
+          question.setAttribute("disabled", "");
+          td.appendChild(question);
+        }
+        tr.appendChild(td);
+      });
 
     const tdActions = document.createElement("td");
     tr.appendChild(tdActions);
@@ -447,23 +460,27 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       this._ordRowPermissionStrings.values()
     ).at(-1);
 
-    this._finalPermission.split("").forEach((char) => {
-      const td = document.createElement("td");
-      if (char === "0") {
-        const xmark = document.createElement("no-permission-button");
-        xmark.setAttribute("disabled", "");
-        td.appendChild(xmark);
-      } else if (char === "1") {
-        const check = document.createElement("has-permission-button");
-        check.setAttribute("disabled", "");
-        td.appendChild(check);
-      } else if (char === "-") {
-        const question = document.createElement("question-mark-button");
-        question.setAttribute("disabled", "");
-        td.appendChild(question);
-      }
-      tr.appendChild(td);
-    });
+    // .split("").reverse(): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
+    this._finalPermission
+      .split("")
+      .reverse()
+      .forEach((char) => {
+        const td = document.createElement("td");
+        if (char === "0") {
+          const xmark = document.createElement("no-permission-button");
+          xmark.setAttribute("disabled", "");
+          td.appendChild(xmark);
+        } else if (char === "1") {
+          const check = document.createElement("has-permission-button");
+          check.setAttribute("disabled", "");
+          td.appendChild(check);
+        } else if (char === "-") {
+          const question = document.createElement("question-mark-button");
+          question.setAttribute("disabled", "");
+          td.appendChild(question);
+        }
+        tr.appendChild(td);
+      });
 
     const tdActions = document.createElement("td");
     tr.appendChild(tdActions);
@@ -521,6 +538,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       const targetName = `${POLICY_TARGET_NAME[target[0]]} ${target[1]}`;
       this._tableBodyData.set(targetName, new Map());
 
+      // If current user has no ACL permission on this target
       if (
         policies.findIndex(
           (policy) =>
@@ -530,11 +548,16 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         entities.forEach((entity) => {
           const entityName = `${POLICY_ENTITY_NAME[entity[0]]} ${entity[1]}`;
 
-          let binaryShiftedPermission = "-------0";
+          let binaryShiftedPermission = "0-------";
           const obj = {
             policyId: null,
-            permission: binaryShiftedPermission,
-            originalPermission: binaryShiftedPermission,
+            permissionBits: binaryShiftedPermission,
+            originalPermissionBits: binaryShiftedPermission,
+            entityType: entity[0],
+            entityId: entity[1],
+            targetType: target[0],
+            targetId: target[1],
+            permission: -1,
           };
 
           this._tableBodyData.get(targetName).set(entityName, obj);
@@ -545,6 +568,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
           let binaryShiftedPermission = "--------";
           let policyId = null;
+          let permission = null;
           const policy = policies.find(
             (policy) =>
               policy.entityName === entityName &&
@@ -552,20 +576,22 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
           );
           if (policy) {
             policyId = policy.id;
-            const permission = BigInt(policy.permission);
-            const shiftedPermission = permission >> BigInt(target[2]);
-            // .split("").reverse().join(""): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
+            permission = policy.permission;
+            const shiftedPermission =
+              BigInt(policy.permission) >> BigInt(target[2]); // In JavaScript, the >> (bitwise right shift) operator only works on 32-bit signed integers. Therefore, need help of BigInt()
             binaryShiftedPermission = this._getRightmost8Bits(
               shiftedPermission.toString(2)
-            )
-              .split("")
-              .reverse()
-              .join("");
+            );
           }
           const obj = {
             policyId,
-            permission: binaryShiftedPermission,
-            originalPermission: binaryShiftedPermission,
+            permissionBits: binaryShiftedPermission,
+            originalPermissionBits: binaryShiftedPermission,
+            entityType: entity[0],
+            entityId: entity[1],
+            targetType: target[0],
+            targetId: target[1],
+            permission,
           };
 
           this._tableBodyData.get(targetName).set(entityName, obj);
@@ -584,19 +610,20 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     if (id) {
       const val = id.split("--");
       if (val.length === 3) {
-        const { permission } = this._tableBodyData.get(val[0]).get(val[1]);
-        const index = +val[2];
-        const bit = permission[index];
+        const { permissionBits } = this._tableBodyData.get(val[0]).get(val[1]);
+        // 7-index: bc in a binary permission string, the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
+        const index = 7 - parseInt(val[2]);
+        const bit = permissionBits[index];
 
-        const newPermission =
-          permission.slice(0, index) +
+        const newPermissionBits =
+          permissionBits.slice(0, index) +
           (bit === "1" ? "0" : "1") +
-          permission.slice(index + 1);
+          permissionBits.slice(index + 1);
 
         const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
         this._tableBodyData
           .get(val[0])
-          .set(val[1], { ...oldObj, permission: newPermission });
+          .set(val[1], { ...oldObj, permissionBits: newPermissionBits });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -610,14 +637,14 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     if (id) {
       const val = id.split("--");
       if (val.length === 2) {
-        const newPermission = this._tableBodyData
+        const newPermissionBits = this._tableBodyData
           .get(val[0])
-          .get(val[1]).originalPermission;
+          .get(val[1]).originalPermissionBits;
 
         const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
         this._tableBodyData
           .get(val[0])
-          .set(val[1], { ...oldObj, permission: newPermission });
+          .set(val[1], { ...oldObj, permissionBits: newPermissionBits });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -631,12 +658,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     if (id) {
       const val = id.split("--");
       if (val.length === 2) {
-        const newPermission = "11111111";
+        const newPermissionBits = "11111111";
 
         const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
         this._tableBodyData
           .get(val[0])
-          .set(val[1], { ...oldObj, permission: newPermission });
+          .set(val[1], { ...oldObj, permissionBits: newPermissionBits });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -650,12 +677,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     if (id) {
       const val = id.split("--");
       if (val.length === 2) {
-        const newPermission = "";
+        const newPermissionBits = "--------";
 
         const oldObj = this._tableBodyData.get(val[0]).get(val[1]);
         this._tableBodyData
           .get(val[0])
-          .set(val[1], { ...oldObj, permission: newPermission });
+          .set(val[1], { ...oldObj, permissionBits: newPermissionBits });
 
         this._renderTableBodyRow(val[0], val[1]);
         this._renderTableBodyOrdRow(val[0]);
@@ -664,19 +691,23 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     }
   }
 
-  _checkPermissionOnCreatePolicy(calculatorPolicies) {
-    if (this._id === "New") {
-      const noPermission = calculatorPolicies.some((policy) => {
-        return (
-          policy.targetName === this._requestedTargetName &&
-          policy.permission === -1
-        );
-      });
+  _checkPermissionOnOperatePolicy() {
+    for (const [targetName, policies] of this._tableBodyData) {
+      const noPermission = Array.from(policies.values()).some(
+        (policy) => policy.permission === -1
+      );
       if (noPermission) {
-        this._noPermission.removeAttribute("hidden");
-        this._noPermission.innerText = `You don't have permission to create new policy on ${this._requestedEntityName} against ${this._requestedTargetName}.`;
-        this._saveReset.style.display = "none";
-        this._permissionInput.permission = "View Only";
+        if (this._id === "New") {
+          this._noPermission.removeAttribute("hidden");
+          this._noPermission.innerText = `You don't have permission to create new policy on ${this._requestedEntityName} against ${this._requestedTargetName}.`;
+          this._saveReset.style.display = "none";
+          this._permissionInput.permission = "View Only";
+        } else {
+          const actionButtons = this._tableBody.querySelectorAll(
+            `[data-id^="${targetName}"]`
+          );
+          actionButtons.forEach((btn) => btn.setAttribute("disabled", ""));
+        }
       }
     }
   }
@@ -692,40 +723,38 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       Group: { userIdGroupIdMap },
     } = store.getState();
 
-    const entities = [];
+    this.entities = [];
 
     if (requestedEntityType === "organization") {
-      entities.push(["organization", requestedEntityId]);
+      this.entities.push(["organization", requestedEntityId]);
     } else if (requestedEntityType === "group") {
-      const group = groupList.find((gr) => gr.id === requestedEntityId);
-      entities.push(["organization", group.organization__id]);
-      entities.push(["group", requestedEntityId]);
+      // const group = groupList.find((gr) => gr.id === requestedEntityId);
+      // entities.push(["organization", group.organization__id]);
+      this.entities.push(["group", requestedEntityId]);
     } else if (requestedEntityType === "user") {
       organizationList.forEach((org) => {
-        entities.push(["organization", org.id]);
+        this.entities.push(["organization", org.id]);
       });
       if (userIdGroupIdMap.has(requestedEntityId)) {
         userIdGroupIdMap.get(requestedEntityId).forEach((groupId) => {
-          entities.push(["group", groupId]);
+          this.entities.push(["group", groupId]);
         });
       }
-      entities.push(["user", requestedEntityId]);
+      this.entities.push(["user", requestedEntityId]);
     }
-
-    return entities;
   }
 
   async _getCalculatorTargets() {
     const targetType = this._targetTypeInput.getValue();
     const targetId = this._targetIdInput.getValue();
-    const targets = [];
+    this.targets = [];
 
     if (targetType === "project") {
       const response = await fetchWithHttpInfo(`/rest/Project/${targetId}`);
 
       if (response.response?.ok) {
         const project = response.data;
-        targets.push(["project", project.id, 0]);
+        this.targets.push(["project", project.id, 0]);
       } else {
         throw new Error(response.data?.message || "Could not fetch data.");
       }
@@ -734,8 +763,8 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
       if (response.response?.ok) {
         const section = response.data;
-        targets.push(["project", section.project, 8]);
-        targets.push(["section", section.id, 0]);
+        this.targets.push(["project", section.project, 8]);
+        this.targets.push(["section", section.id, 0]);
       } else {
         throw new Error(response.data?.message || "Could not fetch data.");
       }
@@ -744,26 +773,99 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
       if (response.response?.ok) {
         const version = response.data;
-        targets.push(["project", version.project, 8]);
-        targets.push(["version", version.id, 0]);
+        this.targets.push(["project", version.project, 8]);
+        this.targets.push(["version", version.id, 0]);
       } else {
         throw new Error(response.data?.message || "Could not fetch data.");
       }
     }
-
-    return targets;
   }
 
   _saveForm(evt) {
     evt.preventDefault();
 
-    for (const [targetName, policies] of this._tableBodyData) {
-      for (const [entityName, obj] of policies) {
-        if (obj.permission !== obj.originalPermission) {
-          console.log(targetName, entityName, obj);
+    if (this._id === "New") {
+    } else {
+      const policyToBeCreated = [];
+      const policyToBeDeleted = [];
+      const policyToBeEdited = [];
+      for (const [targetName, policies] of this._tableBodyData) {
+        for (const [entityName, policy] of policies) {
+          if (policy.permissionBits !== policy.originalPermissionBits) {
+            if (policy.originalPermissionBits === "--------") {
+              policyToBeCreated.push(policy);
+            } else if (policy.permissionBits === "--------") {
+              policyToBeDeleted.push(policy);
+            } else {
+              policyToBeEdited.push(policy);
+            }
+          }
         }
       }
+
+      this._calculateChanges(
+        policyToBeCreated,
+        policyToBeDeleted,
+        policyToBeEdited
+      );
     }
+  }
+
+  _calculateChanges(policyToBeCreated, policyToBeDeleted, policyToBeEdited) {
+    const toBeCreated = [];
+    const toBeDeleted = [];
+    const toBeEdited = [];
+    policyToBeEdited.forEach((policy) => {
+      const target = this.targets.find(
+        (target) => target[0] === policy.targetType
+      );
+
+      const newBinaryPermissionOnTarget = this._getRightmost8Bits(
+        BigInt(`0b${policy.permissionBits}`).toString(2)
+      );
+
+      const binaryPermission = this._padTo8Bits(
+        BigInt(policy.permission).toString(2)
+      );
+
+      const newBinaryPermission = `${binaryPermission.slice(
+        0,
+        -target[2] - 8
+      )}${newBinaryPermissionOnTarget}${
+        target[2] === 0 ? "" : `${binaryPermission.slice(-target[2])}`
+      }`;
+
+      const newPermission = parseInt(newBinaryPermission, 2);
+      console.log(newPermission);
+    });
+  }
+
+  _setUpWarningSavingMsg() {
+    this._warningDeleteMessage = `
+    Pressing confirm will create these policies:<br/><br/>
+    ${1}
+    <br/>
+    <br/><br/>
+    Do you want to continue?
+    `;
+    return this._warningDeleteMessage;
+  }
+
+  _resetTable() {
+    for (const [targetName, policies] of this._tableBodyData) {
+      for (const [entityName, policy] of policies) {
+        if (policy.permissionBits !== policy.originalPermissionBits) {
+          const { originalPermissionBits } = policy;
+          this._tableBodyData.get(targetName).set(entityName, {
+            ...policy,
+            permissionBits: originalPermissionBits,
+          });
+          this._renderTableBodyRow(targetName, entityName);
+        }
+      }
+      this._renderTableBodyOrdRow(targetName);
+    }
+    this._renderTableBodyFinalRow();
   }
 
   _initInputs() {
@@ -801,6 +903,10 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
     // Return the rightmost 8 bits
     return paddedBinaryStr.slice(-8);
+  }
+
+  _padTo8Bits(binaryStr) {
+    return binaryStr.padStart(8, "0");
   }
 
   /**
