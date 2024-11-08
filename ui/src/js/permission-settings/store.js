@@ -822,6 +822,20 @@ const store = create(
       return processedPolicies;
     },
 
+    getPolicyById: async (policyId) => {
+      try {
+        const info = await fetchWithHttpInfo(`/rest/RowProtection/${policyId}`);
+
+        if (info.response.ok) {
+          return info.data;
+        } else if (!info.response.ok) {
+          return { id: policyId, message: info.data?.message };
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
+
     processPolicyData: (data) => {
       return data.map((policy) => {
         let processedObj = null;

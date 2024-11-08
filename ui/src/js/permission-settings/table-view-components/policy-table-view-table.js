@@ -158,10 +158,21 @@ export class PolicyTableViewTable extends TableViewTable {
         } else if (val === "Permission") {
           td.innerText = policy.permission;
         } else {
+          const div = document.createElement("div");
+          div.setAttribute("class", "d-flex flex-row");
+          div.style.gap = "5px";
+          td.appendChild(div);
+
+          const calculator = document.createElement(
+            "permission-calculator-button"
+          );
+          calculator.setAttribute("data-id", `Policy-Cal${policy.id}`);
+          calculator.addEventListener("click", this._goTo.bind(this));
+          div.appendChild(calculator);
           const edit = document.createElement("edit-line-button");
           edit.setAttribute("data-id", `Policy-${policy.id}`);
           edit.addEventListener("click", this._goTo.bind(this));
-          td.appendChild(edit);
+          div.appendChild(edit);
         }
         return td;
       }).forEach((td) => {
