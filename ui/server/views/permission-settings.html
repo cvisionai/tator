@@ -6,27 +6,8 @@
   const page = document.createElement("permission-settings");
   document.body.appendChild(page);
 </script>
-{% endblock head %} {% block body %}
-
-<!-- <template id="permission-settings--header">
-  <div
-    id="header"
-    class="annotation__header d-flex flex-items-center flex-justify-between px-2 f3"
-  >
-    <div class="d-flex flex-items-center">
-      <settings-breadcrumbs
-        id="project-settings--breadcrumbs"
-      ></settings-breadcrumbs>
-    </div>
-    <div class="d-flex">
-      <span style="width: 32px">
-        <success-light></success-light>
-      </span>
-    </div>
-  </div>
-</template> -->
-
-{% include "includes/permission-settings/table-view.html" %} {% include
+{% endblock head %} {% block body %} {% include
+"includes/permission-settings/table-view.html" %} {% include
 "includes/permission-settings/single-view.html" %}
 <template id="permission-settings">
   <main id="permission-settings--main" class="position-relative">
