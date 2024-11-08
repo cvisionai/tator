@@ -708,7 +708,12 @@ export class EntityTimeline extends BaseTimeline {
       .append("defs")
       .append("path")
       .attr("id", (d) => d.pathId.id)
-      .attr("d", (d) => mainLine(d.graphData));
+      .attr("d", (d) => {
+        let nonNullsAndNaNsOnly = d.graphData.filter(
+          (entry) => entry.value != null && !isNaN(entry.value)
+        );
+        return mainLine(nonNullsAndNaNsOnly);
+      });
 
     this._mainLineG
       .append("g")
