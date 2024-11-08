@@ -1239,6 +1239,9 @@ export class AttributePanel extends TatorElement {
     this._idWidget.setValue(values.id);
     this._elementalIdWidget.setValue(values.elemental_id);
     this._markWidget.setValue(values.mark);
+    if (values.mark == -1) {
+      this.permission = "Read Only";
+    }
     this._frameWidget.setValue(values.frame);
     this._typeWidget.setValue(
       `${this._dataType.name} (ID: ${this._dataType.id})`

@@ -530,7 +530,7 @@ export class VideoSettingsDialog extends ModalDialog {
           resA.size === resB.size ||
           [...resA].every((value) => resB.has(value));
         if (!sameResolutions) {
-          Utilities.warningAlert("Videos do not have the same resolutions!");
+          console.warn("Videos do not have the same resolutions!");
           break;
         }
       }
