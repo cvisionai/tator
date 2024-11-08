@@ -489,6 +489,14 @@ export class EntityTimeline extends BaseTimeline {
    * Called whenever there's new data to be displayed on the timelines
    */
   _updateSvgData() {
+    // debounce this function by 33 ms so it doesn't run constantly
+    clearTimeout(this._svgUpdateTimer);
+    this._svgUpdateTimer = setTimeout(() => {
+      this._inner_updateSvgData();
+    }, 33);
+  }
+
+  _inner_updateSvgData() {
     var that = this;
     if (isNaN(this._maxFrame)) {
       return;
