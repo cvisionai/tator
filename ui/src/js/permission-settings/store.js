@@ -645,7 +645,7 @@ const store = create(
 
       set({
         Policy: {
-          init: true,
+          // init: true,
           data,
           processedData,
           map,
@@ -653,6 +653,15 @@ const store = create(
           noPermissionEntities,
         },
       });
+
+      setTimeout(() => {
+        set({
+          Policy: {
+            ...get().Policy,
+            init: true,
+          },
+        });
+      }, 1000);
     },
 
     setTabularPolicy: () => {
@@ -799,7 +808,7 @@ const store = create(
       });
     },
 
-    getCalculatorPolicies: async (targets) => {
+    getPoliciesByTargets: async (targets) => {
       const policies = [];
       for (const target of targets) {
         try {
@@ -827,9 +836,19 @@ const store = create(
         const info = await fetchWithHttpInfo(`/rest/RowProtection/${policyId}`);
 
         if (info.response.ok) {
-          return info.data;
-        } else if (!info.response.ok) {
-          return { id: policyId, message: info.data?.message };
+          const policy = info.data;
+          const processedPolicy = get().processPolicyData([policy])[0];
+          return processedPolicy;
+        } else if (!info.response.ok && info.response.status === 403) {
+          return {
+            id: policyId,
+            permission: -1,
+          };
+        } else {
+          return {
+            id: policyId,
+            permission: null,
+          };
         }
       } catch (error) {
         console.error(error);
