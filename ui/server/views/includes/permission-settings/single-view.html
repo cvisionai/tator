@@ -120,12 +120,16 @@
         </svg>
         <span> Back </span>
       </a>
-      <h2 class="h2" id="title"></h2>
+      <h2 class="h2" id="title">Effective Permission Calculator</h2>
       <span></span>
     </div>
 
     <form id="calculator-table-form">
-      <div class="d-flex flex-row flex-justify-between">
+      <div
+        class="d-flex flex-row flex-justify-around"
+        id="inputs-div"
+        style="display: none"
+      >
         <div class="d-flex flex-column">
           <enum-input
             id="entity-type-input"
@@ -186,9 +190,112 @@
         type="submit"
         value="Save"
         class="btn btn-clear f1 text-semibold"
+        style="display: none"
       />
       <button
         id="calculator-table-reset"
+        class="btn btn-width btn-outline text-gray my-3 px-4"
+      >
+        Reset
+      </button>
+    </div>
+  </div>
+</template>
+
+<template id="policy-single-view">
+  <div class="d-flex flex-column pl-md-6 px-6">
+    <div
+      id="title-div"
+      class="d-flex flex-row flex-justify-between flex-items-center mb-3"
+    >
+      <a
+        class="btn btn-width btn-outline text-gray my-3 px-2"
+        href="#Policy-All"
+      >
+        <svg
+          slot="icon"
+          class="mr-2"
+          xmlns="http://www.w3.org/2000/svg"
+          width="1em"
+          height="1em"
+          viewBox="0 0 512 512"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M176.1 103C181.7 107.7 184 113.8 184 120S181.7 132.3 176.1 136.1L81.94 232H488C501.3 232 512 242.8 512 256s-10.75 24-24 24H81.94l95.03 95.03c9.375 9.375 9.375 24.56 0 33.94s-24.56 9.375-33.94 0l-136-136c-9.375-9.375-9.375-24.56 0-33.94l136-136C152.4 93.66 167.6 93.66 176.1 103z"
+          />
+        </svg>
+        <span> Back </span>
+      </a>
+      <h2 class="h2" id="title"></h2>
+      <span></span>
+    </div>
+
+    <form id="edit-table-form">
+      <div class="d-flex flex-row flex-justify-between" id="inputs-div">
+        <div class="d-flex flex-column">
+          <enum-input
+            id="entity-type-input"
+            name="Entity"
+            data-key="entityType"
+          ></enum-input>
+          <text-input
+            id="entity-id-input"
+            name="ID"
+            type="int"
+            data-key="entityId"
+          ></text-input>
+        </div>
+        <div class="d-flex flex-column">
+          <enum-input
+            id="target-type-input"
+            name="Target"
+            data-key="targetType"
+          ></enum-input>
+          <text-input
+            id="target-id-input"
+            name="ID"
+            type="int"
+            data-key="targetId"
+          ></text-input>
+        </div>
+      </div>
+
+      <text-input
+        name="Permission"
+        type="int"
+        id="permission-input"
+      ></text-input>
+      <div id="no-permission" class="text-center my-4 text-red" hidden></div>
+
+      <div id="no-data" class="text-center my-4" hidden></div>
+
+      <div class="my-4 px-3 edit-table-div">
+        <table id="edit-table" class="table permission-table calculator-table">
+          <colgroup id="edit-table--colgroup"></colgroup>
+          <thead id="edit-table--head"></thead>
+          <tbody id="edit-table--body"></tbody>
+        </table>
+      </div>
+    </form>
+
+    <div
+      id="edit-table--save-reset-section"
+      class="d-flex flex-items-center flex-justify-center my-4"
+      style="display: none"
+    >
+      <input
+        id="edit-table-save"
+        type="submit"
+        value="Save"
+        class="btn btn-clear f1 text-semibold"
+      />
+      <button
+        id="edit-table-reset"
         class="btn btn-width btn-outline text-gray my-3 px-4"
       >
         Reset

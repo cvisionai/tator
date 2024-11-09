@@ -26,11 +26,13 @@ export class PermissionSettings extends TatorPage {
     this._policyCalculatorView = this._shadow.getElementById(
       "policy-calculator-view"
     );
+    this._policySingleView = this._shadow.getElementById("policy-single-view");
     this._views = {
       GroupAll: this._groupTableView,
       PolicyAll: this._policyTableView,
       GroupSingle: this._groupSingleView,
-      PolicySingle: this._policyCalculatorView,
+      PolicyCalculator: this._policyCalculatorView,
+      PolicySingle: this._policySingleView,
     };
 
     this.modal = this._shadow.getElementById("permission-settings--modal");
@@ -118,16 +120,24 @@ export class PermissionSettings extends TatorPage {
   }
 
   _updateSelectedType(newSelectedType, oldSelectedType) {
-    const oldKey = `${oldSelectedType.typeName}${
-      oldSelectedType.typeId === "All" ? "All" : "Single"
-    }`;
-
-    const newKey = `${newSelectedType.typeName}${
-      newSelectedType.typeId === "All" ? "All" : "Single"
-    }`;
+    const oldKey = this._getViewKey(oldSelectedType);
+    const newKey = this._getViewKey(newSelectedType);
 
     this._views[oldKey].hidden = true;
     this._views[newKey].hidden = false;
+  }
+
+  _getViewKey(selectedType) {
+    let id = "";
+    if (selectedType.typeId === "All") {
+      id = "All";
+    } else if (selectedType.typeId.startsWith("Cal")) {
+      id = "Calculator";
+    } else {
+      id = "Single";
+    }
+
+    return `${selectedType.typeName}${id}`;
   }
 
   /**

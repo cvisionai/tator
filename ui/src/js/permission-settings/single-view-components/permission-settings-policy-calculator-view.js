@@ -105,11 +105,8 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     const template = document.getElementById("policy-calculator-view").content;
     this._shadow.appendChild(template.cloneNode(true));
 
-    this._title = this._shadow.getElementById("title");
     this._noData = this._shadow.getElementById("no-data");
-
     this._noPermission = this._shadow.getElementById("no-permission");
-    this._permissionInput = this._shadow.getElementById("permission-input");
 
     this._entityTypeInput = this._shadow.getElementById("entity-type-input");
     this._entityIdInput = this._shadow.getElementById("entity-id-input");
@@ -121,6 +118,7 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
       this._targetTypeInput,
       this._targetIdInput,
     ];
+    this._inputsDiv = this._shadow.getElementById("inputs-div");
 
     this._table = this._shadow.getElementById("calculator-table");
     this._colgroup = this._shadow.getElementById("calculator-table--colgroup");
@@ -156,21 +154,20 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
     this._saveButton.addEventListener("click", this._saveForm.bind(this));
     this._resetButton.addEventListener("click", this._resetTable.bind(this));
-
-    this._permissionInput.addEventListener(
-      "change",
-      this._changePermissionInput.bind(this)
-    );
   }
 
   _updateSelectedType(newSelectedType, oldSelectedType) {
     if (
       newSelectedType.typeName !== "Policy" ||
-      newSelectedType.typeId === "All"
+      newSelectedType.typeId === "All" ||
+      !newSelectedType.typeId.startsWith("Cal")
     ) {
       this._show = false;
       return;
     }
+
+    this.showDimmer();
+    this.loading.showSpinner();
 
     this._show = true;
     this.id = newSelectedType.typeId;
@@ -182,34 +179,15 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   set id(val) {
     this._id = val;
 
-    // New policy
-    if (this._id === "New") {
-      this._initInputs(true);
-      this._title.innerText = "New Policy";
-      this._noPermission.setAttribute("hidden", "");
-      this._permissionInput.removeAttribute("hidden");
-    }
     // Calculator (with no entity and target info preset)
-    else if (this._id === "Cal") {
-      this._initInputs(true);
-      this._title.innerText = "Effective Permission Calculator";
-      this._noPermission.setAttribute("hidden", "");
-      this._permissionInput.setAttribute("hidden", "");
+    if (this._id === "Cal") {
+      // this._initInputs(true);
     }
     // Calculator (with entity and target info preset)
-    else if (this._id.startsWith("Cal")) {
-      this._initInputs(false);
-      this._title.innerText = "Effective Permission Calculator";
-      this._noPermission.setAttribute("hidden", "");
-      this._permissionInput.setAttribute("hidden", "");
-    }
-    // Edit policy
     else {
-      this._initInputs(false);
-      this._title.innerText = "Edit Policy";
-      this._noPermission.setAttribute("hidden", "");
-      this._permissionInput.removeAttribute("hidden");
+      // this._initInputs(false);
     }
+    this._noPermission.setAttribute("hidden", "");
 
     this._setData();
   }
@@ -219,21 +197,20 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     const { Policy } = store.getState();
     if (!Policy.init) return;
 
-    // New policy
-    if (this._id === "New") {
-      this._initByData();
+    if (this.hasAttribute("has-open-modal")) {
+      this.hideDimmer();
+      this.loading.hideSpinner();
     }
+
     // Calculator (with no entity and target info preset)
-    else if (this._id === "Cal") {
+    if (this._id === "Cal") {
+      this._initInputs(true);
       this._initByData();
     }
     // Calculator (with entity and target info preset)
-    else if (this._id.startsWith("Cal")) {
-      this._initByData(Policy.processedMap.get(+this._id.replace("Cal", "")));
-    }
-    // Edit policy
     else {
-      this._initByData(Policy.processedMap.get(+this._id));
+      this._initInputs(false);
+      this._initByData(Policy.processedMap.get(+this._id.replace("Cal", "")));
     }
   }
 
@@ -245,7 +222,6 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
     this._noData.setAttribute("hidden", "");
     this._noPermission.setAttribute("hidden", "");
-    this._permissionInput.permission = "Can Edit";
     this._saveReset.style.display = "none";
     this._tableHead.innerHTML = "";
     this._tableBody.innerHTML = "";
@@ -266,20 +242,15 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         POLICY_TARGET_NAME[this._targetTypeInput.getValue()]
       } ${this._targetIdInput.getValue()}`;
 
-      this._getData();
+      this._getDataByInputs();
     } else {
-      // New policy
-      if (this._id === "New") {
-        this._entityIdInput.setValue(null);
-        this._targetIdInput.setValue(null);
-      }
       // Calculator (with no entity and target info preset)
-      else if (this._id === "Cal") {
+      if (this._id === "Cal") {
         this._entityIdInput.setValue(null);
         this._targetIdInput.setValue(null);
       }
       // Calculator (with entity and target info preset)
-      else if (this._id.startsWith("Cal")) {
+      else {
         this._noData.removeAttribute("hidden");
         this._noData.innerText = `There is no data for Policy ${this._id.replace(
           "Cal",
@@ -291,20 +262,10 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
           this.loading.hideSpinner();
         }
       }
-      // Edit policy
-      else {
-        this._noData.removeAttribute("hidden");
-        this._noData.innerText = `There is no data for Policy ${this._id}.`;
-
-        if (this.hasAttribute("has-open-modal")) {
-          this.hideDimmer();
-          this.loading.hideSpinner();
-        }
-      }
     }
   }
 
-  async _getData() {
+  async _getDataByInputs() {
     // Fetch Policy
     try {
       await this._getCalculatorTargets();
@@ -323,14 +284,12 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._getCalculatorEntities();
     const calculatorPolicies = await store
       .getState()
-      .getCalculatorPolicies(this.targets);
+      .getPoliciesByTargets(this.targets);
     this._getTableBodyData(calculatorPolicies);
 
-    if (this._id.startsWith("Cal")) {
-      this._renderCalculatorTable();
-    } else {
-      this._renderEditTable();
-    }
+    this._renderCalculatorTable();
+
+    this._checkPermissionOnOperatePolicy();
   }
 
   _renderCalculatorTable() {
@@ -370,83 +329,10 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     this._renderCalculatorTableBodyFinalRow();
 
     this._saveReset.style.display = "";
-    this._checkPermissionOnOperatePolicy();
     if (this.hasAttribute("has-open-modal")) {
       this.hideDimmer();
       this.loading.hideSpinner();
     }
-  }
-
-  async _renderEditTable() {
-    this._permissionInputValue = {};
-
-    // Head
-    this._renderEditTableHead();
-
-    // Body
-    this._resetTable();
-
-    this._saveReset.style.display = "";
-    // this._checkPermissionOnOperatePolicy();
-    if (this.hasAttribute("has-open-modal")) {
-      this.hideDimmer();
-      this.loading.hideSpinner();
-    }
-  }
-
-  _renderEditTableBody() {
-    this._tableBody.innerHTML = "";
-
-    this._permissionInput.setValue(this._permissionInputValue.decimal);
-    const chunks = this._splitIntoChunksOf8Chars(
-      this._permissionInputValue.binary
-    );
-    const levelCount = chunks.length;
-
-    // Note: reverse() modify the original array
-    chunks.reverse().forEach((byte, level) => {
-      const tr = document.createElement("tr");
-
-      // Level Column
-      const tdLevel = document.createElement("td");
-      tdLevel.innerText = `Level ${level + 1}`;
-      tr.appendChild(tdLevel);
-
-      // Permission Columns
-      byte
-        .split("")
-        .reverse()
-        .forEach((char, index) => {
-          // id is the index of this char in binaryPermission
-          const id = (levelCount - level) * 8 - (index + 1);
-          const td = document.createElement("td");
-          if (char === "0") {
-            const xmark = document.createElement("no-permission-button");
-            xmark.setAttribute("data-id", id);
-            xmark.addEventListener(
-              "click",
-              this._changeEditTableCell.bind(this)
-            );
-            td.appendChild(xmark);
-          } else if (char === "1") {
-            const check = document.createElement("has-permission-button");
-            check.setAttribute("data-id", id);
-            check.addEventListener(
-              "click",
-              this._changeEditTableCell.bind(this)
-            );
-            td.appendChild(check);
-          }
-          tr.appendChild(td);
-        });
-
-      // Shortcuts Column
-      const tdSc = document.createElement("td");
-      tdSc.innerText = `123`;
-      tr.appendChild(tdSc);
-
-      this._tableBody.appendChild(tr);
-    });
   }
 
   _renderCalculatorTableBodySingleRow(targetName, entityName) {
@@ -540,9 +426,6 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     tr.appendChild(td);
 
     const ordPermission = this._ordRowData.get(targetName);
-    if (ordPermission === "0-------") {
-      td.innerText += `\nYou don't have permission to fetch data of ${targetName}.`;
-    }
 
     // .split("").reverse(): reverse the string, bc the rightmost is "Exist", the left most is "ACL". But in the table it is the opposite
     ordPermission
@@ -653,20 +536,6 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
         tr2.appendChild(th);
       });
     this._tableHead.appendChild(tr2);
-  }
-
-  _renderEditTableHead() {
-    this._colgroup.innerHTML = EDIT_COLGROUP;
-
-    const tr = document.createElement("tr");
-    EDIT_COLUMN.map((val) => {
-      const th = document.createElement("th");
-      th.innerText = val;
-      return th;
-    }).forEach((th) => {
-      tr.appendChild(th);
-    });
-    this._tableHead.appendChild(tr);
   }
 
   _getTableBodyData(policies) {
@@ -866,51 +735,19 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
     }
   }
 
-  _changeEditTableCell(evt) {
-    const index = +evt.target.dataset.id;
-    if (isNaN(index)) return;
-
-    const oldBinary = this._permissionInputValue.binary;
-    const oldChar = oldBinary.at(index);
-    const newChar = oldChar === "0" ? "1" : "0";
-    let newBinary =
-      oldBinary.slice(0, index) + newChar + oldBinary.slice(index + 1);
-    const newDecimal = parseInt(newBinary, 2);
-    this._permissionInputValue.binary = newBinary;
-    this._permissionInputValue.decimal = newDecimal;
-    this._renderEditTableBody();
-  }
-  _changePermissionInput() {
-    const newDecimal = this._permissionInput.getValue();
-    this._permissionInputValue.decimal = newDecimal;
-
-    const binary = newDecimal.toString(2);
-    // If binary's level count is smaller than it defined in BYTE_COUNT, then pad it with "0"s
-    this._permissionInputValue.binary = this._padToAnyBits(
-      this._permissionInputValue.levelCount * 8,
-      binary
-    );
-
-    this._renderEditTableBody();
-  }
-
   _checkPermissionOnOperatePolicy() {
+    this._noPermission.innerText = "";
     for (const [targetName, policies] of this._singleRowData) {
       const noPermission = Array.from(policies.values()).some(
         (policy) => policy.permission === -1
       );
       if (noPermission) {
-        if (this._id === "New") {
-          this._noPermission.removeAttribute("hidden");
-          this._noPermission.innerText = `You don't have permission to create new policy on ${this._requestedEntityName} against ${this._requestedTargetName}.`;
-          this._saveReset.style.display = "none";
-          this._permissionInput.permission = "View Only";
-        } else {
-          const actionButtons = this._tableBody.querySelectorAll(
-            `[data-id^="${targetName}"]`
-          );
-          actionButtons.forEach((btn) => btn.setAttribute("disabled", ""));
-        }
+        this._noPermission.removeAttribute("hidden");
+        this._noPermission.innerText += `You don't have permission to fetch policy data of ${targetName}.\n`;
+        const actionButtons = this._tableBody.querySelectorAll(
+          `[data-id^="${targetName}"]`
+        );
+        actionButtons.forEach((btn) => btn.setAttribute("disabled", ""));
       }
     }
   }
@@ -1056,49 +893,26 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   }
 
   _resetTable() {
-    // Calculator table
-    if (this._id.startsWith("Cal")) {
-      for (const [targetName, policies] of this._singleRowData) {
-        for (const [entityName, policy] of policies) {
-          if (policy.permissionBits !== policy.originalPermissionBits) {
-            const { originalPermissionBits } = policy;
-            this._singleRowData.get(targetName).set(entityName, {
-              ...policy,
-              permissionBits: originalPermissionBits,
-            });
-            this._renderCalculatorTableBodySingleRow(targetName, entityName);
-          }
+    for (const [targetName, policies] of this._singleRowData) {
+      for (const [entityName, policy] of policies) {
+        if (policy.permissionBits !== policy.originalPermissionBits) {
+          const { originalPermissionBits } = policy;
+          this._singleRowData.get(targetName).set(entityName, {
+            ...policy,
+            permissionBits: originalPermissionBits,
+          });
+          this._renderCalculatorTableBodySingleRow(targetName, entityName);
         }
-        this._setOrdRowData(targetName);
-        this._renderCalculatorTableBodyOrdRow(targetName);
       }
-      this._setFinalRowData();
-      this._renderCalculatorTableBodyFinalRow();
+      this._setOrdRowData(targetName);
+      this._renderCalculatorTableBodyOrdRow(targetName);
     }
-    // Edit/New Policy table
-    else {
-      const policy = this._singleRowData
-        .get(this._requestedTargetName)
-        .get(this._requestedEntityName);
-      this._permissionInputValue.decimal = policy.permission;
-
-      const binary = policy.permission.toString(2);
-      // If binary's level count is smaller than it defined in BYTE_COUNT, then pad it with "0"s
-      const levelCount = Math.max(
-        Math.ceil(binary.length / 8),
-        BYTE_COUNT[policy.targetType]
-      );
-
-      this._permissionInputValue.binary = this._padToAnyBits(
-        levelCount * 8,
-        binary
-      );
-      this._permissionInputValue.levelCount = levelCount;
-      this._renderEditTableBody();
-    }
+    this._setFinalRowData();
+    this._renderCalculatorTableBodyFinalRow();
   }
 
   _initInputs(canEdit) {
+    this._inputsDiv.style.display = "";
     this._entityTypeInput.choices = ENTITY_TYPE_CHOICES;
     this._targetTypeInput.choices = TARGET_TYPE_CHOICES;
 
@@ -1149,14 +963,6 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
 
   _padToAnyBits(targetLength, binaryStr) {
     return binaryStr.padStart(targetLength, "0");
-  }
-
-  _splitIntoChunksOf8Chars(str) {
-    let chunks = [];
-    for (let i = 0; i < str.length; i += 8) {
-      chunks.push(str.substring(i, i + 8));
-    }
-    return chunks;
   }
 
   /**
