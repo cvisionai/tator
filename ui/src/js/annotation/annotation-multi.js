@@ -2077,6 +2077,8 @@ export class AnnotationMulti extends TatorElement {
 
     var lastTime = performance.now();
     let check_ready = (checkFrame) => {
+      clearTimeout(this._handleNotReadyTimeout[videoIndex]);
+      this._handleNotReadyTimeout[videoIndex] = null;
       if (this._videoStatus == "scrubbing") {
         console.log(
           `Player status == scrubbing | Cancelling check_ready for video: ${videoIndex}`
@@ -2102,8 +2104,6 @@ export class AnnotationMulti extends TatorElement {
         );
         timeoutIndex = 0;
         timeoutCounter = 0;
-        clearTimeout(this._handleNotReadyTimeout[videoIndex]);
-        this._handleNotReadyTimeout[videoIndex] = null;
         this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
           check_ready(this._videos[videoIndex].currentFrame());
         }, clock_check);

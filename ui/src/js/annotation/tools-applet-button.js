@@ -6,7 +6,7 @@ export class ToolsAppletButton extends TatorElement {
     super();
 
     this._button = document.createElement("button");
-    this._button.setAttribute("style", "position:relative; z-index: 100;");
+    this._button.setAttribute("style", "position:relative;");
     this._button.setAttribute(
       "class",
       "annotation__shape btn-clear py-3 px-3 d-flex rounded-2 text-gray hover-text-white"
