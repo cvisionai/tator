@@ -8,7 +8,7 @@ import {
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 
 const EDIT_COLUMN = [
-  "Level",
+  "Level\n(Self-level to Descendant-level)",
   "Exist",
   "Read",
   "Create",
@@ -65,6 +65,16 @@ const TARGET_TYPE_CHOICES = [
   // { label: "Bucket", value: "bucket" },
   // { label: "Hosted Template", value: "hosted_template" },
 ];
+const QUICK_FILL_CHOICES = [
+  { label: "Not Selected", value: "null" },
+  { label: "Full Control", value: "Full Control" },
+  { label: "Admin", value: "Admin" },
+  { label: "Editor", value: "Editor" },
+  { label: "Annotator", value: "Annotator" },
+  { label: "Verifier", value: "Verifier" },
+  { label: "Viewer", value: "Viewer" },
+  { label: "No Access", value: "No Access" },
+];
 const PARENT_TARGET = {
   section: ["section", "project"],
   project: ["project"],
@@ -82,6 +92,11 @@ export class PolicySingleView extends TatorElement {
 
     this._noData = this._shadow.getElementById("no-data");
     this._noPermission = this._shadow.getElementById("no-permission");
+
+    this._permissionInputDiv = this._shadow.getElementById(
+      "permission-input-div"
+    );
+    this._quickFillInput = this._shadow.getElementById("quick-fill-input");
     this._permissionInput = this._shadow.getElementById("permission-input");
 
     this._entityTypeInput = this._shadow.getElementById("entity-type-input");
@@ -117,6 +132,8 @@ export class PolicySingleView extends TatorElement {
   }
 
   connectedCallback() {
+    this._permissionMask = new PermissionMask();
+
     this._inputs.forEach((input) => {
       input.addEventListener("change", this._inputChange.bind(this));
     });
@@ -134,6 +151,11 @@ export class PolicySingleView extends TatorElement {
     this._permissionInput.addEventListener(
       "change",
       this._changePermissionInput.bind(this)
+    );
+    this._quickFillInput.choices = QUICK_FILL_CHOICES;
+    this._quickFillInput.addEventListener(
+      "change",
+      this._changeQuickFillInput.bind(this)
     );
   }
 
@@ -345,6 +367,7 @@ export class PolicySingleView extends TatorElement {
     if (this._id === "New") {
       // policy not exists
       if (!this._data.permission) {
+        this._quickFillInput.permission = "Can Edit";
         this._permissionInput.permission = "Can Edit";
         this._noData.setAttribute("hidden", "");
         this._noPermission.setAttribute("hidden", "");
@@ -356,7 +379,6 @@ export class PolicySingleView extends TatorElement {
         this._resetTable();
 
         this._saveReset.style.display = "";
-        // this._checkPermissionOnOperatePolicy();
         if (this.hasAttribute("has-open-modal")) {
           this.hideDimmer();
           this.loading.hideSpinner();
@@ -364,6 +386,7 @@ export class PolicySingleView extends TatorElement {
       }
       // policy not permitted to fetch
       else if (this._data.permission === -1) {
+        this._quickFillInput.permission = "View Only";
         this._permissionInput.permission = "View Only";
         this._noPermission.removeAttribute("hidden");
         this._noPermission.innerText = `You don't have permission to create new policy towards ${this._requestedTargetName}.`;
@@ -383,12 +406,13 @@ export class PolicySingleView extends TatorElement {
       // policy not exists
       if (!this._data.permission) {
         this._inputsDiv.style.display = "none";
-        this._permissionInput.setAttribute("hidden", "");
+        this._permissionInputDiv.setAttribute("hidden", "");
         this._noData.removeAttribute("hidden");
         this._noData.innerText = `There is no data for Policy ${this._id}.`;
       }
       // policy not permitted to fetch
       else if (this._data.permission === -1) {
+        this._quickFillInput.permission = "View Only";
         this._permissionInput.permission = "View Only";
         this._noPermission.removeAttribute("hidden");
         this._noPermission.innerText = `You don't have permission to edit Policy ${this._id}.`;
@@ -408,7 +432,6 @@ export class PolicySingleView extends TatorElement {
         this._resetTable();
 
         this._saveReset.style.display = "";
-        // this._checkPermissionOnOperatePolicy();
         if (this.hasAttribute("has-open-modal")) {
           this.hideDimmer();
           this.loading.hideSpinner();
@@ -434,6 +457,13 @@ export class PolicySingleView extends TatorElement {
       const tdLevel = document.createElement("td");
       tdLevel.innerText = `Level ${level + 1}`;
       tr.appendChild(tdLevel);
+
+      if (level === 0) {
+        tdLevel.innerText += `\n(Self-level)`;
+      }
+      if (level === chunks.length - 1) {
+        tdLevel.innerText += `\n(Youngest Descendant-level)`;
+      }
 
       // Permission Columns
       byte
@@ -465,7 +495,21 @@ export class PolicySingleView extends TatorElement {
 
       // Shortcuts Column
       const tdSc = document.createElement("td");
-      tdSc.innerText = `123`;
+      const div = document.createElement("div");
+      div.classList.add("d-flex", "flex-row", "flex-justify-center");
+      div.style.gap = "5px";
+      tdSc.appendChild(div);
+
+      const grant = document.createElement("grant-all-button");
+      grant.setAttribute("data-level", level);
+      grant.addEventListener("click", this._grantRow.bind(this));
+      div.appendChild(grant);
+      const disallow = document.createElement("disallow-permission-button");
+      disallow.setAttribute("title", "Disallow All Permission");
+      disallow.setAttribute("data-level", level);
+      disallow.addEventListener("click", this._disallowRow.bind(this));
+      div.appendChild(disallow);
+
       tr.appendChild(tdSc);
 
       this._tableBody.appendChild(tr);
@@ -487,6 +531,8 @@ export class PolicySingleView extends TatorElement {
   }
 
   _changeEditTableCell(evt) {
+    this._quickFillInput.setValue("null");
+
     const index = +evt.target.dataset.id;
     if (isNaN(index)) return;
 
@@ -500,8 +546,65 @@ export class PolicySingleView extends TatorElement {
     this._permissionInputValue.decimal = newDecimal;
     this._renderEditTableBody();
   }
+
+  _grantRow(evt) {
+    const level = +evt.target.dataset.level;
+    if (isNaN(level)) return;
+
+    this._quickFillInput.setValue("null");
+    const levelCount = this._permissionInputValue.levelCount;
+    const oldBinary = this._permissionInputValue.binary;
+    let newBinary =
+      oldBinary.slice(0, (levelCount - level - 1) * 8) +
+      "11111111" +
+      oldBinary.slice((levelCount - level) * 8);
+    const newDecimal = parseInt(newBinary, 2);
+    this._permissionInputValue.binary = newBinary;
+    this._permissionInputValue.decimal = newDecimal;
+    this._renderEditTableBody();
+  }
+  _disallowRow(evt) {
+    const level = +evt.target.dataset.level;
+    if (isNaN(level)) return;
+
+    this._quickFillInput.setValue("null");
+    const levelCount = this._permissionInputValue.levelCount;
+    const oldBinary = this._permissionInputValue.binary;
+    let newBinary =
+      oldBinary.slice(0, (levelCount - level - 1) * 8) +
+      "00000000" +
+      oldBinary.slice((levelCount - level) * 8);
+    const newDecimal = parseInt(newBinary, 2);
+    this._permissionInputValue.binary = newBinary;
+    this._permissionInputValue.decimal = newDecimal;
+    this._renderEditTableBody();
+  }
+
   _changePermissionInput() {
+    this._quickFillInput.setValue("null");
+
     const newDecimal = this._permissionInput.getValue();
+    this._permissionInputValue.decimal = newDecimal;
+
+    const binary = newDecimal.toString(2);
+    // If binary's length is smaller than level count defined in BYTE_COUNT, then pad it with "0"s
+    this._permissionInputValue.binary = this._padToAnyBits(
+      this._permissionInputValue.levelCount * 8,
+      binary
+    );
+
+    this._renderEditTableBody();
+  }
+
+  _changeQuickFillInput() {
+    const quickFillValue = this._quickFillInput.getValue();
+    if (quickFillValue === "null") return;
+
+    const newDecimal =
+      this._permissionMask.QUICK_FILL_PERMISSIONS[this._data.targetType][
+        quickFillValue
+      ];
+
     this._permissionInputValue.decimal = newDecimal;
 
     const binary = newDecimal.toString(2);
@@ -512,27 +615,6 @@ export class PolicySingleView extends TatorElement {
     );
 
     this._renderEditTableBody();
-  }
-
-  _checkPermissionOnOperatePolicy() {
-    for (const [targetName, policies] of this._singleRowData) {
-      const noPermission = Array.from(policies.values()).some(
-        (policy) => policy.permission === -1
-      );
-      if (noPermission) {
-        if (this._id.startsWith("Cal")) {
-          const actionButtons = this._tableBody.querySelectorAll(
-            `[data-id^="${targetName}"]`
-          );
-          actionButtons.forEach((btn) => btn.setAttribute("disabled", ""));
-        } else {
-          this._noPermission.removeAttribute("hidden");
-          this._noPermission.innerText = `You don't have permission to create new policy on ${this._requestedEntityName} against ${this._requestedTargetName}.`;
-          this._saveReset.style.display = "none";
-          this._permissionInput.permission = "View Only";
-        }
-      }
-    }
   }
 
   _saveForm(evt) {
@@ -715,23 +797,81 @@ export class PolicySingleView extends TatorElement {
 customElements.define("policy-single-view", PolicySingleView);
 
 class PermissionMask {
-  // These bits are repeated so the left-byte is for children objects. This allows
-  // a higher object to store the default permission for children objects by bitshifting by the
-  // level of abstraction.
-  // [0:7] Self-level objects (projects, algos, versions)
-  // [8:15] Children objects (project -> section* -> media -> metadata)
-  // [16:23] Grandchildren objects (project -> section -> media* -> metadata)
-  // [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
-  // If a permission points to a child object, that occupies [0:7]
-  // Permission objects exist against either projects, algos, versions or sections
+  constructor() {
+    // These bits are repeated so the left-byte is for children objects. This allows
+    // a higher object to store the default permission for children objects by bitshifting by the
+    // level of abstraction.
+    // [0:7] Self-level objects (projects, algos, versions)
+    // [8:15] Children objects (project -> section* -> media -> metadata)
+    // [16:23] Grandchildren objects (project -> section -> media* -> metadata)
+    // [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
+    // If a permission points to a child object, that occupies [0:7]
+    // Permission objects exist against either projects, algos, versions or sections
 
-  static EXIST = 0x1; // Allows a row to be seen in a list, or individual GET
-  static READ = 0x2; // Allows a references to be accessed, e.g. generate presigned URLs
-  static CREATE = 0x4; // Allows a row to be created (e.g. POST)
-  static MODIFY = 0x8; // Allows a row to be PATCHED (but not in-place, includes variant delete)
-  static DELETE = 0x10; // Allows a row to be deleted (pruned for metadata)
-  static EXECUTE = 0x20; // Allows an algorithm to be executed (applies to project-level or algorithm)
-  static UPLOAD = 0x40; // Allows media to be uploaded
-  static ACL = 0x80; // Allows ACL modification for a row, if not a creator
-  static FULL_CONTROL = 0xff; // All bits and all future bits are set
+    this.EXIST = 0x1; // Allows a row to be seen in a list, or individual GET
+    this.READ = 0x2; // Allows a references to be accessed, e.g. generate presigned URLs
+    this.CREATE = 0x4; // Allows a row to be created (e.g. POST)
+    this.MODIFY = 0x8; // Allows a row to be PATCHED (but not in-place, includes variant delete)
+    this.DELETE = 0x10; // Allows a row to be deleted (pruned for metadata)
+    this.EXECUTE = 0x20; // Allows an algorithm to be executed (applies to project-level or algorithm)
+    this.UPLOAD = 0x40; // Allows media to be uploaded
+    this.ACL = 0x80; // Allows ACL modification for a row, if not a creator
+    this.FULL_CONTROL = 0xff; // All bits and all future bits are set
+
+    this.QUICK_FILL_PERMISSIONS = {
+      section: {
+        "Full Control":
+          (this.FULL_CONTROL << 16) |
+          (this.FULL_CONTROL << 8) |
+          this.FULL_CONTROL,
+        Admin:
+          ((this.EXIST |
+            this.READ |
+            this.MODIFY |
+            this.CREATE |
+            this.DELETE |
+            this.ACL) <<
+            16) |
+          ((this.EXIST |
+            this.READ |
+            this.MODIFY |
+            this.CREATE |
+            this.DELETE |
+            this.UPLOAD |
+            this.ACL) <<
+            8) |
+          (this.EXIST |
+            this.READ |
+            this.MODIFY |
+            this.CREATE |
+            this.DELETE |
+            this.ACL),
+        Editor:
+          ((this.EXIST | this.READ | this.MODIFY | this.CREATE | this.DELETE) <<
+            16) |
+          ((this.EXIST |
+            this.READ |
+            this.MODIFY |
+            this.CREATE |
+            this.DELETE |
+            this.UPLOAD) <<
+            8) |
+          (this.EXIST | this.READ | this.MODIFY | this.CREATE | this.DELETE),
+        Annotator:
+          ((this.EXIST | this.READ | this.MODIFY | this.CREATE | this.DELETE) <<
+            16) |
+          ((this.EXIST | this.READ) << 8) |
+          (this.EXIST | this.READ),
+        Verifier:
+          ((this.EXIST | this.READ | this.MODIFY) << 16) |
+          ((this.EXIST | this.READ) << 8) |
+          (this.EXIST | this.READ),
+        Viewer:
+          ((this.EXIST | this.READ) << 16) |
+          ((this.EXIST | this.READ) << 8) |
+          (this.EXIST | this.READ),
+        "No Access": 0,
+      },
+    };
+  }
 }

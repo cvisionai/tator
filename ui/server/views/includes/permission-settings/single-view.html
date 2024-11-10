@@ -265,15 +265,27 @@
         </div>
       </div>
 
-      <text-input
-        name="Permission"
-        type="int"
-        id="permission-input"
-      ></text-input>
       <div id="no-permission" class="text-center my-4 text-red" hidden></div>
 
       <div id="no-data" class="text-center my-4" hidden></div>
 
+      <div
+        class="d-flex flex-row flex-justify-between"
+        id="permission-input-div"
+      >
+        <enum-input
+          class="col-4"
+          id="quick-fill-input"
+          name="Quick Fill"
+          data-key="quickFill"
+        ></enum-input>
+        <text-input
+          class="col-5"
+          name="Permission"
+          type="int"
+          id="permission-input"
+        ></text-input>
+      </div>
       <div class="my-4 px-3 edit-table-div">
         <table id="edit-table" class="table permission-table calculator-table">
           <colgroup id="edit-table--colgroup"></colgroup>
