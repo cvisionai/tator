@@ -999,26 +999,26 @@ const store = create(
         // This includes the reponse so error handling can happen in ui
         return responseInfo;
       } catch (err) {
-        set({ status: { ...get().status, name: "idle", msg: "" } });
-        return err;
+        throw new Error(err);
       }
     },
 
-    updatePolicy: async (policyId, data) => {
+    updatePolicy: async (policyId, newPermission) => {
       try {
-        const fn = async (policyId, body) => {
+        const fn = async (policyId, newPermission) => {
           return await fetchWithHttpInfo(`/rest/RowProtection/${policyId}`, {
             method: "PATCH",
-            body: JSON.stringify(body),
+            body: JSON.stringify({
+              permission: newPermission,
+            }),
           });
         };
-        const responseInfo = await fn(policyId, data);
+        const responseInfo = await fn(policyId, newPermission);
 
         // This includes the reponse so error handling can happen in ui
         return responseInfo;
       } catch (err) {
-        set({ status: { ...get().status, name: "idle", msg: "" } });
-        return err;
+        throw new Error(err);
       }
     },
 
@@ -1034,8 +1034,7 @@ const store = create(
         // This includes the reponse so error handling can happen in ui
         return responseInfo;
       } catch (err) {
-        set({ status: { ...get().status, name: "idle", msg: "" } });
-        return err;
+        throw new Error(err);
       }
     },
 

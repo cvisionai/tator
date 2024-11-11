@@ -55,18 +55,21 @@ const ENTITY_TYPE_CHOICES = [
 ];
 const TARGET_TYPE_CHOICES = [
   { label: "Project", value: "project" },
-  // { label: "Media", value: "media" },
-  // { label: "File", value: "file" },
+  { label: "Media", value: "media" },
+  { label: "Localization", value: "localization" },
+  { label: "State", value: "state" },
+  { label: "File", value: "file" },
   { label: "Section", value: "section" },
-  // { label: "Algorithm", value: "algorithm" },
+  { label: "Algorithm", value: "algorithm" },
   { label: "Version", value: "version" },
-  // { label: "Organization", value: "target_organization" },
-  // { label: "Group", value: "target_group" },
-  // { label: "Bucket", value: "bucket" },
-  // { label: "Hosted Template", value: "hosted_template" },
+  { label: "Organization", value: "target_organization" },
+  { label: "Group", value: "target_group" },
+  { label: "Job Cluster", value: "job_cluster" },
+  { label: "Bucket", value: "bucket" },
+  { label: "Hosted Template", value: "hosted_template" },
 ];
 const QUICK_FILL_CHOICES = [
-  { label: "Not Selected", value: "null" },
+  { label: "Not Selected", value: "" },
   { label: "Full Control", value: "Full Control" },
   { label: "Admin", value: "Admin" },
   { label: "Editor", value: "Editor" },
@@ -111,6 +114,7 @@ export class PolicySingleView extends TatorElement {
     ];
     this._inputsDiv = this._shadow.getElementById("inputs-div");
 
+    this._tableDiv = this._shadow.getElementById("edit-table-div");
     this._table = this._shadow.getElementById("edit-table");
     this._colgroup = this._shadow.getElementById("edit-table--colgroup");
     this._tableHead = this._shadow.getElementById("edit-table--head");
@@ -122,6 +126,7 @@ export class PolicySingleView extends TatorElement {
     );
     this._saveButton = this._shadow.getElementById("edit-table-save");
     this._resetButton = this._shadow.getElementById("edit-table-reset");
+    this._deleteButton = this._shadow.getElementById("edit-table-delete");
 
     // // loading spinner
     this.loading = new LoadingSpinner();
@@ -133,6 +138,8 @@ export class PolicySingleView extends TatorElement {
 
   connectedCallback() {
     this._permissionMask = new PermissionMask();
+
+    this._initInputs();
 
     this._inputs.forEach((input) => {
       input.addEventListener("change", this._inputChange.bind(this));
@@ -147,12 +154,16 @@ export class PolicySingleView extends TatorElement {
 
     this._saveButton.addEventListener("click", this._saveForm.bind(this));
     this._resetButton.addEventListener("click", this._resetTable.bind(this));
+    this._deleteButton.addEventListener(
+      "click",
+      this._openDeletePolicyModal.bind(this)
+    );
 
     this._permissionInput.addEventListener(
       "change",
       this._changePermissionInput.bind(this)
     );
-    this._quickFillInput.choices = QUICK_FILL_CHOICES;
+
     this._quickFillInput.addEventListener(
       "change",
       this._changeQuickFillInput.bind(this)
@@ -169,6 +180,7 @@ export class PolicySingleView extends TatorElement {
       return;
     }
 
+    // state.Policy may not be initialized, so show the spinner at first
     this.showDimmer();
     this.loading.showSpinner();
 
@@ -182,17 +194,33 @@ export class PolicySingleView extends TatorElement {
   set id(val) {
     this._id = val;
 
+    // Styles reset at the very beginning
+    this._noData.setAttribute("hidden", "");
+    this._noPermission.setAttribute("hidden", "");
+    this._inputsDiv.style.display = "";
+    this._permissionInputDiv.style.display = "";
+    this._permissionInput.permission = "Can Edit";
+    this._permissionInput.setValue(null);
+    this._quickFillInput.permission = "Can Edit";
+    this._quickFillInput.setValue("");
+    this._saveReset.style.display = "";
+    this._tableDiv.setAttribute("hidden", "");
+
     // New policy
     if (this._id === "New") {
-      this._initInputs(true);
+      this._resetButton.style.display = "";
+      this._deleteButton.style.display = "none";
       this._title.innerText = "New Policy";
-      this._noPermission.setAttribute("hidden", "");
+
+      this._inputs.forEach((input) => (input.permission = "Can Edit"));
     }
     // Edit policy
     else {
-      this._initInputs(false);
+      this._resetButton.style.display = "";
+      this._deleteButton.style.display = "";
       this._title.innerText = "Edit Policy";
-      this._noPermission.setAttribute("hidden", "");
+
+      this._inputs.forEach((input) => (input.permission = "View Only"));
     }
 
     this._setData();
@@ -203,6 +231,7 @@ export class PolicySingleView extends TatorElement {
     const { Policy } = store.getState();
     if (!Policy.init) return;
 
+    // state.Policy initialized, remove the spinner
     if (this.hasAttribute("has-open-modal")) {
       this.hideDimmer();
       this.loading.hideSpinner();
@@ -210,48 +239,28 @@ export class PolicySingleView extends TatorElement {
 
     // New policy
     if (this._id === "New") {
-      this._initByData();
+      this._initByInputs();
     }
     // Edit policy
     else {
-      this._initByData(Policy.processedMap.get(+this._id));
+      this._initByInputs(Policy.processedMap.get(+this._id));
     }
   }
 
   /**
    * @param {object} val
    */
-  async _initByData(val) {
-    console.log("😇 ~ _initByData ~ val:", val, this._id);
-
-    this._noData.setAttribute("hidden", "");
-    this._noPermission.setAttribute("hidden", "");
-    this._permissionInput.permission = "Can Edit";
-    this._permissionInput.setValue(null);
-    this._saveReset.style.display = "none";
-    this._tableHead.innerHTML = "";
-    this._tableBody.innerHTML = "";
+  // val is undefined, or an object that has entityType, entityId, targetType, targetId to fetch data
+  async _initByInputs(val) {
+    console.log("😇 ~ _initByInputs ~ val:", val, this._id);
 
     if (val) {
-      this._data = val;
-
       this.showDimmer();
       this.loading.showSpinner();
 
-      this._entityTypeInput.setValue(val.entityType);
-      this._entityIdInput.setValue(val.entityId);
-      this._targetTypeInput.setValue(val.targetType);
-      this._targetIdInput.setValue(val.targetId);
-
-      this._requestedEntityName = `${
-        POLICY_ENTITY_NAME[this._entityTypeInput.getValue()]
-      } ${this._entityIdInput.getValue()}`;
-      this._requestedTargetName = `${
-        POLICY_TARGET_NAME[this._targetTypeInput.getValue()]
-      } ${this._targetIdInput.getValue()}`;
-
+      this._setInputValues(val);
+      this._storeInputValues();
       this._data = await this._getDataByInputs();
-
       this._processPermission();
     } else {
       // New policy
@@ -261,34 +270,51 @@ export class PolicySingleView extends TatorElement {
       }
       // Edit policy
       else {
-        // Cannot find in states, then manually fetch
+        // didn't find in states, then manually fetch
         this._data = await this._getDataById();
-
+        this._setInputValues(this._data);
+        this._storeInputValues();
         this._processPermission();
-        // this._noData.removeAttribute("hidden");
-        // this._noData.innerText = `There is no data for Policy ${this._id}.`;
-
-        // if (this.hasAttribute("has-open-modal")) {
-        //   this.hideDimmer();
-        //   this.loading.hideSpinner();
-        // }
       }
     }
   }
 
-  async _getDataByInputs() {
-    const entityType = this._entityTypeInput.getValue();
-    const entityId = this._entityIdInput.getValue();
-    const targetType = this._targetTypeInput.getValue();
-    const targetId = this._targetIdInput.getValue();
+  _storeInputValues() {
+    console.log("_storeInputValues");
+    this._entityType = this._entityTypeInput.getValue();
+    this._entityId = this._entityIdInput.getValue();
+    this._targetType = this._targetTypeInput.getValue();
+    this._targetId = this._targetIdInput.getValue();
 
+    this._requestedEntityName = `${POLICY_ENTITY_NAME[this._entityType]} ${
+      this._entityId
+    }`;
+    this._requestedTargetName = `${POLICY_TARGET_NAME[this._targetType]} ${
+      this._targetId
+    }`;
+    console.log(this._entityType);
+  }
+  _setInputValues(val) {
+    console.log("_setInputValues", val);
+    this._entityTypeInput.setValue(val.entityType);
+    this._entityIdInput.setValue(val.entityId);
+    this._targetTypeInput.setValue(val.targetType);
+    this._targetIdInput.setValue(val.targetId);
+  }
+
+  // when state.Policy has this._id
+  // Or when user wants to create a new policy and have filled in all the inputs
+  async _getDataByInputs() {
     const {
       Policy: { processedData },
     } = store.getState();
+    console.log(this._entityType, processedData, this._targetType);
     const data = processedData.find((policy) => {
       return (
-        policy.entityName === this._requestedEntityName &&
-        policy.targetName === this._requestedTargetName
+        policy.entityType === this._entityType &&
+        policy.entityId === this._entityId &&
+        policy.targetType === this._targetType &&
+        policy.targetId === this._targetId
       );
     });
 
@@ -297,18 +323,18 @@ export class PolicySingleView extends TatorElement {
     } else {
       const policies = await store
         .getState()
-        .getPoliciesByTargets([[targetType, targetId]]);
+        .getPoliciesByTargets([[this._targetType, this._targetId]]);
 
       // No policy exists
       if (!policies.length) {
         return {
           id: null,
           permission: null,
-          entityId,
-          entityType,
-          targetType,
-          targetId,
+          entityType: this._entityType,
+          entityId: this._entityId,
           entityName: this._requestedEntityName,
+          targetType: this._targetType,
+          targetId: this._targetId,
           targetName: this._requestedTargetName,
         };
       }
@@ -329,24 +355,22 @@ export class PolicySingleView extends TatorElement {
         return {
           id: null,
           permission: null,
-          entityId,
-          entityType,
-          targetType,
-          targetId,
+          entityType: this._entityType,
+          entityId: this._entityId,
           entityName: this._requestedEntityName,
+          targetType: this._targetType,
+          targetId: this._targetId,
           targetName: this._requestedTargetName,
         };
       }
     }
   }
 
+  // When state.Policy has NO this._id
   async _getDataById() {
     // Fetch Policy
     try {
       const data = await store.getState().getPolicyById(+this._id);
-
-      console.log("😇 ~ _getDataById ~ data:", data);
-
       return data;
     } catch (error) {
       console.error(error);
@@ -363,16 +387,22 @@ export class PolicySingleView extends TatorElement {
 
   _processPermission() {
     console.log(this._data);
+
     // When user wants to create a new policy
     if (this._id === "New") {
       // policy not exists
       if (!this._data.permission) {
         this._quickFillInput.permission = "Can Edit";
         this._permissionInput.permission = "Can Edit";
-        this._noData.setAttribute("hidden", "");
-        this._noPermission.setAttribute("hidden", "");
+        this._quickFillInput.resetChoices();
+        this._quickFillInput.choices = this._getQuickFillChoices();
 
         this._permissionInputValue = {};
+
+        // clear table
+        this._tableDiv.removeAttribute("hidden");
+        this._tableHead.innerHTML = "";
+        this._tableBody.innerHTML = "";
         // Head
         this._renderEditTableHead();
         // Body
@@ -390,6 +420,8 @@ export class PolicySingleView extends TatorElement {
         this._permissionInput.permission = "View Only";
         this._noPermission.removeAttribute("hidden");
         this._noPermission.innerText = `You don't have permission to create new policy towards ${this._requestedTargetName}.`;
+        this._tableDiv.setAttribute("hidden", "");
+        this._saveReset.style.display = "none";
 
         if (this.hasAttribute("has-open-modal")) {
           this.hideDimmer();
@@ -406,9 +438,11 @@ export class PolicySingleView extends TatorElement {
       // policy not exists
       if (!this._data.permission) {
         this._inputsDiv.style.display = "none";
-        this._permissionInputDiv.setAttribute("hidden", "");
+        this._permissionInputDiv.style.display = "none";
         this._noData.removeAttribute("hidden");
         this._noData.innerText = `There is no data for Policy ${this._id}.`;
+        this._tableDiv.setAttribute("hidden", "");
+        this._saveReset.style.display = "none";
       }
       // policy not permitted to fetch
       else if (this._data.permission === -1) {
@@ -416,16 +450,21 @@ export class PolicySingleView extends TatorElement {
         this._permissionInput.permission = "View Only";
         this._noPermission.removeAttribute("hidden");
         this._noPermission.innerText = `You don't have permission to edit Policy ${this._id}.`;
+        this._tableDiv.setAttribute("hidden", "");
+        this._saveReset.style.display = "none";
       }
       // policy data fetched
       else {
-        // Fill the inputs
-        this._entityTypeInput.setValue(this._data.entityType);
-        this._entityIdInput.setValue(this._data.entityId);
-        this._targetTypeInput.setValue(this._data.targetType);
-        this._targetIdInput.setValue(this._data.targetId);
+        this._quickFillInput.resetChoices();
+        this._quickFillInput.choices = this._getQuickFillChoices();
+        this._inputsDiv.style.display = "";
 
         this._permissionInputValue = {};
+
+        // clear table
+        this._tableDiv.removeAttribute("hidden");
+        this._tableHead.innerHTML = "";
+        this._tableBody.innerHTML = "";
         // Head
         this._renderEditTableHead();
         // Body
@@ -531,7 +570,7 @@ export class PolicySingleView extends TatorElement {
   }
 
   _changeEditTableCell(evt) {
-    this._quickFillInput.setValue("null");
+    this._quickFillInput.setValue("");
 
     const index = +evt.target.dataset.id;
     if (isNaN(index)) return;
@@ -551,7 +590,7 @@ export class PolicySingleView extends TatorElement {
     const level = +evt.target.dataset.level;
     if (isNaN(level)) return;
 
-    this._quickFillInput.setValue("null");
+    this._quickFillInput.setValue("");
     const levelCount = this._permissionInputValue.levelCount;
     const oldBinary = this._permissionInputValue.binary;
     let newBinary =
@@ -567,7 +606,7 @@ export class PolicySingleView extends TatorElement {
     const level = +evt.target.dataset.level;
     if (isNaN(level)) return;
 
-    this._quickFillInput.setValue("null");
+    this._quickFillInput.setValue("");
     const levelCount = this._permissionInputValue.levelCount;
     const oldBinary = this._permissionInputValue.binary;
     let newBinary =
@@ -581,7 +620,7 @@ export class PolicySingleView extends TatorElement {
   }
 
   _changePermissionInput() {
-    this._quickFillInput.setValue("null");
+    this._quickFillInput.setValue("");
 
     const newDecimal = this._permissionInput.getValue();
     this._permissionInputValue.decimal = newDecimal;
@@ -598,94 +637,62 @@ export class PolicySingleView extends TatorElement {
 
   _changeQuickFillInput() {
     const quickFillValue = this._quickFillInput.getValue();
-    if (quickFillValue === "null") return;
+    if (quickFillValue === "") return;
 
-    const newDecimal =
-      this._permissionMask.QUICK_FILL_PERMISSIONS[this._data.targetType][
+    console.log(
+      this._data.targetType,
+      quickFillValue,
+      this._permissionMask.QUICK_FILL_PERMISSIONS
+    );
+
+    let newDecimal =
+      this._permissionMask.QUICK_FILL_PERMISSIONS[this._data.targetType]?.[
         quickFillValue
       ];
+    console.log("😇 ~ _changeQuickFillInput ~ newDecimal:", newDecimal);
+    if (typeof newDecimal === "undefined") {
+      const levelCount = this._permissionInputValue.levelCount;
+      const binary = "-".repeat(levelCount * 8);
 
-    this._permissionInputValue.decimal = newDecimal;
+      this._permissionInputValue.decimal = null;
+      this._permissionInputValue.binary = binary;
+    } else {
+      this._permissionInputValue.decimal = newDecimal;
 
-    const binary = newDecimal.toString(2);
-    // If binary's level count is smaller than it defined in BYTE_COUNT, then pad it with "0"s
-    this._permissionInputValue.binary = this._padToAnyBits(
-      this._permissionInputValue.levelCount * 8,
-      binary
-    );
+      const binary = newDecimal.toString(2);
+      // If binary's level count is smaller than it defined in BYTE_COUNT, then pad it with "0"s
+      this._permissionInputValue.binary = this._padToAnyBits(
+        this._permissionInputValue.levelCount * 8,
+        binary
+      );
+    }
 
     this._renderEditTableBody();
   }
 
-  _saveForm(evt) {
+  async _saveForm(evt) {
     evt.preventDefault();
 
+    // Create a new policy
     if (this._id === "New") {
-    } else {
-      const policyToBeCreated = [];
-      const policyToBeDeleted = [];
-      const policyToBeEdited = [];
-      for (const [targetName, policies] of this._singleRowData) {
-        for (const [entityName, policy] of policies) {
-          if (policy.permissionBits !== policy.originalPermissionBits) {
-            if (policy.originalPermissionBits === "--------") {
-              policyToBeCreated.push(policy);
-            } else if (policy.permissionBits === "--------") {
-              policyToBeDeleted.push(policy);
-            } else {
-              policyToBeEdited.push(policy);
-            }
-          }
-        }
+      try {
+        const body = {
+          [this._data.targetType]: this._data.targetId,
+          [this._data.entityType]: this._data.entityId,
+          permission: Number(this._permissionInputValue.decimal),
+        };
+        const responseInfo = await store.getState().createPolicy(body);
+
+        console.log("😇 ~ responseInfo ~ responseInfo:", responseInfo);
+        this.handleResponse(responseInfo);
+      } catch (err) {
+        this.modal._error(err);
       }
-
-      this._calculateChanges(
-        policyToBeCreated,
-        policyToBeDeleted,
-        policyToBeEdited
-      );
     }
-  }
-
-  _calculateChanges(policyToBeCreated, policyToBeDeleted, policyToBeEdited) {
-    const toBeCreated = [];
-    const toBeDeleted = [];
-    const toBeEdited = [];
-    policyToBeEdited.forEach((policy) => {
-      const target = this.targets.find(
-        (target) => target[0] === policy.targetType
-      );
-
-      const newBinaryPermissionOnTarget = this._getRightmost8Bits(
-        BigInt(`0b${policy.permissionBits}`).toString(2)
-      );
-
-      const binaryPermission = this._padToAnyBits(
-        8,
-        BigInt(policy.permission).toString(2)
-      );
-
-      const newBinaryPermission = `${binaryPermission.slice(
-        0,
-        -target[2] - 8
-      )}${newBinaryPermissionOnTarget}${
-        target[2] === 0 ? "" : `${binaryPermission.slice(-target[2])}`
-      }`;
-
-      const newPermission = parseInt(newBinaryPermission, 2);
-      console.log(newPermission);
-    });
-  }
-
-  _setUpWarningSavingMsg() {
-    this._warningDeleteMessage = `
-    Pressing confirm will create these policies:<br/><br/>
-    ${1}
-    <br/>
-    <br/><br/>
-    Do you want to continue?
-    `;
-    return this._warningDeleteMessage;
+    // Edit a policy
+    else {
+      this._openUpdatePolicyModal();
+    }
   }
 
   _resetTable() {
@@ -720,21 +727,21 @@ export class PolicySingleView extends TatorElement {
     }
   }
 
-  _initInputs(canEdit) {
+  _initInputs() {
     this._entityTypeInput.choices = ENTITY_TYPE_CHOICES;
     this._targetTypeInput.choices = TARGET_TYPE_CHOICES;
+  }
 
-    if (canEdit) {
-      this._entityTypeInput.permission = "Can Edit";
-      this._entityIdInput.permission = "Can Edit";
-      this._targetTypeInput.permission = "Can Edit";
-      this._targetIdInput.permission = "Can Edit";
-    } else {
-      this._entityTypeInput.permission = "View Only";
-      this._entityIdInput.permission = "View Only";
-      this._targetTypeInput.permission = "View Only";
-      this._targetIdInput.permission = "View Only";
-    }
+  _getQuickFillChoices() {
+    const keys = Object.keys(
+      this._permissionMask.QUICK_FILL_PERMISSIONS[this._targetType]
+    );
+    const choices = [{ label: "Not Selected", value: "" }];
+    keys.forEach((key) => {
+      choices.push({ label: key, value: key });
+    });
+    console.log(choices);
+    return choices;
   }
 
   _inputChange() {
@@ -744,7 +751,100 @@ export class PolicySingleView extends TatorElement {
 
     if (values.some((value) => !value[1])) return;
 
-    this._initByData(Object.fromEntries(values));
+    this._initByInputs(Object.fromEntries(values));
+  }
+
+  _openUpdatePolicyModal() {
+    const button = document.createElement("button");
+    button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
+
+    let confirmText = document.createTextNode("Confirm");
+    button.appendChild(confirmText);
+
+    button.addEventListener("click", this._updatePolicy.bind(this));
+    this._setUpWarningMsg("PATCH");
+
+    this.modal._confirm({
+      titleText: `Update Confirmation`,
+      mainText: this._modalWarningMessage,
+      buttonSave: button,
+    });
+  }
+
+  async _openDeletePolicyModal() {
+    const button = document.createElement("button");
+    button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
+
+    let confirmText = document.createTextNode("Confirm");
+    button.appendChild(confirmText);
+
+    button.addEventListener("click", this._deletePolicy.bind(this));
+    this._setUpWarningMsg("DELETE");
+
+    this.modal._confirm({
+      titleText: `Delete Confirmation`,
+      mainText: this._modalWarningMessage,
+      buttonSave: button,
+    });
+  }
+
+  _setUpWarningMsg(method) {
+    if (method === "DELETE") {
+      this._modalWarningMessage = `
+      Pressing confirm will create this policy:<br/><br/><br/>
+      ID: ${this._data.id}, ${this._requestedEntityName} against ${this._requestedTargetName}.<br/><br/><br/>
+      Do you want to continue?
+      `;
+    } else if (method === "PATCH") {
+      this._modalWarningMessage = `
+      Pressing confirm will update this policy:<br/><br/><br/>
+      ID: ${this._data.id}, ${this._requestedEntityName} against ${this._requestedTargetName}.<br/><br/>
+      From ${this._data.permission} to ${this._permissionInputValue.decimal}.<br/><br/><br/>
+      Do you want to continue?
+      `;
+    }
+  }
+
+  async _updatePolicy() {
+    const { id } = this._data;
+
+    this.modal._modalCloseAndClear();
+    try {
+      const responseInfo = await store
+        .getState()
+        .updatePolicy(id, Number(this._permissionInputValue.decimal));
+      this.handleResponse(responseInfo);
+    } catch (err) {
+      this.modal._error(err);
+    }
+  }
+
+  async _deletePolicy() {
+    const { id } = this._data;
+
+    this.modal._modalCloseAndClear();
+    try {
+      const responseInfo = await store.getState().deletePolicy(id);
+      this.handleResponse(responseInfo);
+    } catch (err) {
+      this.modal._error(err);
+    }
+  }
+
+  handleResponse(info) {
+    let message = info.data?.message ? info.data.message : "";
+    if (info.response?.ok) {
+      store.getState().setPolicyData();
+      return this.modal._success(message);
+    } else {
+      if (info.response?.status) {
+        return this.modal._error(
+          `<strong>${info.response.status}</strong><br/><br/>${message}`
+        );
+      } else {
+        return this.modal._error(`Error: Could not process request.`);
+      }
+    }
   }
 
   _bitwiseOrBinaryStrings(binaryStrings) {
@@ -808,21 +908,42 @@ class PermissionMask {
     // If a permission points to a child object, that occupies [0:7]
     // Permission objects exist against either projects, algos, versions or sections
 
-    this.EXIST = 0x1; // Allows a row to be seen in a list, or individual GET
-    this.READ = 0x2; // Allows a references to be accessed, e.g. generate presigned URLs
-    this.CREATE = 0x4; // Allows a row to be created (e.g. POST)
-    this.MODIFY = 0x8; // Allows a row to be PATCHED (but not in-place, includes variant delete)
-    this.DELETE = 0x10; // Allows a row to be deleted (pruned for metadata)
-    this.EXECUTE = 0x20; // Allows an algorithm to be executed (applies to project-level or algorithm)
-    this.UPLOAD = 0x40; // Allows media to be uploaded
-    this.ACL = 0x80; // Allows ACL modification for a row, if not a creator
-    this.FULL_CONTROL = 0xff; // All bits and all future bits are set
+    this.EXIST = BigInt(0x1); // Allows a row to be seen in a list, or individual GET
+    this.READ = BigInt(0x2); // Allows a references to be accessed, e.g. generate presigned URLs
+    this.CREATE = BigInt(0x4); // Allows a row to be created (e.g. POST)
+    this.MODIFY = BigInt(0x8); // Allows a row to be PATCHED (but not in-place, includes variant delete)
+    this.DELETE = BigInt(0x10); // Allows a row to be deleted (pruned for metadata)
+    this.EXECUTE = BigInt(0x20); // Allows an algorithm to be executed (applies to project-level or algorithm)
+    this.UPLOAD = BigInt(0x40); // Allows media to be uploaded
+    this.ACL = BigInt(0x80); // Allows ACL modification for a row, if not a creator
+    this.FULL_CONTROL = BigInt(0xff); // All bits and all future bits are set
 
     this.QUICK_FILL_PERMISSIONS = {
+      project: {
+        "Full Control":
+          (this.FULL_CONTROL << 32n) |
+          (this.FULL_CONTROL << 24n) |
+          (this.FULL_CONTROL << 16n) |
+          (this.FULL_CONTROL << 8n) |
+          this.FULL_CONTROL,
+        "No Access": 0,
+      },
+      media: {
+        "No Access": 0,
+      },
+      localization: {
+        "No Access": 0,
+      },
+      state: {
+        "No Access": 0,
+      },
+      file: {
+        "No Access": 0,
+      },
       section: {
         "Full Control":
-          (this.FULL_CONTROL << 16) |
-          (this.FULL_CONTROL << 8) |
+          (this.FULL_CONTROL << 16n) |
+          (this.FULL_CONTROL << 8n) |
           this.FULL_CONTROL,
         Admin:
           ((this.EXIST |
@@ -831,7 +952,7 @@ class PermissionMask {
             this.CREATE |
             this.DELETE |
             this.ACL) <<
-            16) |
+            16n) |
           ((this.EXIST |
             this.READ |
             this.MODIFY |
@@ -839,7 +960,7 @@ class PermissionMask {
             this.DELETE |
             this.UPLOAD |
             this.ACL) <<
-            8) |
+            8n) |
           (this.EXIST |
             this.READ |
             this.MODIFY |
@@ -848,28 +969,59 @@ class PermissionMask {
             this.ACL),
         Editor:
           ((this.EXIST | this.READ | this.MODIFY | this.CREATE | this.DELETE) <<
-            16) |
+            16n) |
           ((this.EXIST |
             this.READ |
             this.MODIFY |
             this.CREATE |
             this.DELETE |
             this.UPLOAD) <<
-            8) |
+            8n) |
           (this.EXIST | this.READ | this.MODIFY | this.CREATE | this.DELETE),
         Annotator:
           ((this.EXIST | this.READ | this.MODIFY | this.CREATE | this.DELETE) <<
-            16) |
-          ((this.EXIST | this.READ) << 8) |
+            16n) |
+          ((this.EXIST | this.READ) << 8n) |
           (this.EXIST | this.READ),
         Verifier:
-          ((this.EXIST | this.READ | this.MODIFY) << 16) |
-          ((this.EXIST | this.READ) << 8) |
+          ((this.EXIST | this.READ | this.MODIFY) << 16n) |
+          ((this.EXIST | this.READ) << 8n) |
           (this.EXIST | this.READ),
         Viewer:
-          ((this.EXIST | this.READ) << 16) |
-          ((this.EXIST | this.READ) << 8) |
+          ((this.EXIST | this.READ) << 16n) |
+          ((this.EXIST | this.READ) << 8n) |
           (this.EXIST | this.READ),
+        "No Access": 0,
+      },
+      algorithm: {
+        "Full Control": this.FULL_CONTROL,
+        "No Access": 0,
+      },
+      version: {
+        "Full Control": (this.FULL_CONTROL << 8n) | this.FULL_CONTROL,
+        "No Access": 0,
+      },
+      target_organization: {
+        "Full Control":
+          (this.FULL_CONTROL << 32n) |
+          (this.FULL_CONTROL << 24n) |
+          (this.FULL_CONTROL << 16n) |
+          (this.FULL_CONTROL << 8n) |
+          this.FULL_CONTROL,
+        "No Access": 0,
+      },
+      target_group: {
+        "Full Control": this.FULL_CONTROL,
+        "No Access": 0,
+      },
+      job_cluster: {
+        "No Access": 0,
+      },
+      bucket: {
+        "No Access": 0,
+      },
+      template: {
+        "Full Control": this.FULL_CONTROL,
         "No Access": 0,
       },
     };
