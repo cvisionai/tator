@@ -93,6 +93,9 @@ nunjucks.configure('server/views', {
 });
 app.set('view engine', 'html');
 
+// Serve favicon.
+app.use(favicon('./server/static/images/favicon.ico'));
+
 // Serve legacy bundles for applets until they can be updated.
 app.use(
   '/static',
@@ -122,7 +125,6 @@ const staticMap = {
 for (const [dir, path] of Object.entries(staticMap)) {
   app.use(path, express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds }));
 }
-app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
 
