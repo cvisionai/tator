@@ -99,6 +99,9 @@ app.use(
   express.static("./legacy", { setHeaders: addHeaders, maxAge: 0 })
 );
 
+// Serve static images in the static directory.
+app.use('/static/images', express.static('./server/static/images', { setHeaders: addHeaders, maxAge: 0 }));
+
 const maxAgeMilliseconds = argv.max_age * 1000;
 const staticMap = {
   "./server/static": argv.static_path,
