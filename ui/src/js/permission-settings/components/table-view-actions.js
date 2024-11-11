@@ -77,18 +77,6 @@ export class TableViewActions extends TatorElement {
   _init() {
     // Override by child class
   }
-
-  _unhideButton() {}
-
-  _hideButton() {}
-
-  _enableButton() {}
-
-  _disableButton() {}
-
-  _highlightButton() {}
-
-  _unhighlightButton() {}
 }
 
 customElements.define("table-view-actions", TableViewActions);

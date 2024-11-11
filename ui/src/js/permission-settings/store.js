@@ -1,7 +1,7 @@
 import create from "../../../node_modules/zustand/esm/vanilla.mjs";
 import { subscribeWithSelector } from "../../../node_modules/zustand/esm/middleware.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import { data as policy, noPer } from "./test.js";
+// import { data as policy, noPer } from "./test.js";
 
 const listResources = {
   section: "Sections",
@@ -600,39 +600,39 @@ const store = create(
 
       const { user, groupList, organizationList } = get();
 
-      // const userPolicyList = await fetchCredentials(
-      //   `/rest/RowProtections?user=${user.id}`,
-      //   {}
-      // ).then((response) => response.json());
-      // data.push(...userPolicyList);
+      const userPolicyList = await fetchCredentials(
+        `/rest/RowProtections?user=${user.id}`,
+        {}
+      ).then((response) => response.json());
+      data.push(...userPolicyList);
 
-      // for (const gr of groupList) {
-      //   const groupPolicyList = await fetchCredentials(
-      //     `/rest/RowProtections?group=${gr.id}`,
-      //     {}
-      //   ).then((response) => response.json());
-      //   // When user is not allowed to get a permission item, the data sent back is not an array
-      //   if (!Array.isArray(groupPolicyList)) {
-      //     noPermissionEntities.push(["group", gr.id]);
-      //     continue;
-      //   }
-      //   data.push(...groupPolicyList);
-      // }
+      for (const gr of groupList) {
+        const groupPolicyList = await fetchCredentials(
+          `/rest/RowProtections?group=${gr.id}`,
+          {}
+        ).then((response) => response.json());
+        // When user is not allowed to get a permission item, the data sent back is not an array
+        if (!Array.isArray(groupPolicyList)) {
+          noPermissionEntities.push(["group", gr.id]);
+          continue;
+        }
+        data.push(...groupPolicyList);
+      }
 
-      // for (const org of organizationList) {
-      //   const organizationPolicyList = await fetchCredentials(
-      //     `/rest/RowProtections?organization=${org.id}`,
-      //     {}
-      //   ).then((response) => response.json());
-      //   // When user is not allowed to get a permission item, the data sent back is not an array
-      //   if (!Array.isArray(organizationPolicyList)) {
-      //     noPermissionEntities.push(["group", gr.id]);
-      //     continue;
-      //   }
-      //   data.push(...organizationPolicyList);
-      // }
-      data = policy;
-      noPermissionEntities = noPer;
+      for (const org of organizationList) {
+        const organizationPolicyList = await fetchCredentials(
+          `/rest/RowProtections?organization=${org.id}`,
+          {}
+        ).then((response) => response.json());
+        // When user is not allowed to get a permission item, the data sent back is not an array
+        if (!Array.isArray(organizationPolicyList)) {
+          noPermissionEntities.push(["group", gr.id]);
+          continue;
+        }
+        data.push(...organizationPolicyList);
+      }
+      // data = policy;
+      // noPermissionEntities = noPer;
 
       data.forEach((policy) => {
         map.set(policy.id, policy);
@@ -645,7 +645,7 @@ const store = create(
 
       set({
         Policy: {
-          // init: true,
+          init: true,
           data,
           processedData,
           map,
@@ -653,15 +653,6 @@ const store = create(
           noPermissionEntities,
         },
       });
-
-      setTimeout(() => {
-        set({
-          Policy: {
-            ...get().Policy,
-            init: true,
-          },
-        });
-      }, 1000);
     },
 
     setTabularPolicy: () => {
