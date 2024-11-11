@@ -265,10 +265,6 @@
         </div>
       </div>
 
-      <div id="no-permission" class="text-center my-4 text-red" hidden></div>
-
-      <div id="no-data" class="text-center my-4" hidden></div>
-
       <div
         class="d-flex flex-row flex-justify-between"
         id="permission-input-div"
@@ -286,7 +282,11 @@
           id="permission-input"
         ></text-input>
       </div>
-      <div class="my-4 px-3 edit-table-div">
+
+      <div id="no-permission" class="text-center my-4 text-red" hidden></div>
+      <div id="no-data" class="text-center my-4" hidden></div>
+
+      <div class="my-4 px-3 edit-table-div" id="edit-table-div" hidden>
         <table id="edit-table" class="table permission-table calculator-table">
           <colgroup id="edit-table--colgroup"></colgroup>
           <thead id="edit-table--head"></thead>
@@ -298,7 +298,7 @@
     <div
       id="edit-table--save-reset-section"
       class="d-flex flex-items-center flex-justify-center my-4"
-      style="display: none"
+      style="display: none; gap: 5px"
     >
       <input
         id="edit-table-save"
@@ -309,8 +309,16 @@
       <button
         id="edit-table-reset"
         class="btn btn-width btn-outline text-gray my-3 px-4"
+        style="display: none"
       >
         Reset
+      </button>
+      <button
+        id="edit-table-delete"
+        class="btn btn-width btn-outline text-gray my-3 px-4"
+        style="display: none"
+      >
+        Delete
       </button>
     </div>
   </div>
