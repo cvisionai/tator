@@ -44,10 +44,10 @@ const TARGET_TYPE_CHOICES = [
   // { label: "Media", value: "media" },
   // { label: "File", value: "file" },
   { label: "Section", value: "section" },
-  // { label: "Algorithm", value: "algorithm" },
+  { label: "Algorithm", value: "algorithm" },
   { label: "Version", value: "version" },
-  // { label: "Organization", value: "target_organization" },
-  // { label: "Group", value: "target_group" },
+  { label: "Organization", value: "target_organization" },
+  { label: "Group", value: "target_group" },
   // { label: "Bucket", value: "bucket" },
   // { label: "Hosted Template", value: "hosted_template" },
 ];
@@ -375,7 +375,7 @@ export class PolicyCalculatorView extends TatorElement {
     tr.classList.add("ord-row");
 
     const td = document.createElement("td");
-    td.innerText = `${this._requestedEntityName}'s effective permission against ${targetName}`;
+    td.innerText = `${this._requestedEntityName}'s effective permission against ${this._requestedTargetName} (via policies set against ${targetName}).`;
     td.setAttribute("colspan", 2);
     tr.appendChild(td);
 
@@ -769,6 +769,37 @@ export class PolicyCalculatorView extends TatorElement {
         const version = response.data;
         this.targets.push(["project", version.project, 8]);
         this.targets.push(["version", version.id, 0]);
+      } else {
+        throw new Error(response.data?.message || "Could not fetch data.");
+      }
+    } else if (targetType === "target_group") {
+      const response = await fetchWithHttpInfo(`/rest/Group/${targetId}`);
+
+      if (response.response?.ok) {
+        const group = response.data;
+        this.targets.push(["target_organization", group.organization, 24]);
+        this.targets.push(["target_group", group.id, 0]);
+      } else {
+        throw new Error(response.data?.message || "Could not fetch data.");
+      }
+    } else if (targetType === "target_organization") {
+      const response = await fetchWithHttpInfo(
+        `/rest/Organization/${targetId}`
+      );
+
+      if (response.response?.ok) {
+        const organization = response.data;
+        this.targets.push(["target_organization", organization.id, 0]);
+      } else {
+        throw new Error(response.data?.message || "Could not fetch data.");
+      }
+    } else if (targetType === "algorithm") {
+      const response = await fetchWithHttpInfo(`/rest/Algorithm/${targetId}`);
+
+      if (response.response?.ok) {
+        const algorithm = response.data;
+        this.targets.push(["project", algorithm.project, 8]);
+        this.targets.push(["algorithm", algorithm.id, 0]);
       } else {
         throw new Error(response.data?.message || "Could not fetch data.");
       }
