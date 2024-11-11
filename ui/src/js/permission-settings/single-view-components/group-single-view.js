@@ -2,7 +2,7 @@ import { TatorElement } from "../../components/tator-element.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { store } from "../store.js";
 
-export class PermissionSettingsGroupSingleView extends TatorElement {
+export class GroupSingleView extends TatorElement {
   constructor() {
     super();
 
@@ -657,7 +657,4 @@ export class PermissionSettingsGroupSingleView extends TatorElement {
   }
 }
 
-customElements.define(
-  "permission-settings-group-single-view",
-  PermissionSettingsGroupSingleView
-);
+customElements.define("group-single-view", GroupSingleView);

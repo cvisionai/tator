@@ -1,4 +1,5 @@
 import { TatorElement } from "../../components/tator-element.js";
+import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { store } from "../store.js";
 
 export class PermissionSettingsTableView extends TatorElement {
@@ -12,12 +13,20 @@ export class PermissionSettingsTableView extends TatorElement {
     this._actionsDiv = this._shadow.getElementById("table-view-actions");
     this._tableDiv = this._shadow.getElementById("table-view-table");
 
+    // // loading spinner
+    this.loading = new LoadingSpinner();
+    this._shadow.appendChild(this.loading.getImg());
+
     // this is outside the template and references by all parts of page to sync the dimmer
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild(this.modal);
   }
 
   connectedCallback() {
+    // state.Policy may not be initialized, so show the spinner at first
+    this.showDimmer();
+    this.loading.showSpinner();
+
     this._type = this.getAttribute("type");
 
     // Create actions component
@@ -39,20 +48,25 @@ export class PermissionSettingsTableView extends TatorElement {
   _newData(dataObj) {
     if (!dataObj.init) return;
 
+    if (this.hasAttribute("has-open-modal")) {
+      this.hideDimmer();
+      this.loading.hideSpinner();
+    }
+
     // Only after knowing how many items are there can we init the paginator
     this._table._initPaginator();
   }
 
-  _getTabularData() {
-    //
+  /**
+   * Modal for this page, and handler
+   * @returns sets page attribute that changes dimmer
+   */
+  showDimmer() {
+    return this.setAttribute("has-open-modal", "");
   }
 
-  _changeFilter() {
-    //
-  }
-
-  _changeSort() {
-    //
+  hideDimmer() {
+    return this.removeAttribute("has-open-modal");
   }
 }
 

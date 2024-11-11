@@ -34,47 +34,6 @@ const CALCULATOR_COLGROUP = `
 <col style="width: 10%" />
 `;
 
-const EDIT_COLUMN = [
-  "Level",
-  "Exist",
-  "Read",
-  "Create",
-  "Modify",
-  "Delete",
-  "Execute",
-  "Upload",
-  "ACL",
-  "Shortcuts",
-];
-const EDIT_COLGROUP = `
-<col style="width: 14%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 14%" />
-`;
-
-const BYTE_COUNT = {
-  project: 5,
-  media: null,
-  localization: null,
-  state: null,
-  file: null,
-  section: 3,
-  algorithm: 1,
-  version: 2,
-  target_organization: 5,
-  target_group: 1,
-  job_cluster: null,
-  bucket: null,
-  hosted_template: 1,
-};
-
 const ENTITY_TYPE_CHOICES = [
   { label: "User", value: "user" },
   { label: "Group", value: "group" },
@@ -92,13 +51,8 @@ const TARGET_TYPE_CHOICES = [
   // { label: "Bucket", value: "bucket" },
   // { label: "Hosted Template", value: "hosted_template" },
 ];
-const PARENT_TARGET = {
-  section: ["section", "project"],
-  project: ["project"],
-  version: ["version", "project"],
-};
 
-export class PermissionSettingsPolicyCalculatorView extends TatorElement {
+export class PolicyCalculatorView extends TatorElement {
   constructor() {
     super();
 
@@ -978,29 +932,4 @@ export class PermissionSettingsPolicyCalculatorView extends TatorElement {
   }
 }
 
-customElements.define(
-  "permission-settings-policy-calculator-view",
-  PermissionSettingsPolicyCalculatorView
-);
-
-class PermissionMask {
-  // These bits are repeated so the left-byte is for children objects. This allows
-  // a higher object to store the default permission for children objects by bitshifting by the
-  // level of abstraction.
-  // [0:7] Self-level objects (projects, algos, versions)
-  // [8:15] Children objects (project -> section* -> media -> metadata)
-  // [16:23] Grandchildren objects (project -> section -> media* -> metadata)
-  // [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
-  // If a permission points to a child object, that occupies [0:7]
-  // Permission objects exist against either projects, algos, versions or sections
-
-  static EXIST = 0x1; // Allows a row to be seen in a list, or individual GET
-  static READ = 0x2; // Allows a references to be accessed, e.g. generate presigned URLs
-  static CREATE = 0x4; // Allows a row to be created (e.g. POST)
-  static MODIFY = 0x8; // Allows a row to be PATCHED (but not in-place, includes variant delete)
-  static DELETE = 0x10; // Allows a row to be deleted (pruned for metadata)
-  static EXECUTE = 0x20; // Allows an algorithm to be executed (applies to project-level or algorithm)
-  static UPLOAD = 0x40; // Allows media to be uploaded
-  static ACL = 0x80; // Allows ACL modification for a row, if not a creator
-  static FULL_CONTROL = 0xff; // All bits and all future bits are set
-}
+customElements.define("policy-calculator-view", PolicyCalculatorView);
