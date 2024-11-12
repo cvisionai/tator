@@ -93,11 +93,17 @@ nunjucks.configure('server/views', {
 });
 app.set('view engine', 'html');
 
+// Serve favicon.
+app.use(favicon('./server/static/images/favicon.ico'));
+
 // Serve legacy bundles for applets until they can be updated.
 app.use(
   '/static',
   express.static("./legacy", { setHeaders: addHeaders, maxAge: 0 })
 );
+
+// Serve static images in the static directory.
+app.use('/static/images', express.static('./server/static/images', { setHeaders: addHeaders, maxAge: 0 }));
 
 const maxAgeMilliseconds = argv.max_age * 1000;
 const staticMap = {
@@ -119,7 +125,6 @@ const staticMap = {
 for (const [dir, path] of Object.entries(staticMap)) {
   app.use(path, express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds }));
 }
-app.use(favicon('./server/static/images/favicon.ico'));
 app.use(express.json());
 app.use(cookieParser());
 

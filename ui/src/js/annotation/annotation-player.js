@@ -1005,7 +1005,7 @@ export class AnnotationPlayer extends TatorElement {
   }
 
   /**
-   * Callback used when user clicks on one of the seek bar sliders
+   * Callback used when user slides on one of the seek bar sliders
    */
   handleSliderInput(evt) {
     // Along allow a scrub display as the user is going slow
@@ -1035,7 +1035,7 @@ export class AnnotationPlayer extends TatorElement {
   }
 
   /**
-   * Callback used when user slides one of the seek bars
+   * Callback used when user clicks one of the seek bars
    */
   handleSliderChange(evt) {
     this._play.setAttribute("is-paused", "");

@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 VERSION_FIELDS = list(version_schema["properties"].keys())
 VERSION_FIELDS.remove("bases")
 
+
 def _serialize_versions(versions):
     versions = versions.values(*VERSION_FIELDS)
     versions = versions.annotate(

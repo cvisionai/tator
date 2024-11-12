@@ -43,6 +43,7 @@ target_objects = {
 
 PROPS = [*row_protection_properties.keys()]
 
+
 def check_acl_permission_of_children(user, row_protection):
     for target in target_objects.keys():
         if getattr(row_protection, target) is not None:

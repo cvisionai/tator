@@ -5,7 +5,8 @@ import uuid
 
 import tator
 from tator.util._upload_file import _upload_file
-from tator.transcode.make_thumbnails import make_thumbnails
+from tator.transcode.determine_transcode import determine_transcode
+from tator.transcode.make_thumbnails import make_thumbnail_image, make_thumbnail_gif
 from tator.transcode.transcode import make_video_definition
 
 def download_file(url, output):
@@ -33,11 +34,15 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
     response = api.create_media_list(project, body=[spec])
     media_id = response.id[0]
 
+    # Needed to update media level info
+    determine_transcode(host, token, type_id, media_id, media_path, 1080)
+
     with tempfile.TemporaryDirectory() as td:
         try:
             thumb_path = os.path.join(td,f"{uuid.uuid4()}.jpg")
             thumb_gif_path = os.path.join(td, f"{uuid.uuid4()}.gif")
-            make_thumbnails(host, token, media_id, media_path, thumb_path, thumb_gif_path)
+            make_thumbnail_image(host, token, media_id, media_path, thumb_path)
+            make_thumbnail_gif(host, token, media_id, media_path, thumb_gif_path)
         except Exception as e:
             print(f"Thumbnail error: {e}")
             # Delete stale media

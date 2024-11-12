@@ -29,6 +29,7 @@ permission_display = Case(
     output_field=CharField(),
 )
 
+
 def _serialize_memberships(memberships):
     memberships = memberships.annotate(
         username=F("user__username"),
