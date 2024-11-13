@@ -200,6 +200,7 @@ ASGI_APPLICATION = "tator_online.routing.application"
 if os.getenv("DD_LOGS_INJECTION"):
     import ddtrace.auto
 
+
 class TatorLogFormatter(logging.Formatter):
     def format_multiline(self, message):
         """Formats multi-line message for single log entry"""

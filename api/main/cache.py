@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 EXPIRE_TIME = 60 * 60 * 24 * 30
 REDIS_USE_SSL = os.getenv("REDIS_USE_SSL", "FALSE").lower() == "true"
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
 
 class TatorCache:
@@ -25,7 +28,9 @@ class TatorCache:
     def setup_redis(cls):
         retry = Retry(ExponentialBackoff(), 3)
         cls.rds = Redis(
-            host=os.getenv("REDIS_HOST"),
+            host=REDIS_HOST,
+            port=REDIS_PORT,
+            password=REDIS_PASSWORD,
             retry=retry,
             retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
             health_check_interval=30,

@@ -318,8 +318,9 @@ class TatorAlgorithm(JobManagerMixin):
                     logger.warning(f"Implicitly sc to pvc of Algo:{self.alg.pk}")
 
         # Add in workflow parameters.
+        existing_params = manifest["spec"].get("arguments", {}).get("parameters", [])
         manifest["spec"]["arguments"] = {
-            "parameters": [
+            "parameters": existing_params + [
                 {
                     "name": "name",
                     "value": self.alg.name,

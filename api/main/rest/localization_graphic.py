@@ -299,4 +299,3 @@ class LocalizationGraphicAPI(TatorAPIView):
         response = Response(response_data, status=status.HTTP_200_OK)
         response["Last-Modified"] = http_date(last_modified)
         return response
-
