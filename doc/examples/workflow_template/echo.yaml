@@ -3,12 +3,12 @@ kind: Workflow                  # new type of k8s spec
 metadata:
   generateName: echo-           # name of the workflow spec
 spec:
-  entrypoint: whalesay          # invoke the whalesay template
+  entrypoint: echo          # invoke the whalesay template
   templates:
-    - name: whalesay              # name of the template
+    - name: echo              # name of the template
       container:
-        image: docker/whalesay
-        command: [ cowsay ]
+        image: busybox
+        command: [ echo ]
         args: [ "{{ message }}" ]
         resources: # limit the resources
           limits:
