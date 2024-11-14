@@ -5,7 +5,7 @@ import uuid
 
 import tator
 from tator.util._upload_file import _upload_file
-from tator.transcode.determine_transcode import determine_transcode
+from tator.transcode.determine_transcode import update_media
 from tator.transcode.make_thumbnails import make_thumbnail_image, make_thumbnail_gif
 from tator.transcode.transcode import make_video_definition
 
@@ -35,7 +35,7 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
     media_id = response.id[0]
 
     # Needed to update media level info
-    determine_transcode(host, token, type_id, media_id, media_path, 1080)
+    update_media(host, token, type_id, media_id, media_path)
 
     with tempfile.TemporaryDirectory() as td:
         try:
