@@ -57,14 +57,6 @@ export class PermissionSettings extends TatorPage {
 
     this._getUserData();
 
-    // await store.getState().setUserData();
-
-    // Project id
-    // this.projectId = store.getState().projectId;
-
-    // This just happens once and unlike getType, it also sets project info
-    // await store.getState().setProjectData(this.projectId);
-
     // Figure out if something else needs to be shown
     this.moveToCurrentHash();
 
@@ -79,9 +71,9 @@ export class PermissionSettings extends TatorPage {
     // Current User's Group List
     await store.getState().getCurrentUserGroupList();
     // All Group data
-    await store.getState().setGroupData();
+    store.getState().setGroupData();
     // Policy data that are associated to this user, this user's groups, this user's organizations
-    await store.getState().setPolicyData();
+    store.getState().setPolicyData();
 
     console.log("😇 ~ _init ~ store.getState():", store.getState());
   }
