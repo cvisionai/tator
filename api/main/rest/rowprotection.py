@@ -182,18 +182,18 @@ class RowProtectionDetailAPI(BaseDetailView):
     http_method_names = ["get", "patch", "delete"]
 
     def _delete(self, params: dict) -> dict:
-        """
-        Deletes the provided group cluster
-        """
-
-        # Grab the job cluster's object and delete it from the database
+        """Retrieve the requested Row Protection by ID"""
         qs = self.get_queryset()
+        if not qs.exists():
+            raise Http404("RowProtection does not exist")
+
         if check_acl_permission_of_children(self.request.user, qs.first()) is False:
             raise PermissionDenied(
                 "User does not have permission to delete this row protection set"
             )
 
-        obj.delete()
+        rp = qs.first()
+        rp.delete()
 
         return {"message": "RowProtection deleted successfully!", "id": params["id"]}
 

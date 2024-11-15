@@ -7341,6 +7341,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
+            engi_rp_id = resp.data["id"]
 
             # Get all row protections for engineering
             resp = self.client.get(f"/rest/RowProtections?section={section_id}")
@@ -7357,6 +7358,10 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
+
+            # redshirt cannot get row protections for engineering
+            resp = self.client.get(f"/rest/RowProtections?section={section_id}")
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
 
             # Go back to kirk
             self.client.force_authenticate(user=self.kirk)
@@ -7439,8 +7444,11 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
 
-            self.client.force_authenticate(user=self.kirk)
+            # redshirt cannot delete the row protection of engineering
+            resp = self.client.delete(f"/rest/RowProtection/{engi_rp_id}")
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
 
+            self.client.force_authenticate(user=self.kirk)
             # Add a row protection to allow the commandant to see the warp core
             resp = self.client.post(
                 f"/rest/RowProtections",
@@ -7464,3 +7472,14 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Pull the value and make sure it was set to 0
             rp = RowProtection.objects.get(pk=rp_id)
             self.assertEqual(rp.permission, 0)
+
+            # kirk delete the row protection of engineering
+            self.client.force_authenticate(user=self.kirk)
+            resp = self.client.delete(f"/rest/RowProtection/{engi_rp_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Now switch to the redshirt and verify they can't see the engineering section
+            self.client.force_authenticate(user=self.red_shirt)
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 0)
