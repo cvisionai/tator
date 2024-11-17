@@ -604,6 +604,14 @@ export class CanvasAppletElement extends TatorElement {
   }
 
   /**
+   * Retiniailize the applet with the provided media
+   * @param {Tator.Media} media
+   */
+  updateMedia(media) {
+    this._media = media;
+  }
+
+  /**
    * Reinitialize the canvas with the frame image to update
    * @param {integer} frame
    *    Frame number associated with the image
