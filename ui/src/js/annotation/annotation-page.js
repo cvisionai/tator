@@ -2442,6 +2442,7 @@ export class AnnotationPage extends TatorPage {
       this._currentCanvasApplet._lastMediaId != selectedCameraMediaId
     ) {
       currentCanvas.getPNGdata(false).then((blob) => {
+        this._currentCanvasApplet.updateMedia(selectedMedia);
         this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
       });
     }
