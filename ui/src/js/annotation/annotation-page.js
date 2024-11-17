@@ -71,6 +71,15 @@ export class AnnotationPage extends TatorPage {
     this._settings = document.createElement("annotation-settings");
     settingsDiv.appendChild(this._settings);
 
+    this._cameraSelectionBar = document.createElement("camera-selection-bar");
+    this._cameraSelectionBar.setAttribute("class", "mx-3");
+    this._cameraSelectionBar.style.display = "none";
+    settingsDiv.appendChild(this._cameraSelectionBar);
+    this._cameraSelectionBar.addEventListener("showCamera", (evt) => {
+      this._cameraSelectionBar.setActive(evt.detail.mediaId);
+      this.showCanvasApplet(this._currentCanvasApplet._applet.id);
+    });
+
     this._appletShortcutBar = document.createElement("applet-shortcut-bar");
     this._appletShortcutBar.style.display = "none";
     settingsDiv.appendChild(this._appletShortcutBar);
@@ -253,6 +262,7 @@ export class AnnotationPage extends TatorPage {
         fetchCredentials(`/rest/Media/${newValue}?presigned=28800`, {}, true)
           .then((response) => response.json())
           .then((data) => {
+            this._mediaInfo = data;
             this._archive_state = data.archive_state;
             if (this._archive_state == "archived") {
               this._loading.style.display = "none";
@@ -314,7 +324,8 @@ export class AnnotationPage extends TatorPage {
                 this._browser.mediaType = type_data;
                 this._undo.mediaType = type_data;
                 let player;
-                this._mediaIds = [];
+                this._multiMediaIds = [];
+                this._cameraCanvasMap = {}; // Map of media id to its corresponding canvas
                 this._numberOfMedia = 1;
                 this._mediaDataCount = 0;
                 if (type_data.dtype == "video") {
@@ -367,7 +378,7 @@ export class AnnotationPage extends TatorPage {
                   player.mediaInfo = data;
                   var mediaIdCount = 0;
                   for (const index of data.media_files.ids.keys()) {
-                    this._mediaIds.push(data.media_files.ids[index]);
+                    this._multiMediaIds.push(data.media_files.ids[index]);
                     mediaIdCount += 1;
                   }
                   this._numberOfMedia = mediaIdCount;
@@ -736,6 +747,30 @@ export class AnnotationPage extends TatorPage {
 
     canvas.addEventListener("canvasReady", () => {
       this._canvasInitialized = true;
+
+      this._mediaMap = {};
+      if (this._mediaType.dtype == "multi") {
+        let mediaList = this._player.getCameraMediaList();
+        for (let media of mediaList) {
+          this._mediaMap[media.id] = media;
+          this._cameraCanvasMap[media.id] = this._player.getCameraCanvas(
+            media.id
+          );
+        }
+        this._cameraSelectionBar.init(mediaList);
+        this._cameraSelectionBar.setActive(mediaList[0].id);
+      } else if (this._mediaType.dtype == "image") {
+        this._mediaMap[this._mediaInfo.id] = this._mediaInfo;
+        this._cameraCanvasMap[this._mediaInfo.id] = this._canvas._image;
+        this._cameraSelectionBar.init([this._mediaInfo]);
+        this._cameraSelectionBar.setActive(this._mediaInfo.id);
+      } else if (this._mediaType.dtype == "video") {
+        this._mediaMap[this._mediaInfo.id] = this._mediaInfo;
+        this._cameraCanvasMap[this._mediaInfo.id] = this._canvas._video;
+        this._cameraSelectionBar.init([this._mediaInfo]);
+        this._cameraSelectionBar.setActive(this._mediaInfo.id);
+      }
+
       _handleQueryParams();
       _removeLoading();
     });
@@ -1100,7 +1135,7 @@ export class AnnotationPage extends TatorPage {
             let allowNonTrackStateUpdates = !block_signals;
             if (this._player.mediaType.dtype == "multi") {
               allowNonTrackStateUpdates =
-                this._mediaIds[canvas._primaryVideoIndex] == mediaId;
+                this._multiMediaIds[canvas._primaryVideoIndex] == mediaId;
             }
             this._data.init(
               dataTypes,
@@ -1176,7 +1211,7 @@ export class AnnotationPage extends TatorPage {
             // create the state across all media
             var stateMediaIds;
             if (this._player.mediaType.dtype == "multi") {
-              stateMediaIds = this._mediaIds;
+              stateMediaIds = this._multiMediaIds;
             }
 
             this._timelineSettings = new TimelineSettings(projectId, dataTypes);
@@ -1476,7 +1511,7 @@ export class AnnotationPage extends TatorPage {
               // For states specifically, if we are using the multi-view, we will
               // create the state across all media
               if (this._player.mediaType.dtype == "multi") {
-                save.stateMediaIds = this._mediaIds;
+                save.stateMediaIds = this._multiMediaIds;
               }
 
               save.addEventListener("cancel", () => {
@@ -1633,11 +1668,6 @@ export class AnnotationPage extends TatorPage {
             this._menuAppletDialog.saveApplet(applet);
             canvas.addAppletToMenu(applet.name, applet.categories);
           } else if (applet.categories.includes("annotator-canvas")) {
-            // #TODO Future work. Enable canvas applets for multiview.
-            if (this._player.mediaType.dtype == "multi") {
-              continue;
-            }
-
             // Add canvas applet
             this._canvasApplets.push(applet);
           }
@@ -1676,20 +1706,11 @@ export class AnnotationPage extends TatorPage {
         //
         // Setup the canvas applets
         //
-        if (this._canvasApplets.length == 0) {
+        if (
+          this._canvasApplets.length == 0 ||
+          this._player.mediaType.dtype == "live"
+        ) {
           this._sidebar.disableCanvasApplet();
-        }
-
-        this._mediaCanvas = null;
-        if ("_video" in this._canvas) {
-          this._mediaCanvas = this._canvas._video;
-        }
-        if ("_image" in this._canvas) {
-          this._mediaCanvas = this._canvas._image;
-        }
-        if (this._mediaCanvas == null) {
-          this._sidebar.disableCanvasApplet();
-          return;
         }
         this._annotationCanvas = canvas;
         this._canvasElement = canvasElement;
@@ -2403,17 +2424,24 @@ export class AnnotationPage extends TatorPage {
       this._currentCanvasApplet = null;
     }
 
+    const selectedCameraMediaId = this._cameraSelectionBar.getActive();
+    const currentCanvas = this._cameraCanvasMap[selectedCameraMediaId];
+    const selectedMedia = this._mediaMap[selectedCameraMediaId];
+
     var appletData = {
       frame: this._currentFrame,
       selectedTrack: this._canvas._activeTrack,
       selectedLocalization: this._canvas.activeLocalization,
-      media: this._canvas._mediaInfo,
+      media: selectedMedia,
     };
 
     this._currentCanvasApplet = this._canvasAppletWrappers[appletId];
 
-    if (this._currentCanvasApplet._lastFrameUpdate != this._currentFrame) {
-      this._mediaCanvas.getPNGdata(false).then((blob) => {
+    if (
+      this._currentCanvasApplet._lastFrameUpdate != this._currentFrame ||
+      this._currentCanvasApplet._lastMediaId != selectedCameraMediaId
+    ) {
+      currentCanvas.getPNGdata(false).then((blob) => {
         this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
       });
     }
@@ -2432,9 +2460,13 @@ export class AnnotationPage extends TatorPage {
     this._settings.style.display = "none";
     this._main.style.display = "none";
 
-    // Display the shortcuts
+    // Display the applet shortcuts
     this._appletShortcutBar.setActive(appletId);
-    this._appletShortcutBar.style.display = "block";
+    this._appletShortcutBar.style.display = "flex";
+    // Display the camera selection if in multiview
+    if (this._player.mediaType.dtype == "multi") {
+      this._cameraSelectionBar.style.display = "flex";
+    }
   }
 
   /**
@@ -2459,6 +2491,7 @@ export class AnnotationPage extends TatorPage {
 
     // Hide shortcuts
     this._appletShortcutBar.style.display = "none";
+    this._cameraSelectionBar.style.display = "none";
 
     // Required resize to reset the elements correctly
     window.dispatchEvent(new Event("resize"));
