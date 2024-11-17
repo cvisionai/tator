@@ -2625,6 +2625,18 @@ export class AnnotationMulti extends TatorElement {
     };
   }
 
+  getCameraCanvas(mediaId) {
+    return this._videoGridInfo[mediaId].video;
+  }
+
+  getCameraMediaList() {
+    let mediaList = [];
+    for (const video of this._videos) {
+      mediaList.push(video._videoObject);
+    }
+    return mediaList;
+  }
+
   overrideCanvas(frame, bitmap) {
     for (const video of this._videos) {
       video._overrideFrame = { frame: frame, bitmap: bitmap };
