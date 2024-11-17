@@ -607,7 +607,7 @@ export class CanvasAppletElement extends TatorElement {
    * Retiniailize the applet with the provided media
    * @param {Tator.Media} media
    */
-  updateMedia(media) {
+  async updateMedia(media) {
     this._media = media;
   }
 
