@@ -205,6 +205,10 @@ app.get('/:projectId/annotation/:id', (req, res) => {
   res = addHeaders(res);
 });
 
+app.get('/permission-settings', (req, res) => {
+  res.render("permission-settings", params);
+});
+
 app.get('/token', (req, res) => {
   res.render('token', params);
 });
