@@ -2411,6 +2411,30 @@ export class AnnotationPage extends TatorPage {
    *    Applet to display
    */
   showCanvasApplet(appletId) {
+    function displayCanvasAppletWrapper() {
+      this._currentCanvasApplet.style.display = "flex";
+      this._currentCanvasApplet.show(appletData);
+
+      this._canvasAppletHeader.style.display = "flex";
+      this._canvasAppletHeader.setAttribute(
+        "title",
+        this._currentCanvasApplet.getTitle()
+      );
+
+      // Hide the main annotation page and the appropriate header components
+      this._versionButton.style.display = "none";
+      this._settings.style.display = "none";
+      this._main.style.display = "none";
+
+      // Display the applet shortcuts
+      this._appletShortcutBar.setActive(appletId);
+      this._appletShortcutBar.style.display = "flex";
+      // Display the camera selection if in multiview
+      if (this._player.mediaType.dtype == "multi") {
+        this._cameraSelectionBar.style.display = "flex";
+      }
+    }
+
     this.hideCanvasAppletMenu();
 
     if (this._currentCanvasApplet != null) {
@@ -2442,31 +2466,13 @@ export class AnnotationPage extends TatorPage {
       this._currentCanvasApplet._lastMediaId != selectedCameraMediaId
     ) {
       currentCanvas.getPNGdata(false).then((blob) => {
-        this._currentCanvasApplet.updateMedia(selectedMedia);
-        this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
+        this._currentCanvasApplet.updateMedia(selectedMedia).then(() => {
+          this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
+          displayCanvasAppletWrapper.bind(this)();
+        });
       });
-    }
-
-    this._currentCanvasApplet.style.display = "flex";
-    this._currentCanvasApplet.show(appletData);
-
-    this._canvasAppletHeader.style.display = "flex";
-    this._canvasAppletHeader.setAttribute(
-      "title",
-      this._currentCanvasApplet.getTitle()
-    );
-
-    // Hide the main annotation page and the appropriate header components
-    this._versionButton.style.display = "none";
-    this._settings.style.display = "none";
-    this._main.style.display = "none";
-
-    // Display the applet shortcuts
-    this._appletShortcutBar.setActive(appletId);
-    this._appletShortcutBar.style.display = "flex";
-    // Display the camera selection if in multiview
-    if (this._player.mediaType.dtype == "multi") {
-      this._cameraSelectionBar.style.display = "flex";
+    } else {
+      displayCanvasAppletWrapper.bind(this)();
     }
   }
 
