@@ -16,7 +16,7 @@ export class CanvasAppletWrapper extends TatorElement {
     this._applet = null; // Must call init()
 
     // Used to help determine if re-init is required
-    this._lastMediaUpdate = null;
+    this._lastMediaId = null;
     this._lastFrameUpdate = null;
   }
 
@@ -124,7 +124,7 @@ export class CanvasAppletWrapper extends TatorElement {
   }
 
   async updateMedia(media) {
-    this._lastMediaUpdate = media;
+    this._lastMediaId = media.id;
     await this._appletElement.updateMedia(media);
   }
 
