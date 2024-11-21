@@ -93,37 +93,47 @@ export class ToolsAppletPanel extends TatorElement {
   initApplet() {
     // if (this._appletData == null) { return; }
 
-    this._appletElement =
+    const appletElement =
       this._appletView.contentWindow.document.getElementById("toolsApplet");
-    if (this._appletElement == null) {
+    if (appletElement == null) {
       return;
     }
+    const appletTagName = appletElement.tagName.toLowerCase();
+    this._appletView.contentWindow.customElements
+      .whenDefined(appletTagName)
+      .then(() => {
+        this._appletElement =
+          this._appletView.contentWindow.document.getElementById("toolsApplet");
+        if (this._appletElement == null) {
+          return;
+        }
 
-    this._appletElement.addEventListener(
-      "closeApplet",
-      this.togglePanel.bind(this)
-    );
-
-    // Listen for html registration, and page event with svg as detail
-    this._appletElement.addEventListener("icon-ready", (evt) => {
-      if (this._appletTrigger !== null && evt.detail.icon !== null) {
-        this._appletTrigger.setIcon(evt.detail.icon);
-      } else {
-        console.warn(
-          "Event icon ready heard, but not enough data to set icon."
+        this._appletElement.addEventListener(
+          "closeApplet",
+          this.togglePanel.bind(this)
         );
-      }
-    });
 
-    // RUN THIS LAST! listeners need to be in place above first
-    this._appletElement.init({
-      canvas: this._canvas,
-      canvasElement: this._canvasElement,
-      data: this._page._data,
-    });
+        // Listen for html registration, and page event with svg as detail
+        this._appletElement.addEventListener("icon-ready", (evt) => {
+          if (this._appletTrigger !== null && evt.detail.icon !== null) {
+            this._appletTrigger.setIcon(evt.detail.icon);
+          } else {
+            console.warn(
+              "Event icon ready heard, but not enough data to set icon."
+            );
+          }
+        });
 
-    //
-    this.dispatchEvent(new Event("appletReady"));
+        // RUN THIS LAST! listeners need to be in place above first
+        this._appletElement.init({
+          canvas: this._canvas,
+          canvasElement: this._canvasElement,
+          data: this._page._data,
+        });
+
+        //
+        this.dispatchEvent(new Event("appletReady"));
+      });
   }
 }
 

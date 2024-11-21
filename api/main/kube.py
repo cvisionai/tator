@@ -320,7 +320,8 @@ class TatorAlgorithm(JobManagerMixin):
         # Add in workflow parameters.
         existing_params = manifest["spec"].get("arguments", {}).get("parameters", [])
         manifest["spec"]["arguments"] = {
-            "parameters": existing_params + [
+            "parameters": existing_params
+            + [
                 {
                     "name": "name",
                     "value": self.alg.name,
