@@ -1496,7 +1496,9 @@ export class AnnotationMulti extends TatorElement {
           if (searchParams.has("frame")) {
             frameInit = Number(searchParams.get("frame"));
           }
-          this.goToFrame(frameInit);
+          setTimeout(() => {
+            this.goToFrame(frameInit);
+          }, 100);
 
           let multiview = null;
           if (searchParams.has("multiview")) {
