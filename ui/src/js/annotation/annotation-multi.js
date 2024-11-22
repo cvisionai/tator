@@ -601,10 +601,10 @@ export class AnnotationMulti extends TatorElement {
           fastForward.removeAttribute("disabled");
           rewind.removeAttribute("disabled");
           video.pause().then(() => {
-            video.back();
+            this.shiftGlobalFrame(-1);
           });
         } else {
-          video.back();
+          this.shiftGlobalFrame(-1);
         }
       }
     });
@@ -617,10 +617,10 @@ export class AnnotationMulti extends TatorElement {
           fastForward.removeAttribute("disabled");
           rewind.removeAttribute("disabled");
           video.pause().then(() => {
-            video.advance();
+            this.shiftGlobalFrame(+1);
           });
         } else {
-          video.advance();
+          this.shiftGlobalFrame(+1);
         }
       }
     });
@@ -1580,6 +1580,14 @@ export class AnnotationMulti extends TatorElement {
       })
     );
   }
+
+  shiftGlobalFrame(amount) {
+    const minFrameIncrement = this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps;
+    amount *= Math.max(1,minFrameIncrement);
+    const prime_frame = this._videos[this._primaryVideoIndex].currentFrame();
+    const global_frame = prime_frame * (this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps);
+    this.goToFrame(global_frame + amount);
+  };
 
   setMultiviewUrl(multiviewType, vid_id) {
     let get_pos = () => {
