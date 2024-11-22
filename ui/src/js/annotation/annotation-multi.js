@@ -1476,7 +1476,7 @@ export class AnnotationMulti extends TatorElement {
           this._primaryVideoIndex = this._longest_idx;
           max_frames = Math.round(max_time * this._maxFps);
           this._timeStore.setLengthAndFps(max_frames, this._maxFps);
-          
+
           const searchParams = new URLSearchParams(window.location.search);
           this._totalTime.textContent =
             "/ " + frameToTime(max_frames, this._maxFps);
@@ -1490,7 +1490,6 @@ export class AnnotationMulti extends TatorElement {
             setup_video(idx, info[idx]);
             this._videos[idx].style.zIndex = "unset";
           }
-
 
           let frameInit = 0;
           if (searchParams.has("frame")) {
@@ -1584,12 +1583,15 @@ export class AnnotationMulti extends TatorElement {
   }
 
   shiftGlobalFrame(amount) {
-    const minFrameIncrement = this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps;
-    amount *= Math.max(1,minFrameIncrement);
+    const minFrameIncrement =
+      this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps;
+    amount *= Math.max(1, minFrameIncrement);
     const prime_frame = this._videos[this._primaryVideoIndex].currentFrame();
-    const global_frame = prime_frame * (this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps);
+    const global_frame =
+      prime_frame *
+      (this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps);
     this.goToFrame(global_frame + amount);
-  };
+  }
 
   setMultiviewUrl(multiviewType, vid_id) {
     let get_pos = () => {
@@ -2327,8 +2329,11 @@ export class AnnotationMulti extends TatorElement {
     let failSafeFunction = () => {
       clearTimeout(this._failSafeTimer);
       this._videoStatus = "paused";
-      const primeToGlobal = this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps;
-      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame()*primeToGlobal);
+      const primeToGlobal =
+        this._maxFps / this._videos[this._primaryVideoIndex]._mediaInfo.fps;
+      this.goToFrame(
+        this._videos[this._primaryVideoIndex].currentFrame() * primeToGlobal
+      );
     };
     clearTimeout(this._failSafeTimer);
     if (paused == false) {
@@ -2614,8 +2619,7 @@ export class AnnotationMulti extends TatorElement {
   }
 
   _timeToFrame(minutes, seconds) {
-    var frame =
-      minutes * 60 * this._maxFps + seconds * this._maxFps + 1;
+    var frame = minutes * 60 * this._maxFps + seconds * this._maxFps + 1;
     return frame;
   }
 
