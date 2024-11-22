@@ -77,7 +77,9 @@ OPERATOR_SUFFIXES = {
 class MediaFieldExpression:
     def get_wrapper():
         return ExpressionWrapper(
-            Cast("media", output_field=BigIntegerField()).bitleftshift(32).bitor(F("frame")),
+            Cast("media_proj__pk", output_field=BigIntegerField())
+            .bitleftshift(32)
+            .bitor(F("frame")),
             output_field=BigIntegerField(),
         )
 
@@ -144,9 +146,9 @@ def _related_search(
         orig_list = [*related_matches]
         related_match = related_matches.pop()
         # Pop and process the list
-        media_vals = related_match.values("media")
+        media_vals = related_match.values("media_proj__pk")
         for related_match in related_matches:
-            this_vals = related_match.values("media")
+            this_vals = related_match.values("media_proj__pk")
             media_vals = media_vals.union(this_vals)
 
         # We now have all the matching media, but lost the score information
@@ -155,14 +157,16 @@ def _related_search(
         # list comp didn't play nice here, but this is easier to read anyway
         score = []
         for x in orig_list:
-            annotated_x = x.values("media").annotate(count=Count("media"))
-            filtered_x = annotated_x.filter(media=OuterRef("id"))
+            annotated_x = x.values("media_proj__pk").annotate(count=Count("media_proj__pk"))
+            filtered_x = annotated_x.filter(media_proj__pk=OuterRef("id"))
             values_x = filtered_x.values("count").order_by("-count")[:1]
             score.append(Subquery(values_x))
         if len(score) > 1:
-            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=Greatest(*score))
+            qs = qs.filter(pk__in=media_vals.values("media_proj__pk")).annotate(
+                incident=Greatest(*score)
+            )
         else:
-            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=score[0])
+            qs = qs.filter(pk__in=media_vals.values("media_proj__pk")).annotate(incident=score[0])
     else:
         qs = qs.filter(pk=-1).annotate(incident=Value(0))
     return qs

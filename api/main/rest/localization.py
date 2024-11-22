@@ -12,6 +12,7 @@ from ..models import User
 from ..models import Project
 from ..models import Version
 from ..models import Section
+from ..models import ProjectLookup
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema, LocalizationByElementalIdSchema
 from ..schema.components import localization as localization_schema
@@ -211,7 +212,7 @@ class LocalizationListAPI(BaseListView):
             Localization(
                 project=project,
                 type=metas[loc_spec["type"]],
-                media=medias[loc_spec["media_id"]],
+                media=medias[loc_spec["media_id"]].pk,
                 user=compute_user(
                     project, self.request.user, loc_spec.get("user_elemental_id", None)
                 ),
@@ -578,7 +579,11 @@ class LocalizationDetailAPI(LocalizationDetailBaseAPI):
 
     def get_queryset(self, **kwargs):
         return self.filter_only_viewables(
-            Localization.objects.filter(pk=self.params["id"], deleted=False)
+            Localization.objects.filter(
+                project=ProjectLookup.objects.get(localization=self.params["id"]).project,
+                pk=self.params["id"],
+                deleted=False,
+            )
         )
 
     def _get(self, params):
@@ -610,8 +615,11 @@ class LocalizationDetailByElementalIdAPI(LocalizationDetailBaseAPI):
         include_deleted = False
         if params.get("prune", None) == 1:
             include_deleted = True
+        version_obj = Version.objects.get(pk=params["version"])
         qs = Localization.objects.filter(
-            elemental_id=params["elemental_id"], version=params["version"]
+            project=version_obj.project,
+            elemental_id=params["elemental_id"],
+            version=params["version"],
         )
         if include_deleted is False:
             qs = qs.filter(deleted=False)

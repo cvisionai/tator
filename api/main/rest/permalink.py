@@ -46,8 +46,9 @@ def _presign(expiration, medias, fields=None):
         "thumbnail_gif",
         "attachment",
     ]
-    media_ids = [media["id"] for media in medias]
-    resources = Resource.objects.filter(media__in=media_ids)
+    media_objs = Media.objects.filter(pk__in=[media["id"] for media in medias])
+    resources = Resource.objects.filter(media_proj__in=media_objs)
+    logger.info(f"resources = {resources}")
     storage_lookup = get_storage_lookup(resources)
 
     # Get replace all keys with presigned urls.
