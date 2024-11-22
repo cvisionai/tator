@@ -2468,7 +2468,7 @@ export class AnnotationMulti extends TatorElement {
     for (let video of this._videos) {
       let this_frame = Math.round(frame * (this._fps[idx] / prime_fps));
       this_frame += this._frameOffsets[idx];
-      console.info(`GBF=${frame} VIDEO_FRAME=${this_frame}`);
+      console.info(`vid=${idx} GBF=${frame} VIDEO_FRAME=${this_frame}`);
       let cb = (frameIdx, source, width, height) => {
         video._draw.clear();
         video._effectManager.clear();
@@ -2479,7 +2479,6 @@ export class AnnotationMulti extends TatorElement {
         p_list.push(
           video.seekFrame(Math.min(this_frame, video._numFrames - 1), cb, true)
         );
-        idx++;
       } else {
         if (video.currentFrame() < video.length - MAGIC_PAD) {
           const seekPromise = video.seekFrame(
@@ -2490,6 +2489,7 @@ export class AnnotationMulti extends TatorElement {
           p_list.push(seekPromise);
         }
       }
+      idx++;
     }
     let coupled_promise = new Promise((resolve, _) => {
       Promise.all(p_list).then(() => {
