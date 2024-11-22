@@ -1467,7 +1467,7 @@ export class AnnotationMulti extends TatorElement {
             this._fps[idx] = info[idx].fps;
             this._lengths[idx] = info[idx].num_frames;
             this._lengthTimes[idx] = info[idx].num_frames / info[idx].fps;
-            if (this._lengths[idx] > this._lengths[this._longest_idx]) {
+            if (this._lengthTimes[idx] > this._lengthTimes[this._longest_idx]) {
               this._longest_idx = idx;
             }
           }
@@ -1475,21 +1475,9 @@ export class AnnotationMulti extends TatorElement {
           for (let idx = 0; idx < video_info.length; idx++) {
             setup_video(idx, info[idx]);
             this._videos[idx].style.zIndex = "unset";
-            if (this._frameOffsets[idx] != 0) {
-              const searchParams = new URLSearchParams(window.location.search);
-              let frameInit = 0;
-              if (searchParams.has("frame")) {
-                frameInit = Number(searchParams.get("frame"));
-              }
-              this._videos[idx].gotoFrame(
-                val.media_files.frameOffset[idx],
-                true
-              );
-              this._videos[idx]._dispFrame =
-                frameInit + val.media_files.frameOffset[idx];
-              this._videos[idx]._frameOffset = val.media_files.frameOffset[idx];
             }
-          }
+          
+          const searchParams = new URLSearchParams(window.location.search);
           this._fps_of_max = fps_of_max;
           this._totalTime.textContent =
             "/ " + frameToTime(max_frames, fps_of_max);
@@ -1499,8 +1487,13 @@ export class AnnotationMulti extends TatorElement {
           this._slider.fps = this._fps[this._primaryVideoIndex];
           this._maxFrameNumber = max_frames - 1;
 
+          let frameInit = 0;
+          if (searchParams.has("frame")) {
+            frameInit = Number(searchParams.get("frame"));
+          }
+          this.goToFrame(frameInit);
+
           let multiview = null;
-          const searchParams = new URLSearchParams(window.location.search);
           if (searchParams.has("multiview")) {
             multiview = searchParams.get("multiview");
             let focusNumber = parseInt(multiview);
@@ -2355,7 +2348,7 @@ export class AnnotationMulti extends TatorElement {
     let prime_fps = this._fps[this._longest_idx];
     for (let idx = 0; idx < this._videos.length; idx++) {
       let video = this._videos[idx];
-      video.rateChange(this._rate * (prime_fps / video._videoObject.fps));
+      video.rateChange(this._rate);
     }
 
     if (this.is_paused()) {
@@ -2472,6 +2465,7 @@ export class AnnotationMulti extends TatorElement {
     for (let video of this._videos) {
       let this_frame = Math.round(frame * (this._fps[idx] / prime_fps));
       this_frame += this._frameOffsets[idx];
+      console.info(`GBF=${frame} VIDEO_FRAME=${this_frame}`);
       let cb = (frameIdx, source, width, height) => {
         video._draw.clear();
         video._effectManager.clear();
