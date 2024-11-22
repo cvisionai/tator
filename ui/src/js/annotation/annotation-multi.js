@@ -2222,7 +2222,6 @@ export class AnnotationMulti extends TatorElement {
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++) {
         let video = this._videos[idx];
-        video.rateChange(this._rate * (prime_fps / video._videoObject.fps));
         playing |= video.play();
       }
 
@@ -2258,7 +2257,6 @@ export class AnnotationMulti extends TatorElement {
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++) {
         let video = this._videos[idx];
-        video.rateChange(this._rate * (prime_fps / video._videoObject.fps));
         playing |= video.play();
       }
       if (playing) {
