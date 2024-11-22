@@ -64,6 +64,16 @@ export class TimeStore {
   }
 
   /**
+   * @ initialize via constants because multi's don't really have primary in variable FPS settings
+   * *
+   */
+  setLengthAndFps(length, fps) {
+    this._globalFPS = fps;
+    this._lastGlobalFrame = length - 1;
+  }
+
+
+  /**
    * @param {Tator.Media} media - Media to add to the internal map when retrieving time info
    * @param {integer} channelIndex - Associated channel index
    */
