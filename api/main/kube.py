@@ -163,7 +163,7 @@ def get_jobs(selector, project=None):
     return jobs
 
 
-def cancel_jobs(selector, project):
+def cancel_jobs(selector, project=None):
     """Deletes argo workflows by selector."""
     clusters = _get_clusters(project)
     cancelled = 0
@@ -177,21 +177,22 @@ def cancel_jobs(selector, project):
                 plural="workflows",
                 label_selector=selector,
             )
-            items = response["items"]
-            if len(items) == 0:
-                continue
-            else:
+        except:
+            continue
+        items = response["items"]
+        if len(items) == 0:
+            continue
+        else:
+            for item in items:
                 # Get the object by selecting on uid label.
                 response = api.delete_namespaced_custom_object(
                     group="argoproj.io",
                     version="v1alpha1",
                     namespace="default",
                     plural="workflows",
-                    label_selector=selector,
+                    name=item["metadata"]["name"],
                 )
-                cancelled += len(items)
-        except:
-            continue
+                cancelled += 1
     return cancelled
 
 
