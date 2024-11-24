@@ -24,8 +24,8 @@ from ..schema import AlgorithmDetailSchema
 from ..schema import AlgorithmListSchema
 from ..schema.components.algorithm import alg_fields as fields
 from ..schema.components.algorithm import algorithm as alg_schema
+from .._get_and_render import get_and_render, to_dict
 
-from .hosted_template import get_and_render, to_dict
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission

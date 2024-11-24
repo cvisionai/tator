@@ -21,7 +21,7 @@ from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .models import Algorithm, JobCluster, MediaType, HostedTemplate
-from .rest.hosted_template import get_and_render
+from ._get_and_render import get_and_render
 from .version import Git
 
 logger = logging.getLogger(__name__)

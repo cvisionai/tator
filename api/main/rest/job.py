@@ -28,6 +28,8 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission, ProjectViewOnlyPermission
 from ._job import workflow_to_job
+from ._job import _job_media_ids
+from ._job import _job_project
 
 logger = logging.getLogger(__name__)
 
@@ -35,18 +37,6 @@ logger = logging.getLogger(__name__)
 def media_batches(media_list, files_per_job):
     for i in range(0, len(media_list), files_per_job):
         yield media_list[i : i + files_per_job]
-
-def _job_media_ids(job):
-    parameters = job["spec"]["arguments"]["parameters"]
-    for param in parameters:
-        if param["name"] == "media_ids":
-            return [int(media_id) for media_id in param["value"].split(",")]
-
-def _job_project(job):
-    parameters = job["spec"]["arguments"]["parameters"]
-    for param in parameters:
-        if param["name"] == "project_id":
-            return int(param["value"])
 
 class JobListAPI(BaseListView):
     """Interact with list of background jobs."""

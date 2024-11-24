@@ -1,8 +1,6 @@
 import logging
 import os
 
-import jinja2
-import requests
 from django.db import transaction
 from django.forms.models import model_to_dict
 from django.conf import settings
@@ -15,6 +13,7 @@ from ..models import HostedTemplate
 from ..models import database_qs
 from ..models import RowProtection
 from .._permission_util import PermissionMask
+from .._get_and_render import get_and_render
 
 from ..schema import HostedTemplateDetailSchema
 from ..schema import HostedTemplateListSchema
@@ -24,19 +23,6 @@ from ._permissions import OrganizationEditPermission, OrganizationMemberPermissi
 from ..schema import parse
 
 logger = logging.getLogger(__name__)
-
-
-def to_dict(param_list):
-    return {p["name"]: p["value"] for p in param_list}
-
-
-def get_and_render(ht, reg):
-    headers = {**to_dict(ht.headers), **to_dict(reg.get("headers", []))}
-    tparams = {**to_dict(ht.tparams), **to_dict(reg.get("tparams", []))}
-    response = requests.get(ht.url, headers=headers)
-    template = jinja2.Template(response.text)
-    rendered_string = template.render(tparams)
-    return rendered_string
 
 
 HOSTED_TEMPLATE_PROPERTIES = ["id", "name", "organization", "url", "tparams"]
