@@ -14,7 +14,8 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 
 from ..models import *
-from ..cache import TatorCache
+from ..kube import get_jobs
+from ._job import _job_project
 
 from .._permission_util import augment_permission, shift_permission, ColBitAnd, PermissionMask
 from functools import reduce
@@ -54,11 +55,10 @@ class ProjectPermissionBase(BasePermission):
                 raise Http404
         elif "uid" in view.kwargs:
             uid = view.kwargs["uid"]
-            cache = TatorCache().get_jobs_by_uid(uid)
-            if cache is not None and len(cache) == 1:
-                project = get_object_or_404(Project, pk=cache[0]["project"])
-            else:
+            jobs = get_jobs(f"uid={uid}")
+            if len(jobs) == 0:
                 raise Http404
+            project = get_object_or_404(Project, pk=_job_project(jobs[0]))
         elif "elemental_id" in view.kwargs:
             elemental_id = view.kwargs["elemental_id"]
 

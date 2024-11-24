@@ -15,7 +15,6 @@ from ..kube import get_jobs
 from ..kube import cancel_jobs
 from ..schema import JobListSchema
 from ..schema import JobDetailSchema
-from ..cache import TatorCache
 from ..models import Media
 from ..kube import TatorAlgorithm
 from ._base_views import BaseListView
@@ -37,6 +36,17 @@ def media_batches(media_list, files_per_job):
     for i in range(0, len(media_list), files_per_job):
         yield media_list[i : i + files_per_job]
 
+def _job_media_ids(job):
+    parameters = job["spec"]["arguments"]["parameters"]
+    for param in parameters:
+        if param["name"] == "media_ids":
+            return [int(media_id) for media_id in param["value"].split(",")]
+
+def _job_project(job):
+    parameters = job["spec"]["arguments"]["parameters"]
+    for param in parameters:
+        if param["name"] == "project_id":
+            return int(param["value"])
 
 class JobListAPI(BaseListView):
     """Interact with list of background jobs."""
@@ -139,8 +149,7 @@ class JobListAPI(BaseListView):
 
         # Retrieve the jobs so we have a list
         selector = f"project={project_id},gid={gid}"
-        cache = TatorCache().get_jobs_by_gid(gid, first_only=False)
-        jobs = get_jobs(selector, cache)
+        jobs = get_jobs(selector, project_id)
         jobs = [workflow_to_job(job) for job in jobs]
 
         return {
@@ -157,19 +166,9 @@ class JobListAPI(BaseListView):
         selector = f"project={project},job_type=algorithm"
         if gid is not None:
             selector += f",gid={gid}"
-            cache = TatorCache().get_jobs_by_gid(gid)
-            if not cache:
-                cache = []
-            else:
-                assert cache[0]["project"] == project
-        elif media_ids:
-            cache = TatorCache().get_jobs_by_media_id(project, media_ids, "algorithm")
-        else:
-            cache = TatorCache().get_jobs_by_project(project, "algorithm")
-        jobs = []
-        for elem in cache:
-            uid_selector = selector + f",uid={elem['uid']}"
-            jobs.extend(get_jobs(uid_selector, cache))
+        jobs = get_jobs(selector, project)
+        if media_ids is not None:
+            jobs = [job for job in jobs if bool(set(_job_media_ids(job)) & set(media_ids))]
         return [workflow_to_job(job) for job in jobs]
 
     def _delete(self, params):
@@ -180,14 +179,7 @@ class JobListAPI(BaseListView):
         selector = f"project={project},job_type=algorithm"
         if gid is not None:
             selector += f",gid={gid}"
-            cache = TatorCache().get_jobs_by_gid(gid)
-            if not cache:
-                cache = []
-            else:
-                assert cache[0]["project"] == project
-        else:
-            cache = TatorCache().get_jobs_by_project(project, "algorithm")
-        cancelled = cancel_jobs(selector, cache)
+        cancelled = cancel_jobs(selector, project)
         return {"message": f"Deleted {cancelled} jobs for project {project}!"}
 
 
@@ -215,20 +207,14 @@ class JobDetailAPI(BaseDetailView):
 
     def _get(self, params):
         uid = params["uid"]
-        cache = TatorCache().get_jobs_by_uid(uid)
-        if cache is None:
-            raise Http404
-        jobs = get_jobs(f"uid={uid}", cache)
+        jobs = get_jobs(f"uid={uid}")
         if len(jobs) != 1:
             raise Http404
         return workflow_to_job(jobs[0])
 
     def _delete(self, params):
         uid = params["uid"]
-        cache = TatorCache().get_jobs_by_uid(uid)
-        if cache is None:
-            raise Http404
-        cancelled = cancel_jobs(f"uid={uid}", cache)
+        cancelled = cancel_jobs(f"uid={uid}")
         if cancelled != 1:
             raise Http404
 
