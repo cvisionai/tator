@@ -54,11 +54,11 @@ class ProjectPermissionBase(BasePermission):
             if project is None:
                 raise Http404
         elif "uid" in view.kwargs:
-            uid = view.kwargs["uid"]
-            jobs = get_jobs(f"uid={uid}")
-            if len(jobs) == 0:
-                raise Http404
-            project = get_object_or_404(Project, pk=_job_project(jobs[0]))
+            # Have to get the object to know its project
+            job = view._get(view.params)
+            if "job" in job:
+                job = job["job"]
+            project = get_object_or_404(Project, pk=job["project"])
         elif "elemental_id" in view.kwargs:
             elemental_id = view.kwargs["elemental_id"]
 

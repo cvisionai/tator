@@ -56,6 +56,8 @@ class ProjectPermissionBase(BasePermission):
         elif "uid" in view.kwargs:
             # Have to get the object to know its project
             job = view._get(view.params)
+            if "job" in job:
+                job = job["job"]
             project = get_object_or_404(Project, pk=job["project"])
         elif "elemental_id" in view.kwargs:
             elemental_id = view.kwargs["elemental_id"]
