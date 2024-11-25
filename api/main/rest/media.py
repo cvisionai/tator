@@ -242,7 +242,7 @@ def _create_media(project, params, user, use_rq=False):
     gid = params.get("gid", None)
     uid = params.get("uid", None)
     new_attributes = params.get("attributes", None)
-    url = params.get("url")
+    url = params.get("url", None)
     elemental_id = params.get("elemental_id", uuid4())
     if gid is not None:
         gid = str(gid)
@@ -317,15 +317,18 @@ def _create_media(project, params, user, use_rq=False):
         # Set up S3 client.
         tator_store = get_tator_store(project_obj.bucket)
 
-        reference_only = params.get("reference_only", 0) == 1
-        if use_rq:
-            push_job(
-                "image_jobs",
-                main._import_image._import_image,
-                args=(name, url, thumbnail_url, media_obj.id, reference_only),
-            )
-        else:
-            main._import_image._import_image(name, url, thumbnail_url, media_obj.id, reference_only)
+        if url:
+            reference_only = params.get("reference_only", 0) == 1
+            if use_rq:
+                push_job(
+                    "image_jobs",
+                    main._import_image._import_image,
+                    args=(name, url, thumbnail_url, media_obj.id, reference_only),
+                )
+            else:
+                main._import_image._import_image(
+                    name, url, thumbnail_url, media_obj.id, reference_only
+                )
 
     else:
         # Create the media object.

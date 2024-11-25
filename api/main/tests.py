@@ -2997,6 +2997,9 @@ class ImageTestCase(
         self.patch_json = {"name": "image1"}
         memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
+    def test_empty_image(self):
+        pass
+
 
 class LocalizationBoxTestCase(
     TatorTransactionTest,
