@@ -4,18 +4,18 @@ function sanitizeHTML(input) {
   // Create a DOM parser
   const parser = new DOMParser();
   // Parse the input as HTML
-  const doc = parser.parseFromString(input, 'text/html');
+  const doc = parser.parseFromString(input, "text/html");
   // Check if the input was parsed as HTML (not just plain text)
   const isHTML = doc.body.children.length > 0;
   if (isHTML) {
-      // Remove all <script> tags
-      const scripts = doc.querySelectorAll('script');
-      scripts.forEach(script => script.remove());
-      // Return the sanitized HTML
-      return doc.body.innerHTML;
+    // Remove all <script> tags
+    const scripts = doc.querySelectorAll("script");
+    scripts.forEach((script) => script.remove());
+    // Return the sanitized HTML
+    return doc.body.innerHTML;
   } else {
-      // If not HTML, return the input as-is
-      return input;
+    // If not HTML, return the input as-is
+    return input;
   }
 }
 
@@ -54,7 +54,6 @@ export class ProjectText extends TatorElement {
         const summaryText = document.createElement("div");
         summaryText.innerHTML = sanitizeHTML(text1);
 
-
         if (lines.length > 2) {
           const details = document.createElement("details");
           details.setAttribute(
@@ -69,7 +68,7 @@ export class ProjectText extends TatorElement {
           summary.appendChild(summaryText);
 
           const text2 = lines.slice(2).join("\n");
-          const detailText = document.createElement('div');
+          const detailText = document.createElement("div");
           detailText.innerHTML = sanitizeHTML(text2);
           details.appendChild(detailText);
         } else {
