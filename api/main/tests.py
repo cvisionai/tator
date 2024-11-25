@@ -682,7 +682,6 @@ class ElementalIDChangeMixin:
         for obj in response.data:
             self.assertEqual(obj["elemental_id"], new_elemental_id)
 
-
 class EntityAuthorChangeMixin:
     def test_author_change(self):
         test_entity = self.entities[0]
@@ -2998,7 +2997,21 @@ class ImageTestCase(
         memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_empty_image(self):
-        pass
+        body = [
+            {
+                "type": self.image_type.pk,
+                "section": "asdf",
+                "name": "asdf",
+                "md5": "asdf",
+                "attributes": {"String Test": unique_string_attr_val},
+            }
+        ]
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format="json")
+        media_id1 = response.data["id"][0]
+
+        response = self.client.get(f"/rest/Media/{media_id1}")
+        assert response.data["attributes"]["String Test"] == unique_string_attr_val
+        assert response.data["media_files"] == {}
 
 
 class LocalizationBoxTestCase(
