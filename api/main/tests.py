@@ -2594,6 +2594,9 @@ class ImageTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "image1"}
 
+    def test_empty_image(self):
+        pass
+
 
 class LocalizationBoxTestCase(
     TatorTransactionTest,
