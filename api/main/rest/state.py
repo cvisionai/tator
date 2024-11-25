@@ -628,9 +628,19 @@ class StateDetailBaseAPI(BaseDetailView):
                     f"Pedantic mode is enabled. Can not edit prior object {state.pk}, must only edit latest mark on version."
                     f"Object is mark {state.mark} of {state.latest_mark} for {state.version.name}/{state.elemental_id}"
                 )
+            old_media = state.media.all()
+            old_localizations = state.localizations.all()
             state.pk = None
             state.variant_deleted = True
+            origin_datetime = state.created_datetime
             state.save()
+            found_it = State.objects.get(pk=state.pk)
+            # Keep original creation time
+            found_it.created_datetime = origin_datetime
+            found_it.save()
+            found_it.media.set(old_media)
+            found_it.localizations.set(old_localizations)
+            found_it.save()
             obj_id = state.pk
             log_changes(state, state.model_dict, state.project, self.request.user)
             qs = Localization.objects.filter(pk__in=delete_localizations)
