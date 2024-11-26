@@ -946,7 +946,6 @@ export class AnnotationPlayer extends TatorElement {
       this._video.currentFrame()
     );
 
-
     this._slider.setAttribute("min", 0);
     this._slider.setAttribute("max", this._timeStore.getLastGlobalFrame());
 
