@@ -179,7 +179,7 @@ media_spec = {
             "type": "string",
         },
         "reference_only": {
-            "description": "Do not import the media resources into Tator. This causes the image to be accessed at the supplied URL upon access in the UI. Valid for images only.",
+            "description": "Do not import the media resources into Tator. This causes the image to be accessed at the supplied URL upon access in the UI. Attempts loading the image from the URL, but fall back to other records if the URL is not accessible.",
             "type": "integer",
             "default": 0,
             "maximum": 1,
