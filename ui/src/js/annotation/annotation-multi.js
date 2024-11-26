@@ -829,6 +829,11 @@ export class AnnotationMulti extends TatorElement {
 
     this._videoTimeline.init(0, this._timeStore.getLastGlobalFrame());
     this._entityTimeline.init(0, this._timeStore.getLastGlobalFrame());
+    this._displayTimelineLabels = true;
+    this._entityTimeline.showFocus(
+      this._displayTimelineLabels,
+      this._videos[this._primaryVideoIndex].currentFrame()
+    );
 
     this._slider.setAttribute("min", 0);
     this._slider.setAttribute("max", this._timeStore.getLastGlobalFrame());
