@@ -122,6 +122,7 @@ SET plan_cache_mode=auto;
 RETURN NEW;
 """
 
+
 # Register prepared statements for the triggers to optimize performance on creation of a database  connection
 @receiver(connection_created)
 def on_connection_created(sender, connection, **kwargs):
@@ -1402,6 +1403,7 @@ class Media(Model, ModelDiffMixin):
 
 
     """
+
     class Meta:
         triggers = [
             pgtrigger.Trigger(
@@ -2484,6 +2486,7 @@ class RowProtection(Model):
     For Media Requests:
        - Find permission objects that match media+user
     """
+
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(
         User, on_delete=SET_NULL, null=True, blank=True, related_name="rp_created_by"
@@ -2557,6 +2560,7 @@ class ProjectLookup(Model):
     localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
     state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+
     class Meta:
         constraints = [
             UniqueConstraint(

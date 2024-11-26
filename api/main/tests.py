@@ -658,6 +658,7 @@ class ElementalIDChangeMixin:
         for obj in response.data:
             self.assertEqual(obj["elemental_id"], new_elemental_id)
 
+
 class EntityAuthorChangeMixin:
     def test_author_change(self):
         test_entity = self.entities[0]
