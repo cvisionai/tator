@@ -692,7 +692,7 @@ export class EntityCard extends TatorElement {
       this.setAttribute("name", this._media.name);
     }
 
-    function hasValue(x) {
+    function hasValue(value) {
       return !(
         value === null ||
         value === undefined ||
