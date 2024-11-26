@@ -1581,20 +1581,7 @@ export class EntityTimeline extends BaseTimeline {
   showFocus(display, currentFrame) {
     if (display) {
       if (currentFrame != null) {
-        var timelineSpan = this._maxFrame - this._minFrame;
-        var window = Math.floor(timelineSpan * 0.1);
-        if (window < 25) {
-          window = 25;
-        }
-        var minFrame = currentFrame - window;
-        if (minFrame < this._minFrame) {
-          minFrame = this._minFrame;
-        }
-        var maxFrame = currentFrame + window;
-        if (maxFrame > this._maxFrame) {
-          maxFrame = this._maxFrame;
-        }
-        this._mainBrushWindow = [minFrame, maxFrame];
+        this._mainBrushWindow = [this._minFrame, this._maxFrame];
       }
 
       this._focusTimelineDiv.style.display = "block";
