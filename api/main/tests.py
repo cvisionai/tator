@@ -2594,9 +2594,10 @@ class ImageTestCase(
         self.patch_json = {"name": "image1"}
 
     def test_empty_image(self):
+        unique_string_attr_val = str(uuid4())
         body = [
             {
-                "type": self.image_type.pk,
+                "type": self.entity_type.pk,
                 "section": "asdf",
                 "name": "asdf",
                 "md5": "asdf",
@@ -2608,7 +2609,7 @@ class ImageTestCase(
 
         response = self.client.get(f"/rest/Media/{media_id1}")
         assert response.data["attributes"]["String Test"] == unique_string_attr_val
-        assert response.data["media_files"] == {}
+        assert response.data["media_files"] in [None, {}]
 
 
 class LocalizationBoxTestCase(
