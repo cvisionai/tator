@@ -69,10 +69,6 @@ export class ToolsAppletPanel extends TatorElement {
 
   togglePanel() {
     this._panel.hidden = !this._panel.hidden;
-
-    if (this._panel.hidden && this._page?._sidebar?._edit) {
-      this._page._sidebar._edit.click();
-    }
   }
 
   /**
