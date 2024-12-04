@@ -125,7 +125,13 @@ export class CanvasAppletWrapper extends TatorElement {
 
   async updateMedia(media) {
     this._lastMediaId = media.id;
-    await this._appletElement.updateMedia(media);
+    // This check exists to maintain backwards compatibility with applet deployments that
+    // don't have this function implemented.
+    if (typeof this._appletElement.updateMedia === "function") {
+      await this._appletElement.updateMedia(media);
+    } else {
+      return;
+    }
   }
 
   // #TODO
