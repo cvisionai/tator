@@ -169,11 +169,6 @@ export class CheckboxSet extends TatorElement {
   updateValue(checkedList) {
     for (let checkbox of this._inputs) {
       const currentVal = decodeURI(checkbox._input.value);
-      console.log(
-        `checkedList.includes(currentVal)  => ${checkedList.includes(
-          currentVal
-        )}`
-      );
       checkbox._checked = checkedList.includes(currentVal);
     }
   }
