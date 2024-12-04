@@ -1,6 +1,4 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Registered Dashboards</title>
 <script type="module">
   import "{{ static_path }}/ui/src/js/analytics/dashboards/index.js";
@@ -8,7 +6,4 @@
   const page = document.createElement("dashboard-portal");
   document.body.appendChild(page);
 </script>
-{% endblock head %}
-
-{% block body %}
-{% endblock body %}
+{% endblock head %} {% block body %} {% endblock body %}

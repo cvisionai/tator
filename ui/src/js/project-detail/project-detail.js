@@ -1744,37 +1744,37 @@ export class ProjectDetail extends TatorPage {
     // Set the active folder or search and the mainSection portion of the page
     this._selectedSection = null;
     if (sectionId != null) {
-			for (const folder of allFolders) {
-				const section = folder.getSection();
-				if (section.id == sectionId) {
-					folder.setActive();
-					this._selectedSection = section;
-					this._sectionSearchDisplay.style.display = "none";
-					break;
-				}
-			}
+      for (const folder of allFolders) {
+        const section = folder.getSection();
+        if (section.id == sectionId) {
+          folder.setActive();
+          this._selectedSection = section;
+          this._sectionSearchDisplay.style.display = "none";
+          break;
+        }
+      }
 
-			if (this._selectedSection == null) {
-				for (const search of allSearches) {
-					const section = search.getSection();
-					if (section.id == sectionId) {
-						search.setActive();
-						this._selectedSection = section;
-						this._sectionSearchDisplay.style.display = "flex";
-						this._sectionSearchDisplay.setDisplay(
-							this._selectedSection.object_search,
-							this._selectedSection.related_search
-						);
-						break;
-					}
-				}
-			}
-		}
+      if (this._selectedSection == null) {
+        for (const search of allSearches) {
+          const section = search.getSection();
+          if (section.id == sectionId) {
+            search.setActive();
+            this._selectedSection = section;
+            this._sectionSearchDisplay.style.display = "flex";
+            this._sectionSearchDisplay.setDisplay(
+              this._selectedSection.object_search,
+              this._selectedSection.related_search
+            );
+            break;
+          }
+        }
+      }
+    }
 
-		if (this._selectedSection == null) {
-			this._allMediaButton.setActive();
-			this._sectionSearchDisplay.style.display = "none";
-		}
+    if (this._selectedSection == null) {
+      this._allMediaButton.setActive();
+      this._sectionSearchDisplay.style.display = "none";
+    }
 
     // Expand the folders in the library panel until the active folder is selected and in view
     if (this._selectedSection != null) {

@@ -1,4 +1,8 @@
-<script src="https://tator-ci.s3.amazonaws.com/datadog-rum.js" type="text/javascript" crossorigin="anonymous"></script>
+<script
+  src="https://tator-ci.s3.amazonaws.com/datadog-rum.js"
+  type="text/javascript"
+  crossorigin="anonymous"
+></script>
 <script>
   const allowedHosts = "{{ datadog_allowed_hosts }}".split(",");
   const useDatadog = (url) => {
@@ -6,31 +10,36 @@
     const host = parsed.host;
     const hostname = parsed.hostname; // Allow with or without port
     const path = parsed.pathname;
-    if ((allowedHosts.includes(host) || allowedHosts.includes(hostname)) && path.startsWith("/rest")) {
+    if (
+      (allowedHosts.includes(host) || allowedHosts.includes(hostname)) &&
+      path.startsWith("/rest")
+    ) {
       return true;
     }
     return false;
-  }
+  };
   window.DD_RUM &&
-  window.DD_RUM.init({
-    clientToken: '{{ datadog_client_token }}',
-    applicationId: '{{ datadog_application_id }}',
-    site: 'datadoghq.com',
-    service: 'frontend',
-    env: '{{ datadog_env }}',
-    version: '{{ datadog_version }}',
-    sessionSampleRate: 100,
-    sessionReplaySampleRate: 0,
-    trackResources: true,
-    trackLongTasks: false,
-    trackUserInteractions: false,
-    allowedTracingUrls: [useDatadog],
-  });
+    window.DD_RUM.init({
+      clientToken: "{{ datadog_client_token }}",
+      applicationId: "{{ datadog_application_id }}",
+      site: "datadoghq.com",
+      service: "frontend",
+      env: "{{ datadog_env }}",
+      version: "{{ datadog_version }}",
+      sessionSampleRate: 100,
+      sessionReplaySampleRate: 0,
+      trackResources: true,
+      trackLongTasks: false,
+      trackUserInteractions: false,
+      allowedTracingUrls: [useDatadog],
+    });
   let userData;
   if (localStorage.id_token) {
-    const parts = localStorage.id_token.split('.');
+    const parts = localStorage.id_token.split(".");
     const base64UrlPayload = parts[1];
-    const base64Payload = base64UrlPayload.replace(/-/g, '+').replace(/_/g, '/');
+    const base64Payload = base64UrlPayload
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
     const userData = JSON.parse(atob(base64Payload));
     console.log(`USER DATA: ${JSON.stringify(userData)}`);
     window.DD_RUM.setUser({
@@ -50,29 +59,33 @@
       credentials: "same-origin",
       headers: {
         "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
     })
-    .then(response => response.json())
-    .then(userData => {
-      console.log(`USER DATA: ${JSON.stringify(userData)}`);
-      window.DD_RUM.setUser({
-        id: userData.id,
-        name: `${userData.first_name} ${userData.last_name}`,
-        username: userData.username,
-        email: userData.email,
+      .then((response) => response.json())
+      .then((userData) => {
+        console.log(`USER DATA: ${JSON.stringify(userData)}`);
+        window.DD_RUM.setUser({
+          id: userData.id,
+          name: `${userData.first_name} ${userData.last_name}`,
+          username: userData.username,
+          email: userData.email,
+        });
       });
-    });
   }
 </script>
-<script type="text/javascript" src="https://tator-ci.s3.amazonaws.com/datadog-logs.js" crossorigin="anonymous"></script>
+<script
+  type="text/javascript"
+  src="https://tator-ci.s3.amazonaws.com/datadog-logs.js"
+  crossorigin="anonymous"
+></script>
 <script>
   window.DD_LOGS &&
     window.DD_LOGS.init({
       clientToken: "{{ datadog_client_token }}",
-      site: 'datadoghq.com',
+      site: "datadoghq.com",
       forwardErrorsToLogs: true,
       sessionSampleRate: 100,
-    })
+    });
 </script>
