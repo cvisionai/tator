@@ -123,6 +123,7 @@ export class MediaSection extends TatorElement {
   updateSectionData(sections) {
     this._sectionData = new SectionData();
     this._sectionData.init(sections);
+    this._upload.sectionData = this._sectionData;
   }
 
   async init(project, section, page, pageSize, allSections) {
@@ -194,6 +195,7 @@ export class MediaSection extends TatorElement {
     }
     this._files.mediaTypesMap = this._mediaTypesMap;
     this._sort.init("Media", mediaTypes);
+    this._upload.mediaTypes = mediaTypes;
   }
 
   set project(val) {
