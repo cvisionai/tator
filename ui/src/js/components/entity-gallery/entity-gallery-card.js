@@ -9,15 +9,15 @@ export class EntityCard extends TatorElement {
 
     // Built ins
     this.builtIns = [
-			"id",
-			"modified_by",
-			"modified_datetime",
-			"created_by",
-			"created_datetime",
-			"type",
-			"elemental_id",
-			"mark",
-		];
+      "id",
+      "modified_by",
+      "modified_datetime",
+      "created_by",
+      "created_datetime",
+      "type",
+      "elemental_id",
+      "mark",
+    ];
 
     // #todo These are not supported in card labels yet
     // this.builtIns_MediaOnly = ["created_by"];
