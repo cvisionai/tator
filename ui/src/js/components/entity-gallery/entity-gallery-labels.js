@@ -66,14 +66,19 @@ export class EntityGalleryLabels extends TatorElement {
     this._selectionValues = {};
 
     this._builtInAttributes = [
-      { name: "ID", id: "id" },
-      { name: "Modified By", id: "modified_by" },
-      { name: "Modified Datetime", id: "modified_datetime" },
-      { name: "Created Datetime", id: "created_datetime" },
-      { name: "Type", id: "type" },
-      { name: "Elemental ID", id: "elemental_id" },
-      { name: "Mark", id: "mark" },
-    ];
+			{ name: "ID", id: "id" },
+
+			{ name: "Created By", id: "created_by" },
+			{ name: "Created Datetime", id: "created_datetime" },
+
+			{ name: "Modified By", id: "modified_by" },
+			{ name: "Modified Datetime", id: "modified_datetime" },
+
+			{ name: "Type", id: "type" },
+			{ name: "Elemental ID", id: "elemental_id" },
+
+			{ name: "Mark", id: "mark" },
+		];
   }
 
   set titleEntityTypeName(val) {
