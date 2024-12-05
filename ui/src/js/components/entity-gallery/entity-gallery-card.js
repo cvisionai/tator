@@ -12,6 +12,7 @@ export class EntityCard extends TatorElement {
       "id",
       "modified_by",
       "modified_datetime",
+      "created_by",
       "created_datetime",
       "type",
       "elemental_id",
