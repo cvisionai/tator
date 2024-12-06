@@ -80,6 +80,10 @@
   color: var(--color-white);
 }
 
+.text-light-gray {
+  color: var(--color-gray--very-light);
+}
+
 .text-gray {
   color: var(--color-gray--light);
 }

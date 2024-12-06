@@ -45,12 +45,14 @@ export class SectionUpload extends UploadElement {
       this.uploadDialogInit.open();
     });
 
-    this.uploadDialogInit.addEventListener("choose-files", () => {
-      this._chosenSection = this.uploadDialogInit._parentFolders.getValue();
-      this._chosenImageType = this.uploadDialogInit._imageType.getValue();
-      this._chosenVideoType = this.uploadDialogInit._videoType.getValue();
-      this._fileInput.click();
-    });
+    this.uploadDialogInit.addEventListener("choose-files", (event) => {
+			this._fileInput.click();
+			this._chosenSection = this.uploadDialogInit._parentFolders.getValue();
+			this._chosenImageType = this.uploadDialogInit._imageType.getValue();
+			this._chosenVideoType = this.uploadDialogInit._videoType.getValue();
+			this._imageAttr = event.detail.attrImage;
+			this._videoAttr = event.detail.attrVideo;
+		});
   }
 
   connectedCallback() {
