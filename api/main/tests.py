@@ -7491,6 +7491,12 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             rp = RowProtection.objects.get(pk=rp_id)
             self.assertEqual(rp.permission, 0)
 
+     
+            # Now switch to the commandant and verify there is no permission
+            self.client.force_authenticate(user=self.commandant)
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+
             # kirk delete the row protection of engineering
             self.client.force_authenticate(user=self.kirk)
             resp = self.client.delete(f"/rest/RowProtection/{engi_rp_id}")
@@ -7499,5 +7505,4 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Now switch to the redshirt and verify they can't see the engineering section
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
-            assertResponse(self, resp, status.HTTP_200_OK)
-            self.assertEqual(len(resp.data), 0)
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
