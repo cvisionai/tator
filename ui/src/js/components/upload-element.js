@@ -110,7 +110,7 @@ export class UploadElement extends TatorElement {
         abortController: this._abortController,
         attributes: attributes ? attributes : {},
       };
-      // console.log("File is OK", fileInfo);
+      console.log("File is OK", fileInfo);
       return fileInfo;
     }
 

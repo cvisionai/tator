@@ -21,7 +21,7 @@ export class UploadDialogInit extends ModalDialog {
     this._parentFolders = document.createElement("enum-input");
     this._parentFolders.setAttribute("class", "text-gray f2");
     this._parentFolders.setAttribute("name", " Folder:");
-    formGroup2.appendChild(this._parentFolders);
+		formGroup2.appendChild(this._parentFolders);
 
     this._mediaFormGroup = document.createElement("details");
     this._mediaFormGroup.setAttribute("class", "hidden form-group");
@@ -217,8 +217,6 @@ export class UploadDialogInit extends ModalDialog {
     element.addEventListener("change", (evt) => {
       const value = Number(element.getValue());
       const attrInfo = this._typeAttributeMap.get(value);
-      console.log("Event ", value, this._typeAttributeMap, attrInfo);
-      // element.clear();
       this._setAttrList(attrInfo, type);
     });
 
@@ -231,7 +229,6 @@ export class UploadDialogInit extends ModalDialog {
 
   _setAttrList(attrList, type) {
     const list = [];
-    console.log("Setting attr list", attrList, type);
     if (attrList && attrList.length > 0) {
       for (let attr of attrList) {
         list.push({
@@ -256,8 +253,8 @@ export class UploadDialogInit extends ModalDialog {
 
   setupData() {
     const searchParams = new URLSearchParams(window.location.search),
-      selectedSection = searchParams.get("section"),
-      choices = this._sectionData.getFolderEnumChoices();
+			selectedSection = searchParams.get("section"),
+			choices = this._sectionData.getFolderEnumChoices();
 
     choices.unshift({ value: this._noParentName, label: this._noParentName });
     this._parentFolders.choices = choices;
