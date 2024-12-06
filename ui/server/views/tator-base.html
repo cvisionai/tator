@@ -2,9 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    {% if datadog_enabled %}
-    {% include "datadog.html" %}
-    {% endif %}
+    {% if datadog_enabled %} {% include "datadog.html" %} {% endif %}
     <script>
       var BACKEND = '{{ backend }}';
       var KEYCLOAK_ENABLED = {{ keycloak_enabled }};
@@ -29,13 +27,14 @@
       }
     </script>
     <script src="{{ static_path }}/require-login.js"></script>
-    <link rel="stylesheet" type="text/css" href="{{ static_path }}/ui/src/css/styles.css"/>
-    {% block head %}
-    {% endblock head %}
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ static_path }}/ui/src/css/styles.css"
+    />
+    {% block head %} {% endblock head %}
   </head>
-<body>
-  {% block body %}
-  {% endblock body %}
-</body>
-
+  <body>
+    {% block body %} {% endblock body %}
+  </body>
 </html>

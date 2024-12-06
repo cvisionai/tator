@@ -1,4 +1,5 @@
 import { UploadElement } from "../components/upload-element.js";
+import "../components/upload-dialog-init.js";
 import { svgNamespace } from "../components/tator-element.js";
 import { store } from "./store.js";
 
@@ -29,17 +30,42 @@ export class SectionUpload extends UploadElement {
     );
     svg.appendChild(path);
 
-    const input = document.createElement("input");
-    input.setAttribute("class", "sr-only");
-    input.setAttribute("type", "file");
-    input.setAttribute("multiple", "");
-    label.appendChild(input);
+    this._fileInput = document.createElement("input");
+    this._fileInput.setAttribute("class", "sr-only");
+    this._fileInput.setAttribute("type", "file");
+    this._fileInput.setAttribute("multiple", "");
+    label.after(this._fileInput);
 
-    input.addEventListener("change", this._fileSelectCallback);
+    this._fileInput.addEventListener("change", this._fileSelectCallback);
+
+    this.uploadDialogInit = document.createElement("upload-dialog-init");
+    this._shadow.appendChild(this.uploadDialogInit);
+
+    label.addEventListener("click", () => {
+      this.uploadDialogInit.open();
+    });
+
+    this.uploadDialogInit.addEventListener("choose-files", () => {
+      this._chosenSection = this.uploadDialogInit._parentFolders.getValue();
+      this._chosenImageType = this.uploadDialogInit._imageType.getValue();
+      this._chosenVideoType = this.uploadDialogInit._videoType.getValue();
+      this._fileInput.click();
+    });
   }
 
   connectedCallback() {
     this.init(store);
+  }
+
+  set sectionData(val) {
+    this._sectionData = val;
+    this.uploadDialogInit._sectionData = val;
+  }
+
+  set mediaTypes(val) {
+    this._mediaTypes = val;
+
+    this.uploadDialogInit.mediaTypes = val;
   }
 
   static get observedAttributes() {

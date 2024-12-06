@@ -4,12 +4,12 @@
 
 Prerequisites:
 
-* Node
-* GNU Make
-* Python
-* Python modules `requests` and `PyYAML`.
-* curl
-* A Tator backend running Keycloak
+- Node
+- GNU Make
+- Python
+- Python modules `requests` and `PyYAML`.
+- curl
+- A Tator backend running Keycloak
 
 Generate index files and install NPM packages:
 
@@ -37,7 +37,6 @@ npx prettier --write .
 
 For security purposes, Keycloak enabled backends are required. The server should have the following values `Clients > tator`:
 
-* `Valid redirect URIs`: `http://localhost:8080/*`
-* `Valid post logout redirect URIs`: `http://localhost:8080`
-* `Web origins`: `http://localhost:8080`
-
+- `Valid redirect URIs`: `http://localhost:8080/*`
+- `Valid post logout redirect URIs`: `http://localhost:8080`
+- `Web origins`: `http://localhost:8080`

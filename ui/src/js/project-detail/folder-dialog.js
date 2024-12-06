@@ -1,5 +1,5 @@
 import { ModalDialog } from "../components/modal-dialog.js";
-
+import { store } from "./store.js";
 /**
  * Dialog for creating a new section.
  * There will be two components:

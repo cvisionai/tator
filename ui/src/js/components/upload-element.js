@@ -9,6 +9,9 @@ export class UploadElement extends TatorElement {
     this._haveNewSection = false;
     this._abortController = new AbortController();
     this._cancel = false;
+    this._chosenSection = null;
+    this._chosenImageType = null;
+    this._chosenVideoType = null;
   }
 
   init(store) {
@@ -40,42 +43,71 @@ export class UploadElement extends TatorElement {
       /(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
     );
     const isArchive = ext.match(/^(zip|tar)/i);
+
+    let mediaType = null,
+      fileOk = false;
+
+    if (
+      isImage &&
+      this._chosenImageType !== null &&
+      this._chosenImageType?.file_format === null
+    ) {
+      mediaType = this._chosenImageType;
+    } else if (
+      isVideo &&
+      this._chosenVideoType !== null &&
+      this._chosenVideoType?.file_format === null
+    ) {
+      mediaType = this._chosenVideoType;
+    }
+
     const mediaTypes = this._store.getState().mediaTypes;
-    for (let idx = 0; idx < mediaTypes.length; idx++) {
-      // TODO: It is possible for users to define two media types with
-      // the same extension, in which case we might be uploading to the
-      // wrong media type.
-      const mediaType = this._store.getState().mediaTypes[idx];
-      let fileOk = false;
-      if (mediaType.file_format === null) {
-        if (mediaType.dtype == "image" && isImage) {
-          fileOk = true;
-        } else if (mediaType.dtype == "video" && isVideo) {
-          fileOk = true;
+    for (let currentType of mediaTypes) {
+      if (mediaType === null) {
+        if (currentType.file_format === null) {
+          if (currentType.dtype == "image" && isImage) {
+            fileOk = true;
+            mediaType = currentType;
+          } else if (currentType.dtype == "video" && isVideo) {
+            fileOk = true;
+            mediaType = currentType;
+          }
+        } else {
+          fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
+          mediaType = currentType;
+
+          if (isArchive) {
+            fileOk = true;
+          }
         }
       } else {
-        fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
-        if (isArchive) {
-          fileOk = true;
+        if (Number(mediaType) === currentType.id) {
+          mediaType = currentType;
         }
-      }
-
-      if (fileOk) {
-        function progressCallback(progress) {
-          this._store.setState({ uploadChunkProgress: progress });
-        }
-        return {
-          file: file,
-          gid: gid,
-          mediaType: isArchive ? -1 : mediaType,
-          section: this._section,
-          isImage: isImage,
-          isArchive: isArchive,
-          progressCallback: progressCallback.bind(this),
-          abortController: this._abortController,
-        };
       }
     }
+
+    if (fileOk) {
+      function progressCallback(progress) {
+        this._store.setState({ uploadChunkProgress: progress });
+      }
+      const fileInfo = {
+        file: file,
+        gid: gid,
+        mediaType: isArchive ? -1 : mediaType,
+        section:
+          this._section && !this._chosenSection
+            ? this._section
+            : this._chosenSection,
+        isImage: isImage,
+        isArchive: isArchive,
+        progressCallback: progressCallback.bind(this),
+        abortController: this._abortController,
+      };
+      console.log("File is OK returning fileInfo", fileInfo);
+      return fileInfo;
+    }
+
     this._store.setState({
       uploadError: `${file.name} is not a valid file type for this project!`,
     });
@@ -88,7 +120,7 @@ export class UploadElement extends TatorElement {
     // Prevent browser default behavior.
     ev.preventDefault();
 
-    console.log(ev.target.files);
+    // console.log(ev.target.files);
 
     // Send immediate notification of adding files.
     this.dispatchEvent(new Event("addingfiles", { composed: true }));

@@ -956,6 +956,8 @@ export class ProjectDetail extends TatorPage {
                 this._memberships = memberships;
                 this._versions = versions;
 
+                store.setState({ sections: this._sections });
+
                 // Hide algorithms if needed from the project detail page.
                 // There are a standard list of algorithm names to hide as well as categories
                 var hiddenAlgos = [
@@ -1823,6 +1825,7 @@ export class ProjectDetail extends TatorPage {
       pageSize,
       this._sections
     );
+    store.setState({ selectedSection: this._selectedSection });
   }
 
   /**
