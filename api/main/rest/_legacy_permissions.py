@@ -18,7 +18,8 @@ from ..models import Affiliation
 from ..models import User
 from ..models import Media
 from ..models import Algorithm
-from ..cache import TatorCache
+from ..kube import get_jobs
+from ._job import _job_project
 
 import logging
 
@@ -53,12 +54,11 @@ class ProjectPermissionBase(BasePermission):
             if project is None:
                 raise Http404
         elif "uid" in view.kwargs:
-            uid = view.kwargs["uid"]
-            cache = TatorCache().get_jobs_by_uid(uid)
-            if cache is not None and len(cache) == 1:
-                project = get_object_or_404(Project, pk=cache[0]["project"])
-            else:
-                raise Http404
+            # Have to get the object to know its project
+            job = view._get(view.params)
+            if "job" in job:
+                job = job["job"]
+            project = get_object_or_404(Project, pk=job["project"])
         elif "elemental_id" in view.kwargs:
             elemental_id = view.kwargs["elemental_id"]
             obj = view.get_queryset().filter(elemental_id=elemental_id)

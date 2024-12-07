@@ -692,13 +692,27 @@ export class EntityCard extends TatorElement {
       this.setAttribute("name", this._media.name);
     }
 
+    function hasValue(value) {
+      return !(
+        value === null ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0)
+      );
+    }
+
     // Set thumnail
-    if (this._media.media_files && this._media.media_files.thumbnail) {
+    if (
+      this._media.media_files &&
+      hasValue(this._media.media_files.thumbnail)
+    ) {
       this.setAttribute("thumb", this._media.media_files.thumbnail[0].path);
     }
     this.removeAttribute("thumb-gif"); // why is this always done? instead of below on else
 
-    if (this._media.media_files && this._media.media_files.thumbnail_gif) {
+    if (
+      this._media.media_files &&
+      hasValue(this._media.media_files.thumbnail_gif)
+    ) {
       this.setAttribute(
         "thumb-gif",
         this._media.media_files.thumbnail_gif[0].path
@@ -706,7 +720,7 @@ export class EntityCard extends TatorElement {
     }
 
     if (this._media.media_files) {
-      if (this._media.media_files.attachment) {
+      if (hasValue(this._media.media_files.attachment)) {
         this.attachments = this._media.media_files.attachment;
       } else {
         this.attachments = [];

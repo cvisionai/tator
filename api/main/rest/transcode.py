@@ -9,7 +9,6 @@ from django.http import Http404
 import requests
 
 from ..store import get_tator_store
-from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
 from ..models import Media
@@ -194,19 +193,6 @@ class TranscodeListAPI(BaseListView):
         )
         response_data = {"message": msg, "id": str(uid), "object": _job_to_transcode(job_list[0])}
 
-        # Cache the job for cancellation/authentication.
-        TatorCache().set_job(
-            {
-                "uid": uid,
-                "gid": gid,
-                "user": self.request.user.pk,
-                "project": project,
-                "algorithm": -1,
-                "datetime": datetime.datetime.utcnow().isoformat() + "Z",
-            },
-            "transcode",
-        )
-
         # Update Media object with workflow name
         media = Media.objects.get(pk=media_id)
         workflow_names = media.attributes.get("_tator_import_workflow", [])
@@ -333,9 +319,6 @@ class TranscodeDetailAPI(BaseDetailView):
 
     def _get(self, params):
         uid = params["uid"]
-        cache = TatorCache().get_jobs_by_uid(uid)
-        if cache is None:
-            raise Http404
         response = requests.put(ENDPOINT, json=[uid])
         job_list = response.json()
         if len(job_list) != 1:
@@ -344,9 +327,6 @@ class TranscodeDetailAPI(BaseDetailView):
 
     def _delete(self, params):
         uid = params["uid"]
-        cache = TatorCache().get_jobs_by_uid(uid)
-        if cache is None:
-            raise Http404
         response = requests.delete(ENDPOINT, json=[uid])
         return {"message": response.json()["message"]}
 
