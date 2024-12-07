@@ -56,12 +56,16 @@ export class UploadElement extends TatorElement {
       this._chosenImageType?.file_format === null
     ) {
       mediaType = this._chosenImageType;
+      fileOk = true;
+      attributes = this._imageAttr;
     } else if (
       isVideo &&
       this._chosenVideoType !== null &&
       this._chosenVideoType?.file_format === null
     ) {
       mediaType = this._chosenVideoType;
+      fileOk = true;
+      attributes = this._videoAttr;
     }
 
     const mediaTypes = this._store.getState().mediaTypes;

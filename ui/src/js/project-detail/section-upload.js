@@ -45,27 +45,43 @@ export class SectionUpload extends UploadElement {
       this.uploadDialogInit.open();
     });
 
-    this.uploadDialogInit.addEventListener("choose-files", (event) => {
-      this._fileInput.click();
+    this.uploadDialogInit.addEventListener(
+      "choose-files",
+      this._handleUpdateVars.bind(this)
+    );
+  }
 
-      const sectionId = Number(
-        this.uploadDialogInit._parentFolders?.getValue()
-      );
+  connectedCallback() {
+    this.init(store);
+  }
+
+  _handleUpdateVars(event) {
+    this._fileInput.click();
+
+    const sectionId = Number(this.uploadDialogInit._parentFolders?.getValue());
+    if (sectionId !== this.uploadDialogInit._noParentName) {
       this._chosenSection =
         sectionId && this._sectionData?._sectionIdMap?.[sectionId]?.name
           ? this._sectionData._sectionIdMap[sectionId].name
           : null;
 
       this.section = this._chosenSection;
-      this._chosenImageType = this.uploadDialogInit._imageType.getValue();
-      this._chosenVideoType = this.uploadDialogInit._videoType.getValue();
-      this._imageAttr = event.detail.attrImage;
-      this._videoAttr = event.detail.attrVideo;
-    });
-  }
+    }
 
-  connectedCallback() {
-    this.init(store);
+    const imageType = this.uploadDialogInit._imageType.getValue();
+    this._chosenImageType = this._mediaTypes.find(
+      (type) => type.id === Number(imageType)
+    );
+    const videoType = this.uploadDialogInit._videoType.getValue();
+    this._chosenVideoType = this._mediaTypes.find(
+      (type) => type.id === Number(videoType)
+    );
+
+    console.log("this._chosenImageType", this._chosenImageType);
+    console.log("this._chosenVideoType", this._chosenVideoType);
+
+    this._imageAttr = event.detail.attrImage;
+    this._videoAttr = event.detail.attrVideo;
   }
 
   set sectionData(val) {

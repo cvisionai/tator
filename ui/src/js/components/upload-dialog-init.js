@@ -257,6 +257,7 @@ export class UploadDialogInit extends ModalDialog {
       choices = this._sectionData.getFolderEnumChoices();
 
     choices.unshift({ value: this._noParentName, label: this._noParentName });
+    this._parentFolders.resetChoices();
     this._parentFolders.choices = choices;
 
     if (selectedSection) {
