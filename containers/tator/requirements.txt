@@ -4,7 +4,7 @@ certifi==2024.7.4
 cryptography==43.0.1
 datadog==0.49.1
 ddtrace==2.7.4
-django==4.2.16
+django==4.2.17
 django_admin_json_editor==0.2.3
 django-cognito-jwt==0.0.4
 django-enumfields==2.1.1
