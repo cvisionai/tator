@@ -30,6 +30,7 @@
   --color-white--50: rgba(255, 255, 255, 0.5);
   --color-white--25: rgba(255, 255, 255, 0.25);
 
+  --color-gray--very-light: #d5dbe8;
   --color-gray--light: #a2afcd;
   --color-gray--medium: #72809d;
   --color-gray--dark: #6d7a96; /* rgb(109, 122, 150) */

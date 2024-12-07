@@ -12,6 +12,8 @@ export class UploadElement extends TatorElement {
     this._chosenSection = null;
     this._chosenImageType = null;
     this._chosenVideoType = null;
+    this._videoAttr = {};
+    this._imageAttr = {};
   }
 
   init(store) {
@@ -45,7 +47,8 @@ export class UploadElement extends TatorElement {
     const isArchive = ext.match(/^(zip|tar)/i);
 
     let mediaType = null,
-      fileOk = false;
+      fileOk = false,
+      attributes = null;
 
     if (
       isImage &&
@@ -53,12 +56,16 @@ export class UploadElement extends TatorElement {
       this._chosenImageType?.file_format === null
     ) {
       mediaType = this._chosenImageType;
+      fileOk = true;
+      attributes = this._imageAttr;
     } else if (
       isVideo &&
       this._chosenVideoType !== null &&
       this._chosenVideoType?.file_format === null
     ) {
       mediaType = this._chosenVideoType;
+      fileOk = true;
+      attributes = this._videoAttr;
     }
 
     const mediaTypes = this._store.getState().mediaTypes;
@@ -68,9 +75,11 @@ export class UploadElement extends TatorElement {
           if (currentType.dtype == "image" && isImage) {
             fileOk = true;
             mediaType = currentType;
+            attributes = this._imageAttr;
           } else if (currentType.dtype == "video" && isVideo) {
             fileOk = true;
             mediaType = currentType;
+            attributes = this._videoAttr;
           }
         } else {
           fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
@@ -103,8 +112,9 @@ export class UploadElement extends TatorElement {
         isArchive: isArchive,
         progressCallback: progressCallback.bind(this),
         abortController: this._abortController,
+        attributes: attributes ? attributes : {},
       };
-      console.log("File is OK returning fileInfo", fileInfo);
+      console.log("File is OK", fileInfo);
       return fileInfo;
     }
 
@@ -119,8 +129,6 @@ export class UploadElement extends TatorElement {
   async _fileSelectCallback(ev) {
     // Prevent browser default behavior.
     ev.preventDefault();
-
-    // console.log(ev.target.files);
 
     // Send immediate notification of adding files.
     this.dispatchEvent(new Event("addingfiles", { composed: true }));
@@ -293,6 +301,6 @@ async function readEntriesPromise(directoryReader) {
       directoryReader.readEntries(resolve, reject);
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
   }
 }
