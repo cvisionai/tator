@@ -845,16 +845,15 @@ export class AnnotationMulti extends TatorElement {
   }
 
   _resizeWindow(inhibit, extra) {
-    if (extra == undefined)
-    {
+    if (extra == undefined) {
       extra = 0;
     }
     this._videoHeightPadObject.height =
       this._headerFooterPad +
       this._controls.offsetHeight +
-      this._timelineDiv.offsetHeight + extra;
-    if (inhibit)
-    {
+      this._timelineDiv.offsetHeight +
+      extra;
+    if (inhibit) {
       return;
     }
     window.dispatchEvent(new Event("resize"));
@@ -1514,10 +1513,9 @@ export class AnnotationMulti extends TatorElement {
 
           const searchParams = new URLSearchParams(window.location.search);
           if (searchParams.has("multiview")) {
-            let multiviewList = searchParams.get("multiview").split(',');
+            let multiviewList = searchParams.get("multiview").split(",");
             let focusCount = 0;
-            for (let multiview of multiviewList)
-            {
+            for (let multiview of multiviewList) {
               let focusNumber = parseInt(multiview);
               if (multiview == "hGrid") {
                 this.setHorizontal();
@@ -1533,9 +1531,7 @@ export class AnnotationMulti extends TatorElement {
                   if (currentIndex == focusNumber) {
                     if (focusCount == 0) {
                       this.setFocus(videoId);
-                    }
-                    else
-                    {
+                    } else {
                       this.addFocus(videoId);
                     }
                     focusCount++;
@@ -1630,7 +1626,7 @@ export class AnnotationMulti extends TatorElement {
       for (let id of this._focusIds) {
         posList.push(this.videoIdToPosition(id));
       }
-      var multiview = posList.join(',');
+      var multiview = posList.join(",");
     }
     var search_params = new URLSearchParams(window.location.search);
     search_params.set("multiview", multiview);
@@ -1662,8 +1658,8 @@ export class AnnotationMulti extends TatorElement {
     const tempHandler = () => {
       this.setMultiProportions();
       window.removeEventListener("resize", tempHandler);
-   };
-   window.addEventListener("resize", tempHandler);
+    };
+    window.addEventListener("resize", tempHandler);
   }
 
   setFocusVertical(vid_id) {
@@ -1680,8 +1676,7 @@ export class AnnotationMulti extends TatorElement {
     this.setFocus(vid_id);
   }
 
-  setFocusURL()
-  {
+  setFocusURL() {
     var search_params = new URLSearchParams(window.location.search);
     search_params.set("focusMode", this._focusMode);
     const path = document.location.pathname;
@@ -1695,8 +1690,7 @@ export class AnnotationMulti extends TatorElement {
     }
   }
 
-  videoIdToPosition(vid_id) 
-  {
+  videoIdToPosition(vid_id) {
     let pos = 0;
     for (let videoId in this._videoDivs) {
       if (videoId == vid_id) {
@@ -1707,17 +1701,13 @@ export class AnnotationMulti extends TatorElement {
     return -1;
   }
 
-
-
   addFocus(vid_id) {
     if (this._multiLayoutState != "focus") {
       console.warn("Can't add focus if not in focus mode");
       return;
-    }
-    else
-    {
+    } else {
       this._focusIds.push(vid_id);
-      this.assignToPrimary(vid_id, this._quality*2);
+      this.assignToPrimary(vid_id, this._quality * 2);
       this.setMultiviewUrl("focus", null);
     }
   }
@@ -1794,9 +1784,21 @@ export class AnnotationMulti extends TatorElement {
     };
 
     video_element.contextMenuAvailable.then(() => {
-      video_element.contextMenuNone.addMenuEntry("Focus Video (Vertical)", () => {this.setFocusVertical(vid_id);});
-      video_element.contextMenuNone.addMenuEntry("Focus Video (Horizontal)", () => {this.setFocusHorizontal(vid_id);});
-      video_element.contextMenuNone.addMenuEntry("Add to Focus", () => {this.addFocus(vid_id);});
+      video_element.contextMenuNone.addMenuEntry(
+        "Focus Video (Vertical)",
+        () => {
+          this.setFocusVertical(vid_id);
+        }
+      );
+      video_element.contextMenuNone.addMenuEntry(
+        "Focus Video (Horizontal)",
+        () => {
+          this.setFocusHorizontal(vid_id);
+        }
+      );
+      video_element.contextMenuNone.addMenuEntry("Add to Focus", () => {
+        this.addFocus(vid_id);
+      });
       video_element.contextMenuNone.addMenuEntry(
         "Horizontal Multiview",
         this.setHorizontal.bind(this)
@@ -1918,27 +1920,23 @@ export class AnnotationMulti extends TatorElement {
     } else {
       if (this._focusMode == "vertical") {
         this._focusDiv.style.display = "flex";
-        this._focusDiv.style.flexDirection="column";
-        this._focusDiv.style.justifyContent= "center";
-        this._focusDiv.style.maxHeight="80vh";
+        this._focusDiv.style.flexDirection = "column";
+        this._focusDiv.style.justifyContent = "center";
+        this._focusDiv.style.maxHeight = "80vh";
         this._selectedDock.style.display = "block";
         this._focusDiv.style.width = "70%";
         this._selectedDock.style.width = "30%";
         this._focusTopDiv.style.flexDirection = "row";
-      }
-      else if (this._focusMode == "horizontal")
-      {
+      } else if (this._focusMode == "horizontal") {
         this._resizeWindow(true, 175); // Add room for film strip
         this._focusDiv.style.display = "flex";
-        this._focusDiv.style.flexDirection="row";
-        this._focusDiv.style.justifyContent= "center";
+        this._focusDiv.style.flexDirection = "row";
+        this._focusDiv.style.justifyContent = "center";
         this._selectedDock.style.display = "flex";
         this._focusTopDiv.style.flexDirection = "column";
         this._focusDiv.style.width = "100%";
         this._selectedDock.style.width = "100%";
-      }
-      else
-      {
+      } else {
         console.warn(`Unknown focus mode ${this._focusMode}`);
       }
     }
@@ -1946,23 +1944,36 @@ export class AnnotationMulti extends TatorElement {
 
     for (let primary of this._focusDiv.children) {
       primary.children[0].stretch = true;
-      primary.children[0].contextMenuNone.displayEntry("Focus Video (Vertical)", false);
-      primary.children[0].contextMenuNone.displayEntry("Focus Video (Horizontal)", false);
+      primary.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Vertical)",
+        false
+      );
+      primary.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Horizontal)",
+        false
+      );
       primary.children[0].contextMenuNone.displayEntry("Add to Focus", false);
       primary.children[0].contextMenuNone.displayEntry(
         "Horizontal Multiview",
         true
       );
       primary.children[0].contextMenuNone.displayEntry("Reset Multiview", true);
-      primary.children[0].gridRows = (this._focusMode == "vertical" ? this._focusIds.length : 1);
+      primary.children[0].gridRows =
+        this._focusMode == "vertical" ? this._focusIds.length : 1;
       primary.children[0].style.gridColumn = null;
       primary.children[0].style.gridRow = null;
     }
 
     for (let docked of this._selectedDock.children) {
       docked.children[0].stretch = true;
-      docked.children[0].contextMenuNone.displayEntry("Focus Video (Vertical)", true);
-      docked.children[0].contextMenuNone.displayEntry("Focus Video (Horizontal)", true);
+      docked.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Vertical)",
+        true
+      );
+      docked.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Horizontal)",
+        true
+      );
       docked.children[0].contextMenuNone.displayEntry("Add to Focus", true);
       docked.children[0].contextMenuNone.displayEntry(
         "Horizontal Multiview",
