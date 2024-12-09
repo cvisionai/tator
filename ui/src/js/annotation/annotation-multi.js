@@ -844,11 +844,19 @@ export class AnnotationMulti extends TatorElement {
     this._resizeWindow();
   }
 
-  _resizeWindow() {
+  _resizeWindow(inhibit, extra) {
+    if (extra == undefined)
+    {
+      extra = 0;
+    }
     this._videoHeightPadObject.height =
       this._headerFooterPad +
       this._controls.offsetHeight +
-      this._timelineDiv.offsetHeight;
+      this._timelineDiv.offsetHeight + extra;
+    if (inhibit)
+    {
+      return;
+    }
     window.dispatchEvent(new Event("resize"));
   }
 
@@ -1840,6 +1848,7 @@ export class AnnotationMulti extends TatorElement {
   setMultiProportions() {
     var horizontalDock = this._selectedDock == this._focusBottomDockDiv;
 
+    this._resizeWindow(true);
     if (horizontalDock) {
       this._focusDiv.style.display = "none";
       this._selectedDock.style.display = "flex";
@@ -1857,14 +1866,14 @@ export class AnnotationMulti extends TatorElement {
       }
       else if (this._focusMode == "horizontal")
       {
+        this._resizeWindow(true, 175); // Add room for film strip
         this._focusDiv.style.display = "flex";
         this._focusDiv.style.flexDirection="row";
         this._focusDiv.style.justifyContent= "center";
-        this._focusDiv.style.maxHeight="65vh";
         this._selectedDock.style.display = "flex";
+        this._focusTopDiv.style.flexDirection = "column";
         this._focusDiv.style.width = "100%";
         this._selectedDock.style.width = "100%";
-        this._focusTopDiv.style.flexDirection = "column";
       }
       else
       {
