@@ -1512,24 +1512,37 @@ export class AnnotationMulti extends TatorElement {
           this._slider.fps = this._fps[this._primaryVideoIndex];
           this._maxFrameNumber = max_frames - 1;
 
-          let multiview = null;
           const searchParams = new URLSearchParams(window.location.search);
           if (searchParams.has("multiview")) {
-            multiview = searchParams.get("multiview");
-            let focusNumber = parseInt(multiview);
-            if (multiview == "hGrid") {
-              this.setHorizontal();
-            } else if (!isNaN(focusNumber)) {
-              this._selectedDock = this._focusTopDockDiv;
+            let multiviewList = searchParams.get("multiview").split(',');
+            let focusCount = 0;
+            for (let multiview of multiviewList)
+            {
+              let focusNumber = parseInt(multiview);
+              if (multiview == "hGrid") {
+                this.setHorizontal();
+              } else if (!isNaN(focusNumber)) {
+                this._selectedDock = this._focusTopDockDiv;
 
-              this._focusMode = searchParams.get("focusMode");
-              let currentIndex = 0;
-              for (let videoId in this._videoDivs) {
-                if (currentIndex == focusNumber) {
-                  this.setFocus(videoId);
-                  break;
+                this._focusMode = searchParams.get("focusMode");
+
+                // Set the focus based on converting video position to
+                // video id
+                let currentIndex = 0;
+                for (let videoId in this._videoDivs) {
+                  if (currentIndex == focusNumber) {
+                    if (focusCount == 0) {
+                      this.setFocus(videoId);
+                    }
+                    else
+                    {
+                      this.addFocus(videoId);
+                    }
+                    focusCount++;
+                    break;
+                  }
+                  currentIndex++;
                 }
-                currentIndex++;
               }
             }
           }
@@ -1613,7 +1626,11 @@ export class AnnotationMulti extends TatorElement {
     if (multiviewType == "horizontal") {
       var multiview = "hGrid";
     } else {
-      var multiview = get_pos(vid_id);
+      let posList = [];
+      for (let id of this._focusIds) {
+        posList.push(this.videoIdToPosition(id));
+      }
+      var multiview = posList.join(',');
     }
     var search_params = new URLSearchParams(window.location.search);
     search_params.set("multiview", multiview);
@@ -1637,7 +1654,7 @@ export class AnnotationMulti extends TatorElement {
       if (videoId != vid_id) {
         this.assignToSecondary(Number(videoId), this._quality);
       } else {
-        this.setMultiviewUrl("focus", Number(videoId));
+        this.setMultiviewUrl("focus", null);
         this.assignToPrimary(Number(videoId), this._quality * 2);
       }
     }
@@ -1678,6 +1695,20 @@ export class AnnotationMulti extends TatorElement {
     }
   }
 
+  videoIdToPosition(vid_id) 
+  {
+    let pos = 0;
+    for (let videoId in this._videoDivs) {
+      if (videoId == vid_id) {
+        return pos;
+      }
+      pos++;
+    }
+    return -1;
+  }
+
+
+
   addFocus(vid_id) {
     if (this._multiLayoutState != "focus") {
       console.warn("Can't add focus if not in focus mode");
@@ -1687,6 +1718,7 @@ export class AnnotationMulti extends TatorElement {
     {
       this._focusIds.push(vid_id);
       this.assignToPrimary(vid_id, this._quality*2);
+      this.setMultiviewUrl("focus", null);
     }
   }
 
@@ -1715,6 +1747,7 @@ export class AnnotationMulti extends TatorElement {
       var search_params = new URLSearchParams(window.location.search);
       if (search_params.has("multiview")) {
         search_params.delete("multiview");
+        search_params.delete("focusMode");
         const path = document.location.pathname;
         const searchArgs = search_params.toString();
         var newUrl = path + "?" + searchArgs;
