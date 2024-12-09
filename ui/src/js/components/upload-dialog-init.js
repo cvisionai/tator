@@ -62,7 +62,7 @@ export class UploadDialogInit extends ModalDialog {
     this._helpText0 = document.createElement("div");
     this._helpText0.setAttribute("class", "f3 text-gray py-3");
     this._helpText0.innerHTML = `
-		  <p class="pb-2">Specify the media type (useful when multiple types areconfigured).</p>
+		  <p class="pb-2">Specify the media type (useful when multiple types are configured).</p>
 			<p>Optionally, set an attribute value for this type during media creation.</p>
 		`;
     this._mediaFormGroup.appendChild(this._helpText0);
