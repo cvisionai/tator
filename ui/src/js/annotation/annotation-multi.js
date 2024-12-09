@@ -1732,6 +1732,7 @@ export class AnnotationMulti extends TatorElement {
       this.assignToSecondary(Number(videoId), this._quality);
       video.contextMenuNone.displayEntry("Focus Video (Vertical)", true);
       video.contextMenuNone.displayEntry("Focus Video (Horizontal)", true);
+      video.contextMenuNone.displayEntry("Add to Focus", false);
       video.contextMenuNone.displayEntry("Horizontal Multiview", false);
       video.contextMenuNone.displayEntry("Reset Multiview", true);
     }
@@ -1805,6 +1806,10 @@ export class AnnotationMulti extends TatorElement {
         "Open Video in New Tab",
         goToChannelVideo
       );
+
+      // Hide the two optional ones by default
+      video_element.contextMenuNone.displayEntry("Reset Multiview", false);
+      video_element.contextMenuNone.displayEntry("Add to Focus", false);
     });
   }
 
@@ -1877,6 +1882,7 @@ export class AnnotationMulti extends TatorElement {
       if (setContextMenu) {
         video.contextMenuNone.displayEntry("Focus Video (Vertical)", true);
         video.contextMenuNone.displayEntry("Focus Video (Horizontal)", true);
+        video.contextMenuNone.displayEntry("Add to Focus", false);
         video.contextMenuNone.displayEntry("Horizontal Multiview", true);
         video.contextMenuNone.displayEntry("Reset Multiview", false);
       }
@@ -1942,12 +1948,13 @@ export class AnnotationMulti extends TatorElement {
       primary.children[0].stretch = true;
       primary.children[0].contextMenuNone.displayEntry("Focus Video (Vertical)", false);
       primary.children[0].contextMenuNone.displayEntry("Focus Video (Horizontal)", false);
+      primary.children[0].contextMenuNone.displayEntry("Add to Focus", false);
       primary.children[0].contextMenuNone.displayEntry(
         "Horizontal Multiview",
         true
       );
       primary.children[0].contextMenuNone.displayEntry("Reset Multiview", true);
-      primary.children[0].gridRows = (this._focusMode == "veritical" ? this._focusIds.length : 1);
+      primary.children[0].gridRows = (this._focusMode == "vertical" ? this._focusIds.length : 1);
       primary.children[0].style.gridColumn = null;
       primary.children[0].style.gridRow = null;
     }
@@ -1956,6 +1963,7 @@ export class AnnotationMulti extends TatorElement {
       docked.children[0].stretch = true;
       docked.children[0].contextMenuNone.displayEntry("Focus Video (Vertical)", true);
       docked.children[0].contextMenuNone.displayEntry("Focus Video (Horizontal)", true);
+      docked.children[0].contextMenuNone.displayEntry("Add to Focus", true);
       docked.children[0].contextMenuNone.displayEntry(
         "Horizontal Multiview",
         true
