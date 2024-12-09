@@ -1522,6 +1522,7 @@ export class AnnotationMulti extends TatorElement {
             } else if (!isNaN(focusNumber)) {
               this._selectedDock = this._focusTopDockDiv;
 
+              this._focusMode = searchParams.get("focusMode");
               let currentIndex = 0;
               for (let videoId in this._videoDivs) {
                 if (currentIndex == focusNumber) {
@@ -1641,18 +1642,40 @@ export class AnnotationMulti extends TatorElement {
       }
     }
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+    const tempHandler = () => {
+      this.setMultiProportions();
+      window.removeEventListener("resize", tempHandler);
+   };
+   window.addEventListener("resize", tempHandler);
   }
 
   setFocusVertical(vid_id) {
     this._selectedDock = this._focusTopDockDiv;
     this._focusMode = "vertical";
+    this.setFocusURL();
     this.setFocus(vid_id);
   }
 
   setFocusHorizontal(vid_id) {
     this._selectedDock = this._focusTopDockDiv;
     this._focusMode = "horizontal";
+    this.setFocusURL();
     this.setFocus(vid_id);
+  }
+
+  setFocusURL()
+  {
+    var search_params = new URLSearchParams(window.location.search);
+    search_params.set("focusMode", this._focusMode);
+    const path = document.location.pathname;
+    const searchArgs = search_params.toString();
+    var newUrl = path + "?" + searchArgs;
+    if (this.pushed_state) {
+      window.history.replaceState(this.multview_state_obj, "Multiview", newUrl);
+    } else {
+      window.history.pushState(this.multview_state_obj, "Multiview", newUrl);
+      this.pushed_state = true;
+    }
   }
 
   addFocus(vid_id) {
