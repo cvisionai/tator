@@ -144,7 +144,7 @@ export class UploadDialogInit extends ModalDialog {
 	setupTypeDropdown() {
 		const list = [];
 		for (let t of this._mediaTypes) {
-			if (["image", "video"].includes(t.dtype)) {
+			if (["image", "video"].includes(t.dtype) && t.visible === true) {
 				list.push({ value: t.id, label: `${t.name} (ID:${t.id})`, extra: t });
 				this._typeAttributeMap.set(t.id, t);
 			}
@@ -157,16 +157,6 @@ export class UploadDialogInit extends ModalDialog {
 				}
 				if (a.label > b.label) {
 					return 1;
-				}
-				return 0;
-			});
-
-			list.sort((a, b) => {
-				if (!a.extra.visible && b.extra.visible) {
-					return 1;
-				}
-				if (!b.extra.visible && a.extra.visible) {
-					return -1;
 				}
 				return 0;
 			});

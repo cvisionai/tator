@@ -106,9 +106,7 @@ export class EntityGalleryLabels extends TatorElement {
 		let typeName = typeData.name ? typeData.name : "";
 
 		// don't re-add this type, or don't add if visible=false...
-		// || typeData.visible === false
-
-		if (this._shownTypes[typeData.id]) {
+		if (this._shownTypes[typeData.id] || typeData.visible === false) {
 			return false;
 		} else {
 			this._shownTypes[typeData.id] = true;
