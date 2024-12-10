@@ -31,7 +31,7 @@ export class RateControl extends TatorElement {
     let removeFocus = () => {
       select.blur();
       select.removeEventListener("mouseout", removeFocus);
-    }
+    };
 
     select.addEventListener("change", (evt) => {
       const rate = Number(evt.target.value);
