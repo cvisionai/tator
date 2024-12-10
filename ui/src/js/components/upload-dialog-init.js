@@ -1,5 +1,4 @@
 import { ModalDialog } from "./modal-dialog.js";
-import "./inputs/feature/attribute-choices.js";
 
 export class UploadDialogInit extends ModalDialog {
 	constructor() {
