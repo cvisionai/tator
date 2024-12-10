@@ -45,13 +45,9 @@ class TatorMail:
             logger.error("SMTP settings are not correctly configured.")
             return {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
-        try:
-            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
-                server.login(smtp_username, smtp_password)
-                server.send_message(message)
-        except Exception as e:
-            logger.error(f"Failed to send email: {e}")
-            return {"ResponseMetadata": {"HTTPStatusCode": 500}}
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
+            server.login(smtp_username, smtp_password)
+            server.send_message(message)
 
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
