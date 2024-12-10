@@ -1508,7 +1508,7 @@ export class AnnotationMulti extends TatorElement {
           }
           this._fps_of_max = fps_of_max;
           this._totalTime.textContent =
-            "/ " + frameToTime(max_frames, fps_of_max);
+            "/ " + frameToTime(max_frames-1, fps_of_max);
           this._totalTime.style.width =
             10 * (this._totalTime.textContent.length - 1) + 5 + "px";
           this._slider.setAttribute("max", max_frames - 1);
