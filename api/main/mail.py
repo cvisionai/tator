@@ -1,6 +1,3 @@
-# pylint: disable=import-error
-from abc import ABC, abstractmethod
-from enum import Enum, unique
 import os
 import io
 import logging
@@ -15,7 +12,6 @@ import ssl
 
 from django.conf import settings
 from django.db import models
-import boto3
 
 from .store import get_tator_store
 import main.models
@@ -23,13 +19,12 @@ import main.models
 logger = logging.getLogger(__name__)
 
 
-class TatorMail(ABC):
-    """Abstract base class for sending emails from Tator"""
+class TatorMail:
+    """Class for sending emails from Tator using a standard SMTP server (e.g., AWS SES)"""
 
-    @abstractmethod
     def _email(self, message, sender, recipients):
         """
-        Service-specific implementation of sending an email
+        Service-specific implementation of sending an email via SMTP.
 
         :param sender: The email address of the sender
         :type sender: str
@@ -38,6 +33,23 @@ class TatorMail(ABC):
         :param message: The message to send
         :type message: MIMEMultipart
         """
+        context = ssl.create_default_context()
+
+        # Ensure all required SMTP settings are defined
+        smtp_host = getattr(settings, "TATOR_EMAIL_HOST", None)
+        smtp_port = getattr(settings, "TATOR_EMAIL_PORT", None)
+        smtp_username = getattr(settings, "TATOR_EMAIL_USER", None)
+        smtp_password = getattr(settings, "TATOR_EMAIL_PASSWORD", None)
+
+        if not smtp_host or not smtp_port or not smtp_username or not smtp_password:
+            logger.error("SMTP settings are not correctly configured.")
+            return {"ResponseMetadata": {"HTTPStatusCode": 500}}
+
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
+            server.login(smtp_username, smtp_password)
+            server.send_message(message)
+
+        return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
     def email_staff(
         self,
@@ -50,8 +62,7 @@ class TatorMail(ABC):
         add_footer: Optional[bool] = True,
     ) -> bool:
         """
-        Sends an email to all deployment staff members, see :meth:`main.mail.TatorMail.email`
-        for details
+        Sends an email to all deployment staff members.
         """
         if settings.TATOR_EMAIL_NOTIFY_STAFF:
             if add_footer and text:
@@ -99,7 +110,7 @@ class TatorMail(ABC):
         :param text: The text body of the email
         :type text: Optional[str]
         :param html: The html body of the email
-        :type text: Optional[str]
+        :type html: Optional[str]
         :param attachments: The list of storage object keys to attach as files to the email
         :type attachments: Optional[list]
         :param raise_on_failure: The text of the error to raise if the email fails.
@@ -112,9 +123,6 @@ class TatorMail(ABC):
         msg["From"] = sender
         msg["To"] = ", ".join(recipients)
 
-        # Record the MIME types of both parts - text/plain and text/html.
-        # According to RFC 2046, the last part of a multipart message, in this case the HTML
-        # message, is best and preferred.
         if text:
             part = MIMEText(text, "plain")
             msg.attach(part)
@@ -123,10 +131,8 @@ class TatorMail(ABC):
             msg.attach(part)
 
         # Add attachments if there are any
-        # #TODO Potentially limit the attachment size(s)
         if attachments:
             for attachment in attachments:
-                # Download the S3 object into a byte stream and attach it
                 key = attachment["key"]
                 upload = key.startswith("_uploads")
                 bucket = None
@@ -145,90 +151,23 @@ class TatorMail(ABC):
 
         email_response = self._email(msg, settings.TATOR_EMAIL_SENDER, recipients)
 
-        # If the email was successful, return True
+        # Check response for success
         if email_response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             return True
 
-        # If the email was unsuccessful, log the response
+        # If the email was unsuccessful
         logger.error(email_response)
 
-        # And if raise_on_failure is set, raise
         if raise_on_failure is not None:
             raise ValueError(raise_on_failure)
 
         return False
 
 
-class TatorSES(TatorMail):
-    """Interface for AWS Simple Email Service."""
-
-    def __init__(self):
-        """Creates the SES interface."""
-        super().__init__()
-        self.ses = boto3.client(
-            "ses",
-            region_name=settings.TATOR_EMAIL_AWS_REGION,
-            aws_access_key_id=settings.TATOR_EMAIL_AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.TATOR_EMAIL_AWS_SECRET_ACCESS_KEY,
-        )
-
-    def _email(self, message, sender, recipients):
-        """Sends an email via AWS SES. See :class:`main.mail.TatorMail` for details"""
-        return self.ses.send_raw_email(
-            Source=sender,
-            Destinations=recipients,
-            RawMessage={"Data": message.as_string()},
-        )
-
-
-class TatorEmailDelivery(TatorMail):
-    """Interface for OCI Email Delivery Service."""
-
-    def __init__(self):
-        """Creates the SMTP interface."""
-        # TODO Remove exception when implementation is complete
-        raise RuntimeError("OCI Email Delivery integration is incomplete, do not use!")
-        super().__init__()  # pylint: disable=unreachable
-        self._host = settings.TATOR_EMAIL_OCI_HOST
-        self._port = settings.TATOR_EMAIL_OCI_PORT
-        self._user = settings.TATOR_EMAIL_OCI_USERNAME
-        self._pass = settings.TATOR_EMAIL_OCI_PASSWORD
-
-    def _email(self, message, sender, recipients):
-        """
-        Sends an email via OCI Email Delivery. See :class:`main.mail.TatorMail`
-        for details
-        """
-
-        # Set up mail server and test access
-        with smtplib.SMTP(self._host, self._port) as smtp:
-            smtp.ehlo()
-
-            # Start tls with trusted CA; may need to manually provide path if the default path does
-            # not contain any (or contains outdated) CAs
-            smtp.starttls(
-                context=ssl.create_default_context(
-                    purpose=ssl.Purpose.SERVER_AUTH, cafile=None, capath=None
-                )
-            )
-            smtp.ehlo()
-
-            # Log in and send message
-            smtp.login(self._user, self._pass)
-            return smtp.send_message(message)
-
-
-@unique
-class EmailService(Enum):
-    AWS = TatorSES
-    OCI = TatorEmailDelivery
-
-
 def get_email_service():
     """Instantiates the correct subclass of :class:`main.mail.TatorMail`"""
 
     if settings.TATOR_EMAIL_ENABLED:
-        # TODO Hard-code AWS SES until OCI integration is complete
-        return TatorSES()
+        return TatorMail()
 
     return None
