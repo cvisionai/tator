@@ -1269,7 +1269,15 @@ export class AnnotationMulti extends TatorElement {
       }
 
       this._videos[idx].addEventListener("playbackEnded", () => {
-        this.pause();
+        const direction = this._videos[idx]._direction;
+        this.pause(() => {
+          if (direction == 1) {
+            // Go to the last frame
+            this.goToFrame(this._maxFrameNumber - 1);
+          } else if (direction == -1) {
+            this.goToFrame(0);
+          }
+        });
       });
       this._videos[idx].addEventListener("canvasResized", () => {
         this._videoTimeline.redraw();
@@ -2439,7 +2447,7 @@ export class AnnotationMulti extends TatorElement {
     return prime;
   }
 
-  pause() {
+  pause(afterPause) {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", { composed: true }));
     this.enableRateChange();
@@ -2451,7 +2459,11 @@ export class AnnotationMulti extends TatorElement {
     let failSafeFunction = () => {
       clearTimeout(this._failSafeTimer);
       this._videoStatus = "paused";
-      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+      if (afterPause) {
+        afterPause();
+      } else {
+        this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+      }
     };
     clearTimeout(this._failSafeTimer);
     if (paused == false) {
