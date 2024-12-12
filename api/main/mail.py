@@ -8,7 +8,6 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 import email.utils
 import smtplib
-import ssl
 
 from django.conf import settings
 from django.db import models
@@ -33,8 +32,6 @@ class TatorMail:
         :param message: The message to send
         :type message: MIMEMultipart
         """
-        context = ssl.create_default_context()
-
         # Ensure all required SMTP settings are defined
         smtp_host = getattr(settings, "TATOR_EMAIL_HOST", None)
         smtp_port = getattr(settings, "TATOR_EMAIL_PORT", None)
@@ -45,7 +42,8 @@ class TatorMail:
             logger.error("SMTP settings are not correctly configured.")
             return {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
-        with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
             server.login(smtp_username, smtp_password)
             server.send_message(message)
 
