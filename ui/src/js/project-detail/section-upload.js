@@ -60,10 +60,34 @@ export class SectionUpload extends UploadElement {
 		this.init(store);
 	}
 
+	_handleDirectoryUpload() {
+		this._allowDirectoryUpload =
+			this.uploadDialogInit._directoryUpload.getChecked();
+		if (this._allowDirectoryUpload) {
+			this._fileInput.setAttribute("webkitdirectory", "");
+			this._fileInput.setAttribute("directory", "");
+		} else {
+			this._fileInput.removeAttribute("webkitdirectory");
+			this._fileInput.removeAttribute("directory");
+		}
+	}
+
 	_handleMediaType(evt) {
+		console.log("Media type changed", evt.target.getValue());
+		if (evt.target.getValue() == this.uploadDialogInit._anyMediaType) {
+			this._chosenMediaType = null;
+			this._uploadAttributes = {};
+			this._fileInput.removeAttribute("accept");
+			this.uploadDialogInit._mediaAttributes.dataType = null;
+			this.uploadDialogInit._mediaAttributes.reset();
+			return;
+		}
+
 		this._chosenMediaType = this._mediaTypes.find(
 			(type) => type.id === Number(evt.target.getValue())
 		);
+
+		this.uploadDialogInit._mediaAttributes.dataType = this._chosenMediaType;
 
 		if (this._chosenMediaType.dtype === "image") {
 			this._fileInput.setAttribute("accept", this._acceptedImageExt.join(","));

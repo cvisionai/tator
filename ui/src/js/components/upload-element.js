@@ -85,39 +85,36 @@ export class UploadElement extends TatorElement {
 			fileOk = false,
 			attributes = null;
 
-		console.log(
-			"File",
-			file,
-			"this._chosenMediaType",
-			this._chosenMediaType,
-			"this._uploadAttributes",
-			this._uploadAttributes
-		);
-
+		// If the media type is already chosen, use it.
 		if (
 			(isImage || isVideo) &&
 			this._chosenMediaType !== null &&
 			this._chosenMediaType?.file_format === null
 		) {
+			if (this._chosenMediaType.dtype == "image" && !isImage) return false;
+			if (this._chosenMediaType.dtype == "video" && !isVideo) return false;
+
 			mediaType = this._chosenMediaType;
 			fileOk = true;
 			attributes = this._uploadAttributes;
 		}
 
-		if (!mediaType || mediaType === null) {
-			const mediaTypes = this._store.getState().mediaTypes;
-			for (let currentType of mediaTypes) {
-				if (currentType.file_format === null) {
-					if (currentType.dtype == "image" && isImage) {
-						fileOk = true;
-						mediaType = currentType;
-					} else if (currentType.dtype == "video" && isVideo) {
-						fileOk = true;
-						mediaType = currentType;
-					}
-				} else {
-					fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
-					mediaType = currentType;
+    const mediaTypes = this._store.getState().mediaTypes;
+    for (let currentType of mediaTypes) {
+      if (mediaType === null) {
+        if (currentType.file_format === null) {
+          if (currentType.dtype == "image" && isImage) {
+            fileOk = true;
+            mediaType = currentType;
+            attributes = this._imageAttr;
+          } else if (currentType.dtype == "video" && isVideo) {
+            fileOk = true;
+            mediaType = currentType;
+            attributes = this._videoAttr;
+          }
+        } else {
+          fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
+          mediaType = currentType;
 
 					if (isArchive) {
 						fileOk = true;

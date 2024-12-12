@@ -22,9 +22,9 @@ export class UploadDialogInit extends ModalDialog {
 		this._parentFolders.setAttribute("name", " Folder:");
 		formGroup2.appendChild(this._parentFolders);
 
-		this._mediaFormGroup = document.createElement("details");
-		this._mediaFormGroup.setAttribute("class", "hidden form-group");
-		this._form.appendChild(this._mediaFormGroup);
+		const details = document.createElement("details");
+		// details.setAttribute("class", "hidden form-group pl-3");
+		this._form.appendChild(details);
 
 		this._helpText = document.createElement("summary");
 		this._helpText.setAttribute(
@@ -44,12 +44,10 @@ export class UploadDialogInit extends ModalDialog {
       </svg> Advanced
 	`;
 
-		const upArrow = `<svg class="no-fill px-1 py-1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-corner-left-up"><polyline points="14 9 9 4 4 9"/><path d="M20 20h-7a4 4 0 0 1-4-4V4"/></svg>`;
-
 		this._helpText.innerHTML = closedText;
 
-		this._mediaFormGroup.addEventListener("toggle", (event) => {
-			if (this._mediaFormGroup.open) {
+		details.addEventListener("toggle", (event) => {
+			if (details.open) {
 				/* the element was toggled open */
 				this._helpText.innerHTML = openText;
 			} else {
@@ -64,26 +62,26 @@ export class UploadDialogInit extends ModalDialog {
 		  <p class="pb-2">Specify the media type (useful when multiple types are configured).</p>
 			<p>Optionally, set an attribute value for this type during media creation.</p>
 		`;
-		this._mediaFormGroup.appendChild(this._helpText0);
+		details.appendChild(this._helpText0);
 
-		this._mediaFormGroup.appendChild(this._helpText);
+		details.appendChild(this._helpText);
 
 		this._helpText2 = document.createElement("p");
 		this._helpText2.setAttribute("class", "text-gray f2 py-2");
 		this._helpText2.innerText = ``;
-		this._mediaFormGroup.appendChild(this._helpText2);
+		details.appendChild(this._helpText2);
 
 		this._mediaType = document.createElement("enum-input");
 		this._mediaType.setAttribute("class", "text-gray f2");
 		this._mediaType.setAttribute("name", "Media Type:");
 		this._mediaType.permission = "View only";
-		this._mediaFormGroup.appendChild(this._mediaType);
+		details.appendChild(this._mediaType);
 
 		this._mediaAttributes = document.createElement("attribute-panel");
 		this._mediaAttributes.enableBuiltInAttributes = false;
 		this._mediaAttributes.enableHiddenAttributes = false;
 		this._mediaAttributes._standardWidgetsDiv.style.display = "none";
-		this._mediaFormGroup.appendChild(this._mediaAttributes);
+		details.appendChild(this._mediaAttributes);
 
 		const apply = document.createElement("button");
 		apply.setAttribute("class", "btn btn-clear");
@@ -136,9 +134,6 @@ export class UploadDialogInit extends ModalDialog {
 		this._typeAttributeMap = new Map();
 
 		this.setupTypeDropdown();
-		// if (multipleImage || multipleVideo) {
-		this._mediaFormGroup.classList.remove("hidden");
-		// }
 	}
 
 	setupTypeDropdown() {
@@ -167,15 +162,10 @@ export class UploadDialogInit extends ModalDialog {
 			this._mediaType.setValue(list[0].value);
 		}
 
-		this._mediaType.addEventListener("change", (evt) => {
-			if (evt.target.getValue() === this._anyMediaType) {
-				// TODO
-				this._mediaAttributes.reset();
-			} else {
-				const id = Number(evt.target.getValue());
-				this._mediaAttributes.dataType = this._typeAttributeMap.get(id);
-			}
-		});
+		// this._mediaType.addEventListener("change", (evt) => {
+		// 	console.log("Change from dialog...", evt.target.getValue());
+
+		// });
 
 		if (list.length > 0) {
 			this._mediaType.permission = "Can Edit";
