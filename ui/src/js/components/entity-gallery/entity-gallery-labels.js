@@ -108,124 +108,124 @@ export class EntityGalleryLabels extends TatorElement {
     checkedFirst = null,
     customBuiltIns = [],
   }) {
-    let typeName = typeData.name ? typeData.name : "";
+		let typeName = typeData.name ? typeData.name : "";
 
-    // don't re-add this type, or don't add if visible=false...
-    if (this._shownTypes[typeData.id] || typeData.visible === false) {
-      return false;
-    } else {
-      this._shownTypes[typeData.id] = true;
-    }
+		// don't re-add this type, or don't add if visible=false...
+		if (this._shownTypes[typeData.id] || typeData.visible === false) {
+			return false;
+		} else {
+			this._shownTypes[typeData.id] = true;
+		}
 
-    // Main labels box
-    let labelsMain = document.createElement("div");
-    labelsMain.setAttribute(
-      "class",
-      "entity-gallery-labels rounded-2 d-flex flex-row flex-justify-center flex-justify-between col-12"
-    );
+		// Main labels box
+		let labelsMain = document.createElement("div");
+		labelsMain.setAttribute(
+			"class",
+			"entity-gallery-labels rounded-2 d-flex flex-row flex-justify-center flex-justify-between col-12"
+		);
 
-    if (!hideTypeName) {
-      let _title = document.createElement("div");
-      _title.setAttribute(
-        "class",
-        "entity-gallery-labels--title py-3 px-2 col-3"
-      );
-      _title.appendChild(document.createTextNode(`${typeName}`));
+		if (!hideTypeName) {
+			let _title = document.createElement("div");
+			_title.setAttribute(
+				"class",
+				"entity-gallery-labels--title py-3 px-2 col-3"
+			);
+			_title.appendChild(document.createTextNode(`${typeName}`));
 
-      if (
-        typeof typeData.description !== "undefined" &&
-        typeData.description !== ""
-      ) {
-        let descriptionText = document.createElement("div");
-        descriptionText.setAttribute("class", "f3 py-1 text-gray");
-        descriptionText.textContent = `${typeData.description}`;
-        _title.appendChild(descriptionText);
-      }
+			if (
+				typeof typeData.description !== "undefined" &&
+				typeData.description !== ""
+			) {
+				let descriptionText = document.createElement("div");
+				descriptionText.setAttribute("class", "f3 py-1 text-gray");
+				descriptionText.textContent = `${typeData.description}`;
+				_title.appendChild(descriptionText);
+			}
 
-      let idText = document.createElement("text");
-      idText.setAttribute("class", "d-flex py-1 text-gray f3");
-      if (typeData.id == -1) {
-        idText.textContent = `Type: Built in`;
-      } else {
-        idText.textContent = `Type ID: ${typeData.id}`;
-      }
-      _title.appendChild(idText);
-      labelsMain.appendChild(_title);
-    }
+			let idText = document.createElement("text");
+			idText.setAttribute("class", "d-flex py-1 text-gray f3");
+			if (typeData.id == -1) {
+				idText.textContent = `Type: Built in`;
+			} else {
+				idText.textContent = `Type ID: ${typeData.id}`;
+			}
+			_title.appendChild(idText);
+			labelsMain.appendChild(_title);
+		}
 
-    // Labels details with checkboxes
-    let _labelDetails = document.createElement("div");
-    _labelDetails.setAttribute("class", "float-right col-10");
-    labelsMain.appendChild(_labelDetails);
+		// Labels details with checkboxes
+		let _labelDetails = document.createElement("div");
+		_labelDetails.setAttribute("class", "float-right col-10");
+		labelsMain.appendChild(_labelDetails);
 
-    // Style div for checkbox set
-    let styleDiv = document.createElement("div");
-    styleDiv.setAttribute(
-      "class",
-      "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2"
-    );
-    _labelDetails.appendChild(styleDiv);
+		// Style div for checkbox set
+		let styleDiv = document.createElement("div");
+		styleDiv.setAttribute(
+			"class",
+			"entity-gallery-labels--checkbox-div px-3 py-1 rounded-2"
+		);
+		_labelDetails.appendChild(styleDiv);
 
-    // No attributes, so we can stop and provide a message
-    if (typeData.attribute_types.length == 0) {
-      const message = document.createElement("span");
-      message.setAttribute("class", "text-gray f2");
-      message.textContent = `${typeName} has no custom attributes.`;
-      styleDiv.appendChild(message);
-    } else {
-      // If ok, create the checkbox list
-      const checkboxList = this.makeListFrom(
-        typeData,
-        checkedFirst,
-        customBuiltIns
-      );
+		// No attributes, so we can stop and provide a message
+		if (typeData.attribute_types.length == 0) {
+			const message = document.createElement("span");
+			message.setAttribute("class", "text-gray f2");
+			message.textContent = `${typeName} has no custom attributes.`;
+			styleDiv.appendChild(message);
+		} else {
+			// If ok, create the checkbox list
+			const checkboxList = this.makeListFrom(
+				typeData,
+				checkedFirst,
+				customBuiltIns
+			);
 
-      const selectionBoxes = document.createElement("checkbox-set");
-      selectionBoxes._colSize = "py-1 pr-2";
-      selectionBoxes._inputDiv.setAttribute(
-        "class",
-        "d-flex flex-row flex-wrap col-12"
-      );
-      selectionBoxes.setValue(checkboxList);
+			const selectionBoxes = document.createElement("checkbox-set");
+			selectionBoxes._colSize = "py-1 pr-2";
+			selectionBoxes._inputDiv.setAttribute(
+				"class",
+				"d-flex flex-row flex-wrap col-12"
+			);
+			selectionBoxes.setValue(checkboxList);
 
-      // Save to refer to in get/set later
-      this._selectionValues[typeData.id] = selectionBoxes;
+			// Save to refer to in get/set later
+			this._selectionValues[typeData.id] = selectionBoxes;
 
-      // Check any project preferences, then also apply any cached (in that order)
-      // #todo get preferences list, this may need to be passed into this function
-      const projectPreference = [];
-      const cacheTypeList = this.getLocalStorage(typeData.id);
-      const listToApply = [...projectPreference, ...cacheTypeList];
-      this._setValue({ typeId: typeData.id, values: listToApply });
+			// Check any project preferences, then also apply any cached (in that order)
+			// #todo get preferences list, this may need to be passed into this function
+			const projectPreference = [];
+			const cacheTypeList = this.getLocalStorage(typeData.id);
+			const listToApply = [...projectPreference, ...cacheTypeList];
+			this._setValue({ typeId: typeData.id, values: listToApply });
 
-      // Append to main box
-      styleDiv.appendChild(selectionBoxes);
+			// Append to main box
+			styleDiv.appendChild(selectionBoxes);
 
-      // Listen for changes
-      selectionBoxes.addEventListener("change", (e) => {
-        const builtIns = this._selectionValues[-1]
-          ? this._selectionValues[-1].getValue()
-          : [];
-        const currentBoxes = typeData.id == -1 ? [] : e.target.getValue();
-        const newValue = [...builtIns, ...currentBoxes];
+			// Listen for changes
+			selectionBoxes.addEventListener("change", (e) => {
+				const builtIns = this._selectionValues[-1]
+					? this._selectionValues[-1].getValue()
+					: [];
+				const currentBoxes = typeData.id == -1 ? [] : e.target.getValue();
+				const newValue = [...builtIns, ...currentBoxes];
 
-        this.setLocalStorage(typeData.id);
+				this.setLocalStorage(typeData.id);
 
-        this.dispatchEvent(
-          new CustomEvent("labels-update", {
-            detail: {
-              value: newValue,
-              typeId: typeData.id,
-            },
-          })
-        );
-      });
-    }
+				this.dispatchEvent(
+					new CustomEvent("labels-update", {
+						detail: {
+							value: newValue,
+							typeId: typeData.id,
+						},
+					})
+				);
+			});
+		}
 
-    this.div.appendChild(labelsMain);
+		this.div.appendChild(labelsMain);
 
-    return labelsMain;
-  }
+		return labelsMain;
+	}
 
   _getValue(typeId) {
     if (this._selectionValues[typeId]) {
