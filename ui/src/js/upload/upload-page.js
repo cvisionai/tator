@@ -1,4 +1,3 @@
-// import { TatorElement } from "../components/tator-element.js";
 import { TatorPage } from "../components/tator-page.js";
 import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
@@ -11,6 +10,7 @@ import { SectionData } from "../util/section-utilities.js";
 export class UploadPage extends TatorPage {
 	constructor() {
 		super();
+		this._uploadsInProgress = 0;
 
 		document.body.setAttribute("class", "no-padding-bottom");
 
@@ -47,7 +47,6 @@ export class UploadPage extends TatorPage {
 		//
 		// Left area of the page
 		//
-		this.createSidebarNav();
 		this.createLeftPanel();
 
 		//
@@ -89,7 +88,7 @@ export class UploadPage extends TatorPage {
 
 		this._description = document.createElement("project-text");
 		this._description.setAttribute("class", "text-gray f2 py-3");
-		this._description.textContent = `Add the files and folders you want to upload to your project. To upload files larger than ***GB, use tator-py, or contact us. Learn more.`;
+		this._description.textContent = `Add files and folders to your project.`;
 		headerWrapperDiv.appendChild(this._description);
 
 		const subheader = document.createElement("div");
@@ -112,13 +111,6 @@ export class UploadPage extends TatorPage {
 		this._modalError = document.createElement("modal-dialog");
 		this._shadow.appendChild(this._modalError);
 
-		// this._uploadDialog = document.createElement("upload-dialog");
-		// this._projects.appendChild(this._uploadDialog);
-
-		// this._attachmentDialog = document.createElement("attachment-dialog");
-		// this._attachmentDialog._header.classList.add("fixed-height-scroll");
-		// this._projects.appendChild(this._attachmentDialog);
-
 		this._sectionData = new SectionData();
 
 		// Create store subscriptions
@@ -129,7 +121,7 @@ export class UploadPage extends TatorPage {
 		);
 
 		window.addEventListener("beforeunload", (evt) => {
-			if (this._uploadDialog.hasAttribute("is-open")) {
+			if (this._uploadsInProgress > 0) {
 				evt.preventDefault();
 				evt.returnValue = "";
 				window.alert("Uploads are in progress. Still leave?");
@@ -154,13 +146,13 @@ export class UploadPage extends TatorPage {
 		// 	this.removeAttribute("has-open-modal");
 		// });
 
-		// this._cancelJob.addEventListener("confirmGroupCancel", () => {
-		// 	this._cancelJob.removeAttribute("is-open");
-		// });
+		this._cancelJob.addEventListener("confirmGroupCancel", () => {
+			this._cancelJob.removeAttribute("is-open");
+		});
 
-		// this._cancelJob.addEventListener("close", () => {
-		// 	this.removeAttribute("has-open-modal");
-		// });
+		this._cancelJob.addEventListener("close", () => {
+			this.removeAttribute("has-open-modal");
+		});
 
 		this._lastQuery = null;
 
@@ -240,6 +232,7 @@ export class UploadPage extends TatorPage {
 								this._algorithms = this.getParsedAlgos(algos);
 								this._mediaTypes = mediaTypes;
 								this._memberships = memberships;
+								this.setupSettingsPanel(this._mediaTypes);
 
 								store.setState({ sections: this._sections });
 
@@ -339,148 +332,6 @@ export class UploadPage extends TatorPage {
 		});
 		this._sections = await response.json();
 		this._sectionData.init(this._sections);
-		this._sectionSearchDisplay.init(
-			this._memberships,
-			this._sections,
-			this._versions
-		);
-		this.makeFolders();
-		this.makeMediaSearches();
-		this._mediaMoveDialog.initSectionOptions(this._sectionData);
-	}
-
-	/**
-	 * @param {integer} id - Section ID to hide / set visible = false
-	 * No checking is done to see if we're just patching the same value
-	 */
-	async hideSection(id) {
-		var response = await fetchCredentials(`/rest/Section/${id}`, {
-			method: "PATCH",
-			body: JSON.stringify({ visible: false }),
-		});
-		if (response.status == 200) {
-			return;
-		} else {
-			var data = await response.json();
-			this._modalError._error(
-				`Unable to hide section. Error: ${data.message}`,
-				"Error"
-			);
-		}
-	}
-
-	/**
-	 * @param {integer} id - Section ID to restore / set visible = true
-	 * No checking is done to see if we're just patching the same value.
-	 */
-	async restoreSection(id) {
-		var response = await fetchCredentials(`/rest/Section/${id}`, {
-			method: "PATCH",
-			body: JSON.stringify({ visible: true }),
-		});
-		if (response.status == 200) {
-			return;
-		} else {
-			var data = await response.json();
-			this._modalError._error(
-				`Unable to restore section. Error: ${data.message}`,
-				"Error"
-			);
-		}
-	}
-
-	//
-	// Folder tree functions
-	//
-
-	/**
-	 * Loops through the folders and sees if they are visible or not (either via expanding) or
-	 * using the section visibility flag.
-	 *
-	 * If a folder/section visibility flag is false, but the this._viewAllHiddenFolders == true, then
-	 *   it is visible to the user. Hidden otherwise.
-	 * If a parent folder is hidden, then all of its children are hidden.
-	 * If a parent folder is not expanded, then all of its children are hidden.
-	 */
-	updateLibraryVisibility() {
-		var that = this;
-
-		if (this._viewAdvancedFolderDetails) {
-			this.setLeftPanelWidth("500px");
-		} else {
-			this.setLeftPanelWidth(this._leftPanelDefaultWidth);
-		}
-
-		function traverseAlphabetically(node, parentPath) {
-			var appendedPath = parentPath;
-			var parentExpanded = null;
-
-			if (appendedPath != "") {
-				var parentSection = that._sectionData._sectionPathMap[parentPath];
-				for (const folder of that._folders.children) {
-					if (folder._section.id == parentSection.id) {
-						parentExpanded = folder._expanded;
-						break;
-					}
-				}
-
-				appendedPath += ".";
-			}
-
-			Object.keys(node)
-				.sort()
-				.forEach((subpath) => {
-					var childSectionListItem = null;
-					var childSection = that._sectionData.getSectionFromPath(
-						appendedPath + subpath
-					);
-					if (SectionData.isSavedSearch(childSection)) {
-						return;
-					}
-
-					for (const folder of that._folders.children) {
-						if (folder._section.id == childSection.id) {
-							childSectionListItem = folder;
-						}
-					}
-
-					if (that._viewAdvancedFolderDetails) {
-						childSectionListItem.showAdvancedDetails();
-					} else {
-						childSectionListItem.hideAdvancedDetails();
-					}
-
-					var section = that._sectionData.getSectionFromPath(
-						appendedPath + subpath
-					);
-					if (SectionData.isSavedSearch(section)) {
-						return;
-					}
-
-					childSectionListItem.style.display = "block";
-					if (!section.visible) {
-						if (!that._viewAllHiddenFolders) {
-							childSectionListItem.collapse();
-							childSectionListItem.style.display = "none";
-						}
-					}
-					if (parentExpanded != null && parentExpanded == false) {
-						childSectionListItem.collapse();
-						childSectionListItem.style.display = "none";
-					}
-
-					traverseAlphabetically(node[subpath], appendedPath + subpath);
-				});
-		}
-		traverseAlphabetically(this._sectionData._sectionTree, "");
-
-		for (const folder of this._errorFolders) {
-			if (this._viewAdvancedFolderDetails) {
-				folder.showAdvancedDetails();
-			} else {
-				folder.hideAdvancedDetails();
-			}
-		}
 	}
 
 	/**
@@ -623,185 +474,6 @@ export class UploadPage extends TatorPage {
 		this.updateLibraryVisibility();
 	}
 
-	//
-	// Media search functions
-	//
-
-	/**
-	 * Update the search list elements in the UI
-	 */
-	updateSearchesVisibility() {
-		if (this._viewAdvancedSearchDetails) {
-			this.setLeftPanelWidth("500px");
-			for (const search of this._savedSearches.children) {
-				search.showAdvancedDetails();
-			}
-		} else {
-			this.setLeftPanelWidth(this._leftPanelDefaultWidth);
-			for (const search of this._savedSearches.children) {
-				search.hideAdvancedDetails();
-			}
-		}
-	}
-
-	/**
-	 * @precondition this._sectionData has been initialized
-	 */
-	makeMediaSearches() {
-		while (this._savedSearches.firstChild) {
-			this._savedSearches.removeChild(this._savedSearches.firstChild);
-		}
-
-		const that = this;
-		function createSectionItem(section) {
-			const childSections = that._sectionData.getChildSections(section);
-
-			const sectionItem = document.createElement("media-search-list-item");
-			sectionItem.init(section, childSections);
-
-			sectionItem.addEventListener("showMoreMenu", () => {
-				for (const search of that._savedSearches.children) {
-					if (search != sectionItem) {
-						search.hideMoreMenu();
-					}
-				}
-			});
-
-			sectionItem.addEventListener("selected", (evt) => {
-				that.selectSection(evt.detail.id);
-			});
-
-			sectionItem.addEventListener("deleteSection", async (evt) => {
-				const sectionToDelete = that._sectionData.getSectionFromID(
-					evt.detail.id
-				);
-				that.selectSection(evt.detail.id);
-				that._deleteSectionDialog.init(sectionToDelete, false);
-				that._deleteSectionDialog.setAttribute("is-open", "");
-				that.setAttribute("has-open-modal", "");
-			});
-
-			sectionItem.addEventListener("renameSection", () => {
-				that._mediaSearchDialog.setMode("editSearch", section);
-				that._mediaSearchDialog.setAttribute("is-open", "");
-				that.setAttribute("has-open-modal", "");
-			});
-
-			that._savedSearches.appendChild(sectionItem);
-		}
-
-		for (const section of this._sectionData.getSavedSearchesList()) {
-			createSectionItem(section);
-		}
-
-		this._mediaSearchDialog.init(this._sectionData);
-		this.updateSearchesVisibility();
-	}
-
-	/**
-	 * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
-	 */
-	selectSection(sectionId, page, pageSize) {
-		// Make all folders and searhes inactive
-		const allFolders = [...this._folders.children];
-		for (const folder of allFolders) {
-			folder.setInactive();
-		}
-
-		const allSearches = [...this._savedSearches.children];
-		for (const search of allSearches) {
-			search.setInactive();
-		}
-
-		this._allMediaButton.setInactive();
-
-		// Set the active folder or search and the mainSection portion of the page
-		this._selectedSection = null;
-		if (sectionId != null) {
-			for (const folder of allFolders) {
-				const section = folder.getSection();
-				if (section.id == sectionId) {
-					folder.setActive();
-					this._selectedSection = section;
-					this._sectionSearchDisplay.style.display = "none";
-					break;
-				}
-			}
-
-			if (this._selectedSection == null) {
-				for (const search of allSearches) {
-					const section = search.getSection();
-					if (section.id == sectionId) {
-						search.setActive();
-						this._selectedSection = section;
-						this._sectionSearchDisplay.style.display = "flex";
-						this._sectionSearchDisplay.setDisplay(
-							this._selectedSection.object_search,
-							this._selectedSection.related_search
-						);
-						break;
-					}
-				}
-			}
-		}
-
-		if (this._selectedSection == null) {
-			this._allMediaButton.setActive();
-			this._sectionSearchDisplay.style.display = "none";
-		}
-
-		// Expand the folders in the library panel until the active folder is selected and in view
-		if (this._selectedSection != null) {
-			var parentSections = this._sectionData.getParentSections(
-				this._selectedSection
-			);
-			var parentSectionIds = parentSections.map((section) => section.id);
-			var activeFolder = null;
-			for (const folder of allFolders) {
-				const section = folder.getSection();
-				if (parentSectionIds.includes(section.id)) {
-					folder.expand();
-				}
-				if (section.id == this._selectedSection.id) {
-					activeFolder = folder;
-				}
-			}
-			this.updateLibraryVisibility();
-
-			if (activeFolder != null) {
-				this.displayPanel("library");
-			} else {
-				this.displayPanel("saved searches");
-			}
-
-			function isInViewport(element) {
-				var rect = element.getBoundingClientRect();
-				return (
-					rect.top >= 0 &&
-					rect.left >= 0 &&
-					rect.bottom <=
-						(window.innerHeight || document.documentElement.clientHeight) &&
-					rect.right <=
-						(window.innerWidth || document.documentElement.clientWidth)
-				);
-			}
-			if (activeFolder != null && !isInViewport(activeFolder)) {
-				activeFolder.scrollIntoView();
-			}
-		}
-
-		// Update media section center page
-		this.updateURL();
-		this._mediaSection.init(
-			this._project.id,
-			this._selectedSection,
-			page,
-			pageSize,
-			this._sections
-		);
-		store.setState({ selectedSection: this._selectedSection });
-	}
-
 	/**
 	 * Updates the URL with the current page's state
 	 */
@@ -816,66 +488,6 @@ export class UploadPage extends TatorPage {
 		window.history.replaceState({}, "", url.toString());
 	}
 
-	//
-	// Side Left Panel
-	//
-
-	leftPanelHidden() {
-		return this._leftPanel.style.display == "none";
-	}
-
-	expandLeftPanel() {
-		this._leftPanel.style.display = "flex";
-	}
-
-	hideLeftPanel() {
-		this._leftPanel.style.display = "none";
-		for (let [panelName, parts] of this._panelPartMap) {
-			parts[0].setAttribute("tooltip", `Open ${panelName} panel`);
-		}
-	}
-
-	/**
-	 * @param {string} panel
-	 *   "library" | "saved searches" | "bookmarks" | "upload"
-	 */
-	displayPanel(panel) {
-		this._currentPanel = panel;
-
-		if (panel == "library") {
-			if (this._viewAdvancedFolderDetails) {
-				this.setLeftPanelWidth("500px");
-			} else {
-				this.setLeftPanelWidth(this._leftPanelDefaultWidth);
-			}
-		} else if (panel == "saved searches") {
-			if (this._viewAdvancedSearchDetails) {
-				this.setLeftPanelWidth("500px");
-			} else {
-				this.setLeftPanelWidth(this._leftPanelDefaultWidth);
-			}
-		} else if (panel == "bookmarks" || panel == "upload") {
-			this.setLeftPanelWidth(this._leftPanelDefaultWidth);
-		}
-
-		for (let [panelName, parts] of this._panelPartMap) {
-			if (panel === panelName) {
-				parts[0].classList.add("btn-purple50");
-				parts[1].classList.add("text-white");
-				parts[1].classList.remove("text-gray");
-				parts[2].style.display = "block";
-
-				parts[0].setAttribute("tooltip", `Hide ${panel} panel`);
-			} else {
-				parts[0].classList.remove("btn-purple50");
-				parts[1].classList.remove("text-white");
-				parts[1].classList.add("text-gray");
-				parts[2].style.display = "none";
-				parts[0].setAttribute("tooltip", `Open ${panel} panel`);
-			}
-		}
-	}
-
 	/**
 	 * @param {string} width
 	 *  e.g. "400px";
@@ -883,114 +495,6 @@ export class UploadPage extends TatorPage {
 	setLeftPanelWidth(width) {
 		this._leftPanel.style.minWidth = width;
 		this._leftPanel.style.maxWidth = width;
-	}
-
-	/**
-	 * Setup the left side navigation bar
-	 * Execute only at initialization.
-	 */
-	createSidebarNav() {
-		var sidebarDiv = document.createElement("div");
-		sidebarDiv.setAttribute(
-			"class",
-			"project-sidebar d-flex flex-items-center flex-column"
-		);
-		this.mainWrapper.appendChild(sidebarDiv);
-
-		this._sidebarLibraryButton = document.createElement("button");
-		this._sidebarLibraryButton.setAttribute(
-			"class",
-			"mt-2 btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button project-sidebar-button tooltip-right"
-		);
-		this._sidebarLibraryButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 4h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M17 17v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2" />
-      </svg>
-    `;
-		sidebarDiv.appendChild(this._sidebarLibraryButton);
-
-		this._sidebarLibraryText = document.createElement("div");
-		this._sidebarLibraryText.setAttribute(
-			"class",
-			"f3 text-gray pb-2 pt-1 text-center mb-2 clickable"
-		);
-		this._sidebarLibraryText.textContent = "Library";
-		sidebarDiv.appendChild(this._sidebarLibraryText);
-
-		this._sidebarSavedSearchesButton = document.createElement("button");
-		this._sidebarSavedSearchesButton.setAttribute(
-			"class",
-			"btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button project-sidebar-button tooltip-right"
-		);
-		this._sidebarSavedSearchesButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />
-      </svg>
-    `;
-		sidebarDiv.appendChild(this._sidebarSavedSearchesButton);
-
-		this._sidebarSavedSearchesText = document.createElement("div");
-		this._sidebarSavedSearchesText.setAttribute(
-			"class",
-			"f3 text-gray pb-2 pt-1 text-center mb-2 clickable"
-		);
-		this._sidebarSavedSearchesText.textContent = "Searches";
-		sidebarDiv.appendChild(this._sidebarSavedSearchesText);
-
-		this._sidebarBookmarksButton = document.createElement("button");
-		this._sidebarBookmarksButton.setAttribute(
-			"class",
-			"btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button project-sidebar-button tooltip-right"
-		);
-		this._sidebarBookmarksButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 10v11l-5 -3l-5 3v-11a3 3 0 0 1 3 -3h4a3 3 0 0 1 3 3z" /><path d="M11 3h5a3 3 0 0 1 3 3v11" />
-      </svg>
-    `;
-		sidebarDiv.appendChild(this._sidebarBookmarksButton);
-
-		this._sidebarBookmarksText = document.createElement("div");
-		this._sidebarBookmarksText.setAttribute(
-			"class",
-			"f3 text-gray pb-2 pt-1 text-center mb-2 clickable"
-		);
-		this._sidebarBookmarksText.textContent = "Bookmarks";
-		sidebarDiv.appendChild(this._sidebarBookmarksText);
-
-		this._sidebarLibraryButton.addEventListener(
-			"click",
-			this._sectionHandler.bind(this, "library")
-		);
-		this._sidebarLibraryText.addEventListener(
-			"click",
-			this._sectionHandler.bind(this, "library")
-		);
-		this._sidebarSavedSearchesButton.addEventListener(
-			"click",
-			this._sectionHandler.bind(this, "saved searches")
-		);
-		this._sidebarSavedSearchesText.addEventListener(
-			"click",
-			this._sectionHandler.bind(this, "saved searches")
-		);
-		this._sidebarBookmarksButton.addEventListener(
-			"click",
-			this._sectionHandler.bind(this, "bookmarks")
-		);
-		this._sidebarBookmarksText.addEventListener(
-			"click",
-			this._sectionHandler.bind(this, "bookmarks")
-		);
-	}
-
-	_sectionHandler(panelName, evt) {
-		evt.currentTarget.blur();
-		if (!this.leftPanelHidden() && this._currentPanel == panelName) {
-			this.hideLeftPanel();
-		} else {
-			this.expandLeftPanel();
-			this.displayPanel(panelName);
-		}
 	}
 
 	/**
@@ -1005,58 +509,38 @@ export class UploadPage extends TatorPage {
 		this._leftPanel = document.createElement("div");
 		this._leftPanel.setAttribute("class", "d-flex flex-grow flex-column");
 		this._leftPanel.style.minWidth = "400px";
-		this._leftPanel.style.maxWidth = "400px";
+		this._leftPanel.style.maxWidth = "450px";
 		this._leftPanel.style.backgroundColor = "#0d1320";
 		this.mainWrapper.appendChild(this._leftPanel);
 
-		this._panelLibrary = document.createElement("section");
-		this._panelLibrary.setAttribute(
+		this._settingsPanel = document.createElement("section");
+		this._settingsPanel.setAttribute(
 			"class",
 			"py-3 mr-3 ml-3 text-gray flex-grow"
 		);
-		this._leftPanel.appendChild(this._panelLibrary);
+		this._leftPanel.appendChild(this._settingsPanel);
+		this.setupSettingsPanel();
 
-		this._panelSavedSearches = document.createElement("section");
-		this._panelSavedSearches.setAttribute(
-			"class",
-			"py-3 mr-3 ml-3 text-gray flex-grow"
-		);
-		this._leftPanel.appendChild(this._panelSavedSearches);
-
-		this._panelBookmarks = document.createElement("section");
-		this._panelBookmarks.setAttribute(
-			"class",
-			"py-3 mr-3 ml-3 text-gray flex-grow"
-		);
-		this._leftPanel.appendChild(this._panelBookmarks);
-
-		// TODO setup upload settings panel
-		// this.setupLibraryPanel();
-
-		this._leftPanelDefaultWidth = "400px";
+		this._leftPanelDefaultWidth = "450px";
 		this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+	}
 
-		// button, text, panel
-		this._panelPartMap = new Map();
-		this._panelPartMap
-			.set("library", [
-				this._sidebarLibraryButton,
-				this._sidebarLibraryText,
-				this._panelLibrary,
-			])
-			.set("saved searches", [
-				this._sidebarSavedSearchesButton,
-				this._sidebarSavedSearchesText,
-				this._panelSavedSearches,
-			])
-			.set("bookmarks", [
-				this._sidebarBookmarksButton,
-				this._sidebarBookmarksText,
-				this._panelBookmarks,
-			]);
+	setupSettingsPanel(mediaTypes) {
+		if (mediaTypes !== undefined) {
+			const h3 = document.createElement("h3");
+			h3.setAttribute("class", "h2 text-light-gray");
+			h3.textContent = "Media Type Settings";
+			this._settingsPanel.appendChild(h3);
 
-		this._currentPanel = "library";
-		this.displayPanel("library");
+			const settings = document.createElement("div");
+			settings.setAttribute("class", "d-flex flex-column");
+			this._settingsPanel.appendChild(settings);
+
+			const mediaTypeSettings = document.createElement("media-type-settings");
+			mediaTypeSettings.setAttribute("class", "d-flex flex-column");
+			mediaTypeSettings.mediaTypes = mediaTypes;
+			settings.appendChild(mediaTypeSettings);
+		}
 	}
 }
 

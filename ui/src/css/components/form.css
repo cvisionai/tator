@@ -425,3 +425,11 @@ input[type="datetime-local"]:invalid {
   filter: invert(1);
   margin-left: 2px;
 }
+
+.bg-charcoal {
+  background-color: var(--color-charcoal--medium);
+}
+
+.bg-charcoal-light {
+  background-color: var(--color-charcoal--light);
+}
