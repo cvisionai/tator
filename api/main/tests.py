@@ -6133,6 +6133,8 @@ class JobClusterTestCase(
         self.entity.save()
         self.another_one.save()
         self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
     def get_organization(self):
@@ -6184,6 +6186,8 @@ class HostedTemplateTestCase(
         self.another_one = HostedTemplate(organization=self.organization, **self.create_json)
         self.another_one.save()
         self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
     def get_organization(self):
