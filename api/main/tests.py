@@ -6082,7 +6082,9 @@ class MutateAliasTestCase(TatorTransactionTest):
     # TODO: write totally different test for geopos mutations (not supported in query string queries)
 
 
-class JobClusterTestCase(TatorTransactionTest):
+class JobClusterTestCase(
+    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+):
     @staticmethod
     def _random_job_cluster_spec():
         uid = str(uuid1())
@@ -6116,48 +6118,10 @@ class JobClusterTestCase(TatorTransactionTest):
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_list_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
-
-    def test_detail_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
 
 
 class HostedTemplateTestCase(TatorTransactionTest):
