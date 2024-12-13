@@ -52,7 +52,7 @@ class JobClusterListAPI(BaseListView):
         """
         user = self.request.user
         org_id = params["organization"]
-        if os.getenv("TATOR_FINE_GRAINED_PERMISSION", "False") != "True":
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
             affiliations = Affiliation.objects.filter(user=user, permission="Admin")
             organization_ids = affiliations.values_list("organization", flat=True)
             if org_id not in organization_ids:
@@ -122,7 +122,7 @@ class JobClusterDetailAPI(BaseDetailView):
         job_cluster_qs = self.get_queryset()
         if job_cluster_qs.exists():
             org_id = job_cluster_qs[0].organization.id
-            if os.getenv("TATOR_FINE_GRAINED_PERMISSION", "False") != "True":
+            if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
                 affiliations = Affiliation.objects.filter(user=user, permission="Admin")
                 organization_ids = affiliations.values_list("organization", flat=True)
                 if org_id not in organization_ids:

@@ -53,7 +53,7 @@ class BucketListAPI(BaseListView):
 
     def _get(self, params):
         # Make sure user has access to this organization.
-        if os.getenv("TATOR_FINE_GRAINED_PERMISSION", "False") != "True":
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
             affiliation = Affiliation.objects.filter(
                 organization=params["organization"], user=self.request.user
             )
@@ -98,7 +98,7 @@ class BucketDetailAPI(BaseDetailView):
         if buckets.exists() == False:
             raise Http404
 
-        if os.getenv("TATOR_FINE_GRAINED_PERMISSION", "False") != "True":
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
             # Make sure user has access to this organization.
             affiliation = Affiliation.objects.filter(
                 organization=buckets[0].organization, user=self.request.user
