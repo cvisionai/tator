@@ -51,7 +51,7 @@ class MediaNextAPI(BaseDetailView):
         response_data = {"next": self._get_next(params["id"])}
         return response_data
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         this_ids = [self.params["id"]]
         next_id = self._get_next(self.params["id"])
         if next_id > 0:

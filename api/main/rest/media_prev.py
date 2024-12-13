@@ -50,7 +50,7 @@ class MediaPrevAPI(BaseDetailView):
         response_data = {"prev": self._get_prev(params["id"])}
         return response_data
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         this_ids = [self.params["id"]]
         next_id = self._get_prev(self.params["id"])
         if next_id > 0:
