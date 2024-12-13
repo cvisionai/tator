@@ -26,6 +26,7 @@ from ..schema import MergeStatesSchema
 from ..schema import TrimStateEndSchema
 from ..schema.components import state as state_schema
 
+from .._permission_util import augment_permission
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
@@ -642,7 +643,9 @@ class StateDetailBaseAPI(BaseDetailView):
 
         return {
             "message": f"State {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
-            "object": type(obj).objects.filter(pk=obj.pk).values(*STATE_PROPERTIES)[0],
+            "object": augment_permission(
+                self.request.user, type(obj).objects.filter(pk=obj.pk)
+            ).values(*STATE_PROPERTIES)[0],
         }
 
     def delete_qs(self, params, qs):
