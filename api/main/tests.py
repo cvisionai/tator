@@ -7270,7 +7270,8 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify behavior if you are Captain Kirk
             self.client.force_authenticate(user=self.kirk)
             resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
-            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
 
             # The commandant, who didn't steal the klingon ship and get demoted can see all row permissions
             self.client.force_authenticate(user=self.commandant)
@@ -7394,7 +7395,8 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # redshirt cannot get row protections for engineering
             resp = self.client.get(f"/rest/RowProtections?section={section_id}")
-            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
 
             # Go back to kirk
             self.client.force_authenticate(user=self.kirk)
