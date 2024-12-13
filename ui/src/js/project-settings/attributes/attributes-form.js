@@ -727,6 +727,7 @@ export class AttributesForm extends TatorElement {
       "string",
       "datetime",
       "geopos",
+      "blob",
     ];
     return this.attributeDTypes;
   }
@@ -781,6 +782,12 @@ export class AttributesForm extends TatorElement {
         "reversible-with-warning": [],
         irreversible: [],
       },
+      blob: {
+        allowed: [],
+        "fully-reversible": [],
+        "reversible-with-warning": [],
+        irreversible: [],
+      }
     };
   }
 
