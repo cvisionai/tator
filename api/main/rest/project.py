@@ -225,7 +225,7 @@ class ProjectListAPI(BaseListView):
             )
         member.save()
 
-        projects = Project.objects.filter(pk=project.id)
+        projects = self.get_queryset().filter(pk=project.pk)
         return {
             "message": f"Project {params['name']} created!",
             "id": project.id,
@@ -349,7 +349,7 @@ class ProjectDetailAPI(BaseDetailView):
         else:
             raise ValueError(f"No recognized keys in request!")
 
-        projects = Project.objects.filter(pk=project.id)
+        projects = self.get_queryset()
         return {
             "message": f"Project {params['id']} updated successfully!",
             "object": _serialize_projects(projects, self.request.user.pk)[0],
