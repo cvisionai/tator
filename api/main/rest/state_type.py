@@ -31,7 +31,7 @@ fields = [
     "delete_child_localizations",
     "default_localization",
     "elemental_id",
-    "effective_permission"
+    "effective_permission",
 ]
 
 import logging

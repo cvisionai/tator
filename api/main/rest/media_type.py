@@ -37,7 +37,7 @@ fields = [
     "default_line",
     "default_dot",
     "elemental_id",
-    "effective_permission"
+    "effective_permission",
 ]
 
 

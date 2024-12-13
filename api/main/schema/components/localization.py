@@ -154,7 +154,7 @@ localization_get_properties = {
     "effective_permission": {
         "type": "integer",
         "description": "Effective permission mask for the current user.",
-    }
+    },
 }
 
 localization_spec = {

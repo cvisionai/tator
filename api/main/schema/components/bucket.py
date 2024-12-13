@@ -68,8 +68,8 @@ bucket_properties = {
     "external_host": {"description": "The proxy host for presigned urls.", "type": "string"},
     "effective_permission": {
         "type": "integer",
-        "description": "Effective permission mask for this entity."
-    }
+        "description": "Effective permission mask for this entity.",
+    },
 }
 
 all_bucket_properties = {

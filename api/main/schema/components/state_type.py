@@ -53,8 +53,8 @@ state_type_properties = {
     },
     "effective_permission": {
         "type": "integer",
-        "description": "Effective permission mask for this entity."
-    }
+        "description": "Effective permission mask for this entity.",
+    },
 }
 
 state_type_spec = {

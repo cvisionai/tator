@@ -54,6 +54,6 @@ version = {
         "effective_permission": {
             "type": "integer",
             "description": "Effective permission mask for this user.",
-        }
+        },
     },
 }

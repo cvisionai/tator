@@ -38,6 +38,7 @@ def media_batches(media_list, files_per_job):
     for i in range(0, len(media_list), files_per_job):
         yield media_list[i : i + files_per_job]
 
+
 class JobListAPI(BaseListView):
     """Interact with list of background jobs."""
 

@@ -20,6 +20,7 @@ from ._permissions import OrganizationEditPermission
 
 logger = logging.getLogger(__name__)
 
+
 def _get_endpoint_url(bucket):
     if bucket.store_type == ObjectStore.GCP:
         return None

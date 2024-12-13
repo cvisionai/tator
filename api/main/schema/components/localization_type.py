@@ -45,8 +45,8 @@ localization_type_properties = {
     },
     "effective_permission": {
         "type": "integer",
-        "description": "Effective permission mask for this entity."
-    }
+        "description": "Effective permission mask for this entity.",
+    },
 }
 
 localization_type_spec = {

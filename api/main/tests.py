@@ -2500,6 +2500,7 @@ class AnonymousAccessTestCase(TatorTransactionTest):
             RowProtection.objects.create(
                 project=self.private_project, group=internal, permission=PermissionMask.OLD_READ
             ).save()
+
     def test_random_user(self):
         """A random user should get access to public project but not the private project"""
         self.client.force_authenticate(self.random_user)
@@ -7508,7 +7509,6 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             rp = RowProtection.objects.get(pk=rp_id)
             self.assertEqual(rp.permission, 0)
 
-     
             # Now switch to the commandant and verify there is no permission
             self.client.force_authenticate(user=self.commandant)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")

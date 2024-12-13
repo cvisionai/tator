@@ -85,7 +85,7 @@ state_get_properties = {
     "effective_permission": {
         "type": "integer",
         "description": "Effective permission mask for the current user.",
-    }
+    },
 }
 
 state_spec = {
