@@ -51,5 +51,9 @@ version = {
             "type": "string",
             "description": "Name of user who created the last unmodified annotation in this version.",
         },
+        "effective_permission": {
+            "type": "integer",
+            "description": "Effective permission mask for this user.",
+        }
     },
 }
