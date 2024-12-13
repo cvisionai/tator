@@ -135,6 +135,15 @@ for (const [dir, path] of Object.entries(staticMap)) {
     path,
     express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
   );
+  if (dir === "./server/static" && path != "/static") {
+    app.use(
+      "/static",
+      express.static(dir, {
+        setHeaders: addHeaders,
+        maxAge: maxAgeMilliseconds,
+      })
+    );
+  }
 }
 app.use(express.json());
 app.use(cookieParser());
