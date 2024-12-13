@@ -95,7 +95,7 @@ class BucketDetailAPI(BaseDetailView):
     def _get(self, params):
         # Make sure bucket exists.
         buckets = self.get_queryset()
-        if buckets.count() == 0:
+        if buckets.exists() == False:
             raise Http404
 
         if os.getenv("TATOR_FINE_GRAINED_PERMISSION", "False") != "True":
