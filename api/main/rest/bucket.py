@@ -53,13 +53,14 @@ class BucketListAPI(BaseListView):
 
     def _get(self, params):
         # Make sure user has access to this organization.
-        affiliation = Affiliation.objects.filter(
-            organization=params["organization"], user=self.request.user
-        )
-        if affiliation.count() == 0:
-            raise PermissionDenied
-        if affiliation[0].permission != "Admin":
-            raise PermissionDenied
+        if os.getenv("TATOR_FINE_GRAINED_PERMISSION", "False") != "True":
+            affiliation = Affiliation.objects.filter(
+                organization=params["organization"], user=self.request.user
+            )
+            if affiliation.count() == 0:
+                raise PermissionDenied
+            if affiliation[0].permission != "Admin":
+                raise PermissionDenied
         buckets = self.get_queryset()
         return [serialize_bucket(bucket) for bucket in buckets]
 
