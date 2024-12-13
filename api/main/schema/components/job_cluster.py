@@ -42,6 +42,10 @@ job_cluster = {
             "type": "integer",
             "description": "Unique integer identifying the organization associated with the job cluster.",
         },
+        "effective_permission": {
+            "type": "integer",
+            "description": "Effective permission mask for this entity.",
+        },
         **job_cluster_post_properties,
     },
 }
