@@ -2483,6 +2483,23 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         resource.media.add(self.private_video)
         resource.save()
 
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", 0) == "true":
+            everyone = Group.objects.create(name="everyone")
+            everyone.save()
+            GroupMembership.objects.create(user=self.anonymous_user, group=everyone).save()
+            GroupMembership.objects.create(user=self.user, group=everyone).save()
+            GroupMembership.objects.create(user=self.random_user, group=everyone).save()
+
+            internal = Group.objects.create(name="internal")
+            internal.save()
+            GroupMembership.objects.create(user=self.user, group=internal).save()
+
+            RowProtection.objects.create(
+                project=self.public_project, group=everyone, permission=PermissionMask.OLD_READ
+            ).save()
+            RowProtection.objects.create(
+                project=self.private_project, group=internal, permission=PermissionMask.OLD_READ
+            ).save()
     def test_random_user(self):
         """A random user should get access to public project but not the private project"""
         self.client.force_authenticate(self.random_user)

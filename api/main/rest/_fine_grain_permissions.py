@@ -298,22 +298,25 @@ class PermalinkPermission(BasePermission):
     def has_permission(self, request, view):
         try:
             media_id = view.kwargs.get("id")
-            m = Media.objects.filter(pk=media_id)
+            anonymous_user = User.objects.filter(username="anonymous")
+            if isinstance(request.user, AnonymousUser):
+                if anonymous_user.exists():
+                    m = augment_permission(anonymous_user[0], Media.objects.filter(pk=media_id))
+                else:
+                    return False
+            else:
+                m = augment_permission(request.user, Media.objects.filter(pk=media_id))
+            required_mask = PermissionMask.EXIST | PermissionMask.READ
+            if m.exists():
+                m = m.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
+                m = m.filter(is_viewable__exact=required_mask)
             if not m.exists():
                 return False  # If the media doesn't exist, do not authenticate
-            project = m[0].project
-            # Not all deployments have an anonymous user
-            anonymous_user = User.objects.filter(username="anonymous")
-            if anonymous_user.exists():
-                anonymous_membership = Membership.objects.filter(
-                    project=project, user=anonymous_user[0]
-                )
-                if anonymous_membership.exists():
-                    return True
-            if not isinstance(request.user, AnonymousUser):
-                user_membership = Membership.objects.filter(project=project, user=request.user)
-                if user_membership.exists():
-                    return True
+
+            if m[0].effective_permission & required_mask == required_mask:
+                return True
+            else:
+                return False
         except Exception as e:
             # This is an untrusted endpoint, so don't leak any exceptions to response if possible
             logger.error(f"Error {e}", exc_info=True)
