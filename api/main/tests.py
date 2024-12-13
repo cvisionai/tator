@@ -6109,9 +6109,16 @@ class JobClusterTestCase(
         self.list_uri = "JobClusters"
         self.detail_uri = "JobCluster"
         self.create_json = self._random_job_cluster_spec()
+        self.patch_json = self._random_job_cluster_spec()
         self.entity = JobCluster(organization=self.organization, **self.create_json)
+        self.another_one = JobCluster(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
