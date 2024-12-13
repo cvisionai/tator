@@ -1141,21 +1141,74 @@ class PermissionListAffiliationTestMixin:
             rp.save()
 
     def test_list_is_a_member_permissions(self):
-        for index, level in enumerate(affiliation_levels):
-            affiliation = self.get_affiliation(self.organization, self.user)
-            affiliation.permission = level
-            affiliation.save()
-            if self.get_requires_admin and not (level == "Admin"):
-                expected_status = status.HTTP_403_FORBIDDEN
-            else:
-                expected_status = status.HTTP_200_OK
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp_admin = RowProtection.objects.get(
+                target_organization=self.organization, group__name=f"{self.organization.name} Admin"
+            )
+
+            rp_elements = []
+            old_perm_map = []
+            # Handle RP-specific to object(s) in question
+            if self.list_uri == "Buckets":
+                rp_elements = RowProtection.objects.filter(bucket__organization=self.organization)
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "JobClusters":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "HostedTemplates":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+
+            old_admin_perm = rp_admin.permission
+            # Attempt to get the list of entities when there is an admin affiliation
             url = f"/rest/{self.list_uri}/{self.organization.pk}"
             if hasattr(self, "entity_type"):
                 url += f"?type={self.entity_type.pk}"
             response = self.client.get(url)
-            assertResponse(self, response, expected_status)
-        affiliation.permission = "Admin"
-        affiliation.save()
+            assertResponse(self, response, 200)
+
+            rp_admin.permission = 0
+            rp_admin.save()
+            for rp in rp_elements:
+                rp.permission = 0
+                rp.save()
+
+            # Now verify we get 403
+            url = f"/rest/{self.list_uri}/{self.organization.pk}"
+            if hasattr(self, "entity_type"):
+                url += f"?type={self.entity_type.pk}"
+            response = self.client.get(url)
+            assertResponse(self, response, 403)
+
+            rp_admin.permission = old_admin_perm
+            rp_admin.save()
+
+            for rp, perm in old_perm_map:
+                rp.permission = perm
+                rp.save()
+        else:
+            for index, level in enumerate(affiliation_levels):
+                affiliation = self.get_affiliation(self.organization, self.user)
+                affiliation.permission = level
+                affiliation.save()
+                if self.get_requires_admin and not (level == "Admin"):
+                    expected_status = status.HTTP_403_FORBIDDEN
+                else:
+                    expected_status = status.HTTP_200_OK
+                url = f"/rest/{self.list_uri}/{self.organization.pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                assertResponse(self, response, expected_status)
+            affiliation.permission = "Admin"
+            affiliation.save()
 
 
 class PermissionDetailAffiliationTestMixin:
