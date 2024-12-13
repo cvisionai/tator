@@ -68,6 +68,10 @@ media_type_properties = {
         "type": "string",
         "nullable": True,
     },
+    "effective_permission": {
+        "type": "integer",
+        "description": "Effective permission mask for this entity."
+    }
 }
 
 media_type_spec = {
