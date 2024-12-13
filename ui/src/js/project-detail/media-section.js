@@ -138,7 +138,7 @@ export class MediaSection extends TatorElement {
       this._nameText.innerHTML = `<span class="text-white d-flex flex-items-center">${this._sectionName}</span>`;
     } else {
       this._sectionName = section.name;
-      this._upload.setAttribute("section", section.name);
+      this._upload.setAttribute("section", section);
       var parts = this._sectionData.getSectionNamesLineage(section);
       var nameTextHTML = `<span class="text-white d-flex flex-items-center">${section.name}</span>`;
       if (parts.length > 1) {
@@ -217,6 +217,7 @@ export class MediaSection extends TatorElement {
       );
     }
     this._more.project = val;
+    this._upload.project = val;
     this._project = val;
   }
 
@@ -600,8 +601,6 @@ export class MediaSection extends TatorElement {
 
     newUrl += "?" + searchParams.toString();
 
-    // #TODO Remove console
-    console.log(`_updatePageArgs - New URL: ${newUrl}`);
     window.history.replaceState({}, "", newUrl);
 
     this._pagePosition.innerHTML = `(Page ${this._paginator_top._page + 1} of ${

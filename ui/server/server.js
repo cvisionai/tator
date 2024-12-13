@@ -194,6 +194,10 @@ app.get("/:projectId/dashboards/:id", (req, res) => {
   res.render("analytics/dashboard", params);
 });
 
+app.get("/:projectId/upload", (req, res) => {
+	res.render("upload", params);
+});
+
 app.get("/organizations", (req, res) => {
   res.render("organizations", params);
 });

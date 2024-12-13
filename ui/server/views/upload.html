@@ -1,0 +1,9 @@
+{% extends "tator-base.html" %} {% block head %}
+<title>Upload | Tator</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/upload/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("upload-page");
+  document.body.appendChild(page);
+</script>
+{% endblock head %} {% block body %} {% endblock body %}

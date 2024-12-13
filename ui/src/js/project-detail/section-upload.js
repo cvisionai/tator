@@ -7,17 +7,18 @@ export class SectionUpload extends UploadElement {
 	constructor() {
 		super();
 
-		const label = document.createElement("label");
-		label.setAttribute("class", "h3 text-gray hover-text-white");
-		label.style.cursor = "pointer";
-		this._shadow.appendChild(label);
+		this._pageLink = document.createElement("a");
+		this._pageLink.setAttribute("class", "text-light-gray hover-text-white");
+		this._pageLink.style.cursor = "pointer";
+		this._pageLink.setAttribute("title", "Go to Upload Page");
+		this._shadow.appendChild(this._pageLink);
 
 		const svg = document.createElementNS(svgNamespace, "svg");
 		svg.setAttribute("id", "icon-upload");
 		svg.setAttribute("viewBox", "0 0 24 24");
 		svg.setAttribute("height", "1em");
 		svg.setAttribute("width", "1em");
-		label.appendChild(svg);
+		this._pageLink.appendChild(svg);
 
 		const title = document.createElementNS(svgNamespace, "title");
 		title.textContent = "Upload";
@@ -34,26 +35,26 @@ export class SectionUpload extends UploadElement {
 		this._fileInput.setAttribute("class", "sr-only");
 		this._fileInput.setAttribute("type", "file");
 		this._fileInput.setAttribute("multiple", "");
-		label.after(this._fileInput);
+		this._pageLink.after(this._fileInput);
 
 		this._fileInput.addEventListener("change", this._fileSelectCallback);
 
 		this.uploadDialogInit = document.createElement("upload-dialog-init");
 		this._shadow.appendChild(this.uploadDialogInit);
 
-		label.addEventListener("click", () => {
-			this.uploadDialogInit.open();
-		});
+		// label.addEventListener("click", () => {
+		// 	this.uploadDialogInit.open();
+		// });
 
-		this.uploadDialogInit.addEventListener(
-			"choose-files",
-			this._handleUpdateVars.bind(this)
-		);
+		// this.uploadDialogInit.addEventListener(
+		// 	"choose-files",
+		// 	this._handleUpdateVars.bind(this)
+		// );
 
-		this.uploadDialogInit._mediaType.addEventListener(
-			"change",
-			this._handleMediaType.bind(this)
-		);
+		// this.uploadDialogInit._mediaType.addEventListener(
+		// 	"change",
+		// 	this._handleMediaType.bind(this)
+		// );
 	}
 
 	connectedCallback() {
@@ -135,12 +136,34 @@ export class SectionUpload extends UploadElement {
 	attributeChangedCallback(name, oldValue, newValue) {
 		switch (name) {
 			case "section":
-				this._section = newValue;
-				this._uploadSection = async () => {
-					return newValue;
-				};
+				if (newValue && newValue.indexOf("{") > -1) {
+					const json = JSON.parse(newValue);
+					this._section = json.name;
+					this._pageLink.setAttribute(
+						"href",
+						`/${this._project.id}/upload?section=${json.id}`
+					);
+					this._uploadSection = async () => {
+						return json.name;
+					};
+				} else {
+					this._section = newValue;
+
+					this._pageLink.setAttribute(
+						"href",
+						`/${this._project.id}/upload?section=${newValue}`
+					);
+					this._uploadSection = async () => {
+						return newValue;
+					};
+				}
 				break;
 		}
+	}
+
+	set project(val) {
+		this._project = val;
+		this._pageLink.setAttribute("href", `/${this._project.id}/upload`);
 	}
 }
 
