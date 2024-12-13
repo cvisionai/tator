@@ -922,4 +922,4 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
-        return Media.objects.filter(pk=self.params["id"], deleted=False)
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))
