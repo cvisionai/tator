@@ -423,7 +423,11 @@ class OrganizationPermissionBase(BasePermission):
             organization = get_object_or_404(Organization, pk=int(organization_id))
         elif "id" in view.kwargs:
             pk = view.kwargs["id"]
-            obj = get_object_or_404(view.get_queryset(), pk=pk)
+            qs = view.get_queryset()
+            if qs.exists():
+                obj = qs[0]
+            else:
+                raise PermissionDenied
             organization = self._organization_from_object(obj)
             if organization is None:
                 raise Http404
