@@ -710,9 +710,6 @@ class StateDetailBaseAPI(BaseDetailView):
             "id": obj_id,
         }
 
-    def get_queryset(self):
-        return State.objects.all()
-
 
 class MergeStatesAPI(BaseDetailView):
     """#TODO"""
@@ -865,7 +862,7 @@ class StateDetailByElementalIdAPI(StateDetailBaseAPI):
         else:
             latest_mark = qs.aggregate(value=Max("mark"))
             qs = qs.filter(mark=latest_mark["value"])
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _get(self, params):
         return self.get_qs(params, self.get_queryset())
