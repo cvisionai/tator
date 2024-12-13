@@ -128,6 +128,7 @@ const staticMap = {
   "./node_modules/earcut": `${argv.static_path}/ui/node_modules/earcut`,
   "./node_modules/underwater-image-color-correction": `${argv.static_path}/ui/node_modules/underwater-image-color-correction`,
   "./node_modules/spark-md5": `${argv.static_path}/ui/node_modules/spark-md5`,
+  "./node_modules/swagger-ui-dist": `${argv.static_path}/ui/node_modules/swagger`,
   "../scripts": `${argv.static_path}/scripts`,
 };
 for (const [dir, path] of Object.entries(staticMap)) {
@@ -136,6 +137,7 @@ for (const [dir, path] of Object.entries(staticMap)) {
     express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
   );
   if (dir === "./server/static" && path != "/static") {
+    // This lets djangi admin panel see static files at static as it doesn't get templated with GIT_REVISION
     app.use(
       "/static",
       express.static(dir, {
