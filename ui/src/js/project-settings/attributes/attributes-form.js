@@ -787,7 +787,7 @@ export class AttributesForm extends TatorElement {
         "fully-reversible": [],
         "reversible-with-warning": [],
         irreversible: [],
-      }
+      },
     };
   }
 
@@ -934,7 +934,12 @@ export class AttributesForm extends TatorElement {
 
         if (defaultVal !== null && defaultVal !== "null") {
           // backend does this but not when value is ""
-          if (dtype == "int" || dtype == "float" || dtype == "blob" || dtype == "string") {
+          if (
+            dtype == "int" ||
+            dtype == "float" ||
+            dtype == "blob" ||
+            dtype == "string"
+          ) {
             if (String(defaultVal).trim() === "") {
               delete formData["default"];
             } else {
