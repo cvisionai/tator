@@ -117,7 +117,8 @@ class TatorAPIView(APIView):
                         qs = qs.order_by("name", "id")
                     else:
                         qs = qs.order_by("id")
-
+        else:
+            qs = qs.annotate(effective_permission=Value(0))
         return qs
 
 

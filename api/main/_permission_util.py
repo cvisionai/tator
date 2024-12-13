@@ -208,7 +208,7 @@ def augment_permission(user, qs):
             assert False, f"Unhandled model {model} (no permission logic for org/project)"
     else:
         # If an object doesn't exist, we can't annotate it
-        return qs
+        return qs.annotate(effective_permission=Value(0))
 
     if qs.query.low_mark != 0 or qs.query.high_mark is not None:
         # This is a slice, we need to get the full queryset to annotate + filter
