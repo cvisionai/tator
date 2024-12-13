@@ -4916,7 +4916,7 @@ class BucketTestCase(
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -6150,9 +6150,19 @@ class HostedTemplateTestCase(
         self.list_uri = "HostedTemplates"
         self.detail_uri = "HostedTemplate"
         self.create_json = self._hosted_template_spec()
+        self.patch_json = {
+            "name": "Updated name",
+            "url": "https://raw.githubusercontent.com/cvisionai/tator/main/doc/examples/workflow_template/echo.yaml",
+        }
         self.entity = HostedTemplate(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one = HostedTemplate(organization=self.organization, **self.create_json)
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
