@@ -4,11 +4,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def _job_media_ids(job):
     parameters = job["spec"]["arguments"]["parameters"]
     for param in parameters:
         if param["name"] == "media_ids":
             return [int(media_id) for media_id in param["value"].split(",")]
+
 
 def _job_project(job):
     parameters = job["spec"]["arguments"]["parameters"]

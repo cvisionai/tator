@@ -58,6 +58,10 @@ hosted_template = {
             "type": "integer",
             "description": "Unique integer identifying the organization associated with the hosted template.",
         },
+        "effective_permission": {
+            "type": "integer",
+            "description": "Effective permission mask for this entity.",
+        },
         # Headers are excluded from GET requests.
         **{k: v for k, v in hosted_template_post_properties.items() if k != "headers"},
     },

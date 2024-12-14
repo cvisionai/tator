@@ -25,7 +25,16 @@ from ..schema import parse
 logger = logging.getLogger(__name__)
 
 
-JOB_CLUSTER_PROPERTIES = ["id", "name", "organization", "host", "port", "token", "cert"]
+JOB_CLUSTER_PROPERTIES = [
+    "id",
+    "name",
+    "organization",
+    "host",
+    "port",
+    "token",
+    "cert",
+    "effective_permission",
+]
 
 
 class JobClusterListAPI(BaseListView):
@@ -43,12 +52,13 @@ class JobClusterListAPI(BaseListView):
         """
         user = self.request.user
         org_id = params["organization"]
-        affiliations = Affiliation.objects.filter(user=user, permission="Admin")
-        organization_ids = affiliations.values_list("organization", flat=True)
-        if org_id not in organization_ids:
-            raise PermissionDenied(
-                f"User {user} does not have Admin permissions for organization {org_id}"
-            )
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
+            affiliations = Affiliation.objects.filter(user=user, permission="Admin")
+            organization_ids = affiliations.values_list("organization", flat=True)
+            if org_id not in organization_ids:
+                raise PermissionDenied(
+                    f"User {user} does not have Admin permissions for organization {org_id}"
+                )
         return list(self.get_queryset().values(*JOB_CLUSTER_PROPERTIES))
 
     def get_queryset(self, **kwargs):
@@ -109,15 +119,17 @@ class JobClusterDetailAPI(BaseDetailView):
     def _get(self, params):
         """Retrieve the requested algortihm entry by ID"""
         user = self.request.user
-        job_cluster = self.get_queryset().first()
-        org_id = job_cluster.organization.id
-        affiliations = Affiliation.objects.filter(user=user, permission="Admin")
-        organization_ids = affiliations.values_list("organization", flat=True)
-        if org_id not in organization_ids:
-            raise PermissionDenied(
-                f"User {user} does not have Admin permissions for organization {org_id}"
-            )
-        return model_to_dict(job_cluster, fields=["id", "name", "host", "port", "token", "cert"])
+        job_cluster_qs = self.get_queryset()
+        if job_cluster_qs.exists():
+            org_id = job_cluster_qs[0].organization.id
+            if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
+                affiliations = Affiliation.objects.filter(user=user, permission="Admin")
+                organization_ids = affiliations.values_list("organization", flat=True)
+                if org_id not in organization_ids:
+                    raise PermissionDenied(
+                        f"User {user} does not have Admin permissions for organization {org_id}"
+                    )
+        return job_cluster_qs.values(*JOB_CLUSTER_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:

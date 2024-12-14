@@ -1141,21 +1141,74 @@ class PermissionListAffiliationTestMixin:
             rp.save()
 
     def test_list_is_a_member_permissions(self):
-        for index, level in enumerate(affiliation_levels):
-            affiliation = self.get_affiliation(self.organization, self.user)
-            affiliation.permission = level
-            affiliation.save()
-            if self.get_requires_admin and not (level == "Admin"):
-                expected_status = status.HTTP_403_FORBIDDEN
-            else:
-                expected_status = status.HTTP_200_OK
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp_admin = RowProtection.objects.get(
+                target_organization=self.organization, group__name=f"{self.organization.name} Admin"
+            )
+
+            rp_elements = []
+            old_perm_map = []
+            # Handle RP-specific to object(s) in question
+            if self.list_uri == "Buckets":
+                rp_elements = RowProtection.objects.filter(bucket__organization=self.organization)
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "JobClusters":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "HostedTemplates":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+
+            old_admin_perm = rp_admin.permission
+            # Attempt to get the list of entities when there is an admin affiliation
             url = f"/rest/{self.list_uri}/{self.organization.pk}"
             if hasattr(self, "entity_type"):
                 url += f"?type={self.entity_type.pk}"
             response = self.client.get(url)
-            assertResponse(self, response, expected_status)
-        affiliation.permission = "Admin"
-        affiliation.save()
+            assertResponse(self, response, 200)
+
+            rp_admin.permission = 0
+            rp_admin.save()
+            for rp in rp_elements:
+                rp.permission = 0
+                rp.save()
+
+            # Now verify we get 403
+            url = f"/rest/{self.list_uri}/{self.organization.pk}"
+            if hasattr(self, "entity_type"):
+                url += f"?type={self.entity_type.pk}"
+            response = self.client.get(url)
+            assertResponse(self, response, 403)
+
+            rp_admin.permission = old_admin_perm
+            rp_admin.save()
+
+            for rp, perm in old_perm_map:
+                rp.permission = perm
+                rp.save()
+        else:
+            for index, level in enumerate(affiliation_levels):
+                affiliation = self.get_affiliation(self.organization, self.user)
+                affiliation.permission = level
+                affiliation.save()
+                if self.get_requires_admin and not (level == "Admin"):
+                    expected_status = status.HTTP_403_FORBIDDEN
+                else:
+                    expected_status = status.HTTP_200_OK
+                url = f"/rest/{self.list_uri}/{self.organization.pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                assertResponse(self, response, expected_status)
+            affiliation.permission = "Admin"
+            affiliation.save()
 
 
 class PermissionDetailAffiliationTestMixin:
@@ -2429,6 +2482,24 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         resource.media.add(self.public_video)
         resource.media.add(self.private_video)
         resource.save()
+
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", 0) == "true":
+            everyone = Group.objects.create(name="everyone")
+            everyone.save()
+            GroupMembership.objects.create(user=self.anonymous_user, group=everyone).save()
+            GroupMembership.objects.create(user=self.user, group=everyone).save()
+            GroupMembership.objects.create(user=self.random_user, group=everyone).save()
+
+            internal = Group.objects.create(name="internal")
+            internal.save()
+            GroupMembership.objects.create(user=self.user, group=internal).save()
+
+            RowProtection.objects.create(
+                project=self.public_project, group=everyone, permission=PermissionMask.OLD_READ
+            ).save()
+            RowProtection.objects.create(
+                project=self.private_project, group=internal, permission=PermissionMask.OLD_READ
+            ).save()
 
     def test_random_user(self):
         """A random user should get access to public project but not the private project"""
@@ -4863,7 +4934,7 @@ class BucketTestCase(
 ):
     def setUp(self):
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -6029,7 +6100,9 @@ class MutateAliasTestCase(TatorTransactionTest):
     # TODO: write totally different test for geopos mutations (not supported in query string queries)
 
 
-class JobClusterTestCase(TatorTransactionTest):
+class JobClusterTestCase(
+    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+):
     @staticmethod
     def _random_job_cluster_spec():
         uid = str(uuid1())
@@ -6054,60 +6127,33 @@ class JobClusterTestCase(TatorTransactionTest):
         self.list_uri = "JobClusters"
         self.detail_uri = "JobCluster"
         self.create_json = self._random_job_cluster_spec()
+        self.patch_json = self._random_job_cluster_spec()
         self.entity = JobCluster(organization=self.organization, **self.create_json)
+        self.another_one = JobCluster(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_list_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_detail_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
 
-    def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
-
-class HostedTemplateTestCase(TatorTransactionTest):
+class HostedTemplateTestCase(
+    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+):
     @staticmethod
     def _hosted_template_spec():
         uid = str(uuid1())
@@ -6131,57 +6177,31 @@ class HostedTemplateTestCase(TatorTransactionTest):
         self.list_uri = "HostedTemplates"
         self.detail_uri = "HostedTemplate"
         self.create_json = self._hosted_template_spec()
+        self.patch_json = {
+            "name": "Updated name",
+            "url": "https://raw.githubusercontent.com/cvisionai/tator/main/doc/examples/workflow_template/echo.yaml",
+        }
         self.entity = HostedTemplate(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one = HostedTemplate(organization=self.organization, **self.create_json)
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_list_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
-
-    def test_detail_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
 
 
 class UsernameTestCase(TatorTransactionTest):
@@ -7255,7 +7275,8 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify behavior if you are Captain Kirk
             self.client.force_authenticate(user=self.kirk)
             resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
-            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
 
             # The commandant, who didn't steal the klingon ship and get demoted can see all row permissions
             self.client.force_authenticate(user=self.commandant)
@@ -7379,7 +7400,8 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # redshirt cannot get row protections for engineering
             resp = self.client.get(f"/rest/RowProtections?section={section_id}")
-            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
 
             # Go back to kirk
             self.client.force_authenticate(user=self.kirk)
@@ -7491,7 +7513,6 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             rp = RowProtection.objects.get(pk=rp_id)
             self.assertEqual(rp.permission, 0)
 
-     
             # Now switch to the commandant and verify there is no permission
             self.client.force_authenticate(user=self.commandant)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")

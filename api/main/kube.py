@@ -135,8 +135,7 @@ def _get_api(cluster):
 
 
 def _get_clusters(project):
-    """Get unique clusters for the given project.
-    """
+    """Get unique clusters for the given project."""
     algos = Algorithm.objects.all()
     if project is not None:
         algos = algos.filter(project=project)

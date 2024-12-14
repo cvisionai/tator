@@ -469,7 +469,7 @@ class MediaListAPI(BaseListView):
                 project, media_spec_list[0], self.request.user, use_rq=True
             )
             qs = Media.objects.filter(id=obj.id)
-            response_data = list(qs.values(*fields))
+            response_data = list(augment_permission(self.request.user, qs).values(*fields))
             response_data = response_data if received_spec_list else response_data[0]
             id_resp = [obj.id] if received_spec_list else obj.id
             response = {"message": msg, "id": id_resp, "object": response_data}
@@ -488,7 +488,7 @@ class MediaListAPI(BaseListView):
                     ids.append(obj.id)
 
             qs = Media.objects.filter(id__in=set(ids))
-            response_data = list(qs.values(*fields))
+            response_data = list(augment_permission(self.request.user, qs).values(*fields))
             response = {
                 "message": f"Started import of {len(ids)} images!",
                 "id": ids,
@@ -922,4 +922,4 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
-        return Media.objects.filter(pk=self.params["id"], deleted=False)
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))

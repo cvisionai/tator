@@ -102,15 +102,15 @@ class RowProtectionListAPI(BaseListView):
         filters = [x["name"] for x in search_filters]
         for key in self.params.keys():
             if key in filters and self.params.get(key, None):
+                logger.info(f"Filtering on {key} with {self.params[key]}")
                 qs = qs.filter(**{key: self.params[key]})
 
+        ids_user_can_see = []
         for row_protection in qs:
-            if check_acl_permission_of_children(self.request.user, row_protection) is False:
-                raise PermissionDenied(
-                    "User does not have permission to acccess this row protection set"
-                )
+            if check_acl_permission_of_children(self.request.user, row_protection) is True:
+                ids_user_can_see.append(row_protection.id)
 
-        return qs
+        return RowProtection.objects.filter(pk__in=ids_user_can_see)
 
     def _delete(self, params: dict) -> dict:
         qs = self.get_queryset()

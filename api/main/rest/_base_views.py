@@ -102,7 +102,14 @@ class TatorAPIView(APIView):
     def filter_only_viewables(self, qs, required_mask=PermissionMask.EXIST | PermissionMask.READ):
         # Convenience function for filtering out objects for most views
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
-            qs = augment_permission(self.request.user, qs)
+            user = self.request.user
+            if isinstance(self.request.user, AnonymousUser):
+                anonymous_qs = User.objects.filter(username="anonymous")
+                if anonymous_qs.exists():
+                    user = anonymous_qs[0]
+                else:
+                    return qs.none()
+            qs = augment_permission(user, qs)
             if qs.exists():
                 qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
                 qs = qs.filter(is_viewable__exact=required_mask)
@@ -117,7 +124,8 @@ class TatorAPIView(APIView):
                         qs = qs.order_by("name", "id")
                     else:
                         qs = qs.order_by("id")
-
+        else:
+            qs = qs.annotate(effective_permission=Value(0))
         return qs
 
 
