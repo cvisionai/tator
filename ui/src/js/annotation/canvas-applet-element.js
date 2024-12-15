@@ -37,14 +37,13 @@ export class CanvasAppletElement extends TatorElement {
    *    List of user-associated favorites
    * @param {undo-buffer} undo
    *    Undo buffer for patching/posting required by elements like the save dialog
-   * @param {undo-buffer} undo
-   *    Undo buffer for patching/posting required by elements like the save dialog
    */
   init(applet, data, favorites, undo) {
     this._applet = applet;
     this._data = data;
     this._undo = undo;
     this._favorites = favorites;
+    this._annotationCanvas = canvas;
 
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex flex-justify-center");
@@ -609,6 +608,14 @@ export class CanvasAppletElement extends TatorElement {
    */
   async updateMedia(media) {
     this._media = media;
+  }
+
+  /**
+   * @param {AnnotationCanvas} canvas
+   *    Associated video/image canvas
+   */
+  async updateAnnotationCanvas(canvas) {
+    this._annotationCanvas = canvas;
   }
 
   /**
