@@ -12,7 +12,7 @@
 
 .annotation-subheader-close {
   background-color: transparent;
-  border: none;
+  height: 24px;
 }
 .annotation-subheader-close:hover,
 .annotation-subheader-close:focus {

@@ -2781,6 +2781,18 @@ export class AnnotationMulti extends TatorElement {
       allowSafeMode: this._allowSafeMode,
     };
   }
+
+  getCameraCanvas(mediaId) {
+    return this._videoGridInfo[mediaId].video;
+  }
+
+  getCameraMediaList() {
+    let mediaList = [];
+    for (const video of this._videos) {
+      mediaList.push(video._videoObject);
+    }
+    return mediaList;
+  }
 }
 
 customElements.define("annotation-multi", AnnotationMulti);
