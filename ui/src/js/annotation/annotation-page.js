@@ -2466,11 +2466,11 @@ export class AnnotationPage extends TatorPage {
       this._currentCanvasApplet._lastFrameUpdate != this._currentFrame ||
       this._currentCanvasApplet._lastMediaId != selectedCameraMediaId
     ) {
-      currentCanvas.getPNGdata(false).then((blob) => {
-        this._currentCanvasApplet.updateMedia(selectedMedia).then(() => {
-          this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
-          displayCanvasAppletWrapper.bind(this)();
-        });
+      currentCanvas.getPNGdata(false).then(async (blob) => {
+        await this._currentCanvasApplet.updateMedia(selectedMedia);
+        await this._currentCanvasApplet.updateAnnotationCanvas(currentCanvas);
+        this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
+        displayCanvasAppletWrapper.bind(this)();
       });
     } else {
       displayCanvasAppletWrapper.bind(this)();
