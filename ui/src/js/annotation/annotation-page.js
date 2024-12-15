@@ -865,6 +865,7 @@ export class AnnotationPage extends TatorPage {
       this._browser.version = evt.detail.version;
       this._versionButton.text = evt.detail.version.name;
       this._version = evt.detail.version;
+      this._canvasAppletHeader.version = this._version;
       for (const key in this._saves) {
         this._saves[key].version = this._version;
       }
@@ -1064,6 +1065,7 @@ export class AnnotationPage extends TatorPage {
             for (const version of versions) {
               if (version.id == default_version) {
                 this._version = version;
+                this._canvasAppletHeader.version = this._version;
               }
             }
 
@@ -2451,7 +2453,7 @@ export class AnnotationPage extends TatorPage {
     const selectedCameraMediaId = this._cameraSelectionBar.getActive();
     const currentCanvas = this._cameraCanvasMap[selectedCameraMediaId];
     const selectedMedia = this._mediaMap[selectedCameraMediaId];
-
+    this._canvasAppletHeader.frame = this._currentFrame;
     var appletData = {
       frame: this._currentFrame,
       selectedTrack: this._canvas._activeTrack,
