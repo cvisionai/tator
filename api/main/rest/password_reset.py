@@ -20,7 +20,7 @@ class PasswordResetListAPI(BaseListView):
 
     def _post(self, params):
         email = params["email"]
-        users = User.objects.filter(email=email)
+        users = User.objects.filter(email__iexact=email)
         if users.count() == 0:
             raise RuntimeError(f"Email {email} is not registered with a user!")
         if users.count() > 1:
