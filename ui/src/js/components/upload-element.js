@@ -70,8 +70,10 @@ export class UploadElement extends TatorElement {
 
   _checkFile(file, gid) {
 		// File extension can have multiple components in archives
-		let comps = file.name.split(".").slice(-1);
-		let ext = comps.join("."); // rejoin extension
+		let comps = file.name.split(".").slice(-1),
+			ext = comps.join("."); // rejoin extension
+		
+		console.log("Checking file", file, gid, ext)
 
 		const isImage = ext.match(
 			/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
@@ -141,7 +143,7 @@ export class UploadElement extends TatorElement {
 				abortController: this._abortController,
 				attributes: attributes ? attributes : {},
 			};
-			console.log("File is OK", fileInfo);
+			// console.log("File is OK", fileInfo);
 			return fileInfo;
 		}
 
@@ -169,7 +171,7 @@ export class UploadElement extends TatorElement {
 		const gid = uuidv1();
 
 		// Get main page.
-		const page = document.getElementsByTagName("project-detail")[0];
+		const page = document.getElementsByTagName("upload-page")[0];
 
 		// Show loading gif.
 		const loading = document.createElement("img");
@@ -178,7 +180,7 @@ export class UploadElement extends TatorElement {
 			"src",
 			`${STATIC_PATH}/ui/src/images/tator_loading.gif`
 		);
-		page._projects.appendChild(loading);
+		page._mainSection.appendChild(loading);
 		page.setAttribute("has-open-modal", "");
 
 		let numSkipped = 0;
@@ -224,19 +226,19 @@ export class UploadElement extends TatorElement {
 		}
 
 		// Remove loading gif.
-		page._projects.removeChild(loading);
+		page._mainSection.removeChild(loading);
 		page.removeAttribute("has-open-modal", "");
 
 		// If upload is big throw up a warning.
 		if (totalSize > 60000000000 || numStarted > 5000) {
 			const bigUpload = document.createElement("big-upload-form");
-			const page = document.getElementsByTagName("project-detail")[0];
-			page._projects.appendChild(bigUpload);
+			const page = document.getElementsByTagName("upload-page")[0];
+			page._mainSection.appendChild(bigUpload);
 			bigUpload.setAttribute("is-open", "");
 			page.setAttribute("has-open-modal", "");
 			bigUpload.addEventListener("close", (evt) => {
 				page.removeAttribute("has-open-modal", "");
-				page._projects.removeChild(bigUpload);
+				page._mainSection.removeChild(bigUpload);
 			});
 			while (bigUpload.hasAttribute("is-open")) {
 				await new Promise((resolve) => setTimeout(resolve, 100));

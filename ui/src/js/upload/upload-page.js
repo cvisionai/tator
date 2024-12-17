@@ -95,21 +95,8 @@ export class UploadPage extends TatorPage {
 		subheader.setAttribute("class", "d-flex flex-justify-right");
 		this._mainSection.appendChild(subheader);
 
-		this._projects = document.createElement("div");
-		this._projects.setAttribute("class", "d-flex flex-justify-right");
-		this._mainSection.appendChild(this._projects);
-
-		this.modalNotify = document.createElement("modal-notify");
-		this._projects.appendChild(this.modalNotify);
-
-		this.modal = document.createElement("modal-dialog");
-		this._projects.appendChild(this.modal);
-
-		this._cancelJob = document.createElement("cancel-confirm");
-		this._shadow.appendChild(this._cancelJob);
-
-		this._modalError = document.createElement("modal-dialog");
-		this._shadow.appendChild(this._modalError);
+		this._dropArea = document.createElement("drop-upload");
+		this._mainSection.appendChild(this._dropArea);
 
 		this._sectionData = new SectionData();
 
@@ -128,38 +115,12 @@ export class UploadPage extends TatorPage {
 			}
 		});
 
-		this._modalError.addEventListener("close", () => {
-			this._modalError.removeAttribute("is-open");
-			this.removeAttribute("has-open-modal");
-		});
-
-		// this._uploadDialog.addEventListener("cancel", (evt) => {
-		// 	store.getState().uploadCancel();
-		// 	this.removeAttribute("has-open-modal");
-		// });
-
-		// this._uploadDialog.addEventListener("close", (evt) => {
-		// 	this.removeAttribute("has-open-modal");
-		// });
-
-		// this._attachmentDialog.addEventListener("close", (evt) => {
-		// 	this.removeAttribute("has-open-modal");
-		// });
-
-		this._cancelJob.addEventListener("confirmGroupCancel", () => {
-			this._cancelJob.removeAttribute("is-open");
-		});
-
-		this._cancelJob.addEventListener("close", () => {
-			this.removeAttribute("has-open-modal");
-		});
-
+		
 		this._lastQuery = null;
 
-		this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
-		this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
-		this.modal.addEventListener("open", this.showDimmer.bind(this));
-		this.modal.addEventListener("close", this.hideDimmer.bind(this));
+		// TODO integrate modals
+		// this.modal.addEventListener("open", this.showDimmer.bind(this));
+		// this.modal.addEventListener("close", this.hideDimmer.bind(this));
 	}
 
 	connectedCallback() {
@@ -529,8 +490,13 @@ export class UploadPage extends TatorPage {
 		if (mediaTypes !== undefined) {
 			const h3 = document.createElement("h3");
 			h3.setAttribute("class", "h2 text-light-gray");
-			h3.textContent = "Media Type Settings";
+			h3.textContent = "Media Types";
 			this._settingsPanel.appendChild(h3);
+      
+      const description = document.createElement("p");
+			description.setAttribute("class", "text-gray f2 py-3");
+			description.textContent = `Specify the data type you are uploading, and any additional metadata to be set on upload.`;
+			this._settingsPanel.appendChild(description);
 
 			const settings = document.createElement("div");
 			settings.setAttribute("class", "d-flex flex-column");

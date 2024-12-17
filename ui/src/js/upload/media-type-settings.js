@@ -31,32 +31,45 @@ export class MediaTypeSettings extends TatorElement {
 		const div = document.createElement("div");
 		div.setAttribute(
 			"class",
-			"form-group bg-charcoal my-3 py-3 px-3 rounded-3 d-flex "
+			"bg-charcoal my-3 py-3 px-3 rounded-3"
 		);
 		this._shadow.appendChild(div);
 
+		const innerTop = document.createElement("div");
+		innerTop.setAttribute(
+			"class",
+			"form-group d-flex"
+		);
+		div.appendChild(innerTop);
+
+
 		const dataTypeDisplay =
-			dataType.charAt(0).toUpperCase() + dataType.slice(1) + "s";
+			dataType.charAt(0).toUpperCase() + dataType.slice(1) ;
 
 		const input = document.createElement("checkbox-input");
 		input.classList.add("col-10");
-		input.setAttribute("name", `Include ${dataTypeDisplay}`);
+		input.setAttribute("name", `Include ${dataTypeDisplay}s`);
 		input.styleSpan.classList.add("px-3");
 		input.styleSpan.classList.remove("px-1");
-		input.checked = true;
-		div.appendChild(input);
+		input._checked = true;
+		innerTop.appendChild(input);
+
+		
+
+		const topSmall = document.createElement("div");
+		topSmall.setAttribute("class", "text-center col-2 pb-1");
+		innerTop.appendChild(topSmall);
 
 		const drawer = document.createElement("div");
 		drawer.setAttribute(
 			"class",
-			"form-group bg-light-charcoal my-3 px-3 rounded=3"
+			"form-group mt-6"
 		);
-		this._shadow.appendChild(drawer);
-
+		drawer.style.display = "none";
+		div.appendChild(drawer);
 		const mediaTypeSelect = document.createElement("enum-input");
 		mediaTypeSelect.setAttribute("name", `${dataTypeDisplay} Type`);
 		drawer.appendChild(mediaTypeSelect);
-
 		const options = list.map((m) => {
 			return {
 				value: m.id,
@@ -65,6 +78,9 @@ export class MediaTypeSettings extends TatorElement {
 		});
 
 		mediaTypeSelect.choices = options;
+
+		
+
 
 		const attributePanel = document.createElement("attribute-panel");
 		attributePanel.enableBuiltInAttributes = false;
@@ -79,21 +95,41 @@ export class MediaTypeSettings extends TatorElement {
 			attributePanel.dataType = list.find((m) => m.id === id);
 		});
 
-		const topSmall = document.createElement("div");
-		topSmall.setAttribute("class", "text-center col-2 pb-1");
-		div.appendChild(topSmall);
 
 		const showLess = document.createElement("span");
-		showLess.setAttribute("class", "text-underline f3");
-		showLess.textContent = "Show Less";
-
+		showLess.setAttribute("class", "clickable f3");
+		showLess.style.display = "none";
+		showLess.textContent = "Less -";
 		topSmall.appendChild(showLess);
 
 		const showMore = document.createElement("span");
-		showMore.setAttribute("class", "text-underline f3");
-		showMore.textContent = "Show More";
-		showMore.style.display = "none";
+		showMore.setAttribute("class", "clickable f3");
+		showMore.textContent = "More +";
 		topSmall.appendChild(showMore);
+
+		input.addEventListener("change", () => {
+			if (input.getChecked()) {
+				this._openDrawer(drawer, showMore, showLess);
+			} else {
+				this._closeDrawer(drawer, showMore, showLess);
+				showMore.style.display = "none";
+			}
+		});
+
+		showMore.addEventListener("click", this._openDrawer.bind(this, drawer, showMore, showLess));
+		showLess.addEventListener("click", this._closeDrawer.bind(this, drawer, showMore, showLess));
+	}
+
+	_openDrawer(drawer, showMore, showLess){
+		drawer.style.display = "block";
+		showLess.style.display = "block";
+		showMore.style.display = "none";
+	}
+
+	_closeDrawer(drawer, showMore, showLess) {
+		drawer.style.display = "none";
+		showLess.style.display = "none";
+		showMore.style.display = "block";
 	}
 }
 
