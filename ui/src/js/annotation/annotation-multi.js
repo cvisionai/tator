@@ -1740,29 +1740,20 @@ export class AnnotationMulti extends TatorElement {
     this.conditionallyAddRemoveFocusMenuItem();
   }
 
+  conditionallyAddRemoveFocusMenuItem() {
+    if (this._multiLayoutState != "focus") return;
 
-  conditionallyAddRemoveFocusMenuItem()
-  {
-    if (this._multiLayoutState != "focus")
-      return
-
-    if (this._focusIds.length <= 1)
-    {
+    if (this._focusIds.length <= 1) {
       for (let videoId in this._videoDivs) {
         let video = this._videoDivs[videoId].children[0];
         video.contextMenuNone.displayEntry("Remove from Focus", false);
       }
-    }
-    else
-    {
+    } else {
       for (let videoId in this._videoDivs) {
         let video = this._videoDivs[videoId].children[0];
-        if (this._focusIds.indexOf(Number(videoId)) > -1)
-        {
+        if (this._focusIds.indexOf(Number(videoId)) > -1) {
           video.contextMenuNone.displayEntry("Remove from Focus", true);
-        }
-        else
-        {
+        } else {
           video.contextMenuNone.displayEntry("Remove from Focus", false);
         }
       }
