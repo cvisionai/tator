@@ -1809,7 +1809,7 @@ export class AnnotationMulti extends TatorElement {
       );
       video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
       video_element.contextMenuNone.addMenuEntry(
-        "Open Video in New Tab",
+        "Open Video in New Player Instance",
         goToChannelVideo
       );
 
