@@ -96,7 +96,11 @@ export class UploadPage extends TatorPage {
 		this._mainSection.appendChild(subheader);
 
 		
-
+		this._dropZone = document.createElement("div");
+		this._dropZone.setAttribute("draggable", "true");
+		this._dropZone.setAttribute("class", "f2 d-flex flex-column text-gray my-6 px-3 py-3 rounded-3 text-center drop-zone");
+		this._dropZone.innerHTML = `Drag and drop files and folders you want to upload here, or choose Add files or Add folder.`;
+		this._mainSection.appendChild(this._dropZone);
 
 
 		this._dropArea = document.createElement("drop-upload");
@@ -179,6 +183,9 @@ export class UploadPage extends TatorPage {
 			this.removeAttribute("has-open-modal");
 		});
 		this._uploadDialog.init(store);
+
+		//
+		this._setupDragAndDrop();
 
 		//
 		this._uploadDialog.addEventListener("open", this.showDimmer.bind(this));
@@ -476,7 +483,66 @@ export class UploadPage extends TatorPage {
 		
 	}
 
+  _setupDragAndDrop() {
+    this._mainSection.addEventListener("dragstart", (startEvt) => {
+      startEvt.dataTransfer.effectAllowed = "move";
+    });
 
+    this._mainSection.addEventListener("dragenter", (event) => {
+      this._dropZone.classList.add("drag-over");
+    });
+
+    this._mainSection.addEventListener("dragover", (event) => {
+      event.preventDefault();
+    });
+
+    this._mainSection.addEventListener("dragend", (event) => {
+      this._dropZone.classList.remove("drag-over");
+    });
+
+    this._mainSection.addEventListener("dragleave", (event) => {
+      this._dropZone.classList.remove("drag-over");
+    });
+
+    this._mainSection.addEventListener("drop", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+			this._dropZone.classList.remove("drag-over");
+			// this._dropArea.drop(event);
+
+			
+			const list = [...event.dataTransfer.items].map(async (item) => {
+				if (item.getAsFileSystemHandle) {
+					return item.getAsFileSystemHandle();
+				} else {
+					let handle = null;
+
+					// From inside an async method or JS module
+					if (item.webkitGetAsEntry) {
+						handle = item.webkitGetAsEntry();
+					} else if (item.getAsEntry) {
+						handle = item.getAsEntry();
+					}
+
+					if (handle && handle.kind === "directory") {
+						await this.addDirectory(handle);
+
+						// this._notAcceptableDialog.show();
+					} else if (handle) {
+						const fileHandle = await this.getFileSafari(handle);
+
+						return fileHandle;
+					} else {
+						console.error("Wasn't able to generate handle");
+					}
+				}
+			});
+
+			console.log("DRAG OVER", event, list);
+			this._dropArea.dropHandler(list);
+      return false;
+    });
+  }
 
 }
 

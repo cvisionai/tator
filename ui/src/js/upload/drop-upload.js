@@ -6,7 +6,7 @@ import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.
 export class DropUpload extends UploadElement {
 	constructor() {
 		super();
-
+		this._totalSize = 0;
 		this._noneText = "-- None --";
 		this._duplicateMap = new Map();
 		const main = document.createElement("div");
@@ -25,7 +25,7 @@ export class DropUpload extends UploadElement {
 
 		this._summaryText = document.createElement("div");
 		this._summaryText.textContent = "No files, or folders added.";
-		this._summaryText.setAttribute("class", "py-2 text-gray f3");
+		this._summaryText.setAttribute("class", "py-2 text-gray f2");
 		this._summaryTitle.appendChild(this._summaryText);
 
 
@@ -86,14 +86,32 @@ export class DropUpload extends UploadElement {
 		this.init(store);
 	}
 
+	dropHandler(list) {
+		this.fileHandleHandler(list);
+	}
+
+	async fileHandleHandler(fileHandles) {
+		const gid = uuidv1();
+		let parent = "";
+
+		if (fileHandles.kind == "directory") {
+			parent = fileHandles.name;
+			this._newSections.push(parent);
+		} else if (!fileHandles || !fileHandles.length) {
+			return;
+		}		
+		
+		await this._recursiveDirectoryUpload(fileHandles, gid, parent);
+		this.showSummary();
+	}
+
 	async filePicker(directory = false) {
 
 		this._abortController = new AbortController();
 
     // open file picker, destructure the one element returned array
     // Set a group ID on the upload.
-		const gid = uuidv1(),
-			specifiedTypes = [this._imagePickerOpts]
+		const specifiedTypes = [this._imagePickerOpts]
 		
 		try {
 			const fileHandles = !directory ? await window.showOpenFilePicker({
@@ -101,24 +119,9 @@ export class DropUpload extends UploadElement {
 				excludeAcceptAllOption: true,
 				multiple: true,
 			}) : await window.showDirectoryPicker();
-			console.log(fileHandles);
-			
-			this._totalSize = 0;
 
-			let parent = "";
+			this.fileHandleHandler(fileHandles);
 
-
-			if (fileHandles.kind == "directory") {
-				parent = fileHandles.name;
-				this._newSections.push(parent);
-			} else if (!fileHandles || !fileHandles.length) {
-				return;
-			}
-
-			
-			
-			await this._recursiveDirectoryUpload(fileHandles, gid, parent);
-			this.showSummary();
 		} catch (err) {
 			console.error(err);
 		}
