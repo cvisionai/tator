@@ -324,6 +324,7 @@ favorite-button {
 
 .annotation__multi-resizer {
   background-color: var(--color-blue-iris);
+  user-select: none;
 }
 
 .annotation__multi-resizer:hover {

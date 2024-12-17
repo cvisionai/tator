@@ -13,6 +13,8 @@ import { TimeStore } from "./time-store.js";
 
 import { VideoCanvas } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 
+import {AnnotationMultiResizer} from "./annotation-multi-resizer.js";
+
 if (!customElements.get("video-canvas")) {
   customElements.define("video-canvas", VideoCanvas);
 }
@@ -1380,6 +1382,8 @@ export class AnnotationMulti extends TatorElement {
     this._dockResizer.setAttribute("class", "annotation__multi-resizer");
     //this._dockResizer.style.display = "none"; // Hide except in horizontal mode
     this._focusTopDiv.appendChild(this._dockResizer);
+
+    this._resizeController = new AnnotationMultiResizer(this, this._dockResizer);
 
     this._focusTopDockDiv = document.createElement("div");
     this._focusTopDockDiv.setAttribute("class", "d-flex flex-wrap");
