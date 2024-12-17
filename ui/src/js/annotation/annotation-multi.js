@@ -1646,6 +1646,7 @@ export class AnnotationMulti extends TatorElement {
   }
 
   setFocus(vid_id) {
+    vid_id = Number(vid_id);
     this._multiLayoutState = "focus";
     this._focusIds = [vid_id];
     for (let videoId in this._videoDivs) {
@@ -1710,8 +1711,8 @@ export class AnnotationMulti extends TatorElement {
       console.warn("Can't add focus if not in focus mode");
       return;
     } else {
-      this._focusIds.push(vid_id);
-      this.assignToPrimary(vid_id, this._quality * 2);
+      this._focusIds.push(Number(vid_id));
+      this.assignToPrimary(Number(vid_id), this._quality * 2);
       this.setMultiviewUrl("focus", null);
     }
   }
