@@ -1720,6 +1720,27 @@ export class AnnotationMulti extends TatorElement {
     }
   }
 
+  removeFocus(vid_id) {
+    vid_id = Number(vid_id);
+    let idx = this._focusIds.indexOf(vid_id);
+    if (idx > -1) {
+      this._focusIds.splice(idx, 1);
+
+      // Clear secondary children
+      // This maintains the order of the videos vs. just appending it to the end
+      while (this._selectedDock.firstChild) {
+        this._selectedDock.removeChild(this._selectedDock.firstChild);
+      }
+      for (let videoId in this._videoDivs) {
+        if (this._focusIds.indexOf(Number(videoId)) == -1) {
+          this.assignToSecondary(Number(videoId), this._quality);
+        }
+      }
+    }
+    this.conditionallyAddRemoveFocusMenuItem();
+  }
+
+
   conditionallyAddRemoveFocusMenuItem()
   {
     if (this._multiLayoutState != "focus")
@@ -1838,7 +1859,7 @@ export class AnnotationMulti extends TatorElement {
         this.addFocus(vid_id);
       });
       video_element.contextMenuNone.addMenuEntry("Remove from Focus", () => {
-        // TODO: Implement
+        this.removeFocus(vid_id);
       });
       video_element.contextMenuNone.addMenuEntry(
         "Horizontal Multiview",
