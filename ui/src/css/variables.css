@@ -23,6 +23,7 @@
   --color-teal--50: rgba(var(--color-teal), 0.5);
 
   --color-blue-iris: #4a4eae; /* rgb(74, 78, 174) */
+  --color-blue-irisAlt: #9497da; /* rgb(74, 78, 174) */
   --color-blue-iris50: rgba(74, 78, 174, 0.5);
 
   --color-white: #ffffff; /* rgb(255, 255, 255) */

@@ -322,6 +322,25 @@ favorite-button {
   display: block;
 }
 
+.annotation__multi-resizer {
+  background-color: var(--color-blue-iris);
+}
+
+.annotation__multi-resizer:hover {
+  background-color: var(--color-blue-irisAlt);
+}
+
+.annotation__multi-resizer-row {
+  cursor: row-resize;
+  height: 10px;
+  width: 100%;
+}
+
+.annotation__multi-resizer-column {
+  cursor: col-resize;
+  width: 10px;
+}
+
 .annotation__version-list {
   overflow-y: auto;
 }

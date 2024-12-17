@@ -1376,6 +1376,11 @@ export class AnnotationMulti extends TatorElement {
     this._focusDiv.setAttribute("class", "d-flex flex-justify-right");
     this._focusTopDiv.appendChild(this._focusDiv);
 
+    this._dockResizer = document.createElement("div");
+    this._dockResizer.setAttribute("class", "annotation__multi-resizer");
+    //this._dockResizer.style.display = "none"; // Hide except in horizontal mode
+    this._focusTopDiv.appendChild(this._dockResizer);
+
     this._focusTopDockDiv = document.createElement("div");
     this._focusTopDockDiv.setAttribute("class", "d-flex flex-wrap");
     this._focusTopDiv.appendChild(this._focusTopDockDiv);
@@ -1660,6 +1665,18 @@ export class AnnotationMulti extends TatorElement {
       }
     }
     this.conditionallyAddRemoveFocusMenuItem();
+
+    this._dockResizer.style.display = "flex";
+    if (this._focusMode == "horizontal") {
+      this._dockResizer.classList.remove("annotation__multi-resizer-column");
+      this._dockResizer.classList.add("annotation__multi-resizer-row");
+    }
+    else
+    {
+      this._dockResizer.classList.remove("annotation__multi-resizer-row");
+      this._dockResizer.classList.add("annotation__multi-resizer-column");
+    }
+
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
     const tempHandler = () => {
       this.setMultiProportions();
@@ -1953,6 +1970,7 @@ export class AnnotationMulti extends TatorElement {
 
     this._gridDiv.style.display = "grid";
     this._focusDiv.style.display = "none";
+    this._dockResizer.style.display = "none";
     this._focusBottomDockDiv.style.display = "none";
     this._focusTopDockDiv.style.display = "none";
 
