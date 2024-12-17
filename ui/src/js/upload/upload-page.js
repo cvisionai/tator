@@ -46,7 +46,7 @@ export class UploadPage extends TatorPage {
 
 		//
 		// Left area of the page
-		//
+		this.createSidebarNav();
 		this.createLeftPanel();
 
 		//
@@ -95,10 +95,54 @@ export class UploadPage extends TatorPage {
 		subheader.setAttribute("class", "d-flex flex-justify-right");
 		this._mainSection.appendChild(subheader);
 
+		
+
+
+
 		this._dropArea = document.createElement("drop-upload");
 		this._mainSection.appendChild(this._dropArea);
 
+		const destination = document.createElement("div");
+		destination.setAttribute("class", "my-6 px-3 py-3 rounded-3 d-flex flex-wrap");
+		destination.setAttribute("style", "border: 1px solid #ccc;");
+		this._mainSection.appendChild(destination);
+
+		const destTitle = document.createElement("div");
+		destTitle.textContent = "Destination";
+		destTitle.setAttribute("class", "col-3 h3");
+		destination.appendChild(destTitle);
+
+		this._destinationPicker = document.createElement("enum-input");
+		this._destinationPicker.classList.add("col-8");
+		this._destinationPicker.setAttribute("name", "Folder");
+		destination.appendChild(this._destinationPicker);
+
+		this._destinationPicker.addEventListener("change", this._dropArea.updateDestination.bind(this._dropArea));
+
+
+		this._bottomSection = document.createElement("div");
+		this._bottomSection.setAttribute("class", "d-flex flex-justify-right my-6 px-3 py-3 rounded-3");
+		this._mainSection.appendChild(this._bottomSection);
+
+
+		this._cancelUpload = document.createElement("a");
+		this._cancelUpload.setAttribute("class", "py-3 f2 px-3 text-gray clickable mr-3");
+		this._cancelUpload.textContent = "Cancel";
+		this._cancelUpload.addEventListener("click", this._dropArea._resetUpload.bind(this._dropArea));
+		this._bottomSection.appendChild(this._cancelUpload);
+
+		this._uploadButton = document.createElement("button");
+		this._uploadButton.setAttribute("class", "btn btn-clear btn-primary f2");
+		this._uploadButton.textContent = "Upload";
+		this._uploadButton.disabled = true;	
+		// this._uploadButton.addEventListener("click", () => {
+		// 	this._dropArea.upload();
+		// });
+		this._bottomSection.appendChild(this._uploadButton);
+
+
 		this._sectionData = new SectionData();
+		this._dropArea._sectionData = this._sectionData;
 
 		// Create store subscriptions
 		store.subscribe((state) => state.user, this._setUser.bind(this));
@@ -108,19 +152,37 @@ export class UploadPage extends TatorPage {
 		);
 
 		window.addEventListener("beforeunload", (evt) => {
-			if (this._uploadsInProgress > 0) {
+			if (this._uploadDialog.hasAttribute("is-open")) {
 				evt.preventDefault();
 				evt.returnValue = "";
 				window.alert("Uploads are in progress. Still leave?");
 			}
 		});
 
+
+		this._dropArea.addEventListener("upload-summary", (evt) => {
+			this._uploadButton.disabled = !evt.detail.ok || evt.detail.data.length === 0;
+		});
+
 		
 		this._lastQuery = null;
 
-		// TODO integrate modals
-		// this.modal.addEventListener("open", this.showDimmer.bind(this));
-		// this.modal.addEventListener("close", this.hideDimmer.bind(this));
+		this._uploadDialog = document.createElement("upload-dialog");
+		this._shadow.appendChild(this._uploadDialog);
+
+		this._uploadDialog.addEventListener("cancel", (evt) => {
+			store.getState().uploadCancel();
+			this.removeAttribute("has-open-modal");
+		});
+
+		this._uploadDialog.addEventListener("close", (evt) => {
+			this.removeAttribute("has-open-modal");
+		});
+		this._uploadDialog.init(store);
+
+		//
+		this._uploadDialog.addEventListener("open", this.showDimmer.bind(this));
+		this._uploadDialog.addEventListener("close", this.hideDimmer.bind(this));
 	}
 
 	connectedCallback() {
@@ -213,8 +275,16 @@ export class UploadPage extends TatorPage {
 								this._sectionData.init(this._sections);
 
 								// Fill in the left panel area with section information
-								// this.makeFolders();
-								// this.displayPanel("library");
+								this._noneText = "-- None --";
+								this._destinationPicker.choices = [{
+									value: this._noneText,
+									label: this._noneText,
+								}, ...this._sections.map((section) => {
+									return {
+										value: section.id,
+										label: section.name,
+									};
+								})];
 							}
 						)
 						.catch((err) => {
@@ -295,145 +365,6 @@ export class UploadPage extends TatorPage {
 		this._sectionData.init(this._sections);
 	}
 
-	/**
-	 * @postcondition Section edit dialog is updated with the list of sections
-	 */
-	makeFolders() {
-		// Clear out the existing folder lists
-		while (this._folders.firstChild) {
-			this._folders.removeChild(this._folders.firstChild);
-		}
-
-		this._errorFolders = [];
-
-		const that = this;
-		function createSectionItem(path, errorSection) {
-			if (errorSection != null) {
-				const sectionItem = document.createElement("section-list-item");
-				sectionItem.init(errorSection, [], true);
-				that._folders.appendChild(sectionItem);
-				that._errorFolders.push(sectionItem);
-			} else {
-				const section = that._sectionData.getSectionFromPath(path);
-				if (SectionData.isSavedSearch(section)) {
-					return;
-				}
-
-				const childSections = that._sectionData.getChildSections(section);
-
-				const sectionItem = document.createElement("section-list-item");
-				sectionItem.init(section, childSections);
-
-				sectionItem.addEventListener("selected", (evt) => {
-					that.selectSection(evt.detail.id);
-				});
-
-				sectionItem.addEventListener("collapse", () => {
-					that.updateLibraryVisibility();
-				});
-
-				sectionItem.addEventListener("expand", () => {
-					that.updateLibraryVisibility();
-				});
-
-				sectionItem.addEventListener("showMoreMenu", () => {
-					for (const folder of that._folders.children) {
-						if (folder != sectionItem) {
-							folder.hideMoreMenu();
-						}
-					}
-				});
-
-				sectionItem.addEventListener("hideSection", async (evt) => {
-					that.showDimmer();
-
-					await that.hideSection(evt.detail.id);
-
-					// Get children of the section. If there are any, we need to hide all of them.
-					const children = that._sectionData.getChildSections(section);
-					for (const childSection of children) {
-						await that.hideSection(childSection.id);
-					}
-
-					// Reset the UI
-					await that.getSections();
-					that.hideDimmer();
-				});
-
-				sectionItem.addEventListener("deleteSection", async (evt) => {
-					const sectionToDelete = that._sectionData.getSectionFromID(
-						evt.detail.id
-					);
-					that.selectSection(evt.detail.id);
-					that._deleteSectionDialog.init(sectionToDelete, false);
-					that._deleteSectionDialog.setAttribute("is-open", "");
-					that.setAttribute("has-open-modal", "");
-				});
-
-				sectionItem.addEventListener("restoreSection", async (evt) => {
-					that.showDimmer();
-					await that.restoreSection(evt.detail.id);
-
-					// Get children of the section. If there are any, we need to restore all of them.
-					const children = that._sectionData.getChildSections(section);
-					for (const childSection of children) {
-						await that.restoreSection(childSection.id);
-					}
-
-					// Reset the UI
-					await that.getSections();
-					that.selectSection(evt.detail.id);
-					that.hideDimmer();
-				});
-
-				sectionItem.addEventListener("addSection", () => {
-					that.showDimmer();
-					that.selectSection(section.id);
-					that._folderDialog.setMode("newFolder", section);
-					that._folderDialog.setAttribute("is-open", "");
-				});
-
-				sectionItem.addEventListener("moveSection", () => {
-					that.showDimmer();
-					that.selectSection(section.id);
-					that._folderDialog.setMode("moveFolder", section);
-					that._folderDialog.setAttribute("is-open", "");
-				});
-
-				sectionItem.addEventListener("renameSection", () => {
-					that.showDimmer();
-					that.selectSection(section.id);
-					that._folderDialog.setMode("renameFolder", section);
-					that._folderDialog.setAttribute("is-open", "");
-				});
-
-				that._folders.appendChild(sectionItem);
-			}
-		}
-
-		function traverseAlphabetically(node, parentPath) {
-			var appendedPath = parentPath;
-			if (appendedPath != "") {
-				appendedPath += ".";
-			}
-
-			Object.keys(node)
-				.sort()
-				.forEach((subpath) => {
-					createSectionItem(appendedPath + subpath);
-					traverseAlphabetically(node[subpath], appendedPath + subpath);
-				});
-		}
-		traverseAlphabetically(this._sectionData._sectionTree, "");
-
-		const errorSections = this._sectionData.getErrorSections();
-		for (const section of errorSections) {
-			createSectionItem(null, section);
-		}
-
-		this._folderDialog.init(this._sectionData);
-		this.updateLibraryVisibility();
-	}
 
 	/**
 	 * Updates the URL with the current page's state
@@ -484,6 +415,11 @@ export class UploadPage extends TatorPage {
 
 		this._leftPanelDefaultWidth = "450px";
 		this.setLeftPanelWidth(this._leftPanelDefaultWidth);
+		this._leftPanel.style.display = "flex";
+		this._sidebarLibraryText.addEventListener("click", () => {
+			this._leftPanel.style.display = this._leftPanel.style.display === "flex" ? "none" : "flex";
+			this._sidebarLibraryText.innerText = this._leftPanel.style.display === "flex" ? "Hide Media Types" : "Show Media Types";
+		});
 	}
 
 	setupSettingsPanel(mediaTypes) {
@@ -508,6 +444,40 @@ export class UploadPage extends TatorPage {
 			settings.appendChild(mediaTypeSettings);
 		}
 	}
+
+	createSidebarNav() {
+		var sidebarDiv = document.createElement("div");
+		sidebarDiv.setAttribute(
+			"class",
+			"project-sidebar d-flex flex-items-center flex-column"
+		);
+		this.mainWrapper.appendChild(sidebarDiv);
+
+		// this._sidebarLibraryButton = document.createElement("button");
+		// this._sidebarLibraryButton.setAttribute(
+		// 	"class",
+		// 	"mt-2 btn-clear d-flex flex-items-center flex-column flex-justify-center px-2 py-2 rounded-2 f2 text-gray entity__button project-sidebar-button tooltip-right"
+		// );
+		// this._sidebarLibraryButton.innerHTML = `
+    //   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+    //     <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 4h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M17 17v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2" />
+    //   </svg>
+    // `;
+		// sidebarDiv.appendChild(this._sidebarLibraryButton);
+
+		this._sidebarLibraryText = document.createElement("div");
+		this._sidebarLibraryText.setAttribute(
+			"class",
+			"f3 text-gray pb-2 pt-1 text-center mb-2 clickable"
+		);
+		this._sidebarLibraryText.textContent = "Hide Media Types";
+		sidebarDiv.appendChild(this._sidebarLibraryText);
+
+		
+	}
+
+
+
 }
 
 customElements.define("upload-page", UploadPage);

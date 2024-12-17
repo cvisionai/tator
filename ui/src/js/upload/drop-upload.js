@@ -7,6 +7,8 @@ export class DropUpload extends UploadElement {
 	constructor() {
 		super();
 
+		this._noneText = "-- None --";
+		this._duplicateMap = new Map();
 		const main = document.createElement("div");
 		main.setAttribute("class", "px-3 py-3 rounded-3");
 		main.setAttribute("style", "border: 1px solid #ccc;");
@@ -16,10 +18,16 @@ export class DropUpload extends UploadElement {
 		this._summary.setAttribute("class", "d-flex flex-justify-between");
 		main.appendChild(this._summary);
 
-		this._summaryTitle = document.createElement("h5");
-		this._summaryTitle.textContent = "Upload Summary (0 files)";
+		this._summaryTitle = document.createElement("div");
+		this._summaryTitle.innerHTML = `<span class="h3 mr-3">Summary</span>`;
 		this._summaryTitle.setAttribute("class", "col-8");
 		this._summary.appendChild(this._summaryTitle);
+
+		this._summaryText = document.createElement("div");
+		this._summaryText.textContent = "No files, or folders added.";
+		this._summaryText.setAttribute("class", "py-2 text-gray f3");
+		this._summaryTitle.appendChild(this._summaryText);
+
 
 		// this._fileInput.addEventListener("change", this._fileSelectCallback);
 
@@ -47,13 +55,14 @@ export class DropUpload extends UploadElement {
 		main.appendChild(this._summaryTable);
 
 		this._headerMap = new Map();
-		this._headerMap.set("select", "Select")
+		this._headerMap.set("select", "")
 			.set("name", "Name")
-			.set("parent", "Folder")
+			.set("parent", "Relative Path")
 			.set("size", "Size")
-			.set("type", "Type");
+			.set("type", "Type")
+			.set("note", "Note");
 
-
+		this._createTable([])
 
     this._videoPickerOpts = {
       description: "Images",
@@ -68,6 +77,9 @@ export class DropUpload extends UploadElement {
         "image/*": [...this._acceptedImageExt],
       },
 		};
+
+		this._uploads = [];
+		this._newSections = [];
 	}
 
 	connectedCallback() {
@@ -75,8 +87,7 @@ export class DropUpload extends UploadElement {
 	}
 
 	async filePicker(directory = false) {
-		this._uploads = [];
-		this._newSections = [];
+
 		this._abortController = new AbortController();
 
     // open file picker, destructure the one element returned array
@@ -91,48 +102,23 @@ export class DropUpload extends UploadElement {
 				multiple: true,
 			}) : await window.showDirectoryPicker();
 			console.log(fileHandles);
+			
+			this._totalSize = 0;
+
+			let parent = "";
+
 
 			if (fileHandles.kind == "directory") {
-				const parent = fileHandles.name;
+				parent = fileHandles.name;
 				this._newSections.push(parent);
-				await this._recursiveDirectoryUpload(fileHandles, gid, parent);
-
-				console.log(this._uploads.map((u) => `${u.parent}/${u.file.name}`));
-				console.log(this._newSections);
-
-
-				this.showSummary();
+			} else if (!fileHandles || !fileHandles.length) {
 				return;
 			}
 
-			if(!fileHandles || !fileHandles.length) return;
-
-			//
-			let numSkipped = 0,
-				numStarted = 0,
-				totalFiles = 0,
-				totalSize = 0;
 			
-	
-			// run code with our fileHandle
-			for (let fileHandle of fileHandles) {
-
-				if (fileHandle.kind === "file") {
-					// run file code
-					const file = await handle.getFile();
-					const added = this._checkFile(file, gid);
-					if (added) {
-						this._uploads.push(added);
-						numStarted++;
-						totalSize += file.size;
-					} else {
-						numSkipped++;
-					}
-				} else if (fileHandle.kind === "directory") {
-					// run directory code
-					console.log("Directory", fileHandle);
-				}
-			}
+			
+			await this._recursiveDirectoryUpload(fileHandles, gid, parent);
+			this.showSummary();
 		} catch (err) {
 			console.error(err);
 		}
@@ -148,7 +134,8 @@ export class DropUpload extends UploadElement {
 				const file = await entry.getFile();
 				const added = this._checkFile(file, gid);
 				if (added) {
-					this._uploads.push({...added, parent});
+					this._uploads.push({ ...added, parent });
+					this._totalSize += file.size;
 				} else {
 					// console.log("File not added", file);
 				}
@@ -270,29 +257,67 @@ export class DropUpload extends UploadElement {
 	
 	showSummary() {
 		let data = [];
-		this._checkboxMap = new Map();
-		this._summaryTitle.textContent = `Upload Summary (${this._uploads.length} files; ${this._newSections.length} folders)`;
+		
+		this._summaryText.innerHTML = `
+		<div class="pb-1">${this._uploads.length} files</div><div class="pb-1">${this._newSections.length} folders</div><div class="pb-1">${this._totalSize} bytes</div><div>`;
 		
 		for (let s of this._newSections) {
+
 			data.push({
 				name: s,
 				size: 0,
 				type: "folder",
-				parent: "-- NEW --"
+				parent: "/",
+				duplicate: false
 			});
 		}
-		
-		const files = this._uploads.map((u) => {
-			return {
+		const files = [];
+		for (let u of this._uploads) {
+			let dupe = false;
+			
+			if (this._duplicateMap.has(u.file.name)) {
+				dupe = true;
+			}
+
+			if (this._data.findIndex((d) => d.name === u.file.name) !== -1) {
+				this._duplicateMap.set(u.file.name, u);
+			}
+
+
+			
+			files.push({
 				name: u.file.name,
 				size: u.file.size,
 				type: u.file.type,
-				parent: u.parent
-			};
-		});
+				parent: `${u.parent === "" ? "/" : u.parent}`,
+				duplicate: dupe,
+				note: dupe ? "Duplicate" : ""
+			});
+		}
 
 		data = [...data, ...files];
 
+		this.dispatchEvent(new CustomEvent("upload-summary", {
+			detail: {
+				data: data,
+				ok: true // TODO: Check if there are any errors
+			}
+		})
+		)
+
+		this._createTable(data);
+
+		// TODO
+		// Big Upload is Total Size > 60000000000
+
+		
+	}
+
+	_createTable(data) {
+		this._checkboxMap = new Map();
+		this._data = data;
+		console.log("Data", this._data);
+		
 		this._summaryTable.innerHTML = "";
 		const header = this._summaryTable.createTHead();
 		const headerRow = header.insertRow();
@@ -302,32 +327,42 @@ export class DropUpload extends UploadElement {
 		});
 
 		const body = this._summaryTable.createTBody();
-		this._data = data;
-		this._data.forEach((row, index) => {
-			const tr = body.insertRow();
-			this._headerMap.forEach((value, key) => {
-				
-				const cell = tr.insertCell();
-				if (key == "select") {
-					const input = document.createElement("input");
-					input.setAttribute("type", "checkbox");
-					this._checkboxMap.set(index, input);
-					cell.appendChild(input);
-					input.addEventListener("click", (evt) => {
-						evt.stopPropagation();
-					});
-					tr.addEventListener("click", (evt) => {
-						// if (evt.target.tagName !== "INPUT") {
-						input.click();
+		
+		if (this._data && this._data.length > 0) {
+			this._data.forEach((row, index) => {
+				const tr = body.insertRow();
+				if(row.duplicate) tr.classList.add("text-red")
+				this._headerMap.forEach((value, key) => {
+					
+					const cell = tr.insertCell();
+					if (key == "select") {
+						const input = document.createElement("input");
+						input.setAttribute("type", "checkbox");
+						this._checkboxMap.set(index, input);
+						cell.appendChild(input);
+						input.addEventListener("click", (evt) => {
+							evt.stopPropagation();
+						});
+						cell.addEventListener("click", (evt) => {
+							// if (evt.target.tagName !== "INPUT") {
+							input.click();
+							// }
+						});
+						input.addEventListener("change", this._calculateSelected.bind(this));
+					} else {
+						cell.textContent = row[key];
+
+						// if (key == "parent") {
+						// 	cell.addEventListener("dblclick", (evt) => {
+						// 		cell.innerHTML = `<select><option>Test</option></select>`;
+						// 	});
 						// }
-					});
-					input.addEventListener("change", this._calculateSelected.bind(this));
-				} else {
-					cell.textContent = row[key];
-				}
-				
+					}
+					
+				});
 			});
-		});
+		}
+
 	}
 
 	_calculateSelected(evt) {
@@ -338,6 +373,39 @@ export class DropUpload extends UploadElement {
 		this._removeButton.disabled = checked.length === 0;
 	}
   
+
+	updateDestination(evt) {
+		const sectionId = Number(evt.target.getValue());
+
+		console.log(sectionId, this._sectionData);
+
+		this._chosenSection =
+				sectionId && this._sectionData?._sectionIdMap?.[sectionId]
+					? this._sectionData._sectionIdMap[sectionId]
+					: null;
+
+		this.section = this._chosenSection;
+		
+		
+	}
+
+	_resetUpload() {
+		this._uploads = [];
+		this._duplicateMap = new Map();
+		this._newSections = [];
+		this._totalSize = 0;
+		this._createTable([]);
+		this._removeButton.disabled = true;
+		this._summaryText.textContent = "No files, or folders added.";
+
+		this.dispatchEvent(new CustomEvent("upload-summary", {
+			detail: {
+				data: [],
+				ok: false
+			}
+		})
+		)
+	}
 }
 
 customElements.define("drop-upload", DropUpload);

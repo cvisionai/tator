@@ -72,8 +72,6 @@ export class UploadElement extends TatorElement {
 		// File extension can have multiple components in archives
 		let comps = file.name.split(".").slice(-1),
 			ext = comps.join("."); // rejoin extension
-		
-		console.log("Checking file", file, gid, ext)
 
 		const isImage = ext.match(
 			/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
