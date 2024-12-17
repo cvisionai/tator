@@ -1659,6 +1659,7 @@ export class AnnotationMulti extends TatorElement {
         this.assignToPrimary(Number(videoId), this._quality * 2);
       }
     }
+    this.conditionallyAddRemoveFocusMenuItem();
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
     const tempHandler = () => {
       this.setMultiProportions();
@@ -1714,6 +1715,36 @@ export class AnnotationMulti extends TatorElement {
       this._focusIds.push(Number(vid_id));
       this.assignToPrimary(Number(vid_id), this._quality * 2);
       this.setMultiviewUrl("focus", null);
+
+      this.conditionallyAddRemoveFocusMenuItem();
+    }
+  }
+
+  conditionallyAddRemoveFocusMenuItem()
+  {
+    if (this._multiLayoutState != "focus")
+      return
+
+    if (this._focusIds.length <= 1)
+    {
+      for (let videoId in this._videoDivs) {
+        let video = this._videoDivs[videoId].children[0];
+        video.contextMenuNone.displayEntry("Remove from Focus", false);
+      }
+    }
+    else
+    {
+      for (let videoId in this._videoDivs) {
+        let video = this._videoDivs[videoId].children[0];
+        if (this._focusIds.indexOf(Number(videoId)) > -1)
+        {
+          video.contextMenuNone.displayEntry("Remove from Focus", true);
+        }
+        else
+        {
+          video.contextMenuNone.displayEntry("Remove from Focus", false);
+        }
+      }
     }
   }
 
@@ -1730,7 +1761,9 @@ export class AnnotationMulti extends TatorElement {
       video.contextMenuNone.displayEntry("Add to Focus", false);
       video.contextMenuNone.displayEntry("Horizontal Multiview", false);
       video.contextMenuNone.displayEntry("Reset Multiview", true);
+      video.contextMenuNone.displayEntry("Remove from Focus", false);
     }
+    this.conditionallyAddRemoveFocusMenuItem();
   }
 
   setupMultiMenu(vid_id) {
@@ -1804,6 +1837,9 @@ export class AnnotationMulti extends TatorElement {
       video_element.contextMenuNone.addMenuEntry("Add to Focus", () => {
         this.addFocus(vid_id);
       });
+      video_element.contextMenuNone.addMenuEntry("Remove from Focus", () => {
+        // TODO: Implement
+      });
       video_element.contextMenuNone.addMenuEntry(
         "Horizontal Multiview",
         this.setHorizontal.bind(this)
@@ -1814,9 +1850,10 @@ export class AnnotationMulti extends TatorElement {
         goToChannelVideo
       );
 
-      // Hide the two optional ones by default
+      // Hide the three optional ones by default
       video_element.contextMenuNone.displayEntry("Reset Multiview", false);
       video_element.contextMenuNone.displayEntry("Add to Focus", false);
+      video_element.contextMenuNone.displayEntry("Remove from Focus", false);
     });
   }
 
@@ -1892,6 +1929,7 @@ export class AnnotationMulti extends TatorElement {
         video.contextMenuNone.displayEntry("Add to Focus", false);
         video.contextMenuNone.displayEntry("Horizontal Multiview", true);
         video.contextMenuNone.displayEntry("Reset Multiview", false);
+        video.contextMenuNone.displayEntry("Remove from Focus", false);
       }
       video.gridRows = this._multi_layout[0];
 
