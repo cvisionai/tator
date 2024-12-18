@@ -1541,6 +1541,7 @@ export class AnnotationMulti extends TatorElement {
                 {
                   this._resizeController._mode = searchParams.get("dock");
                 }
+                this._resizeController.setMenuBasedOnMode();
 
                 // Set the focus based on converting video position to
                 // video id
