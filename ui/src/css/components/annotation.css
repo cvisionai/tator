@@ -333,12 +333,12 @@ favorite-button {
 }
 
 .annotation__multi-resizer-row {
-  height: 10px;
+  height: 8px;
   width: 100%;
 }
 
 .annotation__multi-resizer-column {
-  width: 10px;
+  width: 8px;
 }
 
 .annotation__version-list {
