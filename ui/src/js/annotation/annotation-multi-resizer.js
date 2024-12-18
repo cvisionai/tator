@@ -19,6 +19,20 @@ export class AnnotationMultiResizer
         this._resizerBar.addEventListener("contextmenu", this.onContextMenu.bind(this));
         this._resizerBar.addEventListener("mouseout", this.onMouseOut.bind(this));
         this._resizerBar.addEventListener("mouseenter", this.onMouseEnter.bind(this));
+        this._resizerBar.addEventListener("dblclick", this.onDoubleClick.bind(this));
+        this._mode = "show";
+    }
+
+    onDoubleClick(evt) {
+        if (this._mode == "show")
+        {
+            this.setMode("hidden");
+        }
+        else
+        {
+            this.setMode("show");
+        }
+        this._contextMenu.hideMenu();
     }
 
     onContextMenu(evt) {
@@ -47,15 +61,13 @@ export class AnnotationMultiResizer
         {
             this._contextMenu.displayEntry("Show", true);
             this._contextMenu.displayEntry("Hide", false);
-            this._multi._selectedDock.style.display="none";
-
         }
         else
         {
             this._contextMenu.displayEntry("Show", false);
             this._contextMenu.displayEntry("Hide", true);
-            this._multi._selectedDock.style.display="flex";
         }
+        this._multi.setFocusURL();
+        this._multi.setMultiProportions();
     }
-
 }

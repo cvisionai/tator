@@ -1537,6 +1537,10 @@ export class AnnotationMulti extends TatorElement {
                 this._selectedDock = this._focusTopDockDiv;
 
                 this._focusMode = searchParams.get("focusMode");
+                if (searchParams.has("dock"))
+                {
+                  this._resizeController._mode = searchParams.get("dock");
+                }
 
                 // Set the focus based on converting video position to
                 // video id
@@ -1708,6 +1712,7 @@ export class AnnotationMulti extends TatorElement {
     var search_params = new URLSearchParams(window.location.search);
     search_params.set("focusMode", this._focusMode);
     const path = document.location.pathname;
+    search_params.set("dock", this._resizeController._mode);
     const searchArgs = search_params.toString();
     var newUrl = path + "?" + searchArgs;
     if (this.pushed_state) {
@@ -1990,6 +1995,7 @@ export class AnnotationMulti extends TatorElement {
   setMultiProportions() {
     var horizontalDock = this._selectedDock == this._focusBottomDockDiv;
 
+    let hiddenDock = this._resizeController._mode == "hidden";
     this._resizeWindow(true);
     if (horizontalDock) {
       this._focusDiv.style.display = "none";
@@ -2001,18 +2007,18 @@ export class AnnotationMulti extends TatorElement {
         this._focusDiv.style.flexDirection = "column";
         this._focusDiv.style.justifyContent = "center";
         this._focusDiv.style.maxHeight = "80vh";
-        this._selectedDock.style.display = "flex";
+        this._selectedDock.style.display = (hiddenDock ? "none" : "flex");
         this._selectedDock.style.flexWrap = 'nowrap';
         this._selectedDock.style.flexFlow='column';
         this._focusDiv.style.width = "70%";
         this._selectedDock.style.width = "30%";
         this._focusTopDiv.style.flexDirection = "row";
       } else if (this._focusMode == "horizontal") {
-        this._resizeWindow(true, 175); // Add room for film strip
+        this._resizeWindow(true, !hiddenDock ? 175 : 0); // Add room for film strip
         this._focusDiv.style.display = "flex";
         this._focusDiv.style.flexDirection = "row";
         this._focusDiv.style.justifyContent = "center";
-        this._selectedDock.style.display = "flex";
+        this._selectedDock.style.display = (hiddenDock ? "none" : "flex");
         this._focusTopDiv.style.flexDirection = "column";
         this._selectedDock.style.flexFlow='row';
         this._selectedDock.style.flexWrap = 'nowrap';
