@@ -13,7 +13,7 @@ import { TimeStore } from "./time-store.js";
 
 import { VideoCanvas } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 
-import {AnnotationMultiResizer} from "./annotation-multi-resizer.js";
+import { AnnotationMultiResizer } from "./annotation-multi-resizer.js";
 
 if (!customElements.get("video-canvas")) {
   customElements.define("video-canvas", VideoCanvas);
@@ -555,11 +555,12 @@ export class AnnotationMulti extends TatorElement {
         this._displayTimelineLabels,
         this._videos[this._primaryVideoIndex].currentFrame()
       );
-      this._videoHeightPadObject.height =
-        Math.max(
+      this._videoHeightPadObject.height = Math.max(
         this._headerFooterPad +
-        this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight,this._videoHeightPadObject.height);
+          this._controls.offsetHeight +
+          this._timelineDiv.offsetHeight,
+        this._videoHeightPadObject.height
+      );
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -728,8 +729,10 @@ export class AnnotationMulti extends TatorElement {
       }
       this._videoHeightPadObject.height = Math.max(
         this._headerFooterPad +
-        this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight, this._videoHeightPadObject.height);
+          this._controls.offsetHeight +
+          this._timelineDiv.offsetHeight,
+        this._videoHeightPadObject.height
+      );
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -1384,7 +1387,10 @@ export class AnnotationMulti extends TatorElement {
     //this._dockResizer.style.display = "none"; // Hide except in horizontal mode
     this._focusTopDiv.appendChild(this._dockResizer);
 
-    this._resizeController = new AnnotationMultiResizer(this, this._dockResizer);
+    this._resizeController = new AnnotationMultiResizer(
+      this,
+      this._dockResizer
+    );
 
     this._focusTopDockDiv = document.createElement("div");
     this._focusTopDockDiv.setAttribute("class", "d-flex flex-wrap");
@@ -1537,8 +1543,7 @@ export class AnnotationMulti extends TatorElement {
                 this._selectedDock = this._focusTopDockDiv;
 
                 this._focusMode = searchParams.get("focusMode");
-                if (searchParams.has("dock"))
-                {
+                if (searchParams.has("dock")) {
                   this._resizeController._mode = searchParams.get("dock");
                 }
                 this._resizeController.setMenuBasedOnMode();
@@ -1680,9 +1685,7 @@ export class AnnotationMulti extends TatorElement {
     if (this._focusMode == "horizontal") {
       this._dockResizer.classList.remove("annotation__multi-resizer-column");
       this._dockResizer.classList.add("annotation__multi-resizer-row");
-    }
-    else
-    {
+    } else {
       this._dockResizer.classList.remove("annotation__multi-resizer-row");
       this._dockResizer.classList.add("annotation__multi-resizer-column");
     }
@@ -2009,9 +2012,9 @@ export class AnnotationMulti extends TatorElement {
         this._focusDiv.style.flexDirection = "column";
         this._focusDiv.style.justifyContent = "center";
         this._focusDiv.style.maxHeight = "80vh";
-        this._selectedDock.style.display = (hiddenDock ? "none" : "flex");
-        this._selectedDock.style.flexWrap = 'nowrap';
-        this._selectedDock.style.flexFlow='column';
+        this._selectedDock.style.display = hiddenDock ? "none" : "flex";
+        this._selectedDock.style.flexWrap = "nowrap";
+        this._selectedDock.style.flexFlow = "column";
         this._focusDiv.style.width = "70%";
         this._selectedDock.style.width = "30%";
         this._focusTopDiv.style.flexDirection = "row";
@@ -2021,10 +2024,10 @@ export class AnnotationMulti extends TatorElement {
         this._focusDiv.style.display = "flex";
         this._focusDiv.style.flexDirection = "row";
         this._focusDiv.style.justifyContent = "center";
-        this._selectedDock.style.display = (hiddenDock ? "none" : "flex");
+        this._selectedDock.style.display = hiddenDock ? "none" : "flex";
         this._focusTopDiv.style.flexDirection = "column";
-        this._selectedDock.style.flexFlow='row';
-        this._selectedDock.style.flexWrap = 'nowrap';
+        this._selectedDock.style.flexFlow = "row";
+        this._selectedDock.style.flexWrap = "nowrap";
         this._focusDiv.style.width = "100%";
         this._selectedDock.style.width = "100%";
       } else {
