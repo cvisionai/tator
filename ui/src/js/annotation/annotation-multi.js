@@ -2015,7 +2015,13 @@ export class AnnotationMulti extends TatorElement {
         this._selectedDock.style.display = hiddenDock ? "none" : "flex";
         this._selectedDock.style.flexWrap = "nowrap";
         this._selectedDock.style.flexFlow = "column";
-        this._focusDiv.style.width = "70%";
+        if (hiddenDock) {
+          this._focusDiv.style.width = null;
+        }
+        else
+        {
+          this._focusDiv.style.width = "70%";
+        }
         this._selectedDock.style.width = "30%";
         this._focusTopDiv.style.flexDirection = "row";
       } else if (this._focusMode == "horizontal") {
