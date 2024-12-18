@@ -1820,6 +1820,7 @@ export class AnnotationMulti extends TatorElement {
       if (search_params.has("multiview")) {
         search_params.delete("multiview");
         search_params.delete("focusMode");
+        search_params.delete("dock");
         const path = document.location.pathname;
         const searchArgs = search_params.toString();
         var newUrl = path + "?" + searchArgs;
