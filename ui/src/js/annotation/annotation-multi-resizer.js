@@ -40,18 +40,46 @@ export class AnnotationMultiResizer
         this._contextMenu.displayMenu(evt.clientX, evt.clientY);
     }
 
-    onMouseDown(evt) {
-        this._contextMenu.hideMenu();
-    }
-
     onMouseOut(evt) {
         this._hideTimer = setTimeout(() => {
             this._contextMenu.hideMenu();
         }, 3000);
+        if (this._mode == "hidden")
+        {
+            this.hidePreview();
+        }
     }
 
     onMouseEnter(evt) {
         clearTimeout(this._hideTimer);
+        if (this._mode == "hidden")
+        {
+            this.showPreview();
+        }
+    }
+
+    showPreview()
+    {
+        let barBox = this._resizerBar.getBoundingClientRect();
+        this._multi._selectedDock.style.display="flex";
+        let dockBox = this._multi._selectedDock.getBoundingClientRect();
+        this._multi._selectedDock.style.position = "absolute";
+        this._multi._selectedDock.style.width = barBox.width + "px";
+        this._multi._selectedDock.style.top = `${(barBox.top - dockBox.height)}px`;
+    }
+
+    hidePreview()
+    {
+        this._multi._selectedDock.style.display="none";
+        this._multi._selectedDock.style.position = null;
+    }
+
+    clearPreview()
+    {
+        this._multi._selectedDock.style.display=null;
+        this._multi._selectedDock.style.position = null;
+        this._multi._selectedDock.style.width = null;
+        this._multi._selectedDock.style.top = null;
     }
 
     setMode(mode)

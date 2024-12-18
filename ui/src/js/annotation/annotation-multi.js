@@ -2003,6 +2003,7 @@ export class AnnotationMulti extends TatorElement {
       this._selectedDock.style.width = "100%";
     } else {
       if (this._focusMode == "vertical") {
+        this._resizeController.clearPreview();
         this._focusDiv.style.display = "flex";
         this._focusDiv.style.flexDirection = "column";
         this._focusDiv.style.justifyContent = "center";
@@ -2014,6 +2015,7 @@ export class AnnotationMulti extends TatorElement {
         this._selectedDock.style.width = "30%";
         this._focusTopDiv.style.flexDirection = "row";
       } else if (this._focusMode == "horizontal") {
+        this._resizeController.clearPreview();
         this._resizeWindow(true, !hiddenDock ? 175 : 0); // Add room for film strip
         this._focusDiv.style.display = "flex";
         this._focusDiv.style.flexDirection = "row";
