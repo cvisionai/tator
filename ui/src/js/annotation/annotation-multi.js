@@ -556,9 +556,10 @@ export class AnnotationMulti extends TatorElement {
         this._videos[this._primaryVideoIndex].currentFrame()
       );
       this._videoHeightPadObject.height =
+        Math.max(
         this._headerFooterPad +
         this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight;
+        this._timelineDiv.offsetHeight,this._videoHeightPadObject.height);
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -725,10 +726,10 @@ export class AnnotationMulti extends TatorElement {
       } else {
         this._timelineMore.style.display = "none";
       }
-      this._videoHeightPadObject.height =
+      this._videoHeightPadObject.height = Math.max(
         this._headerFooterPad +
         this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight;
+        this._timelineDiv.offsetHeight, this._videoHeightPadObject.height);
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -2000,7 +2001,9 @@ export class AnnotationMulti extends TatorElement {
         this._focusDiv.style.flexDirection = "column";
         this._focusDiv.style.justifyContent = "center";
         this._focusDiv.style.maxHeight = "80vh";
-        this._selectedDock.style.display = "block";
+        this._selectedDock.style.display = "flex";
+        this._selectedDock.style.flexWrap = 'nowrap';
+        this._selectedDock.style.flexFlow='column';
         this._focusDiv.style.width = "70%";
         this._selectedDock.style.width = "30%";
         this._focusTopDiv.style.flexDirection = "row";
@@ -2011,6 +2014,7 @@ export class AnnotationMulti extends TatorElement {
         this._focusDiv.style.justifyContent = "center";
         this._selectedDock.style.display = "flex";
         this._focusTopDiv.style.flexDirection = "column";
+        this._selectedDock.style.flexFlow='row';
         this._selectedDock.style.flexWrap = 'nowrap';
         this._focusDiv.style.width = "100%";
         this._selectedDock.style.width = "100%";
