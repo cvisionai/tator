@@ -2018,9 +2018,7 @@ export class AnnotationMulti extends TatorElement {
         this._selectedDock.style.flexFlow = "column";
         if (hiddenDock) {
           this._focusDiv.style.width = null;
-        }
-        else
-        {
+        } else {
           this._focusDiv.style.width = "70%";
         }
         this._selectedDock.style.width = "30%";

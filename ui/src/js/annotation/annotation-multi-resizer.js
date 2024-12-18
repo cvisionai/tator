@@ -70,15 +70,15 @@ export class AnnotationMultiResizer {
     let dockBox = this._multi._selectedDock.getBoundingClientRect();
     this._multi._selectedDock.style.position = "absolute";
     if (this._multi._focusMode == "horizontal") {
-        this._multi._selectedDock.style.width = barBox.width + "px";
-        this._multi._selectedDock.style.top = `${barBox.top - dockBox.height}px`;
-    }
-    else
-    {
-        // TODO: Implement
-        this._multi._selectedDock.style.width = null;
-        this._multi._selectedDock.style.left = `${barBox.x - this._multi._selectedDock.offsetWidth}px`;
-        this._multi._selectedDock.style.height = `${barBox.height}px`
+      this._multi._selectedDock.style.width = barBox.width + "px";
+      this._multi._selectedDock.style.top = `${barBox.top - dockBox.height}px`;
+    } else {
+      // TODO: Implement
+      this._multi._selectedDock.style.width = null;
+      this._multi._selectedDock.style.left = `${
+        barBox.x - this._multi._selectedDock.offsetWidth
+      }px`;
+      this._multi._selectedDock.style.height = `${barBox.height}px`;
     }
   }
 
