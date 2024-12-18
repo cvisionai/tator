@@ -44,17 +44,18 @@ export class AnnotationMultiResizer
         this._hideTimer = setTimeout(() => {
             this._contextMenu.hideMenu();
         }, 3000);
+        clearTimeout(this._showTimeout);
         if (this._mode == "hidden")
         {
-            this.hidePreview();
+            this._previewHideTimeout = setTimeout(() => {this.hidePreview();}, 100);
         }
     }
 
     onMouseEnter(evt) {
-        clearTimeout(this._hideTimer);
         if (this._mode == "hidden")
         {
-            this.showPreview();
+            clearTimeout(this._previewHideTimeout);
+            this._showTimeout = setTimeout(() => {this.showPreview();}, 75);
         }
     }
 
@@ -85,7 +86,14 @@ export class AnnotationMultiResizer
     setMode(mode)
     {
         this._mode = mode;
-        if (mode == "hidden")
+        this.setMenuBasedOnMode();
+        this._multi.setFocusURL();
+        this._multi.setMultiProportions();
+    }
+
+    setMenuBasedOnMode()
+    {
+        if (this._mode == "hidden")
         {
             this._contextMenu.displayEntry("Show", true);
             this._contextMenu.displayEntry("Hide", false);
@@ -95,7 +103,5 @@ export class AnnotationMultiResizer
             this._contextMenu.displayEntry("Show", false);
             this._contextMenu.displayEntry("Hide", true);
         }
-        this._multi.setFocusURL();
-        this._multi.setMultiProportions();
     }
 }
