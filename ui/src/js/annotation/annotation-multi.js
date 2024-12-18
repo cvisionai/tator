@@ -2011,6 +2011,7 @@ export class AnnotationMulti extends TatorElement {
         this._focusDiv.style.justifyContent = "center";
         this._selectedDock.style.display = "flex";
         this._focusTopDiv.style.flexDirection = "column";
+        this._selectedDock.style.flexWrap = 'nowrap';
         this._focusDiv.style.width = "100%";
         this._selectedDock.style.width = "100%";
       } else {
