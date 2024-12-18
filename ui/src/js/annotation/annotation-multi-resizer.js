@@ -12,6 +12,9 @@ export class AnnotationMultiResizer
         this._resizerBar.addEventListener("mousedown", this.onMouseDown.bind(this));
         this._resizerBar.addEventListener("mouseout", this.onMouseOut.bind(this));
         this._resizerBar.addEventListener("mouseenter", this.onMouseEnter.bind(this));
+
+        this._contextMenu.addEventListener("mouseout", this.onMouseOut.bind(this));
+        this._contextMenu.addEventListener("mouseenter", this.onMouseEnter.bind(this));
     }
 
     onContextMenu(evt) {
@@ -26,7 +29,7 @@ export class AnnotationMultiResizer
     onMouseOut(evt) {
         this._hideTimer = setTimeout(() => {
             this._contextMenu.hideMenu();
-        }, 1000);
+        }, 1500);
     }
 
     onMouseEnter(evt) {
