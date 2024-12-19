@@ -1670,7 +1670,7 @@ class Resource(Model):
 
     @staticmethod
     @transaction.atomic
-    def add_resource(path_or_link, media, generic_file=None):
+    def add_resource(path_or_link, media, generic_file=None, bucket_id=None):
         if urlparse(path_or_link).scheme != "":
             raise ValueError("Can't supply a url to a resource path")
         if os.path.islink(path_or_link):
@@ -1680,12 +1680,18 @@ class Resource(Model):
         obj, created = Resource.objects.get_or_create(path=path)
         if media is None and generic_file is not None:
             if created:
-                obj.bucket = generic_file.project.bucket
+                if bucket_id is not None:
+                    obj.bucket = Bucket.objects.get(pk=bucket_id)
+                else:
+                    obj.bucket = generic_file.project.bucket
                 obj.save()
             obj.generic_files.add(generic_file)
         elif media is not None:
             if created:
-                obj.bucket = media.project.bucket
+                if bucket_id is not None:
+                    obj.bucket = Bucket.objects.get(pk=bucket_id)
+                else:
+                    obj.bucket = media.project.bucket
                 obj.save()
             obj.media.add(media)
 
