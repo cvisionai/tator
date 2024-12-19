@@ -13,6 +13,8 @@ import { TimeStore } from "./time-store.js";
 
 import { VideoCanvas } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 
+import { AnnotationMultiResizer } from "./annotation-multi-resizer.js";
+
 if (!customElements.get("video-canvas")) {
   customElements.define("video-canvas", VideoCanvas);
 }
@@ -553,10 +555,12 @@ export class AnnotationMulti extends TatorElement {
         this._displayTimelineLabels,
         this._videos[this._primaryVideoIndex].currentFrame()
       );
-      this._videoHeightPadObject.height =
+      this._videoHeightPadObject.height = Math.max(
         this._headerFooterPad +
-        this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight;
+          this._controls.offsetHeight +
+          this._timelineDiv.offsetHeight,
+        this._videoHeightPadObject.height
+      );
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -723,10 +727,12 @@ export class AnnotationMulti extends TatorElement {
       } else {
         this._timelineMore.style.display = "none";
       }
-      this._videoHeightPadObject.height =
+      this._videoHeightPadObject.height = Math.max(
         this._headerFooterPad +
-        this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight;
+          this._controls.offsetHeight +
+          this._timelineDiv.offsetHeight,
+        this._videoHeightPadObject.height
+      );
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -1376,6 +1382,16 @@ export class AnnotationMulti extends TatorElement {
     this._focusDiv.setAttribute("class", "d-flex flex-justify-right");
     this._focusTopDiv.appendChild(this._focusDiv);
 
+    this._dockResizer = document.createElement("div");
+    this._dockResizer.setAttribute("class", "annotation__multi-resizer");
+    //this._dockResizer.style.display = "none"; // Hide except in horizontal mode
+    this._focusTopDiv.appendChild(this._dockResizer);
+
+    this._resizeController = new AnnotationMultiResizer(
+      this,
+      this._dockResizer
+    );
+
     this._focusTopDockDiv = document.createElement("div");
     this._focusTopDockDiv.setAttribute("class", "d-flex flex-wrap");
     this._focusTopDiv.appendChild(this._focusTopDockDiv);
@@ -1527,6 +1543,10 @@ export class AnnotationMulti extends TatorElement {
                 this._selectedDock = this._focusTopDockDiv;
 
                 this._focusMode = searchParams.get("focusMode");
+                if (searchParams.has("dock")) {
+                  this._resizeController._mode = searchParams.get("dock");
+                }
+                this._resizeController.setMenuBasedOnMode();
 
                 // Set the focus based on converting video position to
                 // video id
@@ -1646,6 +1666,7 @@ export class AnnotationMulti extends TatorElement {
   }
 
   setFocus(vid_id) {
+    vid_id = Number(vid_id);
     this._multiLayoutState = "focus";
     this._focusIds = [vid_id];
     for (let videoId in this._videoDivs) {
@@ -1658,6 +1679,17 @@ export class AnnotationMulti extends TatorElement {
         this.assignToPrimary(Number(videoId), this._quality * 2);
       }
     }
+    this.conditionallyAddRemoveFocusMenuItem();
+
+    this._dockResizer.style.display = "flex";
+    if (this._focusMode == "horizontal") {
+      this._dockResizer.classList.remove("annotation__multi-resizer-column");
+      this._dockResizer.classList.add("annotation__multi-resizer-row");
+    } else {
+      this._dockResizer.classList.remove("annotation__multi-resizer-row");
+      this._dockResizer.classList.add("annotation__multi-resizer-column");
+    }
+
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
     const tempHandler = () => {
       this.setMultiProportions();
@@ -1684,6 +1716,7 @@ export class AnnotationMulti extends TatorElement {
     var search_params = new URLSearchParams(window.location.search);
     search_params.set("focusMode", this._focusMode);
     const path = document.location.pathname;
+    search_params.set("dock", this._resizeController._mode);
     const searchArgs = search_params.toString();
     var newUrl = path + "?" + searchArgs;
     if (this.pushed_state) {
@@ -1710,9 +1743,51 @@ export class AnnotationMulti extends TatorElement {
       console.warn("Can't add focus if not in focus mode");
       return;
     } else {
-      this._focusIds.push(vid_id);
-      this.assignToPrimary(vid_id, this._quality * 2);
+      this._focusIds.push(Number(vid_id));
+      this.assignToPrimary(Number(vid_id), this._quality * 2);
       this.setMultiviewUrl("focus", null);
+
+      this.conditionallyAddRemoveFocusMenuItem();
+    }
+  }
+
+  removeFocus(vid_id) {
+    vid_id = Number(vid_id);
+    let idx = this._focusIds.indexOf(vid_id);
+    if (idx > -1) {
+      this._focusIds.splice(idx, 1);
+
+      // Clear secondary children
+      // This maintains the order of the videos vs. just appending it to the end
+      while (this._selectedDock.firstChild) {
+        this._selectedDock.removeChild(this._selectedDock.firstChild);
+      }
+      for (let videoId in this._videoDivs) {
+        if (this._focusIds.indexOf(Number(videoId)) == -1) {
+          this.assignToSecondary(Number(videoId), this._quality);
+        }
+      }
+    }
+    this.conditionallyAddRemoveFocusMenuItem();
+  }
+
+  conditionallyAddRemoveFocusMenuItem() {
+    if (this._multiLayoutState != "focus") return;
+
+    if (this._focusIds.length <= 1) {
+      for (let videoId in this._videoDivs) {
+        let video = this._videoDivs[videoId].children[0];
+        video.contextMenuNone.displayEntry("Remove from Focus", false);
+      }
+    } else {
+      for (let videoId in this._videoDivs) {
+        let video = this._videoDivs[videoId].children[0];
+        if (this._focusIds.indexOf(Number(videoId)) > -1) {
+          video.contextMenuNone.displayEntry("Remove from Focus", true);
+        } else {
+          video.contextMenuNone.displayEntry("Remove from Focus", false);
+        }
+      }
     }
   }
 
@@ -1729,7 +1804,9 @@ export class AnnotationMulti extends TatorElement {
       video.contextMenuNone.displayEntry("Add to Focus", false);
       video.contextMenuNone.displayEntry("Horizontal Multiview", false);
       video.contextMenuNone.displayEntry("Reset Multiview", true);
+      video.contextMenuNone.displayEntry("Remove from Focus", false);
     }
+    this.conditionallyAddRemoveFocusMenuItem();
   }
 
   setupMultiMenu(vid_id) {
@@ -1743,6 +1820,7 @@ export class AnnotationMulti extends TatorElement {
       if (search_params.has("multiview")) {
         search_params.delete("multiview");
         search_params.delete("focusMode");
+        search_params.delete("dock");
         const path = document.location.pathname;
         const searchArgs = search_params.toString();
         var newUrl = path + "?" + searchArgs;
@@ -1803,19 +1881,23 @@ export class AnnotationMulti extends TatorElement {
       video_element.contextMenuNone.addMenuEntry("Add to Focus", () => {
         this.addFocus(vid_id);
       });
+      video_element.contextMenuNone.addMenuEntry("Remove from Focus", () => {
+        this.removeFocus(vid_id);
+      });
       video_element.contextMenuNone.addMenuEntry(
         "Horizontal Multiview",
         this.setHorizontal.bind(this)
       );
       video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
       video_element.contextMenuNone.addMenuEntry(
-        "Open Video in New Tab",
+        "Open Video in New Player Instance",
         goToChannelVideo
       );
 
-      // Hide the two optional ones by default
+      // Hide the three optional ones by default
       video_element.contextMenuNone.displayEntry("Reset Multiview", false);
       video_element.contextMenuNone.displayEntry("Add to Focus", false);
+      video_element.contextMenuNone.displayEntry("Remove from Focus", false);
     });
   }
 
@@ -1891,6 +1973,7 @@ export class AnnotationMulti extends TatorElement {
         video.contextMenuNone.displayEntry("Add to Focus", false);
         video.contextMenuNone.displayEntry("Horizontal Multiview", true);
         video.contextMenuNone.displayEntry("Reset Multiview", false);
+        video.contextMenuNone.displayEntry("Remove from Focus", false);
       }
       video.gridRows = this._multi_layout[0];
 
@@ -1902,6 +1985,7 @@ export class AnnotationMulti extends TatorElement {
 
     this._gridDiv.style.display = "grid";
     this._focusDiv.style.display = "none";
+    this._dockResizer.style.display = "none";
     this._focusBottomDockDiv.style.display = "none";
     this._focusTopDockDiv.style.display = "none";
 
@@ -1916,6 +2000,7 @@ export class AnnotationMulti extends TatorElement {
   setMultiProportions() {
     var horizontalDock = this._selectedDock == this._focusBottomDockDiv;
 
+    let hiddenDock = this._resizeController._mode == "hidden";
     this._resizeWindow(true);
     if (horizontalDock) {
       this._focusDiv.style.display = "none";
@@ -1923,21 +2008,31 @@ export class AnnotationMulti extends TatorElement {
       this._selectedDock.style.width = "100%";
     } else {
       if (this._focusMode == "vertical") {
+        this._resizeController.clearPreview();
         this._focusDiv.style.display = "flex";
         this._focusDiv.style.flexDirection = "column";
         this._focusDiv.style.justifyContent = "center";
         this._focusDiv.style.maxHeight = "80vh";
-        this._selectedDock.style.display = "block";
-        this._focusDiv.style.width = "70%";
+        this._selectedDock.style.display = hiddenDock ? "none" : "flex";
+        this._selectedDock.style.flexWrap = "nowrap";
+        this._selectedDock.style.flexFlow = "column";
+        if (hiddenDock) {
+          this._focusDiv.style.width = null;
+        } else {
+          this._focusDiv.style.width = "70%";
+        }
         this._selectedDock.style.width = "30%";
         this._focusTopDiv.style.flexDirection = "row";
       } else if (this._focusMode == "horizontal") {
-        this._resizeWindow(true, 175); // Add room for film strip
+        this._resizeController.clearPreview();
+        this._resizeWindow(true, !hiddenDock ? 175 : 0); // Add room for film strip
         this._focusDiv.style.display = "flex";
         this._focusDiv.style.flexDirection = "row";
         this._focusDiv.style.justifyContent = "center";
-        this._selectedDock.style.display = "flex";
+        this._selectedDock.style.display = hiddenDock ? "none" : "flex";
         this._focusTopDiv.style.flexDirection = "column";
+        this._selectedDock.style.flexFlow = "row";
+        this._selectedDock.style.flexWrap = "nowrap";
         this._focusDiv.style.width = "100%";
         this._selectedDock.style.width = "100%";
       } else {
