@@ -179,6 +179,25 @@ services:
       exit 0;
       "
 
+  create-alt-bucket:
+    image: minio/mc:RELEASE.2022-07-15T09-20-55Z
+    container_name: create-bucket
+    depends_on:
+      - minio
+    env_file:
+      - ./.env
+    networks:
+      - private
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set tator http://minio:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+      mc mb --ignore-existing tator/${DEFAULT_ALT_BUCKET_NAME};
+      mc admin user add tator ${DEFAULT_LIVE_ACCESS_KEY} ${DEFAULT_LIVE_SECRET_KEY};
+      mc admin policy list tator;
+      mc admin policy set tator readwrite user=${DEFAULT_LIVE_ACCESS_KEY};
+      exit 0;
+      "
+
   create-extensions:
     image: ${REGISTRY}/tator_postgis:${GIT_VERSION}
     container_name: create-extensions
