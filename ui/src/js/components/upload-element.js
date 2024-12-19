@@ -4,7 +4,8 @@ import { uploadMedia } from "../../../../scripts/packages/tator-js/src/utils/upl
 
 export class UploadElement extends TatorElement {
   constructor() {
-    super();
+		super();
+		this._skippedReason = "";
     this._fileSelectCallback = this._fileSelectCallback.bind(this);
     this._haveNewSection = false;
     this._abortController = new AbortController();
@@ -80,6 +81,23 @@ export class UploadElement extends TatorElement {
 			/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
 		);
 		const isArchive = ext.match(/^(zip|tar)/i);
+
+		if (this._store.getState().mediaTypeSettings) {
+			const mediaTypeSettings = this._store.getState().mediaTypeSettings;
+			const imageOk = mediaTypeSettings.find(t => t.dtype === "image");
+			const videoOk = mediaTypeSettings.find(t => t.dtype === "video");
+			if (isImage && !imageOk) {
+				this._skippedReason = "Media Type ";
+				return false;
+			}
+			if (isVideo && !videoOk) {
+				this._skippedReason = "Media Type ";
+				return false;
+			}
+			if (isArchive) {
+				console.warn("Warning: Archive uploaded without media type settings.")
+			}
+		}
 
 		let mediaType = null,
 			fileOk = false,

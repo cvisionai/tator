@@ -9,6 +9,7 @@ const store = create(
 		project: [],
 		mediaTypes: [],
 		organizations: [],
+		mediaTypeSettings: [],
 		uploadChunkProgress: 0, // Upload progress on current file
 		uploadCurrentFile: "", // Name of file currently being uploaded
 		uploadTotalFiles: 0, // Number of files being uploaded

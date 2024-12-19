@@ -6,7 +6,7 @@
   transition-property: background-color, border-style, color;
 }
 
-.drop-zone:hover,
+.drop-zone:focus,
 .drop-zone.drag-over {
   background-color: #696cff;
   color: #ffffff;
