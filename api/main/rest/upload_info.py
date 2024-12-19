@@ -6,6 +6,7 @@ import datetime
 from uuid import uuid1
 from urllib.parse import urlsplit, urlunsplit
 
+from ..models import Bucket
 from ..models import Project
 from ..models import Media
 from ..models import File
@@ -15,6 +16,7 @@ from ..store import get_tator_store
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
 from ._util import _use_internal_host
+from .._permission_util import check_bucket_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,7 @@ class UploadInfoAPI(BaseDetailView):
         media_id = params.get("media_id")
         file_id = params.get("file_id")
         filename = params.get("filename")
+        bucket_id = params.get("bucket_id")
         if os.getenv("REQUIRE_HTTPS") == "TRUE":
             PROTO = "https"
         else:
@@ -60,7 +63,13 @@ class UploadInfoAPI(BaseDetailView):
             components = os.path.splitext(name)
             name = f"{components[0]}_{rand_str}{components[1]}"
 
-        if media_id is None and file_id is None:
+        if bucket_id is not None:
+            bucket = Bucket.objects.filter(pk=bucket_id)
+            if bucket.exists() is False:
+                raise ValueError(f"Bucket ID {bucket_id} does not exist!")
+            check_bucket_permissions(self.request.user, bucket)
+            tator_store = get_tator_store(bucket)
+        elif media_id is None and file_id is None:
             # Generate an object name
             today = datetime.datetime.now().strftime("%Y-%m-%d")
             user = self.request.user.pk

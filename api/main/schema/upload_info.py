@@ -78,6 +78,13 @@ class UploadInfoSchema(AutoSchema):
                     "`media_id` is not given.",
                     "schema": {"type": "string"},
                 },
+                {
+                    "name": "bucket_id",
+                    "in": "query",
+                    "required": False,
+                    "description": "Bucket ID to use for upload. If not provided, the default. User must have permission to write to the bucket.",
+                    "schema": {"type": "integer", "minimum": 1},
+                },
             ]
         return params
 
