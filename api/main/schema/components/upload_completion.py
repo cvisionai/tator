@@ -34,5 +34,10 @@ upload_completion_spec = {
             "minItems": 2,
             "maxItems": 10000,
         },
+        "bucket_id": {
+            "description": "Bucket ID to use for upload. If not provided, the default. User must have permission to write to the bucket.",
+            "type": "integer",
+            "minimum": 1,
+        },
     },
 }
