@@ -21,7 +21,6 @@ from ._attribute_query import (
     get_attribute_psql_queryset,
     get_attribute_psql_queryset_from_query_obj,
     supplied_name_to_field,
-    _look_for_section_uuid,
 )
 
 logger = logging.getLogger(__name__)
@@ -174,27 +173,26 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         media_ids = []
         # This iteration ensures the scoped UUID index is used
         for media_type_id in relevant_media_type_ids:
-            section_uuid = section.tator_user_sections
             object_search = section.object_search
             related_object_search = section.related_object_search
             media_qs = Media.objects.filter(project=project, type=media_type_id)
-            if section.explicit_listing:
-                media_qs = Media.objects.filter(pk__in=section.media.values("id"))
-                logger.info(f"Explicit listing: {media_ids}")
-            elif section_uuid:
-                media_qs = _look_for_section_uuid(media_qs, section_uuid)
-            elif object_search:
-                media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, object_search)
-            elif related_object_search:
-                media_state_types = StateType.objects.filter(project=project)
-                media_localization_types = Localization.objects.filter(project=project)
-                media_qs = _related_search(
-                    media_qs,
-                    project,
-                    media_state_types,
-                    media_localization_types,
-                    related_object_search,
-                )
+            if section.dtype == "folder":
+                media_qs = media_qs.filter(primary_section=section.id)
+            elif section.dtype == "playlist":
+                media_qs = media_qs.filter(pk__in=section.media.values("id"))
+            elif section.dtype == "saved_search":
+                if object_search:
+                    media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, object_search)
+                elif related_object_search:
+                    media_state_types = StateType.objects.filter(project=project)
+                    media_localization_types = Localization.objects.filter(project=project)
+                    media_qs = _related_search(
+                        media_qs,
+                        project,
+                        media_state_types,
+                        media_localization_types,
+                        related_object_search,
+                    )
             else:
                 raise ValueError(f"Invalid Section value pk={section.pk}")
 

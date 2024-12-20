@@ -115,15 +115,24 @@ class SectionListAPI(BaseListView):
         attributes = params.get("attributes", {})
         explicit_listing = params.get("explicit_listing", False)
         media_list = params.get("media", [])
+        dtype = params.get("dtype", None)
 
         if Section.objects.filter(project=project, path__match=path).exists():
             raise Exception("Section with this path already exists!")
+
+        if dtype is None:
+            # Playlists can only be created if dtype is explicitly set.
+            if object_search is None and related_search is None:
+                dtype = "folder"
+            else:
+                dtype = "saved_search"
 
         project = Project.objects.get(pk=project)
 
         attrs = check_required_fields({}, project.attribute_types, {"attributes": attributes})
         section = Section.objects.create(
             project=project,
+            dtype=dtype,
             name=name,
             path=path,
             object_search=object_search,
