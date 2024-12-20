@@ -2125,6 +2125,14 @@ class Section(Model):
     """ Name of the section.
     """
 
+    dtype = CharField(
+        max_length=16,
+        choices=[("folder", "folder"), ("playlist", "playlist"), ("saved_search", "saved_search")],
+        default="folder",
+    )
+    """ What type of section this is.
+    """
+
     path = PathField(null=True, blank=True)
     """ Path of the section. Can only have A-Za-z0-9_- in the path name, versus any ASCII for name """
 

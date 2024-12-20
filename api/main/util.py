@@ -1362,6 +1362,21 @@ def cull_low_used_indices(project_id, dry_run=True, population_limit=10000):
                 print(f"Deleting index for {t.name} {attr['name']}/{attr['dtype']}")
                 ts.delete_index(t, attr)
 
+def update_section_dtype(project_ids=None):
+    projects = Project.objects.all()
+    if isinstance(project_ids, list):
+        projects = projects.filter(pk__in=project_ids)
+    elif isinstance(project_ids, int):
+        projects = projects.filter(pk=project_ids)
+    project_id_list = list(projects.values_list('id', flat=True))
+    section_list = Section.objects.filter(project__in=projects, object_search__isnull=True, related_object_search__isnull=True)
+    print(f"Updating {section_list.count()} section dtypes to `folder`...")
+    section_list.update(dtype='folder')
+    section_list = Section.objects.filter(project__in=projects, object_search__isnull=False)
+    print(f"Updating {section_list.count()} section dtypes to `saved_search`...")
+    section_list = Section.objects.filter(project__in=projects, related_object_search__isnull=False)
+    print(f"Updating {section_list.count()} section dtypes to `saved_search`...")
+
 def update_primary_section(project_ids=None):
     projects = Project.objects.all()
     if isinstance(project_ids, list):
@@ -1369,7 +1384,7 @@ def update_primary_section(project_ids=None):
     elif isinstance(project_ids, int):
         projects = projects.filter(pk=project_ids)
     project_id_list = list(projects.values_list('id', flat=True))
-    section_list = Section.objects.filter(project__in=projects, object_search__isnull=True)
+    section_list = Section.objects.filter(project__in=projects, object_search__isnull=True, related_object_search__isnull=True)
     section_count = section_list.count()
     print(f"Found {section_count} sections!")
     for idx, section in enumerate(section_list.iterator()):
