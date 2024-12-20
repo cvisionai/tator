@@ -34,6 +34,7 @@ DEFAULT_LIVE_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 DEFAULT_LIVE_ENDPOINT_URL=http://minio:9000
 DEFAULT_LIVE_REGION_NAME=us-east-2
 DEFAULT_LIVE_BUCKET_NAME=tator
+DEFAULT_ALT_BUCKET_NAME=tator-alt
 DEFAULT_LIVE_STORE_TYPE=MINIO
 DEFAULT_LIVE_EXTERNAL_HOST=http://${MAIN_HOST}:${PORT}/objects
 MINIO_ACCESS_KEY=minioadmin
@@ -77,3 +78,6 @@ STATIC_MAX_AGE=2592000
 # If using localhost it is recommended to use the following setting
 # This allows for docker containers to utilize localhost to mean the host machine
 #MASQUARADE_LOCALHOST_IP=<LAN_IP>
+
+# Set this true to enable alt bucket tests
+HAS_ALT_BUCKET=true

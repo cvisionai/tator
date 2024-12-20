@@ -66,6 +66,16 @@ class VideoFileListSchema(AutoSchema):
                     "schema": {"type": "integer", "minimum": 0},
                 }
             )
+            params.append(
+                {
+                    "name": "bucket_id",
+                    "in": "query",
+                    "required": False,
+                    "description": "Unique integer identifying a bucket. If provided, the video file will be "
+                    "stored in the specified bucket. If omitted, the video file will be stored in the default bucket.",
+                    "schema": {"type": "integer"},
+                }
+            )
         return params
 
     def get_request_body(self, path, method):
