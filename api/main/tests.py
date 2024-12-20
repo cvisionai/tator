@@ -6429,29 +6429,6 @@ class SectionTestCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
-    def test_adv_error(self):
-        # create a bogus section object and try to filter on it to get an error
-        bad_section = Section.objects.create(project=self.project, name="Test", path="Foo.Test")
-
-        # check media filter reports an error when attempting to use this section
-        url = f"/rest/Medias/{self.project.pk}?section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        url = f"/rest/Medias/{self.project.pk}?multi_section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # check state filter reports an error when attempting to use this section
-        url = f"/rest/States/{self.project.pk}?section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # check localization too
-        url = f"/rest/Localizations/{self.project.pk}?section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_adv_sections(self):
         """
         Test case for performing advanced section operations.
@@ -6465,7 +6442,7 @@ class SectionTestCase(TatorTransactionTest):
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "explicit_listing": True,
+            "dtype": "playlist",
             "media": [media.pk],
         }
         url = f"/rest/Sections/{self.project.pk}"
@@ -6477,7 +6454,7 @@ class SectionTestCase(TatorTransactionTest):
         def check_it(section, section_spec):
             self.assertEqual(section["name"], section_spec["name"])
             self.assertEqual(section["path"], section_spec["path"])
-            self.assertEqual(section["explicit_listing"], section_spec["explicit_listing"])
+            self.assertEqual(section["dtype"], section_spec["dtype"])
             self.assertEqual(section["media"], section_spec["media"])
             self.assertEqual(section["created_by"], self.user.pk)
 
@@ -6497,7 +6474,7 @@ class SectionTestCase(TatorTransactionTest):
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "explicit_listing": True,
+            "dtype": "playlist",
             "media": [],
             "attributes": {"abcdef": False},
         }
@@ -6685,7 +6662,7 @@ class SectionTestCase(TatorTransactionTest):
             section_spec = {
                 "name": f"Test{x}",
                 "path": f"Foo.Test{x}",
-                "explicit_listing": True,
+                "dtype": "playlist",
                 "media": [media.pk],
             }
             url = f"/rest/Sections/{self.project.pk}"
@@ -6741,7 +6718,7 @@ class SectionTestCase(TatorTransactionTest):
             section_spec = {
                 "name": f"Test{r}",
                 "path": f"Foo.Test{r}",
-                "explicit_listing": True,
+                "dtype": "playlist",
                 "media": [lms[r].id],
             }
             url = f"/rest/Sections/{self.project.pk}"
@@ -6842,14 +6819,14 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         self.public_section = Section.objects.create(
             name="Public",
             path="Public",
-            explicit_listing=True,
+            dtype="playlist",
             project=self.project,
         )
 
         self.private_section = Section.objects.create(
             name="Private",
             path="Private",
-            explicit_listing=True,
+            dtype="playlist",
             project=self.project,
         )
 
@@ -7310,7 +7287,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Create a section
             resp = self.client.post(
                 f"/rest/Sections/{self.project.pk}",
-                {"name": "Bridge", "path": "Bridge", "explicit_listing": True},
+                {"name": "Bridge", "path": "Bridge", "dtype": "playlist"},
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
@@ -7348,7 +7325,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Create a second section
             resp = self.client.post(
                 f"/rest/Sections/{self.project.pk}",
-                {"name": "Engineering", "path": "Engineering", "explicit_listing": True},
+                {"name": "Engineering", "path": "Engineering", "dtype": "playlist"},
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
