@@ -296,7 +296,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             if attr_name == "$section":
                 section = Section.objects.filter(pk=value)
             else:
-                section = Section.objects.filter(attributes__tator_user_sections=value)
+                section = Section.objects.filter(tator_user_sections=value)
             if not section.exists():
                 raise Http404
 
