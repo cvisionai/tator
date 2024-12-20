@@ -181,7 +181,7 @@ services:
 
   create-alt-bucket:
     image: minio/mc:RELEASE.2022-07-15T09-20-55Z
-    container_name: create-bucket
+    container_name: create-bucket-alt
     depends_on:
       - minio
     env_file:
