@@ -1211,6 +1211,7 @@ export class AnnotationPlayer extends TatorElement {
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames) - 1);
     this._slider.fps = val.fps;
+    this._preview.mediaInfo = val;
     this._fps = val.fps;
     this._totalTime.textContent =
       "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);

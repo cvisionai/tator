@@ -27,10 +27,11 @@ export class MediaSeekPreview extends TatorElement {
     nameDiv.appendChild(this._frame);
 
     // Image is aspirational
-    //this._img = document.createElement('img');
-    //this._img.setAttribute("style", "max-width: 100%;");
-    //this._img.setAttribute("crossorigin", "anonymous");
-    //this._previewBox.appendChild(this._img);
+    this._img = document.createElement('canvas');
+    this._img.width = 360;
+    this._img.height = 360;
+    this._ctx = this._img.getContext('2d');
+    this._previewBox.appendChild(this._img);
   }
 
   show() {
@@ -39,6 +40,17 @@ export class MediaSeekPreview extends TatorElement {
 
   hide() {
     this._previewBox.style.display = "none";
+  }
+
+  set mediaInfo(val) {
+    // Calculate the aspect ratio and update the canvas size accordingly
+    const aspectRatio = val.width / val.height;
+    this._img.width = 360;
+    this._img.height = 360 / aspectRatio;
+
+    // Fill it black on initialization
+    this._ctx.fillStyle = 'black';
+    this._ctx.fillRect(0, 0, this._img.width, this._img.height);
   }
 
   set info(val) {
