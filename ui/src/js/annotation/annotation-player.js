@@ -1048,9 +1048,12 @@ export class AnnotationPlayer extends TatorElement {
   /**
    * Callback used when a user hovers over the seek bar
    */
-  handleFramePreview(evt) {
+  async handleFramePreview(evt) {
      let proposed_value = evt.detail.frame;
      if (proposed_value > 0) {
+      // Get frame preview image
+      let frame = await this._video.getScrubFrame(proposed_value);
+
       if (this._timeMode == "utc") {
         let timeStr =
           this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
@@ -1061,6 +1064,7 @@ export class AnnotationPlayer extends TatorElement {
           x: evt.detail.clientX,
           y: evt.detail.clientY+15, // Add 15 due to page layout
           time: timeStr,
+          image: frame,
         };
       } else {
         this._preview.info = {
@@ -1068,8 +1072,10 @@ export class AnnotationPlayer extends TatorElement {
           x: evt.detail.clientX,
           y: evt.detail.clientY+15, // Add 15 due to page layout
           time: frameToTime(proposed_value, this._fps),
+          image: frame,
         };
       }
+      frame.close();
     } else {
       this._preview.hide();
     }
