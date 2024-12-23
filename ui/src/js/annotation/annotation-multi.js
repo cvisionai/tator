@@ -459,6 +459,8 @@ export class AnnotationMulti extends TatorElement {
     this._domParents = []; //handle defered loading of video element
     seekDiv.appendChild(this._slider);
     outerDiv.appendChild(seekDiv);
+    this._preview = document.createElement("media-seek-preview");
+    this._slider._shadow.appendChild(this._preview);
 
     var innerDiv = document.createElement("div");
     this._videoTimeline = document.createElement("video-timeline");
@@ -570,6 +572,14 @@ export class AnnotationMulti extends TatorElement {
 
     this._slider.addEventListener("change", (evt) => {
       this.handleSliderChange(evt);
+    });
+
+    this._slider.addEventListener("framePreview", (evt) => {
+      this.handleFramePreview(evt);
+    });
+
+    this._slider.addEventListener("hidePreview", () => {
+      this._preview.hide();
     });
 
     play.addEventListener("click", () => {
@@ -897,6 +907,36 @@ export class AnnotationMulti extends TatorElement {
   }
   disableRateChange() {
     this._rateControl.setAttribute("disabled", "");
+  }
+
+  /**
+   * Callback used when a user hovers over the seek bar
+   */
+  handleFramePreview(evt) {
+    let proposed_value = evt.detail.frame;
+    if (proposed_value > 0) {
+     if (this._timeMode == "utc") {
+       let timeStr =
+         this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+       timeStr = timeStr.split("T")[1].split(".")[0];
+
+       this._preview.info = {
+         frame: proposed_value,
+         x: evt.detail.clientX,
+         y: evt.detail.clientY+15, // Add 15 due to page layout
+         time: timeStr,
+       };
+     } else {
+       this._preview.info = {
+         frame: proposed_value,
+         x: evt.detail.clientX,
+         y: evt.detail.clientY+15, // Add 15 due to page layout
+         time: frameToTime(proposed_value, this._fps[this._longest_idx]),
+       };
+     }
+   } else {
+     this._preview.hide();
+   }
   }
 
   /**
@@ -2182,9 +2222,9 @@ export class AnnotationMulti extends TatorElement {
     this._entityTimeline.setDisplayMode(this._displayMode);
 
     if (this._displayMode == "utc") {
-      this._slider.useUtcTime(this._timeStore);
+      this._timeMode = "utc";
     } else {
-      this._slider.useRelativeTime();
+      this._timeMode = "relative";
     }
 
     this.dispatchEvent(
