@@ -9,7 +9,7 @@ export class SeekBar extends TatorElement {
     this._shadow.appendChild(this.bar);
 
     this.handle = document.createElement("div");
-    this.handle.setAttribute("class", "range-handle");
+    this.handle.setAttribute("class", "annotation-range-handle");
     this.handle.setAttribute("tabindex", "0");
     this.handle.style.cursor = "pointer";
     this.bar.appendChild(this.handle);
@@ -48,6 +48,7 @@ export class SeekBar extends TatorElement {
 
     var mouseOver = (evt) => {
       this.bar.classList.add("annotation-range-div-active");
+      this.handle.classList.add("annotation-range-handle-active");
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
       if (width == 0) {
@@ -78,6 +79,7 @@ export class SeekBar extends TatorElement {
       this.dispatchEvent(new CustomEvent("hidePreview", { composed: true }));
       if (this._active == false) {
         this.bar.classList.remove("annotation-range-div-active");
+        this.handle.classList.remove("annotation-range-handle-active");
       }
     });
 
@@ -106,13 +108,14 @@ export class SeekBar extends TatorElement {
       this.bar.addEventListener("mousemove", mouseOver);
       that.bar.removeAttribute("wide-tooltip");
       this.bar.classList.remove("annotation-range-div-active");
+      this.handle.classList.remove("annotation-range-handle-active");
       console.info("RELEASE MOUSE.");
       this._active = false;
       clearInterval(that._periodicCheck);
       document.removeEventListener("mouseup", releaseMouse);
       document.removeEventListener("mousemove", dragHandler);
       that.dispatchEvent(new CustomEvent("change", { composed: true }));
-      that.handle.classList.remove("range-handle-selected");
+      that.handle.classList.remove("annotation-range-handle-selected");
       // Add back in event handler next iteration (time=0)
       setTimeout(() => {
         that.bar.addEventListener("click", clickHandler);
@@ -124,6 +127,7 @@ export class SeekBar extends TatorElement {
       }
       this.dispatchEvent(new CustomEvent("hidePreview", { composed: true }));
       this.bar.classList.add("annotation-range-div-active");
+      this.handle.classList.add("annotation-range-handle-active");
       this.bar.removeEventListener("mousemove", mouseOver);
       this._active = true;
       this._lastValue = this.value;
@@ -148,7 +152,7 @@ export class SeekBar extends TatorElement {
       that.bar.removeEventListener("click", clickHandler);
       document.addEventListener("mouseup", releaseMouse);
       document.addEventListener("mousemove", dragHandler);
-      this.handle.classList.add("range-handle-selected");
+      this.handle.classList.add("annotation-range-handle-selected");
       evt.stopPropagation();
       return false;
     });
