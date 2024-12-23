@@ -32,11 +32,11 @@ export class MediaSeekPreview extends TatorElement {
   }
 
   show() {
-    this._previewBox.hidden = false;
+    this._previewBox.style.display = "block";
   }
 
   hide() {
-    this._previewBox.hidden = true;
+    this._previewBox.style.display = "none";
   }
 
   set info(val) {
@@ -46,8 +46,8 @@ export class MediaSeekPreview extends TatorElement {
     if (val !== null && val !== -1) {
       this._frame.textContent = `  (${val.frame})`;
       this._time.textContent = val.time;
-      const pos = val.margin - this._previewBox.clientWidth / 2;
-      this._previewBox.style.marginLeft = `${pos}px`;
+      this._previewBox.style.left = `${val.x}px`;
+      this._previewBox.style.top = `${val.y}px`;
       this.show();
     }
   }

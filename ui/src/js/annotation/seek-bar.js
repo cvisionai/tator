@@ -38,7 +38,7 @@ export class SeekBar extends TatorElement {
       that.dispatchEvent(
         new CustomEvent("change", {
           composed: true,
-          detail: { frame: that.value },
+          detail: { frame: that.value},
         })
       );
       evt.stopPropagation();
@@ -59,36 +59,19 @@ export class SeekBar extends TatorElement {
         percentage * (that._max - that._min) + that._min
       );
 
-      if (proposed_value > 0) {
-        if (this._timeMode == "utc") {
-          let timeStr =
-            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
-          timeStr = timeStr.split("T")[1].split(".")[0];
-
-          this.preview.info = {
-            frame: proposed_value,
-            margin: evt.clientX - startX,
-            time: timeStr,
-          };
-        } else {
-          this.preview.info = {
-            frame: proposed_value,
-            margin: evt.clientX - startX,
-            time: frameToTime(proposed_value, this._fps),
-          };
-        }
-      } else {
-        this.preview.hide();
-      }
-
+      this.dispatchEvent(new CustomEvent("framePreview", {composed:true, detail: 
+        {
+          frame:proposed_value,
+          clientX: evt.clientX,
+          clientY: evt.clientY,
+        }}));
       evt.stopPropagation();
       return false;
     };
-    this.preview = document.createElement("media-seek-preview");
-    this.bar.appendChild(this.preview);
+
     this.bar.addEventListener("mousemove", mouseOver);
     this.bar.addEventListener("mouseout", () => {
-      this.preview.hide();
+      this.dispatchEvent(new CustomEvent("hidePreview", {composed:true}));
       if (this._active == false)
       {
         this.bar.classList.remove("annotation-range-div-active");
@@ -136,7 +119,7 @@ export class SeekBar extends TatorElement {
       if (this._disabled == true) {
         return;
       }
-      this.preview.hide();
+      this.dispatchEvent(new CustomEvent("hidePreview", {composed:true}));
       this.bar.classList.add("annotation-range-div-active");
       this.bar.removeEventListener("mousemove", mouseOver);
       this._active = true;
@@ -236,15 +219,6 @@ export class SeekBar extends TatorElement {
 
   get value() {
     return this._value;
-  }
-
-  useUtcTime(timeStore) {
-    this._timeStore = timeStore;
-    this._timeMode = "utc";
-  }
-
-  useRelativeTime() {
-    this._timeMode = "relative";
   }
 
   setPair(other) {

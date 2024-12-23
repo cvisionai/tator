@@ -26,7 +26,6 @@
   padding: var(--spacing-2);
   pointer-events: none;
   position: absolute;
-  top: calc(100% + 16px);
   width: auto;
   max-width: 400px;
   z-index: 1;
