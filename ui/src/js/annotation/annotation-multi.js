@@ -928,7 +928,7 @@ export class AnnotationMulti extends TatorElement {
         let focus = this._focusIds[0];
         video = this._videoDivs[focus].children[0];
         useImage = true;
-        bias += 240;
+        bias += this._preview.img_height;
        }
 
 

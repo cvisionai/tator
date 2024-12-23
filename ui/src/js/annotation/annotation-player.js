@@ -1067,7 +1067,7 @@ export class AnnotationPlayer extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY-(240+50), 
+            y: evt.detail.clientY-(this._preview.img_height+50), 
             time: timeStr,
             image: true,
           };
@@ -1075,7 +1075,7 @@ export class AnnotationPlayer extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY-(240+50),
+            y: evt.detail.clientY-(this._preview.img_height+50),
             time: frameToTime(proposed_value, this._fps),
             image: true,
           };

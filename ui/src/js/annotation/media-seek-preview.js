@@ -26,14 +26,18 @@ export class MediaSeekPreview extends TatorElement {
     nameDiv.appendChild(this._time);
     nameDiv.appendChild(this._frame);
 
-    // Image is aspirational
+    // Set an image size here that works for both 144 or 360
     this._img = document.createElement('canvas');
-    this._img.width = 300;
+    this._img.width = 240;
     this._img.height = 240;
     this._ctx = this._img.getContext('2d');
     this._previewBox.appendChild(this._img);
 
     this._info = {};
+  }
+
+  get img_height() {
+    return this._img.height;
   }
 
   show() {
