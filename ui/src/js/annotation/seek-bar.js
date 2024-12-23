@@ -264,7 +264,7 @@ export class SeekBar extends TatorElement {
     const start = range[0];
     const end = range[1];
     const startPercentage = start / this._max;
-    const endPercentage = end / this._max;
+    const endPercentage = Math.min(1,end / this._max);
     this.onDemandProgress.style.marginLeft = `${startPercentage * 100}%`;
     const widthPx = Math.round(
       (endPercentage - startPercentage) * this.bar.clientWidth
