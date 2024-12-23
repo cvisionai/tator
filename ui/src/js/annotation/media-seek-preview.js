@@ -60,6 +60,65 @@ export class MediaSeekPreview extends TatorElement {
     this._ctx.drawImage(val, 0,0, this._img.width, this._img.height);
     this._img.style.display = "block";
   }
+
+  set annotations(val)
+  {
+    // Dictionary by type
+    for (const typeId of val.keys())
+    {
+      for (const localization of val.get(typeId))
+      {
+        if (localization.type.indexOf("box") >= 0)
+        {
+          this._ctx.strokeStyle = "rgb(64,224,208)";
+          this._ctx.lineWidth = 3;
+          this._ctx.strokeRect(localization.x * this._img.width, localization.y * this._img.height, localization.width * this._img.width, localization.height * this._img.height);
+        
+          // Fill with a 50% alpha color
+          this._ctx.fillStyle = "rgb(64,224,208)";
+          this._ctx.globalAlpha = 0.5;
+          this._ctx.fillRect(localization.x * this._img.width, localization.y * this._img.height, localization.width * this._img.width, localization.height * this._img.height);
+        }
+        else if (localization.type.indexOf("dot") >= 0)
+        {
+          this._ctx.fillStyle = "rgb(64,224,208)";
+          this._ctx.beginPath();
+          this._ctx.arc(localization.x * this._img.width, localization.y * this._img.height, 5, 0, 2 * Math.PI);
+          this._ctx.fill();
+        }
+        else if (localization.type.indexOf("line") >= 0)
+        {
+          this._ctx.strokeStyle = "rgb(64,224,208)";
+          this._ctx.lineWidth = 3;
+          this._ctx.beginPath();
+          this._ctx.moveTo(localization.x * this._img.width, localization.y * this._img.height);
+          this._ctx.lineTo((localization.x + localization.u) * this._img.width, (localization.y + localization.v) * this._img.height);
+          this._ctx.stroke();
+        }
+        else if (localization.type.indexOf("poly") >= 0)
+        {
+          this._ctx.strokeStyle = "rgb(64,224,208)";
+          this._ctx.lineWidth = 3;
+          this._ctx.beginPath();
+          this._ctx.moveTo(localization.points[0][0] * this._img.width, localization.points[0][1] * this._img.height);
+          for (let idx = 1; idx < localization.points.length; idx++)
+          {
+            this._ctx.lineTo(localization.points[idx][0] * this._img.width, localization.points[idx][1] * this._img.height);
+          }
+          this._ctx.closePath();
+          this._ctx.stroke();
+
+          // Fill with a 50% alpha color
+          this._ctx.fillStyle = "rgb(64,224,208)";
+          this._ctx.globalAlpha = 0.5;
+          this._ctx.fill();
+        }
+
+        // Reset alpha
+        this._ctx.globalAlpha = 1;
+      }
+    }
+  }
   set info(val) {
     if (this._info.frame === val.frame) {
       this._previewBox.style.left = `${val.x}px`;

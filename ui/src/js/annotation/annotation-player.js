@@ -1059,6 +1059,12 @@ export class AnnotationPlayer extends TatorElement {
         let frame = await this._video.getScrubFrame(proposed_value);
         this._preview.image = frame;
         frame.close();
+
+        // Get annotations for frame
+        if (this._video._framedData.has(proposed_value))
+        {
+          this._preview.annotations = this._video._framedData.get(proposed_value);
+        }
       }
 
 
