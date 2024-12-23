@@ -11,6 +11,8 @@ export class MediaSeekPreview extends TatorElement {
     this._shadow.appendChild(this._previewBox);
 
     const nameDiv = document.createElement("div");
+    nameDiv.style.display = "flex";
+    nameDiv.style.justifyContent = "center";
     this._previewBox.appendChild(nameDiv);
 
     //  const nameLabel = document.createElement('span');
