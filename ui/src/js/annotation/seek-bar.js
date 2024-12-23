@@ -47,6 +47,7 @@ export class SeekBar extends TatorElement {
     this.bar.addEventListener("click", clickHandler);
 
     var mouseOver = (evt) => {
+      this.bar.classList.add("annotation-range-div-active");
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
       if (width == 0) {
@@ -88,6 +89,10 @@ export class SeekBar extends TatorElement {
     this.bar.addEventListener("mousemove", mouseOver);
     this.bar.addEventListener("mouseout", () => {
       this.preview.hide();
+      if (this._active == false)
+      {
+        this.bar.classList.remove("annotation-range-div-active");
+      }
     });
 
     var dragHandler = function (evt) {
@@ -114,6 +119,7 @@ export class SeekBar extends TatorElement {
     var releaseMouse = (evt) => {
       this.bar.addEventListener("mousemove", mouseOver);
       that.bar.removeAttribute("wide-tooltip");
+      this.bar.classList.remove("annotation-range-div-active");
       console.info("RELEASE MOUSE.");
       this._active = false;
       clearInterval(that._periodicCheck);
@@ -131,6 +137,7 @@ export class SeekBar extends TatorElement {
         return;
       }
       this.preview.hide();
+      this.bar.classList.add("annotation-range-div-active");
       this.bar.removeEventListener("mousemove", mouseOver);
       this._active = true;
       this._lastValue = this.value;

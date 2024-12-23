@@ -675,12 +675,13 @@ annotation-player {
   margin-top: 0px;
   margin-bottom: 2px;
   position: relative;
+  user-select: none;
 }
 
 .annotation-range-div:focus {
   outline: none;
 }
-.annotation-range-div:hover {
+.annotation-range-div-active {
   height: 5px;
   margin-top: 0px;
   margin-bottom: 0px;
