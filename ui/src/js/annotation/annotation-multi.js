@@ -65,6 +65,8 @@ export class AnnotationMulti extends TatorElement {
 
     this._playInteraction = new PlayInteraction(this);
 
+    this._focusIds = [];
+
     const settingsDiv = document.createElement("div");
     settingsDiv.setAttribute("class", "d-flex flex-items-center");
     div.appendChild(settingsDiv);
@@ -579,6 +581,7 @@ export class AnnotationMulti extends TatorElement {
     });
 
     this._slider.addEventListener("hidePreview", () => {
+      this._preview.cancelled=true;
       this._preview.hide();
     });
 
@@ -912,31 +915,71 @@ export class AnnotationMulti extends TatorElement {
   /**
    * Callback used when a user hovers over the seek bar
    */
-  handleFramePreview(evt) {
+  async handleFramePreview(evt) {
     let proposed_value = evt.detail.frame;
-    if (proposed_value > 0) {
-     if (this._timeMode == "utc") {
-       let timeStr =
-         this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
-       timeStr = timeStr.split("T")[1].split(".")[0];
+     this._preview.cancelled = false;
+     if (proposed_value > 0) {
+      // Get frame preview image
+      const existing = this._preview.info;
+      let video = null;
+      let useImage = false;
+      let bias = 50;
+      if (this._focusIds.length > 0) {
+        let focus = this._focusIds[0];
+        video = this._videoDivs[focus].children[0];
+        useImage = true;
+        bias += 240;
+       }
 
-       this._preview.info = {
-         frame: proposed_value,
-         x: evt.detail.clientX,
-         y: evt.detail.clientY+15, // Add 15 due to page layout
-         time: timeStr,
-       };
-     } else {
-       this._preview.info = {
-         frame: proposed_value,
-         x: evt.detail.clientX,
-         y: evt.detail.clientY+15, // Add 15 due to page layout
-         time: frameToTime(proposed_value, this._fps[this._longest_idx]),
-       };
-     }
-   } else {
-     this._preview.hide();
-   }
+
+      // If we are already on this frame save some resources and just show the preview as-is
+      if (existing.frame != proposed_value) {
+        if (this._timeMode == "utc") {
+          let timeStr =
+            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+          timeStr = timeStr.split("T")[1].split(".")[0];
+  
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: evt.detail.clientY-(bias), // Add 15 due to page layout
+            time: timeStr,
+            image: useImage,
+          };
+        } else {
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: evt.detail.clientY-(bias), // Add 15 due to page layout
+            time: frameToTime(proposed_value, this._fps[this._longest_idx]),
+            image: useImage,
+          };
+        }
+
+        if (useImage)
+        {
+          console.info(`Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`);
+          let frame = await video.getScrubFrame(proposed_value);
+          console.info(`Got it!`);
+          if (this._preview.cancelled) {
+            // We took to long and got cancelled.
+            frame.close();
+            return;
+          }
+          this._preview.image = frame;
+          frame.close();
+
+          // Get annotations for frame
+          if (video._framedData.has(proposed_value))
+          {
+            this._preview.annotations = video._framedData.get(proposed_value);
+          }
+        }
+      }
+      this._preview.show();
+    } else {
+      this._preview.hide();
+    }
   }
 
   /**
@@ -1709,6 +1752,7 @@ export class AnnotationMulti extends TatorElement {
     vid_id = Number(vid_id);
     this._multiLayoutState = "focus";
     this._focusIds = [vid_id];
+    this._preview.mediaInfo = this._videoDivs[vid_id].children[0]._mediaInfo;
     for (let videoId in this._videoDivs) {
       let video = this._videoDivs[videoId].children[0];
       video.contextMenuNone.hideMenu();
@@ -1889,6 +1933,7 @@ export class AnnotationMulti extends TatorElement {
       }
       this.assignToGrid();
       reset_url();
+      this._focusIds = [];
     };
 
     let goToChannelVideo = () => {
