@@ -1052,7 +1052,15 @@ export class AnnotationPlayer extends TatorElement {
      let proposed_value = evt.detail.frame;
      if (proposed_value > 0) {
       // Get frame preview image
-      let frame = await this._video.getScrubFrame(proposed_value);
+      const existing = this._preview.info;
+
+      // If we are already on this frame save some resources and just show the preview as-is
+      if (existing.frame != proposed_value) {
+        let frame = await this._video.getScrubFrame(proposed_value);
+        this._preview.image = frame;
+        frame.close();
+      }
+
 
       if (this._timeMode == "utc") {
         let timeStr =
@@ -1064,7 +1072,7 @@ export class AnnotationPlayer extends TatorElement {
           x: evt.detail.clientX,
           y: evt.detail.clientY+15, // Add 15 due to page layout
           time: timeStr,
-          image: frame,
+          image: true,
         };
       } else {
         this._preview.info = {
@@ -1072,10 +1080,9 @@ export class AnnotationPlayer extends TatorElement {
           x: evt.detail.clientX,
           y: evt.detail.clientY+15, // Add 15 due to page layout
           time: frameToTime(proposed_value, this._fps),
-          image: frame,
+          image: true,
         };
       }
-      frame.close();
     } else {
       this._preview.hide();
     }

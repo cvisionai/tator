@@ -32,6 +32,8 @@ export class MediaSeekPreview extends TatorElement {
     this._img.height = 300;
     this._ctx = this._img.getContext('2d');
     this._previewBox.appendChild(this._img);
+
+    this._info = {};
   }
 
   show() {
@@ -53,8 +55,17 @@ export class MediaSeekPreview extends TatorElement {
     this._ctx.fillRect(0, 0, this._img.width, this._img.height);
   }
 
+  set image(val)
+  {
+    this._ctx.drawImage(val, 0,0, this._img.width, this._img.height);
+    this._img.style.display = "block";
+  }
   set info(val) {
-    if (this._info == val && val !== null && val !== -1) this.show();
+    if (this._info.frame === val.frame) {
+      this._previewBox.style.left = `${val.x}px`;
+      this._previewBox.style.top = `${val.y}px`;
+      this.show();
+    }
 
     this._info = val;
     if (val !== null && val !== -1) {
@@ -65,7 +76,6 @@ export class MediaSeekPreview extends TatorElement {
 
       // If a preview image was supplied, display else hide the canvas
       if (val.image) {
-        this._ctx.drawImage(val.image, 0,0, this._img.width, this._img.height);
         this._img.style.display = "block";
       }
       else
@@ -74,6 +84,10 @@ export class MediaSeekPreview extends TatorElement {
       }
       this.show();
     }
+  }
+
+  get info() {
+    return this._info;
   }
 }
 
