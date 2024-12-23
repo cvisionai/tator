@@ -5,7 +5,7 @@ export class SeekBar extends TatorElement {
   constructor() {
     super();
     this.bar = document.createElement("div");
-    this.bar.setAttribute("class", "range-div select-pointer");
+    this.bar.setAttribute("class", "annotation-range-div select-pointer");
     this._shadow.appendChild(this.bar);
 
     this.handle = document.createElement("div");
@@ -161,9 +161,9 @@ export class SeekBar extends TatorElement {
     });
 
     this.loadProgress = document.createElement("div");
-    this.loadProgress.setAttribute("class", "range-loaded");
+    this.loadProgress.setAttribute("class", "annotation-range-loaded");
     this.onDemandProgress = document.createElement("div");
-    this.onDemandProgress.setAttribute("class", "range-ondemand");
+    this.onDemandProgress.setAttribute("class", "annotation-range-ondemand");
     this.bar.appendChild(this.loadProgress);
     this.bar.appendChild(this.onDemandProgress);
 
