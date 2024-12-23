@@ -1050,9 +1050,9 @@ export class AnnotationPlayer extends TatorElement {
    * Callback used when a user hovers over the seek bar
    */
   async handleFramePreview(evt) {
-     let proposed_value = evt.detail.frame;
-     this._preview.cancelled = false;
-     if (proposed_value > 0) {
+    let proposed_value = evt.detail.frame;
+    this._preview.cancelled = false;
+    if (proposed_value > 0) {
       // Get frame preview image
       const existing = this._preview.info;
 
@@ -1062,12 +1062,12 @@ export class AnnotationPlayer extends TatorElement {
           let timeStr =
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
           timeStr = timeStr.split("T")[1].split(".")[0];
-  
+
           let bias = 15;
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY-(this._preview.img_height+50), 
+            y: evt.detail.clientY - (this._preview.img_height + 50),
             time: timeStr,
             image: true,
           };
@@ -1075,13 +1075,15 @@ export class AnnotationPlayer extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY-(this._preview.img_height+50),
+            y: evt.detail.clientY - (this._preview.img_height + 50),
             time: frameToTime(proposed_value, this._fps),
             image: true,
           };
         }
 
-        console.info(`Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`);
+        console.info(
+          `Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`
+        );
         let frame = await this._video.getScrubFrame(proposed_value);
         console.info(`Got it!`);
         if (this._preview.cancelled) {
@@ -1093,9 +1095,9 @@ export class AnnotationPlayer extends TatorElement {
         frame.close();
 
         // Get annotations for frame
-        if (this._video._framedData.has(proposed_value))
-        {
-          this._preview.annotations = this._video._framedData.get(proposed_value);
+        if (this._video._framedData.has(proposed_value)) {
+          this._preview.annotations =
+            this._video._framedData.get(proposed_value);
         }
       }
       this._preview.show();

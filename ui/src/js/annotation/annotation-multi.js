@@ -581,7 +581,7 @@ export class AnnotationMulti extends TatorElement {
     });
 
     this._slider.addEventListener("hidePreview", () => {
-      this._preview.cancelled=true;
+      this._preview.cancelled = true;
       this._preview.hide();
     });
 
@@ -917,8 +917,8 @@ export class AnnotationMulti extends TatorElement {
    */
   async handleFramePreview(evt) {
     let proposed_value = evt.detail.frame;
-     this._preview.cancelled = false;
-     if (proposed_value > 0) {
+    this._preview.cancelled = false;
+    if (proposed_value > 0) {
       // Get frame preview image
       const existing = this._preview.info;
       let video = null;
@@ -929,8 +929,7 @@ export class AnnotationMulti extends TatorElement {
         video = this._videoDivs[focus].children[0];
         useImage = true;
         bias += this._preview.img_height;
-       }
-
+      }
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
@@ -938,11 +937,11 @@ export class AnnotationMulti extends TatorElement {
           let timeStr =
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
           timeStr = timeStr.split("T")[1].split(".")[0];
-  
+
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY-(bias), // Add 15 due to page layout
+            y: evt.detail.clientY - bias, // Add 15 due to page layout
             time: timeStr,
             image: useImage,
           };
@@ -950,15 +949,16 @@ export class AnnotationMulti extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY-(bias), // Add 15 due to page layout
+            y: evt.detail.clientY - bias, // Add 15 due to page layout
             time: frameToTime(proposed_value, this._fps[this._longest_idx]),
             image: useImage,
           };
         }
 
-        if (useImage)
-        {
-          console.info(`Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`);
+        if (useImage) {
+          console.info(
+            `Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`
+          );
           let frame = await video.getScrubFrame(proposed_value);
           console.info(`Got it!`);
           if (this._preview.cancelled) {
@@ -970,8 +970,7 @@ export class AnnotationMulti extends TatorElement {
           frame.close();
 
           // Get annotations for frame
-          if (video._framedData.has(proposed_value))
-          {
+          if (video._framedData.has(proposed_value)) {
             this._preview.annotations = video._framedData.get(proposed_value);
           }
         }

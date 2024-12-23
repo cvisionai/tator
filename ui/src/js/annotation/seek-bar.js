@@ -38,7 +38,7 @@ export class SeekBar extends TatorElement {
       that.dispatchEvent(
         new CustomEvent("change", {
           composed: true,
-          detail: { frame: that.value},
+          detail: { frame: that.value },
         })
       );
       evt.stopPropagation();
@@ -59,21 +59,24 @@ export class SeekBar extends TatorElement {
         percentage * (that._max - that._min) + that._min
       );
 
-      this.dispatchEvent(new CustomEvent("framePreview", {composed:true, detail: 
-        {
-          frame:proposed_value,
-          clientX: evt.clientX,
-          clientY: evt.clientY,
-        }}));
+      this.dispatchEvent(
+        new CustomEvent("framePreview", {
+          composed: true,
+          detail: {
+            frame: proposed_value,
+            clientX: evt.clientX,
+            clientY: evt.clientY,
+          },
+        })
+      );
       evt.stopPropagation();
       return false;
     };
 
     this.bar.addEventListener("mousemove", mouseOver);
     this.bar.addEventListener("mouseout", () => {
-      this.dispatchEvent(new CustomEvent("hidePreview", {composed:true}));
-      if (this._active == false)
-      {
+      this.dispatchEvent(new CustomEvent("hidePreview", { composed: true }));
+      if (this._active == false) {
         this.bar.classList.remove("annotation-range-div-active");
       }
     });
@@ -119,7 +122,7 @@ export class SeekBar extends TatorElement {
       if (this._disabled == true) {
         return;
       }
-      this.dispatchEvent(new CustomEvent("hidePreview", {composed:true}));
+      this.dispatchEvent(new CustomEvent("hidePreview", { composed: true }));
       this.bar.classList.add("annotation-range-div-active");
       this.bar.removeEventListener("mousemove", mouseOver);
       this._active = true;
@@ -245,7 +248,7 @@ export class SeekBar extends TatorElement {
     const start = range[0];
     const end = range[1];
     const startPercentage = start / this._max;
-    const endPercentage = Math.min(1,end / this._max);
+    const endPercentage = Math.min(1, end / this._max);
     this.onDemandProgress.style.marginLeft = `${startPercentage * 100}%`;
     const widthPx = Math.round(
       (endPercentage - startPercentage) * this.bar.clientWidth
