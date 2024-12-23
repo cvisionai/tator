@@ -141,12 +141,19 @@ export class MediaSeekPreview extends TatorElement {
       {
         this._img.style.display = "none";
       }
-      this.show();
     }
   }
 
   get info() {
     return this._info;
+  }
+
+  set cancelled(val) {
+    this._cancelled = val;
+  }
+
+  get cancelled() {
+    return this._cancelled;
   }
 }
 

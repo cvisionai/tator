@@ -661,6 +661,7 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._slider.addEventListener("hidePreview", () => {
+      this._preview.cancelled = true; // This isn't about cancel culture
       this._preview.hide();
     });
 
@@ -1050,13 +1051,43 @@ export class AnnotationPlayer extends TatorElement {
    */
   async handleFramePreview(evt) {
      let proposed_value = evt.detail.frame;
+     this._preview.cancelled = false;
      if (proposed_value > 0) {
       // Get frame preview image
       const existing = this._preview.info;
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
+        if (this._timeMode == "utc") {
+          let timeStr =
+            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+          timeStr = timeStr.split("T")[1].split(".")[0];
+  
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: evt.detail.clientY+15, // Add 15 due to page layout
+            time: timeStr,
+            image: true,
+          };
+        } else {
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: evt.detail.clientY+15, // Add 15 due to page layout
+            time: frameToTime(proposed_value, this._fps),
+            image: true,
+          };
+        }
+
+        console.info(`Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`);
         let frame = await this._video.getScrubFrame(proposed_value);
+        console.info(`Got it!`);
+        if (this._preview.cancelled) {
+          // We took to long and got cancelled.
+          frame.close();
+          return;
+        }
         this._preview.image = frame;
         frame.close();
 
@@ -1066,29 +1097,7 @@ export class AnnotationPlayer extends TatorElement {
           this._preview.annotations = this._video._framedData.get(proposed_value);
         }
       }
-
-
-      if (this._timeMode == "utc") {
-        let timeStr =
-          this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
-        timeStr = timeStr.split("T")[1].split(".")[0];
-
-        this._preview.info = {
-          frame: proposed_value,
-          x: evt.detail.clientX,
-          y: evt.detail.clientY+15, // Add 15 due to page layout
-          time: timeStr,
-          image: true,
-        };
-      } else {
-        this._preview.info = {
-          frame: proposed_value,
-          x: evt.detail.clientX,
-          y: evt.detail.clientY+15, // Add 15 due to page layout
-          time: frameToTime(proposed_value, this._fps),
-          image: true,
-        };
-      }
+      this._preview.show();
     } else {
       this._preview.hide();
     }
