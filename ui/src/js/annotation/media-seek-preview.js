@@ -70,6 +70,7 @@ export class MediaSeekPreview extends TatorElement {
     for (const typeId of val.keys()) {
       for (const localization of val.get(typeId)) {
         if (localization.type.indexOf("box") >= 0) {
+          this._ctx.globalAlpha = 0.7;
           this._ctx.strokeStyle = "rgb(64,224,208)";
           this._ctx.lineWidth = 3;
           this._ctx.strokeRect(
@@ -81,7 +82,7 @@ export class MediaSeekPreview extends TatorElement {
 
           // Fill with a 50% alpha color
           this._ctx.fillStyle = "rgb(64,224,208)";
-          this._ctx.globalAlpha = 0.5;
+          this._ctx.globalAlpha = 0.2;
           this._ctx.fillRect(
             localization.x * this._img.width,
             localization.y * this._img.height,
@@ -89,6 +90,7 @@ export class MediaSeekPreview extends TatorElement {
             localization.height * this._img.height
           );
         } else if (localization.type.indexOf("dot") >= 0) {
+          this._ctx.globalAlpha = 0.7;
           this._ctx.fillStyle = "rgb(64,224,208)";
           this._ctx.beginPath();
           this._ctx.arc(
@@ -100,6 +102,7 @@ export class MediaSeekPreview extends TatorElement {
           );
           this._ctx.fill();
         } else if (localization.type.indexOf("line") >= 0) {
+          this._ctx.globalAlpha = 0.7;
           this._ctx.strokeStyle = "rgb(64,224,208)";
           this._ctx.lineWidth = 3;
           this._ctx.beginPath();
@@ -113,6 +116,7 @@ export class MediaSeekPreview extends TatorElement {
           );
           this._ctx.stroke();
         } else if (localization.type.indexOf("poly") >= 0) {
+          this._ctx.globalAlpha = 0.7;
           this._ctx.strokeStyle = "rgb(64,224,208)";
           this._ctx.lineWidth = 3;
           this._ctx.beginPath();
@@ -131,7 +135,7 @@ export class MediaSeekPreview extends TatorElement {
 
           // Fill with a 50% alpha color
           this._ctx.fillStyle = "rgb(64,224,208)";
-          this._ctx.globalAlpha = 0.5;
+          this._ctx.globalAlpha = 0.2;
           this._ctx.fill();
         }
 
