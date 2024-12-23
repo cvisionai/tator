@@ -18,7 +18,7 @@
 }
 
 .tooltip-seek-preview {
-  background-color: var(--color-charcoal--medium);
+  background-color: var(--color-charcoal--medium-dark);
   border-radius: 3px;
   color: var(--color-gray--dark);
   font-size: 12px;
