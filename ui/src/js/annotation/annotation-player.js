@@ -1063,10 +1063,11 @@ export class AnnotationPlayer extends TatorElement {
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
           timeStr = timeStr.split("T")[1].split(".")[0];
   
+          let bias = 15;
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY+15, // Add 15 due to page layout
+            y: evt.detail.clientY-(240+50), 
             time: timeStr,
             image: true,
           };
@@ -1074,7 +1075,7 @@ export class AnnotationPlayer extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY+15, // Add 15 due to page layout
+            y: evt.detail.clientY-(240+50),
             time: frameToTime(proposed_value, this._fps),
             image: true,
           };
