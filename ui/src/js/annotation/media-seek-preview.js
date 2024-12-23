@@ -62,6 +62,16 @@ export class MediaSeekPreview extends TatorElement {
       this._time.textContent = val.time;
       this._previewBox.style.left = `${val.x}px`;
       this._previewBox.style.top = `${val.y}px`;
+
+      // If a preview image was supplied, display else hide the canvas
+      if (val.image) {
+        this._ctx.drawImage(val.image, 0,0, this._img.width, this._img.height);
+        this._img.style.display = "block";
+      }
+      else
+      {
+        this._img.style.display = "none";
+      }
       this.show();
     }
   }
