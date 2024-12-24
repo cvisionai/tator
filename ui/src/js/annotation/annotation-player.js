@@ -456,6 +456,8 @@ export class AnnotationPlayer extends TatorElement {
     this._slider = document.createElement("seek-bar");
     seekDiv.appendChild(this._slider);
     outerDiv.appendChild(seekDiv);
+    this._preview = document.createElement("media-seek-preview");
+    this._slider._shadow.appendChild(this._preview);
 
     var innerDiv = document.createElement("div");
     this._videoTimeline = document.createElement("video-timeline");
@@ -652,6 +654,15 @@ export class AnnotationPlayer extends TatorElement {
 
     this._slider.addEventListener("change", (evt) => {
       this.handleSliderChange(evt);
+    });
+
+    this._slider.addEventListener("framePreview", (evt) => {
+      this.handleFramePreview(evt);
+    });
+
+    this._slider.addEventListener("hidePreview", () => {
+      this._preview.cancelled = true; // This isn't about cancel culture
+      this._preview.hide();
     });
 
     play.addEventListener("click", () => {
@@ -1036,6 +1047,65 @@ export class AnnotationPlayer extends TatorElement {
   }
 
   /**
+   * Callback used when a user hovers over the seek bar
+   */
+  async handleFramePreview(evt) {
+    let proposed_value = evt.detail.frame;
+    this._preview.cancelled = false;
+    if (proposed_value > 0) {
+      // Get frame preview image
+      const existing = this._preview.info;
+
+      // If we are already on this frame save some resources and just show the preview as-is
+      if (existing.frame != proposed_value) {
+        if (this._timeMode == "utc") {
+          let timeStr =
+            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+          timeStr = timeStr.split("T")[1].split(".")[0];
+
+          let bias = 15;
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: evt.detail.clientY - (this._preview.img_height + 50),
+            time: timeStr,
+            image: true,
+          };
+        } else {
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: evt.detail.clientY - (this._preview.img_height + 50),
+            time: frameToTime(proposed_value, this._fps),
+            image: true,
+          };
+        }
+
+        console.info(
+          `Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`
+        );
+        let frame = await this._video.getScrubFrame(proposed_value);
+        console.info(`Got it!`);
+        if (this._preview.cancelled) {
+          // We took to long and got cancelled.
+          frame.close();
+          return;
+        }
+        this._preview.image = frame;
+        frame.close();
+
+        // Get annotations for frame
+        if (this._video._framedData.has(proposed_value)) {
+          this._preview.annotations =
+            this._video._framedData.get(proposed_value);
+        }
+      }
+      this._preview.show();
+    } else {
+      this._preview.hide();
+    }
+  }
+  /**
    * Callback used when user clicks one of the seek bars
    */
   handleSliderChange(evt) {
@@ -1172,6 +1242,7 @@ export class AnnotationPlayer extends TatorElement {
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames) - 1);
     this._slider.fps = val.fps;
+    this._preview.mediaInfo = val;
     this._fps = val.fps;
     this._totalTime.textContent =
       "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);
@@ -1362,9 +1433,9 @@ export class AnnotationPlayer extends TatorElement {
     this._entityTimeline.setDisplayMode(this._displayMode);
 
     if (this._displayMode == "utc") {
-      this._slider.useUtcTime(this._timeStore);
+      this._timeMode = "utc";
     } else {
-      this._slider.useRelativeTime();
+      this._timeMode = "relative";
     }
 
     this.dispatchEvent(

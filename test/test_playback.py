@@ -87,7 +87,7 @@ def test_playback_accuracy(page_factory, project, count_test):
     canvas = page.query_selector("video-canvas")
     page.wait_for_timeout(10000)
     play_button = page.query_selector("play-button")
-    seek_handle = page.query_selector("seek-bar .range-handle")
+    seek_handle = page.query_selector("seek-bar .annotation-range-handle")
     display_div = page.query_selector("#frame_num_display")
     display_ctrl = page.query_selector("#frame_num_ctrl")
 
@@ -151,7 +151,7 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   canvas = page.query_selector_all('video-canvas')
   page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .range-handle')
+  seek_handle = page.query_selector('seek-bar .annotation-range-handle')
   display_div = page.query_selector('#frame_num_display')
   display_ctrl = page.query_selector('#frame_num_ctrl')
 
@@ -202,7 +202,7 @@ def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_coun
   canvas = page.query_selector_all('video-canvas')
   page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .range-handle')
+  seek_handle = page.query_selector('seek-bar .annotation-range-handle')
   display_div = page.query_selector('#frame_num_display')
   display_ctrl = page.query_selector('#frame_num_ctrl')
 
@@ -252,7 +252,7 @@ def test_small_res_file(page_factory, project, small_video):
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
   play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .range-handle')
+  seek_handle = page.query_selector('seek-bar .annotation-range-handle')
 
   # Wait for hq buffer and verify it is blue
   _wait_for_color(page, canvas, 2, timeout=30, name='seek')
@@ -269,7 +269,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   canvas = page.query_selector('video-canvas')
 
   play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .range-handle')
+  seek_handle = page.query_selector('seek-bar .annotation-range-handle')
 
 
   # Wait for hq buffer and verify it is red
@@ -316,7 +316,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
     canvas = page.query_selector_all("video-canvas")
     display_ctrl = page.query_selector("#frame_num_ctrl")
     play_button = page.query_selector("play-button")
-    seek_handle = page.query_selector("seek-bar .range-handle")
+    seek_handle = page.query_selector("seek-bar .annotation-range-handle")
 
     # Wait for hq buffer and verify it is red
     print("Waiting 15 seconds for video to load")
@@ -569,7 +569,7 @@ def test_concat(page_factory, project, concat_test):
   canvas = page.query_selector('video-canvas')
 
   play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .range-handle')
+  seek_handle = page.query_selector('seek-bar .annotation-range-handle')
 
   # Wait for hq buffer and verify it is red
   page.wait_for_timeout(30000)
