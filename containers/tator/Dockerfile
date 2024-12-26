@@ -24,6 +24,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     wget \
     xdot \
     xmlsec1 \
+    postgresql-client-14 \
+    redis-tools \
  && rm -rf /var/lib/apt/lists/*
 
 # Install pip packages
