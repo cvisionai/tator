@@ -6442,7 +6442,7 @@ class SectionTestCase(TatorTransactionTest):
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "dtype": "playlist",
+            "dtype": "folder",
             "media": [media.pk],
         }
         url = f"/rest/Sections/{self.project.pk}"
@@ -6474,7 +6474,7 @@ class SectionTestCase(TatorTransactionTest):
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "dtype": "playlist",
+            "dtype": "folder",
             "media": [],
             "attributes": {"abcdef": False},
         }
@@ -6819,14 +6819,14 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         self.public_section = Section.objects.create(
             name="Public",
             path="Public",
-            dtype="playlist",
+            dtype="folder",
             project=self.project,
         )
 
         self.private_section = Section.objects.create(
             name="Private",
             path="Private",
-            dtype="playlist",
+            dtype="folder",
             project=self.project,
         )
 
@@ -7287,7 +7287,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Create a section
             resp = self.client.post(
                 f"/rest/Sections/{self.project.pk}",
-                {"name": "Bridge", "path": "Bridge", "dtype": "playlist"},
+                {"name": "Bridge", "path": "Bridge", "dtype": "folder"},
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
@@ -7325,7 +7325,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Create a second section
             resp = self.client.post(
                 f"/rest/Sections/{self.project.pk}",
-                {"name": "Engineering", "path": "Engineering", "dtype": "playlist"},
+                {"name": "Engineering", "path": "Engineering", "dtype": "folder"},
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
