@@ -239,7 +239,7 @@ export class AnnotationMulti extends TatorElement {
     this._playerTimelineUnits = document.createElement("div");
     this._playerTimelineUnits.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     this._playerTimelineUnits.textContent = "Timeline Units";
     this._playerSettingsMenu.appendChild(this._playerTimelineUnits);
@@ -251,7 +251,7 @@ export class AnnotationMulti extends TatorElement {
     this._playerTimelineUnitsContent = document.createElement("div");
     this._playerTimelineUnitsContent.setAttribute(
       "class",
-      "f3 text-purple text-semibold text-uppercase d-flex flex-grow px-2 flex-justify-right"
+      "f3 text-purple text-semibold d-flex flex-grow px-2 flex-justify-right"
     );
     this._playerTimelineUnitsContent.textContent = "";
     this._playerTimelineUnits.appendChild(this._playerTimelineUnitsContent);
@@ -263,9 +263,10 @@ export class AnnotationMulti extends TatorElement {
     this._playerQuality = document.createElement("div");
     this._playerQuality.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     this._playerQuality.textContent = "Quality";
+    this._playerQuality.style.width = "200px";
     this._playerSettingsMenu.appendChild(this._playerQuality);
 
     this._playerQuality.addEventListener("click", () => {
@@ -275,7 +276,7 @@ export class AnnotationMulti extends TatorElement {
     this._playerQualityContent = document.createElement("div");
     this._playerQualityContent.setAttribute(
       "class",
-      "f3 text-purple text-semibold text-uppercase d-flex flex-grow px-2 flex-justify-right"
+      "f3 text-purple text-semibold d-flex flex-grow px-2 flex-justify-right"
     );
     this._playerQualityContent.textContent = "";
     this._playerQuality.appendChild(this._playerQualityContent);
@@ -287,7 +288,7 @@ export class AnnotationMulti extends TatorElement {
     this._playerPlaybackSettings = document.createElement("div");
     this._playerPlaybackSettings.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2"
     );
     this._playerPlaybackSettings.textContent = "Video Settings";
     this._playerSettingsMenu.appendChild(this._playerPlaybackSettings);
@@ -304,7 +305,7 @@ export class AnnotationMulti extends TatorElement {
     this._playerTimelineSettings = document.createElement("div");
     this._playerTimelineSettings.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2"
     );
     this._playerTimelineSettings.textContent = "Timeline Settings";
     this._playerSettingsMenu.appendChild(this._playerTimelineSettings);
@@ -322,7 +323,7 @@ export class AnnotationMulti extends TatorElement {
     var backOption = document.createElement("div");
     backOption.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     backOption.textContent = "< Back";
     this._timelineUnitsMenu.appendChild(backOption);
@@ -333,7 +334,7 @@ export class AnnotationMulti extends TatorElement {
     this._timelineUnitsFrame = document.createElement("div");
     this._timelineUnitsFrame.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     this._timelineUnitsFrame.textContent = "Frame";
     this._timelineUnitsMenu.appendChild(this._timelineUnitsFrame);
@@ -345,7 +346,7 @@ export class AnnotationMulti extends TatorElement {
     this._timelineUnitsRelativeTime = document.createElement("div");
     this._timelineUnitsRelativeTime.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     this._timelineUnitsRelativeTime.textContent = "Relative Time";
     this._timelineUnitsMenu.appendChild(this._timelineUnitsRelativeTime);
@@ -357,7 +358,7 @@ export class AnnotationMulti extends TatorElement {
     this._timelineUnitsUTC = document.createElement("div");
     this._timelineUnitsUTC.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     this._timelineUnitsUTC.textContent = "UTC Time";
     this._timelineUnitsMenu.appendChild(this._timelineUnitsUTC);
@@ -370,7 +371,7 @@ export class AnnotationMulti extends TatorElement {
     var backOption = document.createElement("div");
     backOption.setAttribute(
       "class",
-      "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     backOption.textContent = "< Back";
     this._videoQualityMenu.appendChild(backOption);
@@ -381,7 +382,7 @@ export class AnnotationMulti extends TatorElement {
     var wrapper = document.createElement("div");
     wrapper.setAttribute(
       "class",
-      "f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center"
+      "f3 text-gray text-semibold d-flex flex-grow px-2 py-2 flex-items-center"
     );
     wrapper.textContent = "Playback Quality";
     this._videoQualityMenu.appendChild(wrapper);
@@ -1285,6 +1286,9 @@ export class AnnotationMulti extends TatorElement {
           }
         });
       });
+      this._videos[idx].addEventListener("canvasMouseDown", () => {
+        this._hideCanvasMenus();
+      });
       this._videos[idx].addEventListener("canvasResized", () => {
         this._videoTimeline.redraw();
         this._entityTimeline.redraw();
@@ -2120,7 +2124,13 @@ export class AnnotationMulti extends TatorElement {
     this._playerSettingsMenu.style.top = `${pos.top - 150}px`;
     this._playerSettingsMenu.style.left = `${pos.left - 150}px`;
 
-    this._playerTimelineUnitsContent.textContent = this._displayMode;
+    if (this._displayMode == "frame") {
+      this._playerTimelineUnitsContent.textContent = "Frame";
+    } else if (this._displayMode == "relativeTime") {
+      this._playerTimelineUnitsContent.textContent = "Relative Time";
+    } else if (this._displayMode == "utc") {
+      this._playerTimelineUnitsContent.textContent = "UTC";
+    }
     this._playerQualityContent.textContent = this._qualityControl._quality;
     this._playerSettingsMenu.style.display = "flex";
   }

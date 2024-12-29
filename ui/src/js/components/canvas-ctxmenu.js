@@ -7,7 +7,7 @@ export class CanvasContextMenu extends TatorElement {
     this._div = document.createElement("div");
     this._div.setAttribute(
       "class",
-      "btn-clear btn-border d-flex px-2 py-2 rounded-1 f2 annotation__setting"
+      "annotation-canvas-overlay-menu d-flex flex-column rounded-1"
     );
     this._div.style.position = "absolute";
     this._div.style.width = "auto";
@@ -19,11 +19,11 @@ export class CanvasContextMenu extends TatorElement {
     this._numEntries = 0;
   }
 
-  addMenuEntry(newText, clickCallback, keyboardShortcut) {
-    const button = document.createElement("button");
+  addMenuEntry(newText, clickCallback, keyboardShortcut, subMenu) {
+    const button = document.createElement("div");
     button.setAttribute(
       "class",
-      "btn-clear d-flex flex-items-center py-2 text-gray hover-text-white"
+      "annotation-canvas-overlay-menu-option f3 text-gray text-semibold d-flex flex-grow px-2 py-2"
     );
     if (keyboardShortcut != undefined) {
       button.textContent = `${newText}${keyboardShortcut}`;
