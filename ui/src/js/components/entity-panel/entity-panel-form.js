@@ -19,6 +19,8 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.enableBuiltInAttributes = true;
     this._attributes.enableHiddenAttributes = true;
     this._attributes.permission = "View Only"; // start as view only - set to user permission on page
+    this._attributes._standardWidgetsDiv.classList.remove("mx-4");
+    this._attributes._standardWidgetsDiv.classList.add("mt-2");
     this._div.appendChild(this._attributes);
 
     this._attributes.addEventListener(
@@ -74,6 +76,7 @@ export class EntityGalleryPanelForm extends TatorElement {
     // Disable marks for media version of this panel
     if ("media" in data) {
       this._attributes.disableWidget("Mark");
+      this._attributes.hideStandardWidgets();
     }
 
     this._data = data;

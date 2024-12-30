@@ -29,6 +29,8 @@ export class FramePanel extends TatorElement {
     div.appendChild(attrDiv);
 
     this._attributes = document.createElement("attribute-panel");
+    this._attributes._standardWidgetsDiv.classList.remove("mx-4");
+    this._attributes._standardWidgetsDiv.classList.add("mt-2");
     attrDiv.appendChild(this._attributes);
 
     this._moreLessButton.addEventListener("click", () => {
@@ -81,6 +83,7 @@ export class FramePanel extends TatorElement {
     this._typeId = val.id;
     this._method = val.interpolation;
     this._attributes.dataType = val;
+    this._attributes.displayTrackUI(false);
     this._attributes.addEventListener("change", () => {
       if (this._blockingWrites) {
         return;
