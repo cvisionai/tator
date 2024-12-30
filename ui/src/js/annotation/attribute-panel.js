@@ -72,6 +72,7 @@ export class AttributePanel extends TatorElement {
       "title",
       "Elemental ID (last 6 chars) @ Version ID / Mark Number"
     );
+    this._combinedIdWidget.setAttribute("id", "metadata-combined-id");
     this._frameVersionWrapper.appendChild(this._combinedIdWidget);
 
     this._standardWidgetsExpandedDiv = document.createElement("div");
