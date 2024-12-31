@@ -84,6 +84,7 @@ export class UploadElement extends TatorElement {
 
 		if (this._store.getState().mediaTypeSettings) {
 			const mediaTypeSettings = this._store.getState().mediaTypeSettings;
+			console.log("mediaTypeSettings",mediaTypeSettings);
 			const imageOk = mediaTypeSettings.find(t => t.dtype === "image");
 			const videoOk = mediaTypeSettings.find(t => t.dtype === "video");
 			if (isImage && !imageOk) {

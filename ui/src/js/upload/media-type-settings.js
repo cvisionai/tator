@@ -31,6 +31,8 @@ export class MediaTypeSettings extends TatorElement {
 		for (let [t, list] of this._dtypeMap) {
 			this._createSection(t, list);
 		}
+
+		this.getValue();
 	}
 
 	getValue() {
@@ -82,7 +84,7 @@ export class MediaTypeSettings extends TatorElement {
 			dataType.charAt(0).toUpperCase() + dataType.slice(1) ;
 
 		const input = document.createElement("checkbox-input");
-		input.classList.add("col-10");
+		input.classList.add("col-10", "text-light-gray");
 		input.setAttribute("name", `Include ${dataTypeDisplay}s`);
 		input.setValue({ id: dataType, checked: true, data: { dataType: dataType } })
 		input.styleSpan.classList.add("px-3");
@@ -113,6 +115,11 @@ export class MediaTypeSettings extends TatorElement {
 
 		mediaTypeSelect.choices = options;
 
+		// const info = document.createElement("div");
+		// info.classList.add("text-light-gray", "f1", "pt-6");
+		// info.textContent = "Attributes:";
+		// drawer.appendChild(info);
+
 		const attributePanel = document.createElement("attribute-panel");
 		attributePanel.enableBuiltInAttributes = false;
 		attributePanel.enableHiddenAttributes = false;
@@ -142,9 +149,11 @@ export class MediaTypeSettings extends TatorElement {
 		input.addEventListener("change", () => {
 			if (input.getChecked()) {
 				this._openDrawer(drawer, showMore, showLess);
+				input.classList.add("text-light-gray");
 			} else {
 				this._closeDrawer(drawer, showMore, showLess);
 				showMore.style.display = "none";
+				input.classList.remove("text-light-gray");
 			}
 			this.getValue();
 		});

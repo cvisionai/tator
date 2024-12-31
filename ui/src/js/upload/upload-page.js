@@ -11,7 +11,7 @@ export class UploadPage extends TatorPage {
 	constructor() {
 		super();
 		this._uploadsInProgress = 0;
-
+		this._noneText = "-- None --";
 		document.body.setAttribute("class", "no-padding-bottom");
 
 		// Success and warning Utility hooks
@@ -105,22 +105,6 @@ export class UploadPage extends TatorPage {
 		this._upload = document.createElement("drop-upload");
 		this._mainSection.appendChild(this._upload);
 
-		const destination = document.createElement("div");
-		destination.setAttribute("class", "my-6 px-3 py-3 rounded-3 d-flex flex-wrap");
-		destination.setAttribute("style", "border: 1px solid #ccc;");
-		this._mainSection.appendChild(destination);
-
-		const destTitle = document.createElement("div");
-		destTitle.textContent = "Destination";
-		destTitle.setAttribute("class", "col-3 h3");
-		destination.appendChild(destTitle);
-
-		this._destinationPicker = document.createElement("enum-input");
-		this._destinationPicker.setAttribute("class","col-6 f3 text-gray pt-3");
-		this._destinationPicker.setAttribute("name", "Destination");
-		destination.appendChild(this._destinationPicker);
-		this._destinationPicker.addEventListener("change", this._upload.updateDestination.bind(this._upload));
-
 
 		this._bottomSection = document.createElement("div");
 		this._bottomSection.setAttribute("class", "d-flex flex-justify-right my-6 px-3 py-3 rounded-3");
@@ -178,6 +162,7 @@ export class UploadPage extends TatorPage {
 		this._uploadDialog.addEventListener("close", (evt) => {
 			this.removeAttribute("has-open-modal");
 		});
+	
 		this._uploadDialog.init(store);
 
 		//
@@ -196,6 +181,7 @@ export class UploadPage extends TatorPage {
 		// Initialize store data
 		store.getState().init();
 		// this._uploadDialog.init(store);
+
 	}
 
 	static get observedAttributes() {
@@ -280,15 +266,7 @@ export class UploadPage extends TatorPage {
 								this._sectionData.init(this._sections);
 								this._upload.sections = this._sections;
 								this._upload.mediaTypes = this._mediaTypes;
-								this._destinationPicker.choices = [{
-									value: this._noneText,
-									label: this._noneText,
-								}, ...this._sections.map((section) => {
-									return {
-										value: section.id,
-										label: section.name,
-									};
-								})];
+								
 							}
 						)
 						.catch((err) => {
@@ -442,10 +420,10 @@ export class UploadPage extends TatorPage {
 			settings.setAttribute("class", "d-flex flex-column");
 			this._settingsPanel.appendChild(settings);
 
-			const mediaTypeSettings = document.createElement("media-type-settings");
-			mediaTypeSettings.setAttribute("class", "d-flex flex-column");
-			mediaTypeSettings.mediaTypes = mediaTypes;
-			settings.appendChild(mediaTypeSettings);
+			this.mediaTypeSettings = document.createElement("media-type-settings");
+			this.mediaTypeSettings.setAttribute("class", "d-flex flex-column");
+			this.mediaTypeSettings.mediaTypes = mediaTypes;
+			settings.appendChild(this.mediaTypeSettings);
 		}
 	}
 

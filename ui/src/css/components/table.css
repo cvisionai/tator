@@ -303,22 +303,3 @@
   height: 70px;
   vertical-align: middle;
 }
-
-.upload-table tr td:first-child {
-  width: 5%;
-  word-break: break-all;
-}
-
-.upload-table {
-  border-spacing: 5px;
-}
-
-.upload-table tr td:nth-child(2) {
-  width: 33%;
-  word-break: break-all;
-}
-
-.upload-table tr td:nth-child(3) {
-  width: 33%;
-  word-break: break-all;
-}
