@@ -22,9 +22,6 @@ from main.backup import TatorBackupManager
 
 from django.conf import settings
 
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import streaming_bulk
-
 logger = logging.getLogger(__name__)
 
 """ Utility scripts for data management in django-shell """
@@ -234,37 +231,6 @@ def fixVideoDims(project):
                 video.save()
         except:
             print(f"Error on {video.pk}")
-
-
-def clearOldFilebeatIndices():
-    es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST")])
-    for index in es.indices.get("filebeat-*"):
-        tokens = str(index).split("-")
-        if len(tokens) < 3:
-            continue
-        dt = parse(tokens[2])
-        delta = datetime.datetime.now() - dt
-        if delta.days > 7:
-            logger.info(f"Deleting old filebeat index {index}")
-            es.indices.delete(str(index))
-
-
-def make_sections():
-    for project in Project.objects.all().iterator():
-        es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST")])
-        result = es.search(
-            index=f"project_{project.pk}",
-            body={
-                "size": 0,
-                "aggs": {"sections": {"terms": {"field": "tator_user_sections", "size": 1000}}},
-            },
-            stored_fields=[],
-        )
-        for section in result["aggregations"]["sections"]["buckets"]:
-            Section.objects.create(
-                project=project, name=section["key"], tator_user_sections=section["key"]
-            )
-            logger.info(f"Created section {section['key']} in project {project.pk}!")
 
 
 def make_resources():

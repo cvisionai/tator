@@ -37,6 +37,7 @@ pyjwt[crypto]==2.5.0
 pytest-django==4.8.0
 pytest-xdist==3.5.0
 python-dateutil==2.8.2
+python-magic==0.4.27
 pyyaml==6.0.1
 rawpy==0.19.1
 redis==5.0.3
