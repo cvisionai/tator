@@ -185,7 +185,7 @@ tator-image:
 
 .PHONY: ui-image
 ui-image:
-	cd ui && npm install && npm run build && cd ..
+	cd ui && npm install && npm run build && npm prune --production && cd ..
 	DOCKER_BUILDKIT=1 docker build --pull --build-arg GIT_VERSION=$(GIT_VERSION) --network host -t $(REGISTRY)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
 
 .PHONY: postgis-image
