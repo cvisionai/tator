@@ -37,8 +37,10 @@ export class CanvasAppletElement extends TatorElement {
    *    List of user-associated favorites
    * @param {undo-buffer} undo
    *    Undo buffer for patching/posting required by elements like the save dialog
+   * @param {AnnotationCanvas} canvas
+   *    Image/video canvas associated with the applet
    */
-  init(applet, data, favorites, undo) {
+  init(applet, data, favorites, undo, canvas) {
     this._applet = applet;
     this._data = data;
     this._undo = undo;
