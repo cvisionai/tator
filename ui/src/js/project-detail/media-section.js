@@ -59,9 +59,15 @@ export class MediaSection extends TatorElement {
     this._reload.setAttribute("class", "px-2");
     actions.appendChild(this._reload);
 
-    this._upload = document.createElement("section-upload");
-    this._upload.setAttribute("class", "px-2");
-    actions.appendChild(this._upload);
+    this._uploadPageLink = document.createElement("a");
+		this._uploadPageLink.setAttribute(
+			"class",
+			"px-2 text-light-gray hover-text-white clickable"
+		);
+		this._uploadPageLink.setAttribute("title", "Go to Upload Page");
+		this._uploadPageLink.disabled = true;
+		this._uploadPageLink.innerHTML = `<svg id="icon-upload" viewBox="0 0 24 24" height="1em" width="1em"><title>Upload</title><path d="M20 15v4c0 0.137-0.027 0.266-0.075 0.382-0.050 0.122-0.125 0.232-0.218 0.325s-0.203 0.167-0.325 0.218c-0.116 0.048-0.245 0.075-0.382 0.075h-14c-0.137 0-0.266-0.027-0.382-0.075-0.122-0.050-0.232-0.125-0.325-0.218s-0.167-0.203-0.218-0.325c-0.048-0.116-0.075-0.245-0.075-0.382v-4c0-0.552-0.448-1-1-1s-1 0.448-1 1v4c0 0.405 0.081 0.793 0.228 1.148 0.152 0.368 0.375 0.698 0.651 0.974s0.606 0.499 0.974 0.651c0.354 0.146 0.742 0.227 1.147 0.227h14c0.405 0 0.793-0.081 1.148-0.228 0.368-0.152 0.698-0.375 0.974-0.651s0.499-0.606 0.651-0.974c0.146-0.354 0.227-0.742 0.227-1.147v-4c0-0.552-0.448-1-1-1s-1 0.448-1 1zM11 5.414v9.586c0 0.552 0.448 1 1 1s1-0.448 1-1v-9.586l3.293 3.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5-5c-0.001-0.001-0.003-0.002-0.004-0.004-0.095-0.094-0.204-0.165-0.32-0.213-0.245-0.101-0.521-0.101-0.766 0-0.116 0.048-0.225 0.119-0.32 0.213-0.001 0.001-0.003 0.002-0.004 0.004l-5 5c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z"></path></svg>`;
+		actions.appendChild(this._uploadPageLink);
 
     this._more = document.createElement("section-more");
     this._more.setAttribute("class", "px-2");
@@ -123,65 +129,64 @@ export class MediaSection extends TatorElement {
   updateSectionData(sections) {
     this._sectionData = new SectionData();
     this._sectionData.init(sections);
-    this._upload.sectionData = this._sectionData;
   }
 
   async init(project, section, page, pageSize, allSections) {
-    this._pageWrapper.style.display = "none";
-    this._loading.style.display = "flex";
+		this._pageWrapper.style.display = "none";
+		this._loading.style.display = "flex";
 
-    this.updateSectionData(allSections);
+		this.updateSectionData(allSections);
 
-    if (section === null) {
-      this._sectionName = "All Media";
-      this._upload.setAttribute("section", "");
-      this._nameText.innerHTML = `<span class="text-white d-flex flex-items-center">${this._sectionName}</span>`;
-    } else {
-      this._sectionName = section.name;
-      this._upload.setAttribute("section", section);
-      var parts = this._sectionData.getSectionNamesLineage(section);
-      var nameTextHTML = `<span class="text-white d-flex flex-items-center">${section.name}</span>`;
-      if (parts.length > 1) {
-        let mainSectionName = parts[parts.length - 1];
-        parts.pop();
-        var chevronSpacer = `
+		if (section === null) {
+			this._sectionName = "All Media";
+			this._nameText.innerHTML = `<span class="text-white d-flex flex-items-center">${this._sectionName}</span>`;
+		} else {
+			this._sectionName = section.name;
+			var parts = this._sectionData.getSectionNamesLineage(section);
+			var nameTextHTML = `<span class="text-white d-flex flex-items-center">${section.name}</span>`;
+			if (parts.length > 1) {
+				let mainSectionName = parts[parts.length - 1];
+				parts.pop();
+				var chevronSpacer = `
         <svg width="20" height="20" viewBox="0 0 24 24" class="no-fill px-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
         `;
-        nameTextHTML = `<span class="text-dark-gray d-flex flex-items-center">`;
-        nameTextHTML += parts.join(chevronSpacer);
-        nameTextHTML += chevronSpacer;
-        nameTextHTML += `</span>`;
-        nameTextHTML += `<span class="text-white d-flex flex-items-center">${mainSectionName}</span>`;
-      }
-      this._nameText.innerHTML = nameTextHTML;
-    }
-    this._project = project;
-    this._section = section;
-    this._files.setAttribute("project-id", project);
+				nameTextHTML = `<span class="text-dark-gray d-flex flex-items-center">`;
+				nameTextHTML += parts.join(chevronSpacer);
+				nameTextHTML += chevronSpacer;
+				nameTextHTML += `</span>`;
+				nameTextHTML += `<span class="text-white d-flex flex-items-center">${mainSectionName}</span>`;
+			}
+			this._nameText.innerHTML = nameTextHTML;
+		}
+		this._projectId = project;
+		this._section = section;
+		this._files.setAttribute("project-id", project);
 
-    this._upload.setAttribute("project-id", project);
-    this._more.section = section;
+		this._uploadPageLink.href = `/${project}/upload`;
+		this._uploadPageLink.disabled = false;
 
-    if (page != null && pageSize != null) {
-      this._start = (page - 1) * pageSize;
-      this._stop = this._start + pageSize;
-      this._paginator_top.pageSize = pageSize;
-      this._paginator_bottom.pageSize = pageSize;
-      this._page = page;
-    } else {
-      this._start = 0;
-      this._stop = this._paginator_top._pageSize;
-      this._page = 1;
-    }
-    this._paginator_top._setPage(page - 1);
-    this._paginator_bottom._setPage(page - 1);
+		this._more.section = section;
 
-    this._updatePageArgs();
+		if (page != null && pageSize != null) {
+			this._start = (page - 1) * pageSize;
+			this._stop = this._start + pageSize;
+			this._paginator_top.pageSize = pageSize;
+			this._paginator_bottom.pageSize = pageSize;
+			this._page = page;
+		} else {
+			this._start = 0;
+			this._stop = this._paginator_top._pageSize;
+			this._page = 1;
+		}
+		this._paginator_top._setPage(page - 1);
+		this._paginator_bottom._setPage(page - 1);
 
-    await this.reload();
-  }
+		this._updatePageArgs();
+
+		await this.reload();
+	}
 
   /**
    * @param {array} mediaTypes
@@ -195,29 +200,28 @@ export class MediaSection extends TatorElement {
     }
     this._files.mediaTypesMap = this._mediaTypesMap;
     this._sort.init("Media", mediaTypes);
-    this._upload.mediaTypes = mediaTypes;
   }
 
   set project(val) {
     this._files.project = val;
     if (!hasPermission(val.permission, "Can Edit")) {
-      this._upload.style.display = "none";
-      this._more.setAttribute(
-        "editPermission",
-        "Editing menu disable due to permissions."
-      );
-    }
-    if (
-      !(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)
-    ) {
-      this._upload.style.display = "none";
-      this._more.setAttribute(
-        "uploadPermission",
-        "Upload hidden due to permissions."
-      );
-    }
-    this._more.project = val;
-    this._upload.project = val;
+			this._uploadPageLink.style.display = "none";
+			this._more.setAttribute(
+				"editPermission",
+				"Editing menu disable due to permissions."
+			);
+		}
+		if (
+			!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)
+		) {
+			this._uploadPageLink.style.display = "none";
+			this._more.setAttribute(
+				"uploadPermission",
+				"Upload hidden due to permissions."
+			);
+		}
+		this._more.project = val;
+		this._uploadPageLink.setAttribute("href", `/${val.id}/upload`);
     this._project = val;
   }
 
@@ -347,17 +351,21 @@ export class MediaSection extends TatorElement {
    * @returns {URLSearchParams}
    */
   _sectionParams() {
-    var searchParams = new URLSearchParams();
-    const filterAndSearchParams = this._getFilterQueryParams();
-    const sortParam = new URLSearchParams(this._sort.getQueryParam());
-    let params = joinParams(searchParams, filterAndSearchParams);
-    params = joinParams(params, sortParam);
-    searchParams.delete("section");
-    if (this._section != null) {
-      searchParams.set("section", this._section.id);
-    }
-    return params;
-  }
+		var searchParams = new URLSearchParams();
+		const filterAndSearchParams = this._getFilterQueryParams();
+		const sortParam = new URLSearchParams(this._sort.getQueryParam());
+		let params = joinParams(searchParams, filterAndSearchParams);
+		params = joinParams(params, sortParam);
+		searchParams.delete("section");
+		if (this._section != null) {
+			searchParams.set("section", this._section.id);
+			this._uploadPageLink.href = `/${this._projectId}/upload?section=${this._section.id}`;
+		} else {
+			this._uploadPageLink.href = `/${this._projectId}/upload`;
+		}
+
+		return params;
+	}
 
   /**
    * @postcondition Media cards are updated with the URL parameters
@@ -374,8 +382,10 @@ export class MediaSection extends TatorElement {
 
     console.log(`Load media... sectionQuery: ${sectionQuery}`);
     var response = await fetchCredentials(
-      `/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`
-    );
+			`/rest/Medias/${
+				this._projectId
+			}?${sectionQuery.toString()}&presigned=28800`
+		);
     var mediaList = await response.json();
 
     this._files.numMedia = this._paginator_top._numFiles;
@@ -396,8 +406,8 @@ export class MediaSection extends TatorElement {
     const sectionQuery = this._sectionParams();
     console.log(`Get media count... sectionQuery: ${sectionQuery.toString()}`);
     const response = await fetchCredentials(
-      `/rest/MediaCount/${this._project}?${sectionQuery.toString()}`
-    );
+			`/rest/MediaCount/${this._projectId}?${sectionQuery.toString()}`
+		);
     const count = await response.json();
     this.numMedia = count;
 
@@ -406,15 +416,15 @@ export class MediaSection extends TatorElement {
 
   _launchAlgorithm(evt) {
     this.dispatchEvent(
-      new CustomEvent("runAlgorithm", {
-        composed: true,
-        detail: {
-          algorithmName: evt.detail.algorithmName,
-          section: this._section,
-          projectId: this._project,
-        },
-      })
-    );
+			new CustomEvent("runAlgorithm", {
+				composed: true,
+				detail: {
+					algorithmName: evt.detail.algorithmName,
+					section: this._section,
+					projectId: this._projectId,
+				},
+			})
+		);
   }
 
   _downloadFiles(evt) {
@@ -426,7 +436,7 @@ export class MediaSection extends TatorElement {
     }
     const getUrl = (endpoint) => {
       const params = joinParams(this._sectionParams(), mediaParams);
-      return `/rest/${endpoint}/${this._project}?${params.toString()}`;
+      return `/rest/${endpoint}/${this._projectId}?${params.toString()}`;
     };
     const dialog = document.createElement("download-dialog");
     const page = document.getElementsByTagName("project-detail")[0];
@@ -503,12 +513,12 @@ export class MediaSection extends TatorElement {
     }
     const params = joinParams(mediaParams, this._sectionParams());
     const getUrl = (endpoint) => {
-      return `/rest/${endpoint}/${this._project}?`;
+      return `/rest/${endpoint}/${this._projectId}?`;
     };
 
     const redirectUrl = `/${
-      this._project
-    }/analytics/export?${params.toString()}`;
+			this._projectId
+		}/analytics/export?${params.toString()}`;
     window.location.href = redirectUrl;
   }
 
@@ -540,15 +550,15 @@ export class MediaSection extends TatorElement {
 
     this._more.addEventListener("deleteSection", (evt) => {
       this.dispatchEvent(
-        new CustomEvent("remove", {
-          detail: {
-            sectionParams: this._sectionParams(),
-            section: this._section,
-            projectId: this._project,
-            deleteMedia: false,
-          },
-        })
-      );
+				new CustomEvent("remove", {
+					detail: {
+						sectionParams: this._sectionParams(),
+						section: this._section,
+						projectId: this._projectId,
+						deleteMedia: false,
+					},
+				})
+			);
     });
 
     // Callback for when user selects Delete Media option in the section more menu

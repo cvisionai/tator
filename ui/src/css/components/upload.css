@@ -13,6 +13,11 @@
 }
 
 
+.upload-table tr td {
+  padding: 5px 10px;
+}
+
+
 .upload-table tr td:first-child {
   width: 10%;
   word-break: break-all;
@@ -21,6 +26,8 @@
 .upload-table {
   border-spacing: 5px;
 }
+
+
 
 .upload-table tr td:nth-child(2) {
   width: 40%;
@@ -31,3 +38,31 @@
   width: 29%;
   word-break: break-all;
 } */
+
+.upload-idem-notification {
+  background-color: #202543;
+  padding: 5px 10px 10px;
+  border-radius: 2px;
+  color: white;
+}
+
+.upload-idem-notification > div:nth-child(2) {
+  margin-top: -5px;
+}
+
+.upload-idem-notification.checking-files {
+  background: linear-gradient(-45deg, rgba(74,78,174,1), rgba(42,43,102,1), rgba(10,63,100,1));
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes checkBg {
+  0% {
+      background-position: 0% 50%;
+  }
+  50% {
+      background-position: 100% 50%;
+  }
+  100% {
+      background-position: 0% 50%;
+  }
+}

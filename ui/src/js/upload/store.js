@@ -16,13 +16,24 @@ const store = create(
 		uploadFilesCompleted: 0, // Number of files that have been uploaded
 		uploadError: "", // Most recent upload error message
 		uploadCancelled: false, // Whether uploads have been cancelled
+		uploadFoldersCompleted: 0,
+		uploadTotalFolders: 0,
+		uploadInformation: {
+			files: [],
+			folders: [],
+			errors: [],
+			complete: false,
+		},
 		uploadCancel: () => {
 			set({
-				uploadChunkProgress: 0,
-				uploadCurrentFile: "",
-				uploadTotalFiles: 0,
-				uploadError: "",
-				uploadCancelled: true,
+				uploadChunkProgress: 0, // Upload progress on current file
+				uploadCurrentFile: "", // Name of file currently being uploaded
+				uploadTotalFiles: 0, // Number of files being uploaded
+				uploadFilesCompleted: 0, // Number of files that have been uploaded
+				uploadError: "", // Most recent upload error message
+				uploadCancelled: false, // Whether uploads have been cancelled
+				uploadFoldersCompleted: 0,
+				uploadTotalFolders: 0,
 			});
 		},
 		init: async () => {

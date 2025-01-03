@@ -8,11 +8,9 @@ export class MediaTypeSettings extends TatorElement {
 
 	set mediaTypes(val) {
 		this._mediaTypes = val;
-		
+
 		this._render();
 	}
-
-	
 
 	_render() {
 		this._inputToSelectMap = new Map();
@@ -32,6 +30,10 @@ export class MediaTypeSettings extends TatorElement {
 			this._createSection(t, list);
 		}
 
+		this._createSection("folder", [
+			{ dtype: "folder", attribute_types: [], id: -111, name: "Directory" },
+		]);
+
 		this.getValue();
 	}
 
@@ -40,53 +42,51 @@ export class MediaTypeSettings extends TatorElement {
 		const mediaTypeSettings = [];
 		for (let input of inputs) {
 			const checked = input.getChecked();
-			const drawer = input.nextElementSibling;
-			const mediaTypeSelect = drawer.querySelector("enum-input");
-			const attributePanel = drawer.querySelector("attribute-panel");
 
-			console.log(checked, drawer, mediaTypeSelect, attributePanel);
-			
 			if (checked) {
 				const dataType = input.getData().dataType;
 				const mediaTypeValue = this._inputToSelectMap.get(dataType).getValue(),
 					attributes = this._inputToAttrMap.get(dataType).getValues();
-				
-				const mediaType = this._mediaTypes.find((m) => m.id === Number(mediaTypeValue));
+
+				const mediaType = this._mediaTypes.find(
+					(m) => m.id === Number(mediaTypeValue)
+				);
 				mediaTypeSettings.push({
 					dtype: dataType,
 					mediaType: mediaType,
-					attributes: attributes,
+					attributes: attributes ? attributes : [],
 				});
 			}
 		}
-		console.log(mediaTypeSettings);
+		console.log("Get media type settings value...", mediaTypeSettings);
 		store.setState({ mediaTypeSettings });
 		return mediaTypeSettings;
 	}
 
 	_createSection(dataType, list) {
 		const div = document.createElement("div");
-		div.setAttribute(
-			"class",
-			"bg-charcoal my-3 py-3 px-3 rounded-3"
-		);
+		div.setAttribute("class", "bg-charcoal my-3 py-3 px-3 rounded-3");
 		this._shadow.appendChild(div);
 
 		const innerTop = document.createElement("div");
-		innerTop.setAttribute(
-			"class",
-			"form-group d-flex"
-		);
+		innerTop.setAttribute("class", "form-group d-flex");
 		div.appendChild(innerTop);
 
-
 		const dataTypeDisplay =
-			dataType.charAt(0).toUpperCase() + dataType.slice(1) ;
+			dataType.charAt(0).toUpperCase() + dataType.slice(1);
 
 		const input = document.createElement("checkbox-input");
 		input.classList.add("col-10", "text-light-gray");
 		input.setAttribute("name", `Include ${dataTypeDisplay}s`);
-		input.setValue({ id: dataType, checked: true, data: { dataType: dataType } })
+		input.setAttribute(
+			"tooltip",
+			`Disable to ignore ${dataTypeDisplay}s chosen from your local file system.`
+		);
+		input.setValue({
+			id: dataType,
+			checked: true,
+			data: { dataType: dataType },
+		});
 		input.styleSpan.classList.add("px-3");
 		input.styleSpan.classList.remove("px-1");
 		input._checked = true;
@@ -97,15 +97,14 @@ export class MediaTypeSettings extends TatorElement {
 		innerTop.appendChild(topSmall);
 
 		const drawer = document.createElement("div");
-		drawer.setAttribute(
-			"class",
-			"form-group mt-6"
-		);
+		drawer.setAttribute("class", "form-group mt-6");
 		drawer.style.display = "none";
 		div.appendChild(drawer);
+
 		const mediaTypeSelect = document.createElement("enum-input");
 		mediaTypeSelect.setAttribute("name", `${dataTypeDisplay} Type`);
 		drawer.appendChild(mediaTypeSelect);
+
 		const options = list.map((m) => {
 			return {
 				value: m.id,
@@ -134,9 +133,10 @@ export class MediaTypeSettings extends TatorElement {
 			this.getValue();
 		});
 
-
+		const optHide = list[0].dtype !== "folder" ? "hidden" : "";
 		const showLess = document.createElement("span");
-		showLess.setAttribute("class", "clickable f3");
+		showLess.setAttribute("class", "clickable f3 " + optHide);
+		showLess.setAttribute("tooltip", "Hide drawer");
 		showLess.style.display = "none";
 		showLess.textContent = "Less -";
 		topSmall.appendChild(showLess);
@@ -144,9 +144,23 @@ export class MediaTypeSettings extends TatorElement {
 		const showMore = document.createElement("span");
 		showMore.setAttribute("class", "clickable f3");
 		showMore.textContent = "More +";
+		showMore.setAttribute(
+			"tooltip",
+			`Set attributes on media, or specify a registered ${dataTypeDisplay} Type.`
+		);
 		topSmall.appendChild(showMore);
 
+		showMore.addEventListener(
+			"click",
+			this._openDrawer.bind(this, drawer, showMore, showLess)
+		);
+		showLess.addEventListener(
+			"click",
+			this._closeDrawer.bind(this, drawer, showMore, showLess)
+		);
+
 		input.addEventListener("change", () => {
+			this.getValue();
 			if (input.getChecked()) {
 				this._openDrawer(drawer, showMore, showLess);
 				input.classList.add("text-light-gray");
@@ -154,19 +168,22 @@ export class MediaTypeSettings extends TatorElement {
 				this._closeDrawer(drawer, showMore, showLess);
 				showMore.style.display = "none";
 				input.classList.remove("text-light-gray");
+				input.setAttribute(
+					"tooltip",
+					`Enable to choose ${dataTypeDisplay}s from your local file system.`
+				);
 			}
 			this.getValue();
 		});
 
 		this._inputToSelectMap.set(dataType, mediaTypeSelect);
 		this._inputToAttrMap.set(dataType, attributePanel);
-		showMore.addEventListener("click", this._openDrawer.bind(this, drawer, showMore, showLess));
-		showLess.addEventListener("click", this._closeDrawer.bind(this, drawer, showMore, showLess));
 	}
 
-	_openDrawer(drawer, showMore, showLess){
+	_openDrawer(drawer, showMore, showLess) {
 		drawer.style.display = "block";
 		showLess.style.display = "block";
+		showLess.classList.remove("hidden");
 		showMore.style.display = "none";
 	}
 

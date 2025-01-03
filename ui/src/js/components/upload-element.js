@@ -9,7 +9,8 @@ export class UploadElement extends TatorElement {
     this._fileSelectCallback = this._fileSelectCallback.bind(this);
     this._haveNewSection = false;
     this._abortController = new AbortController();
-    this._cancel = false;
+		this._cancel = false;
+		this._lastSection = null;
     this._chosenSection = null;
     this._chosenMediaType = null;
 		this._uploadAttributes = {};
@@ -84,9 +85,8 @@ export class UploadElement extends TatorElement {
 
 		if (this._store.getState().mediaTypeSettings) {
 			const mediaTypeSettings = this._store.getState().mediaTypeSettings;
-			console.log("mediaTypeSettings",mediaTypeSettings);
-			const imageOk = mediaTypeSettings.find(t => t.dtype === "image");
-			const videoOk = mediaTypeSettings.find(t => t.dtype === "video");
+			const imageOk = mediaTypeSettings.find((t) => t.dtype === "image");
+			const videoOk = mediaTypeSettings.find((t) => t.dtype === "video");
 			if (isImage && !imageOk) {
 				this._skippedReason = "Media Type ";
 				return false;
@@ -96,7 +96,7 @@ export class UploadElement extends TatorElement {
 				return false;
 			}
 			if (isArchive) {
-				console.warn("Warning: Archive uploaded without media type settings.")
+				console.warn("Warning: Archive uploaded without media type settings.");
 			}
 		}
 
@@ -118,22 +118,22 @@ export class UploadElement extends TatorElement {
 			attributes = this._uploadAttributes;
 		}
 
-    const mediaTypes = this._store.getState().mediaTypes;
-    for (let currentType of mediaTypes) {
-      if (mediaType === null) {
-        if (currentType.file_format === null) {
-          if (currentType.dtype == "image" && isImage) {
-            fileOk = true;
-            mediaType = currentType;
-            attributes = this._imageAttr;
-          } else if (currentType.dtype == "video" && isVideo) {
-            fileOk = true;
-            mediaType = currentType;
-            attributes = this._videoAttr;
-          }
-        } else {
-          fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
-          mediaType = currentType;
+		const mediaTypes = this._store.getState().mediaTypes;
+		for (let currentType of mediaTypes) {
+			if (mediaType === null) {
+				if (currentType.file_format === null) {
+					if (currentType.dtype == "image" && isImage) {
+						fileOk = true;
+						mediaType = currentType;
+						attributes = this._imageAttr;
+					} else if (currentType.dtype == "video" && isVideo) {
+						fileOk = true;
+						mediaType = currentType;
+						attributes = this._videoAttr;
+					}
+				} else {
+					fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
+					mediaType = currentType;
 
 					if (isArchive) {
 						fileOk = true;
@@ -142,33 +142,37 @@ export class UploadElement extends TatorElement {
 			}
 		}
 
-		if (fileOk && mediaType !== null) {
-			function progressCallback(progress) {
-				this._store.setState({ uploadChunkProgress: progress });
-			}
-			const fileInfo = {
-				file: file,
-				gid: gid,
-				mediaType: isArchive ? -1 : mediaType,
-				section:
-					this._section && !this._chosenSection
-						? this._section
-						: this._chosenSection,
-				isImage: isImage,
-				isArchive: isArchive,
-				progressCallback: progressCallback.bind(this),
-				abortController: this._abortController,
-				attributes: attributes ? attributes : {},
-			};
-			// console.log("File is OK", fileInfo);
-			return fileInfo;
+		// if (fileOk && mediaType !== null) {
+		function progressCallback(progress) {
+			this._store.setState({ uploadChunkProgress: progress });
 		}
+		const fileInfo = {
+			ok: fileOk,
+			file: file,
+			gid: gid,
+			mediaType: isArchive ? -1 : mediaType == null ? null : mediaType,
+			section:
+				this._section && !this._chosenSection
+					? this._section
+					: this._chosenSection,
+			isImage: isImage,
+			isArchive: isArchive,
+			progressCallback: progressCallback.bind(this),
+			abortController: this._abortController,
+			attributes: attributes ? attributes : {},
+		};
+		// console.log("File is OK", fileInfo);
+		return fileInfo;
+		// }
 
-		this._store.setState({
-			uploadError: `Error: Please check that ${file.name} is a valid file type for this project!`,
-		});
+		// this._store.setState({
+		// 	uploadError: `Error: Please check that ${file.name} is a valid file type for this project!`,
+		// });
 
-		return false;
+		// return {
+		// 	file: file,
+		// 	ok: false,
+		// };
 	}
 
   // Iterates through items from drag and drop or file select
@@ -304,9 +308,9 @@ export class UploadElement extends TatorElement {
 						});
 					});
 			}
-			promise.catch((error) => {
-				this._store.setState({ uploadError: error.message });
-			});
+			// promise.catch((error) => {
+			// 	this._store.setState({ uploadError: error.message });
+			// });
 		}
 	}
 }

@@ -3,7 +3,8 @@ import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
 import { SectionData } from "../util/section-utilities.js";
-
+import "../components/upload-dialog.js";
+import { reducePathUtil } from "../util/path-formatter.js";
 /**
  * Main uploads page
  */
@@ -95,35 +96,48 @@ export class UploadPage extends TatorPage {
 		subheader.setAttribute("class", "d-flex flex-justify-right");
 		this._mainSection.appendChild(subheader);
 
-		
 		this._dropZone = document.createElement("div");
 		this._dropZone.setAttribute("draggable", "true");
-		this._dropZone.setAttribute("class", "f2 d-flex flex-column text-gray my-6 px-3 py-3 rounded-3 text-center drop-zone");
+		this._dropZone.setAttribute(
+			"class",
+			"f2 d-flex flex-column text-gray my-6 px-3 py-3 rounded-3 text-center drop-zone"
+		);
 		this._dropZone.innerHTML = `Drag and drop files and folders you want to upload here, or choose Add files or Add folder.`;
 		this._mainSection.appendChild(this._dropZone);
 
 		this._upload = document.createElement("drop-upload");
 		this._mainSection.appendChild(this._upload);
 
-
 		this._bottomSection = document.createElement("div");
-		this._bottomSection.setAttribute("class", "d-flex flex-justify-right my-6 px-3 py-3 rounded-3");
+		this._bottomSection.setAttribute(
+			"class",
+			"d-flex flex-justify-right my-6 px-3 py-3 rounded-3"
+		);
 		this._mainSection.appendChild(this._bottomSection);
 
-
 		this._cancelUpload = document.createElement("a");
-		this._cancelUpload.setAttribute("class", "py-3 f2 px-3 text-gray clickable mr-3");
-		this._cancelUpload.textContent = "Cancel";
-		this._cancelUpload.addEventListener("click", this._upload._resetUpload.bind(this._upload));
+		this._cancelUpload.setAttribute(
+			"class",
+			"py-3 f2 px-3 text-gray clickable mr-3"
+		);
+		this._cancelUpload.textContent = "Cancel & Reset";
+		this._cancelUpload.addEventListener(
+			"click",
+			this._upload._resetUpload.bind(this._upload)
+		);
 		this._bottomSection.appendChild(this._cancelUpload);
 
 		this._uploadButton = document.createElement("button");
 		this._uploadButton.setAttribute("class", "btn btn-clear btn-primary f2");
 		this._uploadButton.textContent = "Upload";
-		this._uploadButton.disabled = true;	
-		this._uploadButton.addEventListener("click", this._upload.upload.bind(this._upload));
+		this._uploadButton.disabled = true;
+		this._uploadButton.style.width = "500px";
+		this._uploadButton.addEventListener("click", async () => {
+			this._uploadDialog.setAttribute("is-open", "");
+			await this._upload.upload();
+			this._upload._resetUpload();
+		});
 		this._bottomSection.appendChild(this._uploadButton);
-
 
 		this._sectionData = new SectionData();
 		this._upload._sectionData = this._sectionData;
@@ -143,12 +157,11 @@ export class UploadPage extends TatorPage {
 			}
 		});
 
-
 		this._upload.addEventListener("upload-summary", (evt) => {
-			this._uploadButton.disabled = !evt.detail.ok || evt.detail.data.length === 0;
+			const valid = evt.detail.data.filter((item) => !item.skip);
+			this._uploadButton.disabled = !evt.detail.ok || valid.length === 0;
 		});
 
-		
 		this._lastQuery = null;
 
 		this._uploadDialog = document.createElement("upload-dialog");
@@ -162,30 +175,47 @@ export class UploadPage extends TatorPage {
 		this._uploadDialog.addEventListener("close", (evt) => {
 			this.removeAttribute("has-open-modal");
 		});
-	
+
 		this._uploadDialog.init(store);
 
 		//
 		this._setupDragAndDrop();
 
 		//
-		this._uploadDialog.addEventListener("open", this.showDimmer.bind(this));
-		this._uploadDialog.addEventListener("close", this.hideDimmer.bind(this));
+		// this._uploadDialog.addEventListener("open", this.showDimmer.bind(this));
+		// this._uploadDialog.addEventListener("close", this.hideDimmer.bind(this));
+
+		this._upload.addEventListener("section-change", (evt) => {
+			const chosenSection = evt?.detail?.section?.id
+				? evt.detail.section
+				: null;
+			console.log("chosenSection", chosenSection);
+			// Set page breadcrumbs
+			this._breadcrumb.innerHTML = `<div class="annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray">
+			<a class="text-gray" href="/${this._project.id}/project-detail">${
+				this._project.name
+			}</a>
+			${
+				chosenSection !== null
+					? `<chevron-right class="px-2"></chevron-right> <a class="text-gray" href="/${
+							this._project.id
+					  }/project-detail?section=${chosenSection.id}">${reducePathUtil(
+							chosenSection.path
+					  )}</a> `
+					: ""
+			}
+			<chevron-right class="px-2"></chevron-right>
+			<span class="text-gray">Upload Media</span>
+		</div>`;
+		});
 	}
 
 	connectedCallback() {
-		this.setAttribute(
-			"project-id",
-			Number(window.location.pathname.split("/")[1])
-		);
+		this._projectId = Number(window.location.pathname.split("/")[1]);
+		this._init();
 		// Initialize store data
 		store.getState().init();
-		// this._uploadDialog.init(store);
-
-	}
-
-	static get observedAttributes() {
-		return ["project-id", "token"].concat(TatorPage.observedAttributes);
+		this._uploadDialog.init(store);
 	}
 
 	_notify(title, message, error_or_ok) {
@@ -195,16 +225,17 @@ export class UploadPage extends TatorPage {
 	}
 
 	_init() {
-		const projectId = this.getAttribute("project-id");
-		this._projectId = projectId;
-
 		// Get info about the project.
-		const projectPromise = fetchCredentials("/rest/Project/" + projectId);
-		const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
-		const algoPromise = fetchCredentials("/rest/Algorithms/" + projectId);
-		const mediaTypePromise = fetchCredentials("/rest/MediaTypes/" + projectId);
+		const projectPromise = fetchCredentials("/rest/Project/" + this._projectId);
+		const sectionPromise = fetchCredentials(
+			"/rest/Sections/" + this._projectId
+		);
+		const algoPromise = fetchCredentials("/rest/Algorithms/" + this._projectId);
+		const mediaTypePromise = fetchCredentials(
+			"/rest/MediaTypes/" + this._projectId
+		);
 		const membershipPromise = fetchCredentials(
-			"/rest/Memberships/" + projectId
+			"/rest/Memberships/" + this._projectId
 		);
 
 		// Run all above promises
@@ -240,13 +271,13 @@ export class UploadPage extends TatorPage {
 							async ([project, sections, algos, mediaTypes, memberships]) => {
 								// Save retrieved REST data
 								this._project = project;
+								this._projectId = project.id;
 								this._sections = sections;
+								this._upload._sections = this._sections;
 								this._algorithms = this.getParsedAlgos(algos);
 								this._mediaTypes = mediaTypes;
 								this._memberships = memberships;
 								this.setupSettingsPanel(this._mediaTypes);
-
-								
 
 								store.setState({ sections: this._sections });
 
@@ -264,9 +295,8 @@ export class UploadPage extends TatorPage {
 
 								// Initialize folder/search/bookmark data
 								this._sectionData.init(this._sections);
-								this._upload.sections = this._sections;
+
 								this._upload.mediaTypes = this._mediaTypes;
-								
 							}
 						)
 						.catch((err) => {
@@ -302,22 +332,6 @@ export class UploadPage extends TatorPage {
 		return parsedAlgos;
 	}
 
-	attributeChangedCallback(name, oldValue, newValue) {
-		TatorPage.prototype.attributeChangedCallback.call(
-			this,
-			name,
-			oldValue,
-			newValue
-		);
-		switch (name) {
-			case "username":
-				break;
-			case "project-id":
-				this._init();
-				break;
-		}
-	}
-
 	/**
 	 * Displays the background dimmer. Call when a modal is open.
 	 */
@@ -346,7 +360,6 @@ export class UploadPage extends TatorPage {
 		this._sections = await response.json();
 		this._sectionData.init(this._sections);
 	}
-
 
 	/**
 	 * Updates the URL with the current page's state
@@ -399,8 +412,12 @@ export class UploadPage extends TatorPage {
 		this.setLeftPanelWidth(this._leftPanelDefaultWidth);
 		this._leftPanel.style.display = "flex";
 		this._sidebarLibraryText.addEventListener("click", () => {
-			this._leftPanel.style.display = this._leftPanel.style.display === "flex" ? "none" : "flex";
-			this._sidebarLibraryText.innerText = this._leftPanel.style.display === "flex" ? "Hide Media Types" : "Show Media Types";
+			this._leftPanel.style.display =
+				this._leftPanel.style.display === "flex" ? "none" : "flex";
+			this._sidebarLibraryText.innerText =
+				this._leftPanel.style.display === "flex"
+					? "Hide Media Types"
+					: "Show Media Types";
 		});
 	}
 
@@ -410,8 +427,8 @@ export class UploadPage extends TatorPage {
 			h3.setAttribute("class", "h2 text-light-gray");
 			h3.textContent = "Media Types";
 			this._settingsPanel.appendChild(h3);
-      
-      const description = document.createElement("p");
+
+			const description = document.createElement("p");
 			description.setAttribute("class", "text-gray f2 py-3");
 			description.textContent = `Specify the data type you are uploading, and any additional metadata to be set on upload.`;
 			this._settingsPanel.appendChild(description);
@@ -442,38 +459,35 @@ export class UploadPage extends TatorPage {
 		);
 		this._sidebarLibraryText.textContent = "Hide Media Types";
 		sidebarDiv.appendChild(this._sidebarLibraryText);
-
-		
 	}
 
-  _setupDragAndDrop() {
-    this._mainSection.addEventListener("dragstart", (startEvt) => {
-      startEvt.dataTransfer.effectAllowed = "move";
-    });
+	_setupDragAndDrop() {
+		this._mainSection.addEventListener("dragstart", (startEvt) => {
+			startEvt.dataTransfer.effectAllowed = "move";
+		});
 
-    this._mainSection.addEventListener("dragenter", (event) => {
-      this._dropZone.classList.add("drag-over");
-    });
+		this._mainSection.addEventListener("dragenter", (event) => {
+			this._dropZone.classList.add("drag-over");
+		});
 
-    this._mainSection.addEventListener("dragover", (event) => {
-      event.preventDefault();
-    });
+		this._mainSection.addEventListener("dragover", (event) => {
+			event.preventDefault();
+		});
 
-    this._mainSection.addEventListener("dragend", (event) => {
-      this._dropZone.classList.remove("drag-over");
-    });
+		this._mainSection.addEventListener("dragend", (event) => {
+			this._dropZone.classList.remove("drag-over");
+		});
 
-    this._mainSection.addEventListener("dragleave", (event) => {
-      this._dropZone.classList.remove("drag-over");
-    });
+		this._mainSection.addEventListener("dragleave", (event) => {
+			this._dropZone.classList.remove("drag-over");
+		});
 
-    this._mainSection.addEventListener("drop", (event) => {
-      event.stopPropagation();
-      event.preventDefault();
+		this._mainSection.addEventListener("drop", (event) => {
+			event.stopPropagation();
+			event.preventDefault();
 			this._dropZone.classList.remove("drag-over");
 			// this._upload.drop(event);
 
-			
 			const list = [...event.dataTransfer.items].map(async (item) => {
 				if (item.getAsFileSystemHandle) {
 					return item.getAsFileSystemHandle();
@@ -503,10 +517,9 @@ export class UploadPage extends TatorPage {
 
 			console.log("DRAG OVER", event, list);
 			this._upload.dropHandler(list);
-      return false;
-    });
-  }
-
+			return false;
+		});
+	}
 }
 
 customElements.define("upload-page", UploadPage);

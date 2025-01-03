@@ -359,9 +359,6 @@ export class ProjectDetail extends TatorPage {
 		);
 		this._projects.appendChild(this._bookmarkDeleteDialog);
 
-		this._uploadDialog = document.createElement("upload-dialog");
-		this._projects.appendChild(this._uploadDialog);
-
 		this._attachmentDialog = document.createElement("attachment-dialog");
 		this._attachmentDialog._header.classList.add("fixed-height-scroll");
 		this._projects.appendChild(this._attachmentDialog);
@@ -377,14 +374,6 @@ export class ProjectDetail extends TatorPage {
 			(state) => state.announcements,
 			this._setAnnouncements.bind(this)
 		);
-
-		window.addEventListener("beforeunload", (evt) => {
-			if (this._uploadDialog.hasAttribute("is-open")) {
-				evt.preventDefault();
-				evt.returnValue = "";
-				window.alert("Uploads are in progress. Still leave?");
-			}
-		});
 
 		this._modalError.addEventListener("close", () => {
 			this._modalError.removeAttribute("is-open");
@@ -404,15 +393,6 @@ export class ProjectDetail extends TatorPage {
 			"filterParameters",
 			this._updateFilterResults.bind(this)
 		);
-
-		this._uploadDialog.addEventListener("cancel", (evt) => {
-			store.getState().uploadCancel();
-			this.removeAttribute("has-open-modal");
-		});
-
-		this._uploadDialog.addEventListener("close", (evt) => {
-			this.removeAttribute("has-open-modal");
-		});
 
 		this._attachmentDialog.addEventListener("close", (evt) => {
 			this.removeAttribute("has-open-modal");
@@ -848,11 +828,6 @@ export class ProjectDetail extends TatorPage {
 			this.setAttribute("has-open-modal", "");
 		});
 
-		this._mediaSection.addEventListener("filesadded", (evt) => {
-			this._uploadDialog.setAttribute("is-open", "");
-			this.setAttribute("has-open-modal", "");
-		});
-
 		this._mediaSection.addEventListener("attachments", (evt) => {
 			this._attachmentDialog.init(evt.detail);
 			this._attachmentDialog.setAttribute("is-open", "");
@@ -867,7 +842,6 @@ export class ProjectDetail extends TatorPage {
 		);
 		// Initialize store data
 		store.getState().init();
-		this._uploadDialog.init(store);
 	}
 
 	static get observedAttributes() {
