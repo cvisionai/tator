@@ -1052,7 +1052,7 @@ export class AnnotationPlayer extends TatorElement {
   async handleFramePreview(evt) {
     let proposed_value = evt.detail.frame;
     this._preview.cancelled = false;
-    if (proposed_value > 0) {
+    if (proposed_value >= 0) {
       // Get frame preview image
       const existing = this._preview.info;
 
