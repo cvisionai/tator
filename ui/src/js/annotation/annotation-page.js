@@ -1050,7 +1050,7 @@ export class AnnotationPage extends TatorPage {
             }
 
             // If there is a default version pick that one, otherwise use the first one.
-            this._version == null;
+            this._version = null;
             this.setAttribute("user-id", user.id);
             let default_version = versions[0].id;
             for (const membership of memberships) {
@@ -1068,6 +1068,7 @@ export class AnnotationPage extends TatorPage {
                 this._canvasAppletHeader.version = this._version;
               }
             }
+            this._canvasAppletHeader.version = this._version;
 
             // Initialize version dialog.
             this._versionDialog.init(versions, this._version.id);
@@ -1275,6 +1276,7 @@ export class AnnotationPage extends TatorPage {
               this._browser.frameChange(evt.detail.frame);
               this._settings.setAttribute("frame", evt.detail.frame);
               this._currentFrame = evt.detail.frame;
+              this.updateCanvasAppletWithFrameChange();
               // TODO: tempting to call '_updateURL' here but may be a performance bottleneck
             });
             canvas.addEventListener("select", (evt) => {
@@ -1534,6 +1536,7 @@ export class AnnotationPage extends TatorPage {
                   saveDialog.updateFrame(this._currentFrame);
                 }
               }
+              this.updateCanvasAppletWithFrameChange();
             });
 
             canvas.addEventListener("create", (evt) => {
@@ -1714,8 +1717,6 @@ export class AnnotationPage extends TatorPage {
         ) {
           this._sidebar.disableCanvasApplet();
         }
-        this._annotationCanvas = canvas;
-        this._canvasElement = canvasElement;
 
         var canvasAppletInitPromises = [];
         for (const applet of this._canvasApplets) {
@@ -1730,6 +1731,13 @@ export class AnnotationPage extends TatorPage {
           );
           this._canvasAppletPageWrapper.appendChild(appletInterface);
           this._canvasAppletWrappers[applet.id] = appletInterface;
+          appletInterface.addEventListener("overrideCanvas", (evt) => {
+            this.overrideCanvas(evt.detail.bitmap);
+          });
+
+          appletInterface.addEventListener("clearOverrideCanvas", () => {
+            this.clearOverrideCanvas();
+          });
         }
         Promise.all(canvasAppletInitPromises).then(() => {
           this._canvasAppletMenuLoading.style.display = "none";
@@ -2407,6 +2415,23 @@ export class AnnotationPage extends TatorPage {
   }
 
   /**
+   * Force update the canvas applet init with the new frame.
+   * If a canvas applet is not currently open, then do nothing.
+   */
+  updateCanvasAppletWithFrameChange() {
+    if (this._currentCanvasApplet == null) {
+      return;
+    }
+    if (
+      this._currentCanvasApplet._lastFrameUpdate != this._currentFrame &&
+      !this._updatingCanvasAppletWithFrameChange
+    ) {
+      this._updatingCanvasAppletWithFrameChange = true;
+      this.showCanvasApplet(this._currentCanvasApplet._applet.id);
+    }
+  }
+
+  /**
    * Bring up the canvas applet to the forefront and hide the main annotation parts.
    * Pass along information about the current state to the applet.
    * @param {int} appletId
@@ -2435,6 +2460,8 @@ export class AnnotationPage extends TatorPage {
       if (this._player.mediaType.dtype == "multi") {
         this._cameraSelectionBar.style.display = "flex";
       }
+
+      this._updatingCanvasAppletWithFrameChange = false;
     }
 
     this.hideCanvasAppletMenu();
@@ -2468,6 +2495,7 @@ export class AnnotationPage extends TatorPage {
       this._currentCanvasApplet._lastMediaId != selectedCameraMediaId
     ) {
       currentCanvas.getPNGdata(false).then(async (blob) => {
+        await this._currentCanvasApplet.updateAnnotator(this._player);
         await this._currentCanvasApplet.updateMedia(selectedMedia);
         await this._currentCanvasApplet.updateAnnotationCanvas(currentCanvas);
         this._currentCanvasApplet.updateFrame(this._currentFrame, blob);
