@@ -576,25 +576,52 @@ export class AnnotationMulti extends TatorElement {
       this.handleSliderChange(evt);
     });
 
-    this._previewProcessing = false;
-    this._slider.addEventListener("framePreview", async (evt) => {
-      // debounce events here. Process the last one 500ms after the last event (as a retry)
-      clearTimeout(this._previewTimeout);
-      this._previewTimeout = setTimeout(async () => {
-        this._previewProcessing = false;
-        await this.handleFramePreview(evt);
-      }, 500);
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._lastPreview = 0;
 
-      if (this._previewProcessing == false) {
-        this._previewProcessing = true;
+    let processPreview = async (evt) => {
+      this._pendingPreview = evt;
+        // Keep frames moving if we get dropped/interrupted
+        this._lastPreview = performance.now();
         await this.handleFramePreview(evt);
-        this._previewProcessing = false;
-        clearTimeout(this._previewTimeout);
+        this._pendingPreview = null;
+
+        // If there is a new event to process, process it
+        while (
+          this._nextPreview &&
+          this._nextPreview.detail.frame != evt.detail.frame
+        ) {
+          this._pendingPreview = this._nextPreview;
+          this._nextPreview = null;
+          await this.handleFramePreview(this._pendingPreview);
+        }
+        this._pendingPreview = null;
+    }
+    this._slider.addEventListener("framePreview", async (evt) => {
+      // Frame previews can get interrupted if we aren't keeping 30fps
+      // things will look janky but we don't want to make things harder
+      // by blocking the UI on a billion previews as someone zips by
+      if (this._pendingPreview == null) {
+        processPreview(evt);
+      } else {
+        const delta = performance.now() - this._lastPreview;
+        if (delta < 33) {
+          // If there is an event to process, process it
+          this._nextPreview = evt;
+        }
+        else
+        {
+          this._nextPreview = null;
+          processPreview(evt);
+        }
       }
     });
 
     this._slider.addEventListener("hidePreview", () => {
-      this._preview.cancelled = true;
+      this._preview.cancelled = true; // This isn't about cancel culture
+      this._pendingPreview = null;
+      this._nextPreview = null;
       this._preview.hide();
     });
 
