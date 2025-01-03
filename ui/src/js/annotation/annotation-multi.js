@@ -578,20 +578,19 @@ export class AnnotationMulti extends TatorElement {
 
     this._previewProcessing = false;
     this._slider.addEventListener("framePreview", async (evt) => {
-        // debounce events here. Process the last one 500ms after the last event (as a retry)
-        clearTimeout(this._previewTimeout);
-        this._previewTimeout = setTimeout(async () => {
-          this._previewProcessing=false;
-          await this.handleFramePreview(evt);
-        }, 500);
+      // debounce events here. Process the last one 500ms after the last event (as a retry)
+      clearTimeout(this._previewTimeout);
+      this._previewTimeout = setTimeout(async () => {
+        this._previewProcessing = false;
+        await this.handleFramePreview(evt);
+      }, 500);
 
-        if (this._previewProcessing == false)
-        {
-          this._previewProcessing = true;
-          await this.handleFramePreview(evt);
-          this._previewProcessing = false;
-          clearTimeout(this._previewTimeout);
-        }
+      if (this._previewProcessing == false) {
+        this._previewProcessing = true;
+        await this.handleFramePreview(evt);
+        this._previewProcessing = false;
+        clearTimeout(this._previewTimeout);
+      }
     });
 
     this._slider.addEventListener("hidePreview", () => {
@@ -944,8 +943,7 @@ export class AnnotationMulti extends TatorElement {
         video = this._videoDivs[focus].children[0];
         useImage = true;
         bias += this._preview.img_height;
-      }
-      else if (this._videos.length <= 2) {
+      } else if (this._videos.length <= 2) {
         multiImage = true;
         video = this._videos;
         bias += this._preview.img_height;
@@ -953,16 +951,12 @@ export class AnnotationMulti extends TatorElement {
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
-
         if (useImage) {
           this._preview.mediaInfo = video._mediaInfo;
           let frame = null;
-          try
-          {
+          try {
             frame = await video.getScrubFrame(proposed_value);
-          }
-          catch (e)
-          {
+          } catch (e) {
             console.error(`Failed to get frame ${proposed_value} ${e}`);
             return;
           }
@@ -981,15 +975,25 @@ export class AnnotationMulti extends TatorElement {
         }
         if (multiImage) {
           // Here we do both images of a multi video
-          let fake_info = {height: video[0]._mediaInfo.height, width: video[0]._mediaInfo.width*2};
+          let fake_info = {
+            height: video[0]._mediaInfo.height,
+            width: video[0]._mediaInfo.width * 2,
+          };
           this._preview.mediaInfo = fake_info;
 
-          console.info(`START: ${performance.now()}: Requesting frame ${proposed_value}`);
+          console.info(
+            `START: ${performance.now()}: Requesting frame ${proposed_value}`
+          );
           let frame0_promise = video[0].getScrubFrame(proposed_value);
           let frame1_promise = video[1].getScrubFrame(proposed_value);
           try {
-            let [frame0, frame1] = await Promise.all([frame0_promise, frame1_promise]);
-            console.info(`END: ${performance.now()}: Requesting frame ${proposed_value}`);
+            let [frame0, frame1] = await Promise.all([
+              frame0_promise,
+              frame1_promise,
+            ]);
+            console.info(
+              `END: ${performance.now()}: Requesting frame ${proposed_value}`
+            );
             if (this._preview.cancelled) {
               // We took to long and got cancelled.
               frame0.close();
@@ -997,19 +1001,22 @@ export class AnnotationMulti extends TatorElement {
               return;
             }
 
-
-
-            this._preview.image = [frame0,frame1];
+            this._preview.image = [frame0, frame1];
             frame0.close();
             frame1.close();
-          }
-          catch (e)
-          {
+          } catch (e) {
             console.error(`Failed to get frame ${proposed_value} ${e}`);
           }
 
           // Set the annotations for the multi
-          let annotations = [(video[0]._framedData.has(proposed_value) ? video[0]._framedData.get(proposed_value) : []),(video[1]._framedData.has(proposed_value) ? video[1]._framedData.get(proposed_value) : [])];
+          let annotations = [
+            video[0]._framedData.has(proposed_value)
+              ? video[0]._framedData.get(proposed_value)
+              : [],
+            video[1]._framedData.has(proposed_value)
+              ? video[1]._framedData.get(proposed_value)
+              : [],
+          ];
           this._preview.annotations = annotations;
         }
 

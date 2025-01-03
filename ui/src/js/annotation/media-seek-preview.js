@@ -88,12 +88,9 @@ export class MediaSeekPreview extends TatorElement {
           this._ctx.strokeStyle = "rgb(64,224,208)";
           this._ctx.lineWidth = 3;
           this._ctx.beginPath();
-          this._ctx.moveTo(
-            xFn(localization.x),
-            yFn(localization.y)
-          );
+          this._ctx.moveTo(xFn(localization.x), yFn(localization.y));
           this._ctx.lineTo(
-            xFn((localization.x + localization.u)),
+            xFn(localization.x + localization.u),
             yFn(localization.y + localization.v)
           );
           this._ctx.stroke();
@@ -140,14 +137,17 @@ export class MediaSeekPreview extends TatorElement {
   }
 
   set image(val) {
-    if (val.constructor.name == "Array")
-    {
+    if (val.constructor.name == "Array") {
       // Put the 2 images stacked left to right:
       this._ctx.drawImage(val[0], 0, 0, this._img.width / 2, this._img.height);
-      this._ctx.drawImage(val[1], this._img.width / 2, 0, this._img.width / 2, this._img.height);
-    }
-    else
-    {
+      this._ctx.drawImage(
+        val[1],
+        this._img.width / 2,
+        0,
+        this._img.width / 2,
+        this._img.height
+      );
+    } else {
       this._ctx.drawImage(val, 0, 0, this._img.width, this._img.height);
     }
     this._img.style.display = "block";
@@ -155,15 +155,54 @@ export class MediaSeekPreview extends TatorElement {
 
   set annotations(val) {
     // Dictionary by type
-    if (val.constructor.name != "Array")
-    {
-      this._drawAnnotations(val, (x)=>{return x*this._img.width;}, (y)=>{return y*this._img.height;}, (width)=>{return width*this._img.width;}, (height)=>{return height*this._img.height;});
-    }
-    else
-    {
+    if (val.constructor.name != "Array") {
+      this._drawAnnotations(
+        val,
+        (x) => {
+          return x * this._img.width;
+        },
+        (y) => {
+          return y * this._img.height;
+        },
+        (width) => {
+          return width * this._img.width;
+        },
+        (height) => {
+          return height * this._img.height;
+        }
+      );
+    } else {
       // Put the 2 annotations stacked left to right:
-      this._drawAnnotations(val[0], (x)=>{return x*this._img.width / 2;}, (y)=>{return y*this._img.height;}, (width)=>{return width*this._img.width / 2;}, (height)=>{return height*this._img.height;});
-      this._drawAnnotations(val[1], (x)=>{return x*this._img.width / 2 + this._img.width / 2;}, (y)=>{return y*this._img.height;}, (width)=>{return width*this._img.width / 2;}, (height)=>{return height*this._img.height;});
+      this._drawAnnotations(
+        val[0],
+        (x) => {
+          return (x * this._img.width) / 2;
+        },
+        (y) => {
+          return y * this._img.height;
+        },
+        (width) => {
+          return (width * this._img.width) / 2;
+        },
+        (height) => {
+          return height * this._img.height;
+        }
+      );
+      this._drawAnnotations(
+        val[1],
+        (x) => {
+          return (x * this._img.width) / 2 + this._img.width / 2;
+        },
+        (y) => {
+          return y * this._img.height;
+        },
+        (width) => {
+          return (width * this._img.width) / 2;
+        },
+        (height) => {
+          return height * this._img.height;
+        }
+      );
     }
   }
 
