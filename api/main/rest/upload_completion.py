@@ -11,6 +11,7 @@ from ._permissions import ProjectTransferPermission
 
 from .._permission_util import check_bucket_permissions
 
+
 class UploadCompletionAPI(BaseListView):
     """Completes a multipart upload."""
 

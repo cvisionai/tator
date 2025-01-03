@@ -71,7 +71,9 @@ class CloneMediaListAPI(BaseListView):
         # Look for destination section, if given.
         section = None
         if params.get("dest_section"):
-            sections = Section.objects.filter(project=dest, name__iexact=params["dest_section"], dtype="folder")
+            sections = Section.objects.filter(
+                project=dest, name__iexact=params["dest_section"], dtype="folder"
+            )
             if sections.count() == 0:
                 section = Section.objects.create(
                     dtype="folder",

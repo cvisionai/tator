@@ -271,7 +271,10 @@ def _create_media(project, params, user, use_rq=False):
         else:
             tator_user_sections = str(uuid1())
             section_obj = Section.objects.create(
-                project=project_obj, name=section, tator_user_sections=tator_user_sections, dtype="folder",
+                project=project_obj,
+                name=section,
+                tator_user_sections=tator_user_sections,
+                dtype="folder",
             )
 
     # Get the media type.
