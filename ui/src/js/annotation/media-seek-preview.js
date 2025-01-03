@@ -138,15 +138,25 @@ export class MediaSeekPreview extends TatorElement {
 
   set image(val) {
     if (val.constructor.name == "Array") {
-      // Put the 2 images stacked left to right:
-      this._ctx.drawImage(val[0], 0, 0, this._img.width / 2, this._img.height);
-      this._ctx.drawImage(
-        val[1],
-        this._img.width / 2,
-        0,
-        this._img.width / 2,
-        this._img.height
-      );
+      // Less than 4 do a film strip
+      if (val.length < 4) {
+        for (let idx = 0; idx < val.length; idx++) {
+          let x = idx * this._img.width / val.length;
+          let width = this._img.width / val.length;
+          this._ctx.drawImage(val[idx], x, 0, width, this._img.height);
+        }
+      }
+      else if (val.length == 4)
+      {
+        // Let's do a 2x2 grid
+        for (let idx = 0; idx < val.length; idx++) {
+          let x = (idx % 2) * this._img.width / 2;
+          let y = Math.floor(idx / 2) * this._img.height / 2;
+          let width = this._img.width / 2;
+          let height = this._img.height / 2;
+          this._ctx.drawImage(val[idx], x, y, width, height);
+        }
+      }
     } else {
       this._ctx.drawImage(val, 0, 0, this._img.width, this._img.height);
     }
