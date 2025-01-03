@@ -302,3 +302,30 @@
     overflow-wrap: break-word;
   }
 }
+
+.version-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: var(--color-charcoal--medium-dark);
+}
+.version-table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background-color: #353b49;
+}
+.version-table thead {
+  border: 1px solid #353b49;
+}
+.version-table tbody tr {
+  border: 1px solid #1f2635;
+}
+.version-table tbody tr.selected {
+  background-color: #1f2635;
+}
+.version-table tbody tr:hover {
+  background-color: #1f2635;
+}
+.version-table td {
+  height: 70px;
+  vertical-align: middle;
+}

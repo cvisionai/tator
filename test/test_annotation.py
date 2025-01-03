@@ -43,14 +43,14 @@ def common_annotation(page, canvas, bias=0):
         light.wait_for_element_state('visible')
         light.wait_for_element_state('hidden')
         print("Waiting for elemental id...")
-        elemental_id_fields = page.query_selector_all("#metadata-elemental-id")
+        elemental_id_fields = page.query_selector_all("#metadata-combined-id")
         # find only the visible one
         visible_elemental_id_fields = [field for field in elemental_id_fields if field.is_visible()]
         elemental_id_field = visible_elemental_id_fields[0] if visible_elemental_id_fields else None
-        value = elemental_id_field.input_value()
+        value = elemental_id_field.text_content().split("@")[0].strip()
         while value == None:
             print("field invalid, waiting")
-            value = elemental_id_field.input_value()
+            value = elemental_id_field.text_content().split("@")[0].strip()
             page.wait_for_timeout(1000)
 
         print(f"{idx}: Elemental ID: {value}")
@@ -68,7 +68,7 @@ def common_annotation(page, canvas, bias=0):
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
         found = False
         for attempts in range(5):
-            elemental_id_fields = page.query_selector_all("#metadata-elemental-id")
+            elemental_id_fields = page.query_selector_all("#metadata-combined-id")
             # find only the visible one
             visible_elemental_id_fields = [
                 field for field in elemental_id_fields if field.is_visible()
@@ -76,7 +76,7 @@ def common_annotation(page, canvas, bias=0):
             elemental_id_field = (
                 visible_elemental_id_fields[0] if visible_elemental_id_fields else None
             )
-            if elemental_id_field.input_value() == elemental_ids[idx]:
+            if elemental_id_field.text_content().split("@")[0].strip() == elemental_ids[idx]:
                 found = True
                 break
             page.wait_for_timeout(1000)
@@ -105,7 +105,7 @@ def common_annotation(page, canvas, bias=0):
 
         page.mouse.click(x+45, y+45)
         for attempts in range(5):
-            elemental_id_fields = page.query_selector_all("#metadata-elemental-id")
+            elemental_id_fields = page.query_selector_all("#metadata-combined-id")
             # find only the visible one
             visible_elemental_id_fields = [
                 field for field in elemental_id_fields if field.is_visible()
@@ -113,7 +113,8 @@ def common_annotation(page, canvas, bias=0):
             elemental_id_field = (
                 visible_elemental_id_fields[0] if visible_elemental_id_fields else None
             )
-            if elemental_id_field.input_value() == elemental_ids[idx]:
+            print(elemental_id_field.text_content().split("@")[0].strip())
+            if elemental_id_field.text_content().split("@")[0].strip() == elemental_ids[idx]:
                 found = True
                 break
             page.wait_for_timeout(1000)

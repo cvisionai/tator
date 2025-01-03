@@ -177,7 +177,7 @@ save-dialog {
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
-  z-index: 4;
+  z-index: 100;
   &.is-open {
     opacity: 1;
     pointer-events: initial;
@@ -204,7 +204,7 @@ modify-track-dialog {
   transform: scale(0.95);
   transition-duration: 0.25s;
   transition-property: transform, opacity;
-  z-index: 4;
+  z-index: 100;
   &.is-open {
     opacity: 1;
     pointer-events: initial;
@@ -355,7 +355,6 @@ favorite-button {
 
 .annotation__version-list {
   overflow-y: auto;
-  max-height: 240px;
 }
 
 .annotation__announcement-list {

@@ -25,6 +25,7 @@ export class AttributePanel extends TatorElement {
     this._topDiv.appendChild(this._moreLessButton);
 
     this._trackDiv = document.createElement("div");
+    this._trackDiv.setAttribute("id", "attribute-panel-track-div");
     this._trackDiv.setAttribute(
       "class",
       "annotation__panel-group py-2 text-gray f2"
@@ -35,26 +36,66 @@ export class AttributePanel extends TatorElement {
     this._standardWidgetsDiv = document.createElement("div");
     this._standardWidgetsDiv.setAttribute(
       "class",
-      "annotation__panel-group pt-2 text-gray f2"
+      "annotation__panel-group text-gray f2 rounded-2 box-border py-2 px-2 mx-4"
     );
     this._shadow.appendChild(this._standardWidgetsDiv);
+
+    this._frameVersionWrapper = document.createElement("div");
+    this._frameVersionWrapper.setAttribute(
+      "class",
+      "d-flex flex-row flex-grow flex-items-center clickable"
+    );
+    this._standardWidgetsDiv.appendChild(this._frameVersionWrapper);
+
+    this._frameLabel = document.createElement("div");
+    this._frameLabel.setAttribute(
+      "class",
+      "f2 text-gray mr-2 d-flex flex-items-center"
+    );
+    this._frameLabel.setAttribute("title", "Frame Number");
+    this._frameVersionWrapper.appendChild(this._frameLabel);
+
+    this._versionLabel = document.createElement("div");
+    this._versionLabel.setAttribute(
+      "class",
+      "f2 text-gray mr-2 d-flex flex-items-center"
+    );
+    this._versionLabel.setAttribute("title", "Version Name");
+    this._frameVersionWrapper.appendChild(this._versionLabel);
+
+    this._combinedIdWidget = document.createElement("div");
+    this._combinedIdWidget.setAttribute(
+      "class",
+      "f3 text-dark-gray d-flex flex-row flex-grow flex-items-center"
+    );
+    this._combinedIdWidget.setAttribute(
+      "title",
+      "Elemental ID (last 6 chars) @ Version ID / Mark Number"
+    );
+    this._combinedIdWidget.setAttribute("id", "metadata-combined-id");
+    this._frameVersionWrapper.appendChild(this._combinedIdWidget);
+
+    this._standardWidgetsExpandedDiv = document.createElement("div");
+    this._standardWidgetsExpandedDiv.setAttribute("class", "pt-2");
+    this._standardWidgetsExpandedDiv.hidden = true;
+    this._standardWidgetsDiv.appendChild(this._standardWidgetsExpandedDiv);
 
     this._idWidget = document.createElement("text-input");
     this._idWidget.permission = "View Only";
     this._idWidget.setAttribute("name", "ID");
-    this._standardWidgetsDiv.appendChild(this._idWidget);
+    this._standardWidgetsExpandedDiv.appendChild(this._idWidget);
     this._widgets.push(this._idWidget);
 
     this._frameWidget = document.createElement("text-input");
     this._frameWidget.permission = "View Only";
     this._frameWidget.setAttribute("name", "Frame");
-    this._standardWidgetsDiv.appendChild(this._frameWidget);
+    this._standardWidgetsExpandedDiv.appendChild(this._frameWidget);
     this._widgets.push(this._frameWidget);
 
     this._typeWidget = document.createElement("text-input");
     this._typeWidget.permission = "View Only";
     this._typeWidget.setAttribute("name", "Type");
-    this._standardWidgetsDiv.appendChild(this._typeWidget);
+    this._standardWidgetsExpandedDiv.appendChild(this._typeWidget);
     this._widgets.push(this._typeWidget);
     this._typeWidget.style.display = "none";
 
@@ -62,20 +103,28 @@ export class AttributePanel extends TatorElement {
     this._elementalIdWidget._input.setAttribute("id", "metadata-elemental-id");
     this._elementalIdWidget.permission = "View Only";
     this._elementalIdWidget.setAttribute("name", "Elemental ID");
-    this._standardWidgetsDiv.appendChild(this._elementalIdWidget);
+    this._standardWidgetsExpandedDiv.appendChild(this._elementalIdWidget);
     this._widgets.push(this._elementalIdWidget);
 
     this._versionWidget = document.createElement("text-input");
     this._versionWidget.setAttribute("name", "Version");
     this._versionWidget.permission = "View Only";
-    this._standardWidgetsDiv.appendChild(this._versionWidget);
+    this._standardWidgetsExpandedDiv.appendChild(this._versionWidget);
     this._widgets.push(this._versionWidget);
 
     this._markWidget = document.createElement("text-input");
     this._markWidget.setAttribute("name", "Mark");
     this._markWidget.permission = "View Only";
-    this._standardWidgetsDiv.appendChild(this._markWidget);
+    this._standardWidgetsExpandedDiv.appendChild(this._markWidget);
     this._widgets.push(this._markWidget);
+
+    this._standardWidgetsChevron = this._chevron();
+    this._frameVersionWrapper.appendChild(this._standardWidgetsChevron);
+    this._frameVersionWrapper.addEventListener("click", () => {
+      document.activeElement.blur();
+      this._toggleAttributes(this._standardWidgetsExpandedDiv);
+      this._toggleChevron({ target: this._frameVersionWrapper });
+    });
 
     this._groupDiv = document.createElement("div");
     this._groupDiv.setAttribute(
@@ -90,14 +139,14 @@ export class AttributePanel extends TatorElement {
       "f2 text-gray clickable pt-3 pb-1"
     );
     this._builtInAttrLabel.textContent = "Built-in Attributes";
-    this._groupDiv.appendChild(this._builtInAttrLabel);
+    this._standardWidgetsExpandedDiv.appendChild(this._builtInAttrLabel);
 
     this._builtInAttrsDiv = document.createElement("div");
     this._builtInAttrsDiv.setAttribute(
       "class",
-      "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2"
+      "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2 mt-1 rounded-2"
     );
-    this._groupDiv.appendChild(this._builtInAttrsDiv);
+    this._standardWidgetsExpandedDiv.appendChild(this._builtInAttrsDiv);
 
     this._parentAttrGroupDiv = document.createElement("div");
     this._parentAttrGroupDiv.setAttribute(
@@ -149,14 +198,15 @@ export class AttributePanel extends TatorElement {
 
     this._builtInAttrLabel.appendChild(this._chevron());
     this._builtInAttrLabel.addEventListener("click", (evt) => {
+      this._builtInAttrLabel.blur();
       this._toggleAttributes(this._builtInAttrsDiv);
-      this._toggleChevron(evt);
+      this._toggleChevron({ target: this._builtInAttrLabel });
     });
 
     this._hiddenAttrLabel.appendChild(this._chevron());
     this._hiddenAttrLabel.addEventListener("click", (evt) => {
       this._toggleAttributes(this._hiddenAttrsDiv);
-      this._toggleChevron(evt);
+      this._toggleChevron({ target: this._hiddenAttrLabel });
     });
 
     this._moreLessButton.addEventListener("click", () => {
@@ -218,7 +268,6 @@ export class AttributePanel extends TatorElement {
     switch (name) {
       case "in-entity-browser":
         this._userDiv.classList.add("px-4");
-        this._standardWidgetsDiv.classList.add("px-4");
         this._groupDiv.classList.add("px-4");
     }
   }
@@ -1098,7 +1147,7 @@ export class AttributePanel extends TatorElement {
     }
   }
 
-  _getVersion(versionId, widget) {
+  _getVersion(versionId) {
     if (versionId) {
       fetchCredentials("/rest/Version/" + versionId)
         .then((response) => {
@@ -1106,8 +1155,38 @@ export class AttributePanel extends TatorElement {
         })
         .then((result) => {
           this._versionList.push({ result });
-          widget.setValue(result.name);
+          this.setVersionInfo(result.name, versionId);
         });
+    }
+  }
+
+  displayFrameVersionOnly() {
+    this._standardWidgetsChevron.style.display = "none";
+    this._combinedIdWidget.style.display = "none";
+    this._frameVersionWrapper.classList.remove("clickable");
+    this._standardWidgetsExpandedDiv.style.display = "none";
+  }
+
+  setFrameInfo(frame) {
+    this._frameWidget.setValue(frame);
+    this._frameLabel.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" class="no-fill mr-1" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M8 4l0 16" /><path d="M16 4l0 16" /><path d="M4 8l4 0" /><path d="M4 16l4 0" /><path d="M4 12l16 0" /><path d="M16 8l4 0" /><path d="M16 16l4 0" />
+      </svg>
+      <span class="text-white">${frame}</span>`;
+  }
+
+  setVersionInfo(versionName, versionId) {
+    this._versionLabel.innerHTML = ``;
+    if (versionName == null) {
+      this._getVersion(versionId, this._versionWidget);
+    } else {
+      this._versionWidget.setValue(versionName);
+      this._versionLabel.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" class="no-fill mr-1" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+        </svg>
+        <span class="text-white">${versionName}</span>`;
     }
   }
 
@@ -1134,6 +1213,14 @@ export class AttributePanel extends TatorElement {
     if (val == "Elemental ID") {
       this._elementalIdWidget.style.display = "none";
     }
+  }
+
+  showStandardWidgets() {
+    this._standardWidgetsDiv.style.display = "block";
+  }
+
+  hideStandardWidgets() {
+    this._standardWidgetsDiv.style.display = "none";
   }
 
   showHeader() {
@@ -1182,6 +1269,12 @@ export class AttributePanel extends TatorElement {
       }
     }
     this._groupDiv.style.display = "none";
+
+    this._standardWidgetsExpandedDiv.hidden = true;
+    this._frameVersionWrapper.classList.remove("chevron-trigger-90");
+
+    this._builtInAttrsDiv.hidden = true;
+    this._builtInAttrLabel.classList.remove("chevron-trigger-90");
 
     var standardWidgets = [
       { attrName: "ID", widget: this._idWidget },
@@ -1242,7 +1335,8 @@ export class AttributePanel extends TatorElement {
     if (values.mark == -1) {
       this.permission = "Read Only";
     }
-    this._frameWidget.setValue(values.frame);
+    this.setFrameInfo(values.frame);
+
     this._typeWidget.setValue(
       `${this._dataType.name} (ID: ${this._dataType.id})`
     );
@@ -1257,10 +1351,16 @@ export class AttributePanel extends TatorElement {
       }
     }
 
-    if (!foundVersion) {
-      this._getVersion(values.version, this._versionWidget);
-    } else {
-      this._versionWidget.setValue(version);
+    this.setVersionInfo(version, values.version);
+
+    this._combinedIdWidget.innerHTML = "";
+    if (values.elemental_id) {
+      var shortElementalId = values.elemental_id.slice(-6);
+      this._combinedIdWidget.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" class="no-fill mr-1" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z" /><path d="M15 9h.01" />
+      </svg>
+      <span>${shortElementalId}@${values.version}/${values.mark}</span>`;
     }
 
     // Check if the slider needs to be updated if there's different track data now.
