@@ -960,13 +960,19 @@ export class AnnotationMulti extends TatorElement {
       // Get frame preview image
       const existing = this._preview.info;
       let video = null;
-      let useImage = false;
       let multiImage = false;
       let bias = 50;
       if (this._focusIds.length > 0) {
-        let focus = this._focusIds[0];
-        video = this._videoDivs[focus].children[0];
-        useImage = true;
+        video = [];
+        for (let focusId of this._focusIds) {
+          video.push(this._videoDivs[focusId].children[0]);
+        }
+        // limit to 4
+        if (video.length > 4) {
+          video = video.slice(0, 4);
+        }
+
+        multiImage = true;
         bias += this._preview.img_height;
       } else if (this._videos.length <= 4) {
         multiImage = true;
@@ -976,28 +982,6 @@ export class AnnotationMulti extends TatorElement {
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
-        if (useImage) {
-          this._preview.mediaInfo = video._mediaInfo;
-          let frame = null;
-          try {
-            frame = await video.getScrubFrame(proposed_value);
-          } catch (e) {
-            console.error(`Failed to get frame ${proposed_value} ${e}`);
-            return;
-          }
-          if (this._preview.cancelled) {
-            // We took to long and got cancelled.
-            frame.close();
-            return;
-          }
-          this._preview.image = frame;
-          frame.close();
-
-          // Get annotations for frame
-          if (video._framedData.has(proposed_value)) {
-            this._preview.annotations = video._framedData.get(proposed_value);
-          }
-        }
         if (multiImage) {
           // Here we do both images of a multi video
           let fake_info = {};
@@ -1059,7 +1043,7 @@ export class AnnotationMulti extends TatorElement {
             x: evt.detail.clientX,
             y: evt.detail.clientY - bias, // Add 15 due to page layout
             time: timeStr,
-            image: useImage | multiImage,
+            image: multiImage,
           };
         } else {
           this._preview.info = {
@@ -1067,7 +1051,7 @@ export class AnnotationMulti extends TatorElement {
             x: evt.detail.clientX,
             y: evt.detail.clientY - bias, // Add 15 due to page layout
             time: frameToTime(proposed_value, this._fps[this._longest_idx]),
-            image: useImage | multiImage,
+            image: multiImage,
           };
         }
       }
