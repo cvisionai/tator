@@ -662,22 +662,22 @@ export class AnnotationPlayer extends TatorElement {
 
     let processPreview = async (evt) => {
       this._pendingPreview = evt;
-        // Keep frames moving if we get dropped/interrupted
-        this._lastPreview = performance.now();
-        await this.handleFramePreview(evt);
-        this._pendingPreview = null;
+      // Keep frames moving if we get dropped/interrupted
+      this._lastPreview = performance.now();
+      await this.handleFramePreview(evt);
+      this._pendingPreview = null;
 
-        // If there is a new event to process, process it
-        while (
-          this._nextPreview &&
-          this._nextPreview.detail.frame != evt.detail.frame
-        ) {
-          this._pendingPreview = this._nextPreview;
-          this._nextPreview = null;
-          await this.handleFramePreview(this._pendingPreview);
-        }
-        this._pendingPreview = null;
-    }
+      // If there is a new event to process, process it
+      while (
+        this._nextPreview &&
+        this._nextPreview.detail.frame != evt.detail.frame
+      ) {
+        this._pendingPreview = this._nextPreview;
+        this._nextPreview = null;
+        await this.handleFramePreview(this._pendingPreview);
+      }
+      this._pendingPreview = null;
+    };
     this._slider.addEventListener("framePreview", async (evt) => {
       // Frame previews can get interrupted if we aren't keeping 30fps
       // things will look janky but we don't want to make things harder
@@ -689,9 +689,7 @@ export class AnnotationPlayer extends TatorElement {
         if (delta < 33) {
           // If there is an event to process, process it
           this._nextPreview = evt;
-        }
-        else
-        {
+        } else {
           this._nextPreview = null;
           processPreview(evt);
         }

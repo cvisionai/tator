@@ -141,17 +141,15 @@ export class MediaSeekPreview extends TatorElement {
       // Less than 4 do a film strip
       if (val.length < 4) {
         for (let idx = 0; idx < val.length; idx++) {
-          let x = idx * this._img.width / val.length;
+          let x = (idx * this._img.width) / val.length;
           let width = this._img.width / val.length;
           this._ctx.drawImage(val[idx], x, 0, width, this._img.height);
         }
-      }
-      else if (val.length == 4)
-      {
+      } else if (val.length == 4) {
         // Let's do a 2x2 grid
         for (let idx = 0; idx < val.length; idx++) {
-          let x = (idx % 2) * this._img.width / 2;
-          let y = Math.floor(idx / 2) * this._img.height / 2;
+          let x = ((idx % 2) * this._img.width) / 2;
+          let y = (Math.floor(idx / 2) * this._img.height) / 2;
           let width = this._img.width / 2;
           let height = this._img.height / 2;
           this._ctx.drawImage(val[idx], x, y, width, height);
@@ -183,36 +181,48 @@ export class MediaSeekPreview extends TatorElement {
       );
     } else {
       // Put the 2 annotations stacked left to right:
-      this._drawAnnotations(
-        val[0],
-        (x) => {
-          return (x * this._img.width) / 2;
-        },
-        (y) => {
-          return y * this._img.height;
-        },
-        (width) => {
-          return (width * this._img.width) / 2;
-        },
-        (height) => {
-          return height * this._img.height;
+      if (val.length < 4) {
+        // Film strip
+        for (let idx = 0; idx < val.length; idx++) {
+          let tile_width = this._img.width / val.length;
+          this._drawAnnotations(
+            val[idx],
+            (x) => {
+              return x * tile_width + idx * tile_width;
+            },
+            (y) => {
+              return y * this._img.height;
+            },
+            (width) => {
+              return (width / val.length) * this._img.width;
+            },
+            (height) => {
+              return height * this._img.height;
+            }
+          );
         }
-      );
-      this._drawAnnotations(
-        val[1],
-        (x) => {
-          return (x * this._img.width) / 2 + this._img.width / 2;
-        },
-        (y) => {
-          return y * this._img.height;
-        },
-        (width) => {
-          return (width * this._img.width) / 2;
-        },
-        (height) => {
-          return height * this._img.height;
+      } else if (val.length == 4) {
+        // Grid
+        for (let idx = 0; idx < val.length; idx++) {
+          let tile_width = this._img.width / 2;
+          let tile_height = this._img.height / 2;
+          this._drawAnnotations(
+            val[idx],
+            (x) => {
+              return x * tile_width + (idx % 2) * tile_width;
+            },
+            (y) => {
+              return y * tile_height + Math.floor(idx / 2) * tile_height;
+            },
+            (width) => {
+              return (width / 2) * this._img.width;
+            },
+            (height) => {
+              return (height / 2) * this._img.height;
+            }
+          );
         }
-      );
+      }
     }
   }
 

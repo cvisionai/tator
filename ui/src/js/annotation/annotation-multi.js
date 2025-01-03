@@ -582,22 +582,22 @@ export class AnnotationMulti extends TatorElement {
 
     let processPreview = async (evt) => {
       this._pendingPreview = evt;
-        // Keep frames moving if we get dropped/interrupted
-        this._lastPreview = performance.now();
-        await this.handleFramePreview(evt);
-        this._pendingPreview = null;
+      // Keep frames moving if we get dropped/interrupted
+      this._lastPreview = performance.now();
+      await this.handleFramePreview(evt);
+      this._pendingPreview = null;
 
-        // If there is a new event to process, process it
-        while (
-          this._nextPreview &&
-          this._nextPreview.detail.frame != evt.detail.frame
-        ) {
-          this._pendingPreview = this._nextPreview;
-          this._nextPreview = null;
-          await this.handleFramePreview(this._pendingPreview);
-        }
-        this._pendingPreview = null;
-    }
+      // If there is a new event to process, process it
+      while (
+        this._nextPreview &&
+        this._nextPreview.detail.frame != evt.detail.frame
+      ) {
+        this._pendingPreview = this._nextPreview;
+        this._nextPreview = null;
+        await this.handleFramePreview(this._pendingPreview);
+      }
+      this._pendingPreview = null;
+    };
     this._slider.addEventListener("framePreview", async (evt) => {
       // Frame previews can get interrupted if we aren't keeping 30fps
       // things will look janky but we don't want to make things harder
@@ -609,9 +609,7 @@ export class AnnotationMulti extends TatorElement {
         if (delta < 33) {
           // If there is an event to process, process it
           this._nextPreview = evt;
-        }
-        else
-        {
+        } else {
           this._nextPreview = null;
           processPreview(evt);
         }
@@ -1002,22 +1000,19 @@ export class AnnotationMulti extends TatorElement {
         }
         if (multiImage) {
           // Here we do both images of a multi video
-          let fake_info = {}
-          if (video.length < 4)
-          {
+          let fake_info = {};
+          if (video.length < 4) {
             fake_info = {
               height: video[0]._mediaInfo.height,
               width: video[0]._mediaInfo.width * video.length,
             };
-          }
-          else if (video.length == 4)
-          {
+          } else if (video.length == 4) {
             fake_info = {
               height: video[0]._mediaInfo.height * 2,
               width: video[0]._mediaInfo.width * 2,
             };
           }
-          
+
           this._preview.mediaInfo = fake_info;
           let promises = [];
           for (let idx = 0; idx < video.length; idx++) {
@@ -1036,8 +1031,8 @@ export class AnnotationMulti extends TatorElement {
 
             this._preview.image = frames;
             for (let frame of frames) {
-                frame.close();
-            } 
+              frame.close();
+            }
           } catch (e) {
             console.error(`Failed to get frame ${proposed_value} ${e}`);
           }
@@ -1047,9 +1042,7 @@ export class AnnotationMulti extends TatorElement {
           for (let idx = 0; idx < video.length; idx++) {
             if (video[idx]._framedData.has(proposed_value)) {
               annotations.push(video[idx]._framedData.get(proposed_value));
-            }
-            else
-            {
+            } else {
               annotations.push([]);
             }
           }
