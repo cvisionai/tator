@@ -656,9 +656,22 @@ export class AnnotationPlayer extends TatorElement {
       this.handleSliderChange(evt);
     });
 
-    this._slider.addEventListener("framePreview", (evt) => {
-      this.handleFramePreview(evt);
-    });
+    this._slider.addEventListener("framePreview", async (evt) => {
+      // debounce events here. Process the last one 500ms after the last event (as a retry)
+      clearTimeout(this._previewTimeout);
+      this._previewTimeout = setTimeout(async () => {
+        this._previewProcessing=false;
+        await this.handleFramePreview(evt);
+      }, 500);
+
+      if (this._previewProcessing == false)
+      {
+        this._previewProcessing = true;
+        await this.handleFramePreview(evt);
+        this._previewProcessing = false;
+        clearTimeout(this._previewTimeout);
+      }
+  });
 
     this._slider.addEventListener("hidePreview", () => {
       this._preview.cancelled = true; // This isn't about cancel culture
