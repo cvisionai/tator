@@ -22,9 +22,11 @@ def _serialize_affiliations(affiliations):
         affiliation_data[idx]["last_name"] = affiliation.user.last_name
         affiliation_data[idx]["email"] = affiliation.user.email
     affiliation_data.sort(
-        key=lambda affiliation: affiliation["last_name"].lower()
-        if affiliation["last_name"]
-        else affiliation["username"].lower()
+        key=lambda affiliation: (
+            affiliation["last_name"].lower()
+            if affiliation["last_name"]
+            else affiliation["username"].lower()
+        )
     )
     return affiliation_data
 

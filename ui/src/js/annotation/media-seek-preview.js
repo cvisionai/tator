@@ -48,25 +48,7 @@ export class MediaSeekPreview extends TatorElement {
     this._previewBox.style.display = "none";
   }
 
-  set mediaInfo(val) {
-    // Calculate the aspect ratio and update the canvas size accordingly
-    const aspectRatio = val.width / val.height;
-    let newWidth = this._img.height * aspectRatio;
-    if (this._img.width != newWidth) {
-      this._img.width = newWidth;
-      // Fill it black on initialization
-      this._ctx.fillStyle = "black";
-      this._ctx.fillRect(0, 0, this._img.width, this._img.height);
-    }
-  }
-
-  set image(val) {
-    this._ctx.drawImage(val, 0, 0, this._img.width, this._img.height);
-    this._img.style.display = "block";
-  }
-
-  set annotations(val) {
-    // Dictionary by type
+  _drawAnnotations(val, xFn, yFn, widthFn, heightFn) {
     for (const typeId of val.keys()) {
       for (const localization of val.get(typeId)) {
         if (localization.type.indexOf("box") >= 0) {
@@ -74,28 +56,28 @@ export class MediaSeekPreview extends TatorElement {
           this._ctx.strokeStyle = "rgb(64,224,208)";
           this._ctx.lineWidth = 3;
           this._ctx.strokeRect(
-            localization.x * this._img.width,
-            localization.y * this._img.height,
-            localization.width * this._img.width,
-            localization.height * this._img.height
+            xFn(localization.x),
+            yFn(localization.y),
+            widthFn(localization.width),
+            heightFn(localization.height)
           );
 
           // Fill with a 50% alpha color
           this._ctx.fillStyle = "rgb(64,224,208)";
           this._ctx.globalAlpha = 0.2;
           this._ctx.fillRect(
-            localization.x * this._img.width,
-            localization.y * this._img.height,
-            localization.width * this._img.width,
-            localization.height * this._img.height
+            xFn(localization.x),
+            yFn(localization.y),
+            widthFn(localization.width),
+            heightFn(localization.height)
           );
         } else if (localization.type.indexOf("dot") >= 0) {
           this._ctx.globalAlpha = 0.7;
           this._ctx.fillStyle = "rgb(64,224,208)";
           this._ctx.beginPath();
           this._ctx.arc(
-            localization.x * this._img.width,
-            localization.y * this._img.height,
+            xFn(localization.x),
+            yFn(localization.y),
             5,
             0,
             2 * Math.PI
@@ -106,13 +88,10 @@ export class MediaSeekPreview extends TatorElement {
           this._ctx.strokeStyle = "rgb(64,224,208)";
           this._ctx.lineWidth = 3;
           this._ctx.beginPath();
-          this._ctx.moveTo(
-            localization.x * this._img.width,
-            localization.y * this._img.height
-          );
+          this._ctx.moveTo(xFn(localization.x), yFn(localization.y));
           this._ctx.lineTo(
-            (localization.x + localization.u) * this._img.width,
-            (localization.y + localization.v) * this._img.height
+            xFn(localization.x + localization.u),
+            yFn(localization.y + localization.v)
           );
           this._ctx.stroke();
         } else if (localization.type.indexOf("poly") >= 0) {
@@ -121,13 +100,13 @@ export class MediaSeekPreview extends TatorElement {
           this._ctx.lineWidth = 3;
           this._ctx.beginPath();
           this._ctx.moveTo(
-            localization.points[0][0] * this._img.width,
-            localization.points[0][1] * this._img.height
+            xFn(localization.points[0][0]),
+            yFn(localization.points[0][1])
           );
           for (let idx = 1; idx < localization.points.length; idx++) {
             this._ctx.lineTo(
-              localization.points[idx][0] * this._img.width,
-              localization.points[idx][1] * this._img.height
+              xFn(localization.points[idx][0]),
+              yFn(localization.points[idx][1])
             );
           }
           this._ctx.closePath();
@@ -144,6 +123,109 @@ export class MediaSeekPreview extends TatorElement {
       }
     }
   }
+
+  set mediaInfo(val) {
+    // Calculate the aspect ratio and update the canvas size accordingly
+    const aspectRatio = val.width / val.height;
+    let newWidth = Math.floor(this._img.height * aspectRatio);
+    if (this._img.width != newWidth) {
+      this._img.width = newWidth;
+      // Fill it black on initialization
+      this._ctx.fillStyle = "black";
+      this._ctx.fillRect(0, 0, this._img.width, this._img.height);
+    }
+  }
+
+  set image(val) {
+    if (val.constructor.name == "Array") {
+      // Less than 4 do a film strip
+      if (val.length < 4) {
+        for (let idx = 0; idx < val.length; idx++) {
+          let x = (idx * this._img.width) / val.length;
+          let width = this._img.width / val.length;
+          this._ctx.drawImage(val[idx], x, 0, width, this._img.height);
+        }
+      } else if (val.length == 4) {
+        // Let's do a 2x2 grid
+        for (let idx = 0; idx < val.length; idx++) {
+          let x = ((idx % 2) * this._img.width) / 2;
+          let y = (Math.floor(idx / 2) * this._img.height) / 2;
+          let width = this._img.width / 2;
+          let height = this._img.height / 2;
+          this._ctx.drawImage(val[idx], x, y, width, height);
+        }
+      }
+    } else {
+      this._ctx.drawImage(val, 0, 0, this._img.width, this._img.height);
+    }
+    this._img.style.display = "block";
+  }
+
+  set annotations(val) {
+    // Dictionary by type
+    if (val.constructor.name != "Array") {
+      this._drawAnnotations(
+        val,
+        (x) => {
+          return x * this._img.width;
+        },
+        (y) => {
+          return y * this._img.height;
+        },
+        (width) => {
+          return width * this._img.width;
+        },
+        (height) => {
+          return height * this._img.height;
+        }
+      );
+    } else {
+      // Put the 2 annotations stacked left to right:
+      if (val.length < 4) {
+        // Film strip
+        for (let idx = 0; idx < val.length; idx++) {
+          let tile_width = this._img.width / val.length;
+          this._drawAnnotations(
+            val[idx],
+            (x) => {
+              return x * tile_width + idx * tile_width;
+            },
+            (y) => {
+              return y * this._img.height;
+            },
+            (width) => {
+              return (width / val.length) * this._img.width;
+            },
+            (height) => {
+              return height * this._img.height;
+            }
+          );
+        }
+      } else if (val.length == 4) {
+        // Grid
+        for (let idx = 0; idx < val.length; idx++) {
+          let tile_width = this._img.width / 2;
+          let tile_height = this._img.height / 2;
+          this._drawAnnotations(
+            val[idx],
+            (x) => {
+              return x * tile_width + (idx % 2) * tile_width;
+            },
+            (y) => {
+              return y * tile_height + Math.floor(idx / 2) * tile_height;
+            },
+            (width) => {
+              return (width / 2) * this._img.width;
+            },
+            (height) => {
+              return (height / 2) * this._img.height;
+            }
+          );
+        }
+      }
+    }
+  }
+
   set info(val) {
     if (this._info.frame === val.frame) {
       this._previewBox.style.left = `${val.x}px`;

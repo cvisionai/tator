@@ -576,12 +576,50 @@ export class AnnotationMulti extends TatorElement {
       this.handleSliderChange(evt);
     });
 
-    this._slider.addEventListener("framePreview", (evt) => {
-      this.handleFramePreview(evt);
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._lastPreview = 0;
+
+    let processPreview = async (evt) => {
+      this._pendingPreview = evt;
+      // Keep frames moving if we get dropped/interrupted
+      this._lastPreview = performance.now();
+      await this.handleFramePreview(evt);
+      this._pendingPreview = null;
+
+      // If there is a new event to process, process it
+      while (
+        this._nextPreview &&
+        this._nextPreview.detail.frame != evt.detail.frame
+      ) {
+        this._pendingPreview = this._nextPreview;
+        this._nextPreview = null;
+        await this.handleFramePreview(this._pendingPreview);
+      }
+      this._pendingPreview = null;
+    };
+    this._slider.addEventListener("framePreview", async (evt) => {
+      // Frame previews can get interrupted if we aren't keeping 30fps
+      // things will look janky but we don't want to make things harder
+      // by blocking the UI on a billion previews as someone zips by
+      if (this._pendingPreview == null) {
+        processPreview(evt);
+      } else {
+        const delta = performance.now() - this._lastPreview;
+        if (delta < 33) {
+          // If there is an event to process, process it
+          this._nextPreview = evt;
+        } else {
+          this._nextPreview = null;
+          processPreview(evt);
+        }
+      }
     });
 
     this._slider.addEventListener("hidePreview", () => {
-      this._preview.cancelled = true;
+      this._preview.cancelled = true; // This isn't about cancel culture
+      this._pendingPreview = null;
+      this._nextPreview = null;
       this._preview.hide();
     });
 
@@ -918,21 +956,83 @@ export class AnnotationMulti extends TatorElement {
   async handleFramePreview(evt) {
     let proposed_value = evt.detail.frame;
     this._preview.cancelled = false;
-    if (proposed_value > 0) {
+    if (proposed_value >= 0) {
       // Get frame preview image
       const existing = this._preview.info;
       let video = null;
-      let useImage = false;
+      let multiImage = false;
       let bias = 50;
       if (this._focusIds.length > 0) {
-        let focus = this._focusIds[0];
-        video = this._videoDivs[focus].children[0];
-        useImage = true;
+        video = [];
+        for (let focusId of this._focusIds) {
+          video.push(this._videoDivs[focusId].children[0]);
+        }
+        // limit to 4
+        if (video.length > 4) {
+          video = video.slice(0, 4);
+        }
+
+        multiImage = true;
+        bias += this._preview.img_height;
+      } else if (this._videos.length <= 4) {
+        multiImage = true;
+        video = this._videos;
         bias += this._preview.img_height;
       }
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
+        if (multiImage) {
+          // Here we do both images of a multi video
+          let fake_info = {};
+          if (video.length < 4) {
+            fake_info = {
+              height: video[0]._mediaInfo.height,
+              width: video[0]._mediaInfo.width * video.length,
+            };
+          } else if (video.length == 4) {
+            fake_info = {
+              height: video[0]._mediaInfo.height * 2,
+              width: video[0]._mediaInfo.width * 2,
+            };
+          }
+
+          this._preview.mediaInfo = fake_info;
+          let promises = [];
+          for (let idx = 0; idx < video.length; idx++) {
+            let frame_promise = video[idx].getScrubFrame(proposed_value);
+            promises.push(frame_promise);
+          }
+          try {
+            let frames = await Promise.all(promises);
+            if (this._preview.cancelled) {
+              // We took to long and got cancelled.
+              for (let frame of frames) {
+                frame.close();
+              }
+              return;
+            }
+
+            this._preview.image = frames;
+            for (let frame of frames) {
+              frame.close();
+            }
+          } catch (e) {
+            console.error(`Failed to get frame ${proposed_value} ${e}`);
+          }
+
+          // Set the annotations for the multi
+          let annotations = [];
+          for (let idx = 0; idx < video.length; idx++) {
+            if (video[idx]._framedData.has(proposed_value)) {
+              annotations.push(video[idx]._framedData.get(proposed_value));
+            } else {
+              annotations.push([]);
+            }
+          }
+          this._preview.annotations = annotations;
+        }
+
         if (this._timeMode == "utc") {
           let timeStr =
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
@@ -943,7 +1043,7 @@ export class AnnotationMulti extends TatorElement {
             x: evt.detail.clientX,
             y: evt.detail.clientY - bias, // Add 15 due to page layout
             time: timeStr,
-            image: useImage,
+            image: multiImage,
           };
         } else {
           this._preview.info = {
@@ -951,28 +1051,8 @@ export class AnnotationMulti extends TatorElement {
             x: evt.detail.clientX,
             y: evt.detail.clientY - bias, // Add 15 due to page layout
             time: frameToTime(proposed_value, this._fps[this._longest_idx]),
-            image: useImage,
+            image: multiImage,
           };
-        }
-
-        if (useImage) {
-          console.info(
-            `Getting Frame Preview for ${proposed_value} existing = ${existing.frame}`
-          );
-          let frame = await video.getScrubFrame(proposed_value);
-          console.info(`Got it!`);
-          if (this._preview.cancelled) {
-            // We took to long and got cancelled.
-            frame.close();
-            return;
-          }
-          this._preview.image = frame;
-          frame.close();
-
-          // Get annotations for frame
-          if (video._framedData.has(proposed_value)) {
-            this._preview.annotations = video._framedData.get(proposed_value);
-          }
         }
       }
       this._preview.show();
@@ -1751,7 +1831,6 @@ export class AnnotationMulti extends TatorElement {
     vid_id = Number(vid_id);
     this._multiLayoutState = "focus";
     this._focusIds = [vid_id];
-    this._preview.mediaInfo = this._videoDivs[vid_id].children[0]._mediaInfo;
     for (let videoId in this._videoDivs) {
       let video = this._videoDivs[videoId].children[0];
       video.contextMenuNone.hideMenu();

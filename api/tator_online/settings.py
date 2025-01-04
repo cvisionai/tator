@@ -252,13 +252,15 @@ LOGGING = {
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.TokenAuthentication",
-        "tator_online.authentication.KeycloakAuthentication",
-    )
-    if KEYCLOAK_ENABLED
-    else (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        (
+            "rest_framework.authentication.TokenAuthentication",
+            "tator_online.authentication.KeycloakAuthentication",
+        )
+        if KEYCLOAK_ENABLED
+        else (
+            "rest_framework.authentication.SessionAuthentication",
+            "rest_framework.authentication.TokenAuthentication",
+        )
     ),
     "DEFAULT_RENDERER_CLASSES": (
         "main.renderers.TatorRenderer",
