@@ -113,6 +113,18 @@ export class CanvasAppletWrapper extends TatorElement {
   }
 
   /**
+   * @param {AnnotationMulti, AnnotationPlayer, or AnnotationImage} annotator
+   *    Annotation player pointer so that the applet can control the underyling video
+   */
+  async updateAnnotator(annotator) {
+    if (typeof this._appletElement.updateAnnotator === "function") {
+      await this._appletElement.updateAnnotator(annotator);
+    } else {
+      return;
+    }
+  }
+
+  /**
    * @param {Tator.Media} media
    * @returns Promise
    */
