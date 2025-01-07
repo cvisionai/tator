@@ -975,6 +975,10 @@ export class ProjectDetail extends TatorPage {
                 this._versions = versions;
                 this._applets = applets;
 
+                const searchParams = new URLSearchParams(
+                  window.location.search
+                );
+
                 // Load page applet navigation elements
                 for (const applet of applets) {
                   if (applet.categories.includes("project-page"))
@@ -988,6 +992,11 @@ export class ProjectDetail extends TatorPage {
                     button.addEventListener("selected", () => {
                      this.selectApplet(button, applet);
                     });
+
+                    if (project.extended_info.default_project_page===applet.name && searchParams.has("section")===false)
+                    {
+                      this.selectApplet(button, applet);
+                    }
                   }
                 }
 
@@ -1062,9 +1071,6 @@ export class ProjectDetail extends TatorPage {
 
                 // Pull URL search parameters.
                 // If there are search parameters, apply them to the filterView
-                const searchParams = new URLSearchParams(
-                  window.location.search
-                );
                 if (searchParams.has("filterConditions")) {
                   this._filterURIString = searchParams.get("filterConditions");
                   this._filterConditions = JSON.parse(
@@ -1104,7 +1110,8 @@ export class ProjectDetail extends TatorPage {
                 if (searchParams.has("section")) {
                   const sectionId = Number(searchParams.get("section"));
                   this.selectSection(sectionId, initPage, initPageSize);
-                } else {
+                } else if (this._appletDiv.style.display == "none") {
+                  // Load section default if no applet is loaded already and no section was specified
                   this.selectSection(null, initPage, initPageSize);
                 }
 
@@ -1782,6 +1789,9 @@ export class ProjectDetail extends TatorPage {
   */
   selectApplet(button, applet)
   {
+    this._selectedApplet = applet;
+    this._selectedSection = null;
+    this.updateURL();
     this.makeAllInactive();
     button.setActive();
     this._pageDiv.style.display="none";
@@ -1793,6 +1803,7 @@ export class ProjectDetail extends TatorPage {
    */
   selectSection(sectionId, page, pageSize) {
 
+    this._selectedApplet = null;
     if (this._appletDiv.style.display != "none")
     {
       this._pageDiv.style.display=null;
@@ -1898,6 +1909,11 @@ export class ProjectDetail extends TatorPage {
       url.searchParams.set("section", this._selectedSection.id);
     } else {
       url.searchParams.delete("section");
+    }
+    if (this._selectedApplet !== null) {
+      url.searchParams.set("applet", this._selectedApplet.id);
+    } else {
+      url.searchParams.delete("applet");
     }
     window.history.replaceState({}, "", url.toString());
   }
