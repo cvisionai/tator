@@ -114,5 +114,10 @@ project = {
             "description": "List of attribute types in the project (applicable to section objects)",
             "items": {"$ref": "#/components/schemas/AttributeType"},
         },
+        "extended_info": {
+            "type": "object",
+            "description": "Extended information about the project.",
+            "additionalProperties": True,
+        },
     },
 }

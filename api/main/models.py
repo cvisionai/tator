@@ -803,6 +803,10 @@ class Project(Model):
     """ Defines the attribute types that can be used to filter sections for this project
     """
 
+    extended_info = JSONField(default=dict, null=True, blank=True)
+    """ Extended information about the project, useful for configuration of Tator® extensions.
+    """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
