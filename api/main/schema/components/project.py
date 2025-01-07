@@ -109,5 +109,10 @@ project = {
             "type": "string",
             "description": "Permission level of user making request.",
         },
+        "attribute_types": {
+            "type": "array",
+            "description": "List of attribute types in the project (applicable to section objects)",
+            "items": {"$ref": "#/components/schemas/AttributeType"},
+        },
     },
 }
