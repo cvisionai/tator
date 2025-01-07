@@ -901,6 +901,7 @@ export class ProjectDetail extends TatorPage {
       "/rest/Memberships/" + projectId
     );
     const versionPromise = fetchCredentials("/rest/Versions/" + projectId);
+    const appletPromise = fetchCredentials("/rest/Applets/" + projectId);
 
     // Run all above promises
     Promise.all([
@@ -911,6 +912,7 @@ export class ProjectDetail extends TatorPage {
       mediaTypePromise,
       membershipPromise,
       versionPromise,
+      appletPromise,
     ])
       .then(
         ([
@@ -921,6 +923,7 @@ export class ProjectDetail extends TatorPage {
           mediaTypeResponse,
           membershipResponse,
           versionResponse,
+          appletResponse,
         ]) => {
           const projectData = projectResponse.json();
           const sectionData = sectionResponse.json();
@@ -929,6 +932,7 @@ export class ProjectDetail extends TatorPage {
           const mediaTypeData = mediaTypeResponse.json();
           const membershipData = membershipResponse.json();
           const versionData = versionResponse.json();
+          const appletData = appletResponse.json();
 
           Promise.all([
             projectData,
@@ -938,6 +942,7 @@ export class ProjectDetail extends TatorPage {
             mediaTypeData,
             membershipData,
             versionData,
+            appletData,
           ])
             .then(
               async ([
@@ -948,6 +953,7 @@ export class ProjectDetail extends TatorPage {
                 mediaTypes,
                 memberships,
                 versions,
+                applets,
               ]) => {
                 // Save retrieved REST data
                 this._project = project;
@@ -956,8 +962,20 @@ export class ProjectDetail extends TatorPage {
                 this._mediaTypes = mediaTypes;
                 this._memberships = memberships;
                 this._versions = versions;
+                this._applets = applets;
 
                 store.setState({ sections: this._sections });
+
+                // Load page applet navigation elements
+                for (const applet of applets) {
+                  if (applet.categories.includes("project-page"))
+                  {
+                    let button = document.createElement("page-applet-item");
+                    button.init(applet);
+                    this._pageAppletButtons.push(button);
+                    this._libraryButtons.appendChild(button);
+                  }
+                }
 
                 // Hide algorithms if needed from the project detail page.
                 // There are a standard list of algorithm names to hide as well as categories
@@ -1742,6 +1760,10 @@ export class ProjectDetail extends TatorPage {
 
     this._allMediaButton.setInactive();
 
+    for (const pageAppletBtn of this._pageAppletButtons) {
+      pageAppletBtn.setInactive();
+    }
+
     // Set the active folder or search and the mainSection portion of the page
     this._selectedSection = null;
     if (sectionId != null) {
@@ -2178,8 +2200,12 @@ export class ProjectDetail extends TatorPage {
     libraryText.textContent = "Library";
     libraryHeader.appendChild(libraryText);
 
+    this._libraryButtons = document.createElement("div");
     this._allMediaButton = document.createElement("all-media-item");
-    this._panelLibrary.appendChild(this._allMediaButton);
+    this._pageAppletButtons = [];
+
+    this._libraryButtons.appendChild(this._allMediaButton);
+    this._panelLibrary.appendChild(this._libraryButtons);
 
     this._allMediaButton.addEventListener("selected", (evt) => {
       this.selectSection(evt.detail.id);
