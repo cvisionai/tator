@@ -1758,6 +1758,7 @@ class MainPage extends TatorPage {
 
   _updateProject(project) {
     this._breadcrumbs.setAttribute("project-name", project.name);
+    super._updateProject(project);
   }
 
   connectedCallback() {

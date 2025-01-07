@@ -124,6 +124,7 @@ export class AnalyticsPage extends TatorPage {
   }
 
   async _init(project) {
+    this._updateProject(project);
     this._breadcrumbs.setAttribute("project-name", project.name);
 
     // Database interface. This should only be used by the viewModel/interface code.

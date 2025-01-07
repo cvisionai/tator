@@ -72,6 +72,7 @@ export class AnalyticsPortal extends TatorPage {
   }
 
   _updateProject(project) {
+    super._updateProject(project);
     this._breadcrumbs.setAttribute("project-name", project.name);
   }
 
