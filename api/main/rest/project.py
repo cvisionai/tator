@@ -27,7 +27,6 @@ from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
 
-
 def _serialize_projects(projects, user_id):
     cache = TatorCache()
     ttl = 28800
