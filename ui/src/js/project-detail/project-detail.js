@@ -985,12 +985,8 @@ export class ProjectDetail extends TatorPage {
                     this._libraryButtons.appendChild(button);
 
                     // Handle selection
-                    button.addEventListener("selected", (evt) => {
-                      this.makeAllInactive();
-                      button.setActive();
-                      this._pageDiv.style.display="none";
-                      this._appletDiv.style.display=null;
-                      this._appletIframe.setAttribute("src", applet.html_file);
+                    button.addEventListener("selected", () => {
+                     this.selectApplet(button, applet);
                     });
                   }
                 }
@@ -1778,6 +1774,19 @@ export class ProjectDetail extends TatorPage {
     for (const pageAppletBtn of this._pageAppletButtons) {
       pageAppletBtn.setInactive();
     }
+  }
+
+  /**
+  @param {button} The button that triggered the event
+  @param {applet} The applet object to load in the iframe div
+  */
+  selectApplet(button, applet)
+  {
+    this.makeAllInactive();
+    button.setActive();
+    this._pageDiv.style.display="none";
+    this._appletDiv.style.display=null;
+    this._appletIframe.setAttribute("src", applet.html_file);
   }
   /**
    * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
