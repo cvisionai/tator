@@ -61,12 +61,17 @@ export class ProjectDetail extends TatorPage {
 
     this._mainSection = document.createElement("section");
     this._mainSection.setAttribute("class", "px-3 ml-3 flex-grow");
-    this._headerDiv = document.createElement("div");
-    this._headerDiv.setAttribute("class", "py-3 px-3 ml-3 flex-grow");
+    this._projHeaderDiv = document.createElement("div");
+    this._projHeaderDiv.setAttribute("class", "py-3 px-3 ml-3");
     this._pageDiv = document.createElement("div");
     this._pageDiv.setAttribute("class", "flex-grow");
-    this.main.appendChild(this._headerDiv);
+    this._appletDiv = document.createElement("div");
+    this._appletDiv.style.display="none";
+    this._appletIframe = document.createElement("iframe");
+    this._appletDiv.appendChild(this._appletIframe);
+    this.main.appendChild(this._projHeaderDiv);
     this.main.appendChild(this._pageDiv);
+    this.main.appendChild(this._appletDiv);
 
     this._pageDiv.appendChild(this._mainSection);
 
@@ -78,7 +83,7 @@ export class ProjectDetail extends TatorPage {
 
     const header = document.createElement("div");
     header.setAttribute("class", "main__header d-flex flex-justify-between");
-    this._headerDiv.appendChild(header);
+    this._projHeaderDiv.appendChild(header);
 
     const headerWrapperDiv = document.createElement("div");
     headerWrapperDiv.setAttribute("class", "d-flex flex-column");
@@ -978,6 +983,15 @@ export class ProjectDetail extends TatorPage {
                     button.init(applet);
                     this._pageAppletButtons.push(button);
                     this._libraryButtons.appendChild(button);
+
+                    // Handle selection
+                    button.addEventListener("selected", (evt) => {
+                      this.makeAllInactive();
+                      button.setActive();
+                      this._pageDiv.style.display="none";
+                      this._appletDiv.style.display=null;
+                      this._appletIframe.setAttribute("src", applet.html_file);
+                    });
                   }
                 }
 
@@ -1747,11 +1761,8 @@ export class ProjectDetail extends TatorPage {
     this.updateSearchesVisibility();
   }
 
-  /**
-   * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
-   */
-  selectSection(sectionId, page, pageSize) {
-    // Make all folders and searhes inactive
+  makeAllInactive()
+  {
     const allFolders = [...this._folders.children];
     for (const folder of allFolders) {
       folder.setInactive();
@@ -1767,6 +1778,20 @@ export class ProjectDetail extends TatorPage {
     for (const pageAppletBtn of this._pageAppletButtons) {
       pageAppletBtn.setInactive();
     }
+  }
+  /**
+   * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
+   */
+  selectSection(sectionId, page, pageSize) {
+
+    if (this._appletDiv.style.display != "none")
+    {
+      this._pageDiv.style.display=null;
+      this._appletDiv.style.display="none";
+    }
+    // Make all folders and searhes inactive
+    const allFolders = [...this._folders.children];
+    this.makeAllInactive();
 
     // Set the active folder or search and the mainSection portion of the page
     this._selectedSection = null;
