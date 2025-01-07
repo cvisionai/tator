@@ -984,6 +984,11 @@ export class ProjectDetail extends TatorPage {
                   window.location.search
                 );
 
+                // Hide all media if specified by project extension
+                if (project.extended_info.hideAllMedia) {
+                  this._allMediaButton.style.display = "none";
+                }
+
                 // Load page applet navigation elements
                 for (const applet of applets) {
                   if (applet.categories.includes("project-page"))
@@ -998,7 +1003,7 @@ export class ProjectDetail extends TatorPage {
                      this.selectApplet(button, applet);
                     });
 
-                    if (project.extended_info.default_project_page===applet.name && searchParams.has("section")===false)
+                    if (project.extended_info.defaultProjectPage===applet.name && searchParams.has("section")===false)
                     {
                       this.selectApplet(button, applet);
                     }
