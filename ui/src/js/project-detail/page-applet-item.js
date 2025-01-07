@@ -51,8 +51,7 @@ export class PageAppletItem extends TatorElement {
     });
   }
 
-  init(applet)
-  {
+  init(applet) {
     this._name.innerHTML = applet.name;
     this._applet = applet;
   }

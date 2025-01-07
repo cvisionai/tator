@@ -106,7 +106,7 @@ export class RegisteredDashboard extends TatorPage {
       "analytics-name-link",
       window.location.origin + `/${project.id}/dashboards`
     );
-    
+
     // Call parent _updateProject
     super._updateProject(project);
   }

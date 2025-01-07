@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 PROJECT_PROPERTIES = list(project_schema["properties"].keys())
 PROJECT_PROPERTIES.remove("permission")  # this is calculated and inserted in python-logic
 
+
 def _serialize_projects(projects, user_id):
     cache = TatorCache()
     ttl = 28800
