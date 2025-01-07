@@ -68,6 +68,7 @@ export class ProjectDetail extends TatorPage {
     this._appletDiv = document.createElement("div");
     this._appletDiv.style.display="none";
     this._appletIframe = document.createElement("iframe");
+    this._appletIframe.style.width="100%";
     this._appletDiv.appendChild(this._appletIframe);
     this.main.appendChild(this._projHeaderDiv);
     this.main.appendChild(this._pageDiv);
@@ -1796,6 +1797,8 @@ export class ProjectDetail extends TatorPage {
     button.setActive();
     this._pageDiv.style.display="none";
     this._appletDiv.style.display=null;
+    const boundingRect = this._appletDiv.getBoundingClientRect();
+    this._appletIframe.style.height=`calc(100vh - ${boundingRect.top+5}px)`;
     this._appletIframe.setAttribute("src", applet.html_file);
   }
   /**
