@@ -63,6 +63,12 @@ export class TatorPage extends TatorElement {
     }
   }
 
+  _updateProject(project)
+  {
+    this._projectInfo = project;
+    // TODO implement this
+  }
+
   _setUser(user) {
     this._header.setAttribute(
       "username",

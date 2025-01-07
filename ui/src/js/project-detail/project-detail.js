@@ -375,6 +375,7 @@ export class ProjectDetail extends TatorPage {
       (state) => state.announcements,
       this._setAnnouncements.bind(this)
     );
+    store.subscribe((state) => state.project, this._updateProject.bind(this));
 
     window.addEventListener("beforeunload", (evt) => {
       if (this._uploadDialog.hasAttribute("is-open")) {

@@ -112,6 +112,7 @@ export class AnalyticsCollections extends TatorPage {
   }
 
   _init(project) {
+    this._updateProject(project);
     this._breadcrumbs.setAttribute("project-name", project.name);
     this.loading.showSpinner();
     this.showDimmer();

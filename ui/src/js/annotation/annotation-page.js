@@ -220,6 +220,9 @@ export class AnnotationPage extends TatorPage {
   _updateProject(project) {
     this.setAttribute("project-name", project.name);
     this.setAttribute("project-id", project.id);
+
+    // Call the parent's update project as well
+    super._updateProject(project);
   }
 
   _updateMedia(mediaId) {
