@@ -56,11 +56,19 @@ export class ProjectDetail extends TatorPage {
     //
     this.main = document.createElement("main");
     this.main.setAttribute("class", "d-flex flex-grow col-12 mr-3");
+    this.main.style.flexDirection="column";
     this.mainWrapper.appendChild(this.main);
 
     this._mainSection = document.createElement("section");
-    this._mainSection.setAttribute("class", "py-3 px-3 ml-3 flex-grow");
-    this.main.appendChild(this._mainSection);
+    this._mainSection.setAttribute("class", "px-3 ml-3 flex-grow");
+    this._headerDiv = document.createElement("div");
+    this._headerDiv.setAttribute("class", "py-3 px-3 ml-3 flex-grow");
+    this._pageDiv = document.createElement("div");
+    this._pageDiv.setAttribute("class", "flex-grow");
+    this.main.appendChild(this._headerDiv);
+    this.main.appendChild(this._pageDiv);
+
+    this._pageDiv.appendChild(this._mainSection);
 
     this.gallery = {};
     this.gallery._main = this._mainSection;
@@ -70,7 +78,7 @@ export class ProjectDetail extends TatorPage {
 
     const header = document.createElement("div");
     header.setAttribute("class", "main__header d-flex flex-justify-between");
-    div.appendChild(header);
+    this._headerDiv.appendChild(header);
 
     const headerWrapperDiv = document.createElement("div");
     headerWrapperDiv.setAttribute("class", "d-flex flex-column");
