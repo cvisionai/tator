@@ -98,6 +98,7 @@ export class NavMain extends TatorElement {
     knowledge.setAttribute("rel", "noopener noreferrer");
     knowledge.textContent = "Knowledge Base";
     headingDiv.appendChild(knowledge);
+    this._knowledge = knowledge;
 
     const service = document.createElement("a");
     service.setAttribute("class", "nav__link");
@@ -105,6 +106,7 @@ export class NavMain extends TatorElement {
     service.setAttribute("href", "mailto:info@cvisionai.com");
     service.textContent = "Customer Service";
     headingDiv.appendChild(service);
+    this._service = service;
 
     const shortcuts = document.createElement("button");
     shortcuts.setAttribute("class", "nav__link btn-clear px-0");
@@ -118,6 +120,16 @@ export class NavMain extends TatorElement {
     close.addEventListener("navClose", (evt) => {
       this.removeAttribute("is-open");
     });
+  }
+
+  set customerServiceHref(val)
+  {
+    this._service.href = val;
+  }
+
+  set knowledgeHref(val)
+  {
+    this._knowledge.href = val;
   }
 
   static get observedAttributes() {

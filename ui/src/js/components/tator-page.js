@@ -66,7 +66,14 @@ export class TatorPage extends TatorElement {
   _updateProject(project)
   {
     this._projectInfo = project;
-    // TODO implement this
+    if (project.extended_info.customerServiceHref)
+    {
+      this._nav.customerServiceHref = project.extended_info.customerServiceHref;
+    }
+    if (project.extended_info.knowledgeHref)
+    {
+      this._nav.knowledgeHref = project.extended_info.knowledgeHref;
+    }
   }
 
   _setUser(user) {
