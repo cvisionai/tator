@@ -370,7 +370,7 @@ export class DropUpload extends UploadElement {
 						...added,
 						parent,
 						skip: true,
-						note: "Invalid file type",
+						note: added.note ? added.note : "Invalid file type",
 					});
 				}
 			} else if (entry.kind === "directory") {
@@ -509,7 +509,9 @@ export class DropUpload extends UploadElement {
 				exists: false,
 				duplicate: false,
 				skip: this._specifiedTypes.allowDirectories ? false : true,
-				note: this._specifiedTypes.allowDirectories
+				note: s.note
+					? s.note
+					: this._specifiedTypes.allowDirectories
 					? `<span class="text-purple">Checking...</span>`
 					: "Folder upload disabled",
 			});
@@ -524,7 +526,11 @@ export class DropUpload extends UploadElement {
 				parent: `${u.parent === "" ? "" : u.parent}`,
 				duplicate: u.duplicate ? u.duplicate : false,
 				exists: u.exists ? u.exists : false,
-				note: u.note ? u.note : `<span class="text-purple">Checking...</span>`,
+				note: u.note
+					? u.note
+					: u.note
+					? u.note
+					: `<span class="text-purple">Checking...</span>`,
 				skip: u.skip ? u.skip : false,
 			});
 		}

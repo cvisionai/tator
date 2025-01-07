@@ -3,16 +3,16 @@ import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.
 import { uploadMedia } from "../../../../scripts/packages/tator-js/src/utils/upload-media.js";
 
 export class UploadElement extends TatorElement {
-  constructor() {
+	constructor() {
 		super();
 		this._skippedReason = "";
-    this._fileSelectCallback = this._fileSelectCallback.bind(this);
-    this._haveNewSection = false;
-    this._abortController = new AbortController();
+		this._fileSelectCallback = this._fileSelectCallback.bind(this);
+		this._haveNewSection = false;
+		this._abortController = new AbortController();
 		this._cancel = false;
 		this._lastSection = null;
-    this._chosenSection = null;
-    this._chosenMediaType = null;
+		this._chosenSection = null;
+		this._chosenMediaType = null;
 		this._uploadAttributes = {};
 
 		this._acceptedImageExt = [
@@ -51,26 +51,27 @@ export class UploadElement extends TatorElement {
 			".avchd",
 			".ts",
 		];
-  }
+	}
 
-  init(store) {
-    this._store = store;
-    store.subscribe(
-      (state) => state.uploadCancelled,
-      (cancelled) => {
-        if (cancelled) {
-          // Cancel next uploads.
-          this._cancel = true;
-          // Abort uploads in progress.
-          this._abortController.abort();
-        } else {
-          this._cancel = false;
-        }
-      }
-    );
-  }
+	init(store) {
+		this._store = store;
+		store.subscribe(
+			(state) => state.uploadCancelled,
+			(cancelled) => {
+				if (cancelled) {
+					// Cancel next uploads.
+					this._cancel = true;
+					// Abort uploads in progress.
+					this._abortController.abort();
+				} else {
+					this._cancel = false;
+				}
+			}
+		);
+	}
 
-  _checkFile(file, gid) {
+	_checkFile(file, gid) {
+		let note = "";
 		// File extension can have multiple components in archives
 		let comps = file.name.split(".").slice(-1),
 			ext = comps.join("."); // rejoin extension
@@ -82,23 +83,6 @@ export class UploadElement extends TatorElement {
 			/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
 		);
 		const isArchive = ext.match(/^(zip|tar)/i);
-
-		if (this._store.getState().mediaTypeSettings) {
-			const mediaTypeSettings = this._store.getState().mediaTypeSettings;
-			const imageOk = mediaTypeSettings.find((t) => t.dtype === "image");
-			const videoOk = mediaTypeSettings.find((t) => t.dtype === "video");
-			if (isImage && !imageOk) {
-				this._skippedReason = "Media Type ";
-				return false;
-			}
-			if (isVideo && !videoOk) {
-				this._skippedReason = "Media Type ";
-				return false;
-			}
-			if (isArchive) {
-				console.warn("Warning: Archive uploaded without media type settings.");
-			}
-		}
 
 		let mediaType = null,
 			fileOk = false,
@@ -142,6 +126,24 @@ export class UploadElement extends TatorElement {
 			}
 		}
 
+		if (this._store.getState().mediaTypeSettings) {
+			const mediaTypeSettings = this._store.getState().mediaTypeSettings;
+			const imageOk = mediaTypeSettings.find((t) => t.dtype === "image");
+			const videoOk = mediaTypeSettings.find((t) => t.dtype === "video");
+
+			if (isArchive) {
+				console.warn("Warning: Archive uploaded without media type settings.");
+			}
+
+			if (isImage && !imageOk) {
+				fileOk = false;
+				note = "Image media type not enabled.";
+			}
+			if (isVideo && !videoOk) {
+				fileOk = false;
+				note = "Video media type not enabled.";
+			}
+		}
 		// if (fileOk && mediaType !== null) {
 		function progressCallback(progress) {
 			this._store.setState({ uploadChunkProgress: progress });
@@ -160,6 +162,7 @@ export class UploadElement extends TatorElement {
 			progressCallback: progressCallback.bind(this),
 			abortController: this._abortController,
 			attributes: attributes ? attributes : {},
+			note: note ? note : "",
 		};
 		// console.log("File is OK", fileInfo);
 		return fileInfo;
@@ -175,9 +178,9 @@ export class UploadElement extends TatorElement {
 		// };
 	}
 
-  // Iterates through items from drag and drop or file select
-  // event and sends them to the upload worker.
-  async _fileSelectCallback(ev) {
+	// Iterates through items from drag and drop or file select
+	// event and sends them to the upload worker.
+	async _fileSelectCallback(ev) {
 		console.log("File select callback");
 		// Prevent browser default behavior.
 		ev.preventDefault();
