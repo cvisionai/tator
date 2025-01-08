@@ -2151,6 +2151,7 @@ class Section(Model):
         max_length=16,
         choices=[("folder", "folder"), ("playlist", "playlist"), ("saved_search", "saved_search")],
         default="folder",
+        null=True, blank=True,
     )
     """ What type of section this is.
     """
