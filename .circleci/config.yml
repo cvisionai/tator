@@ -9,6 +9,8 @@ jobs:
       image: default
     environment:
       DOCKER_REGISTRY: cvisionai
+      # CI Always uses AWS Lightsail to build images
+      APT_REPO_HOST: http://us-east-1.ec2.archive.ubuntu.com/ubuntu/
     steps:
     - attach_workspace:
         at: ~/
