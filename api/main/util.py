@@ -1167,6 +1167,7 @@ def find_funky_marks(project_id, fix_it=False, since_when=datetime.datetime.from
             )
             find_bad_marks(potential_states)
 
+
 def memberships_to_rowp(project_id, force=False, verbose=True):
     from main._permission_util import shift_permission, PermissionMask
 
@@ -1374,6 +1375,7 @@ def update_primary_section(project_ids=None):
             )
             media_list.update(primary_section=section)
     print("Finished updating primary section!")
+
 
 def fill_lookup_table(project_id, dry_run=False):
     unhandled_media = Media.objects.filter(project=project_id, projectlookup__isnull=True)

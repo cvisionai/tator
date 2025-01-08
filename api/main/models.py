@@ -2500,6 +2500,7 @@ class ProjectLookup(Model):
     localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
     state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+
     class Meta:
         constraints = [
             UniqueConstraint(
