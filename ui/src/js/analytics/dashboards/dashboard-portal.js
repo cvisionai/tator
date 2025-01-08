@@ -86,6 +86,7 @@ export class DashboardPortal extends TatorPage {
   }
 
   _init(project) {
+    this._updateProject(project);
     this._breadcrumbs.setAttribute("project-name", project.name);
     this._projectId = project.id;
     this._getDashboards();
