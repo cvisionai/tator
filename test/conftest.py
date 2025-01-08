@@ -73,6 +73,8 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     context = chrome.new_context(
         **browser_context_args,
         record_video_dir=videos,
+        record_video_size={"width": 1920, "height": 1080},
+        viewport={"width": 2560, "height": 1440},
         locale="en-US",
     )
     page = context.new_page()
