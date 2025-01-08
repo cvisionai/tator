@@ -4,7 +4,7 @@ MAINTAINER CVision AI <info@cvisionai.com>
 
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
 ENV APT_REPO_HOST=${APT_REPO_HOST}
-RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
+RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list.d/ubuntu.sources
 
 # Install apt packages
 ENV DEBIAN_FRONTEND=noninteractive
