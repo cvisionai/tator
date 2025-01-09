@@ -957,6 +957,12 @@ export class AnnotationMulti extends TatorElement {
     let proposed_value = evt.detail.frame;
     this._preview.cancelled = false;
     if (proposed_value >= 0) {
+
+      if (this._timelineMore.style.display != "none")
+      {
+        // Add mouse over to the timeline detail area
+        this._entityTimeline.focusMouseMove(null,null,proposed_value);
+      }
       // Get frame preview image
       const existing = this._preview.info;
       let video = null;
