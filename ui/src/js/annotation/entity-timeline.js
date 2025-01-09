@@ -1491,26 +1491,34 @@ export class EntityTimeline extends BaseTimeline {
     this._focusSvg.on("mousemove", this.focusMouseMove.bind(this));
   }
 
-  focusMouseMove(event, d) {
-    var currentFrame = parseInt(this._focusX.invert(d3.pointer(event)[0]));
+  focusMouseMove(event, d, overrideFrame) {
+    var currentFrame = 0;
+    if (overrideFrame) {
+      currentFrame = overrideFrame;
+    }
+    else if (event)
+    {
+      currentFrame = parseInt(this._focusX.invert(d3.pointer(event)[0]));
+    }
+    const x = this._mainX(currentFrame);
 
     this._mouseLine
       .attr("opacity", "0.5")
-      .attr("x1", d3.pointer(event)[0])
-      .attr("x2", d3.pointer(event)[0])
+      .attr("x1", x)
+      .attr("x2", x)
       .attr("y1", -this._focusStep - this._focusMargin.bottom)
       .attr("y2", this._focusHeight);
 
     this._mainFrameLine
       .attr("opacity", "0.5")
-      .attr("x1", this._mainX(currentFrame))
-      .attr("x2", this._mainX(currentFrame))
+      .attr("x1", x)
+      .attr("x2", x)
       .attr("y1", -this._mainStep - this._mainMargin.bottom)
       .attr("y2", this._mainHeight);
 
     if (this._displayXAxis) {
       this._focusFrameText.attr("opacity", "1.0");
-      this._focusFrameText.attr("x", d3.pointer(event)[0]);
+      this._focusFrameText.attr("x", x);
       if (this.inFrameDisplayMode()) {
         this._focusFrameText.text(currentFrame);
       } else if (this.inRelativeTimeDisplayMode()) {
