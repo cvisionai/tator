@@ -122,13 +122,11 @@ export class NavMain extends TatorElement {
     });
   }
 
-  set customerServiceHref(val)
-  {
+  set customerServiceHref(val) {
     this._service.href = val;
   }
 
-  set knowledgeHref(val)
-  {
+  set knowledgeHref(val) {
     this._knowledge.href = val;
   }
 

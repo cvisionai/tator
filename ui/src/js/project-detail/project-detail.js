@@ -56,7 +56,7 @@ export class ProjectDetail extends TatorPage {
     //
     this.main = document.createElement("main");
     this.main.setAttribute("class", "d-flex flex-grow col-12 mr-3");
-    this.main.style.flexDirection="column";
+    this.main.style.flexDirection = "column";
     this.mainWrapper.appendChild(this.main);
 
     this._mainSection = document.createElement("section");
@@ -66,9 +66,9 @@ export class ProjectDetail extends TatorPage {
     this._pageDiv = document.createElement("div");
     this._pageDiv.setAttribute("class", "flex-grow");
     this._appletDiv = document.createElement("div");
-    this._appletDiv.style.display="none";
+    this._appletDiv.style.display = "none";
     this._appletIframe = document.createElement("iframe");
-    this._appletIframe.style.width="100%";
+    this._appletIframe.style.width = "100%";
     this._appletDiv.appendChild(this._appletIframe);
     this.main.appendChild(this._projHeaderDiv);
     this.main.appendChild(this._pageDiv);
@@ -987,8 +987,7 @@ export class ProjectDetail extends TatorPage {
 
                 // Load page applet navigation elements
                 for (const applet of applets) {
-                  if (applet.categories.includes("project-page"))
-                  {
+                  if (applet.categories.includes("project-page")) {
                     let button = document.createElement("page-applet-item");
                     button.init(applet);
                     this._pageAppletButtons.push(button);
@@ -996,11 +995,14 @@ export class ProjectDetail extends TatorPage {
 
                     // Handle selection
                     button.addEventListener("selected", () => {
-                     this.selectApplet(button, applet);
+                      this.selectApplet(button, applet);
                     });
 
-                    if (project.extended_info.defaultProjectPage===applet.name && searchParams.has("section")===false)
-                    {
+                    if (
+                      project.extended_info.defaultProjectPage ===
+                        applet.name &&
+                      searchParams.has("section") === false
+                    ) {
                       this.selectApplet(button, applet);
                     }
                   }
@@ -1770,8 +1772,7 @@ export class ProjectDetail extends TatorPage {
     this.updateSearchesVisibility();
   }
 
-  makeAllInactive()
-  {
+  makeAllInactive() {
     const allFolders = [...this._folders.children];
     for (const folder of allFolders) {
       folder.setInactive();
@@ -1793,29 +1794,26 @@ export class ProjectDetail extends TatorPage {
   @param {button} The button that triggered the event
   @param {applet} The applet object to load in the iframe div
   */
-  selectApplet(button, applet)
-  {
+  selectApplet(button, applet) {
     this._selectedApplet = applet;
     this._selectedSection = null;
     this.updateURL();
     this.makeAllInactive();
     button.setActive();
-    this._pageDiv.style.display="none";
-    this._appletDiv.style.display=null;
+    this._pageDiv.style.display = "none";
+    this._appletDiv.style.display = null;
     const boundingRect = this._appletDiv.getBoundingClientRect();
-    this._appletIframe.style.height=`calc(100vh - ${boundingRect.top+5}px)`;
+    this._appletIframe.style.height = `calc(100vh - ${boundingRect.top + 5}px)`;
     this._appletIframe.setAttribute("src", applet.html_file);
   }
   /**
    * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
    */
   selectSection(sectionId, page, pageSize) {
-
     this._selectedApplet = null;
-    if (this._appletDiv.style.display != "none")
-    {
-      this._pageDiv.style.display=null;
-      this._appletDiv.style.display="none";
+    if (this._appletDiv.style.display != "none") {
+      this._pageDiv.style.display = null;
+      this._appletDiv.style.display = "none";
     }
     // Make all folders and searhes inactive
     const allFolders = [...this._folders.children];
