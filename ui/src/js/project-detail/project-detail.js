@@ -1833,6 +1833,7 @@ export class ProjectDetail extends TatorPage {
       }
 
       if (this._selectedSection == null) {
+        const allSearches = [...this._savedSearches.children];
         for (const search of allSearches) {
           const section = search.getSection();
           if (section.id == sectionId) {
