@@ -4,6 +4,8 @@ import { store } from "./store.js";
 export class MediaTypeSettings extends TatorElement {
 	constructor() {
 		super();
+
+		this._availableTypes = ["video", "image", "file", "folder"];
 	}
 
 	set mediaTypes(val) {
@@ -18,11 +20,13 @@ export class MediaTypeSettings extends TatorElement {
 		this._dtypeMap = new Map();
 		if (this._mediaTypes && this._mediaTypes.length > 0) {
 			for (let m of this._mediaTypes) {
-				const array = this._dtypeMap.has(m.dtype)
-					? this._dtypeMap.get(m.dtype)
-					: [];
-				array.push(m);
-				this._dtypeMap.set(m.dtype, array);
+				if (this._availableTypes.includes(m.dtype)) {
+					const array = this._dtypeMap.has(m.dtype)
+						? this._dtypeMap.get(m.dtype)
+						: [];
+					array.push(m);
+					this._dtypeMap.set(m.dtype, array);
+				}
 			}
 		}
 
