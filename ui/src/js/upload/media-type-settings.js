@@ -81,7 +81,7 @@ export class MediaTypeSettings extends TatorElement {
 
 		const input = document.createElement("checkbox-input");
 		input.classList.add("col-10", "text-light-gray");
-		input.setAttribute("name", `Include ${dataTypeDisplay}s`);
+		input.setAttribute("name", `${dataTypeDisplay}s`);
 		input.setAttribute(
 			"tooltip",
 			`Disable to ignore ${dataTypeDisplay}s chosen from your local file system.`
@@ -102,7 +102,7 @@ export class MediaTypeSettings extends TatorElement {
 
 		const drawer = document.createElement("div");
 		drawer.setAttribute("class", "form-group mt-6");
-		drawer.style.display = "none";
+		// drawer.style.display = "none";
 		div.appendChild(drawer);
 
 		const mediaTypeSelect = document.createElement("enum-input");
@@ -137,17 +137,17 @@ export class MediaTypeSettings extends TatorElement {
 			this.getValue();
 		});
 
-		const optHide = list[0].dtype !== "folder" ? "hidden" : "";
+		const optHide = "";
 		const showLess = document.createElement("span");
 		showLess.setAttribute("class", "clickable f3 " + optHide);
 		showLess.setAttribute("tooltip", "Hide drawer");
-		showLess.style.display = "none";
 		showLess.textContent = "Less -";
 		topSmall.appendChild(showLess);
 
 		const showMore = document.createElement("span");
 		showMore.setAttribute("class", "clickable f3");
 		showMore.textContent = "More +";
+		showMore.style.display = "none";
 		showMore.setAttribute(
 			"tooltip",
 			`Set attributes on media, or specify a registered ${dataTypeDisplay} Type.`

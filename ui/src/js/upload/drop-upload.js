@@ -14,6 +14,7 @@ export class DropUpload extends UploadElement {
 		this._setEmptyVariables();
 		this._uploads = [];
 		this._newSections = [];
+		this._ftDisabled = "File type disabled";
 		this._allSelectedText = "Select all";
 		this._noneSelectedText = "Deselect all";
 		this._specifiedTypes = {
@@ -43,6 +44,18 @@ export class DropUpload extends UploadElement {
 		this._summaryText.textContent = "No files, or folders added.";
 		this._summaryText.setAttribute("class", "py-2 text-gray f2");
 		this._summaryTitle.appendChild(this._summaryText);
+
+		this._clearAllInvalid = document.createElement("a");
+		this._clearAllInvalid.setAttribute(
+			"class",
+			"text-underline text-gray clickable f3 hidden"
+		);
+		this._clearAllInvalid.textContent = "Clear Invalid";
+		this._clearAllInvalid.addEventListener(
+			"click",
+			this._clearAllInvalidEntries.bind(this)
+		);
+		this._summaryTitle.appendChild(this._clearAllInvalid);
 
 		this._checkIdemDiv = document.createElement("div");
 		this._checkIdemDiv.setAttribute(
@@ -170,18 +183,6 @@ export class DropUpload extends UploadElement {
 		);
 		this._destination.appendChild(this._destinationApply);
 
-		this._clearAllInvalid = document.createElement("a");
-		this._clearAllInvalid.setAttribute(
-			"class",
-			"text-underlined text-gray clickable f3 ml-3"
-		);
-		this._clearAllInvalid.textContent = "Clear All Invalid";
-		this._clearAllInvalid.addEventListener(
-			"click",
-			this._clearAllInvalidEntries.bind(this)
-		);
-		this._destination.appendChild(this._clearAllInvalid);
-
 		const selectSection = document.createElement("div");
 		selectSection.setAttribute("class", "col-3");
 		// topOfTable.appendChild(selectSection);
@@ -259,7 +260,7 @@ export class DropUpload extends UploadElement {
 
 		// TODO: Set this or just get from store?
 		this._mediaTypeSettings = mediaTypeSettings;
-
+		const dtypes = [...new Set(mediaTypeSettings.map((m) => m.dtype))];
 		for (let entry of mediaTypeSettings) {
 			if (entry.dtype == "image") {
 				specList.push(...this._acceptedImageExt);
@@ -275,6 +276,44 @@ export class DropUpload extends UploadElement {
 			acceptList: specList,
 			allowDirectories: allowDirectories,
 		};
+		this._checkIdem.innerHTML = "";
+		let removed = [];
+		if (this._data && this._data.length > 0) {
+			for (let data of this._data) {
+				if (data.type === "folder" && !allowDirectories) {
+					this._removeEntry(data);
+					this._checkIdem.innerHTML = "File type change: Removing entry...";
+					removed.push(data);
+				} else {
+					console.log("Checking data", data);
+					let comps = data.file.name.split(".").slice(-1),
+						ext = comps.join("."); // rejoin extension
+
+					const isImage = ext.match(
+						/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
+					);
+					const isVideo = ext.match(
+						/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
+					);
+
+					if (!dtypes.includes("image") && isImage) {
+						this._removeEntry(data);
+						this._checkIdem.innerHTML = "File type change: Removing entry...";
+					removed.push(data);
+					}
+					if (!dtypes.includes("video") && isVideo) {
+						this._removeEntry(data);
+						this._checkIdem.innerHTML = "File type change: Removing entry...";
+					removed.push(data);
+					}
+				}
+				this._checkIdem.innerHTML = `Removed ${removed.length} entries due to file type change.`;
+				// removed.push(data);
+				this._createTable(this._data);
+				this._calculateSelected();
+				this._textSummaryUpdate();
+			}
+		}
 	}
 
 	async fileHandleHandler(fileHandles) {
@@ -361,7 +400,6 @@ export class DropUpload extends UploadElement {
 				const added = this._checkFile(file, gid);
 				if (added.ok) {
 					this._uploads.push({ ...added, parent });
-					this._totalSize += file.size;
 				} else {
 					console.log("File not added", file);
 					this._skippedEntries.push(file);
@@ -370,7 +408,7 @@ export class DropUpload extends UploadElement {
 						...added,
 						parent,
 						skip: true,
-						note: added.note ? added.note : "Invalid file type",
+						note: added.note ? added.note : this._ftDisabled,
 					});
 				}
 			} else if (entry.kind === "directory") {
@@ -389,7 +427,7 @@ export class DropUpload extends UploadElement {
 					skip: this._specifiedTypes.allowDirectories ? false : true,
 					note: this._specifiedTypes.allowDirectories
 						? `<span class="text-purple">Checking...</span>`
-						: "Folder upload disabled",
+						: this._ftDisabled,
 				});
 
 				let newParent = this._specifiedTypes.allowDirectories
@@ -497,28 +535,40 @@ export class DropUpload extends UploadElement {
 	 *
 	 * */
 	formatTableData() {
-		let data = [],
+		let data = this._data,
 			files = [];
 
+		this._totalSize = 0;
+
 		for (let s of this._newSections) {
-			data.push({
-				name: s.name,
-				size: 0,
-				type: "folder",
-				parent: s.parent,
-				exists: false,
-				duplicate: false,
-				skip: this._specifiedTypes.allowDirectories ? false : true,
-				note: s.note
-					? s.note
-					: this._specifiedTypes.allowDirectories
-					? `<span class="text-purple">Checking...</span>`
-					: "Folder upload disabled",
-			});
+			if (
+				this._data.find(
+					(d) =>
+						d.name === s.name && d.type === "folder" && d.parent === s.parent
+				)
+			) {
+				// Don't add duplicate folders
+				console.log("Duplicate found", d, s);
+			} else {
+				data.push({
+					name: s.name,
+					size: 0,
+					type: "folder",
+					parent: s.parent,
+					exists: false,
+					duplicate: false,
+					skip: this._specifiedTypes.allowDirectories ? false : true,
+					note: s.note
+						? s.note
+						: this._specifiedTypes.allowDirectories
+						? `<span class="text-purple">Checking...</span>`
+						: "Folder upload disabled",
+				});
+			}
 		}
 
 		for (let u of this._uploads) {
-			files.push({
+			let uploadEntry = {
 				...u,
 				name: u.file?.name ? u.file.name : u.name ? u.name : "",
 				size: u.file?.size ? u.file.size : u.size ? u.size : 0,
@@ -532,11 +582,22 @@ export class DropUpload extends UploadElement {
 					? u.note
 					: `<span class="text-purple">Checking...</span>`,
 				skip: u.skip ? u.skip : false,
-			});
+			};
+			if (
+				this._data.find(
+					(d) => d.name === uploadEntry.name && uploadEntry.parent === d.parent
+				)
+			) {
+				// Don't add duplicate files
+			} else {
+				files.push(uploadEntry);
+			}
 		}
 
 		data = [...data, ...files];
-
+		for (let f of data) {
+			this._totalSize += f.size;
+		}
 		return data;
 	}
 
@@ -547,6 +608,12 @@ export class DropUpload extends UploadElement {
 			validFiles = this._data.filter((u) => !u.skip && u.type !== "folder"),
 			invalidEntries = this._data.filter((u) => u.skip);
 
+		if (invalidEntries.length > 0) {
+			this._clearAllInvalid.classList.remove("hidden");
+		} else {
+			this._clearAllInvalid.classList.add("hidden");
+		}
+
 		this._summaryText.innerHTML = `
 			<div class="pb-1">
 				${validFiles.length} file${validFiles.length === 1 ? "" : "s"}
@@ -555,7 +622,7 @@ export class DropUpload extends UploadElement {
 				${validSections.length} folder${validSections.length === 1 ? "" : "s"}
 			</div>
 							<div class="pb-1">
-					${invalidEntries.length} invalid (will be skipped)
+					${invalidEntries.length} invalid
 				</div>
 			<div class="pb-1">${formatBytesOutput(this._totalSize)} total</div>
 			${
@@ -591,7 +658,7 @@ export class DropUpload extends UploadElement {
 				return d;
 			});
 			this._createTable(this._data);
-			await asyncTimeout(1000);
+			await this.asyncTimeout(100);
 			this._cancelling = false;
 		}
 	}
@@ -675,7 +742,7 @@ export class DropUpload extends UploadElement {
 						if (this._cancelledCheck) {
 							resolve(folders);
 						}
-						await this.asyncTimeout(300);
+						await this.asyncTimeout(100);
 						let mySection = this._sections.find((s) => s.path == f.parent);
 
 						// If the parent is set to root, we need to check all sections
@@ -765,7 +832,7 @@ export class DropUpload extends UploadElement {
 
 	asyncTimeout(ms) {
 		return new Promise((resolve) => {
-			console.log("Async timeout", ms);
+			// console.log("Async timeout", ms);
 			setTimeout(resolve, ms);
 		});
 	}
@@ -779,7 +846,7 @@ export class DropUpload extends UploadElement {
 							return resolve(folders);
 						}
 
-						await this.asyncTimeout(300);
+						await this.asyncTimeout(100);
 						// Check if the folder exists in the section
 						const newPath = growPathByNameUtil(folder.parent, folder.name),
 							url = `/rest/Sections/${this._projectId}?match=${newPath}`;
@@ -792,7 +859,7 @@ export class DropUpload extends UploadElement {
 							this._skippedEntries.push(folder);
 							folder.exists = true;
 							folder.skip = true;
-							folder.note = "Exists: Folder paths cannot be duplicated";
+							folder.note = `<span class="text-red">Folder with this name exists in this location.</span>`;
 
 							this._removeParentPath(folder.name);
 						} else if (!folder.skip) {
@@ -915,7 +982,35 @@ export class DropUpload extends UploadElement {
 						cell.textContent = "--";
 					} else if (key == "size") {
 						cell.textContent = formatBytesOutput(row.size);
-					} else if (key == "lastrow") {
+					} else if (key == "lastrow" && row.note.indexOf("exists") > -1) {
+						cell.classList.add("text-center", "f3", "clickable", "text-gray");
+						
+						const renameAction = document.createElement("span");
+						renameAction.innerHTML = `Rename <br/><br/><br/>`;
+						renameAction.addEventListener("click", (evt) => {
+							tr.remove();
+							this._removeEntry(row);
+							this._data.push({
+								...row,
+								name: `${row.name}_copy`,
+								parent: row.parent.replace(row.name, `${row.name}_copy`),
+							});
+							
+							this._createTable(this._data);
+							this._checkIdempotency();
+							this._calculateSelected();
+							this._textSummaryUpdate();
+						});
+						cell.appendChild(renameAction);
+						
+						const removeAction = document.createElement("span");
+						removeAction.textContent = "Remove";
+						removeAction.addEventListener("click", (evt) => {
+							tr.remove();
+							this._removeEntry(row);
+						});
+						cell.appendChild(removeAction);
+					} else if (key == "lastrow"){
 						cell.classList.add("text-center", "f3", "clickable", "text-gray");
 						cell.addEventListener("click", (evt) => {
 							tr.remove();
@@ -1346,6 +1441,91 @@ export class DropUpload extends UploadElement {
 			store.setState({ uploadError: err.message });
 			return msg;
 		}
+	}
+
+	_checkFile(file, gid) {
+		const mediaTypes = this._store.getState().mediaTypes;
+		let mediaType = null,
+		fileOk = false,
+			attributes = null,
+			note = "",
+			comps = file.name.split(".").slice(-1), // File extension can have multiple components in archives
+			ext = comps.join("."); // rejoin extension
+
+		const isImage = ext.match(
+			/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
+		),
+			isVideo = ext.match(
+			/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
+		),
+			isArchive = ext.match(/^(zip|tar)/i);
+
+		const imageOk = mediaTypes.find((t) => t.dtype === "image");
+		const videoOk = mediaTypes.find((t) => t.dtype === "video");
+
+		if (isImage && !imageOk) {
+			fileOk = false;
+			note = this._ftDisabled;
+		} else if (isImage && imageOk) {
+			mediaType = imageOk;
+			fileOk = true;
+			attributes = this._imageAttr;
+		} else if (isVideo && !videoOk) {
+			fileOk = false;
+			note = this._ftDisabled;
+		} else if (isVideo && videoOk) {
+			mediaType = videoOk;
+			fileOk = true;
+			attributes = this._videoAttr;
+		}
+
+
+		
+		for (let currentType of mediaTypes) {
+			if (mediaType === null) {
+				if (currentType?.file_format !== null) {
+					fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
+					mediaType = currentType;
+
+					if (isArchive) {
+						fileOk = true;
+					}
+				}
+			}
+		}
+
+		// if (fileOk && mediaType !== null) {
+		function progressCallback(progress) {
+			this._store.setState({ uploadChunkProgress: progress });
+		}
+		const fileInfo = {
+			ok: fileOk,
+			file: file,
+			gid: gid,
+			mediaType: isArchive ? -1 : mediaType == null ? null : mediaType,
+			section:
+				this._section && !this._chosenSection
+					? this._section
+					: this._chosenSection,
+			isImage: isImage,
+			isArchive: isArchive,
+			progressCallback: progressCallback.bind(this),
+			abortController: this._abortController,
+			attributes: attributes ? attributes : {},
+			note: note ? note : "",
+		};
+		// console.log("File is OK", fileInfo);
+		return fileInfo;
+		// }
+
+		// this._store.setState({
+		// 	uploadError: `Error: Please check that ${file.name} is a valid file type for this project!`,
+		// });
+
+		// return {
+		// 	file: file,
+		// 	ok: false,
+		// };
 	}
 
 	_clearAllInvalidEntries(evt) {
