@@ -990,10 +990,15 @@ export class DropUpload extends UploadElement {
 						renameAction.addEventListener("click", (evt) => {
 							tr.remove();
 							this._removeEntry(row);
+
+							const splitName = row.name.split(".");
+
+							const newName = splitName[0] + "_copy." + splitName[1];
+
 							this._data.push({
 								...row,
-								name: `${row.name}_copy`,
-								parent: row.parent.replace(row.name, `${row.name}_copy`),
+								name: `${newName}`,
+								parent: row.parent.replace(row.name, `${newName}`),
 							});
 							
 							this._createTable(this._data);
