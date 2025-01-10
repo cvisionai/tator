@@ -991,7 +991,7 @@ export class ProjectDetail extends TatorPage {
 
                 // Load page applet navigation elements
                 for (const applet of applets) {
-                  if (applet.categories.includes("project-page")) {
+                  if (applet.categories && applet.categories.includes("project-page")) {
                     let button = document.createElement("page-applet-item");
                     button.init(applet);
                     this._pageAppletButtons.push(button);
