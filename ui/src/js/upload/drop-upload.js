@@ -951,10 +951,6 @@ export class DropUpload extends UploadElement {
 				(f) => f.name !== row.name
 			);
 
-			for (let f of this._data) {
-				this._totalSize += f.size;
-			}
-
 			if (this._data[index].type === "folder") {
 				let removedParent = this._data[index].name
 					.replaceAll(" ", "_")
@@ -965,6 +961,11 @@ export class DropUpload extends UploadElement {
 			this._data.splice(index, 1);
 			this._newSections = this._data.filter((s) => s.type === "folder");
 			this._uploads = this._data.filter((u) => u.type !== "folder");
+
+			this._totalSize = 0;
+			for (let f of this._uploads) {
+				this._totalSize += f.size;
+			}
 
 			this._createTable(this._data);
 			this._calculateSelected();
