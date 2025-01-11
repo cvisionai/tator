@@ -1,27 +1,35 @@
-import { UploadElement } from "../components/upload-element.js";
 import { store } from "./store.js";
-import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
+import { v1 as uuidv1 } from "uuid";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { uploadMedia } from "../../../../scripts/packages/tator-js/src/utils/upload-media.js";
 import { reducePathUtil, growPathByNameUtil } from "../util/path-formatter.js";
 import { formatBytesOutput } from "../util/bytes-formatter.js";
+import { TatorElement } from "../components/tator-element.js";
 
-export class DropUpload extends UploadElement {
+import Upload from "./classes/Upload.js";
+
+/**
+ * User is assembling a new Upload which consists of files and folders
+ * that will be uploaded to the server.
+ *
+ * This component is responsible for:
+ * 1. Displaying the files and folders that have been added
+ * 2. Displaying the destination section
+ * 3. Displaying the media type settings
+ * 4. Displaying the upload summary
+ * 5. Displaying the upload status and progress
+ * 6. Displaying the success or failures of the upload
+ *
+ */
+
+export class UploadElement extends TatorElement {
 	constructor() {
 		super();
-		this._direction = 1;
+
+		this._currentUpload = null;
+		this._activeUploads = [];
 
 		this._setEmptyVariables();
-		this._uploads = [];
-		this._newSections = [];
-		this._ftDisabled = "File type disabled";
-		this._allSelectedText = "Select all";
-		this._noneSelectedText = "Deselect all";
-		this._specifiedTypes = {
-			description: "Media Files",
-			acceptList: [],
-			allowDirectories: true,
-		};
 
 		const main = document.createElement("div");
 		main.setAttribute("class", "px-3 py-3 rounded-3");
@@ -237,8 +245,6 @@ export class DropUpload extends UploadElement {
 			.set("type", "Type")
 			.set("lastrow", "");
 
-		this._createTable([]);
-
 		store.subscribe(
 			(state) => state.mediaTypeSettings,
 			this._updateFileOptions.bind(this)
@@ -249,122 +255,44 @@ export class DropUpload extends UploadElement {
 		this._projectId = Number(window.location.pathname.split("/")[1]);
 		this.init(store);
 	}
-
-	dropHandler(list) {
-		this.fileHandleHandler(list);
+	init(store) {
+		this._store = store;
+		store.subscribe(
+			(state) => state.uploadCancelled,
+			(cancelled) => {
+				if (cancelled) {
+					// Cancel next uploads.
+					this._cancel = true;
+					// Abort uploads in progress.
+					this._abortController.abort();
+				} else {
+					this._cancel = false;
+				}
+			}
+		);
 	}
 
-	_updateFileOptions(mediaTypeSettings) {
-		let specList = [],
-			allowDirectories = false;
-
-		// TODO: Set this or just get from store?
-		this._mediaTypeSettings = mediaTypeSettings;
-		const dtypes = [...new Set(mediaTypeSettings.map((m) => m.dtype))];
-		for (let entry of mediaTypeSettings) {
-			if (entry.dtype == "image") {
-				specList.push(...this._acceptedImageExt);
-			} else if (entry.dtype == "video") {
-				specList.push(...this._acceptedVideoExt);
-			} else if (entry.dtype == "folder") {
-				allowDirectories = true;
-			}
-		}
+	generateSpecList(mediaTypeSettings) {
+		let allowDirectories = mediaTypeSettings.find((m) => m.dtype === "folder")
+				? true
+				: false,
+			acceptList = mediaTypeSettings.map((m) => {
+				if (m.dtype === "image") {
+					return this._acceptedImageExt;
+				} else if (m.dtype === "video") {
+					return this._acceptedVideoExt;
+				}
+			});
 
 		this._specifiedTypes = {
 			description: "Media Files",
-			acceptList: specList,
+			acceptList: acceptList,
 			allowDirectories: allowDirectories,
 		};
-		this._checkIdem.innerHTML = "";
-		let removed = [];
-		if (this._data && this._data.length > 0) {
-			for (let data of this._data) {
-				if (data.type === "folder" && !allowDirectories) {
-					this._removeEntry(data);
-					this._checkIdem.innerHTML = "File type change: Removing entry...";
-					removed.push(data);
-				} else {
-					console.log("Checking data", data);
-					let comps = data.file.name.split(".").slice(-1),
-						ext = comps.join("."); // rejoin extension
-
-					const isImage = ext.match(
-						/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
-					);
-					const isVideo = ext.match(
-						/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
-					);
-
-					if (!dtypes.includes("image") && isImage) {
-						this._removeEntry(data);
-						this._checkIdem.innerHTML = "File type change: Removing entry...";
-					removed.push(data);
-					}
-					if (!dtypes.includes("video") && isVideo) {
-						this._removeEntry(data);
-						this._checkIdem.innerHTML = "File type change: Removing entry...";
-					removed.push(data);
-					}
-				}
-				this._checkIdem.innerHTML = `Removed ${removed.length} entries due to file type change.`;
-				// removed.push(data);
-				this._createTable(this._data);
-				this._calculateSelected();
-				this._textSummaryUpdate();
-			}
-		}
 	}
 
-	async fileHandleHandler(fileHandles) {
-		const gid = uuidv1();
-		let parent = `${
-			this._chosenSection?.path === "None"
-				? this._chosenSection.name.replaceAll(" ", "_").replaceAll(".", "_")
-				: this._chosenSection?.path
-				? this._chosenSection.path
-				: "New_Files"
-		}`;
-
-		if (fileHandles.kind == "directory") {
-			this._newSections.push({
-				name: entry.name,
-				parent: parent, // PATH
-				type: "folder",
-				skip: this._specifiedTypes.allowDirectories ? false : true,
-				note: this._specifiedTypes.allowDirectories
-					? `<span class="text-purple">Checking...</span>`
-					: "Folder upload disabled",
-			});
-			if (
-				parent &&
-				parent == "New_Files" &&
-				this._specifiedTypes.allowDirectories
-			) {
-				parent = ``;
-			} else {
-				parent = this._specifiedTypes.allowDirectories
-					? `${growPathByNameUtil(parent, entry.name)}`
-					: parent;
-			}
-		} else if (!fileHandles || !fileHandles.length) {
-			return;
-		}
-
-		await this._recursiveDirectoryUpload(fileHandles, gid, parent);
-		const data = this.formatTableData();
-
-		this._createTable(data);
-		this._textSummaryUpdate();
-
-		// Big Upload is Total Size > 60000000000
-		if (data.filter((a) => !a.skip).length > 0) {
-			await this._checkIdempotency();
-		} else {
-			this._checkIdemDiv.classList.remove("checking-files");
-		}
-
-		this._textSummaryUpdate();
+	dropHandler(list) {
+		this.fileHandleHandler(list);
 	}
 
 	async filePicker(directory = false) {
@@ -392,61 +320,67 @@ export class DropUpload extends UploadElement {
 		}
 	}
 
-	_recursiveDirectoryUpload = async (handle, gid, parent) => {
-		const entries = await handle.values();
-		for await (let entry of entries) {
-			if (entry.kind === "file") {
-				const file = await entry.getFile();
-				const added = this._checkFile(file, gid);
-				if (added.ok) {
-					this._uploads.push({ ...added, parent });
-				} else {
-					console.log("File not added", file);
-					this._skippedEntries.push(file);
-					// this._skippedReason = "File type not allowed";
-					this._uploads.push({
-						...added,
-						parent,
-						skip: true,
-						note: added.note ? added.note : this._ftDisabled,
-					});
-				}
-			} else if (entry.kind === "directory") {
-				if (
-					parent &&
-					parent == "New_Files" &&
-					this._specifiedTypes.allowDirectories
-				) {
-					parent = "";
-				}
+	_updateFileOptions(mediaTypeSettings) {
+		this.generateSpecList(mediaTypeSettings);
 
-				this._newSections.push({
-					name: entry.name,
-					parent: parent,
-					type: "folder",
-					skip: this._specifiedTypes.allowDirectories ? false : true,
-					note: this._specifiedTypes.allowDirectories
-						? `<span class="text-purple">Checking...</span>`
-						: this._ftDisabled,
-				});
+		// If there is already file data present when this changes, update the file options
+		if (this._currentUpload) {
+			let removed = this._currentUpload._updateFileOptions(mediaTypeSettings);
 
-				let newParent = this._specifiedTypes.allowDirectories
-					? `${growPathByNameUtil(parent, entry.name)}`
-					: parent;
+			// Notify the user
+			if (removed.length > 0) {
+				this.idemDivAsMessanger(
+					`File type changed: Removed ${removed.length} entr${
+						removed.length == 1 ? "y" : "ies"
+					}.`
+				);
 
-				if (
-					parent &&
-					parent == "New_Files" &&
-					this._specifiedTypes.allowDirectories &&
-					entry.kind === "directory"
-				) {
-					newParent = "";
-				}
-
-				await this._recursiveDirectoryUpload(entry, gid, newParent);
+				// Update the summary table
+				this._createTable(this._currentUpload.list);
 			}
 		}
-	};
+	}
+
+	idemDivAsMessanger(message, time = 1500) {
+		this._checkIdem.innerHTML = message;
+		this._checkIdemDiv.style.display = "block";
+		setTimeout(() => {
+			this._checkIdemDiv.style.display = "none";
+		}, time);
+	}
+
+	async fileHandleHandler(fileHandles) {
+		const gid = uuidv1();
+
+		let parent = `${
+			this._chosenSection?.path === "None"
+				? this._chosenSection.name.replaceAll(" ", "_").replaceAll(".", "_")
+				: this._chosenSection?.path
+				? this._chosenSection.path
+				: "New_Files"
+		}`;
+
+		if (this._currentUpload === null) {
+			this._currentUpload = new Upload({
+				gid,
+				fileHandles,
+				parent,
+				destination: this._chosenSection,
+				store: this._store,
+			});
+			await this._currentUpload._constructList();
+		} else {
+			this._currentUpload.addFileHandles(fileHandles);
+		}
+
+		this._createTable();
+		console.log("this._currentUpload.list.....", this._currentUpload.list);
+		if (this._currentUpload.list.length > 0) {
+			await this._checkIdempotency();
+		} else {
+			this._checkIdemDiv.classList.remove("checking-files");
+		}
+	}
 
 	set sectionData(val) {
 		this._sectionData = val;
@@ -529,84 +463,14 @@ export class DropUpload extends UploadElement {
 		this._pageLink.setAttribute("href", `/${this._project.id}/upload`);
 	}
 
-	/**
-	 * Creates upload summary from newly added files
-	 * TODO: this isn't totally necessary could be merged with initial data creation?
-	 *
-	 * */
-	formatTableData() {
-		let data = this._data,
-			files = [];
-
-		this._totalSize = 0;
-
-		for (let s of this._newSections) {
-			if (
-				this._data.find(
-					(d) =>
-						d.name === s.name && d.type === "folder" && d.parent === s.parent
-				)
-			) {
-				// Don't add duplicate folders
-				console.log("Duplicate found", d, s);
-			} else {
-				data.push({
-					name: s.name,
-					size: 0,
-					type: "folder",
-					parent: s.parent,
-					exists: false,
-					duplicate: false,
-					skip: this._specifiedTypes.allowDirectories ? false : true,
-					note: s.note
-						? s.note
-						: this._specifiedTypes.allowDirectories
-						? `<span class="text-purple">Checking...</span>`
-						: "Folder upload disabled",
-				});
-			}
-		}
-
-		for (let u of this._uploads) {
-			let uploadEntry = {
-				...u,
-				name: u.file?.name ? u.file.name : u.name ? u.name : "",
-				size: u.file?.size ? u.file.size : u.size ? u.size : 0,
-				type: u.file?.type ? u.file.type : u.type ? u.type : "file",
-				parent: `${u.parent === "" ? "" : u.parent}`,
-				duplicate: u.duplicate ? u.duplicate : false,
-				exists: u.exists ? u.exists : false,
-				note: u.note
-					? u.note
-					: u.note
-					? u.note
-					: `<span class="text-purple">Checking...</span>`,
-				skip: u.skip ? u.skip : false,
-			};
-			if (
-				this._data.find(
-					(d) => d.name === uploadEntry.name && uploadEntry.parent === d.parent
-				)
-			) {
-				// Don't add duplicate files
-			} else {
-				files.push(uploadEntry);
-			}
-		}
-
-		data = [...data, ...files];
-		for (let f of data) {
-			this._totalSize += f.size;
-		}
-		return data;
-	}
-
 	_textSummaryUpdate() {
-		const validSections = this._data.filter(
-				(u) => !u.skip && u.type == "folder"
+		const validSections = this._currentUpload.list.filter(
+				(u) => !u.invalid_skip && u.type == "folder"
 			),
-			validFiles = this._data.filter((u) => !u.skip && u.type !== "folder"),
-			invalidEntries = this._data.filter((u) => u.skip);
+			validFiles = this._currentUpload.list.filter(
+				(u) => !u.invalid_skip && u.type !== "folder"
+			),
+			invalidEntries = this._currentUpload.list.filter((u) => u.invalid_skip);
 
 		if (invalidEntries.length > 0) {
 			this._clearAllInvalid.classList.remove("hidden");
@@ -624,22 +488,15 @@ export class DropUpload extends UploadElement {
 							<div class="pb-1">
 					${invalidEntries.length} invalid
 				</div>
-			<div class="pb-1">${formatBytesOutput(this._totalSize)} total</div>
+			<div class="pb-1">${formatBytesOutput(
+				this._currentUpload.totalSize
+			)} total</div>
 			${
-				this._totalSize > 60000000000 || validFiles.length > 5000
+				this._currentUpload.totalSize > 60000000000 || validFiles.length > 5000
 					? `<div class="text-red bg-gray py-3 px-3">Warning: Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try tator-py.</div>`
 					: ""
 			}
 			<div>`;
-
-		if (this._skippedReason !== "" && this._skippedEntries.length > 0) {
-			this._shadow
-				.getElementById("skipped-details")
-				?.addEventListener("click", (evt) => {
-					evt.preventDefault();
-					window.alert(this._skippedEntries.map((f) => f.name).join("\n"));
-				});
-		}
 	}
 
 	async _abortIdemCheck(evt) {
@@ -686,48 +543,24 @@ export class DropUpload extends UploadElement {
 		);
 
 		// If we have a new base, check them all -- Otherwise, just the unmarked items
-		this._data = this._data.map((d, i) => {
-			return { ...d, index: i };
-		});
-
-		const files = this._data.filter(
-				(d) => d.type !== "folder" && d.skip !== true
+		const files = this._currentUpload.list.filter(
+				(d) => d.type !== "folder" && d.invalid_skip !== true
 			),
-			folders = this._data.filter(
-				(d) => d.type === "folder" && d.skip !== true
+			folders = this._currentUpload.list.filter(
+				(d) => d.type === "folder" && d.invalid_skip !== true
 			),
-			remainingFiles = this._data.filter((d) => d.skip);
+			remainingFiles = this._currentUpload.list.filter((d) => d.invalid_skip);
 
-		const checkedFolders =
-			folders.length > 0 ? await this._folderIdempotencyCheck(folders) : [];
-		const checkedFiles =
-			files.length > 0 ? await this._fileIdempotencyCheck(files) : [];
+		if (folders.length > 0) {
+			await this._folderIdempotencyCheck(folders);
+		}
+		if (files.length > 0) {
+			await this._fileIdempotencyCheck(files);
+		}
 
-		this._createTable([...checkedFolders, ...checkedFiles, ...remainingFiles]);
-		const totalExisting = this._data.filter((d) => d.exists).length;
-		const totalDuplicates = this._data.filter((d) => d.duplicate).length;
-		this._checkIdemDiv.style.display = "block";
-		this._checkIdem.innerHTML = "Idempotency check complete!";
-		// `<div class="h3">${
-		// 	totalDuplicates > 0 || totalExisting > 0
-		// 		? "Please review: "
-		// 		: "Idempotency check complete!"
-		// }</div><div class="py-2">${
-		// 	totalExisting == 0
-		// 		? ""
-		// 		: `${totalExisting}  match${totalExisting == 1 ? "" : "es"} exist${
-		// 				totalExisting == 1 ? "s" : ""
-		// 		  }.`
-		// }; ${totalDuplicates} duplicate${
-		// 	totalDuplicates === 1 ? "" : "s"
-		// } found in selected folder.</div>`;
+		this.idemDivAsMessanger("Idempotency check complete!");
 		this._checkIdemDiv.classList.remove("checking-files");
-
-		// if (!(totalDuplicates > 0 || totalExisting > 0)) {
-		setTimeout(() => {
-			this._checkIdemDiv.style.display = "none";
-		}, 1000);
-		// }
+		this._createTable();
 		return;
 	}
 
@@ -742,7 +575,7 @@ export class DropUpload extends UploadElement {
 						if (this._cancelledCheck) {
 							resolve(folders);
 						}
-						await this.asyncTimeout(100);
+						await this.asyncTimeout(10);
 						let mySection = this._sections.find((s) => s.path == f.parent);
 
 						// If the parent is set to root, we need to check all sections
@@ -814,12 +647,12 @@ export class DropUpload extends UploadElement {
 											.join("<br/>")
 									: ""
 							}</div>`;
-						} else if (!f.skip) {
+						} else if (!f.info_skip && !f.invalid_skip) {
 							f.note = "<span class=''>Valid file</span>";
 						}
 
-						this._data[f.index] = f;
-						this._createTable(this._data);
+						this._currentUpload.updateIndex(f.index, f);
+						this._createTable();
 					} catch (err) {
 						if (err !== "Idempotency check cancelled")
 							console.error("Error checking idem. for file", err);
@@ -858,15 +691,15 @@ export class DropUpload extends UploadElement {
 						if (data.length > 0) {
 							this._skippedEntries.push(folder);
 							folder.exists = true;
-							folder.skip = true;
+							folder.invalid_skip = true;
 							folder.note = `<span class="text-red">Folder with this name exists in this location.</span>`;
 
-							this._removeParentPath(folder.name);
-						} else if (!folder.skip) {
+							this._currentUpload._removeParentPath(folder.name);
+						} else if (!folder.invalid_skip) {
 							folder.note = "<span class=''>Valid folder</span>";
 						}
 
-						this._data[folder.index] = folder;
+						this._currentUpload.updateIndex(folder.index, folder);
 
 						this._createTable(this._data);
 					} catch (err) {
@@ -910,31 +743,33 @@ export class DropUpload extends UploadElement {
 	}
 
 	_createTable(data) {
-		this.dispatchEvent(
-			new CustomEvent("upload-summary", {
-				detail: {
-					data: data,
-					ok: true, // TODO: Check if there are any errors
-				},
-			})
-		);
+		// Upload > list
 
 		this._checkboxMap = new Map();
-		this._data = data;
 
 		this._summaryTable.innerHTML = "";
 		this._createHeader();
 		const body = this._summaryTable.createTBody();
 
-		const start = (this._currentPage - 1) * this._pageSize;
-		const end = start + this._pageSize;
-		const pageData = this._data.slice(start, end);
+		// TBD: Pagination?
+		// const start = (this._currentPage - 1) * this._pageSize;
+		// const end = start + this._pageSize;
+		// const pageData = this._data.slice(start, end);
 
-		const pageText = `Page: <span>${
-			this._currentPage
-		}</span> of <span>${Math.ceil(this._data.length / this._pageSize)}</span>`;
+		// const pageText = `Page: <span>${
+		// 	this._currentPage
+		// }</span> of <span>${Math.ceil(this._data.length / this._pageSize)}</span>`;
 
-		this._paginatorSummary.innerHTML = pageText;
+		// this._paginatorSummary.innerHTML = pageText;
+		const pageData = this._currentUpload?.list ? this._currentUpload.list : [];
+		this.dispatchEvent(
+			new CustomEvent("upload-summary", {
+				detail: {
+					data: pageData,
+					ok: true, // TODO: Check if there are any errors
+				},
+			})
+		);
 
 		if (pageData && pageData.length > 0) {
 			pageData.forEach((row, index) => {
@@ -942,7 +777,6 @@ export class DropUpload extends UploadElement {
 				tr.dataset.info = JSON.stringify(row);
 				this._headerMap.forEach((value, key) => {
 					const cell = tr.insertCell();
-
 					if (key == "name") {
 						if (row.type === "folder") {
 							cell.innerHTML = `<span><svg class="no-fill mr-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -956,7 +790,7 @@ export class DropUpload extends UploadElement {
 							)} > <span class="text-bold">${row.name}</span>`;
 						}
 					} else if (key == "select") {
-						if (row.skip) {
+						if (row.invalid_skip) {
 							cell.classList.add("text-center", "f3", "clickable");
 							cell.addEventListener("click", (evt) => {
 								tr.remove();
@@ -982,32 +816,22 @@ export class DropUpload extends UploadElement {
 						cell.textContent = "--";
 					} else if (key == "size") {
 						cell.textContent = formatBytesOutput(row.size);
-					} else if (key == "lastrow" && row.note.indexOf("exists") > -1) {
+					} else if (
+						key == "lastrow" &&
+						row?.note &&
+						row?.note?.indexOf("exists") > -1
+					) {
 						cell.classList.add("text-center", "f3", "clickable", "text-gray");
-						
+
 						const renameAction = document.createElement("span");
 						renameAction.innerHTML = `Rename <br/><br/><br/>`;
 						renameAction.addEventListener("click", (evt) => {
 							tr.remove();
-							this._removeEntry(row);
-
-							const splitName = row.name.split(".");
-
-							const newName = splitName[0] + "_copy." + splitName[1];
-
-							this._data.push({
-								...row,
-								name: `${newName}`,
-								parent: row.parent.replace(row.name, `${newName}`),
-							});
-							
-							this._createTable(this._data);
+							this._currentUpload.updateEntry({ index: index });
 							this._checkIdempotency();
-							this._calculateSelected();
-							this._textSummaryUpdate();
 						});
 						cell.appendChild(renameAction);
-						
+
 						const removeAction = document.createElement("span");
 						removeAction.textContent = "Remove";
 						removeAction.addEventListener("click", (evt) => {
@@ -1015,7 +839,7 @@ export class DropUpload extends UploadElement {
 							this._removeEntry(row);
 						});
 						cell.appendChild(removeAction);
-					} else if (key == "lastrow"){
+					} else if (key == "lastrow") {
 						cell.classList.add("text-center", "f3", "clickable", "text-gray");
 						cell.addEventListener("click", (evt) => {
 							tr.remove();
@@ -1026,12 +850,16 @@ export class DropUpload extends UploadElement {
 						cell.innerHTML = row[key];
 
 						if (key == "note") {
-							if (row.skip) tr.classList.add("text-gray");
+							if (row.invalid_skip) tr.classList.add("text-gray");
 						}
 					}
 				});
 			});
 		}
+
+		// Update related elements
+		this._calculateSelected();
+		this._textSummaryUpdate();
 	}
 
 	_calculateSelected(evt) {
@@ -1045,75 +873,13 @@ export class DropUpload extends UploadElement {
 	}
 
 	_removeEntry(row) {
-		const index = this._data.findIndex((d) => d.name === row.name);
-		if (index > -1) {
-			this._skippedEntries = this._skippedEntries.filter(
-				(f) => f.name !== row.name
-			);
-
-			if (this._data[index].type === "folder") {
-				let removedParent = this._data[index].name
-					.replaceAll(" ", "_")
-					.replaceAll(".", "_");
-				this._data = this._removeParentPath(removedParent);
-			}
-
-			this._data.splice(index, 1);
-			this._newSections = this._data.filter((s) => s.type === "folder");
-			this._uploads = this._data.filter((u) => u.type !== "folder");
-
-			this._totalSize = 0;
-			for (let f of this._uploads) {
-				this._totalSize += f.size;
-			}
-
-			this._createTable(this._data);
-			this._calculateSelected();
-			this._textSummaryUpdate();
-		}
-	}
-
-	_removeParentPath(removedParent) {
-		for (let f of this._data) {
-			console.log(
-				`Removing parent *${removedParent}* from current *${f.parent}*`
-			);
-
-			// File paths are the parent path + destination at the end, or just destination if it is 1 directory
-			// File paths like "" or "New_Files" are the same
-			// New folder additions store the path as really just the parent, and the name is the new folder (destination at end)
-
-			if (f.parent.indexOf("." + removedParent) > -1) {
-				console.log("Rem 1");
-				// it is inside a path like "Folder.RemoveMe.Folder2"
-				// - Replace ".RemoveMe" with ""
-				f.parent = f.parent.replace("." + removedParent, "");
-			} else if (f.parent.indexOf(removedParent + ".") > -1) {
-				// it is at the top of a path like "RemoveMe.Folder2"
-				// - Replace "RemoveMe." with ""
-				f.parent = f.parent.replace("." + removedParent, "");
-			} else if (f.parent === removedParent) {
-				// If equal
-				// - This file is in the folder we are removing
-				// - This is the folder we're removing
-				// So we do something slightly different for folders
-				f.parent = f.type === "folder" ? "" : "New_Files";
-			} else {
-				// If none of these cases are met, it is unrelated to the removed folder path
-			}
-		}
-
-		return this._data;
+		this._currentUpload._removeEntry(row);
+		// Notify the user
+		this.idemDivAsMessanger(`Removed entry...`, 850);
+		this._createTable();
 	}
 
 	_destinationApplySelected(evt) {
-		console.log(
-			"DEST APPLY this._chosenSection",
-			this._chosenSection,
-			"this._lastSection",
-			this._lastSection
-		);
-
 		const oldPath =
 			this._lastSection === null
 				? ""
@@ -1127,36 +893,14 @@ export class DropUpload extends UploadElement {
 
 		// If the destination has changed
 		if (oldPath !== newPath) {
-			const data = [];
-			for (let ind in this._data) {
-				const d = this._data[ind];
-
-				console.log(
-					`${d.parent == oldPath} current:${
-						d.parent
-					} old:${oldPath} combo:${growPathByNameUtil(d.parent, newPath)}`,
-					d
-				);
-
-				if (d.type == "folder" && d.parent.indexOf(oldPath) > -1) {
-					d.parent = d.parent.replace(oldPath, newPath);
-				} else if (d.parent == oldPath || d.parent.indexOf(oldPath) === -1) {
-					d.parent = newPath;
-				} else if (d.parent.indexOf(oldPath) > -1) {
-					d.parent = d.parent.replace(oldPath, newPath);
-				}
-
-				console.log("Data updated", { ...d });
-
-				data.push(d);
-			}
-
-			this._lastSection = this._chosenSection;
-			this._createTable(data);
-			this._checkIdempotency();
-			this._calculateSelected();
-			this._textSummaryUpdate();
+			this._currentUpload.updatePaths(oldPath, newPath);
 		}
+
+		this._lastSection = this._chosenSection;
+		// this._createTable(data);
+		this._checkIdempotency();
+		// this._calculateSelected();
+		// this._textSummaryUpdate();
 	}
 
 	_removeSelection(evt) {
@@ -1188,8 +932,6 @@ export class DropUpload extends UploadElement {
 		}
 
 		this._createTable(data);
-		this._textSummaryUpdate();
-		this._calculateSelected();
 	}
 
 	updateDestination(evt) {
@@ -1237,6 +979,7 @@ export class DropUpload extends UploadElement {
 	}
 
 	_setEmptyVariables() {
+		this._direction = 1; // to flip the sort direction
 		this._totalSize = 0;
 		this._skippedEntries = [];
 		this._skippedReason = "";
@@ -1252,6 +995,61 @@ export class DropUpload extends UploadElement {
 			name: "",
 			path: "",
 		};
+
+		this._ftDisabled = "File type disabled";
+		this._allSelectedText = "Select all";
+		this._noneSelectedText = "Deselect all";
+		this._skippedReason = "";
+		this._haveNewSection = false;
+		this._abortController = new AbortController();
+		this._cancel = false;
+		this._lastSection = null;
+
+		// this._chosenSection = null;
+		this._chosenMediaType = null;
+		this._uploadAttributes = {};
+		this._specifiedTypes = {
+			description: "Media Files",
+			acceptList: [],
+			allowDirectories: true,
+		};
+
+		this._acceptedImageExt = [
+			".tiff",
+			".tif",
+			".bmp",
+			".jpe",
+			".jpg",
+			".jpeg",
+			".png",
+			".gif",
+			".avif",
+			".heic",
+			".heif",
+		];
+		this._acceptedVideoExt = [
+			".mp4",
+			".avi",
+			".3gp",
+			".ogg",
+			".wmv",
+			".webm",
+			".flv",
+			".mkv",
+			".mov",
+			".mts",
+			".m4v",
+			".mpg",
+			".mp2",
+			".mpeg",
+			".mpe",
+			".mpv",
+			".m4p",
+			".qt",
+			".swf",
+			".avchd",
+			".ts",
+		];
 	}
 
 	_resetUpload() {
@@ -1278,10 +1076,10 @@ export class DropUpload extends UploadElement {
 		let promise = new Promise((resolve) => resolve(true));
 
 		const validSections = this._data.filter(
-			(u) => !u.skip && u.type == "folder"
+			(u) => !u.invalid_skip && u.type == "folder"
 		);
 		const validFiles = this._uploads.filter(
-			(u) => !u.skip && u.type !== "folder"
+			(u) => !u.invalid_skip && u.type !== "folder"
 		);
 
 		const allValid = [...validFiles, ...validSections],
@@ -1448,99 +1246,12 @@ export class DropUpload extends UploadElement {
 		}
 	}
 
-	_checkFile(file, gid) {
-		const mediaTypes = this._store.getState().mediaTypes;
-		let mediaType = null,
-		fileOk = false,
-			attributes = null,
-			note = "",
-			comps = file.name.split(".").slice(-1), // File extension can have multiple components in archives
-			ext = comps.join("."); // rejoin extension
-
-		const isImage = ext.match(
-			/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
-		),
-			isVideo = ext.match(
-			/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
-		),
-			isArchive = ext.match(/^(zip|tar)/i);
-
-		const imageOk = mediaTypes.find((t) => t.dtype === "image");
-		const videoOk = mediaTypes.find((t) => t.dtype === "video");
-
-		if (isImage && !imageOk) {
-			fileOk = false;
-			note = this._ftDisabled;
-		} else if (isImage && imageOk) {
-			mediaType = imageOk;
-			fileOk = true;
-			attributes = this._imageAttr;
-		} else if (isVideo && !videoOk) {
-			fileOk = false;
-			note = this._ftDisabled;
-		} else if (isVideo && videoOk) {
-			mediaType = videoOk;
-			fileOk = true;
-			attributes = this._videoAttr;
-		}
-
-
-		
-		for (let currentType of mediaTypes) {
-			if (mediaType === null) {
-				if (currentType?.file_format !== null) {
-					fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
-					mediaType = currentType;
-
-					if (isArchive) {
-						fileOk = true;
-					}
-				}
-			}
-		}
-
-		// if (fileOk && mediaType !== null) {
-		function progressCallback(progress) {
-			this._store.setState({ uploadChunkProgress: progress });
-		}
-		const fileInfo = {
-			ok: fileOk,
-			file: file,
-			gid: gid,
-			mediaType: isArchive ? -1 : mediaType == null ? null : mediaType,
-			section:
-				this._section && !this._chosenSection
-					? this._section
-					: this._chosenSection,
-			isImage: isImage,
-			isArchive: isArchive,
-			progressCallback: progressCallback.bind(this),
-			abortController: this._abortController,
-			attributes: attributes ? attributes : {},
-			note: note ? note : "",
-		};
-		// console.log("File is OK", fileInfo);
-		return fileInfo;
-		// }
-
-		// this._store.setState({
-		// 	uploadError: `Error: Please check that ${file.name} is a valid file type for this project!`,
-		// });
-
-		// return {
-		// 	file: file,
-		// 	ok: false,
-		// };
-	}
-
 	_clearAllInvalidEntries(evt) {
 		evt.preventDefault();
-		this._data = this._data.filter((d) => !d.skip);
+		this._data = this._data.filter((d) => !d.invalid_skip);
 		this._skippedEntries = [];
 		this._createTable(this._data);
-		this._textSummaryUpdate();
-		this._calculateSelected();
 	}
 }
 
-customElements.define("drop-upload", DropUpload);
+customElements.define("upload-element", UploadElement);

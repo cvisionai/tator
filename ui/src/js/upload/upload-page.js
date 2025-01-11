@@ -3,7 +3,6 @@ import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
 import { SectionData } from "../util/section-utilities.js";
-import "../components/upload-dialog.js";
 import { reducePathUtil } from "../util/path-formatter.js";
 /**
  * Main uploads page
@@ -105,7 +104,7 @@ export class UploadPage extends TatorPage {
 		this._dropZone.innerHTML = `Drag and drop files and folders you want to upload here, or choose Add files or Add folder.`;
 		this._mainSection.appendChild(this._dropZone);
 
-		this._upload = document.createElement("drop-upload");
+		this._upload = document.createElement("upload-element");
 		this._mainSection.appendChild(this._upload);
 
 		this._bottomSection = document.createElement("div");

@@ -1,4 +1,4 @@
-import { ModalDialog } from "./modal-dialog.js";
+import { ModalDialog } from "../components/modal-dialog.js";
 
 export class UploadDialog extends ModalDialog {
 	constructor() {
@@ -8,7 +8,7 @@ export class UploadDialog extends ModalDialog {
 		this._div.style.width = "100%";
 		this._div.style.height = "100%";
 		this._div.style.position = "absolute";
-    this._div.style.top = "-20px";
+		this._div.style.top = "-20px";
 		this._div.style.bottom = "0";
 		this._div.style.left = "0";
 		this._div.style.right = "0";
@@ -22,7 +22,7 @@ export class UploadDialog extends ModalDialog {
 
 		this._folderProgress = document.createElement("progress");
 		this._folderProgress.setAttribute("class", "progress");
-    this._folderProgress.hidden = true;
+		this._folderProgress.hidden = true;
 		this._main.appendChild(this._folderProgress);
 
 		this._fileText = document.createElement("h3");
@@ -69,7 +69,7 @@ export class UploadDialog extends ModalDialog {
 
 		this._cancelButton = document.createElement("button");
 		this._cancelButton.setAttribute("class", "btn btn-clear btn-red");
-		this._cancelButton.textContent = "Cancel";
+		this._cancelButton.textContent = "Back to Uploads";
 		this._footer.appendChild(this._cancelButton);
 
 		this._close = document.createElement("button");
@@ -157,7 +157,6 @@ export class UploadDialog extends ModalDialog {
 		);
 		store.subscribe((state) => state.uploadError, this._addError.bind(this));
 
-
 		store.subscribe(
 			(state) => state.uploadInformation,
 			this._createTable.bind(this)
@@ -175,9 +174,9 @@ export class UploadDialog extends ModalDialog {
 		this._cancelled = false;
 		this._folderProgress.setAttribute("max", numFolders);
 		this._totalFolders = numFolders;
-    this._folderText.textContent = `Created 0/${this._totalFolders} Folders`;
-    
-    this._folderProgress.hidden = false;
+		this._folderText.textContent = `Created 0/${this._totalFolders} Folders`;
+
+		this._folderProgress.hidden = false;
 		this._folderText.hidden = false;
 	}
 
@@ -237,7 +236,7 @@ export class UploadDialog extends ModalDialog {
 			this._cancelButton.style.display = "none";
 			this._close.style.display = "flex";
 			if (this._failFiles == 0) {
-        this._uploadText.innerHTML = `
+				this._uploadText.innerHTML = `
             <div class="text-green py-3 h2">Upload complete!</div>
             <div class="text-normal f1 py-2">Successfully created: ${this._totalFolders} Folders</div>
 						<div class="text-normal f1 py-2">Successfully added: ${this._totalFiles} Files</div>
@@ -269,7 +268,7 @@ export class UploadDialog extends ModalDialog {
 		this._failFiles = 0;
 		this._fileProgress.hidden = false;
 		this._folderProgress.hidden = false;
-    this._uploadProgress.hidden = false;
+		this._uploadProgress.hidden = false;
 		this._header.style.display = "flex";
 
 		while (this._errors.firstChild) {
@@ -288,7 +287,6 @@ export class UploadDialog extends ModalDialog {
 			// cell.addEventListener("click", (evt) => {
 			// 	this._sortTable(key, this._direction);
 			// });
-			
 		});
 	}
 
@@ -319,8 +317,7 @@ export class UploadDialog extends ModalDialog {
 					} else {
 						cell.textContent = row[key];
 					}
-					
-			});
+				});
 			});
 		}
 	}
