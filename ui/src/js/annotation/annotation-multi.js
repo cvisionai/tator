@@ -621,6 +621,9 @@ export class AnnotationMulti extends TatorElement {
       this._pendingPreview = null;
       this._nextPreview = null;
       this._preview.hide();
+
+      // Emulate a mouse out to hide the line
+      this._entityTimeline.focusMouseOut();
     });
 
     play.addEventListener("click", () => {
