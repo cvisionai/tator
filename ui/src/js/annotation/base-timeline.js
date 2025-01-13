@@ -49,11 +49,12 @@ export class BaseTimeline extends TatorElement {
    */
   set timeStore(val) {
     this._timeStore = val;
+    this._timeStoreInitialized = true;
   }
 
   /**
    * Called when the timeStore has been initialized.
-   * @precondition timeStore must have been set
+   * @precondition timeStore must have been set (set in property above)
    */
   timeStoreInitialized() {
     this._timeStoreInitialized = true;

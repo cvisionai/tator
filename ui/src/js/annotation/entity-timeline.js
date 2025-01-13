@@ -77,7 +77,9 @@ export class EntityTimeline extends BaseTimeline {
     this._timelineSettings = val;
   }
 
-  timeStoreInitialized() {
+  set timeStore(val)
+  {
+    this._timeStore = val;
     this._timeStoreInitialized = true;
     this.updateData();
   }
