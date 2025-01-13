@@ -1340,7 +1340,7 @@ export class AnnotationPage extends TatorPage {
                   // select track takes care of frame jump
                   canvas.selectTrack(
                     evt.detail.data,
-                    undefined,
+                    evt.detail.data.frame,
                     !evt.detail.goToEntityFrame
                   );
                 } else if ("frame" in evt.detail.data) {
