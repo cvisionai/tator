@@ -580,33 +580,9 @@ export class AnnotationMulti extends TatorElement {
     this._nextPreview = null;
     this._lastPreview = 0;
 
-    this._slider.addEventListener("framePreview", async (evt) => {
-      // Frame previews can get interrupted if we aren't keeping 30fps
-      // things will look janky but we don't want to make things harder
-      // by blocking the UI on a billion previews as someone zips by
-      if (this._pendingPreview == null) {
-        this.processPreview(evt);
-      } else {
-        const delta = performance.now() - this._lastPreview;
-        if (delta < 33) {
-          // If there is an event to process, process it
-          this._nextPreview = evt;
-        } else {
-          this._nextPreview = null;
-          this.processPreview(evt);
-        }
-      }
-    });
+    this._slider.addEventListener("framePreview", this.debouncePreview.bind(this));
 
-    this._slider.addEventListener("hidePreview", () => {
-      this._preview.cancelled = true; // This isn't about cancel culture
-      this._pendingPreview = null;
-      this._nextPreview = null;
-      this._preview.hide();
-
-      // Emulate a mouse out to hide the line
-      this._entityTimeline.focusMouseOut();
-    });
+    this._slider.addEventListener("hidePreview", this.hidePreview.bind(this));
 
     play.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -772,6 +748,10 @@ export class AnnotationMulti extends TatorElement {
       window.dispatchEvent(new Event("resize"));
     });
 
+    this._entityTimeline.addEventListener("mouseout", (evt) => {
+      this.hidePreview(true);
+    })
+
     fullscreen.addEventListener("click", (evt) => {
       this._hideCanvasMenus();
       if (fullscreen.hasAttribute("is-maximized")) {
@@ -935,6 +915,24 @@ export class AnnotationMulti extends TatorElement {
     this._rateControl.setAttribute("disabled", "");
   }
 
+  async debouncePreview(evt) {
+    // Frame previews can get interrupted if we aren't keeping 30fps
+    // things will look janky but we don't want to make things harder
+    // by blocking the UI on a billion previews as someone zips by
+    if (this._pendingPreview == null) {
+      this.processPreview(evt);
+    } else {
+      const delta = performance.now() - this._lastPreview;
+      if (delta < 33) {
+        // If there is an event to process, process it
+        this._nextPreview = evt;
+      } else {
+        this._nextPreview = null;
+        this.processPreview(evt);
+      }
+    }
+  }
+
   async processPreview(evt) {
     this._pendingPreview = evt;
     // Keep frames moving if we get dropped/interrupted
@@ -954,6 +952,17 @@ export class AnnotationMulti extends TatorElement {
     this._pendingPreview = null;
   };
 
+  hidePreview(skipTimeline) {
+    this._preview.cancelled = true; // This isn't about cancel culture
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._preview.hide();
+
+    if (skipTimeline != true) {
+    // Emulate a mouse out to hide the line
+      this._entityTimeline.focusMouseOut();
+    }
+  }
   /**
    * Callback used when a user hovers over the seek bar
    */
@@ -962,7 +971,7 @@ export class AnnotationMulti extends TatorElement {
     this._preview.cancelled = false;
     if (proposed_value >= 0) {
 
-      if (this._timelineMore.style.display != "none")
+      if (this._timelineMore.style.display != "none" && evt.detail.skipTimeline != true)
       {
         // Add mouse over to the timeline detail area
         this._entityTimeline.focusMouseMove(null,null,proposed_value, true);
@@ -1410,8 +1419,8 @@ export class AnnotationMulti extends TatorElement {
 
         this._videoTimeline.timeStore = this._timeStore;
         this._entityTimeline.timeStore = this._timeStore;
+        this._entityTimeline.parent = this;
         this._videoTimeline.timeStoreInitialized();
-        this._entityTimeline.timeStoreInitialized();
 
         this._setToPlayMode();
 
