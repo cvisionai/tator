@@ -1477,21 +1477,33 @@ export class EntityTimeline extends BaseTimeline {
       mouseLine.attr("opacity", "0.5");
       that._mainFrameLine.attr("opacity", "0.5");
     });
-    this._focusSvg.on("mouseout", function () {
+    this._focusSvg.on("mouseout", () => {
       d3.select(this).style("cursor", "default");
-      mouseLine.attr("opacity", "0");
-      that._mainFrameLine.attr("opacity", "0");
-      if (displayXAxis) {
-        focusFrameTextBackground.attr("opacity", "0");
-        focusFrameText.attr("opacity", "0");
-        focusLineValues.attr("opacity", "0");
-        focusStateValues.attr("opacity", "0");
-      }
+      this.focusMouseOut();
     });
     this._focusSvg.on("mousemove", this.focusMouseMove.bind(this));
   }
 
+  focusMouseOut()
+  {
+    if (this._mouseLine == undefined)
+    {
+      return;
+    }
+    this._mouseLine.attr("opacity", "0");
+    this._mainFrameLine.attr("opacity", "0");
+    if (this._displayXAxis) {
+      this._focusFrameTextBackground.attr("opacity", "0");
+      this._focusFrameText.attr("opacity", "0");
+      this._focusLineValues.attr("opacity", "0");
+      this._focusStateValues.attr("opacity", "0");
+    }
+  }
   focusMouseMove(event, d, overrideFrame) {
+    if (this._mouseLine == undefined)
+    {
+      return;
+    }
     var currentFrame = 0;
     if (overrideFrame) {
       currentFrame = overrideFrame;
