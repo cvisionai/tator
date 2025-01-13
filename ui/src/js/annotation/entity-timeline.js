@@ -84,6 +84,11 @@ export class EntityTimeline extends BaseTimeline {
     this.updateData();
   }
 
+  set parent(val)
+  {
+    this._parent = val;
+  }
+
   /**
    * @precondition this._timelineSettings must have been initialized
    * @precondition this._data must have been initialized
@@ -1515,6 +1520,12 @@ export class EntityTimeline extends BaseTimeline {
       currentFrame = parseInt(this._focusX.invert(d3.pointer(event)[0]));
     }
     const x = this._mainX(currentFrame);
+
+    if (external == undefined && this._parent != undefined)
+    {
+      const fakeEvt = {detail: {clientX: x, frame: currentFrame, skipTimeline: true}};
+      this._parent.processPreview(fakeEvt);
+    }
 
     this._mouseLine
       .attr("opacity", "0.5")
