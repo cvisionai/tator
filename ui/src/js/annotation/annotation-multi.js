@@ -580,30 +580,12 @@ export class AnnotationMulti extends TatorElement {
     this._nextPreview = null;
     this._lastPreview = 0;
 
-    let processPreview = async (evt) => {
-      this._pendingPreview = evt;
-      // Keep frames moving if we get dropped/interrupted
-      this._lastPreview = performance.now();
-      await this.handleFramePreview(evt);
-      this._pendingPreview = null;
-
-      // If there is a new event to process, process it
-      while (
-        this._nextPreview &&
-        this._nextPreview.detail.frame != evt.detail.frame
-      ) {
-        this._pendingPreview = this._nextPreview;
-        this._nextPreview = null;
-        await this.handleFramePreview(this._pendingPreview);
-      }
-      this._pendingPreview = null;
-    };
     this._slider.addEventListener("framePreview", async (evt) => {
       // Frame previews can get interrupted if we aren't keeping 30fps
       // things will look janky but we don't want to make things harder
       // by blocking the UI on a billion previews as someone zips by
       if (this._pendingPreview == null) {
-        processPreview(evt);
+        this.processPreview(evt);
       } else {
         const delta = performance.now() - this._lastPreview;
         if (delta < 33) {
@@ -611,7 +593,7 @@ export class AnnotationMulti extends TatorElement {
           this._nextPreview = evt;
         } else {
           this._nextPreview = null;
-          processPreview(evt);
+          this.processPreview(evt);
         }
       }
     });
@@ -952,6 +934,25 @@ export class AnnotationMulti extends TatorElement {
   disableRateChange() {
     this._rateControl.setAttribute("disabled", "");
   }
+
+  async processPreview(evt) {
+    this._pendingPreview = evt;
+    // Keep frames moving if we get dropped/interrupted
+    this._lastPreview = performance.now();
+    await this.handleFramePreview(evt);
+    this._pendingPreview = null;
+
+    // If there is a new event to process, process it
+    while (
+      this._nextPreview &&
+      this._nextPreview.detail.frame != evt.detail.frame
+    ) {
+      this._pendingPreview = this._nextPreview;
+      this._nextPreview = null;
+      await this.handleFramePreview(this._pendingPreview);
+    }
+    this._pendingPreview = null;
+  };
 
   /**
    * Callback used when a user hovers over the seek bar
