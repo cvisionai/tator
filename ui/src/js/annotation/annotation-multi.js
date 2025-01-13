@@ -964,7 +964,7 @@ export class AnnotationMulti extends TatorElement {
       if (this._timelineMore.style.display != "none")
       {
         // Add mouse over to the timeline detail area
-        this._entityTimeline.focusMouseMove(null,null,proposed_value);
+        this._entityTimeline.focusMouseMove(null,null,proposed_value, true);
       }
       // Get frame preview image
       const existing = this._preview.info;

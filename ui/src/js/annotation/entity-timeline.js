@@ -1499,7 +1499,7 @@ export class EntityTimeline extends BaseTimeline {
       this._focusStateValues.attr("opacity", "0");
     }
   }
-  focusMouseMove(event, d, overrideFrame) {
+  focusMouseMove(event, d, overrideFrame, external) {
     if (this._mouseLine == undefined)
     {
       return;
