@@ -1043,6 +1043,9 @@ export class AnnotationMulti extends TatorElement {
           this._preview.annotations = annotations;
         }
 
+        // Get the Y position from the seek bar to prevent the preview dancing up and down
+        const rect = this._slider.getBoundingClientRect();
+
         if (this._timeMode == "utc") {
           let timeStr =
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
@@ -1051,7 +1054,7 @@ export class AnnotationMulti extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY - bias, // Add 15 due to page layout
+            y: rect.top - bias, // Add 15 due to page layout
             time: timeStr,
             image: multiImage,
           };
@@ -1059,7 +1062,7 @@ export class AnnotationMulti extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY - bias, // Add 15 due to page layout
+            y: rect.top - bias, // Add 15 due to page layout
             time: frameToTime(proposed_value, this._fps[this._longest_idx]),
             image: multiImage,
           };
