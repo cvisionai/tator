@@ -1,13 +1,4 @@
-//gid
-
-import UploadMedia from "./Media.js";
-import UploadFolder from "./Folder.js";
-
-import { uploadMedia } from "../../../../../scripts/packages/tator-js/src/utils/upload-media.js";
-import {
-	reducePathUtil,
-	growPathByNameUtil,
-} from "../../util/path-formatter.js";
+import UploadEntry from "./UploadEntry.js";
 
 // TODO: handle isArchive
 
@@ -16,9 +7,11 @@ export default class Upload {
 	list = [];
 	allowDirectories = true;
 	totalSize = 0;
-	_ftDisabled = "File type disabled";
+	#ftDisabled = "File type disabled";
+	#ftInvalid = "File type invalid";
+	#abortController = new AbortController();
 
-	constructor({ gid, fileHandles, parent, destination, store }) {
+	constructor({ gid, fileHandles, parent, destination, store, sectionData }) {
 		this.gid = gid;
 		this.fileHandles = fileHandles;
 		this.parent = parent;
@@ -31,6 +24,7 @@ export default class Upload {
 				: null,
 		}; // to do - tease apart parent + destination?
 		this._store = store;
+		this._sectionData = sectionData;
 	}
 
 	getSkippedEntries() {
@@ -50,16 +44,18 @@ export default class Upload {
 					info_skip: allowDirectories ? false : true,
 					note: this._specifiedTypes.allowDirectories
 						? `<span class="text-purple">Checking...</span>`
-						: this._ftDisabled,
+						: this.#ftDisabled,
 					size: 0,
 				})
 			);
-			if (this.parent && this.parent == "New_Files" && this.allowDirectories) {
+			if (this.parent && this.parent == "" && this.allowDirectories) {
 				this.parent = ``;
 			} else {
-				this.parent = this.allowDirectories
-					? `${growPathByNameUtil(this.parent, entry.name)}`
-					: this.parent;
+				let newPath = this._sectionData.getSectionPath(entry);
+				if (this.parent && this.parent !== "" && this.parent !== null) {
+					newPath = `${this.parent}.${newPath}`;
+				}
+				this.parent = this.allowDirectories ? `${newPath}` : this.parent;
 			}
 		} else if (!this.fileHandles || !this.fileHandles.length) {
 			return;
@@ -80,13 +76,8 @@ export default class Upload {
 
 		for await (let entry of entries) {
 			if (entry.kind === "file") {
-				const file = await entry.getFile();
-				// media = new Media({file}),
-				const added = this._checkFile(file);
-				this.list.push(
-					new UploadMedia({
-						mediaType: added.mediaType,
-						options: added.options,
+				const file = await entry.getFile(),
+					newMedia = new UploadEntry({
 						file: file,
 						name: entry.name,
 						parent: parent,
@@ -95,21 +86,22 @@ export default class Upload {
 						type: file.type ? file.type : "file",
 						invalid_skip: null,
 						info: null,
-						skip: !added.ok,
-						note: !added.ok ? this._ftDisabled : added.note ? added.note : "",
 						size: file.size,
-					})
-				);
+						store: this._store,
+					});
+				const added = this._checkFile(newMedia);
+				this.list.push(added);
+
 				if (added.ok) {
 					this.totalSize += file.size;
 				}
 			} else if (entry.kind === "directory") {
-				if (parent && parent == "New_Files" && this.allowDirectories) {
+				if (parent && parent == "" && this.allowDirectories) {
 					parent = "";
 				}
 
 				this.list.push(
-					new UploadFolder({
+					new UploadEntry({
 						name: entry.name,
 						parent: this.parent,
 						destination: this.destination,
@@ -120,17 +112,20 @@ export default class Upload {
 						skip: this.allowDirectories ? false : true,
 						note: this.allowDirectories
 							? `<span class="text-purple">Checking...</span>`
-							: this._ftDisabled,
+							: this.#ftDisabled,
+						store: this._store,
 					})
 				);
 
-				let newParent = this.allowDirectories
-					? `${growPathByNameUtil(parent, entry.name)}`
-					: parent;
+				let newPath = this._sectionData.getSectionPath(entry),
+					newParent = newPath;
+				if (entry.parent && entry.parent !== "" && entry.parent !== null) {
+					newPath = `${entry.parent}.${newPath}`;
+				}
 
 				if (
 					parent &&
-					parent == "New_Files" &&
+					parent == "" &&
 					this.allowDirectories &&
 					entry.kind === "directory"
 				) {
@@ -237,7 +232,7 @@ export default class Upload {
 				// - This file is in the folder we are removing
 				// - This is the folder we're removing
 				// So we do something slightly different for folders
-				f.parent = f.type === "folder" ? "" : "New_Files";
+				f.parent = f.type === "folder" ? "" : "";
 			} else {
 				// If none of these cases are met, it is unrelated to the removed folder path
 			}
@@ -262,93 +257,131 @@ export default class Upload {
 		}
 	}
 
-	_checkFile(file, gid) {
+	_checkFile(newMedia) {
 		const mediaTypes = this._store.getState().mediaTypes;
+
 		let mediaType = null,
 			fileOk = false,
 			attributes = null,
-			note = "",
-			comps = file.name.split(".").slice(-1), // File extension can have multiple components in archives
-			ext = comps.join("."); // rejoin extension
+			note = "";
 
-		// Check if the file is an image, video, or archive
-		// media._isImage();
-
-		const isImage = ext.match(
-				/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif|heic|heif)$/i
-			),
-			isVideo = ext.match(
-				/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
-			),
-			isArchive = ext.match(/^(zip|tar)/i);
+		const isImage = newMedia._isImage(),
+			isVideo = newMedia._isVideo(),
+			isArchive = newMedia._isArchive(); // TODO
 
 		const imageOk = mediaTypes.find((t) => t.dtype === "image");
 		const videoOk = mediaTypes.find((t) => t.dtype === "video");
 
 		if (isImage && !imageOk) {
 			fileOk = false;
-			note = this._ftDisabled;
+			note = this.#ftDisabled;
 		} else if (isImage && imageOk) {
 			mediaType = imageOk;
 			fileOk = true;
-			attributes = this._imageAttr;
+			attributes = this._imageAttr; // TODO
 		} else if (isVideo && !videoOk) {
 			fileOk = false;
-			note = this._ftDisabled;
+			note = this.#ftDisabled;
 		} else if (isVideo && videoOk) {
 			mediaType = videoOk;
 			fileOk = true;
 			attributes = this._videoAttr;
+		} else {
+			note = this.#ftInvalid;
 		}
 
+		console.log(
+			"Checking file",
+			isImage,
+			isVideo,
+			isArchive,
+			newMedia,
+			imageOk,
+			videoOk,
+			mediaType
+		);
 		for (let currentType of mediaTypes) {
-			if (mediaType === null) {
-				if (currentType?.file_format !== null) {
-					fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
+			// Loop to find if a type has a file_format property
+			// if (mediaType === null) {
+			if (currentType?.file_format !== null) {
+				try {
+					fileOk =
+						newMedia.ext.toLowerCase() ===
+						currentType.file_format.toLowerCase();
 					mediaType = currentType;
 
 					if (isArchive) {
 						fileOk = true;
 					}
+				} catch (err) {
+					console.error("Error checking file type", err, currentType);
 				}
+			}
+			// }
+		}
+
+		// Apply information to the newMedia object
+		newMedia.ok = fileOk;
+		newMedia.mediaType = mediaType?.id ? mediaType.id : null;
+		newMedia.options = {
+			attributes: attributes ? attributes : {},
+		};
+		newMedia.note = !fileOk && note ? note : "";
+		newMedia.invalid_skip = !fileOk;
+
+		console.log("Information added to the newMedia object", newMedia);
+
+		return newMedia;
+	}
+
+	getValidSummary() {
+		const validSections = this.list.filter(
+			(u) => !u.invalid_skip && u.type == "folder"
+		);
+		const validFiles = this.list.filter(
+			(u) => !u.invalid_skip && u.type !== "folder"
+		);
+
+		return {
+			validSections: validSections,
+			validFiles: validFiles,
+			totalSize: this.totalSize,
+		};
+	}
+
+	upload() {
+		let promise = new Promise((resolve) => resolve(true));
+
+		const validSections = this.list.filter(
+			(u) => !u.invalid_skip && u.type == "folder"
+		);
+		const validFiles = this.list.filter(
+			(u) => !u.invalid_skip && u.type !== "folder"
+		);
+
+		const allValid = [...validFiles, ...validSections],
+			uploadInfo = allValid.map((f) => {
+				return {
+					...f,
+					status: "Pending...",
+				};
+			});
+
+		this._store.setState({
+			uploadTotalFolders: validSections.length,
+			uploadTotalFiles: validFiles.length,
+			uploadCancelled: false,
+			uploadInformation: uploadInfo,
+		});
+
+		if (uploadInfo.length > 0) {
+			for (const [idx, entry] of [...validSections, ...validFiles].entries()) {
+				promise = promise.then(entry.uploadEntry.bind(entry, idx));
 			}
 		}
 
-		// if (fileOk && mediaType !== null) {
-		function progressCallback(progress) {
-			this._store.setState({ uploadChunkProgress: progress });
-		}
-
-		const fileInfo = {
-			ok: fileOk,
-			file: file,
-			gid: gid,
-			mediaType: mediaType.id,
-			// mediaType: isArchive ? -1 : mediaType == null ? null : mediaType,
-			// section:
-			// 	this._section && !this._chosenSection
-			// 		? this._section
-			// 		: this._chosenSection,
-			isImage: isImage,
-			isArchive: isArchive,
-			progressCallback: progressCallback.bind(this),
-			abortController: this._abortController,
-			options: {
-				attributes: attributes ? attributes : {},
-			},
-			note: note ? note : "",
-		};
-		// console.log("File is OK", fileInfo);
-		return fileInfo;
-		// }
-
-		// this._store.setState({
-		// 	uploadError: `Error: Please check that ${file.name} is a valid file type for this project!`,
-		// });
-
-		// return {
-		// 	file: file,
-		// 	ok: false,
-		// };
+		promise.catch((error) => {
+			this._store.setState({ uploadError: error.message });
+		});
 	}
 }

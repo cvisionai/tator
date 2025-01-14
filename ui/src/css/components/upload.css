@@ -32,6 +32,7 @@
 .upload-table tr td:nth-child(2) {
   width: 40%;
   word-break: break-all;
+  text-align: left;
 }
 
 /* .upload-table tr td:nth-child(3) {

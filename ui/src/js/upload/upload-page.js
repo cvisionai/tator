@@ -3,7 +3,7 @@ import { hasPermission } from "../util/has-permission.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
 import { SectionData } from "../util/section-utilities.js";
-import { reducePathUtil } from "../util/path-formatter.js";
+
 /**
  * Main uploads page
  */
@@ -25,7 +25,7 @@ export class UploadPage extends TatorPage {
 		user.parentNode.insertBefore(utilitiesDiv, user);
 
 		this._lightSpacer = document.createElement("span");
-		this._lightSpacer.style.width = "32px";
+		this._lightSpacer.style.width = "100%";
 		utilitiesDiv.appendChild(this._lightSpacer);
 
 		this._success = document.createElement("success-light");
@@ -43,11 +43,6 @@ export class UploadPage extends TatorPage {
 		this.mainWrapper.setAttribute("class", "analysis--main--wrapper d-flex");
 		this.mainWrapper.style.minHeight = "calc(100vh - 62px)";
 		this._shadow.appendChild(this.mainWrapper);
-
-		//
-		// Left area of the page
-		this.createSidebarNav();
-		this.createLeftPanel();
 
 		//
 		// Central area of the page
@@ -87,22 +82,11 @@ export class UploadPage extends TatorPage {
 		h1.appendChild(this._projectText);
 
 		this._description = document.createElement("project-text");
-		this._description.setAttribute("class", "text-gray f2 py-3");
-		this._description.textContent = `Add files and folders to your project.`;
+		this._description.setAttribute("class", "text-gray f2 pt-3");
+		this._description.innerHTML = `
+		Add files and folders to your project.
+		&nbsp;Recommended max browser upload size is 60GB, or 5000 files. For larger uploads try <a href="https://www.tator.io/docs/developer-guide/getting-started/install-tator-py" class="text-purple hover-text-underline" target="_blank">tator-py</a>`;
 		headerWrapperDiv.appendChild(this._description);
-
-		const subheader = document.createElement("div");
-		subheader.setAttribute("class", "d-flex flex-justify-right");
-		this._mainSection.appendChild(subheader);
-
-		this._dropZone = document.createElement("div");
-		this._dropZone.setAttribute("draggable", "true");
-		this._dropZone.setAttribute(
-			"class",
-			"f2 d-flex flex-column text-gray my-6 px-3 py-3 rounded-3 text-center drop-zone"
-		);
-		this._dropZone.innerHTML = `Drag and drop files and folders you want to upload here, or choose Add files or Add folder.`;
-		this._mainSection.appendChild(this._dropZone);
 
 		this._upload = document.createElement("upload-element");
 		this._mainSection.appendChild(this._upload);
@@ -139,7 +123,7 @@ export class UploadPage extends TatorPage {
 		this._bottomSection.appendChild(this._uploadButton);
 
 		this._sectionData = new SectionData();
-		this._upload._sectionData = this._sectionData;
+		this._upload.sectionData = this._sectionData;
 
 		// Create store subscriptions
 		store.subscribe((state) => state.user, this._setUser.bind(this));
@@ -159,6 +143,9 @@ export class UploadPage extends TatorPage {
 		this._upload.addEventListener("upload-summary", (evt) => {
 			const valid = evt.detail.data.filter((item) => !item.skip);
 			this._uploadButton.disabled = !evt.detail.ok || valid.length === 0;
+			if (evt?.detail?.buttonText) {
+				this._uploadButton.textContent = evt.detail.buttonText;
+			}
 		});
 
 		this._lastQuery = null;
@@ -180,40 +167,55 @@ export class UploadPage extends TatorPage {
 		//
 		this._setupDragAndDrop();
 
+		// Breadcrumb
+		this._breadcrumbInner = document.createElement("div");
+		this._breadcrumbInner.setAttribute(
+			"class",
+			"annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray"
+		);
+		this._breadcrumb.appendChild(this._breadcrumbInner);
+
+		this._breadcrumbProject = document.createElement("a");
+		this._breadcrumbProject.setAttribute("class", "text-gray");
+		this._breadcrumbInner.appendChild(this._breadcrumbProject);
+
+		this._breadcrumbChevron = document.createElement("chevron-right");
+		this._breadcrumbChevron.setAttribute("class", "px-2");
+		this._breadcrumbInner.appendChild(this._breadcrumbChevron);
+
+		this._breadcrumbSection = document.createElement("a");
+		this._breadcrumbSection.setAttribute("class", "text-gray");
+		this._breadcrumbInner.appendChild(this._breadcrumbSection);
+
+		this._breadcrumbChevron2 = document.createElement("chevron-right");
+		this._breadcrumbChevron2.setAttribute("class", "px-2 hidden");
+		this._breadcrumbInner.appendChild(this._breadcrumbChevron2);
+
+		this._breadcrumbEnd = document.createElement("span");
+		this._breadcrumbEnd.setAttribute("class", "px-2");
+		this._breadcrumbEnd.textContent = "Upload Media";
+		this._breadcrumbInner.appendChild(this._breadcrumbEnd);
+
+		this._upload.addEventListener(
+			"section-change",
+			this._updateBreadcrumb.bind(this)
+		);
+
 		//
 		// this._uploadDialog.addEventListener("open", this.showDimmer.bind(this));
 		// this._uploadDialog.addEventListener("close", this.hideDimmer.bind(this));
 
-		this._upload.addEventListener("section-change", (evt) => {
-			const chosenSection = evt?.detail?.section?.id
-				? evt.detail.section
-				: null;
-			console.log("chosenSection", chosenSection);
-			// Set page breadcrumbs
-			this._breadcrumb.innerHTML = `<div class="annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray">
-			<a class="text-gray" href="/${this._project.id}/project-detail">${
-				this._project.name
-			}</a>
-			${
-				chosenSection !== null
-					? `<chevron-right class="px-2"></chevron-right> <a class="text-gray" href="/${
-							this._project.id
-					  }/project-detail?section=${chosenSection.id}">${reducePathUtil(
-							chosenSection.path
-					  )}</a> `
-					: ""
-			}
-			<chevron-right class="px-2"></chevron-right>
-			<span class="text-gray">Upload Media</span>
-		</div>`;
-		});
+		// updates the init of sectionData utility with the new sections list
+		store.subscribe((state) => state.sections, this.newSectionsList.bind(this));
 	}
 
-	connectedCallback() {
+	async connectedCallback() {
 		this._projectId = Number(window.location.pathname.split("/")[1]);
-		this._init();
+
 		// Initialize store data
-		store.getState().init();
+		const initInfo = await store.getState().init();
+		console.log(initInfo);
+		this._init(initInfo);
 		this._uploadDialog.init(store);
 	}
 
@@ -223,91 +225,34 @@ export class UploadPage extends TatorPage {
 		this.setAttribute("has-open-modal", "");
 	}
 
-	_init() {
-		// Get info about the project.
-		const projectPromise = fetchCredentials("/rest/Project/" + this._projectId);
-		const sectionPromise = fetchCredentials(
-			"/rest/Sections/" + this._projectId
-		);
-		const algoPromise = fetchCredentials("/rest/Algorithms/" + this._projectId);
-		const mediaTypePromise = fetchCredentials(
-			"/rest/MediaTypes/" + this._projectId
-		);
-		const membershipPromise = fetchCredentials(
-			"/rest/Memberships/" + this._projectId
-		);
+	_init({ project, sections, mediaTypes }) {
+		// Inits project data
+		this._project = project;
+		this._projectId = project.id;
 
-		// Run all above promises
-		Promise.all([
-			projectPromise,
-			sectionPromise,
-			algoPromise,
-			mediaTypePromise,
-			membershipPromise,
-		])
-			.then(
-				([
-					projectResponse,
-					sectionResponse,
-					algoResponse,
-					mediaTypeResponse,
-					membershipResponse,
-				]) => {
-					const projectData = projectResponse.json();
-					const sectionData = sectionResponse.json();
-					const algoData = algoResponse.json();
-					const mediaTypeData = mediaTypeResponse.json();
-					const membershipData = membershipResponse.json();
+		// Inits sections data
+		this._sections = sections;
+		store.setState({ sections: this._sections });
 
-					Promise.all([
-						projectData,
-						sectionData,
-						algoData,
-						mediaTypeData,
-						membershipData,
-					])
-						.then(
-							async ([project, sections, algos, mediaTypes, memberships]) => {
-								// Save retrieved REST data
-								this._project = project;
-								this._projectId = project.id;
-								this._sections = sections;
-								this._upload._sections = this._sections;
-								this._algorithms = this.getParsedAlgos(algos);
-								this._mediaTypes = mediaTypes;
-								this._memberships = memberships;
-								this.setupSettingsPanel(this._mediaTypes);
+		// Inits media type data
+		this._mediaTypes = mediaTypes;
+		this._upload.mediaTypes = this._mediaTypes;
 
-								store.setState({ sections: this._sections });
+		// Change the msg if the user does not have can transfer* todo confirm
+		if (!hasPermission(this._project.permission, "Full Control")) {
+			// TODO
+		}
 
-								// Set page breadcrumbs
-								this._breadcrumb.innerHTML = `<div class="annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray">
-                  <a class="text-gray" href="/${this._project.id}/project-detail">${this._project.name}</a>
-                  <chevron-right class="px-2"></chevron-right>
-                  <a class="text-gray">Upload Media</a>
-                </div>`;
+		// Set page breadcrumbs
+		this._breadcrumbProject.textContent = this._project.name;
+		this._breadcrumbProject.href = `/${this._project.id}/project-detail`;
+	}
 
-								// Hide the settings button if the user does not have full control
-								if (!hasPermission(this._project.permission, "Full Control")) {
-									// TODO
-								}
-
-								// Initialize folder/search/bookmark data
-								this._sectionData.init(this._sections);
-
-								this._upload.mediaTypes = this._mediaTypes;
-							}
-						)
-						.catch((err) => {
-							console.error("Error setting up page with all promises", err);
-							this.hideDimmer();
-						});
-				}
-			)
-			.catch((err) => {
-				console.error("Error setting up page with all promises", err);
-				this.hideDimmer();
-			});
+	newSectionsList(sections) {
+		this._sections = sections;
+		// Initialize folder/search/bookmark data
+		this._sectionData.init(this._sections);
+		this._upload.sections = this._sections;
 	}
 
 	getParsedAlgos(algos) {
@@ -405,7 +350,6 @@ export class UploadPage extends TatorPage {
 			"py-3 mr-3 ml-3 text-gray flex-grow"
 		);
 		this._leftPanel.appendChild(this._settingsPanel);
-		this.setupSettingsPanel();
 
 		this._leftPanelDefaultWidth = "450px";
 		this.setLeftPanelWidth(this._leftPanelDefaultWidth);
@@ -418,29 +362,6 @@ export class UploadPage extends TatorPage {
 					? "Hide Media Types"
 					: "Show Media Types";
 		});
-	}
-
-	setupSettingsPanel(mediaTypes) {
-		if (mediaTypes !== undefined) {
-			const h3 = document.createElement("h3");
-			h3.setAttribute("class", "h2 text-light-gray");
-			h3.textContent = "Media Types";
-			this._settingsPanel.appendChild(h3);
-
-			const description = document.createElement("p");
-			description.setAttribute("class", "text-gray f2 py-3");
-			description.textContent = `Specify the data type you are uploading, and any additional metadata to be set on upload.`;
-			this._settingsPanel.appendChild(description);
-
-			const settings = document.createElement("div");
-			settings.setAttribute("class", "d-flex flex-column");
-			this._settingsPanel.appendChild(settings);
-
-			this.mediaTypeSettings = document.createElement("media-type-settings");
-			this.mediaTypeSettings.setAttribute("class", "d-flex flex-column");
-			this.mediaTypeSettings.mediaTypes = mediaTypes;
-			settings.appendChild(this.mediaTypeSettings);
-		}
 	}
 
 	createSidebarNav() {
@@ -461,12 +382,12 @@ export class UploadPage extends TatorPage {
 	}
 
 	_setupDragAndDrop() {
-		this._mainSection.addEventListener("dragstart", (startEvt) => {
+		this.mainWrapper.addEventListener("dragstart", (startEvt) => {
 			startEvt.dataTransfer.effectAllowed = "move";
 		});
 
 		this._mainSection.addEventListener("dragenter", (event) => {
-			this._dropZone.classList.add("drag-over");
+			this._upload._dropZone.classList.add("drag-over");
 		});
 
 		this._mainSection.addEventListener("dragover", (event) => {
@@ -474,40 +395,36 @@ export class UploadPage extends TatorPage {
 		});
 
 		this._mainSection.addEventListener("dragend", (event) => {
-			this._dropZone.classList.remove("drag-over");
+			this._upload._dropZone.classList.remove("drag-over");
 		});
 
 		this._mainSection.addEventListener("dragleave", (event) => {
-			this._dropZone.classList.remove("drag-over");
+			this._upload._dropZone.classList.remove("drag-over");
 		});
 
 		this._mainSection.addEventListener("drop", (event) => {
 			event.stopPropagation();
 			event.preventDefault();
-			this._dropZone.classList.remove("drag-over");
-			// this._upload.drop(event);
+			this._upload._dropZone.classList.remove("drag-over");
+			let handle = null;
 
 			const list = [...event.dataTransfer.items].map(async (item) => {
 				if (item.getAsFileSystemHandle) {
-					return item.getAsFileSystemHandle();
+					handle = item.getAsFileSystemHandle();
+					return handle;
 				} else {
-					let handle = null;
-
-					// From inside an async method or JS module
 					if (item.webkitGetAsEntry) {
 						handle = item.webkitGetAsEntry();
 					} else if (item.getAsEntry) {
 						handle = item.getAsEntry();
 					}
 
-					if (handle && handle.kind === "directory") {
-						await this.addDirectory(handle);
-
-						// this._notAcceptableDialog.show();
-					} else if (handle) {
-						const fileHandle = await this.getFileSafari(handle);
-
-						return fileHandle;
+					// if (handle && handle.kind === "directory") {
+					// 	// await this.addDirectory(handle);
+					// 	this.dropHandler(handle);
+					// } else
+					if (handle) {
+						return handle;
 					} else {
 						console.error("Wasn't able to generate handle");
 					}
@@ -515,9 +432,24 @@ export class UploadPage extends TatorPage {
 			});
 
 			console.log("DRAG OVER", event, list);
-			this._upload.dropHandler(list);
+			this._upload.fileHandleHandler(list);
 			return false;
 		});
+	}
+
+	_updateBreadcrumb(evt) {
+		const chosenSection = evt?.detail?.section?.id ? evt.detail.section : null;
+
+		if (chosenSection !== null && chosenSection?.id) {
+			this._breadcrumbChevron2.classList.remove("hidden");
+			this._breadcrumbSection.textContent = `${this._sectionData
+				.getSectionNamesLineage(chosenSection)
+				.join(" > ")}`;
+			this._breadcrumbSection.href = `/${chosenSection.project}/project-detail?section=${chosenSection.id}`;
+		} else {
+			this._breadcrumbSection.textContent = "";
+			this._breadcrumbChevron2.classList.add("hidden");
+		}
 	}
 }
 

@@ -6,6 +6,45 @@ export class MediaTypeSettings extends TatorElement {
 		super();
 
 		this._availableTypes = ["video", "image", "file", "folder"];
+
+		this._div = document.createElement("div");
+		this._div.setAttribute("class", "px-3 py-3 rounded-3 my-3 ");
+		this._div.setAttribute(
+			"style",
+			"border: 1px solid var(--color-charcoal--light);"
+		);
+		this._shadow.appendChild(this._div);
+
+		this._summary = document.createElement("div");
+		this._summary.setAttribute(
+			"class",
+			"d-flex flex-justify-between flex-items-center"
+		);
+		this._div.appendChild(this._summary);
+
+		this._summaryTitle = document.createElement("div");
+		this._summaryTitle.innerHTML = `<span class="h3 mr-3">Properties</span>`;
+		this._summaryTitle.setAttribute("class", "col-10");
+		this._summary.appendChild(this._summaryTitle);
+
+		this._summaryText = document.createElement("div");
+		this._summaryText.textContent =
+			"Specify the data type you are uploading, and any additional metadata to be set on upload.";
+		this._summaryText.setAttribute("class", "py-2 text-gray f2");
+		this._summaryTitle.appendChild(this._summaryText);
+
+		this._clearAllInvalid = document.createElement("a");
+		this._clearAllInvalid.setAttribute(
+			"class",
+			"text-underline text-gray clickable f1 hover-text-white"
+		);
+		this._clearAllInvalid.textContent = "Reset to default values";
+		this._clearAllInvalid.addEventListener("click", this._render.bind(this));
+		this._summary.appendChild(this._clearAllInvalid);
+
+		this._optionsDiv = document.createElement("div");
+		this._optionsDiv.setAttribute("class", "offset-sm-2 d-flex flex-wrap");
+		this._div.appendChild(this._optionsDiv);
 	}
 
 	set mediaTypes(val) {
@@ -15,6 +54,7 @@ export class MediaTypeSettings extends TatorElement {
 	}
 
 	_render() {
+		this._optionsDiv.innerHTML = "";
 		this._inputToSelectMap = new Map();
 		this._inputToAttrMap = new Map();
 		this._dtypeMap = new Map();
@@ -33,10 +73,6 @@ export class MediaTypeSettings extends TatorElement {
 		for (let [t, list] of this._dtypeMap) {
 			this._createSection(t, list);
 		}
-
-		this._createSection("folder", [
-			{ dtype: "folder", attribute_types: [], id: -111, name: "Directory" },
-		]);
 
 		this.getValue();
 	}
@@ -69,12 +105,16 @@ export class MediaTypeSettings extends TatorElement {
 
 	_createSection(dataType, list) {
 		const div = document.createElement("div");
-		div.setAttribute("class", "bg-charcoal my-3 py-3 px-3 rounded-3");
-		this._shadow.appendChild(div);
+		div.setAttribute("class", "col-5 mr-6 mt-2");
+		this._optionsDiv.appendChild(div);
+
+		const inner = document.createElement("div");
+		inner.setAttribute("class", "bg-charcoal px-3 py-2 rounded-3");
+		div.appendChild(inner);
 
 		const innerTop = document.createElement("div");
-		innerTop.setAttribute("class", "form-group d-flex");
-		div.appendChild(innerTop);
+		innerTop.setAttribute("class", "form-group d-flex flex-justify-between");
+		inner.appendChild(innerTop);
 
 		const dataTypeDisplay =
 			dataType.charAt(0).toUpperCase() + dataType.slice(1);
@@ -102,8 +142,8 @@ export class MediaTypeSettings extends TatorElement {
 
 		const drawer = document.createElement("div");
 		drawer.setAttribute("class", "form-group mt-6");
-		// drawer.style.display = "none";
-		div.appendChild(drawer);
+		drawer.style.display = "none";
+		inner.appendChild(drawer);
 
 		const mediaTypeSelect = document.createElement("enum-input");
 		mediaTypeSelect.setAttribute("name", `${dataTypeDisplay} Type`);
@@ -141,13 +181,14 @@ export class MediaTypeSettings extends TatorElement {
 		const showLess = document.createElement("span");
 		showLess.setAttribute("class", "clickable f3 " + optHide);
 		showLess.setAttribute("tooltip", "Hide drawer");
+		showLess.style.display = "none";
 		showLess.textContent = "Less -";
 		topSmall.appendChild(showLess);
 
 		const showMore = document.createElement("span");
 		showMore.setAttribute("class", "clickable f3");
 		showMore.textContent = "More +";
-		showMore.style.display = "none";
+		// showMore.style.display = "none";
 		showMore.setAttribute(
 			"tooltip",
 			`Set attributes on media, or specify a registered ${dataTypeDisplay} Type.`

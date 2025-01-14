@@ -18,6 +18,7 @@ const store = create(
 		uploadCancelled: false, // Whether uploads have been cancelled
 		uploadFoldersCompleted: 0,
 		uploadTotalFolders: 0,
+		sections: [],
 		uploadInformation: {
 			files: [],
 			folders: [],
@@ -38,7 +39,7 @@ const store = create(
 		},
 		init: async () => {
 			const projectId = Number(window.location.pathname.split("/")[1]);
-			Promise.all([
+			return Promise.all([
 				fetchCredentials(`/rest/User/GetCurrent`, {}, true).then((response) =>
 					response.json()
 				),
@@ -51,13 +52,20 @@ const store = create(
 				fetchCredentials(`/rest/MediaTypes/${projectId}`, {}, true).then(
 					(response) => response.json()
 				),
+				fetchCredentials(`/rest/Sections/${projectId}`, {}, true).then(
+					(response) => response.json()
+				),
 			]).then((values) => {
-				set({
+				const setObj = {
 					user: values[0],
 					announcements: values[1],
 					project: values[2],
 					mediaTypes: values[3],
-				});
+					sections: values[4],
+				};
+				set(setObj);
+
+				return setObj;
 			});
 		},
 	}))
