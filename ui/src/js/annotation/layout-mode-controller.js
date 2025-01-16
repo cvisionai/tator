@@ -18,7 +18,6 @@ export class LayoutModeController {
       this.controls.setAttribute('style', this.styles.controls);
       this.sidebar.setAttribute('style', this.styles.sidebar);
       this.browser.setAttribute('style', this.styles.browser);
-      this.videoCanvas._stretch = this.stretch;
       this.fullscreen.removeAttribute("is-maximized");
     } else {
       window.MODE = 'FULLSCREEN';
@@ -29,13 +28,11 @@ export class LayoutModeController {
         sidebar: this.sidebar.getAttribute('style'),
         browser: this.browser.getAttribute('style'),
       };
-      this.stretch = this.videoCanvas._stretch;
       // Make player full screen
       this.videoCanvas.style.position = 'fixed';
       this.videoCanvas.style.top = '50%';
       this.videoCanvas.style.left = '50%';
       this.videoCanvas.style.transform = 'translate(-50%, -50%)';
-      this.videoCanvas._stretch = 1;
       this.videoCanvas._canvas.style.maxHeight = null;
       // Move controls to bottom of screen
       this.controls.style.position = 'fixed';
