@@ -37,12 +37,15 @@ export class AnnotationPlayer extends TatorElement {
     this._video.domParents.push({ object: this });
     playerDiv.appendChild(this._video);
 
+    this._controls_and_scrub = document.createElement("div");
+    playerDiv.appendChild(this._controls_and_scrub);
+
     const div = document.createElement("div");
     div.setAttribute(
       "class",
       "video__controls d-flex flex-items-center flex-justify-between px-4"
     );
-    playerDiv.appendChild(div);
+    this._controls_and_scrub.appendChild(div);
     this._controls = div;
 
     const playButtons = document.createElement("div");
@@ -421,7 +424,7 @@ export class AnnotationPlayer extends TatorElement {
       "class",
       "scrub__bar d-flex flex-items-center flex-grow px-4"
     );
-    playerDiv.appendChild(this._timelineDiv);
+    this._controls_and_scrub.appendChild(this._timelineDiv);
 
     const timeDiv = document.createElement("div");
     timeDiv.setAttribute(
@@ -868,6 +871,7 @@ export class AnnotationPlayer extends TatorElement {
       window.dispatchEvent(new Event("resize"));
     });
 
+    /*
     fullscreen.addEventListener("click", (evt) => {
       this._hideCanvasMenus();
       if (fullscreen.hasAttribute("is-maximized")) {
@@ -881,7 +885,7 @@ export class AnnotationPlayer extends TatorElement {
       }
       window.dispatchEvent(new Event("resize"));
     });
-
+    */
     this._qualityControl.addEventListener("setQuality", (evt) => {
       this.dispatchEvent(
         new CustomEvent("setPlayQuality", {

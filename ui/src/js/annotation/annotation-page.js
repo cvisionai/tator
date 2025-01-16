@@ -4,6 +4,7 @@ import { Utilities } from "../util/utilities.js";
 import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
 import { TimelineSettings } from "./timeline-settings.js";
 import { playerControlManagement } from "./annotation-common.js";
+import { LayoutModeController } from "./layout-mode-controller.js";
 
 export class AnnotationPage extends TatorPage {
   constructor() {
@@ -445,6 +446,7 @@ export class AnnotationPage extends TatorPage {
                   this._sidebar.videoIsPlaying = false;
                   playerControlManagement(player, false);
                 });
+                this.layoutModeController = new LayoutModeController(player, this._sidebar, this._browser, this._header);
               });
             const nextPromise = fetchCredentials(
               `/rest/MediaNext/${newValue}${window.location.search}`,
