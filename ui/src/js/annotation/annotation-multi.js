@@ -1628,6 +1628,9 @@ export class AnnotationMulti extends TatorElement {
           }
         }
       });
+      roi_vid.addEventListener("playbackNotReady", () => {
+        this._playInteraction.disable();
+      });
 
       // Setup addons for multi-menu and initialize the gridview
       this.assignToGrid(false);

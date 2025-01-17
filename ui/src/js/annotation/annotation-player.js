@@ -784,6 +784,9 @@ export class AnnotationPlayer extends TatorElement {
         this._playInteraction.enable();
       }
     });
+    this._video.addEventListener("playbackNotReady", () => {
+      this._playInteraction.disable();
+    })
     this._currentFrameInput.addEventListener("focus", () => {
       document.body.classList.add("shortcuts-disabled");
     });
