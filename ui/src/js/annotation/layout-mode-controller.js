@@ -194,6 +194,7 @@ export class LayoutModeController {
       this.warningLight._message_div.style.top = "10px";
       this.warningLight._message_div.style.right = "10px";
       this.warningLight._message_div.style.width = "300px";
+      // Set up success light
       document.body.appendChild(this.successLight);
       this.successLight._svg.style.position = "fixed";
       this.successLight._svg.style.top = "10px";
@@ -202,6 +203,7 @@ export class LayoutModeController {
       this.successLight._message_div.style.top = "10px";
       this.successLight._message_div.style.right = "10px";
       this.successLight._message_div.style.width = "300px";
+      // Set up preview
       this.preview.style.position = 'fixed';
 
       // Hide video controls
