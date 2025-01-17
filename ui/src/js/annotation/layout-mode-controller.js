@@ -49,6 +49,7 @@ export class LayoutModeController {
       if (window.MODE != 'FULLSCREEN' || !this.shouldShowControls()) {
         return;
       }
+      clearTimeout(this.hideTimeout);
       clearTimeout(this.inactivityTimeout);
       const mouseX = event.pageX;
       const mouseY = event.pageY;
@@ -68,6 +69,7 @@ export class LayoutModeController {
   }
 
   activateControl(control) {
+    clearTimeout(this.hideTimeout);
     clearTimeout(this.inactivityTimeout);
     this.allControls.forEach((c) => {
       if (c === control) {
@@ -79,8 +81,10 @@ export class LayoutModeController {
   }
 
   showControls() {
+    clearTimeout(this.hideTimeout);
     clearTimeout(this.inactivityTimeout);
     this.allControls.forEach((control) => {
+      control.style.display = 'block';
       control.style.opacity = 0.5;
     });
     this.startInactivityTimer();
@@ -90,6 +94,11 @@ export class LayoutModeController {
     this.allControls.forEach((control) => {
       control.style.opacity = 0;
     });
+    this.hideTimeout = setTimeout(() => {
+      this.allControls.forEach((control) => {
+        control.style.display = 'none';
+      });
+    }, 500 + 50);
     this.keepHidden = true;
     setTimeout(() => {
       this.keepHidden = false;
@@ -117,6 +126,7 @@ export class LayoutModeController {
   toggleFullscreen() {
     this.player._hideCanvasMenus();
     if (this.fullscreen.hasAttribute("is-maximized")) {
+      clearTimeout(this.hideTimeout);
       clearTimeout(this.inactivityTimeout);
       window.MODE = undefined;
       this.videoCanvas.setAttribute('style', this.styles.videoCanvas);
