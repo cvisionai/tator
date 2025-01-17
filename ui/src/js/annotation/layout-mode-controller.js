@@ -27,7 +27,7 @@ export class LayoutModeController {
         return;
       }
       if (!this.shouldShowControls()) {
-        this.hideControls();
+        this.hideControls(true);
         return;
       }
       const mouseX = event.pageX;
@@ -36,11 +36,7 @@ export class LayoutModeController {
       if (control) {
         this.activateControl(control);
       } else {
-        if (this.showModes.includes(this.videoCanvas._mouseMode)) {
-          this.showControls();
-        } else {
-          this.hideControls();
-        }
+        this.showControls();
       }
     });
 
@@ -90,15 +86,17 @@ export class LayoutModeController {
     this.startInactivityTimer();
   }
 
-  hideControls() {
+  hideControls(realHide = false) {
     this.allControls.forEach((control) => {
       control.style.opacity = 0;
     });
-    this.hideTimeout = setTimeout(() => {
-      this.allControls.forEach((control) => {
-        control.style.display = 'none';
-      });
-    }, 500 + 50);
+    if (realHide) {
+      this.hideTimeout = setTimeout(() => {
+        this.allControls.forEach((control) => {
+          control.style.display = 'none';
+        });
+      }, 500 + 50);
+    }
     this.keepHidden = true;
     setTimeout(() => {
       this.keepHidden = false;
