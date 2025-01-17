@@ -871,21 +871,6 @@ export class AnnotationPlayer extends TatorElement {
       window.dispatchEvent(new Event("resize"));
     });
 
-    /*
-    fullscreen.addEventListener("click", (evt) => {
-      this._hideCanvasMenus();
-      if (fullscreen.hasAttribute("is-maximized")) {
-        fullscreen.removeAttribute("is-maximized");
-        playerDiv.classList.remove("is-full-screen");
-        this.dispatchEvent(new Event("minimize", { composed: true }));
-      } else {
-        fullscreen.setAttribute("is-maximized", "");
-        playerDiv.classList.add("is-full-screen");
-        this.dispatchEvent(new Event("maximize", { composed: true }));
-      }
-      window.dispatchEvent(new Event("resize"));
-    });
-    */
     this._qualityControl.addEventListener("setQuality", (evt) => {
       this.dispatchEvent(
         new CustomEvent("setPlayQuality", {
