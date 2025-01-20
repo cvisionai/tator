@@ -1512,11 +1512,17 @@ export class EntityTimeline extends BaseTimeline {
     } else if (event) {
       currentFrame = parseInt(this._focusX.invert(d3.pointer(event)[0]));
     }
+
+    const rect = this.getBoundingClientRect();
     const x = this._mainX(currentFrame);
 
     if (external == undefined && this._parent != undefined) {
       const fakeEvt = {
-        detail: { clientX: x, frame: currentFrame, skipTimeline: true },
+        detail: {
+          clientX: x + rect.left,
+          frame: currentFrame,
+          skipTimeline: true,
+        },
       };
       this._parent.processPreview(fakeEvt);
     }
