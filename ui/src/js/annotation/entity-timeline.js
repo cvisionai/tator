@@ -77,15 +77,13 @@ export class EntityTimeline extends BaseTimeline {
     this._timelineSettings = val;
   }
 
-  set timeStore(val)
-  {
+  set timeStore(val) {
     this._timeStore = val;
     this._timeStoreInitialized = true;
     this.updateData();
   }
 
-  set parent(val)
-  {
+  set parent(val) {
     this._parent = val;
   }
 
@@ -1491,10 +1489,8 @@ export class EntityTimeline extends BaseTimeline {
     this._focusSvg.on("mousemove", this.focusMouseMove.bind(this));
   }
 
-  focusMouseOut()
-  {
-    if (this._mouseLine == undefined)
-    {
+  focusMouseOut() {
+    if (this._mouseLine == undefined) {
       return;
     }
     this._mouseLine.attr("opacity", "0");
@@ -1507,23 +1503,21 @@ export class EntityTimeline extends BaseTimeline {
     }
   }
   focusMouseMove(event, d, overrideFrame, external) {
-    if (this._mouseLine == undefined)
-    {
+    if (this._mouseLine == undefined) {
       return;
     }
     var currentFrame = 0;
     if (overrideFrame) {
       currentFrame = overrideFrame;
-    }
-    else if (event)
-    {
+    } else if (event) {
       currentFrame = parseInt(this._focusX.invert(d3.pointer(event)[0]));
     }
     const x = this._mainX(currentFrame);
 
-    if (external == undefined && this._parent != undefined)
-    {
-      const fakeEvt = {detail: {clientX: x, frame: currentFrame, skipTimeline: true}};
+    if (external == undefined && this._parent != undefined) {
+      const fakeEvt = {
+        detail: { clientX: x, frame: currentFrame, skipTimeline: true },
+      };
       this._parent.processPreview(fakeEvt);
     }
 

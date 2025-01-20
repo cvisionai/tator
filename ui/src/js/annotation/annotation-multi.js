@@ -580,7 +580,10 @@ export class AnnotationMulti extends TatorElement {
     this._nextPreview = null;
     this._lastPreview = 0;
 
-    this._slider.addEventListener("framePreview", this.debouncePreview.bind(this));
+    this._slider.addEventListener(
+      "framePreview",
+      this.debouncePreview.bind(this)
+    );
 
     this._slider.addEventListener("hidePreview", this.hidePreview.bind(this));
 
@@ -750,7 +753,7 @@ export class AnnotationMulti extends TatorElement {
 
     this._entityTimeline.addEventListener("mouseout", (evt) => {
       this.hidePreview(true);
-    })
+    });
 
     fullscreen.addEventListener("click", (evt) => {
       this._hideCanvasMenus();
@@ -950,7 +953,7 @@ export class AnnotationMulti extends TatorElement {
       await this.handleFramePreview(this._pendingPreview);
     }
     this._pendingPreview = null;
-  };
+  }
 
   hidePreview(skipTimeline) {
     this._preview.cancelled = true; // This isn't about cancel culture
@@ -959,7 +962,7 @@ export class AnnotationMulti extends TatorElement {
     this._preview.hide();
 
     if (skipTimeline != true) {
-    // Emulate a mouse out to hide the line
+      // Emulate a mouse out to hide the line
       this._entityTimeline.focusMouseOut();
     }
   }
@@ -970,11 +973,12 @@ export class AnnotationMulti extends TatorElement {
     let proposed_value = evt.detail.frame;
     this._preview.cancelled = false;
     if (proposed_value >= 0) {
-
-      if (this._timelineMore.style.display != "none" && evt.detail.skipTimeline != true)
-      {
+      if (
+        this._timelineMore.style.display != "none" &&
+        evt.detail.skipTimeline != true
+      ) {
         // Add mouse over to the timeline detail area
-        this._entityTimeline.focusMouseMove(null,null,proposed_value, true);
+        this._entityTimeline.focusMouseMove(null, null, proposed_value, true);
       }
       // Get frame preview image
       const existing = this._preview.info;
