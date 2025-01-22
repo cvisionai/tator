@@ -76,7 +76,8 @@ export class EntityCard extends TatorElement {
 
     // Text for Title Div
     this._name = document.createElement("a");
-    this._name.setAttribute("class", "text-semibold text-white css-truncate");
+    this._name.setAttribute("class", "text-semibold text-white col-11");
+    this._name.style.overflowWrap = "break-word";
     // this._name.setAttribute("href", "#");
     this.titleDiv.appendChild(this._name);
 
@@ -110,13 +111,6 @@ export class EntityCard extends TatorElement {
     this._bottom = document.createElement("div");
     this._bottom.setAttribute("class", "f3 d-flex flex-justify-between");
     this._styledDiv.appendChild(this._bottom);
-
-    // OPTIONAL Detail text (ie file extension)
-    this._ext = document.createElement("span");
-    this._ext.setAttribute("title", "file extension");
-    this._ext.setAttribute("class", "f3 text-gray");
-    this._ext.hidden = true;
-    this._bottom.appendChild(this._ext);
 
     // OPTIONAL Pagination position
     this._pos_text = document.createElement("span");
@@ -249,13 +243,13 @@ export class EntityCard extends TatorElement {
       input.addEventListener("blur", (evt) => {
         if (evt.target.value !== "") {
           this._name.textContent = evt.target.value;
-          const full = evt.target.value + this._ext.textContent;
+          const full = evt.target.value;
           this._li.setAttribute("title", full);
         }
         fetchCredentials("/rest/Media/" + this.getAttribute("media-id"), {
           method: "PATCH",
           body: JSON.stringify({
-            name: `${this._name.textContent}.${this._ext.textContent}`,
+            name: `${this._name.textContent}`,
           }),
         }).catch((err) => console.error("Failed to change name: " + err));
         this.titleDiv.replaceChild(this._name, evt.target);
@@ -371,10 +365,7 @@ export class EntityCard extends TatorElement {
         }
         break;
       case "name":
-        const dot = Math.max(0, newValue.lastIndexOf(".") || Infinity);
-        const ext = newValue.slice(dot + 1);
-        this._ext.textContent = ext.toUpperCase();
-        this._name.textContent = newValue.slice(0, dot);
+        this._name.textContent = newValue;
         this._li.setAttribute("title", newValue);
         this._more.setAttribute("name", newValue);
         break;
@@ -1279,8 +1270,6 @@ export class EntityCard extends TatorElement {
     // Link reset
     this._name.style.opacity = 0.35;
     this._link.style.opacity = 0.35;
-    // this._name.style.cursor = "not-allowed";
-    // this._link.style.cursor = "not-allowed";
     this._link.setAttribute("href", "#");
     this._name.removeAttribute("href");
 
@@ -1290,19 +1279,11 @@ export class EntityCard extends TatorElement {
     this._archiveEmblem.style.display = "none";
     this._archiveUpEmblem.style.display = "none";
     this._archiveDownEmblem.style.display = "none";
-
-    // TODO - the above are set on media these are note, clear diff time?
-    // this._ext.hidden = true;
-    // this._pos_text.textContent = "";
   }
 
   handleDragStart(e) {
-    // evt.preventDefault();
-    // console.log("Drag start: Trying to drag this file?");
     this.dispatchEvent(new Event("card-moving"));
 
-    //
-    // console.log(this.cardObj);
     const data = this.cardObj;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", JSON.stringify(data));
