@@ -357,8 +357,10 @@ export class SaveDialog extends TatorElement {
         const height = this.clientHeight;
         if (boxRight + 20 + width < window.innerWidth) {
           this.style.left = boxRight + 20 + "px";
-        } else {
+        } else if (boxLeft - 20 - width > 0) {
           this.style.left = boxLeft - 20 - width + "px";
+        } else {
+          this.style.left = window.innerWidth - 20 - width + "px";
         }
         if (boxTop + height < window.innerHeight) {
           this.style.top = boxTop + "px";

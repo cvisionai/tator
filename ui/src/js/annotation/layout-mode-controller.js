@@ -55,26 +55,6 @@ export class LayoutModeController {
         this.hideControls();
       }
     });
-
-    // If this is a multi, handle window resizes here
-    if (this.canvas.tagName == 'DIV') {
-      this.canvas.style.width = '100%';
-      this.videoCanvas.forEach(canvas => canvas._stretch = 1);
-      /*
-      window.addEventListener('resize', () => {
-        if (window.MODE == 'FULLSCREEN') {
-          const ratio = this.canvas.width / this.canvas.height;
-          if (window.innerHeight * ratio < window.innerWidth) {
-            this.canvas.style.height = window.innerHeight;
-            this.canvas.style.width = window.innerHeight * ratio;
-          } else {
-            this.canvas.style.height = window.innerWidth / ratio;
-            this.canvas.style.width = window.innerWidth;
-          }
-        }
-      });
-      */
-    }
   }
 
   shouldShowControls() {
@@ -144,11 +124,13 @@ export class LayoutModeController {
 
   toggleFullscreen() {
     this.player._hideCanvasMenus();
+    this.contextMenus = this.videoCanvas.flatMap(canvas => Array.from(canvas._shadow.querySelectorAll('canvas-context-menu')));
     if (this.fullscreen.hasAttribute("is-maximized")) {
       clearTimeout(this.hideTimeout);
       clearTimeout(this.inactivityTimeout);
       window.MODE = undefined;
       this.canvas.setAttribute('style', this.styles.canvas);
+      this.contextMenus.forEach(menu => menu._div.setAttribute('style', this.styles.contextMenus.shift()));
       this.controls.setAttribute('style', this.styles.controls);
       this.sidebar.setAttribute('style', this.styles.sidebar);
       this.browser.setAttribute('style', this.styles.browser);
@@ -166,6 +148,7 @@ export class LayoutModeController {
       // Save off styles so we can restore them later
       this.styles = {
         canvas: this.canvas.getAttribute('style'),
+        contextMenus: this.contextMenus.map(menu => menu._div.getAttribute('style')),
         controls: this.controls.getAttribute('style'),
         sidebar: this.sidebar.getAttribute('style'),
         browser: this.browser.getAttribute('style'),
@@ -179,12 +162,16 @@ export class LayoutModeController {
       this.parents = {
         successLight: this.successLight.parentElement,
         warningLight: this.warningLight.parentElement,
+        contextMenus: this.contextMenus.map(menu => menu.parentElement),
       };
-      // Make player full screen
+      this.contextMenus.forEach(menu => {
+        menu._div.style.position = 'fixed';
+      });
       this.canvas.style.position = 'fixed';
-      this.canvas.style.top = '50%';
-      this.canvas.style.left = '50%';
-      this.canvas.style.transform = 'translate(-50%, -50%)';
+      if (this.canvas.tagName == 'DIV') {
+        this.canvas.style.maxWidth = '100%';
+        this.canvas.style.maxHeight = '100%';
+      }
       this.videoCanvas.forEach(canvas => canvas._canvas.style.maxHeight = null);
       this.videoCanvas.forEach(canvas => canvas.parentNode.style.maxWidth = null);
       // Move controls to bottom of screen
