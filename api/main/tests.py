@@ -7387,6 +7387,19 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assertResponse(self, resp, status.HTTP_201_CREATED)
             media_id = resp.data["id"]
 
+            # Add a media to this section
+            resp = self.client.post(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "name": "Warp Core (Alternate)",
+                    "type": self.media_type.pk,
+                    "md5": "1234567",
+                    "section_id": section_id,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            media_id_alt = resp.data["id"]
             # Add red shirt to engineering
             # Post the row protection to the project
             resp = self.client.post(
@@ -7409,13 +7422,14 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Fetch all the media for the project as kirk
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
             assertResponse(self, resp, status.HTTP_200_OK)
-            self.assertEqual(len(resp.data), 2)
+            self.assertEqual(len(resp.data), 3)
 
             # Now switch to the redshift and verify they can only see the engineering section
+            # (Both the warp core and warp core alternate)
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
             assertResponse(self, resp, status.HTTP_200_OK)
-            self.assertEqual(len(resp.data), 1)
+            self.assertEqual(len(resp.data), 2)
 
             # redshirt cannot get row protections for engineering
             resp = self.client.get(f"/rest/RowProtections?section={section_id}")
@@ -7481,17 +7495,23 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
                 f"/rest/States/{self.project.pk}",
                 {
                     "type": self.state_type.pk,
-                    "media_ids": [media_id],
+                    "media_ids": [media_id, media_id_alt],
                     "version": self.captains_log.pk,
                     "frame": 0,
                 },
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
+            state_id = resp.data["id"][0]
             # Assert we get two States from Kirk's permission
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
+
+            # Verify we can fetch the created state
+            resp = self.client.get(f"/rest/State/{state_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(resp.data["id"], state_id)
 
             # Switch back to the red shirt and verify we get 1 localization and 1 state
             self.client.force_authenticate(user=self.red_shirt)
