@@ -81,7 +81,11 @@ export class LayoutModeController {
     clearTimeout(this.hideTimeout);
     clearTimeout(this.inactivityTimeout);
     this.allControls.forEach((control) => {
-      control.style.display = 'block';
+      if (control.tagName == 'HEADER') {
+        control.style.display = 'flex';
+      } else {
+        control.style.display = 'block';
+      }
       control.style.opacity = 0.5;
     });
     this.startInactivityTimer();
