@@ -349,10 +349,18 @@ export class SaveDialog extends TatorElement {
     const canvasDefined = typeof this._canvasPosition !== "undefined";
     if (dragDefined && canvasDefined) {
       if (window.MODE == "FULLSCREEN") {
-        const boxLeft = Math.min(this._dragInfo.start.x, this._dragInfo.end.x) + this._canvasPosition.left;
-        const boxRight = Math.max(this._dragInfo.start.x, this._dragInfo.end.x) + this._canvasPosition.left;
-        const boxTop = Math.min(this._dragInfo.start.y, this._dragInfo.end.y) + this._canvasPosition.top;
-        const boxBottom = Math.max(this._dragInfo.start.y, this._dragInfo.end.y) + this._canvasPosition.top;
+        const boxLeft =
+          Math.min(this._dragInfo.start.x, this._dragInfo.end.x) +
+          this._canvasPosition.left;
+        const boxRight =
+          Math.max(this._dragInfo.start.x, this._dragInfo.end.x) +
+          this._canvasPosition.left;
+        const boxTop =
+          Math.min(this._dragInfo.start.y, this._dragInfo.end.y) +
+          this._canvasPosition.top;
+        const boxBottom =
+          Math.max(this._dragInfo.start.y, this._dragInfo.end.y) +
+          this._canvasPosition.top;
         const width = this.clientWidth;
         const height = this.clientHeight;
         if (boxRight + 20 + width < window.innerWidth) {

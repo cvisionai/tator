@@ -446,7 +446,12 @@ export class AnnotationPage extends TatorPage {
                   this._sidebar.videoIsPlaying = false;
                   playerControlManagement(player, false);
                 });
-                this.layoutModeController = new LayoutModeController(player, this._sidebar, this._browser, this._header);
+                this.layoutModeController = new LayoutModeController(
+                  player,
+                  this._sidebar,
+                  this._browser,
+                  this._header
+                );
               });
             const nextPromise = fetchCredentials(
               `/rest/MediaNext/${newValue}${window.location.search}`,
