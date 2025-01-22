@@ -76,7 +76,8 @@ export class EntityCard extends TatorElement {
 
     // Text for Title Div
     this._name = document.createElement("a");
-    this._name.setAttribute("class", "text-semibold text-white css-truncate");
+    this._name.setAttribute("class", "text-semibold text-white col-11");
+    this._name.style.overflowWrap = "break-word";
     // this._name.setAttribute("href", "#");
     this.titleDiv.appendChild(this._name);
 
