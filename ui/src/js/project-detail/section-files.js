@@ -116,7 +116,6 @@ export class SectionFiles extends TatorElement {
           card._li.classList.add("dark-card");
           card.titleDiv.hidden = false;
           card._more.hidden = false;
-          card._ext.hidden = false;
           card._title.hidden = false;
           card._id_text.hidden = true;
 
