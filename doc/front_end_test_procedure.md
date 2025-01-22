@@ -44,6 +44,41 @@ Follow these steps to test the annotation tools.
 1. Turn off auto frame jump in the entity browser and verify the localization select/deselect works in the canvas.
 1. Perform the above with multi-view
 
+#### Media Upload Tests
+-----------------------
+Follow these steps to test adding and organizing media.
+
+Pre-requisites:
+-  Folders and media from the Localization Related Tests above
+
+1. Open the project detail page for Test Project in the browser.
+1. Create a folder on your local file system called `Folder X` and add 2 videos and 1 image to it
+2. Create a folder on your local file system called `Folder Y` and add 2 videos to it
+3. Inside Folder Y create another folder called `Folder Z` and add 2 images to it
+4. Click to view the Images folder
+5. Click to upload icon
+6. Verify the destination selected is `Images` section
+7. Uncheck "preserve structure"
+8. Uncheck (disable) "Video" media type
+9. Drag `Folder Y` to the page
+10. Verify the summary has 2 rows, and the upload button reads "Upload 2 files"
+11. Click "Clear & Reset"
+12. Repeat with `Folder X` and verify the summary is correct
+13. Continue with upload by clicking the button.
+14. From project detail page verify 1 file was added to the `Images` section
+15. Click into `All Media`
+16. Click to upload icon
+17. Verify the destination selected is `All Media (None)` section
+18. Click "+ More" on the to the Media Type `Video` box.
+19. Set an attribute on the the Video media type.
+20. Drag `Folder X` onto the page.
+21. Verify the summary has 4 rows, Verify the warning next to the image file, and the upload button reads "Upload 3 files, and 1 folder"
+22. Continue with upload by clicking the button.
+23. From project detail page verify 3 files were added to the new section `Folder X`.
+24. Try testing a nest section by repeeating the above with Folder Y.
+25. Try re-adding the same folder in the same location to check idempotency warning.
+26. Try repeating 25 without idempotency checked and see result; No warning, but potentially an error during upload.
+
 ### State Related Tests
 1. Perform the following steps to test out state types in a single video
     - python3 ./setup_project --host <host> --token <token> --name <new_project_name> --create-state-latest-type --create-state-range-type --create-track-type
@@ -154,3 +189,5 @@ Steps
 1. Navigate the pages with both paginators and verify the annotation count in sequential order.
 1. Verify the aspect/fill toggle changes the thumbnails
 1. Verify the thumbnail size slider changes the card/thumbnail sizes.
+
+
