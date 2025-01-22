@@ -580,48 +580,12 @@ export class AnnotationMulti extends TatorElement {
     this._nextPreview = null;
     this._lastPreview = 0;
 
-    let processPreview = async (evt) => {
-      this._pendingPreview = evt;
-      // Keep frames moving if we get dropped/interrupted
-      this._lastPreview = performance.now();
-      await this.handleFramePreview(evt);
-      this._pendingPreview = null;
+    this._slider.addEventListener(
+      "framePreview",
+      this.debouncePreview.bind(this)
+    );
 
-      // If there is a new event to process, process it
-      while (
-        this._nextPreview &&
-        this._nextPreview.detail.frame != evt.detail.frame
-      ) {
-        this._pendingPreview = this._nextPreview;
-        this._nextPreview = null;
-        await this.handleFramePreview(this._pendingPreview);
-      }
-      this._pendingPreview = null;
-    };
-    this._slider.addEventListener("framePreview", async (evt) => {
-      // Frame previews can get interrupted if we aren't keeping 30fps
-      // things will look janky but we don't want to make things harder
-      // by blocking the UI on a billion previews as someone zips by
-      if (this._pendingPreview == null) {
-        processPreview(evt);
-      } else {
-        const delta = performance.now() - this._lastPreview;
-        if (delta < 33) {
-          // If there is an event to process, process it
-          this._nextPreview = evt;
-        } else {
-          this._nextPreview = null;
-          processPreview(evt);
-        }
-      }
-    });
-
-    this._slider.addEventListener("hidePreview", () => {
-      this._preview.cancelled = true; // This isn't about cancel culture
-      this._pendingPreview = null;
-      this._nextPreview = null;
-      this._preview.hide();
-    });
+    this._slider.addEventListener("hidePreview", this.hidePreview.bind(this));
 
     play.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -787,6 +751,10 @@ export class AnnotationMulti extends TatorElement {
       window.dispatchEvent(new Event("resize"));
     });
 
+    this._entityTimeline.addEventListener("mouseout", (evt) => {
+      this.hidePreview(true);
+    });
+
     fullscreen.addEventListener("click", (evt) => {
       this._hideCanvasMenus();
       if (fullscreen.hasAttribute("is-maximized")) {
@@ -950,6 +918,54 @@ export class AnnotationMulti extends TatorElement {
     this._rateControl.setAttribute("disabled", "");
   }
 
+  async debouncePreview(evt) {
+    // Frame previews can get interrupted if we aren't keeping 30fps
+    // things will look janky but we don't want to make things harder
+    // by blocking the UI on a billion previews as someone zips by
+    if (this._pendingPreview == null) {
+      this.processPreview(evt);
+    } else {
+      const delta = performance.now() - this._lastPreview;
+      if (delta < 33) {
+        // If there is an event to process, process it
+        this._nextPreview = evt;
+      } else {
+        this._nextPreview = null;
+        this.processPreview(evt);
+      }
+    }
+  }
+
+  async processPreview(evt) {
+    this._pendingPreview = evt;
+    // Keep frames moving if we get dropped/interrupted
+    this._lastPreview = performance.now();
+    await this.handleFramePreview(evt);
+    this._pendingPreview = null;
+
+    // If there is a new event to process, process it
+    while (
+      this._nextPreview &&
+      this._nextPreview.detail.frame != evt.detail.frame
+    ) {
+      this._pendingPreview = this._nextPreview;
+      this._nextPreview = null;
+      await this.handleFramePreview(this._pendingPreview);
+    }
+    this._pendingPreview = null;
+  }
+
+  hidePreview(skipTimeline) {
+    this._preview.cancelled = true; // This isn't about cancel culture
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._preview.hide();
+
+    if (skipTimeline != true) {
+      // Emulate a mouse out to hide the line
+      this._entityTimeline.focusMouseOut();
+    }
+  }
   /**
    * Callback used when a user hovers over the seek bar
    */
@@ -957,6 +973,13 @@ export class AnnotationMulti extends TatorElement {
     let proposed_value = evt.detail.frame;
     this._preview.cancelled = false;
     if (proposed_value >= 0) {
+      if (
+        this._timelineMore.style.display != "none" &&
+        evt.detail.skipTimeline != true
+      ) {
+        // Add mouse over to the timeline detail area
+        this._entityTimeline.focusMouseMove(null, null, proposed_value, true);
+      }
       // Get frame preview image
       const existing = this._preview.info;
       let video = null;
@@ -1033,6 +1056,9 @@ export class AnnotationMulti extends TatorElement {
           this._preview.annotations = annotations;
         }
 
+        // Get the Y position from the seek bar to prevent the preview dancing up and down
+        const rect = this._slider.getBoundingClientRect();
+
         if (this._timeMode == "utc") {
           let timeStr =
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
@@ -1041,7 +1067,7 @@ export class AnnotationMulti extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY - bias, // Add 15 due to page layout
+            y: rect.top - bias, // Add 15 due to page layout
             time: timeStr,
             image: multiImage,
           };
@@ -1049,7 +1075,7 @@ export class AnnotationMulti extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY - bias, // Add 15 due to page layout
+            y: rect.top - bias, // Add 15 due to page layout
             time: frameToTime(proposed_value, this._fps[this._longest_idx]),
             image: multiImage,
           };
@@ -1397,8 +1423,8 @@ export class AnnotationMulti extends TatorElement {
 
         this._videoTimeline.timeStore = this._timeStore;
         this._entityTimeline.timeStore = this._timeStore;
+        this._entityTimeline.parent = this;
         this._videoTimeline.timeStoreInitialized();
-        this._entityTimeline.timeStoreInitialized();
 
         this._setToPlayMode();
 
@@ -1627,6 +1653,9 @@ export class AnnotationMulti extends TatorElement {
             //this._rateControl.setValue(this._rate);
           }
         }
+      });
+      roi_vid.addEventListener("playbackNotReady", () => {
+        this._playInteraction.disable();
       });
 
       // Setup addons for multi-menu and initialize the gridview

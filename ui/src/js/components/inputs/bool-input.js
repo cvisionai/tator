@@ -15,6 +15,7 @@ export class BoolInput extends TatorElement {
     );
     fieldset.appendChild(div);
     this.label = div;
+    this._disabled = false;
 
     this._legend = document.createElement("legend");
     this._legend.setAttribute("class", "col-4");
@@ -92,7 +93,7 @@ export class BoolInput extends TatorElement {
   }
 
   set permission(val) {
-    if (hasPermission(val, "Can Edit")) {
+    if (hasPermission(val, "Can Edit") && !this._disabled) {
       this._on.removeAttribute("readonly");
       this._off.removeAttribute("readonly");
       this._onLabel.removeEventListener("click", this._preventDefault);
@@ -107,6 +108,11 @@ export class BoolInput extends TatorElement {
 
   set default(val) {
     this._default = val;
+  }
+
+  set disabled(val) {
+    this._disabled = val;
+    this.setDisable(val);
   }
 
   /**

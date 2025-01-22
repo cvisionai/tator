@@ -6,6 +6,8 @@ export class EnumInput extends TatorElement {
   constructor() {
     super();
 
+    this._disabled = false;
+
     this.label = document.createElement("label");
     this.label.setAttribute(
       "class",
@@ -77,8 +79,17 @@ export class EnumInput extends TatorElement {
     }
   }
 
+  set disabled(val) {
+    this._disabled = val;
+    if (val) {
+      this._select.setAttribute("disabled", "");
+    } else {
+      this._select.removeAttribute("disabled");
+    }
+  }
+
   set permission(val) {
-    if (hasPermission(val, "Can Edit")) {
+    if (hasPermission(val, "Can Edit") && !this._disabled) {
       this._select.removeAttribute("disabled");
     } else {
       this._select.setAttribute("disabled", "");

@@ -113,5 +113,19 @@ project = {
             "type": "string",
             "description": "Permission level of user making request.",
         },
+        "attribute_types": {
+            "type": "array",
+            "description": "List of attribute types in the project (applicable to section objects)",
+            "items": {"$ref": "#/components/schemas/AttributeType"},
+        },
+        "extended_info": {
+            "type": "object",
+            "description": "Extended information about the project. Useful Keys: "
+            + "knowledgeHref: Overrides knowledge base url when in project."
+            + "customerServiceHref: Overrides customer service url when in project."
+            + "defaultProjectPage: Overrides the default project page when in project, if a named project-page applet exists"
+            + "hideAllMedia : Hides all media option in the project-detail",
+            "additionalProperties": True,
+        },
     },
 }

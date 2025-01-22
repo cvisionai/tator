@@ -88,6 +88,7 @@ MIDDLEWARE = (
         "django.contrib.sessions.middleware.SessionMiddleware",
         "django.middleware.common.CommonMiddleware",
         "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "main.middleware.HttpMethodMiddleware",
     ]
     + (
         [
@@ -101,7 +102,6 @@ MIDDLEWARE = (
     + [
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
-        "main.middleware.HttpMethodMiddleware",
     ]
 )
 

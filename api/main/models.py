@@ -115,12 +115,19 @@ END  IF;
 RETURN NEW;
 """
 
+UPDATE_LOOKUP_TRIGGER_FUNC = """
+SET plan_cache_mode=force_generic_plan;
+EXECUTE format('EXECUTE update_lookup_{0}(%s,%s)', NEW.project::integer, NEW.id::integer);
+SET plan_cache_mode=auto;
+RETURN NEW;
+"""
+
 
 # Register prepared statements for the triggers to optimize performance on creation of a database  connection
 @receiver(connection_created)
 def on_connection_created(sender, connection, **kwargs):
     http_method = get_http_method()
-    if http_method in ["PATCH", "POST"]:
+    if http_method in ["PATCH", "POST", "DELETE"]:
         logger.info(
             f"{http_method} detected, creating prepared statements."
         )  # useful for testing purposes
@@ -153,6 +160,18 @@ def create_prepared_statements(cursor):
     )
     cursor.execute(
         "PREPARE update_latest_mark_state(UUID, INT) AS UPDATE main_state SET latest_mark=(SELECT COALESCE(MAX(mark),0) FROM main_state WHERE elemental_id=$1 AND version=$2 AND deleted=FALSE) WHERE elemental_id=$1 AND version=$2;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_media(INT, INT) AS INSERT INTO main_projectlookup (project_id, media_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_localization(INT, INT) AS INSERT INTO main_projectlookup (project_id, localization_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
+    )
+
+    cursor.execute(
+        "PREPARE update_lookup_state(INT, INT) AS INSERT INTO main_projectlookup (project_id, state_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
     )
 
 
@@ -784,6 +803,10 @@ class Project(Model):
     """ Defines the attribute types that can be used to filter sections for this project
     """
 
+    extended_info = JSONField(default=dict, null=True, blank=True)
+    """ Extended information about the project, useful for configuration of Tator® extensions.
+    """
+
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
 
@@ -1390,6 +1413,16 @@ class Media(Model, ModelDiffMixin):
 
     """
 
+    class Meta:
+        triggers = [
+            pgtrigger.Trigger(
+                name="post_media_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("media"),
+            ),
+        ]
+
     project = ForeignKey(
         Project,
         on_delete=SET_NULL,
@@ -1867,6 +1900,12 @@ class Localization(Model, ModelDiffMixin):
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC.format("localization"),
             ),
+            pgtrigger.Trigger(
+                name="post_localization_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("localization"),
+            ),
         ]
 
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
@@ -1971,6 +2010,12 @@ class State(Model, ModelDiffMixin):
                 condition=pgtrigger.Q(old__deleted=False, new__deleted=True),
                 declare=[("_var", "integer")],
                 func=AFTER_MARK_TRIGGER_FUNC.format("state"),
+            ),
+            pgtrigger.Trigger(
+                name="post_state_update_lookup",
+                operation=pgtrigger.Insert,
+                when=pgtrigger.After,
+                func=UPDATE_LOOKUP_TRIGGER_FUNC.format("state"),
             ),
         ]
 
@@ -2135,6 +2180,7 @@ class Section(Model):
         max_length=16,
         choices=[("folder", "folder"), ("playlist", "playlist"), ("saved_search", "saved_search")],
         default="folder",
+        null=True, blank=True,
     )
     """ What type of section this is.
     """
@@ -2473,6 +2519,23 @@ class RowProtection(Model):
                     "group",
                 ],
                 name="permission_uniqueness_check",
+            )
+        ]
+
+
+class ProjectLookup(Model):
+    """This Table defines an easy way to look up the project associated with a given object"""
+
+    media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=["project", "media", "localization", "state"],
+                name="lookup_uniqueness_check",
             )
         ]
 

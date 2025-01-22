@@ -660,48 +660,12 @@ export class AnnotationPlayer extends TatorElement {
     this._nextPreview = null;
     this._lastPreview = 0;
 
-    let processPreview = async (evt) => {
-      this._pendingPreview = evt;
-      // Keep frames moving if we get dropped/interrupted
-      this._lastPreview = performance.now();
-      await this.handleFramePreview(evt);
-      this._pendingPreview = null;
+    this._slider.addEventListener(
+      "framePreview",
+      this.debouncePreview.bind(this)
+    );
 
-      // If there is a new event to process, process it
-      while (
-        this._nextPreview &&
-        this._nextPreview.detail.frame != evt.detail.frame
-      ) {
-        this._pendingPreview = this._nextPreview;
-        this._nextPreview = null;
-        await this.handleFramePreview(this._pendingPreview);
-      }
-      this._pendingPreview = null;
-    };
-    this._slider.addEventListener("framePreview", async (evt) => {
-      // Frame previews can get interrupted if we aren't keeping 30fps
-      // things will look janky but we don't want to make things harder
-      // by blocking the UI on a billion previews as someone zips by
-      if (this._pendingPreview == null) {
-        processPreview(evt);
-      } else {
-        const delta = performance.now() - this._lastPreview;
-        if (delta < 33) {
-          // If there is an event to process, process it
-          this._nextPreview = evt;
-        } else {
-          this._nextPreview = null;
-          processPreview(evt);
-        }
-      }
-    });
-
-    this._slider.addEventListener("hidePreview", () => {
-      this._preview.cancelled = true; // This isn't about cancel culture
-      this._pendingPreview = null;
-      this._nextPreview = null;
-      this._preview.hide();
-    });
+    this._slider.addEventListener("hidePreview", this.hidePreview.bind(this));
 
     play.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -783,6 +747,9 @@ export class AnnotationPlayer extends TatorElement {
       if (this.is_paused()) {
         this._playInteraction.enable();
       }
+    });
+    this._video.addEventListener("playbackNotReady", () => {
+      this._playInteraction.disable();
     });
     this._currentFrameInput.addEventListener("focus", () => {
       document.body.classList.add("shortcuts-disabled");
@@ -866,6 +833,9 @@ export class AnnotationPlayer extends TatorElement {
         this._controls.offsetHeight +
         this._timelineDiv.offsetHeight;
       window.dispatchEvent(new Event("resize"));
+    });
+    this._entityTimeline.addEventListener("mouseout", (evt) => {
+      this.hidePreview(this);
     });
 
     fullscreen.addEventListener("click", (evt) => {
@@ -982,6 +952,55 @@ export class AnnotationPlayer extends TatorElement {
     }
   }
 
+  async debouncePreview(evt) {
+    // Frame previews can get interrupted if we aren't keeping 30fps
+    // things will look janky but we don't want to make things harder
+    // by blocking the UI on a billion previews as someone zips by
+    if (this._pendingPreview == null) {
+      this.processPreview(evt);
+    } else {
+      const delta = performance.now() - this._lastPreview;
+      if (delta < 33) {
+        // If there is an event to process, process it
+        this._nextPreview = evt;
+      } else {
+        this._nextPreview = null;
+        this.processPreview(evt);
+      }
+    }
+  }
+
+  async processPreview(evt) {
+    this._pendingPreview = evt;
+    // Keep frames moving if we get dropped/interrupted
+    this._lastPreview = performance.now();
+    await this.handleFramePreview(evt);
+    this._pendingPreview = null;
+
+    // If there is a new event to process, process it
+    while (
+      this._nextPreview &&
+      this._nextPreview.detail.frame != evt.detail.frame
+    ) {
+      this._pendingPreview = this._nextPreview;
+      this._nextPreview = null;
+      await this.handleFramePreview(this._pendingPreview);
+    }
+    this._pendingPreview = null;
+  }
+
+  hidePreview(skipTimeline) {
+    this._preview.cancelled = true; // This isn't about cancel culture
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._preview.hide();
+
+    if (skipTimeline != true) {
+      // Emulate a mouse out to hide the line
+      this._entityTimeline.focusMouseOut();
+    }
+  }
+
   _setToPlayMode() {
     this._videoMode = "play";
 
@@ -1091,11 +1110,20 @@ export class AnnotationPlayer extends TatorElement {
     let proposed_value = evt.detail.frame;
     this._preview.cancelled = false;
     if (proposed_value >= 0) {
+      if (
+        this._timelineMore.style.display != "none" &&
+        evt.detail.skipTimeline != true
+      ) {
+        // Add mouse over to the timeline detail area
+        this._entityTimeline.focusMouseMove(null, null, proposed_value, true);
+      }
+
       // Get frame preview image
       const existing = this._preview.info;
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
+        const rect = this._slider.getBoundingClientRect();
         if (this._timeMode == "utc") {
           let timeStr =
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
@@ -1105,7 +1133,7 @@ export class AnnotationPlayer extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY - (this._preview.img_height + 50),
+            y: rect.top - (this._preview.img_height + 50),
             time: timeStr,
             image: true,
           };
@@ -1113,7 +1141,7 @@ export class AnnotationPlayer extends TatorElement {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: evt.detail.clientY - (this._preview.img_height + 50),
+            y: rect.top - (this._preview.img_height + 50),
             time: frameToTime(proposed_value, this._fps),
             image: true,
           };
@@ -1317,8 +1345,8 @@ export class AnnotationPlayer extends TatorElement {
         }
         this._videoTimeline.timeStore = this._timeStore;
         this._entityTimeline.timeStore = this._timeStore;
+        this._entityTimeline.parent = this;
         this._videoTimeline.timeStoreInitialized();
-        this._entityTimeline.timeStoreInitialized();
 
         this._setToPlayMode();
 
