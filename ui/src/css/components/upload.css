@@ -29,7 +29,7 @@
 
 
 
-.upload-table tr td:nth-child(2) {
+.upload-table tr td.wide {
   width: 40%;
   word-break: break-all;
   text-align: left;

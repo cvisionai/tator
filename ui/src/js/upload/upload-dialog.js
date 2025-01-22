@@ -6,14 +6,15 @@ export class UploadDialog extends ModalDialog {
 
 		this._title.nodeValue = "Uploading";
 		this._div.style.width = "100%";
-		this._div.style.height = "100%";
-		this._div.style.position = "absolute";
-		this._div.style.top = "-20px";
+		this._div.style.height = "100vh";
+		this._div.style.position = "fixed";
+		this._div.style.top = "0";
 		this._div.style.bottom = "0";
 		this._div.style.left = "0";
 		this._div.style.right = "0";
 
-		this._modal.height = "100vh";
+		this._main.style = "height:60vh;overflow-y:scroll;";
+		this._modal.style = "height:100vh";
 
 		this._folderText = document.createElement("h3");
 		this._folderText.setAttribute("class", "text-center text-semibold py-3");
@@ -67,9 +68,11 @@ export class UploadDialog extends ModalDialog {
 		this._errors.setAttribute("class", "modal__errors d-flex flex-column");
 		this._main.appendChild(this._errors);
 
+		this._close.innerHTML = "Minimize";
+
 		this._cancelButton = document.createElement("button");
-		this._cancelButton.setAttribute("class", "btn btn-clear btn-red");
-		this._cancelButton.textContent = "Back to Uploads";
+		this._cancelButton.setAttribute("class", "btn btn-clear");
+		this._cancelButton.textContent = "Minimize";
 		this._footer.appendChild(this._cancelButton);
 
 		this._close = document.createElement("button");
@@ -125,6 +128,7 @@ export class UploadDialog extends ModalDialog {
 
 	open() {
 		this.setAttribute("is-open", "");
+		window.scrollTo(0, 0);
 	}
 
 	init(store) {

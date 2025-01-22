@@ -224,3 +224,24 @@
   color: var(--color-white);
   background-color: var(--color-purple);
 }
+
+#btn-progress-outer {
+  position: relative;
+}
+
+.btn-progress-text {
+  z-index: 100;
+  position: relative;
+  /* color: white; */
+}
+
+.btn-progress-inner {
+  background-color: var(--color-blue-400);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.25s;
+  width: 0;
+  z-index: 1;
+}

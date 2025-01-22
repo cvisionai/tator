@@ -34,7 +34,7 @@ export class UploadElement extends TatorElement {
 		this._destination = document.createElement("div");
 		this._destination.setAttribute(
 			"class",
-			"px-3 py-3 rounded-3 my-3 d-flex flex-items-center flex-wrap"
+			"px-3 py-2 rounded-3 my-3 d-flex flex-wrap"
 		);
 		this._destination.setAttribute(
 			"style",
@@ -43,15 +43,32 @@ export class UploadElement extends TatorElement {
 		this._shadow.appendChild(this._destination);
 
 		this._destinationTitle = document.createElement("div");
-		this._destinationTitle.innerHTML = `<span class="h3 mr-3">Destination</span>`;
-		this._destinationTitle.setAttribute("class", "col-2");
+		this._destinationTitle.innerHTML = `
+		
+		<span class="text-gray">Specify the destination, and optionally choose the data type you are uploading, and apply metadata to uploaded media.</span>`;
+		this._destinationTitle.setAttribute("class", "col-9 my-3 pb-2");
 		this._destination.appendChild(this._destinationTitle);
 
-		this._destinationPicker = document.createElement("enum-input");
-		this._destinationPicker.setAttribute("class", "d-block f1 col-6 ");
-		this._destinationPicker.label.setAttribute("class", "py-1");
+		this._resetToDefault = document.createElement("a");
+		this._resetToDefault.setAttribute(
+			"class",
+			"col-3 text-underline text-gray clickable f1 hover-text-white text-right"
+		);
+		this._resetToDefault.textContent = "Reset to default values";
+		this._resetToDefault.addEventListener("click", () => {
+			window.dispatchEvent(new Event("reset-to-default"));
+		});
+		this._destination.appendChild(this._resetToDefault);
 
-		// this._destinationPicker.setAttribute("name", "Destination");
+		this._destinationPicker = document.createElement("enum-input");
+		this._destinationPicker.setAttribute(
+			"class",
+			"d-block f1 col-lg-4 col-sm-8 pr-3"
+		);
+		this._destinationPicker.label.setAttribute("class", "py-1");
+		this._destinationPicker.setAttribute("name", "Destination");
+		// this._destinationPicker._select.classList.remove("col-8");
+		this._destinationPicker._select.classList.add("pl-3", "ml-3");
 		this._destination.appendChild(this._destinationPicker);
 		this._destinationPicker.addEventListener(
 			"change",
@@ -59,19 +76,19 @@ export class UploadElement extends TatorElement {
 		);
 
 		const destBottom = document.createElement("div");
-		destBottom.setAttribute("class", "col-9 offset-sm-2 pt-2");
+		destBottom.setAttribute("class", "col-lg-4 col-sm-12");
 		this._destination.appendChild(destBottom);
 
 		this._idemPotencyCheck = document.createElement("checkbox-input");
 		this._idemPotencyCheck.label.setAttribute(
 			"class",
-			"d-flex flex-items-center py-1"
+			"d-flex flex-items-center pb-3"
 		);
 		this._idemPotencyCheck.setAttribute("class", "d-block f2 pb-2");
 		this._idemPotencyCheck._checked = true;
 		this._idemPotencyCheck.setAttribute(
 			"name",
-			"Check idempotency (duplicate files or folders) before upload"
+			"Flag duplicates before upload. (Uncheck to skip)"
 		);
 		destBottom.appendChild(this._idemPotencyCheck);
 		// this._idemPotencyCheck.addEventListener(
@@ -88,14 +105,14 @@ export class UploadElement extends TatorElement {
 		this._folderCheck.setAttribute("class", "d-block f2");
 		this._folderCheck.setAttribute(
 			"name",
-			"Preserve folder structure during upload. (Uncheck to flatten)"
+			"Preserve folder structure. (Uncheck to flatten)"
 		);
 		destBottom.appendChild(this._folderCheck);
 
 		// Properties of media types
 		this.mediaTypeSettings = document.createElement("media-type-settings");
-		this.mediaTypeSettings.setAttribute("class", "d-flex flex-column");
-		this._shadow.appendChild(this.mediaTypeSettings);
+		this.mediaTypeSettings.setAttribute("class", "pl-6 col-md-12 col-lg-3");
+		this._destination.appendChild(this.mediaTypeSettings);
 
 		// File summary and upload CTAs
 		const main = document.createElement("div");
@@ -123,22 +140,31 @@ export class UploadElement extends TatorElement {
 		this._summaryText.setAttribute("class", "py-2 text-gray f2");
 		this._summaryTitle.appendChild(this._summaryText);
 
-		this._clearAllInvalid = document.createElement("a");
-		this._clearAllInvalid.setAttribute(
+		this._invalidInfo = document.createElement("div");
+		this._summaryTitle.appendChild(this._invalidInfo);
+
+		this._invalidSummary = document.createElement("span");
+		this._invalidSummary.setAttribute("class", "text-gray f2");
+		this._invalidSummary.textContent = "Invalid: 0";
+		this._invalidSummary.hidden = true;
+		this._invalidInfo.appendChild(this._invalidSummary);
+
+		this._invalidDetails = document.createElement("a");
+		this._invalidDetails.setAttribute(
 			"class",
-			"text-underline text-gray clickable f3 hidden"
+			"text-underline text-gray clickable f3 ml-3 hidden"
 		);
-		this._clearAllInvalid.textContent = "Clear Invalid";
-		this._clearAllInvalid.addEventListener(
+		this._invalidDetails.textContent = "Details";
+		this._invalidDetails.addEventListener(
 			"click",
-			this._clearAllInvalidEntries.bind(this)
+			this._showInvalidDetails.bind(this)
 		);
-		this._summaryTitle.appendChild(this._clearAllInvalid);
+		this._invalidInfo.appendChild(this._invalidDetails);
 
 		this._checkIdemDiv = document.createElement("div");
 		this._checkIdemDiv.setAttribute(
 			"class",
-			"upload-idem-notification py-2 f2 "
+			"upload-idem-notification py-2 f2 mt-3"
 		);
 		this._checkIdemDiv.style.display = "none";
 		main.appendChild(this._checkIdemDiv);
@@ -242,13 +268,13 @@ export class UploadElement extends TatorElement {
 		topOfTable.appendChild(topRight);
 
 		this._dropZone = document.createElement("div");
-		this._dropZone.setAttribute("draggable", "true");
 		this._dropZone.setAttribute(
 			"class",
-			"col-8 offset-sm-2 f1 d-flex flex-column text-gray px-3 py-3 my-3 rounded-3 text-center drop-zone flex-justify-center flex-items-center"
+			"col-lg-8 col-sm-11 offset-lg-2 f1 text-gray px-3 py-3 my-3 mt-6 rounded-3 text-center drop-zone flex-justify-center flex-items-center"
 		);
 		// this._dropZone.style = "height: 100px;";
 		this._dropZone.innerHTML = `Drag and drop files and folders you want to upload here, or choose Add Files or Add Folder.`;
+		// <br/><br/>Recommended browser upload size is 60GB, or 5000 files. For larger uploads try <a href="https://www.tator.io/docs/developer-guide/getting-started/install-tator-py" class="text-purple hover-text-underline" target="_blank">tator-py</a>.
 		main.appendChild(this._dropZone);
 
 		this._paginatorSummary = document.createElement("div");
@@ -278,10 +304,7 @@ export class UploadElement extends TatorElement {
 		topRight.appendChild(this._paginatorNext);
 
 		this._summaryTable = document.createElement("table");
-		this._summaryTable.setAttribute(
-			"class",
-			"col-12 file-table upload-table pb-6 mb-6"
-		);
+		this._summaryTable.setAttribute("class", "col-12 file-table upload-table");
 		main.appendChild(this._summaryTable);
 
 		this._headerMap = new Map();
@@ -387,6 +410,8 @@ export class UploadElement extends TatorElement {
 	}
 
 	idemDivAsMessanger(message, time = 1500) {
+		// this._loadingInterface.displayLoadingScreen(message);
+
 		this._checkIdem.innerHTML = message;
 		this._checkIdemDiv.style.display = "block";
 		setTimeout(() => {
@@ -436,9 +461,8 @@ export class UploadElement extends TatorElement {
 	set sections(val) {
 		this._sections = val;
 		// Fill in the left panel area with section information
-
-		const choices = this._sectionData.getFolderEnumChoices();
-		console.log("Choices", choices);
+		var choices = this._sectionData.getFolderEnumChoices();
+      choices.unshift({ value: this._noParentName, label: this._noParentName });
 		this._destinationPicker.choices = choices;
 
 		const params = new URLSearchParams(window.location.search);
@@ -504,39 +528,46 @@ export class UploadElement extends TatorElement {
 	}
 
 	_textSummaryUpdate() {
-		const validSections = this._currentUpload.list.filter(
-				(u) => !u.invalid_skip && u.type == "folder"
-			),
-			validFiles = this._currentUpload.list.filter(
-				(u) => !u.invalid_skip && u.type !== "folder"
-			),
-			invalidEntries = this._currentUpload.list.filter((u) => u.invalid_skip);
-
-		if (invalidEntries.length > 0) {
-			this._clearAllInvalid.classList.remove("hidden");
+		if (!this._currentUpload?.list || this._currentUpload?.list.length === 0) {
+			this._summaryText.textContent = "No files, or folders added.";
+			this._invalidSummary.hidden = true;
 		} else {
-			this._clearAllInvalid.classList.add("hidden");
-		}
 
-		this._summaryText.innerHTML = `
-			<div class="pb-1">
-				${validFiles.length} file${validFiles.length === 1 ? "" : "s"}
-			</div>
-			<div class="pb-1">
-				${validSections.length} folder${validSections.length === 1 ? "" : "s"}
-			</div>
-							<div class="pb-1">
-					${invalidEntries.length} invalid
+	
+			const validSections = this._currentUpload.list.filter(
+					(u) => !u.invalid_skip && u.type == "folder"
+				),
+				validFiles = this._currentUpload.list.filter(
+					(u) => !u.invalid_skip && u.type !== "folder"
+				),
+				invalidEntries = this._currentUpload.list.filter((u) => u.invalid_skip);
+
+			this._summaryText.innerHTML = `
+				<div class="pb-1">
+					Valid: ${validFiles.length} file${
+				validFiles.length === 1 ? "" : "s"
+			} (${formatBytesOutput(this._currentUpload.totalSize)}) 
+					${validSections.length > 0 && validFiles.length > 0 ? " and " : ""}
+					${validSections.length} folder${validSections.length === 1 ? "" : "s"}
 				</div>
-			<div class="pb-1">${formatBytesOutput(
-				this._currentUpload.totalSize
-			)} total</div>
-			${
-				this._currentUpload.totalSize > 60000000000 || validFiles.length > 5000
-					? `<div class="text-red bg-gray py-3 px-3">Warning: Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try tator-py.</div>`
-					: ""
+				${
+					this._currentUpload.totalSize > 60000000000 ||
+					validFiles.length > 5000
+						? `<div class="text-red bg-gray py-3 px-3">Warning: Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try tator-py.</div>`
+						: ""
+				}
+				<div>`;
+
+			if (invalidEntries.length > 0) {
+				this._invalidSummary.hidden = false;
+				this._invalidSummary.innerHTML = `Invalid: 
+				${invalidEntries.length}`;
+				this._invalidDetails.classList.remove("hidden");
+			} else {
+				this._invalidSummary.hidden = true;
+				this._invalidDetails.classList.add("hidden");
 			}
-			<div>`;
+		}
 	}
 
 	async _abortIdemCheck(evt) {
@@ -554,8 +585,8 @@ export class UploadElement extends TatorElement {
 				}
 				return d;
 			});
-			this._createTable(this._data);
-			await this.asyncTimeout(100);
+			this._createTable();
+			await this.asyncTimeout(10);
 			this._cancelling = false;
 		}
 	}
@@ -565,17 +596,19 @@ export class UploadElement extends TatorElement {
 			new CustomEvent("upload-summary", {
 				detail: {
 					data: [],
-					ok: true, // TODO: Check if there are any errors
-					buttonText: "Waiting for iempotency check...",
+					ok: false, // TODO: Check if there are any errors
+					buttonText: "Waiting for idempotency check...",
+					idemCheck: true,
 				},
 			})
 		);
+		this._progressButton._progressCallback(0);
 		this._idemCheckAbort = new AbortController();
 		this._cancelledCheck = false;
-		this._checkIdemDiv.style.display = "block";
-		this._checkIdemDiv.classList.add("checking-files");
-		this._checkIdem.innerHTML = `<div class="f1 col-9">
-		<div>Checking selection for duplicate files... This may take a few moments.</div>`;
+		// this._checkIdemDiv.style.display = "block";
+		// this._checkIdemDiv.classList.add("checking-files");
+		// this._checkIdem.innerHTML = `<div class="f1 col-9">
+		// <div>Checking selection for duplicate files... This may take a few moments.</div>`;
 
 		this._abortButton = document.createElement("a");
 		this._abortButton.setAttribute("href", "#");
@@ -607,25 +640,35 @@ export class UploadElement extends TatorElement {
 			await this._fileIdempotencyCheck(files);
 		}
 
-		this.idemDivAsMessanger("Idempotency check complete!");
-		this._checkIdemDiv.classList.remove("checking-files");
+		// this.idemDivAsMessanger("Idempotency check complete!");
+		// this._checkIdemDiv.classList.remove("checking-files");
 		this._createTable();
 
 		const { validSections, validFiles } = this._currentUpload.getValidSummary();
+
+		if (files.length !== validFiles.length) {
+			this.idemDivAsMessanger("Some invalid files were skipped.");
+		}
+
 		this.dispatchEvent(
 			new CustomEvent("upload-summary", {
 				detail: {
 					data: [...validSections, ...validFiles],
 					ok: true, // TODO: Check if there are any errors
-					buttonText: `Upload ${validFiles.length} file${
-						validFiles.length === 1 ? "" : "s"
+					buttonText: `Upload ${
+						validFiles.length > 0
+							? `${validFiles.length} file${validFiles.length === 1 ? "" : "s"}`
+							: ""
 					} ${
 						validFiles.length > 0 && validSections.length > 0 ? " and " : ""
 					} ${
 						validSections.length > 0
-							? `folder${validSections.length === 1 ? "" : "s"}`
+							? `${validSections.length} folder${
+									validSections.length === 1 ? "" : "s"
+							  }`
 							: ""
 					}`,
+					idemCheck: false,
 				},
 			})
 		);
@@ -635,7 +678,8 @@ export class UploadElement extends TatorElement {
 	async _fileIdempotencyCheck(files) {
 		return new Promise(async (resolve, reject) => {
 			const newSectNames = this._newSections.map((u) => u.name);
-
+			let percentUp = 100 / files.length;
+			let start = 0;
 			if (files && files.length > 0) {
 				// Goes through and checks if media exists in the location
 				for (let f of files) {
@@ -720,11 +764,14 @@ export class UploadElement extends TatorElement {
 						}
 
 						this._currentUpload.updateIndex(f.index, f);
-						this._createTable();
+						this._createTable(true);
 					} catch (err) {
 						if (err !== "Idempotency check cancelled")
 							console.error("Error checking idem. for file", err);
 					}
+
+					start += percentUp;
+					this._progressButton._progressCallback(start);
 				}
 				resolve(files);
 			}
@@ -830,7 +877,7 @@ export class UploadElement extends TatorElement {
 		});
 	}
 
-	_createTable(data) {
+	_createTable(idemCheck = false) {
 		// Upload > list
 
 		this._checkboxMap = new Map();
@@ -849,12 +896,14 @@ export class UploadElement extends TatorElement {
 		// }</span> of <span>${Math.ceil(this._data.length / this._pageSize)}</span>`;
 
 		// this._paginatorSummary.innerHTML = pageText;
-		const pageData = this._currentUpload?.list ? this._currentUpload.list : [];
+		const pageData = this._currentUpload?.list
+			? this._currentUpload.list.filter((u) => !u.invalid_skip)
+			: [];
 		this.dispatchEvent(
 			new CustomEvent("upload-summary", {
 				detail: {
 					data: pageData,
-					ok: true, // TODO: Check if there are any errors
+					ok: !idemCheck, // TODO: Check if there are any errors
 				},
 			})
 		);
@@ -865,6 +914,9 @@ export class UploadElement extends TatorElement {
 				tr.dataset.info = JSON.stringify(row);
 				this._headerMap.forEach((value, key) => {
 					const cell = tr.insertCell();
+					if (key == "name") {
+						cell.classList.add("wide");
+					}
 					if (key == "name") {
 						const reducedName = `${this._sectionData.getSectionPath({
 								name: row.name,
@@ -1030,7 +1082,7 @@ export class UploadElement extends TatorElement {
 	updateDestination(evt) {
 		this._lastSection = this._chosenSection;
 		const sectionId =
-			this._destinationPicker.getValue() !== this._noneText
+			this._destinationPicker.getValue() !== this._noParentName
 				? Number(this._destinationPicker.getValue())
 				: null;
 
@@ -1047,20 +1099,11 @@ export class UploadElement extends TatorElement {
 					: { id: null, name: "", path: "" };
 		}
 
-		if (this._chosenSection.id !== null) {
 			window.history.replaceState(
 				{},
 				"",
-				`/${this._projectId}/upload?section=${this._chosenSection.id}`
+				`/${this._projectId}/upload${(this._chosenSection.id !== null) ? `?section=${this._chosenSection.id}` : ""}`
 			);
-		}
-
-		console.log(
-			"DEST UPDATE this._chosenSection",
-			this._chosenSection,
-			"this._lastSection",
-			this._lastSection
-		);
 
 		this.dispatchEvent(
 			new CustomEvent("section-change", {
@@ -1081,7 +1124,7 @@ export class UploadElement extends TatorElement {
 		this._data = [];
 		this._uploads = [];
 		this._newSections = [];
-		this._noneText = "-- None --";
+		this._noParentName = "-- Default --";
 		this._duplicateMap = new Map();
 		this._chosenSection = {
 			id: null,
@@ -1145,9 +1188,18 @@ export class UploadElement extends TatorElement {
 		];
 	}
 
+	upload() {
+		this._uploading = this._currentUpload;
+		this._uploading.upload();
+		this._uploads.push(this._uploading);
+
+		this._currentUpload = null
+		this._resetUpload();
+	}
+
 	_resetUpload() {
 		this._setEmptyVariables();
-		this._createTable([]);
+		this._createTable();
 		this._checkIdemDiv.style.display = "none";
 		this._checkIdem.innerHTML = "";
 		this._removeButton.textContent = "Remove";
@@ -1166,11 +1218,11 @@ export class UploadElement extends TatorElement {
 
 	_updateShowing(evt) {
 		this._currentPage = 1;
-		this._createTable(this._data);
+		this._createTable();
 	}
 
 	_updatePage() {
-		this._createTable(this._data);
+		this._createTable();
 	}
 
 	_nextPage() {
@@ -1189,25 +1241,28 @@ export class UploadElement extends TatorElement {
 	}
 
 	_sortTable(key) {
-		const data = this._data.sort((a, b) => {
-			if (a[key] < b[key]) {
-				return this._direction * -1;
-			}
-			if (a[key] > b[key]) {
-				return this._direction * 1;
-			}
-			return 0;
-		});
-
 		this._direction = this._direction * -1;
-		this._createTable(data);
+		this._currentUpload.sortList(key, this._direction);
+		this._createTable();
+	}
+
+	_showInvalidDetails(evt) {
+		window.dispatchEvent(
+			new CustomEvent("show-invalid-details", {
+				detail: {
+					data: this._currentUpload.getSkippedEntries(),
+				},
+			})
+		);
 	}
 
 	_clearAllInvalidEntries(evt) {
 		evt.preventDefault();
-		this._data = this._data.filter((d) => !d.invalid_skip);
-		this._skippedEntries = [];
-		this._createTable(this._data);
+		this._currentUpload.list = this._currentUpload.list.filter(
+			(d) => !d.invalid_skip
+		);
+
+		this._createTable();
 	}
 }
 

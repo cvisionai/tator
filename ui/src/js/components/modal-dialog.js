@@ -15,37 +15,37 @@ export class ModalDialog extends TatorElement {
     );
     this._div.appendChild(this._modal);
 
-    const close = document.createElement("modal-close");
-    this._modal.appendChild(close);
+    this._close = document.createElement("modal-close");
+		this._modal.appendChild(this._close);
 
-    this._header = document.createElement("div");
-    this._header.setAttribute(
-      "class",
-      "modal__header py-6 px-6 lh-default text-center"
-    );
-    this._modal.appendChild(this._header);
+		this._header = document.createElement("div");
+		this._header.setAttribute(
+			"class",
+			"modal__header py-6 px-6 lh-default text-center"
+		);
+		this._modal.appendChild(this._header);
 
-    this._titleDiv = document.createElement("div");
-    this._titleDiv.setAttribute("class", "h2 px-6");
-    this._header.appendChild(this._titleDiv);
+		this._titleDiv = document.createElement("div");
+		this._titleDiv.setAttribute("class", "h2 px-6");
+		this._header.appendChild(this._titleDiv);
 
-    this._title = document.createTextNode("");
-    this._titleDiv.appendChild(this._title);
+		this._title = document.createTextNode("");
+		this._titleDiv.appendChild(this._title);
 
-    this._main = document.createElement("div");
-    this._main.setAttribute("class", "modal__main px-6 py-4");
-    this._modal.appendChild(this._main);
+		this._main = document.createElement("div");
+		this._main.setAttribute("class", "modal__main px-6 py-4");
+		this._modal.appendChild(this._main);
 
-    this._footer = document.createElement("div");
-    this._footer.setAttribute("class", "modal__footer d-flex");
-    this._modal.appendChild(this._footer);
+		this._footer = document.createElement("div");
+		this._footer.setAttribute("class", "modal__footer d-flex");
+		this._modal.appendChild(this._footer);
 
-    this._closeCallback = (evt) => {
-      this.dispatchEvent(new Event("close"));
-      this.removeAttribute("is-open");
-    };
+		this._closeCallback = (evt) => {
+			this.dispatchEvent(new Event("close"));
+			this.removeAttribute("is-open");
+		};
 
-    close.addEventListener("click", this._closeCallback.bind(this));
+		this._close.addEventListener("click", this._closeCallback.bind(this));
   }
 
   static get observedAttributes() {

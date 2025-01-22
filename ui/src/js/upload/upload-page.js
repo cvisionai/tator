@@ -4,14 +4,40 @@ import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/util
 import { store } from "./store.js";
 import { SectionData } from "../util/section-utilities.js";
 
+class LoadingInterface {
+	constructor(dom) {
+		this._loadingScreen = document.getElementById("loadingScreen");
+		this._loadingScreenText = document.getElementById("loadingScreenText");
+	}
+
+	displayLoadingScreen(message) {
+		this._loadingScreen.style.display = "block";
+		this._loadingScreen.classList.add("has-open-modal");
+
+		if (message) {
+			this._loadingScreenText.innerHTML = `<div class="text-semibold d-flex flex-column">${message}</div>`;
+		} else {
+			this._loadingScreenText.innerHTML = `<div class="text-semibold">Loading...</div>`;
+		}
+	}
+
+	hideLoadingScreen() {
+		this._loadingScreen.classList.remove("has-open-modal");
+		this._loadingScreen.style.display = "none";
+	}
+}
+
 /**
  * Main uploads page
  */
 export class UploadPage extends TatorPage {
 	constructor() {
 		super();
+
+		this._loadingInterface = new LoadingInterface(this._shadow);
+		this._loadingInterface.displayLoadingScreen();
+
 		this._uploadsInProgress = 0;
-		this._noneText = "-- None --";
 		document.body.setAttribute("class", "no-padding-bottom");
 
 		// Success and warning Utility hooks
@@ -41,7 +67,7 @@ export class UploadPage extends TatorPage {
 		// Wrapper to allow r.side bar to slide into left
 		this.mainWrapper = document.createElement("div");
 		this.mainWrapper.setAttribute("class", "analysis--main--wrapper d-flex");
-		this.mainWrapper.style.minHeight = "calc(100vh - 62px)";
+		this.mainWrapper.style.minHeight = "calc(100vh + 300px)";
 		this._shadow.appendChild(this.mainWrapper);
 
 		//
@@ -81,22 +107,36 @@ export class UploadPage extends TatorPage {
 		this._projectText.nodeValue = "Upload Media";
 		h1.appendChild(this._projectText);
 
-		this._description = document.createElement("project-text");
-		this._description.setAttribute("class", "text-gray f2 pt-3");
-		this._description.innerHTML = `
-		Add files and folders to your project.
-		&nbsp;Recommended max browser upload size is 60GB, or 5000 files. For larger uploads try <a href="https://www.tator.io/docs/developer-guide/getting-started/install-tator-py" class="text-purple hover-text-underline" target="_blank">tator-py</a>`;
-		headerWrapperDiv.appendChild(this._description);
+		// this._description = document.createElement("project-text");
+		// this._description.setAttribute("class", "text-gray f2 pt-3");
+		// this._description.innerHTML = `
+		// Add files and folders to your project.
+		// &nbsp;Recommended max browser upload size is 60GB, or 5000 files. For larger uploads try <a href="https://www.tator.io/docs/developer-guide/getting-started/install-tator-py" class="text-purple hover-text-underline" target="_blank">tator-py</a>`;
+		// headerWrapperDiv.appendChild(this._description);
 
 		this._upload = document.createElement("upload-element");
+		this._upload._loadingInterface = this._loadingInterface;
 		this._mainSection.appendChild(this._upload);
 
 		this._bottomSection = document.createElement("div");
 		this._bottomSection.setAttribute(
 			"class",
-			"d-flex flex-justify-right my-6 px-3 py-3 rounded-3"
+			"d-flex flex-justify-center px-3 py-3 position-fixed bg-charcoal"
 		);
-		this._mainSection.appendChild(this._bottomSection);
+		this._bottomSection.style = "bottom: 0; position: fixed; width: 100%;";
+		this._shadow.appendChild(this._bottomSection);
+
+		this._maximizeUpload = document.createElement("a");
+		this._maximizeUpload.setAttribute(
+			"class",
+			"py-3 f2 px-3 text-gray clickable mr-3"
+		);
+		this._maximizeUpload.textContent = "View Upload Window";
+		// this._maximizeUpload.addEventListener(
+		// 	"click",
+		// 	this._upload._resetUpload.bind(this._upload)
+		// );
+		this._bottomSection.appendChild(this._maximizeUpload);
 
 		this._cancelUpload = document.createElement("a");
 		this._cancelUpload.setAttribute(
@@ -110,9 +150,10 @@ export class UploadPage extends TatorPage {
 		);
 		this._bottomSection.appendChild(this._cancelUpload);
 
-		this._uploadButton = document.createElement("button");
+		this._progressButton = document.createElement("progress-button");
+		this._uploadButton = this._progressButton.btn;
 		this._uploadButton.setAttribute("class", "btn btn-clear btn-primary f2");
-		this._uploadButton.textContent = "Upload";
+		this._progressButton.setText = "Upload";
 		this._uploadButton.disabled = true;
 		this._uploadButton.style.width = "500px";
 		this._uploadButton.addEventListener("click", async () => {
@@ -120,10 +161,24 @@ export class UploadPage extends TatorPage {
 			await this._upload.upload();
 			this._upload._resetUpload();
 		});
-		this._bottomSection.appendChild(this._uploadButton);
+		this._bottomSection.appendChild(this._progressButton);
+
+		this._cancelIdemCheck = document.createElement("a");
+		this._cancelIdemCheck.hidden = true;
+		this._cancelIdemCheck.innerText = "Abort idempotency check";
+		this._cancelIdemCheck.setAttribute(
+			"class",
+			"ml-3 my-3 text-center col-12 py-2"
+		);
+		this._cancelIdemCheck.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			this._upload._abortIdemCheck();
+		});
+		this._shadow.appendChild(this._cancelIdemCheck);
 
 		this._sectionData = new SectionData();
 		this._upload.sectionData = this._sectionData;
+		this._upload._progressButton = this._progressButton;
 
 		// Create store subscriptions
 		store.subscribe((state) => state.user, this._setUser.bind(this));
@@ -142,9 +197,10 @@ export class UploadPage extends TatorPage {
 
 		this._upload.addEventListener("upload-summary", (evt) => {
 			const valid = evt.detail.data.filter((item) => !item.skip);
-			this._uploadButton.disabled = !evt.detail.ok || valid.length === 0;
+			this._uploadButton.disabled = !(evt.detail.ok && valid.length > 0);
+			this._cancelIdemCheck.hidden = !evt.detail.checkIdem;
 			if (evt?.detail?.buttonText) {
-				this._uploadButton.textContent = evt.detail.buttonText;
+				this._progressButton.setText = evt.detail.buttonText;
 			}
 		});
 
@@ -156,6 +212,11 @@ export class UploadPage extends TatorPage {
 		this._uploadDialog.addEventListener("cancel", (evt) => {
 			store.getState().uploadCancel();
 			this.removeAttribute("has-open-modal");
+		});
+
+		this._maximizeUpload.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			this._uploadDialog.setAttribute("is-open", "");
 		});
 
 		this._uploadDialog.addEventListener("close", (evt) => {
@@ -196,14 +257,46 @@ export class UploadPage extends TatorPage {
 		this._breadcrumbEnd.textContent = "Upload Media";
 		this._breadcrumbInner.appendChild(this._breadcrumbEnd);
 
+		this.invalidNotify = document.createElement("modal-notify");
+		this._shadow.appendChild(this.invalidNotify);
+
+		window.addEventListener("show-invalid-details", (evt) => {
+			const skippedList = evt.detail.data;
+			this._invalidTable = document.createElement("upload-table");
+			this._invalidTable._sectionData = this._sectionData;
+			this._invalidTable.setAttribute(
+				"class",
+				"col-12 file-table upload-table pb-6 mb-6"
+			);
+			this.invalidNotify._main.appendChild(this._invalidTable);
+			this._invalidTable.uploadData = skippedList;
+
+			this._notify(
+				"Invalid Details",
+				`Some files have invalid details. Please correct them and try again.`,
+				"neutral"
+			);
+		});
+
 		this._upload.addEventListener(
 			"section-change",
 			this._updateBreadcrumb.bind(this)
 		);
 
 		//
-		// this._uploadDialog.addEventListener("open", this.showDimmer.bind(this));
-		// this._uploadDialog.addEventListener("close", this.hideDimmer.bind(this));
+		this.invalidNotify.addEventListener("open", this.showDimmer.bind(this));
+		this.invalidNotify.addEventListener("close", () => {
+			this.hideDimmer();
+		});
+
+		this.invalidNotify._accept.innerHTML = "Close and Clear Invalid";
+		this.invalidNotify._accept.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			this.invalidNotify._closeCallback();
+			this.hideDimmer();
+			this.invalidNotify._main.innerHTML = "";
+			this._upload._clearAllInvalidEntries(evt);
+		});
 
 		// updates the init of sectionData utility with the new sections list
 		store.subscribe((state) => state.sections, this.newSectionsList.bind(this));
@@ -217,11 +310,12 @@ export class UploadPage extends TatorPage {
 		console.log(initInfo);
 		this._init(initInfo);
 		this._uploadDialog.init(store);
+		this._loadingInterface.hideLoadingScreen();
 	}
 
 	_notify(title, message, error_or_ok) {
-		this.modalNotify.init(title, message, error_or_ok);
-		this.modalNotify.setAttribute("is-open", "");
+		this.invalidNotify.init(title, message, error_or_ok, null, true);
+		this.invalidNotify.setAttribute("is-open", "");
 		this.setAttribute("has-open-modal", "");
 	}
 

@@ -8,11 +8,11 @@ export class MediaTypeSettings extends TatorElement {
 		this._availableTypes = ["video", "image", "file", "folder"];
 
 		this._div = document.createElement("div");
-		this._div.setAttribute("class", "px-3 py-3 rounded-3 my-3 ");
-		this._div.setAttribute(
-			"style",
-			"border: 1px solid var(--color-charcoal--light);"
-		);
+		this._div.setAttribute("class", "col-12"); //px-3 py-3 rounded-3 my-3
+		// this._div.setAttribute(
+		// 	"style",
+		// 	"border: 1px solid var(--color-charcoal--light);"
+		// );
 		this._shadow.appendChild(this._div);
 
 		this._summary = document.createElement("div");
@@ -22,28 +22,30 @@ export class MediaTypeSettings extends TatorElement {
 		);
 		this._div.appendChild(this._summary);
 
-		this._summaryTitle = document.createElement("div");
-		this._summaryTitle.innerHTML = `<span class="h3 mr-3">Properties</span>`;
-		this._summaryTitle.setAttribute("class", "col-10");
-		this._summary.appendChild(this._summaryTitle);
+		// this._summaryTitle = document.createElement("div");
+		// this._summaryTitle.innerHTML = `<span class="h3 mr-3">Properties</span>`;
+		// this._summaryTitle.setAttribute("class", "col-10");
+		// this._summary.appendChild(this._summaryTitle);
 
-		this._summaryText = document.createElement("div");
-		this._summaryText.textContent =
-			"Specify the data type you are uploading, and any additional metadata to be set on upload.";
-		this._summaryText.setAttribute("class", "py-2 text-gray f2");
-		this._summaryTitle.appendChild(this._summaryText);
+		// this._summaryText = document.createElement("div");
+		// this._summaryText.textContent =
+		// 	"Specify the data type you are uploading, and any additional metadata to be set on upload.";
+		// this._summaryText.setAttribute("class", "py-2 text-gray f2");
+		// this._summaryTitle.appendChild(this._summaryText);
 
-		this._clearAllInvalid = document.createElement("a");
-		this._clearAllInvalid.setAttribute(
-			"class",
-			"text-underline text-gray clickable f1 hover-text-white"
-		);
-		this._clearAllInvalid.textContent = "Reset to default values";
-		this._clearAllInvalid.addEventListener("click", this._render.bind(this));
-		this._summary.appendChild(this._clearAllInvalid);
+		// this._clearAllInvalid = document.createElement("a");
+		// this._clearAllInvalid.setAttribute(
+		// 	"class",
+		// 	"text-underline text-gray clickable f1 hover-text-white"
+		// );
+		// this._clearAllInvalid.textContent = "Reset to default values";
+		// this._clearAllInvalid.addEventListener("click", this._render.bind(this));
+		// this._summary.appendChild(this._clearAllInvalid);
+
+		window.addEventListener("reset-to-default", this._render.bind(this));
 
 		this._optionsDiv = document.createElement("div");
-		this._optionsDiv.setAttribute("class", "offset-sm-2 d-flex flex-wrap");
+		// this._optionsDiv.setAttribute("class", "offset-lg-2 d-flex flex-wrap");
 		this._div.appendChild(this._optionsDiv);
 	}
 
@@ -105,11 +107,11 @@ export class MediaTypeSettings extends TatorElement {
 
 	_createSection(dataType, list) {
 		const div = document.createElement("div");
-		div.setAttribute("class", "col-5 mr-6 mt-2");
+		div.setAttribute("class", "mb-3");
 		this._optionsDiv.appendChild(div);
 
 		const inner = document.createElement("div");
-		inner.setAttribute("class", "bg-charcoal px-3 py-2 rounded-3");
+		inner.setAttribute("class", "bg-charcoal col-12 px-3 py-2 rounded-3");
 		div.appendChild(inner);
 
 		const innerTop = document.createElement("div");

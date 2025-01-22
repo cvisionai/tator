@@ -89,6 +89,7 @@ export default class Upload {
 						size: file.size,
 						store: this._store,
 					});
+				console.log("New media", newMedia, newMedia._isImage());
 				const added = this._checkFile(newMedia);
 				this.list.push(added);
 
@@ -100,12 +101,19 @@ export default class Upload {
 					parent = "";
 				}
 
+				let newPath = this._sectionData.getSectionPath(entry),
+				newParent = newPath;
+			if (entry.parent && entry.parent !== "" && entry.parent !== null) {
+				newPath = `${entry.parent}.${newPath}`;
+			}
+
 				this.list.push(
 					new UploadEntry({
 						name: entry.name,
 						parent: this.parent,
 						destination: this.destination,
 						status: "new",
+						path: newPath,
 						type: "folder",
 						invalid_skip: null,
 						info: null,
@@ -117,11 +125,7 @@ export default class Upload {
 					})
 				);
 
-				let newPath = this._sectionData.getSectionPath(entry),
-					newParent = newPath;
-				if (entry.parent && entry.parent !== "" && entry.parent !== null) {
-					newPath = `${entry.parent}.${newPath}`;
-				}
+
 
 				if (
 					parent &&
@@ -260,69 +264,45 @@ export default class Upload {
 	_checkFile(newMedia) {
 		const mediaTypes = this._store.getState().mediaTypes;
 
-		let mediaType = null,
+		let mediaType = -1,
 			fileOk = false,
 			attributes = null,
-			note = "";
+			note = this.#ftDisabled;
 
 		const isImage = newMedia._isImage(),
 			isVideo = newMedia._isVideo(),
 			isArchive = newMedia._isArchive(); // TODO
 
-		const imageOk = mediaTypes.find((t) => t.dtype === "image");
-		const videoOk = mediaTypes.find((t) => t.dtype === "video");
+		console.log("NEW MEDIA", isArchive, isImage, isVideo);
 
-		if (isImage && !imageOk) {
-			fileOk = false;
-			note = this.#ftDisabled;
-		} else if (isImage && imageOk) {
-			mediaType = imageOk;
-			fileOk = true;
-			attributes = this._imageAttr; // TODO
-		} else if (isVideo && !videoOk) {
-			fileOk = false;
-			note = this.#ftDisabled;
-		} else if (isVideo && videoOk) {
-			mediaType = videoOk;
-			fileOk = true;
-			attributes = this._videoAttr;
-		} else {
-			note = this.#ftInvalid;
-		}
-
-		console.log(
-			"Checking file",
-			isImage,
-			isVideo,
-			isArchive,
-			newMedia,
-			imageOk,
-			videoOk,
-			mediaType
-		);
-		for (let currentType of mediaTypes) {
-			// Loop to find if a type has a file_format property
-			// if (mediaType === null) {
-			if (currentType?.file_format !== null) {
+		for (let type of mediaTypes) {
+			console.log("type", type);
+			if (type.dtype == "image" && isImage) {
+				mediaType = type;
+				fileOk = true;
+				note = "";
+				attributes = this._imageAttr;
+			}
+			if (type.dtype == "video" && isVideo) {
+				mediaType = type;
+				fileOk = true;
+				note = "";
+				attributes = this._videoAttr;
+			}
+			if (type?.file_format !== null && isArchive) {
 				try {
 					fileOk =
-						newMedia.ext.toLowerCase() ===
-						currentType.file_format.toLowerCase();
-					mediaType = currentType;
-
-					if (isArchive) {
-						fileOk = true;
-					}
+						newMedia.ext.toLowerCase() === type.file_format.toLowerCase();
+					mediaType = type;
 				} catch (err) {
 					console.error("Error checking file type", err, currentType);
 				}
 			}
-			// }
 		}
 
 		// Apply information to the newMedia object
 		newMedia.ok = fileOk;
-		newMedia.mediaType = mediaType?.id ? mediaType.id : null;
+		newMedia.mediaType = mediaType?.id ? mediaType : null;
 		newMedia.options = {
 			attributes: attributes ? attributes : {},
 		};
@@ -336,15 +316,16 @@ export default class Upload {
 
 	getValidSummary() {
 		const validSections = this.list.filter(
-			(u) => !u.invalid_skip && u.type == "folder"
-		);
-		const validFiles = this.list.filter(
-			(u) => !u.invalid_skip && u.type !== "folder"
-		);
+				(u) => !u.invalid_skip && u.type == "folder"
+			),
+			validFiles = this.list.filter(
+				(u) => !u.invalid_skip && u.type !== "folder"
+			);
 
 		return {
 			validSections: validSections,
 			validFiles: validFiles,
+			invalidFiles: this.list.filter((u) => u.invalid_skip),
 			totalSize: this.totalSize,
 		};
 	}
@@ -376,12 +357,25 @@ export default class Upload {
 
 		if (uploadInfo.length > 0) {
 			for (const [idx, entry] of [...validSections, ...validFiles].entries()) {
-				promise = promise.then(entry.uploadEntry.bind(entry, idx));
+				promise = promise.then(entry.uploadEntry.bind(entry, idx, this.gid));
 			}
 		}
 
 		promise.catch((error) => {
+			console.error("Upload error, full catch:", error);
 			this._store.setState({ uploadError: error.message });
+		});
+	}
+
+	sortList(key, direction) {
+		this.list = this.list.sort((a, b) => {
+			if (a[key] < b[key]) {
+				return direction * -1;
+			}
+			if (a[key] > b[key]) {
+				return direction * 1;
+			}
+			return 0;
 		});
 	}
 }

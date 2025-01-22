@@ -10,22 +10,6 @@ const store = create(
 		mediaTypes: [],
 		organizations: [],
 
-		// uploadChunkProgress: 0, // Upload progress on current file
-		// uploadCurrentFile: "", // Name of file currently being uploaded
-		// uploadTotalFiles: 0, // Number of files being uploaded
-		// uploadFilesCompleted: 0, // Number of files that have been uploaded
-		// uploadError: "", // Most recent upload error message
-		// uploadCancelled: false, // Whether uploads have been cancelled
-
-		// uploadCancel: () => {
-		//   set({
-		//     uploadChunkProgress: 0,
-		//     uploadCurrentFile: "",
-		//     uploadTotalFiles: 0,
-		//     uploadError: "",
-		//     uploadCancelled: true,
-		//   });
-		// },
 		init: async () => {
 			const projectId = Number(window.location.pathname.split("/")[1]);
 			Promise.all([

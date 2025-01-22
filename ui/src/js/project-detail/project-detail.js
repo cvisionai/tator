@@ -1884,7 +1884,7 @@ export class ProjectDetail extends TatorPage {
 
 	/**
 	 * @param {string} panel
-	 *   "library" | "saved searches" | "bookmarks" | "upload"
+	 *   "library" | "saved searches" | "bookmarks" |  "activity" #TODO
 	 */
 	displayPanel(panel) {
 		this._currentPanel = panel;
@@ -1901,7 +1901,7 @@ export class ProjectDetail extends TatorPage {
 			} else {
 				this.setLeftPanelWidth(this._leftPanelDefaultWidth);
 			}
-		} else if (panel == "bookmarks" || panel == "upload") {
+		} else if (panel == "bookmarks" || panel == "activity") {
 			this.setLeftPanelWidth(this._leftPanelDefaultWidth);
 		}
 
