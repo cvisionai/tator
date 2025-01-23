@@ -190,7 +190,7 @@ export class LayoutModeController {
       if (this.canvas.tagName == "DIV") {
         this.canvas.style.position = "fixed";
         this.canvas.style.width = "100vw";
-        this.canvas.style.top = '0px';
+        this.canvas.style.top = "0px";
       }
       // Move controls to bottom of screen
       this.controls.style.position = "fixed";
