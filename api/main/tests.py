@@ -7107,12 +7107,14 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                             if localization.version.pk == self.readonly_version.pk:
                                 assert localization.effective_permission == 0x03
                             else:
-                                assert localization.effective_permission == 0x0F
+                                assert (
+                                    localization.effective_permission == 0x01
+                                )  # It's default project permission here
                         elif media_primary_section_pk == self.private_section.pk:
-                            assert localization.effective_permission == 0x0F
+                            assert localization.effective_permission == 0x01
                     else:
                         if media_primary_section_pk == self.public_section.pk:
-                            assert localization.effective_permission == 0x03
+                            assert localization.effective_permission == 0x01
                         else:
                             assert localization.effective_permission == 0x00
 
