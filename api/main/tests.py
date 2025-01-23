@@ -6960,6 +6960,22 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
             group=self.groups[1], version=self.full_version, permission=0x0F0F
         )
 
+        # At this point we have 3 versions; with boxes in both public and private sections
+        # A user needs permission for both the section and version to modify or read a localization
+        # For the baseline version members have default project permissions due to no RP existing
+        # For read-only they have read only permission
+        # For full they have full permission
+        # Thus, members can modify localizations in public section on full.
+        #
+        #   Member permissions validated in the following code for metadata
+        #   *-----------*----------| -----------| --------|
+        #   |           | Baseline |  Read-only |  Full   |
+        #   | Private   |    X     |      X     |   X     |
+        #   | Public    |    X     |   R/O      | Full    |
+        #   *-----------*----------*------------*---------*
+        #
+        #   Admins have access to all
+
         # Give member group read/write permissions to all files
         for f in self.files:
             rp = RowProtection.objects.create(group=self.groups[1], file=f, permission=0xFF)
