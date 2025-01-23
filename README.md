@@ -13,7 +13,7 @@ Quick start
 Install [Docker](https://www.docker.com/), then:
 
 ```bash
-git clone --recurse-submodules https://github.com/cvisionai/tator
+git clone --branch stable --recurse-submodules https://github.com/cvisionai/tator
 cd tator
 cp example-env .env
 make tator
