@@ -38,6 +38,7 @@ upload_completion_spec = {
             "description": "Bucket ID to use for upload. If not provided, the default. User must have permission to write to the bucket.",
             "type": "integer",
             "minimum": 1,
+            "nullable": True,
         },
     },
 }
