@@ -597,11 +597,15 @@ def count_test(request, base_url, project, token, video_files):
     video_types = [m for m in media_types if m.dtype == "video"]
     video_type_id = video_types[0].id
 
+    # Get the file size of the mp4 file
+    file_size = os.path.getsize(count_mp4)
+
     colors=[count_mp4, count_360_mp4]
     segments=[count_segments, count_360_segments]
     media_id = create_media(api, project, base_url, token, video_type_id, "count_check.mp4", "Counts", count_mp4)
+    # Ensure it uploads in multiple chunks to verify multipart uploads
     for color,segment in zip(colors, segments):
-        upload_media_file(api, project, media_id, color, segment)
+        upload_media_file(api, project, media_id, color, segment, chunk_size=file_size / 10)
     yield media_id
 
 @pytest.fixture(scope='session')

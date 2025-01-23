@@ -51,15 +51,30 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
 
     return media_id
 
-def upload_media_file(api,project, media_id, media_path, segments_path):
+
+def upload_media_file(
+    api, project, media_id, media_path, segments_path, chunk_size=5 * 1024 * 1024
+):
     """ Handles uploading either archival or streaming format """
     path = os.path.basename(media_path)
     filename = os.path.splitext(os.path.basename(path))[0]
-    for _, upload_info in _upload_file(api, project, media_path,
-                                        media_id=media_id, filename=f"{filename}.mp4", chunk_size=0x10000000):
+    for _, upload_info in _upload_file(
+        api,
+        project,
+        media_path,
+        media_id=media_id,
+        filename=f"{filename}.mp4",
+        chunk_size=chunk_size,
+    ):
         pass
-    for _, segment_info in _upload_file(api, project, segments_path,
-                                            media_id=media_id, filename=f"{filename}.json", chunk_size=0x10000000):
+    for _, segment_info in _upload_file(
+        api,
+        project,
+        segments_path,
+        media_id=media_id,
+        filename=f"{filename}.json",
+        chunk_size=chunk_size,
+    ):
         pass
     # Construct create video file spec.
     media_def = {**make_video_definition(media_path),
@@ -68,6 +83,7 @@ def upload_media_file(api,project, media_id, media_path, segments_path):
     response = api.create_video_file(media_id, role='streaming',
                                         video_definition=media_def)
     return response
+
 
 def get_video_path(page):
     """ Gets a page with video name set to the current test.
