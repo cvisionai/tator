@@ -6848,6 +6848,7 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
         self.baseline_version = create_test_version("baseline", "", 0, self.project, None)
         self.readonly_version = create_test_version("readonly", "", 0, self.project, None)
+        self.full_version = create_test_version("full", "", 0, self.project, None)
 
         # create test videos
         self.videos = [
@@ -6888,15 +6889,22 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
         # create a bunch of boxes
         for video in self.videos:
-            version = self.baseline_version
             for idx in range(10):
+                version = self.baseline_version
                 # Add every other box in the public section to the read-only version
                 if (
                     video.primary_section
                     and video.primary_section.pk == self.public_section.pk
-                    and idx % 2 == 0
+                    and idx % 3 == 0
                 ):
                     version = self.readonly_version
+                if (
+                    video.primary_section
+                    and video.primary_section.pk == self.public_section.pk
+                    and idx % 3 == 1
+                ):
+                    version = self.full_version
+
                 create_test_box(self.users[0], self.box_type, self.project, video, idx)
 
         # Make some files
@@ -6928,6 +6936,8 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
         # Add read/write permissions to the member group to public/private but not whole project
         # They can modify media / localizations but not the sections themselves
+        # Note: The user needs read/write on the version as well to modify localizations
+        # In this case, they have exist permission on `baseline`, `readonly` on readonly, and `full` on full.
         rp = RowProtection.objects.create(
             group=self.groups[1], section=self.public_section, permission=0x0F0F03
         )
@@ -6943,6 +6953,11 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         # Add read-only permissions to members to the read-only version
         rp = RowProtection.objects.create(
             group=self.groups[1], version=self.readonly_version, permission=0x0303
+        )
+
+        # Add full permissions to the full version
+        rp = RowProtection.objects.create(
+            group=self.groups[1], version=self.full_version, permission=0x0F0F
         )
 
         # Give member group read/write permissions to all files
@@ -7106,6 +7121,8 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                         if media_primary_section_pk == self.public_section.pk:
                             if localization.version.pk == self.readonly_version.pk:
                                 assert localization.effective_permission == 0x03
+                            elif localization.version.pk == self.full_version.pk:
+                                assert localization.effective_permission == 0x0F
                             else:
                                 assert (
                                     localization.effective_permission == 0x01
