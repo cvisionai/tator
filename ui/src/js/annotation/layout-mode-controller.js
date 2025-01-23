@@ -187,17 +187,6 @@ export class LayoutModeController {
       this.contextMenus.forEach((menu) => {
         menu._div.style.position = "fixed";
       });
-      this.canvas.style.position = "fixed";
-      if (this.canvas.tagName == "DIV") {
-        this.canvas.style.maxWidth = "100%";
-        this.canvas.style.maxHeight = "100%";
-      }
-      this.videoCanvas.forEach(
-        (canvas) => (canvas._canvas.style.maxHeight = null)
-      );
-      this.videoCanvas.forEach(
-        (canvas) => (canvas.parentNode.style.maxWidth = null)
-      );
       // Move controls to bottom of screen
       this.controls.style.position = "fixed";
       this.controls.style.bottom = 0;
