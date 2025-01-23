@@ -348,15 +348,44 @@ export class SaveDialog extends TatorElement {
     const dragDefined = typeof this._dragInfo !== "undefined";
     const canvasDefined = typeof this._canvasPosition !== "undefined";
     if (dragDefined && canvasDefined) {
-      const boxRight = Math.max(this._dragInfo.start.x, this._dragInfo.end.x);
-      let thisTop = this._canvasPosition.top;
-      let thisLeft = boxRight + 20 + this._canvasPosition.left;
+      if (window.MODE == "FULLSCREEN") {
+        const boxLeft =
+          Math.min(this._dragInfo.start.x, this._dragInfo.end.x) +
+          this._canvasPosition.left;
+        const boxRight =
+          Math.max(this._dragInfo.start.x, this._dragInfo.end.x) +
+          this._canvasPosition.left;
+        const boxTop =
+          Math.min(this._dragInfo.start.y, this._dragInfo.end.y) +
+          this._canvasPosition.top;
+        const boxBottom =
+          Math.max(this._dragInfo.start.y, this._dragInfo.end.y) +
+          this._canvasPosition.top;
+        const width = this.clientWidth;
+        const height = this.clientHeight;
+        if (boxRight + 20 + width < window.innerWidth) {
+          this.style.left = boxRight + 20 + "px";
+        } else if (boxLeft - 20 - width > 0) {
+          this.style.left = boxLeft - 20 - width + "px";
+        } else {
+          this.style.left = window.innerWidth - 20 - width + "px";
+        }
+        if (boxTop + height < window.innerHeight) {
+          this.style.top = boxTop + "px";
+        } else {
+          this.style.top = window.innerHeight - 20 - height + "px";
+        }
+      } else {
+        const boxRight = Math.max(this._dragInfo.start.x, this._dragInfo.end.x);
+        let thisTop = this._canvasPosition.top;
+        let thisLeft = boxRight + 20 + this._canvasPosition.left;
 
-      // Prevent being drawn off screen
-      thisTop = Math.max(thisTop, 50);
-      thisLeft = Math.max(thisLeft, 50);
-      this.style.top = thisTop + "px";
-      this.style.left = thisLeft + "px";
+        // Prevent being drawn off screen
+        thisTop = Math.max(thisTop, 50);
+        thisLeft = Math.max(thisLeft, 50);
+        this.style.top = thisTop + "px";
+        this.style.left = thisLeft + "px";
+      }
     }
   }
 

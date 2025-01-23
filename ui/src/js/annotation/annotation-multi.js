@@ -38,12 +38,15 @@ export class AnnotationMulti extends TatorElement {
     this._vidDiv = document.createElement("div");
     playerDiv.appendChild(this._vidDiv);
 
+    this._controls_and_scrub = document.createElement("div");
+    playerDiv.appendChild(this._controls_and_scrub);
+
     const div = document.createElement("div");
     div.setAttribute(
       "class",
       "video__controls d-flex flex-items-center flex-justify-between px-4"
     );
-    playerDiv.appendChild(div);
+    this._controls_and_scrub.appendChild(div);
     this._controls = div;
 
     const playButtons = document.createElement("div");
@@ -422,8 +425,8 @@ export class AnnotationMulti extends TatorElement {
       "class",
       "scrub__bar d-flex flex-items-center flex-grow px-4"
     );
-    playerDiv.appendChild(timelineDiv);
     this._timelineDiv = timelineDiv;
+    this._controls_and_scrub.appendChild(this._timelineDiv);
 
     const timeDiv = document.createElement("div");
     timeDiv.setAttribute(
@@ -649,20 +652,6 @@ export class AnnotationMulti extends TatorElement {
     // Start out with play button disabled.
     this._playInteraction.disable();
 
-    fullscreen.addEventListener("click", (evt) => {
-      this._hideCanvasMenus();
-      if (fullscreen.hasAttribute("is-maximized")) {
-        fullscreen.removeAttribute("is-maximized");
-        this._playerDiv.classList.remove("is-full-screen");
-        this.dispatchEvent(new Event("minimize", { composed: true }));
-      } else {
-        fullscreen.setAttribute("is-maximized", "");
-        this._playerDiv.classList.add("is-full-screen");
-        this.dispatchEvent(new Event("maximize", { composed: true }));
-      }
-      window.dispatchEvent(new Event("resize"));
-    });
-
     this._currentFrameInput.addEventListener("focus", () => {
       document.body.classList.add("shortcuts-disabled");
     });
@@ -753,20 +742,6 @@ export class AnnotationMulti extends TatorElement {
 
     this._entityTimeline.addEventListener("mouseout", (evt) => {
       this.hidePreview(true);
-    });
-
-    fullscreen.addEventListener("click", (evt) => {
-      this._hideCanvasMenus();
-      if (fullscreen.hasAttribute("is-maximized")) {
-        fullscreen.removeAttribute("is-maximized");
-        playerDiv.classList.remove("is-full-screen");
-        this.dispatchEvent(new Event("minimize", { composed: true }));
-      } else {
-        fullscreen.setAttribute("is-maximized", "");
-        playerDiv.classList.add("is-full-screen");
-        this.dispatchEvent(new Event("maximize", { composed: true }));
-      }
-      window.dispatchEvent(new Event("resize"));
     });
 
     this._qualityControl.addEventListener("setQuality", (evt) => {
