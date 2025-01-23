@@ -187,6 +187,11 @@ export class LayoutModeController {
       this.contextMenus.forEach((menu) => {
         menu._div.style.position = "fixed";
       });
+      if (this.canvas.tagName == "DIV") {
+        this.canvas.style.position = "fixed";
+        this.canvas.style.width = "100vw";
+        this.canvas.style.top = '0px';
+      }
       // Move controls to bottom of screen
       this.controls.style.position = "fixed";
       this.controls.style.bottom = 0;
