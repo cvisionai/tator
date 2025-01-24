@@ -26,7 +26,7 @@ export class LayoutModeController {
         return;
       }
       if (!this.shouldShowControls()) {
-        this.hideControls(true);
+        this.hideControls(this.allControls, true);
         return;
       }
       const mouseX = event.pageX;
@@ -50,7 +50,7 @@ export class LayoutModeController {
       const mouseY = event.pageY;
       const control = this.getControlUnderMouse(mouseX, mouseY);
       if (!control) {
-        this.hideControls();
+        this.hideControls(this.allControls);
       }
     });
   }
@@ -72,13 +72,10 @@ export class LayoutModeController {
   activateControl(control) {
     clearTimeout(this.hideTimeout);
     clearTimeout(this.inactivityTimeout);
-    this.allControls.forEach((c) => {
-      if (c === control) {
-        c.style.opacity = 1;
-      } else {
-        c.style.opacity = 0;
-      }
-    });
+    control.style.opacity = 1;
+    this.hideControls(this.allControls.filter(
+      (c) => c !== control
+    ), true);
   }
 
   showControls() {
@@ -95,13 +92,13 @@ export class LayoutModeController {
     this.startInactivityTimer();
   }
 
-  hideControls(realHide = false) {
-    this.allControls.forEach((control) => {
+  hideControls(controls, realHide = false) {
+    controls.forEach((control) => {
       control.style.opacity = 0;
     });
     if (realHide) {
       this.hideTimeout = setTimeout(() => {
-        this.allControls.forEach((control) => {
+        controls.forEach((control) => {
           control.style.display = "none";
         });
       }, 500 + 50);
@@ -114,7 +111,7 @@ export class LayoutModeController {
 
   startInactivityTimer() {
     this.inactivityTimeout = setTimeout(() => {
-      this.hideControls();
+      this.hideControls(this.allControls);
     }, 1000);
   }
 
@@ -242,7 +239,7 @@ export class LayoutModeController {
       this.preview.style.position = "fixed";
 
       // Hide video controls
-      this.hideControls();
+      this.hideControls(this.allControls);
 
       this.fullscreen.setAttribute("is-maximized", "");
     }
