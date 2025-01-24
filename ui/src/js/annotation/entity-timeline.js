@@ -12,6 +12,7 @@ export class EntityTimeline extends BaseTimeline {
     this._mainTimelineDiv = document.createElement("div");
     this._mainTimelineDiv.id = "main-timeline";
     this._shadow.appendChild(this._mainTimelineDiv);
+    this.addResizer();
 
     this._focusTimelineDiv = document.createElement("div");
     this._focusTimelineDiv.setAttribute("class", "");
@@ -46,6 +47,12 @@ export class EntityTimeline extends BaseTimeline {
     this._numericalData = [];
     this._pointsData = [];
     window.addEventListener("resize", this._updateSvgData());
+
+    this._defaultLineHeight = 30;
+    this._defaultPointsHeight = 20;
+    this._mainLineHeight = this._defaultLineHeight;
+    this._mainPointsHeight = this._defaultPointsHeight;
+    this._userSetLineHeight = null;
   }
 
   /**
@@ -509,19 +516,71 @@ export class EntityTimeline extends BaseTimeline {
     }, 33);
   }
 
+  // Add this method to EntityTimeline class
+  addResizer() {
+    // Create resizer element
+    const resizer = document.createElement("div");
+    resizer.id = "timeline-resizer";
+
+    // Add styles
+    const style = document.createElement("style");
+    style.textContent = `
+    #timeline-resizer {
+      position: absolute;
+      right: 5px;
+      bottom: 5px;
+      width: 10px;
+      height: 10px;
+      background: #6d7a96;
+      cursor: ns-resize;
+      border-radius: 50%;
+      z-index: 1000;
+    }
+    #main-timeline {
+      position: relative;
+    }
+  `;
+    this._shadow.appendChild(style);
+    this._mainTimelineDiv.appendChild(resizer);
+
+    // Add drag functionality
+    let startY;
+    let startHeight;
+
+    const onMouseDown = (e) => {
+      e.preventDefault();
+      startY = e.clientY;
+      startHeight = this._mainLineHeight;
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    };
+
+    const onMouseMove = (e) => {
+      const delta = e.clientY - startY;
+      this._userSetLineHeight = Math.max(
+        this._defaultLineHeight,
+        startHeight + delta
+      );
+      this._mainLineHeight = this._userSetLineHeight;
+      this._updateSvgData();
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    resizer.addEventListener("mousedown", onMouseDown);
+  }
+
   _inner_updateSvgData() {
     var that = this;
     if (isNaN(this._maxFrame)) {
       return;
     }
 
-    this._mainPointsHeight = 10;
-    this._mainLineHeight = 30;
-    if (this._pointsData.length == 0) {
-      this._mainPointsHeight = 0;
-    }
-    if (this._numericalData.length == 0) {
-      this._mainLineHeight = 0;
+    if (this._userSetLineHeight !== null) {
+      this._mainLineHeight = this._userSetLineHeight;
     }
     this._mainStepPad = 2;
     this._mainStep = 5; // vertical height of each entry in the series / band
