@@ -516,61 +516,65 @@ export class EntityTimeline extends BaseTimeline {
     }, 33);
   }
 
-  // Add this method to EntityTimeline class
   addResizer() {
-    // Create resizer element
+    this._mainTimelineDiv.classList.add("position-relative");
+
     const resizer = document.createElement("div");
     resizer.id = "timeline-resizer";
-
-    // Add styles
-    const style = document.createElement("style");
-    style.textContent = `
-    #timeline-resizer {
+    resizer.style = `
       position: absolute;
-      right: 5px;
-      bottom: 5px;
-      width: 10px;
-      height: 10px;
-      background: #6d7a96;
+      right: 0;
+      bottom: 0;
+      width: 20px;
+      height: 20px;
       cursor: ns-resize;
-      border-radius: 50%;
-      z-index: 1000;
-    }
-    #main-timeline {
-      position: relative;
-    }
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    `;
+
+    resizer.innerHTML = `
+    <svg width="20" height="20" style="position: absolute; bottom: 0; right: 0;">
+      <path d="M20 20 L10 20 L20 10" fill="white" opacity="0.6"/>
+      <path d="M20 20 L15 20 L20 15" fill="white"/>
+    </svg>
   `;
-    this._shadow.appendChild(style);
-    this._mainTimelineDiv.appendChild(resizer);
 
-    // Add drag functionality
-    let startY;
-    let startHeight;
+    resizer.onmouseover = () => (resizer.style.opacity = "1");
+    resizer.onmouseout = () => (resizer.style.opacity = "0.5");
 
-    const onMouseDown = (e) => {
-      e.preventDefault();
-      startY = e.clientY;
-      startHeight = this._mainLineHeight;
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
-    };
+    let isDragging = false;
+    let startY, startHeight;
+    const MIN_HEIGHT = 20;
+    const MAX_HEIGHT = 300;
 
-    const onMouseMove = (e) => {
+    const handleDrag = (e) => {
+      if (!isDragging) return;
       const delta = e.clientY - startY;
       this._userSetLineHeight = Math.max(
-        this._defaultLineHeight,
-        startHeight + delta
+        MIN_HEIGHT,
+        Math.min(MAX_HEIGHT, startHeight + delta)
       );
       this._mainLineHeight = this._userSetLineHeight;
       this._updateSvgData();
     };
 
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
+    const handleDragStart = (e) => {
+      isDragging = true;
+      startY = e.clientY;
+      startHeight = this._mainLineHeight;
+      document.addEventListener("mousemove", handleDrag);
+      document.addEventListener("mouseup", handleDragEnd);
+      e.preventDefault();
     };
 
-    resizer.addEventListener("mousedown", onMouseDown);
+    const handleDragEnd = () => {
+      isDragging = false;
+      document.removeEventListener("mousemove", handleDrag);
+      document.removeEventListener("mouseup", handleDragEnd);
+    };
+
+    resizer.addEventListener("mousedown", handleDragStart);
+    this._mainTimelineDiv.appendChild(resizer);
   }
 
   _inner_updateSvgData() {
