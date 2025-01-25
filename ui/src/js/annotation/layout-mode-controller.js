@@ -73,9 +73,10 @@ export class LayoutModeController {
     clearTimeout(this.hideTimeout);
     clearTimeout(this.inactivityTimeout);
     control.style.opacity = 1;
-    this.hideControls(this.allControls.filter(
-      (c) => c !== control
-    ), true);
+    this.hideControls(
+      this.allControls.filter((c) => c !== control),
+      true
+    );
   }
 
   showControls() {
