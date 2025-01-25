@@ -377,11 +377,13 @@ export class EntityTimeline extends BaseTimeline {
             [],
             data.attributes[attrTypeInfo.startUTCAttr]
           );
+          startFrame = Math.max(startFrame, this._minFrame);
           endFrame = this._timeStore.getGlobalFrame(
             "utc",
             [],
             data.attributes[attrTypeInfo.endUTCAttr]
           );
+          endFrame = Math.min(endFrame, this._maxFrame);
         }
 
         if (
