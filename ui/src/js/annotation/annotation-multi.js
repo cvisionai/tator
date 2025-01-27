@@ -2745,6 +2745,11 @@ export class AnnotationMulti extends TatorElement {
     var pausePromises = [];
     let failSafeFunction = () => {
       clearTimeout(this._failSafeTimer);
+      if (this._videoStatus != "paused") {
+        // Timer didn't get cancelled by playing, so the fail safe
+        // will be bad to execute
+        return;
+      }
       this._videoStatus = "paused";
       if (afterPause) {
         afterPause();
