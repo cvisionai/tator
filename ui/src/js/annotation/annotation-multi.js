@@ -748,7 +748,10 @@ export class AnnotationMulti extends TatorElement {
           this._timelineDiv.offsetHeight,
         this._videoHeightPadObject.height
       );
-      window.dispatchEvent(new Event("resize"));
+      if (this._lastVideoHeightPadHeight != this._videoHeightPadObject.height) {
+        window.dispatchEvent(new Event("resize"));
+        this._lastVideoHeightPadHeight = this._videoHeightPadObject.height;
+      }
     });
 
     this._entityTimeline.addEventListener("mouseout", (evt) => {
