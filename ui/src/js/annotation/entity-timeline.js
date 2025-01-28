@@ -12,6 +12,7 @@ export class EntityTimeline extends BaseTimeline {
     this._mainTimelineDiv = document.createElement("div");
     this._mainTimelineDiv.id = "main-timeline";
     this._shadow.appendChild(this._mainTimelineDiv);
+    this.addResizer();
 
     this._focusTimelineDiv = document.createElement("div");
     this._focusTimelineDiv.setAttribute("class", "");
@@ -46,6 +47,12 @@ export class EntityTimeline extends BaseTimeline {
     this._numericalData = [];
     this._pointsData = [];
     window.addEventListener("resize", this._updateSvgData());
+
+    this._defaultLineHeight = 30;
+    this._defaultPointsHeight = 20;
+    this._mainLineHeight = this._defaultLineHeight;
+    this._mainPointsHeight = this._defaultPointsHeight;
+    this._userSetLineHeight = null;
   }
 
   /**
@@ -509,19 +516,75 @@ export class EntityTimeline extends BaseTimeline {
     }, 33);
   }
 
+  addResizer() {
+    this._mainTimelineDiv.classList.add("position-relative");
+
+    const resizer = document.createElement("div");
+    resizer.id = "timeline-resizer";
+    resizer.style = `
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 20px;
+      height: 20px;
+      cursor: ns-resize;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    `;
+
+    resizer.innerHTML = `
+    <svg width="20" height="20" style="position: absolute; bottom: 0; right: 0;">
+      <path d="M20 20 L10 20 L20 10" fill="white" opacity="0.6"/>
+      <path d="M20 20 L15 20 L20 15" fill="white"/>
+    </svg>
+  `;
+
+    resizer.onmouseover = () => (resizer.style.opacity = "1");
+    resizer.onmouseout = () => (resizer.style.opacity = "0.5");
+
+    let isDragging = false;
+    let startY, startHeight;
+    const MIN_HEIGHT = 20;
+    const MAX_HEIGHT = 300;
+
+    const handleDrag = (e) => {
+      if (!isDragging) return;
+      const delta = e.clientY - startY;
+      this._userSetLineHeight = Math.max(
+        MIN_HEIGHT,
+        Math.min(MAX_HEIGHT, startHeight + delta)
+      );
+      this._mainLineHeight = this._userSetLineHeight;
+      this._updateSvgData();
+    };
+
+    const handleDragStart = (e) => {
+      isDragging = true;
+      startY = e.clientY;
+      startHeight = this._mainLineHeight;
+      document.addEventListener("mousemove", handleDrag);
+      document.addEventListener("mouseup", handleDragEnd);
+      e.preventDefault();
+    };
+
+    const handleDragEnd = () => {
+      isDragging = false;
+      document.removeEventListener("mousemove", handleDrag);
+      document.removeEventListener("mouseup", handleDragEnd);
+    };
+
+    resizer.addEventListener("mousedown", handleDragStart);
+    this._mainTimelineDiv.appendChild(resizer);
+  }
+
   _inner_updateSvgData() {
     var that = this;
     if (isNaN(this._maxFrame)) {
       return;
     }
 
-    this._mainPointsHeight = 10;
-    this._mainLineHeight = 30;
-    if (this._pointsData.length == 0) {
-      this._mainPointsHeight = 0;
-    }
-    if (this._numericalData.length == 0) {
-      this._mainLineHeight = 0;
+    if (this._userSetLineHeight !== null) {
+      this._mainLineHeight = this._userSetLineHeight;
     }
     this._mainStepPad = 2;
     this._mainStep = 5; // vertical height of each entry in the series / band
