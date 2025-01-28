@@ -1437,7 +1437,7 @@ export class AnnotationMulti extends TatorElement {
         this._timeStore.addChannelMedia(video_info, idx);
       }
 
-      this._videos[idx].addEventListener("playbackEnded", () => {
+      let playbackAnomalyCb = () => {
         const direction = this._videos[idx]._direction;
         this.pause(() => {
           if (direction == 1) {
@@ -1447,7 +1447,9 @@ export class AnnotationMulti extends TatorElement {
             this.goToFrame(0);
           }
         });
-      });
+      }
+      this._videos[idx].addEventListener("playbackEnded", playbackAnomalyCb);
+      this._videos[idx].addEventListener("playbackStalled", playbackAnomalyCb);
       this._videos[idx].addEventListener("canvasResized", () => {
         this._videoTimeline.redraw();
         this._entityTimeline.redraw();
