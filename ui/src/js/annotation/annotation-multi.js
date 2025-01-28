@@ -1349,6 +1349,24 @@ export class AnnotationMulti extends TatorElement {
       };
       this._slider.onBufferLoaded(fakeEvt);
 
+      let notReady = false;
+      for (let video of this._videos) {
+        if (video.bufferDelayRequired()) {
+          notReady |= video.onDemandBufferAvailable() == false;
+        } else {
+          notReady |= video.scrubBufferAvailable() == false;
+        }
+      }
+
+      // Update playability as on-demand comes in
+      if (notReady) {
+        this._playInteraction.disable();
+        this._playbackDisabled = true;
+      } else {
+        this._playInteraction.enable();
+        this._playbackDisabled = false;
+      }
+
       let frame = Math.round(
         fakeEvt.detail.percent_complete * this._maxFrameNumber
       );
@@ -2387,10 +2405,13 @@ export class AnnotationMulti extends TatorElement {
   }
 
   checkReady() {
-    let notReady;
+    let notReady = false;
     for (let video of this._videos) {
-      notReady |=
-        video.bufferDelayRequired() && video.onDemandBufferAvailable() == false;
+      if (video.bufferDelayRequired()) {
+        notReady |= video.onDemandBufferAvailable() == false;
+      } else {
+        notReady |= video.scrubBufferAvailable() == false;
+      }
     }
     if (notReady) {
       this.handleAllNotReadyEvents();
@@ -2570,10 +2591,14 @@ export class AnnotationMulti extends TatorElement {
           const buffer_required = this._videos[vidIdx].bufferDelayRequired();
           const on_demand_available =
             this._videos[vidIdx].onDemandBufferAvailable();
+          const scrub_available = this._videos[vidIdx].scrubBufferAvailable();
           console.info(
             `${vidIdx}: ${buffer_required} and ${on_demand_available}`
           );
           if (buffer_required == true && on_demand_available == false) {
+            allVideosReady = false;
+          }
+          if (buffer_required == false && scrub_available == false) {
             allVideosReady = false;
           }
         }
