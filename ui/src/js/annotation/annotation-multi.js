@@ -1360,6 +1360,28 @@ export class AnnotationMulti extends TatorElement {
         }
       }
     };
+
+    let global_status = new Array(video_count).fill(0);
+    let global_playing = (vid_idx) => {
+      global_status[vid_idx] = 1;
+      for (let idx = 0; idx < global_status.length; idx++) {
+        if (global_status[idx] == 0) {
+          this._videoStatus = "paused";
+          this._play.setAttribute("is-paused", "");
+          this._playInteraction.enable();
+          return false;
+        }
+      }
+      this._videoStatus = "playing";
+      this._play.removeAttribute("is-paused");
+      return true;
+    }
+    let global_paused = (vid_idx) => {
+      global_status[vid_idx] = 0;
+      this._videoStatus = "paused";
+      this._play.setAttribute("is-paused", "");
+    }
+
     // Functor to normalize the progress bar
     let global_progress = new Array(video_count).fill(0);
     let global_on_demand_progress = new Array(video_count).fill([0, 0]);
@@ -1514,6 +1536,12 @@ export class AnnotationMulti extends TatorElement {
       this._videos[idx].addEventListener("frameChange", (evt) => {
         global_frame_change(idx, evt);
       });
+      this._videos[idx].addEventListener("playing", () => {
+        global_playing(idx);
+      })
+      this._videos[idx].addEventListener("paused", () => {
+        global_paused(idx);
+      })
       const smallTextStyle = {
         fontSize: "16pt",
         fontWeight: "bold",
@@ -2678,10 +2706,9 @@ export class AnnotationMulti extends TatorElement {
         video.rateChange(this._rate * (prime_fps / video._videoObject.fps));
         playing |= video.play();
       }
+      this._playInteraction.disable();
 
       if (playing) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
         this._syncThread = setTimeout(() => {
           this.syncCheck();
         }, 500);
@@ -2714,16 +2741,13 @@ export class AnnotationMulti extends TatorElement {
         video.rateChange(this._rate * (prime_fps / video._videoObject.fps));
         playing |= video.play();
       }
-      if (playing) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
-      }
       this.syncCheck();
     }
   }
 
   playBackwards() {
     let playing = false;
+    this._playInteraction.disable();
     // Check to see if the video player can play at this rate
     // at the current frame. If not, inform the user.
     for (let video of this._videos) {
@@ -2744,8 +2768,6 @@ export class AnnotationMulti extends TatorElement {
       let video = this._videos[idx];
       playing |= video.playBackwards();
     }
-    this._videoStatus = "playing";
-    this._play.removeAttribute("is-paused");
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
   }
@@ -2793,7 +2815,7 @@ export class AnnotationMulti extends TatorElement {
       for (let video of this._videos) {
         pausePromises.push(video.pause());
       }
-      this._play.setAttribute("is-paused", "");
+      this._playInteraction.disable();
       this._rateControl.setValue(this._videos[this._primaryVideoIndex].rate);
       this._failSafeTimer = setTimeout(failSafeFunction, 1500);
     }
