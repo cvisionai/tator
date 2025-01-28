@@ -626,6 +626,16 @@ export class AnnotationPlayer extends TatorElement {
       }
     });
 
+    this._video.addEventListener("playing", () => {
+      this._play.removeAttribute("is-paused");
+      this._videoStatus = "playing";
+    });
+
+    this._video.addEventListener("paused", () => {
+      this._play.setAttribute("is-paused", "");
+      this._videoStatus = "paused";
+    });
+
     this._video.addEventListener("onDemandDetail", (evt) => {
       this._slider.onDemandLoaded(evt);
     });
@@ -697,9 +707,7 @@ export class AnnotationPlayer extends TatorElement {
       this._hideCanvasMenus();
       this._video.pause();
       this._video.rateChange(2 * this._rate);
-      if (this._video.play()) {
-        play.removeAttribute("is-paused");
-      }
+      this._video.play();
     });
 
     framePrev.addEventListener("click", () => {
@@ -848,7 +856,10 @@ export class AnnotationPlayer extends TatorElement {
         this._headerFooterPad +
         this._controls.offsetHeight +
         this._timelineDiv.offsetHeight;
-      window.dispatchEvent(new Event("resize"));
+      if (this._lastVideoHeightPadHeight != this._videoHeightPadObject.height) {
+        window.dispatchEvent(new Event("resize"));
+        this._lastVideoHeightPadHeight = this._videoHeightPadObject.height;
+      }
     });
     this._entityTimeline.addEventListener("mouseout", (evt) => {
       this.hidePreview(this);
@@ -1720,10 +1731,7 @@ export class AnnotationPlayer extends TatorElement {
     const paused = this.is_paused();
     if (paused) {
       this._video.rateChange(this._rate);
-      if (this._video.play()) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
-      }
+      this._video.play();
     }
   }
 
@@ -1743,10 +1751,7 @@ export class AnnotationPlayer extends TatorElement {
       //  this._rateControl.setValue(1.0, true);
       //  this._video.rateChange(this._rate);
       //}
-      if (this._video.playBackwards()) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
-      }
+      this._video.playBackwards();
     }
   }
 
@@ -1760,7 +1765,6 @@ export class AnnotationPlayer extends TatorElement {
     if (paused == false) {
       this._videoStatus = "paused";
       this._video.pause();
-      this._play.setAttribute("is-paused", "");
     }
     this.checkReady();
   }
