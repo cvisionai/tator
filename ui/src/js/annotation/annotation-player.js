@@ -612,6 +612,18 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("bufferLoaded", (evt) => {
       this._slider.onBufferLoaded(evt);
+      if (
+        this._video.bufferDelayRequired() &&
+        this._video.onDemandBufferAvailable() == false
+      ) {
+        this._playInteraction.disable();
+      } else {
+        if (this._video.scrubBufferAvailable() == false) {
+          this._playInteraction.disable();
+        } else {
+          this._playInteraction.enable();
+        }
+      }
     });
 
     this._video.addEventListener("onDemandDetail", (evt) => {
@@ -1540,8 +1552,11 @@ export class AnnotationPlayer extends TatorElement {
     ) {
       this.handleNotReadyEvent();
     } else {
-      // TODO refactor this into a member function
-      this._playInteraction.enable();
+      if (this._video.scrubBufferAvailable() == false) {
+        this._playInteraction.disable();
+      } else {
+        this._playInteraction.enable();
+      }
     }
   }
   handleNotReadyEvent() {
