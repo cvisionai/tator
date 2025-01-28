@@ -1350,12 +1350,12 @@ export class AnnotationMulti extends TatorElement {
       this._videoStatus = "playing";
       this._play.removeAttribute("is-paused");
       return true;
-    }
+    };
     let global_paused = (vid_idx) => {
       global_status[vid_idx] = 0;
       this._videoStatus = "paused";
       this._play.setAttribute("is-paused", "");
-    }
+    };
 
     // Functor to normalize the progress bar
     let global_progress = new Array(video_count).fill(0);
@@ -1513,10 +1513,10 @@ export class AnnotationMulti extends TatorElement {
       });
       this._videos[idx].addEventListener("playing", () => {
         global_playing(idx);
-      })
+      });
       this._videos[idx].addEventListener("paused", () => {
         global_paused(idx);
-      })
+      });
       const smallTextStyle = {
         fontSize: "16pt",
         fontWeight: "bold",
