@@ -57,6 +57,9 @@ def launch_time(request):
 
 @pytest.fixture(scope='session')
 def chrome(browser_type, browser_type_launch_args):
+    args = browser_type_launch_args.get("args", [])
+    args.append("--enable-unsafe-swiftshader")
+    browser_type_launch_args["args"] = args
     yield browser_type.launch(
         **browser_type_launch_args,
         executable_path="/usr/bin/google-chrome",
