@@ -381,7 +381,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
     page.close()
 
 
-@pytest.mark.skip(reason="Too flaky")
+@pytest.mark.flaky(reruns=2)
 def test_playback_schedule(page_factory, project, count_test):
     print("[Video] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
