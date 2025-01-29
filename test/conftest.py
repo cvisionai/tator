@@ -45,27 +45,32 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     if 'username' in metafunc.fixturenames:
-          metafunc.parametrize('username', [metafunc.config.getoption('username')])
+        metafunc.parametrize('username', [metafunc.config.getoption('username')])
     if 'password' in metafunc.fixturenames:
-          metafunc.parametrize('password', [metafunc.config.getoption('password')])
+        metafunc.parametrize("password", [metafunc.config.getoption("password")])
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def launch_time(request):
     current_dt = datetime.datetime.now()
     dt_str = current_dt.strftime('%Y_%m_%d__%H_%M_%S')
     yield dt_str
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def chrome(browser_type, browser_type_launch_args):
     args = browser_type_launch_args.get("args", [])
     args.append("--enable-unsafe-swiftshader")
     browser_type_launch_args["args"] = args
-    yield browser_type.launch(
+    browser = browser_type.launch(
         **browser_type_launch_args,
         executable_path="/usr/bin/google-chrome",
     )
+    yield browser
+    browser.close()
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     """ Yields a persistent logged in context. """
     print("Logging in...")
@@ -90,13 +95,15 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     yield context
     context.close()
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def page_factory(request, launch_time, base_url, chrome, browser_context_args, authenticated):
     base_path = os.path.join(request.config.option.videos, launch_time)
     storage = authenticated.storage_state(path="/tmp/state.json")
     yield PageFactory(chrome, browser_context_args, storage, base_path)
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def token(request, page_factory):
     """ Token obtained via the API Token page. """
     print("Getting token...")
@@ -113,7 +120,8 @@ def token(request, page_factory):
     assert(len(token) == 40)
     yield token
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def project(request, page_factory, launch_time, base_url, token):
     """ Project created with setup_project.py script, all options enabled. """
     print("Creating test project with setup_project.py...")
@@ -143,7 +151,8 @@ def project(request, page_factory, launch_time, base_url, token):
     page.close()
     yield project_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video_section(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -157,7 +166,8 @@ def video_section(request, page_factory, project):
     page.close()
     yield section
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def slow_video_section(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -171,7 +181,8 @@ def slow_video_section(request, page_factory, project):
     page.close()
     yield section
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video_section2(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -185,7 +196,8 @@ def video_section2(request, page_factory, project):
     page.close()
     yield section
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video_section3(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -199,7 +211,8 @@ def video_section3(request, page_factory, project):
     page.close()
     yield section
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def image_section(request, page_factory, project):
     print("Creating image section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -213,7 +226,8 @@ def image_section(request, page_factory, project):
     page.close()
     yield section
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def image_section1(request, page_factory, project):
     print("Creating image section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -227,7 +241,8 @@ def image_section1(request, page_factory, project):
     page.close()
     yield section
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def image_set(request):
     print("Getting image files...")
     out_path = '/tmp/lfw.tgz'
@@ -249,7 +264,8 @@ def image_set(request):
     yield image_path
     shutil.rmtree(extract_path)
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video_file(request):
     print("Getting video file...")
     out_path = '/tmp/AudioVideoSyncTest_BallastMedia.mp4'
@@ -258,7 +274,8 @@ def video_file(request):
         subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video(request, page_factory, project, video_section, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -280,7 +297,8 @@ def video(request, page_factory, project, video_section, video_file):
     page.close()
     yield video
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def slow_video_file(request, video_file):
     print("Getting video file...")
     in_path = video_file
@@ -288,7 +306,8 @@ def slow_video_file(request, video_file):
     subprocess.run(["ffmpeg", "-y", "-i", in_path, "-r", "5", out_path])
     yield out_path
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def slow_video(request, page_factory, project, slow_video_section, slow_video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -310,7 +329,8 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     page.close()
     yield video
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video2(request, page_factory, project, video_section2, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -332,7 +352,8 @@ def video2(request, page_factory, project, video_section2, video_file):
     page.close()
     yield video
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video3(request, page_factory, project, video_section3, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -354,7 +375,8 @@ def video3(request, page_factory, project, video_section3, video_file):
     page.close()
     yield video
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def multi(request, base_url, token, project, video2, video3):
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -363,7 +385,8 @@ def multi(request, base_url, token, project, video2, video3):
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[video2,video3], "Multis")
     yield response.id[0]
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def image_file(request):
     out_path = '/tmp/test1.jpg'
     if not os.path.exists(out_path):
@@ -371,7 +394,8 @@ def image_file(request):
         subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def image(request, page_factory, project, image_section, image_file):
     print("Uploading an image...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -394,7 +418,7 @@ def image(request, page_factory, project, image_section, image_file):
     yield image
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="function")
 def referenced_image(request, base_url, token, page_factory, project, image_section):
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -432,7 +456,8 @@ def referenced_image(request, base_url, token, page_factory, project, image_sect
         attempts += 1
     yield response.id[0]
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def referenced_video(request, base_url, token, page_factory, project):
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -465,7 +490,8 @@ def referenced_video(request, base_url, token, page_factory, project):
     api.create_video_file(media_id, role='streaming', video_definition=video_def)
     yield media_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def image1(request, page_factory, project, image_section1, image_file):
     print("Uploading an image...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -487,7 +513,8 @@ def image1(request, page_factory, project, image_section1, image_file):
     page.close()
     yield image
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def yaml_file(request):
     out_path = '/tmp/TEST.yaml'
     if not os.path.exists(out_path):
@@ -495,7 +522,8 @@ def yaml_file(request):
             f.write("test")
     yield out_path
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def html_file(request):
     out_path = '/tmp/applet-test.yaml'
     if not os.path.exists(out_path):
@@ -503,7 +531,8 @@ def html_file(request):
             f.write("<html><head></head><body><h1>HTML FILE</h1></body></html>")
     yield out_path
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def video_files(request):
     files = ["https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.mp4",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.json",
@@ -521,7 +550,8 @@ def video_files(request):
         dst = os.path.join("/tmp",os.path.basename(fp))
         download_file(fp, dst)
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def rgb_test(request, base_url, project, token, video_files):
     red_mp4="/tmp/FF0000.mp4"
     red_segments="/tmp/FF0000.json"
@@ -541,9 +571,10 @@ def rgb_test(request, base_url, project, token, video_files):
         upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def rgb_test_2(request, base_url, project, token, video_files):
-    
+
     red_mp4="/tmp/FF0000.mp4"
     red_segments="/tmp/FF0000.json"
     green_mp4="/tmp/00FF00.mp4"
@@ -562,7 +593,8 @@ def rgb_test_2(request, base_url, project, token, video_files):
         upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def multi_rgb(request, base_url, token, project, rgb_test, rgb_test_2):
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -571,7 +603,8 @@ def multi_rgb(request, base_url, token, project, rgb_test, rgb_test_2):
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[rgb_test,rgb_test_2], "Multis")
     yield response.id[0]
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def small_video(request, base_url, project, token, video_files):
     blue_mp4="/tmp/0000FF.mp4"
     blue_segments="/tmp/0000FF.json"
@@ -588,7 +621,8 @@ def small_video(request, base_url, project, token, video_files):
         upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def count_test(request, base_url, project, token, video_files):
     count_mp4="/tmp/count.mp4"
     count_segments="/tmp/count.json"
@@ -611,7 +645,8 @@ def count_test(request, base_url, project, token, video_files):
         upload_media_file(api, project, media_id, color, segment, chunk_size=file_size / 10)
     yield media_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def count_1fps_test(request, base_url, project, token, video_files):
     count_mp4="/tmp/count_1fps.mp4"
     count_segments="/tmp/count_1fps.json"
@@ -628,7 +663,8 @@ def count_1fps_test(request, base_url, project, token, video_files):
         upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def count_test_2(request, base_url, project, token, video_files):
     count_mp4="/tmp/count.mp4"
     count_segments="/tmp/count.json"
@@ -647,7 +683,8 @@ def count_test_2(request, base_url, project, token, video_files):
         upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def multi_count(request, base_url, token, project, count_test, count_test_2):
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -656,7 +693,8 @@ def multi_count(request, base_url, token, project, count_test, count_test_2):
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[count_test,count_test_2], "Multis")
     yield response.id[0]
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def multi_offset_count(request, base_url, token, project, count_test, count_test_2):
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -666,7 +704,8 @@ def multi_offset_count(request, base_url, token, project, count_test, count_test
     api.update_media(response.id[0], {'multi': {'frameOffset': [0,100]}})
     yield response.id[0]
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="function")
 def concat_test(request, base_url, token, project, rgb_test, rgb_test_2):
     api = tator.get_api(host=base_url, token=token)
     response = tator.util.make_concat(api, "test_concat",[rgb_test,rgb_test_2], "Concat")
