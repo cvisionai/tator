@@ -52,26 +52,30 @@ def _get_element_center(element):
   return center_x,center_y
 
 def _wait_for_color(page, canvas, looking_for, timeout=30, name='unknown'):
-  found = False
-  if type(looking_for) != list:
-    looking_for = [looking_for]
-  for _ in range(timeout):
-    page.wait_for_timeout(1000)
-    canvas_color = _get_canvas_color(canvas)
-    if np.argmax(canvas_color) in looking_for:
-      found = True
-      break
-  if not found:
-    raise ValueError(f"Did not capture desired color(s) {looking_for} after {timeout} seconds. "
-                     f"Last color: {canvas_color}")
+    found = False
+    if type(looking_for) != list:
+        looking_for = [looking_for]
+    for _ in range(timeout):
+        page.wait_for_timeout(1000)
+        canvas_color = _get_canvas_color(canvas)
+        if np.argmax(canvas_color) in looking_for:
+            found = True
+            break
+    if not found:
+        raise ValueError(
+            f"Did not capture desired color(s) {looking_for} after {timeout} seconds. "
+            f"Last color: {canvas_color}"
+        )
 
-def _wait_for_frame(canvas, frame, timeout=30):
-  for _ in range(timeout):
-    canvas_frame = _get_canvas_frame(canvas)
-    if canvas_frame == frame:
-      break
-    page.wait_for_timeout(1000)
-  assert canvas_frame == frame, f"canvas={canvas_frame}, expected={frame}"
+
+def _wait_for_frame(page, canvas, frame, timeout=30):
+    for _ in range(timeout):
+        canvas_frame = _get_canvas_frame(canvas)
+        if canvas_frame == frame:
+            break
+        page.wait_for_timeout(1000)
+    assert canvas_frame == frame, f"canvas={canvas_frame}, expected={frame}"
+
 
 @pytest.mark.flaky(reruns=2)
 def test_playback_accuracy(page_factory, project, count_test):
@@ -142,54 +146,59 @@ def test_playback_accuracy(page_factory, project, count_test):
 
 @pytest.mark.flaky(reruns=2)
 def test_playback_accuracy_multi(page_factory, project, multi_count):
-  print("[Multi] Going to annotation view...(Accuracy)")
-  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{multi_count}?scrubQuality=360&seekQuality=720&playQuality=720", wait_until='networkidle')
-  page.on("pageerror", print_page_error)
-  page.wait_for_selector('video-canvas')
-  canvas = page.query_selector_all('video-canvas')
-  page.wait_for_timeout(10000)
-  play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .annotation-range-handle')
-  display_div = page.query_selector('#frame_num_display')
-  display_ctrl = page.query_selector('#frame_num_ctrl')
+    print("[Multi] Going to annotation view...(Accuracy)")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440})  # Annotation decent screen
+    page.goto(
+        f"/{project}/annotation/{multi_count}?scrubQuality=360&seekQuality=720&playQuality=720",
+        wait_until="networkidle",
+    )
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector("video-canvas")
+    canvas = page.query_selector_all("video-canvas")
+    page.wait_for_timeout(10000)
+    play_button = page.query_selector("play-button")
+    seek_handle = page.query_selector("seek-bar .annotation-range-handle")
+    display_div = page.query_selector("#frame_num_display")
+    display_ctrl = page.query_selector("#frame_num_ctrl")
 
-  # Something times out here in the unit test.
-  #_wait_for_frame(canvas[0], 0)
-  #canvas_frame = _get_canvas_frame(canvas[0])
-  #assert(canvas_frame == 0)
-  #canvas_frame = _get_canvas_frame(canvas[1])
-  #assert(canvas_frame == 0)
-  #assert(int(display_div.inner_text())==0)
+    # Something times out here in the unit test.
+    # _wait_for_frame(canvas[0], 0)
+    # canvas_frame = _get_canvas_frame(canvas[0])
+    # assert(canvas_frame == 0)
+    # canvas_frame = _get_canvas_frame(canvas[1])
+    # assert(canvas_frame == 0)
+    # assert(int(display_div.inner_text())==0)
 
-  play_button.click() # play the video
-  page.wait_for_timeout(5000) # This is simulating the user watching, not dependent on any events.
-  play_button.click() # pause the video
-  page.wait_for_timeout(1000)
-  current_frame = int(display_div.inner_text())
-  assert(current_frame > 0)
-  _wait_for_frame(canvas[0], current_frame)
-  _wait_for_frame(canvas[1], current_frame)
+    play_button.click()  # play the video
+    page.wait_for_timeout(
+        5000
+    )  # This is simulating the user watching, not dependent on any events.
+    play_button.click()  # pause the video
+    page.wait_for_timeout(1000)
+    current_frame = int(display_div.inner_text())
+    assert current_frame > 0
+    _wait_for_frame(page, canvas[0], current_frame)
+    _wait_for_frame(page, canvas[1], current_frame)
 
-  # Click the scrub handle
-  seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=10)
-  page.mouse.down()
+    # Click the scrub handle
+    seek_x, seek_y = _get_element_center(seek_handle)
+    page.mouse.move(seek_x, seek_y, steps=10)
+    page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=10)
-  page.wait_for_timeout(1000)
-  current_frame = int(display_div.inner_text())
-  _wait_for_frame(canvas[0], current_frame)
-  _wait_for_frame(canvas[1], current_frame)
-  page.mouse.up()
+    page.mouse.move(seek_x + 500, seek_y, steps=10)
+    page.wait_for_timeout(1000)
+    current_frame = int(display_div.inner_text())
+    _wait_for_frame(page, canvas[0], current_frame)
+    _wait_for_frame(page, canvas[1], current_frame)
+    page.mouse.up()
 
-  # Complete scrub
-  page.wait_for_timeout(5000)
-  current_frame = int(display_div.inner_text())
-  _wait_for_frame(canvas[0], current_frame)
-  _wait_for_frame(canvas[1], current_frame)
-  page.close()
+    # Complete scrub
+    page.wait_for_timeout(5000)
+    current_frame = int(display_div.inner_text())
+    _wait_for_frame(page, canvas[0], current_frame)
+    _wait_for_frame(page, canvas[1], current_frame)
+    page.close()
 
 @pytest.mark.flaky(reruns=2)
 def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_count):
@@ -226,8 +235,8 @@ def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_coun
     page.wait_for_timeout(1000)
     current_frame = int(display_div.inner_text())
     assert current_frame > 0
-    _wait_for_frame(canvas[0], current_frame)
-    _wait_for_frame(canvas[1], current_frame + 100)  # Offset is 100
+    _wait_for_frame(page, canvas[0], current_frame)
+    _wait_for_frame(page, canvas[1], current_frame + 100)  # Offset is 100
 
     # Click the scrub handle
     seek_x, seek_y = _get_element_center(seek_handle)
@@ -237,15 +246,15 @@ def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_coun
     page.mouse.move(seek_x + 500, seek_y, steps=10)
     page.wait_for_timeout(1000)
     current_frame = int(display_div.inner_text())
-    _wait_for_frame(canvas[0], current_frame)
-    _wait_for_frame(canvas[1], current_frame + 100)
+    _wait_for_frame(page, canvas[0], current_frame)
+    _wait_for_frame(page, canvas[1], current_frame + 100)
     page.mouse.up()
 
     # Complete scrub
     page.wait_for_timeout(5000)
     current_frame = int(display_div.inner_text())
-    _wait_for_frame(canvas[0], current_frame)
-    _wait_for_frame(canvas[1], current_frame + 100)
+    _wait_for_frame(page, canvas[0], current_frame)
+    _wait_for_frame(page, canvas[1], current_frame + 100)
     page.close()
 
 def test_small_res_file(page_factory, project, small_video):
