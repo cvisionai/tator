@@ -9,6 +9,7 @@ import pytesseract
 import pytest
 import numpy as np
 from pprint import pprint
+import time
 
 def _get_canvas_color(canvas):
   """ Returns the RGB value of the canvas (mean) """
@@ -55,12 +56,13 @@ def _wait_for_color(page, canvas, looking_for, timeout=30, name='unknown'):
     found = False
     if type(looking_for) != list:
         looking_for = [looking_for]
-    for _ in range(timeout):
+    for attempt in range(timeout):
         page.wait_for_timeout(1000)
         canvas_color = _get_canvas_color(canvas)
         if np.argmax(canvas_color) in looking_for:
             found = True
             break
+        print(f"{time.time()}: Attempt {attempt} - {name} color: {canvas_color}")
     if not found:
         raise ValueError(
             f"Did not capture desired color(s) {looking_for} after {timeout} seconds. "
@@ -274,47 +276,48 @@ def test_small_res_file(page_factory, project, small_video):
   page.close()
 
 def test_buffer_usage_single(page_factory, project, rgb_test):
-  # Tests play, scrub, and seek buffer usage
-  print("[Video] Going to annotation view...")
-  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{rgb_test}?scrubQuality=360&seekQuality=1080&playQuality=720", wait_until='networkidle')
-  page.on("pageerror", print_page_error)
-  page.wait_for_selector('video-canvas')
-  canvas = page.query_selector('video-canvas')
+    # Tests play, scrub, and seek buffer usage
+    print("[Video] Going to annotation view...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.set_viewport_size({"width": 2560, "height": 1440})  # Annotation decent screen
+    page.goto(
+        f"/{project}/annotation/{rgb_test}?scrubQuality=360&seekQuality=1080&playQuality=720",
+        wait_until="networkidle",
+    )
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector("video-canvas")
+    canvas = page.query_selector("video-canvas")
 
-  play_button = page.query_selector('play-button')
-  seek_handle = page.query_selector('seek-bar .annotation-range-handle')
+    play_button = page.query_selector("play-button")
+    seek_handle = page.query_selector("seek-bar .annotation-range-handle")
 
+    # Wait for hq buffer and verify it is red
+    page.wait_for_timeout(15000)  # This takes forever with the weird color video
+    _wait_for_color(page, canvas, 0, timeout=30, name="seek")
 
-  # Wait for hq buffer and verify it is red
-  page.wait_for_timeout(15000) # This takes forever with the weird color video
-  _wait_for_color(page, canvas, 0, timeout=30, name='seek')
+    play_button.click()
+    _wait_for_color(page, canvas, 1, timeout=30, name="playing")
 
-  play_button.click()
-  _wait_for_color(page, canvas, 1, timeout=30, name='playing')
+    # Pause the video
+    play_button.click()
+    _wait_for_color(page, canvas, 0, timeout=30, name="seek (pause)")
 
-  # Pause the video
-  play_button.click()
-  _wait_for_color(page, canvas, 0, timeout=30, name='seek (pause)')
+    # Click the scrub handle
+    seek_x, seek_y = _get_element_center(seek_handle)
+    page.mouse.move(seek_x, seek_y, steps=10)
+    page.mouse.down()
 
+    page.mouse.move(seek_x + 5, seek_y, steps=10)
+    _wait_for_color(page, canvas, 1, timeout=30, name="small scrub (play buffer)")
 
-  # Click the scrub handle
-  seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=10)
-  page.mouse.down()
+    page.mouse.move(seek_x + 1000, seek_y, steps=10)
+    # Look for either green(play) or blue(scrub) based on how much got buffered, both are correct
+    _wait_for_color(page, canvas, [1, 2], timeout=30, name="big scrub (scrub buffer)")
 
-  page.mouse.move(seek_x+5, seek_y, steps=10)
-  _wait_for_color(page, canvas, 1, timeout=30, name='small scrub (play buffer)')
-
-  page.mouse.move(seek_x+1000, seek_y, steps=10)
-  # Look for either green(play) or blue(scrub) based on how much got buffered, both are correct
-  _wait_for_color(page, canvas, [1,2], timeout=30, name='big scrub (scrub buffer)')
-
-  # Release the scrub
-  page.mouse.up()
-  _wait_for_color(page, canvas, 0, timeout=30, name='seek / pause')
-  page.close()
+    # Release the scrub
+    page.mouse.up()
+    _wait_for_color(page, canvas, 0, timeout=30, name="seek / pause")
+    page.close()
 
 @pytest.mark.flaky(reruns=2)
 def test_buffer_usage_multi(page_factory, project, multi_rgb):
