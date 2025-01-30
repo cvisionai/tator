@@ -300,7 +300,7 @@ def video(request, page_factory, project, video_section, video_file):
     page.close()
     for x in range(30):
         video_obj = api.get_media(video)
-        if video_obj.media_files is not None a
+        if video_obj.media_files is not None:
             if len(video2_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
@@ -337,7 +337,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     page.close()
     for x in range(30):
         video_obj = api.get_media(video)
-        if video_obj.media_files is not None a
+        if video_obj.media_files is not None:
             if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
@@ -366,7 +366,7 @@ def video2(request, page_factory, project, video_section2, video_file):
     page.close()
     for x in range(30):
         video_obj = api.get_media(video)
-        if video_obj.media_files is not None a
+        if video_obj.media_files is not None:
             if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
@@ -395,7 +395,7 @@ def video3(request, page_factory, project, video_section3, video_file):
     page.close()
     for x in range(30):
         video_obj = api.get_media(video)
-        if video_obj.media_files is not None a
+        if video_obj.media_files is not None:
             if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
@@ -449,7 +449,7 @@ def image(request, page_factory, project, image_section, image_file):
     page.close()
     for x in range(30):
         image_obj = api.get_media(image)
-        if image_obj.media_files is not None a
+        if image_obj.media_files is not None:
             if len(image_obj.media_files.to_dict().get('image', [])) >= 1:
                 break
         time.sleep(1)
