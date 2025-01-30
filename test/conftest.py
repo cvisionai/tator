@@ -302,7 +302,7 @@ def video(request, page_factory, project, video_section, video_file, base_url, t
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -340,7 +340,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -370,7 +370,7 @@ def video2(request, page_factory, project, video_section2, video_file, base_url,
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -400,7 +400,7 @@ def video3(request, page_factory, project, video_section3, video_file, base_url,
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
