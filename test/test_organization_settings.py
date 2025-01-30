@@ -4,12 +4,12 @@ import inspect
 import time
 from ._common import print_page_error
 
-def test_organization_settings(page_factory, project, launch_time, image_file, base_url):
+def test_organization_settings(page_factory, project, launch_time, image_file, base_url, random_chars):
     print("Going to organizations...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/organizations", wait_until='networkidle')
     page.on("pageerror", print_page_error)
-    name = f"test_front_end_{launch_time}"
+    name = f"test_front_end_{launch_time}_{random_chars}"
     page.wait_for_selector(f'text="{name}"')
     summaries = page.query_selector_all('organization-summary')
     for summary in summaries:
