@@ -185,7 +185,6 @@ def test_referenced_video_annotation(page_factory, project, referenced_video):
     common_annotation(page, canvas)
     page.close()
 
-@pytest.mark.flaky(reruns=2)
 def test_multi_annotation(page_factory, project, multi):
     print("[Multi] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
