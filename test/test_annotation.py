@@ -27,11 +27,11 @@ def common_annotation(page, canvas, bias=0):
         width = 100
         height = 100
         page.mouse.move(x, y, steps=50)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
         page.mouse.down()
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
         page.mouse.move(x + width, y + height, steps=50)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
         page.mouse.up()
         page.wait_for_selector('save-dialog.is-open')
         save_dialog = page.query_selector('save-dialog.is-open')
@@ -62,7 +62,7 @@ def common_annotation(page, canvas, bias=0):
         x += canvas_center_x
         y += canvas_center_y
         page.mouse.move(x+50, y+50, steps=50)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
         page.mouse.click(x+50, y+50)
         selector = page.query_selector("entity-selector:visible")
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
@@ -83,11 +83,11 @@ def common_annotation(page, canvas, bias=0):
 
         assert found, "Elemental ID not found"
 
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
         page.mouse.down()
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
         page.mouse.move(x, y, steps=50)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
         page.mouse.up()
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
@@ -101,7 +101,7 @@ def common_annotation(page, canvas, bias=0):
         y += canvas_center_y
 
         page.mouse.move(x+45, y+45, steps=50)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
 
         page.mouse.click(x+45, y+45)
         for attempts in range(5):
@@ -118,13 +118,13 @@ def common_annotation(page, canvas, bias=0):
                 found = True
                 break
             page.wait_for_timeout(1000)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
 
         page.mouse.down()
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
 
         page.mouse.move(x+95, y+95, steps=50)
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1000)
 
         page.mouse.up()
 
