@@ -136,7 +136,6 @@ def common_annotation(page, canvas, bias=0):
         print(f'Success!')
 
 
-@pytest.mark.flaky(reruns=2)
 def test_video_annotation(page_factory, project, video):
     print("[Video] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
