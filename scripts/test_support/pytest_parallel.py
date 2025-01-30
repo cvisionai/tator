@@ -97,6 +97,8 @@ def main():
             full_xml_paths = [os.path.join(tmpdir, x) for x in os.listdir(tmpdir) if x.endswith(".xml")]
             merge_junit_reports(junitxml_path, *full_xml_paths)
     
+    if returncode != 0:
+        print(f"ERROR: Pytest returned with non-zero exit code: {returncode}")
     # Forward exit code from pytest
     sys.exit(returncode)
 
