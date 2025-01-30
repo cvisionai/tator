@@ -57,9 +57,7 @@ class LeafSuggestionAPI(BaseDetailView):
         ancestor = params["ancestor"]
 
         # Try to find root node for type
-        root_node = Leaf.objects.filter(project=project, path=ancestor)
-        logger.info(f"root_node = {root_node} {ancestor}")
-        logger.info(f"all={Leaf.objects.filter(project=project).values('path')}")
+        root_node = Leaf.objects.filter(project=project, path=ancestor, deleted=False)
         if root_node.count() == 0:
             return Leaf.objects.filter(pk=-1)
 
@@ -84,10 +82,9 @@ class LeafSuggestionAPI(BaseDetailView):
 
         type_id = root_node[0].type
         queryset = Leaf.objects.filter(
-            project=project, type=type_id, path__istartswith=ancestor, path__depth__gte=min_level
+            project=project, type=type_id, path__istartswith=ancestor, path__depth__gte=min_level, deleted=False
         ).filter(q_object)
 
-        logger.info(f"*******Query: {queryset.query}")
         return self.filter_only_viewables(queryset)
 
     def _get(self, params):
