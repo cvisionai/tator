@@ -338,7 +338,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None a
-            if len(video2_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -367,7 +367,7 @@ def video2(request, page_factory, project, video_section2, video_file):
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None a
-            if len(video2_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -396,7 +396,7 @@ def video3(request, page_factory, project, video_section3, video_file):
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None a
-            if len(video2_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -447,6 +447,13 @@ def image(request, page_factory, project, image_section, image_file):
             break
     image = int(cards[0].get_attribute('media-id'))
     page.close()
+    for x in range(30):
+        image_obj = api.get_media(image)
+        if image_obj.media_files is not None a
+            if len(image_obj.media_files.to_dict().get('image', [])) >= 1:
+                break
+        time.sleep(1)
+        print("Waiting for image worker")
     yield image
 
 
