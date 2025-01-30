@@ -302,7 +302,7 @@ def video(request, page_factory, project, video_section, video_file, base_url, t
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3 and video_obj.num_frames > 0:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -340,7 +340,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3 and video_obj.num_frames > 0:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -370,7 +370,7 @@ def video2(request, page_factory, project, video_section2, video_file, base_url,
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3 and video_obj.num_frames > 0:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -400,7 +400,7 @@ def video3(request, page_factory, project, video_section3, video_file, base_url,
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3  and video_obj.num_frames > 0:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -409,14 +409,6 @@ def video3(request, page_factory, project, video_section3, video_file, base_url,
 @pytest.fixture(scope='session')
 def multi(request, base_url, token, project, video2, video3):
     api = tator.get_api(host=base_url, token=token)
-    for x in range(30):
-        video2_obj = api.get_media(video2)
-        video3_obj = api.get_media(video3)
-        if video2_obj.media_files is not None and video3_obj.media_files is not None:
-            if len(video2_obj.media_files.to_dict().get('streaming', [])) > 2 and len(video3_obj.media_files.to_dict().get('streaming', [])) > 2:
-                break
-        time.sleep(1)
-        print("Waiting for transcodes")
     media_types = api.get_media_type_list(project)
     multi_types = [m for m in media_types if m.dtype == "multi"]
     multi_type_id = multi_types[0]
