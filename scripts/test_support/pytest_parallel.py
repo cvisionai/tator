@@ -3,6 +3,7 @@ import subprocess
 import argparse
 import os
 import tempfile
+import signal
 
 from junitparser import JUnitXml, TestSuite
 
@@ -57,14 +58,35 @@ def main():
 
     returncode = 0
     procs = []
+
+    # Register an interrupt handler such that on ctrl-C we kill all children
+    def interrupt_handler(sig, frame):
+        for proc in procs:
+            proc.kill()
+        sys.exit(1)
+    signal.signal(signal.SIGINT, interrupt_handler)
+
+    running = 0
     with tempfile.TemporaryDirectory() as tmpdir:
         for i, test in enumerate(test_files):
             if junitxml_path:
                 forwarded_args.append(f"--junitxml={os.path.join(tmpdir, f'{test}_{i}.xml')}")
             fp = os.path.join(args.test_path, test)
             cmd = ["pytest", fp] + forwarded_args
-            procs.append(subprocess.Popen(cmd))
-            print(f"{i}: {cmd}")
+            if running < args.num_workers:
+                procs.append(subprocess.Popen(cmd))
+                print(f"{i}: {cmd}")
+                running += 1
+            else:
+                for proc in procs:
+                    print(f"Waiting for process {i}")
+                    returncode |= proc.wait()
+                    print(f"Process {i} exited with code {returncode}")
+                    running -= -1
+                procs.append(subprocess.Popen(cmd))
+                running += 1
+                print(f"{i}: {cmd}")
+
 
         for i, proc in enumerate(procs):
             print(f"Waiting for process {i}")
