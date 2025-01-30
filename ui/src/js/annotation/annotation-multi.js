@@ -2224,8 +2224,9 @@ export class AnnotationMulti extends TatorElement {
         true
       );
       primary.children[0].contextMenuNone.displayEntry("Reset Multiview", true);
+      // when horizontally focused, the focused section should take up 3/4 of the available height
       primary.children[0].gridRows =
-        this._focusMode == "vertical" ? this._focusIds.length : 1;
+        this._focusMode == "vertical" ? this._focusIds.length : 4 / 3;
       primary.children[0].style.gridColumn = null;
       primary.children[0].style.gridRow = null;
     }
@@ -2252,7 +2253,11 @@ export class AnnotationMulti extends TatorElement {
       if (horizontalDock) {
         docked.children[0].gridRows = 1;
       } else {
-        docked.children[0].gridRows = this._selectedDock.children.length;
+        // when horizontally focused, the docked section should take up 1/4 of the available height
+        docked.children[0].gridRows =
+          this._focusMode == "vertical"
+            ? this._selectedDock.children.length
+            : 4;
       }
     }
 

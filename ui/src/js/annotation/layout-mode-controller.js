@@ -134,6 +134,9 @@ export class LayoutModeController {
       Array.from(canvas._shadow.querySelectorAll("canvas-context-menu"))
     );
     if (this.fullscreen.hasAttribute("is-maximized")) {
+      this.videoCanvas.forEach(
+        (v) => (v.heightPadObject = this.player._videoHeightPadObject)
+      );
       clearTimeout(this.hideTimeout);
       clearTimeout(this.inactivityTimeout);
       window.MODE = undefined;
@@ -160,6 +163,12 @@ export class LayoutModeController {
       this.preview.setAttribute("style", this.styles.preview);
       this.fullscreen.removeAttribute("is-maximized");
     } else {
+      this.videoCanvas.forEach(
+        (v) =>
+          (v.heightPadObject = {
+            height: 0,
+          })
+      );
       window.MODE = "FULLSCREEN";
       // Save off styles so we can restore them later
       this.styles = {
