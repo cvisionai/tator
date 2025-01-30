@@ -130,10 +130,13 @@ def token(request, page_factory):
     yield token
 
 @pytest.fixture(scope='session')
-def project(request, page_factory, launch_time, base_url, token):
+def random_chars():
+    random_str = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    yield random_str
+@pytest.fixture(scope='session')
+def project(request, page_factory, launch_time, base_url, token, random_chars):
     """ Project created with setup_project.py script, all options enabled. """
     print("Creating test project with setup_project.py...")
-    random_chars = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
     name = f"test_front_end_{launch_time}_{random_chars}"
     cmd = [
         'python3',
