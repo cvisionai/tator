@@ -279,8 +279,9 @@ def video_file(request):
     yield out_path
 
 @pytest.fixture(scope='session')
-def video(request, page_factory, project, video_section, video_file):
+def video(request, page_factory, project, video_section, video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -301,7 +302,7 @@ def video(request, page_factory, project, video_section, video_file):
     for x in range(30):
         video_obj = api.get_media(video)
         if video_obj.media_files is not None:
-            if len(video2_obj.media_files.to_dict().get('streaming', [])) > 2:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 2:
                 break
         time.sleep(1)
         print("Waiting for transcodes")
@@ -316,8 +317,9 @@ def slow_video_file(request, video_file):
     yield out_path
 
 @pytest.fixture(scope='session')
-def slow_video(request, page_factory, project, slow_video_section, slow_video_file):
+def slow_video(request, page_factory, project, slow_video_section, slow_video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={slow_video_section}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -345,8 +347,9 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     yield video
 
 @pytest.fixture(scope='session')
-def video2(request, page_factory, project, video_section2, video_file):
+def video2(request, page_factory, project, video_section2, video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section2}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -374,8 +377,9 @@ def video2(request, page_factory, project, video_section2, video_file):
     yield video
 
 @pytest.fixture(scope='session')
-def video3(request, page_factory, project, video_section3, video_file):
+def video3(request, page_factory, project, video_section3, video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section3}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -428,8 +432,9 @@ def image_file(request):
     yield out_path
 
 @pytest.fixture(scope='session')
-def image(request, page_factory, project, image_section, image_file):
+def image(request, page_factory, project, image_section, image_file, base_url, token):
     print("Uploading an image...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={image_section}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
