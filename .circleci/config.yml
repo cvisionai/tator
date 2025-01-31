@@ -222,7 +222,7 @@ jobs:
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && export PYTHONUNBUFFERED=1 && cd tator && for i in $(seq 1 3); do if [ -d "test-results" ]; then rm -f test-results/*; else mkdir -p test-results; fi; python3 scripts/test_support/pytest_parallel.py --num-workers 2 test --keep --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s --junitxml=test-results/frontend-junit.xml && break || sleep 10; done;';
           ssh lightsail 'test -e tator/test-results/frontend-junit.xml' && scp lightsail:tator/test-results/frontend-junit.xml frontend-test-results/ || exit 0;
-          grep -q -E 'failures="[1-9]|errors="[1-9]' frontend-test-results/frontend-junit.xml && exit 1 || exit 0;
+          grep -q -E '\b[1-9][0-9]*\s+failed\b' frontend-test-results/frontend-junit.xml && exit 1 || exit 0;
     - store_test_results:
         path: frontend-test-results
     - store_artifacts:
