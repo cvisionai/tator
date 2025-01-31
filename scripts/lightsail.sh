@@ -9,7 +9,7 @@ aws lightsail create-instances \
   --instance-names tator-ci-$GIT_VERSION \
   --availability-zone us-east-1a \
   --blueprint-id ubuntu_22_04 \
-  --bundle-id 2xlarge_2_0
+  --bundle-id 4xlarge_3_0
 
 # Configure SSH
 echo "Configuring ssh..."
