@@ -365,6 +365,7 @@ workflows:
         - rest-tests
         - front-end-tests
         - tator-py-tests
+        - cron-job-tests
         context: cvisionai
         filters:
           tags:
