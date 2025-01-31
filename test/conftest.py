@@ -565,12 +565,12 @@ def html_file(request):
 
 @pytest.fixture(scope='session')
 def video_files(request):
-    files = ["https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.mp4",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.json",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.mp4",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.json",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.mp4",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.json",
+    files = ["https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/FF0000.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/FF0000.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/00FF00.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/00FF00.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/0000FF.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/0000FF.json",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.mp4",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.json",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.mp4",
