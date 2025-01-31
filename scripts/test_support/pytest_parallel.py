@@ -53,7 +53,11 @@ def main():
     # Execute pytest command in a loop once per python `test_file.py` file 
     # concat the junit xml path if given
 
-    test_files = [x for x in os.listdir(args.test_path) if x.startswith("test_") and x.endswith(".py")]
+    test_files = []
+    if os.path.isdir(args.test_path):
+        test_files = [os.path.join(args.test_path,x) for x in os.listdir(args.test_path) if x.startswith("test_") and x.endswith(".py")]
+    else:
+        test_files.append(args.test_path)
     # Construct and execute pytest command
 
     returncode = 0
@@ -70,9 +74,8 @@ def main():
     with tempfile.TemporaryDirectory() as tmpdir:
         for i, test in enumerate(test_files):
             if junitxml_path:
-                forwarded_args.append(f"--junitxml={os.path.join(tmpdir, f'{test}_{i}.xml')}")
-            fp = os.path.join(args.test_path, test)
-            cmd = ["pytest", fp] + forwarded_args
+                forwarded_args.append(f"--junitxml={os.path.join(tmpdir, f'{i}.xml')}")
+            cmd = ["pytest", test] + forwarded_args
             if running < args.num_workers:
                 procs.append(subprocess.Popen(cmd))
                 print(f"{i}: {cmd}")

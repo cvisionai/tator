@@ -557,7 +557,7 @@ def yaml_file(request):
 
 @pytest.fixture(scope='session')
 def html_file(request):
-    out_path = f'{temp_folder}/applet-test.yaml'
+    out_path = f'{temp_folder}/applet-test.html'
     if not os.path.exists(out_path):
         with open(out_path, 'w+') as f:
             f.write("<html><head></head><body><h1>HTML FILE</h1></body></html>")
