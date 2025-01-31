@@ -212,9 +212,6 @@ jobs:
         name: Install sshfs
         command: sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install sshfs
     - run:
-        name: Sleep for 1 hour to recharge credits
-        command: sleep 3600
-    - run:
         name: Front end tests
         no_output_timeout: 30m
         command: |
