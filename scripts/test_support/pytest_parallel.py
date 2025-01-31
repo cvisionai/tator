@@ -12,10 +12,14 @@ def merge_junit_reports(output_file, *input_files):
     merged_suite = TestSuite("MergedResults")
 
     for file in input_files:
-        xml = JUnitXml.fromfile(file)
-        for suite in xml:
-            for case in suite:
-                merged_suite.add_testcase(case)
+        try:
+            xml = JUnitXml.fromfile(file)
+            for suite in xml:
+                for case in suite:
+                    merged_suite.add_testcase(case)
+        except Exception as e:
+            print(f"Failed to load JUnit XML file {file}: {e}")
+
 
     merged_xml.add_testsuite(merged_suite)
     merged_xml.write(output_file)
