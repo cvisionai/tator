@@ -22,6 +22,8 @@ def merge_junit_reports(output_file, *input_files):
 
 
     merged_xml.add_testsuite(merged_suite)
+    # Make sure the output directory exists
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     merged_xml.write(output_file)
     print(f"Merged results written to {output_file}")
 
