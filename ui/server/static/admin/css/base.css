@@ -332,6 +332,10 @@ a.quiet:visited {
   display: none;
 }
 
+.invisible {
+  visibility: hidden; /* preserves space */
+}
+
 /* TABLES */
 
 table {

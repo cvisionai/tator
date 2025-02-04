@@ -6,4 +6,113 @@
   const page = document.createElement("upload-page");
   document.body.appendChild(page);
 </script>
-{% endblock head %} {% block body %} {% endblock body %}
+{% endblock head %} {% block body %}
+<style>
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .loading-background {
+    background: linear-gradient(-45deg, rgba(74, 78, 174, 1), rgba(42, 43, 102, 1), rgba(10, 63, 100, 1));
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    pointer-events: initial;
+    position: fixed;
+    z-index: 1500;
+  }
+
+  .circle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &:before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      opacity: 0.7;
+      animation: scale 3s infinite cubic-bezier(0, 0, 0.50, 1.00);
+    }
+  }
+
+  .circle-1 {
+    background-color: #696cff;
+
+    &:before {
+      background-color: #696cff;
+      animation-delay: 500ms;
+    }
+  }
+
+  .circle-2 {
+    background-color: #696cff;
+
+    &:before {
+      background-color: #696cff;
+      animation-delay: 1000ms;
+    }
+  }
+
+  .circle-3 {
+    background-color: #696cff;
+
+    &:before {
+      background-color: #696cff;
+      animation-delay: 1500ms;
+    }
+  }
+
+  @keyframes scale {
+    0% {
+      transform: scale(1);
+    }
+
+    50%,
+    75% {
+      transform: scale(2.5);
+    }
+
+    78%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .loading-text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+  }
+</style>
+<div id="loadingScreen" class="loading-background">
+  <div class="loading-text flex-column">
+    <div class="d-flex py-5">
+      <div class="circle circle-1 mx-1"></div>
+      <div class="circle circle-2 mx-1"></div>
+      <div class="circle circle-3 mx-1"></div>
+    </div>
+    <div id="loadingScreenText"></div>
+  </div>
+</div>
+{% endblock body %}
