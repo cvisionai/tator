@@ -35,19 +35,14 @@ from .._permission_util import (
     PermissionMask,
 )
 
-from ..schema.components.project import project_properties as project_schema
+from ..schema.components.project import project as project_schema
 
 import os
 
 logger = logging.getLogger(__name__)
 
-PROJECT_PROPERTIES = list(project_schema.keys())
-PROJECT_PROPERTIES.append("thumb")
-PROJECT_PROPERTIES.append("attribute_types")
-PROJECT_PROPERTIES.append("usernames")
-PROJECT_PROPERTIES.append("id")
-PROJECT_PROPERTIES.append("num_files")
-PROJECT_PROPERTIES.append("duration")
+PROJECT_PROPERTIES = list(project_schema["properties"].keys())
+PROJECT_PROPERTIES.remove("permission")  # this is calculated and inserted in python-logic
 
 
 def _serialize_projects(projects, user_id):
@@ -55,8 +50,6 @@ def _serialize_projects(projects, user_id):
     ttl = 28800
     project_data = list(projects.values(*PROJECT_PROPERTIES))
     stores = {None: get_tator_store(None, connect_timeout=1, read_timeout=1, max_attempts=1)}
-    if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
-        projects = augment_permission(User.objects.get(pk=user_id), projects)
 
     for idx, project in enumerate(projects):
         if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
@@ -227,7 +220,7 @@ class ProjectListAPI(BaseListView):
             )
         member.save()
 
-        projects = Project.objects.filter(pk=project.id)
+        projects = self.get_queryset().filter(pk=project.pk)
         return {
             "message": f"Project {params['name']} created!",
             "id": project.id,
@@ -266,7 +259,7 @@ class ProjectDetailAPI(BaseDetailView):
         return super().get_permissions()
 
     def _get(self, params):
-        projects = Project.objects.filter(pk=params["id"])
+        projects = self.get_queryset()
         return _serialize_projects(projects, self.request.user.pk)[0]
 
     @transaction.atomic
@@ -351,7 +344,7 @@ class ProjectDetailAPI(BaseDetailView):
         else:
             raise ValueError(f"No recognized keys in request!")
 
-        projects = Project.objects.filter(pk=project.id)
+        projects = self.get_queryset()
         return {
             "message": f"Project {params['id']} updated successfully!",
             "object": _serialize_projects(projects, self.request.user.pk)[0],

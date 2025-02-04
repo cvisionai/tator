@@ -4,9 +4,10 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 
 from ..cache import TatorCache
-from ..models import Affiliation, database_qs, Organization, Permission, safe_delete, RowProtection
+from ..models import Affiliation, Organization, Permission, safe_delete, RowProtection
 from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
+from ..schema.components.organization import organization
 from ..store import get_tator_store
 
 from ._permissions import OrganizationAdminPermission, OrganizationMemberPermission
@@ -19,10 +20,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+ORGANIZATION_KEYS = list(organization["properties"].keys())
+ORGANIZATION_KEYS.remove("permission")
+
 
 def _serialize_organizations(organizations, user_id):
     ttl = 28800
-    organization_data = database_qs(organizations)
+    organization_data = list(organizations.values(*ORGANIZATION_KEYS))
     store = get_tator_store()
     cache = TatorCache()
     for idx, organization in enumerate(organizations):
@@ -118,7 +122,7 @@ class OrganizationDetailAPI(BaseDetailView):
         return super().get_permissions()
 
     def _get(self, params):
-        organizations = Organization.objects.filter(pk=params["id"])
+        organizations = self.get_queryset()
         return _serialize_organizations(organizations, self.request.user.pk)[0]
 
     @transaction.atomic

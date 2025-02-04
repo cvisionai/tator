@@ -94,6 +94,7 @@
 .form-select.disabled {
   color: var(--color-gray--dark);
   background-color: var(--color-charcoal--medium);
+  cursor: not-allowed;
 }
 .form-control option,
 .form-select option {

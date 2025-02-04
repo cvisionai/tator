@@ -22,9 +22,6 @@ from main.backup import TatorBackupManager
 
 from django.conf import settings
 
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import streaming_bulk
-
 logger = logging.getLogger(__name__)
 
 """ Utility scripts for data management in django-shell """
@@ -234,37 +231,6 @@ def fixVideoDims(project):
                 video.save()
         except:
             print(f"Error on {video.pk}")
-
-
-def clearOldFilebeatIndices():
-    es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST")])
-    for index in es.indices.get("filebeat-*"):
-        tokens = str(index).split("-")
-        if len(tokens) < 3:
-            continue
-        dt = parse(tokens[2])
-        delta = datetime.datetime.now() - dt
-        if delta.days > 7:
-            logger.info(f"Deleting old filebeat index {index}")
-            es.indices.delete(str(index))
-
-
-def make_sections():
-    for project in Project.objects.all().iterator():
-        es = Elasticsearch([os.getenv("ELASTICSEARCH_HOST")])
-        result = es.search(
-            index=f"project_{project.pk}",
-            body={
-                "size": 0,
-                "aggs": {"sections": {"terms": {"field": "tator_user_sections", "size": 1000}}},
-            },
-            stored_fields=[],
-        )
-        for section in result["aggregations"]["sections"]["buckets"]:
-            Section.objects.create(
-                project=project, name=section["key"], tator_user_sections=section["key"]
-            )
-            logger.info(f"Created section {section['key']} in project {project.pk}!")
 
 
 def make_resources():
@@ -1361,3 +1327,82 @@ def cull_low_used_indices(project_id, dry_run=True, population_limit=10000):
                     continue
                 print(f"Deleting index for {t.name} {attr['name']}/{attr['dtype']}")
                 ts.delete_index(t, attr)
+
+
+def update_section_dtype(project_ids=None):
+    projects = Project.objects.all()
+    if isinstance(project_ids, list):
+        projects = projects.filter(pk__in=project_ids)
+    elif isinstance(project_ids, int):
+        projects = projects.filter(pk=project_ids)
+    project_id_list = list(projects.values_list("id", flat=True))
+    section_list = Section.objects.filter(
+        project__in=projects, object_search__isnull=True, related_object_search__isnull=True
+    )
+    print(f"Updating {section_list.count()} section dtypes to `folder`...")
+    section_list.update(dtype="folder")
+    section_list = Section.objects.filter(project__in=projects, object_search__isnull=False)
+    print(f"Updating {section_list.count()} section dtypes to `saved_search`...")
+    section_list = Section.objects.filter(project__in=projects, related_object_search__isnull=False)
+    print(f"Updating {section_list.count()} section dtypes to `saved_search`...")
+
+
+def update_primary_section(project_ids=None):
+    projects = Project.objects.all()
+    if isinstance(project_ids, list):
+        projects = projects.filter(pk__in=project_ids)
+    elif isinstance(project_ids, int):
+        projects = projects.filter(pk=project_ids)
+    project_id_list = list(projects.values_list("id", flat=True))
+    section_list = Section.objects.filter(
+        project__in=projects, object_search__isnull=True, related_object_search__isnull=True
+    )
+    section_count = section_list.count()
+    print(f"Found {section_count} sections!")
+    for idx, section in enumerate(section_list.iterator()):
+        media_list = Media.objects.filter(
+            attributes__tator_user_sections=section.tator_user_sections,
+            primary_section__isnull=True,
+        )
+        count = media_list.count()
+        if count == 0:
+            print(
+                f"[{idx+1}/{section_count}] Skipping section {section.name}, no media require updates..."
+            )
+        else:
+            print(
+                f"[{idx+1}/{section_count}] Updating primary section for {count} media in section {section.name}..."
+            )
+            media_list.update(primary_section=section)
+    print("Finished updating primary section!")
+
+
+def fill_lookup_table(project_id, dry_run=False):
+    unhandled_media = Media.objects.filter(project=project_id, projectlookup__isnull=True)
+    unhandled_localizations = Localization.objects.filter(
+        project=project_id, projectlookup__isnull=True
+    )
+    unhandled_states = State.objects.filter(project=project_id, projectlookup__isnull=True)
+
+    print(
+        "For {project_id}, need to add:\n\t{unhandled_media.count()} media to lookup table\n\t{unhandled_localizations.count()} localizations to lookup table\n\t{unhandled_states.count()} states to lookup table"
+    )
+
+    if dry_run:
+        return
+
+    # Break into 500-element chunks
+    for chunk in unhandled_media.iterator(chunk_size=500):
+        ProjectLookup.objects.bulk_create(
+            [ProjectLookUp(project=project_id, media_id=m.id) for m in chunk]
+        )
+
+    for chunk in unhandled_localizations.iterator(chunk_size=500):
+        ProjectLookup.objects.bulk_create(
+            [ProjectLookUp(project=project_id, localization_id=l.id) for l in chunk]
+        )
+
+    for chunk in unhandled_states.iterator(chunk_size=500):
+        ProjectLookup.objects.bulk_create(
+            [ProjectLookUp(project=project_id, state_id=s.id) for s in chunk]
+        )

@@ -31,6 +31,7 @@ fields = [
     "delete_child_localizations",
     "default_localization",
     "elemental_id",
+    "effective_permission",
 ]
 
 import logging
@@ -78,7 +79,7 @@ class StateTypeListAPI(BaseListView):
         if elemental_id is not None:
             safe = uuid.UUID(elemental_id)
             qs = qs.filter(elemental_id=safe)
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _get(self, params):
         """Retrieve state types.
@@ -230,4 +231,4 @@ class StateTypeDetailAPI(BaseDetailView):
         }
 
     def get_queryset(self, **kwargs):
-        return StateType.objects.filter(pk=self.params["id"])
+        return self.filter_only_viewables(StateType.objects.filter(pk=self.params["id"]))

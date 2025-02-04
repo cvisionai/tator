@@ -1,4 +1,5 @@
 """ TODO: add documentation for this """
+
 import logging
 
 from dateutil.parser import parse as dateutil_parse
@@ -84,14 +85,6 @@ class MediaFieldExpression:
 
 def _sanitize(name):
     return re.sub(r"[^a-zA-Z]", "_", name)
-
-
-def _look_for_section_uuid(media_qs, maybe_uuid_val):
-    media_qs = media_qs.annotate(
-        section_val=Cast(F("attributes__tator_user_sections"), TextField())
-    )
-    # Note: This escape is required because of database_qs usage
-    return media_qs.filter(section_val=f'"{maybe_uuid_val}"')
 
 
 def supplied_name_to_field(supplied_name):
@@ -299,39 +292,42 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
         inverse = query_object.get("inverse", False)
         value = query_object["value"]
 
-        if attr_name == "$section":
+        if attr_name == "$section" or attr_name == "tator_user_sections":
             # Handle section based look-up
-            section = Section.objects.filter(pk=value)
+            if attr_name == "$section":
+                section = Section.objects.filter(pk=value)
+            else:
+                section = Section.objects.filter(tator_user_sections=value)
             if not section.exists():
                 raise Http404
 
             relevant_state_type_ids = StateType.objects.filter(project=project)
             relevant_localization_type_ids = LocalizationType.objects.filter(project=project)
             media_qs = Media.objects.filter(project=project)
-            section_uuid = section[0].tator_user_sections
-            if section_uuid:
-                media_qs = _look_for_section_uuid(media_qs, section_uuid)
+            if section[0].dtype == "folder":
+                media_qs = media_qs.filter(primary_section=section[0].pk)
+            elif section[0].dtype == "playlist":
+                media_qs = media_qs.filter(pk__in=section[0].media)
+            elif section[0].dtype == "saved_search":
+                if section[0].object_search:
+                    media_qs = get_attribute_psql_queryset_from_query_obj(
+                        media_qs, section[0].object_search
+                    )
 
-            if section[0].object_search:
-                media_qs = get_attribute_psql_queryset_from_query_obj(
-                    media_qs, section[0].object_search
-                )
-
-            if section[0].related_object_search:
-                media_qs = _related_search(
-                    media_qs,
-                    project,
-                    relevant_state_type_ids,
-                    relevant_localization_type_ids,
-                    section[0].related_object_search,
-                )
+                elif section[0].related_object_search:
+                    media_qs = _related_search(
+                        media_qs,
+                        project,
+                        relevant_state_type_ids,
+                        relevant_localization_type_ids,
+                        section[0].related_object_search,
+                    )
             if media_qs.exists() == False:
                 query = Q(pk=-1)
             elif is_media:
                 query = Q(pk__in=media_qs)
             else:
                 query = Q(media__in=media_qs)
-            all_casts.add("tator_user_sections")
         elif attr_name == "$coincident_states":
             if operation != "search":
                 raise ValueError(
@@ -513,8 +509,6 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     if is_media == False:
         annotateField["$coincident"] = MediaFieldExpression
 
-    annotateField["tator_user_sections"] = TextField
-    attributeCast["tator_user_sections"] = lambda x: f'"{x}"'
     for key in ["$x", "$y", "$u", "$v", "$width", "$height", "$fps"]:
         attributeCast[key] = float
     for key in [

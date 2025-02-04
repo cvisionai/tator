@@ -356,5 +356,10 @@ media = {
             "type": "integer",
             "nullable": True,
         },
+        "effective_permission": {
+            "description": "Calculated permission for this value",
+            "type": "integer",
+            "nullable": True,
+        },
     },
 }

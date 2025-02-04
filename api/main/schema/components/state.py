@@ -82,6 +82,10 @@ state_get_properties = {
         "type": "boolean",
         "description": "Unique integer identifying the user who created this localization.",
     },
+    "effective_permission": {
+        "type": "integer",
+        "description": "Effective permission mask for the current user.",
+    },
 }
 
 state_spec = {

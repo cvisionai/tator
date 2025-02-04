@@ -16,6 +16,8 @@ from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema, LocalizationByElementalIdSchema
 from ..schema.components import localization as localization_schema
 
+from .._permission_util import augment_permission
+
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
@@ -519,7 +521,9 @@ class LocalizationDetailBaseAPI(BaseDetailView):
 
         return {
             "message": f"Localization {obj.elemental_id}@{obj.version.id}/{obj.mark} successfully updated!",
-            "object": type(obj).objects.filter(pk=obj.pk).values(*LOCALIZATION_PROPERTIES)[0],
+            "object": augment_permission(
+                self.request.user, type(obj).objects.filter(pk=obj.pk)
+            ).values(*LOCALIZATION_PROPERTIES)[0],
         }
 
     def delete_qs(self, params, qs):

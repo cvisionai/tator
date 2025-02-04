@@ -153,6 +153,7 @@ export class ProjectSettings extends TatorPage {
   updateProject(newType) {
     this._breadcrumbs.setAttribute("project-name", newType.data.name);
     this.setProjectPermission(newType.data.permission);
+    this._updateProject(newType.data); // call parent object method
   }
 
   /**

@@ -101,7 +101,7 @@ class PermalinkAPI(TatorAPIView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
-        qs = Media.objects.filter(pk=params["id"], deleted=False)
+        qs = self.get_queryset()
         if not qs.exists():
             raise Http404
         fields = [*MEDIA_PROPERTIES]
@@ -149,4 +149,6 @@ class PermalinkAPI(TatorAPIView):
         return process_exception(exc)
 
     def get_queryset(self):
-        return Media.objects.all()
+        media_qs = Media.objects.filter(pk=self.params["id"], deleted=False)
+        print(f"media_qs: {media_qs}")
+        return self.filter_only_viewables(media_qs)

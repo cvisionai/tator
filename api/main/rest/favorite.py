@@ -1,4 +1,5 @@
 """ Favorite REST endpoints """
+
 # pylint: disable=too-many-ancestors
 
 import logging

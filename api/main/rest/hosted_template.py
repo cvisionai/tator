@@ -4,6 +4,8 @@ import os
 from django.db import transaction
 from django.forms.models import model_to_dict
 from django.conf import settings
+from django.http import Http404
+
 from rest_framework.exceptions import PermissionDenied
 import yaml
 
@@ -25,7 +27,14 @@ from ..schema import parse
 logger = logging.getLogger(__name__)
 
 
-HOSTED_TEMPLATE_PROPERTIES = ["id", "name", "organization", "url", "tparams"]
+HOSTED_TEMPLATE_PROPERTIES = [
+    "id",
+    "name",
+    "organization",
+    "url",
+    "tparams",
+    "effective_permission",
+]
 
 
 class HostedTemplateListAPI(BaseListView):
@@ -51,27 +60,22 @@ class HostedTemplateListAPI(BaseListView):
         Returns the full database entries of registered hosted templates for the given organization
         """
         user = self.request.user
-        org_id = params["organization"]
-        affiliations = Affiliation.objects.filter(user=user, permission="Admin")
-        organization_ids = affiliations.values_list("organization", flat=True)
-        if org_id not in organization_ids:
-            raise PermissionDenied(
-                f"User {user} does not have Admin permissions for organization {org_id}"
-            )
-        return list(
-            HostedTemplate.objects.filter(organization__id=org_id).values(
-                *HOSTED_TEMPLATE_PROPERTIES
-            )
-        )
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
+            org_id = params["organization"]
+            affiliations = Affiliation.objects.filter(user=user, permission="Admin")
+            organization_ids = affiliations.values_list("organization", flat=True)
+            if org_id not in organization_ids:
+                raise PermissionDenied(
+                    f"User {user} does not have Admin permissions for organization {org_id}"
+                )
+        return list(self.get_queryset().values(*HOSTED_TEMPLATE_PROPERTIES))
 
     def get_queryset(self, **kwargs):
         """
         Returns a queryset of hosted templates
         """
         return self.filter_only_viewables(
-            HostedTemplate.objects.filter(organization__id=self.params["organization"]).values(
-                *HOSTED_TEMPLATE_PROPERTIES
-            )
+            HostedTemplate.objects.filter(organization__id=self.params["organization"])
         )
 
     def _post(self, params: dict) -> dict:
@@ -128,15 +132,18 @@ class HostedTemplateDetailAPI(BaseDetailView):
     def _get(self, params):
         """Retrieve the requested algortihm entry by ID"""
         user = self.request.user
-        hosted_template = HostedTemplate.objects.get(pk=params["id"])
-        org_id = hosted_template.organization.id
-        affiliations = Affiliation.objects.filter(user=user, permission="Admin")
-        organization_ids = affiliations.values_list("organization", flat=True)
-        if org_id not in organization_ids:
-            raise PermissionDenied(
-                f"User {user} does not have Admin permissions for organization {org_id}"
-            )
-        return model_to_dict(hosted_template, fields=HOSTED_TEMPLATE_PROPERTIES)
+        hosted_template_qs = self.get_queryset()
+        if hosted_template_qs.exists() == False:
+            raise Http404
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
+            org_id = hosted_template_qs[0].organization.id
+            affiliations = Affiliation.objects.filter(user=user, permission="Admin")
+            organization_ids = affiliations.values_list("organization", flat=True)
+            if org_id not in organization_ids:
+                raise PermissionDenied(
+                    f"User {user} does not have Admin permissions for organization {org_id}"
+                )
+        return hosted_template_qs.values(*HOSTED_TEMPLATE_PROPERTIES)[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:

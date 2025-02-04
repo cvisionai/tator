@@ -14,7 +14,10 @@ export class CanvasAppletWrapper extends TatorElement {
     super();
 
     this._applet = null; // Must call init()
-    this._lastFrameUpdate = -1; // Used to help determine if re-init is required
+
+    // Used to help determine if re-init is required
+    this._lastMediaId = null;
+    this._lastFrameUpdate = null;
   }
 
   /**
@@ -107,6 +110,47 @@ export class CanvasAppletWrapper extends TatorElement {
   async updateFrame(frame, blob) {
     this._lastFrameUpdate = frame;
     await this._appletElement.updateFrame(frame, blob);
+  }
+
+  /**
+   * @param {AnnotationMulti, AnnotationPlayer, or AnnotationImage} annotator
+   *    Annotation player pointer so that the applet can control the underyling video
+   */
+  async updateAnnotator(annotator) {
+    if (typeof this._appletElement.updateAnnotator === "function") {
+      await this._appletElement.updateAnnotator(annotator);
+    } else {
+      return;
+    }
+  }
+
+  /**
+   * @param {Tator.Media} media
+   * @returns Promise
+   */
+  async updateMedia(media) {
+    this._lastMediaId = media.id;
+    // This check exists to maintain backwards compatibility with applet deployments that
+    // don't have this function implemented.
+    if (typeof this._appletElement.updateMedia === "function") {
+      await this._appletElement.updateMedia(media);
+    } else {
+      return;
+    }
+  }
+
+  /**
+   * @param {AnnotationCanvas} canvas
+   *    Associated video/image canvas
+   */
+  async updateAnnotationCanvas(canvas) {
+    // This check exists to maintain backwards compatibility with applet deployments that
+    // don't have this function implemented.
+    if (typeof this._appletElement.updateAnnotationCanvas === "function") {
+      await this._appletElement.updateAnnotationCanvas(canvas);
+    } else {
+      return;
+    }
   }
 
   // #TODO

@@ -47,6 +47,7 @@ export class PermissionSettings extends TatorPage {
       (state) => state.selectedType,
       this._updateSelectedType.bind(this)
     );
+    store.subscribe((state) => state.project, this._updateProject.bind(this));
 
     // Init
     this._init();

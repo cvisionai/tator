@@ -96,10 +96,7 @@ export class SaveDialog extends TatorElement {
 
     this._attributes = document.createElement("attribute-panel");
     attrDiv.appendChild(this._attributes);
-    this._attributes.disableWidget("ID");
-    // this._attributes.disableWidget("Frame");
-    this._attributes.disableWidget("Elemental ID");
-    this._attributes.disableWidget("Mark");
+    this._attributes.displayFrameVersionOnly();
 
     this._attributes.addEventListener("change", () => {
       this._values = this._attributes.getValues();
@@ -138,6 +135,7 @@ export class SaveDialog extends TatorElement {
         id: -1,
         frame: this._requestObj.frame,
       });
+      this._attributes.setVersionInfo(this._version.name, this._version.id);
       this._values = this._attributes.getValues();
       if (this._values === null) {
         this._save.setAttribute("disabled", "");
@@ -185,7 +183,9 @@ export class SaveDialog extends TatorElement {
     this._undo = undo;
     this._version = version;
     this._favoritesData = favorites;
-    this._attributes._versionWidget.setValue(this._version.name);
+    this._attributes.setVersionInfo(this._version.name, this._version.id);
+    this._attributes._standardWidgetsDiv.classList.remove("mx-4");
+    this._attributes._standardWidgetsDiv.classList.add("mt-2");
 
     // Set choices on type selector.
     this._type.choices = dataTypes.map((type) => {
@@ -291,14 +291,14 @@ export class SaveDialog extends TatorElement {
 
   set version(val) {
     this._version = val;
-    this._attributes._versionWidget.setValue(this._version.name);
+    this._attributes.setVersionInfo(this._version.name, this._version.id);
   }
 
   // Used to dynamically update frame attribute
   updateFrame(val) {
     // Update the frame, set widget value
     this._frame = val;
-    this._attributes._frameWidget.setValue(this._frame);
+    this._attributes.setFrameInfo(this._frame);
 
     // Update _requestObj's frame (object used to save)
     if (this._requestObj) {
@@ -337,7 +337,7 @@ export class SaveDialog extends TatorElement {
     if (this._dataType.interpolation == "attr_style_range") {
       this._attributes.setFrameRange(val.frame, val.frame);
     }
-    this._attributes._frameWidget.setValue(val.frame);
+    this._attributes.setFrameInfo(val.frame);
   }
 
   addRecent(val) {
@@ -348,15 +348,44 @@ export class SaveDialog extends TatorElement {
     const dragDefined = typeof this._dragInfo !== "undefined";
     const canvasDefined = typeof this._canvasPosition !== "undefined";
     if (dragDefined && canvasDefined) {
-      const boxRight = Math.max(this._dragInfo.start.x, this._dragInfo.end.x);
-      let thisTop = this._canvasPosition.top;
-      let thisLeft = boxRight + 20 + this._canvasPosition.left;
+      if (window.MODE == "FULLSCREEN") {
+        const boxLeft =
+          Math.min(this._dragInfo.start.x, this._dragInfo.end.x) +
+          this._canvasPosition.left;
+        const boxRight =
+          Math.max(this._dragInfo.start.x, this._dragInfo.end.x) +
+          this._canvasPosition.left;
+        const boxTop =
+          Math.min(this._dragInfo.start.y, this._dragInfo.end.y) +
+          this._canvasPosition.top;
+        const boxBottom =
+          Math.max(this._dragInfo.start.y, this._dragInfo.end.y) +
+          this._canvasPosition.top;
+        const width = this.clientWidth;
+        const height = this.clientHeight;
+        if (boxRight + 20 + width < window.innerWidth) {
+          this.style.left = boxRight + 20 + "px";
+        } else if (boxLeft - 20 - width > 0) {
+          this.style.left = boxLeft - 20 - width + "px";
+        } else {
+          this.style.left = window.innerWidth - 20 - width + "px";
+        }
+        if (boxTop + height < window.innerHeight) {
+          this.style.top = boxTop + "px";
+        } else {
+          this.style.top = window.innerHeight - 20 - height + "px";
+        }
+      } else {
+        const boxRight = Math.max(this._dragInfo.start.x, this._dragInfo.end.x);
+        let thisTop = this._canvasPosition.top;
+        let thisLeft = boxRight + 20 + this._canvasPosition.left;
 
-      // Prevent being drawn off screen
-      thisTop = Math.max(thisTop, 50);
-      thisLeft = Math.max(thisLeft, 50);
-      this.style.top = thisTop + "px";
-      this.style.left = thisLeft + "px";
+        // Prevent being drawn off screen
+        thisTop = Math.max(thisTop, 50);
+        thisLeft = Math.max(thisLeft, 50);
+        this.style.top = thisTop + "px";
+        this.style.left = thisLeft + "px";
+      }
     }
   }
 

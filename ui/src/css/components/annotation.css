@@ -12,7 +12,7 @@
 
 .annotation-subheader-close {
   background-color: transparent;
-  border: none;
+  height: 24px;
 }
 .annotation-subheader-close:hover,
 .annotation-subheader-close:focus {
@@ -320,6 +320,25 @@ favorite-button {
 }
 .annotation__multi-player.is-full-screen .video__minimize {
   display: block;
+}
+
+.annotation__multi-resizer {
+  background-color: var(--color-blue-iris);
+  cursor: context-menu;
+  user-select: none;
+}
+
+.annotation__multi-resizer:hover {
+  background-color: var(--color-blue-irisAlt);
+}
+
+.annotation__multi-resizer-row {
+  height: 8px;
+  width: 100%;
+}
+
+.annotation__multi-resizer-column {
+  width: 8px;
 }
 
 .annotation__version-list {
@@ -647,4 +666,74 @@ annotation-player {
 .annotation-canvas-overlay-menu-option:focus {
   color: var(--color-white);
   background-color: var(--color-purple50);
+}
+
+.annotation-range-div {
+  -webkit-appearance: none;
+  border-radius: 3px;
+  height: 3px;
+  margin-top: 0px;
+  margin-bottom: 7px;
+  position: relative;
+  user-select: none;
+}
+
+.annotation-range-div:focus {
+  outline: none;
+}
+.annotation-range-div-active {
+  height: 10px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.annotation-range-loaded {
+  -webkit-appearance: none;
+  background-color: var(--color-gray--dark);
+  border-radius: 3px;
+  height: 100%;
+  position: absolute;
+  width: 0px;
+}
+.annotation-range-loaded:focus {
+  outline: none;
+}
+
+.annotation-range-ondemand {
+  -webkit-appearance: none;
+  background-color: var(--color-white--25);
+  border-radius: 3px;
+  height: 100%;
+  position: absolute;
+  width: 0px;
+}
+.annotation-range-ondemand:focus {
+  outline: none;
+}
+
+.annotation-range-handle {
+  -webkit-appearance: none;
+  height: 10px;
+  width: 10px;
+  z-index: 1;
+  position: absolute;
+  border-radius: 50%;
+  margin-top: -3.5px;
+  margin-left: -5px;
+  background-color: var(--color-white);
+}
+.annotation-range-handle:focus {
+  outline: none;
+}
+
+.annotation-range-handle-selected {
+  background-color: var(--color-gray--light);
+  border: var(--color-white);
+}
+
+.annotation-range-handle-active {
+  height: 20px;
+  width: 20px;
+  margin-top: -5.25px;
+  margin-left: -8.5px;
 }

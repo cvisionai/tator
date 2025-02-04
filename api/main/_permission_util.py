@@ -208,7 +208,7 @@ def augment_permission(user, qs):
             assert False, f"Unhandled model {model} (no permission logic for org/project)"
     else:
         # If an object doesn't exist, we can't annotate it
-        return qs
+        return qs.annotate(effective_permission=Value(0))
 
     if qs.query.low_mark != 0 or qs.query.high_mark is not None:
         # This is a slice, we need to get the full queryset to annotate + filter
@@ -473,15 +473,12 @@ def augment_permission(user, qs):
         #
         effected_sections = qs.values("primary_section__pk")
 
-        section_rp = RowProtection.objects.filter(section__in=effected_sections).filter(
-            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
-        )
-        section_rp = section_rp.annotate(
-            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
-        )
+        section_qs = Section.objects.filter(pk__in=effected_sections)
+        section_qs = augment_permission(user, section_qs)
+
         section_perm_dict = {
-            entry["section"]: (entry["calc_perm"] >> CHILD_SHIFT)
-            for entry in section_rp.values("section", "calc_perm")
+            entry["pk"]: (entry["effective_permission"] >> CHILD_SHIFT)
+            for entry in section_qs.values("pk", "effective_permission")
         }
         section_cases = [
             When(primary_section=section, then=Value(perm))
@@ -497,7 +494,6 @@ def augment_permission(user, qs):
     elif model in [Localization, State]:
         # For these models, we can use the section+version+project to determine permissions
         #
-
         if model == Localization:
             qs = qs.annotate(section=F("media__primary_section__pk"))
         elif model == State:
@@ -509,42 +505,32 @@ def augment_permission(user, qs):
         # Calculate a dictionary for permissions by section and version in this set
         effected_media = qs.values("media__pk")
         effected_sections = (
-            Section.objects.filter(project=project, media__in=effected_media)
+            Section.objects.filter(project=project, pk__in=qs.values("section"))
             .values("pk")
             .distinct()
         )
         effected_versions = qs.values("version__pk")
 
-        section_rp = RowProtection.objects.filter(section__in=effected_sections).filter(
-            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
-        )
-        section_rp = section_rp.annotate(
-            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
-        )
-        version_rp = RowProtection.objects.filter(version__in=effected_versions).filter(
-            Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
-        )
-        version_rp = version_rp.annotate(
-            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("version")])
-        )
+        # Calculate augmented permission which accounts for usage of default
+        # permission at either the section or version level (e.g. no RP)
+        section_qs = Section.objects.filter(pk__in=effected_sections)
+        section_qs = augment_permission(user, section_qs)
+        version_qs = Version.objects.filter(pk__in=effected_versions)
+        version_qs = augment_permission(user, version_qs)
 
+        # Make dicts and account for child shift of each type
+        # Versions direct child is metadata, but for sections is 2 shifts
         section_perm_dict = {
-            entry["section"]: (entry["calc_perm"] >> (CHILD_SHIFT * 2))
-            for entry in section_rp.values("section", "calc_perm")
+            entry["pk"]: (entry["effective_permission"] >> (CHILD_SHIFT * 2))
+            for entry in section_qs.values("pk", "effective_permission")
         }
         version_perm_dict = {
-            entry["version"]: (entry["calc_perm"] >> CHILD_SHIFT)
-            for entry in version_rp.values("version", "calc_perm")
+            entry["pk"]: (entry["effective_permission"] >> CHILD_SHIFT)
+            for entry in version_qs.values("pk", "effective_permission")
         }
 
-        section_cases = [
-            When(media__primary_section=section, then=Value(perm))
-            for section, perm in section_perm_dict.items()
-        ]
-        version_cases = [
-            When(version=version, then=Value(perm)) for version, perm in version_perm_dict.items()
-        ]
-
+        # Based on the sections and versions create a case match for each permutation
+        # in this resultset
         combo_cases = []
         for section, section_perm in section_perm_dict.items():
             for version, version_perm in version_perm_dict.items():
@@ -561,8 +547,6 @@ def augment_permission(user, qs):
         qs = qs.annotate(
             effective_permission=Case(
                 *combo_cases,  # Match intersections first
-                *section_cases,  # Then sections
-                *version_cases,  # Then versions
                 default=F("project_permission"),
                 output_field=BigIntegerField(),
             ),
@@ -649,3 +633,17 @@ class PermissionMask:
     # This level lets a user make sections they have full control over and eventually media upload priv
     # If bit 16 was 0, they could make sections, but ultimately not media due to project-level restriction (AND bitwise logic)
     CAN_MAKE_MEDIA_AND_SECTIONS = (CREATE | UPLOAD) << 16 | (CREATE) << 8 | (EXIST | READ | UPLOAD)
+
+
+# Utility function for checking bucket permissions against a user
+def check_bucket_permissions(user, bucket):
+    """raises an exception if user doesn't have access to work with the bucket"""
+    if os.getenv("TATOR_FINE_GRAIN_PERMISSION"):
+        bucket_aug = augment_permission(user, bucket)
+        if bucket_aug[0].effective_permission < 0x1:
+            raise ValueError(f"User {user.pk} does not have permission to bucket {bucket.pk}!")
+    else:
+        org = bucket.first().organization
+        affls = user.affiliation_set.filter(organization=org)
+        if not affls.exists():
+            raise ValueError(f"User {user.pk} does not have permission to bucket {bucket.pk}!")

@@ -50,16 +50,30 @@ export class ProjectDetail extends TatorPage {
 		this.createSidebarNav();
 		this.createLeftPanel();
 
-		//
-		// Central area of the page
-		//
-		this.main = document.createElement("main");
-		this.main.setAttribute("class", "d-flex flex-grow col-12 mr-3");
-		this.mainWrapper.appendChild(this.main);
+    //
+    // Central area of the page
+    //
+    this.main = document.createElement("main");
+    this.main.setAttribute("class", "d-flex flex-grow col-12 mr-3");
+    this.main.style.flexDirection = "column";
+    this.mainWrapper.appendChild(this.main);
 
-		this._mainSection = document.createElement("section");
-		this._mainSection.setAttribute("class", "py-3 px-3 ml-3 flex-grow");
-		this.main.appendChild(this._mainSection);
+    this._mainSection = document.createElement("section");
+    this._mainSection.setAttribute("class", "px-3 ml-3 flex-grow");
+    this._projHeaderDiv = document.createElement("div");
+    this._projHeaderDiv.setAttribute("class", "py-3 px-3 ml-3");
+    this._pageDiv = document.createElement("div");
+    this._pageDiv.setAttribute("class", "flex-grow");
+    this._appletDiv = document.createElement("div");
+    this._appletDiv.style.display = "none";
+    this._appletIframe = document.createElement("iframe");
+    this._appletIframe.style.width = "100%";
+    this._appletDiv.appendChild(this._appletIframe);
+    this.main.appendChild(this._projHeaderDiv);
+    this.main.appendChild(this._pageDiv);
+    this.main.appendChild(this._appletDiv);
+
+    this._pageDiv.appendChild(this._mainSection);
 
 		this.gallery = {};
 		this.gallery._main = this._mainSection;
@@ -67,9 +81,9 @@ export class ProjectDetail extends TatorPage {
 		const div = document.createElement("div");
 		this.gallery._main.appendChild(div);
 
-		const header = document.createElement("div");
-		header.setAttribute("class", "main__header d-flex flex-justify-between");
-		div.appendChild(header);
+    const header = document.createElement("div");
+    header.setAttribute("class", "main__header d-flex flex-justify-between");
+    this._projHeaderDiv.appendChild(header);
 
 		const headerWrapperDiv = document.createElement("div");
 		headerWrapperDiv.setAttribute("class", "d-flex flex-column");
@@ -368,12 +382,21 @@ export class ProjectDetail extends TatorPage {
 
 		this._sectionData = new SectionData();
 
-		// Create store subscriptions
-		store.subscribe((state) => state.user, this._setUser.bind(this));
-		store.subscribe(
-			(state) => state.announcements,
-			this._setAnnouncements.bind(this)
-		);
+    // Create store subscriptions
+    store.subscribe((state) => state.user, this._setUser.bind(this));
+    store.subscribe(
+      (state) => state.announcements,
+      this._setAnnouncements.bind(this)
+    );
+    store.subscribe((state) => state.project, this._updateProject.bind(this));
+
+    window.addEventListener("beforeunload", (evt) => {
+      if (this._uploadDialog.hasAttribute("is-open")) {
+        evt.preventDefault();
+        evt.returnValue = "";
+        window.alert("Uploads are in progress. Still leave?");
+      }
+    });
 
 		this._modalError.addEventListener("close", () => {
 			this._modalError.removeAttribute("is-open");
@@ -864,73 +887,115 @@ export class ProjectDetail extends TatorPage {
 		this._settingsButton.setAttribute("href", `/${projectId}/project-settings`);
 		this._activityNav.init(projectId);
 
-		// Get info about the project.
-		const projectPromise = fetchCredentials("/rest/Project/" + projectId);
-		const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
-		const bookmarkPromise = fetchCredentials("/rest/Bookmarks/" + projectId);
-		const algoPromise = fetchCredentials("/rest/Algorithms/" + projectId);
-		const mediaTypePromise = fetchCredentials("/rest/MediaTypes/" + projectId);
-		const membershipPromise = fetchCredentials(
-			"/rest/Memberships/" + projectId
-		);
-		const versionPromise = fetchCredentials("/rest/Versions/" + projectId);
+    // Get info about the project.
+    const projectPromise = fetchCredentials("/rest/Project/" + projectId);
+    const sectionPromise = fetchCredentials("/rest/Sections/" + projectId);
+    const bookmarkPromise = fetchCredentials("/rest/Bookmarks/" + projectId);
+    const algoPromise = fetchCredentials("/rest/Algorithms/" + projectId);
+    const mediaTypePromise = fetchCredentials("/rest/MediaTypes/" + projectId);
+    const membershipPromise = fetchCredentials(
+      "/rest/Memberships/" + projectId
+    );
+    const versionPromise = fetchCredentials("/rest/Versions/" + projectId);
+    const appletPromise = fetchCredentials("/rest/Applets/" + projectId);
 
-		// Run all above promises
-		Promise.all([
-			projectPromise,
-			sectionPromise,
-			bookmarkPromise,
-			algoPromise,
-			mediaTypePromise,
-			membershipPromise,
-			versionPromise,
-		])
-			.then(
-				([
-					projectResponse,
-					sectionResponse,
-					bookmarkResponse,
-					algoResponse,
-					mediaTypeResponse,
-					membershipResponse,
-					versionResponse,
-				]) => {
-					const projectData = projectResponse.json();
-					const sectionData = sectionResponse.json();
-					const bookmarkData = bookmarkResponse.json();
-					const algoData = algoResponse.json();
-					const mediaTypeData = mediaTypeResponse.json();
-					const membershipData = membershipResponse.json();
-					const versionData = versionResponse.json();
+    // Run all above promises
+    Promise.all([
+      projectPromise,
+      sectionPromise,
+      bookmarkPromise,
+      algoPromise,
+      mediaTypePromise,
+      membershipPromise,
+      versionPromise,
+      appletPromise,
+    ])
+      .then(
+        ([
+          projectResponse,
+          sectionResponse,
+          bookmarkResponse,
+          algoResponse,
+          mediaTypeResponse,
+          membershipResponse,
+          versionResponse,
+          appletResponse,
+        ]) => {
+          const projectData = projectResponse.json();
+          const sectionData = sectionResponse.json();
+          const bookmarkData = bookmarkResponse.json();
+          const algoData = algoResponse.json();
+          const mediaTypeData = mediaTypeResponse.json();
+          const membershipData = membershipResponse.json();
+          const versionData = versionResponse.json();
+          const appletData = appletResponse.json();
 
-					Promise.all([
-						projectData,
-						sectionData,
-						bookmarkData,
-						algoData,
-						mediaTypeData,
-						membershipData,
-						versionData,
-					])
-						.then(
-							async ([
-								project,
-								sections,
-								bookmarks,
-								algos,
-								mediaTypes,
-								memberships,
-								versions,
-							]) => {
-								// Save retrieved REST data
-								this._project = project;
-								this._sections = sections;
-								this._bookmarks = bookmarks;
-								this._mediaTypes = mediaTypes;
-								this._memberships = memberships;
-								this._versions = versions;
+          Promise.all([
+            projectData,
+            sectionData,
+            bookmarkData,
+            algoData,
+            mediaTypeData,
+            membershipData,
+            versionData,
+            appletData,
+          ])
+            .then(
+              async ([
+                project,
+                sections,
+                bookmarks,
+                algos,
+                mediaTypes,
+                memberships,
+                versions,
+                applets,
+              ]) => {
+                // Save retrieved REST data
+                this._project = project;
+                this._sections = sections;
+                this._bookmarks = bookmarks;
+                this._mediaTypes = mediaTypes;
+                this._memberships = memberships;
+                this._versions = versions;
+                this._applets = applets;
 
-								store.setState({ sections: this._sections });
+                store.setState({ sections: this._sections });
+
+                const searchParams = new URLSearchParams(
+                  window.location.search
+                );
+
+                // Hide all media if specified by project extension
+                if (project.extended_info.hideAllMedia) {
+                  this._allMediaButton.style.display = "none";
+                }
+
+                // Load page applet navigation elements
+                for (const applet of applets) {
+                  if (
+                    applet.categories &&
+                    applet.categories.includes("project-page")
+                  ) {
+                    let button = document.createElement("page-applet-item");
+                    button.init(applet);
+                    this._pageAppletButtons.push(button);
+                    this._libraryButtons.appendChild(button);
+
+                    // Handle selection
+                    button.addEventListener("selected", () => {
+                      this.selectApplet(button, applet);
+                    });
+
+                    if (
+                      project.extended_info.defaultProjectPage ===
+                        applet.name &&
+                      searchParams.has("section") === false
+                    ) {
+                      this.selectApplet(button, applet);
+                    }
+                  }
+                }
 
 								// Hide algorithms if needed from the project detail page.
 								// There are a standard list of algorithm names to hide as well as categories
@@ -1001,20 +1066,17 @@ export class ProjectDetail extends TatorPage {
 								this.makeBookmarks();
 								this.displayPanel("library");
 
-								// Pull URL search parameters.
-								// If there are search parameters, apply them to the filterView
-								const searchParams = new URLSearchParams(
-									window.location.search
-								);
-								if (searchParams.has("filterConditions")) {
-									this._filterURIString = searchParams.get("filterConditions");
-									this._filterConditions = JSON.parse(
-										decodeURIComponent(this._filterURIString)
-									);
-								} else {
-									this._filterConditions = [];
-									this._filterURIString = null;
-								}
+                // Pull URL search parameters.
+                // If there are search parameters, apply them to the filterView
+                if (searchParams.has("filterConditions")) {
+                  this._filterURIString = searchParams.get("filterConditions");
+                  this._filterConditions = JSON.parse(
+                    decodeURIComponent(this._filterURIString)
+                  );
+                } else {
+                  this._filterConditions = [];
+                  this._filterURIString = null;
+                }
 
 								// Setup the filter UI
 								this._modelData = new TatorData(projectId);
@@ -1032,22 +1094,23 @@ export class ProjectDetail extends TatorPage {
 								this._mediaSection._modelData = this._modelData;
 								this._mediaSection._files.memberships = this._memberships;
 
-								// Select the section if provided in the URL
-								// Also get the page information for the initial setup
-								var initPage = null;
-								if (searchParams.has("page")) {
-									initPage = Number(searchParams.get("page"));
-								}
-								var initPageSize = null;
-								if (searchParams.has("pagesize")) {
-									initPageSize = Number(searchParams.get("pagesize"));
-								}
-								if (searchParams.has("section")) {
-									const sectionId = Number(searchParams.get("section"));
-									this.selectSection(sectionId, initPage, initPageSize);
-								} else {
-									this.selectSection(null, initPage, initPageSize);
-								}
+                // Select the section if provided in the URL
+                // Also get the page information for the initial setup
+                var initPage = null;
+                if (searchParams.has("page")) {
+                  initPage = Number(searchParams.get("page"));
+                }
+                var initPageSize = null;
+                if (searchParams.has("pagesize")) {
+                  initPageSize = Number(searchParams.get("pagesize"));
+                }
+                if (searchParams.has("section")) {
+                  const sectionId = Number(searchParams.get("section"));
+                  this.selectSection(sectionId, initPage, initPageSize);
+                } else if (this._appletDiv.style.display == "none") {
+                  // Load section default if no applet is loaded already and no section was specified
+                  this.selectSection(null, initPage, initPageSize);
+                }
 
 								if (this._filterConditions.length > 0) {
 									this._updateFilterResults({
@@ -1698,22 +1761,52 @@ export class ProjectDetail extends TatorPage {
 		this.updateSearchesVisibility();
 	}
 
-	/**
-	 * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
-	 */
-	selectSection(sectionId, page, pageSize) {
-		// Make all folders and searhes inactive
-		const allFolders = [...this._folders.children];
-		for (const folder of allFolders) {
-			folder.setInactive();
-		}
+  makeAllInactive() {
+    const allFolders = [...this._folders.children];
+    for (const folder of allFolders) {
+      folder.setInactive();
+    }
 
 		const allSearches = [...this._savedSearches.children];
 		for (const search of allSearches) {
 			search.setInactive();
 		}
 
-		this._allMediaButton.setInactive();
+    this._allMediaButton.setInactive();
+
+    for (const pageAppletBtn of this._pageAppletButtons) {
+      pageAppletBtn.setInactive();
+    }
+  }
+
+  /**
+  @param {button} The button that triggered the event
+  @param {applet} The applet object to load in the iframe div
+  */
+  selectApplet(button, applet) {
+    this._selectedApplet = applet;
+    this._selectedSection = null;
+    this.updateURL();
+    this.makeAllInactive();
+    button.setActive();
+    this._pageDiv.style.display = "none";
+    this._appletDiv.style.display = null;
+    const boundingRect = this._appletDiv.getBoundingClientRect();
+    this._appletIframe.style.height = `calc(100vh - ${boundingRect.top + 5}px)`;
+    this._appletIframe.setAttribute("src", applet.html_file);
+  }
+  /**
+   * @param {integer} sectionId - Tator ID of section element. If null, then All Media is assumed
+   */
+  selectSection(sectionId, page, pageSize) {
+    this._selectedApplet = null;
+    if (this._appletDiv.style.display != "none") {
+      this._pageDiv.style.display = null;
+      this._appletDiv.style.display = "none";
+    }
+    // Make all folders and searhes inactive
+    const allFolders = [...this._folders.children];
+    this.makeAllInactive();
 
 		// Set the active folder or search and the mainSection portion of the page
 		this._selectedSection = null;
@@ -1728,22 +1821,23 @@ export class ProjectDetail extends TatorPage {
 				}
 			}
 
-			if (this._selectedSection == null) {
-				for (const search of allSearches) {
-					const section = search.getSection();
-					if (section.id == sectionId) {
-						search.setActive();
-						this._selectedSection = section;
-						this._sectionSearchDisplay.style.display = "flex";
-						this._sectionSearchDisplay.setDisplay(
-							this._selectedSection.object_search,
-							this._selectedSection.related_search
-						);
-						break;
-					}
-				}
-			}
-		}
+      if (this._selectedSection == null) {
+        const allSearches = [...this._savedSearches.children];
+        for (const search of allSearches) {
+          const section = search.getSection();
+          if (section.id == sectionId) {
+            search.setActive();
+            this._selectedSection = section;
+            this._sectionSearchDisplay.style.display = "flex";
+            this._sectionSearchDisplay.setDisplay(
+              this._selectedSection.object_search,
+              this._selectedSection.related_search
+            );
+            break;
+          }
+        }
+      }
+    }
 
 		if (this._selectedSection == null) {
 			this._allMediaButton.setActive();
@@ -1808,13 +1902,18 @@ export class ProjectDetail extends TatorPage {
 	updateURL() {
 		let url = new URL(window.location.href);
 
-		if (this._selectedSection !== null) {
-			url.searchParams.set("section", this._selectedSection.id);
-		} else {
-			url.searchParams.delete("section");
-		}
-		window.history.replaceState({}, "", url.toString());
-	}
+    if (this._selectedSection !== null) {
+      url.searchParams.set("section", this._selectedSection.id);
+    } else {
+      url.searchParams.delete("section");
+    }
+    if (this._selectedApplet !== null) {
+      url.searchParams.set("applet", this._selectedApplet.id);
+    } else {
+      url.searchParams.delete("applet");
+    }
+    window.history.replaceState({}, "", url.toString());
+  }
 
 	//
 	// Bookmark management
@@ -2060,8 +2159,12 @@ export class ProjectDetail extends TatorPage {
 		libraryText.textContent = "Library";
 		libraryHeader.appendChild(libraryText);
 
-		this._allMediaButton = document.createElement("all-media-item");
-		this._panelLibrary.appendChild(this._allMediaButton);
+    this._libraryButtons = document.createElement("div");
+    this._allMediaButton = document.createElement("all-media-item");
+    this._pageAppletButtons = [];
+
+    this._libraryButtons.appendChild(this._allMediaButton);
+    this._panelLibrary.appendChild(this._libraryButtons);
 
 		this._allMediaButton.addEventListener("selected", (evt) => {
 			this.selectSection(evt.detail.id);

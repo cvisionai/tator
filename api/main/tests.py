@@ -1141,21 +1141,74 @@ class PermissionListAffiliationTestMixin:
             rp.save()
 
     def test_list_is_a_member_permissions(self):
-        for index, level in enumerate(affiliation_levels):
-            affiliation = self.get_affiliation(self.organization, self.user)
-            affiliation.permission = level
-            affiliation.save()
-            if self.get_requires_admin and not (level == "Admin"):
-                expected_status = status.HTTP_403_FORBIDDEN
-            else:
-                expected_status = status.HTTP_200_OK
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp_admin = RowProtection.objects.get(
+                target_organization=self.organization, group__name=f"{self.organization.name} Admin"
+            )
+
+            rp_elements = []
+            old_perm_map = []
+            # Handle RP-specific to object(s) in question
+            if self.list_uri == "Buckets":
+                rp_elements = RowProtection.objects.filter(bucket__organization=self.organization)
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "JobClusters":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "HostedTemplates":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+
+            old_admin_perm = rp_admin.permission
+            # Attempt to get the list of entities when there is an admin affiliation
             url = f"/rest/{self.list_uri}/{self.organization.pk}"
             if hasattr(self, "entity_type"):
                 url += f"?type={self.entity_type.pk}"
             response = self.client.get(url)
-            assertResponse(self, response, expected_status)
-        affiliation.permission = "Admin"
-        affiliation.save()
+            assertResponse(self, response, 200)
+
+            rp_admin.permission = 0
+            rp_admin.save()
+            for rp in rp_elements:
+                rp.permission = 0
+                rp.save()
+
+            # Now verify we get 403
+            url = f"/rest/{self.list_uri}/{self.organization.pk}"
+            if hasattr(self, "entity_type"):
+                url += f"?type={self.entity_type.pk}"
+            response = self.client.get(url)
+            assertResponse(self, response, 403)
+
+            rp_admin.permission = old_admin_perm
+            rp_admin.save()
+
+            for rp, perm in old_perm_map:
+                rp.permission = perm
+                rp.save()
+        else:
+            for index, level in enumerate(affiliation_levels):
+                affiliation = self.get_affiliation(self.organization, self.user)
+                affiliation.permission = level
+                affiliation.save()
+                if self.get_requires_admin and not (level == "Admin"):
+                    expected_status = status.HTTP_403_FORBIDDEN
+                else:
+                    expected_status = status.HTTP_200_OK
+                url = f"/rest/{self.list_uri}/{self.organization.pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                assertResponse(self, response, expected_status)
+            affiliation.permission = "Admin"
+            affiliation.save()
 
 
 class PermissionDetailAffiliationTestMixin:
@@ -2178,6 +2231,7 @@ class FileMixin:
 
 class CurrentUserTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2302,6 +2356,7 @@ class CurrentUserTestCase(TatorTransactionTest):
 
 class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2369,6 +2424,7 @@ class AlgorithmLaunchTestCase(
 
 class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2386,6 +2442,7 @@ class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin)
 
 class AnonymousAccessTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.random_user = create_test_user()
@@ -2430,6 +2487,24 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         resource.media.add(self.private_video)
         resource.save()
 
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", 0) == "true":
+            everyone = Group.objects.create(name="everyone")
+            everyone.save()
+            GroupMembership.objects.create(user=self.anonymous_user, group=everyone).save()
+            GroupMembership.objects.create(user=self.user, group=everyone).save()
+            GroupMembership.objects.create(user=self.random_user, group=everyone).save()
+
+            internal = Group.objects.create(name="internal")
+            internal.save()
+            GroupMembership.objects.create(user=self.user, group=internal).save()
+
+            RowProtection.objects.create(
+                project=self.public_project, group=everyone, permission=PermissionMask.OLD_READ
+            ).save()
+            RowProtection.objects.create(
+                project=self.private_project, group=internal, permission=PermissionMask.OLD_READ
+            ).save()
+
     def test_random_user(self):
         """A random user should get access to public project but not the private project"""
         self.client.force_authenticate(self.random_user)
@@ -2472,6 +2547,7 @@ class VideoTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2964,6 +3040,7 @@ class ImageTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3116,6 +3193,7 @@ class LocalizationLineTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3200,6 +3278,7 @@ class LocalizationDotTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3282,6 +3361,7 @@ class LocalizationPolyTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3363,6 +3443,7 @@ class StateTestCase(
     AttributeRenameMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         # logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
@@ -3476,6 +3557,7 @@ class StateTestCase(
 
 class LocalizationMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3756,6 +3838,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
 
 class StateMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -3972,6 +4055,7 @@ class LeafTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4095,6 +4179,7 @@ class LeafTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4122,6 +4207,7 @@ class StateTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4169,6 +4255,7 @@ class MediaTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4212,6 +4299,7 @@ class LocalizationTypeTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4284,6 +4372,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
         TatorTransactionTest, PermissionListMembershipTestMixin, PermissionDetailTestMixin
     ):
         def setUp(self):
+            super().setUp()
             print(f"\n{self.__class__.__name__}=", end="", flush=True)
             logging.disable(logging.CRITICAL)
             self.user = create_test_user()
@@ -4307,6 +4396,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
 
 class ProjectTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4471,6 +4561,7 @@ class ProjectTestCase(TatorTransactionTest):
 
 class TranscodeTestCase(TatorTransactionTest, PermissionCreateTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4506,6 +4597,7 @@ class VersionTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4602,6 +4694,7 @@ class FavoriteStateTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -4651,6 +4744,7 @@ class FavoriteLocalizationTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4698,6 +4792,7 @@ class BookmarkTestCase(
     PermissionDetailTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4732,6 +4827,7 @@ class AffiliationTestCase(
     PermissionDetailAffiliationTestMixin,
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4765,6 +4861,7 @@ class AffiliationTestCase(
 
 class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTestMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user(is_staff=True)
@@ -4862,8 +4959,9 @@ class BucketTestCase(
     TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
 ):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -4910,6 +5008,7 @@ class BucketTestCase(
 
 class ImageFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4944,6 +5043,7 @@ class ImageFileTestCase(TatorTransactionTest, FileMixin):
 
 class VideoFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -4985,6 +5085,7 @@ class VideoFileTestCase(TatorTransactionTest, FileMixin):
 
 class AudioFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5013,6 +5114,7 @@ class AudioFileTestCase(TatorTransactionTest, FileMixin):
 
 class AuxiliaryFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5051,6 +5153,7 @@ class ResourceTestCase(TatorTransactionTest):
     }
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5618,6 +5721,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
     """This runs the same tests as `ResourceTestCase` but adds project-specific buckets"""
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5650,6 +5754,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
 
 class AttributeTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -5865,6 +5970,7 @@ class MutateAliasTestCase(TatorTransactionTest):
     """Tests alias mutation."""
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6029,7 +6135,9 @@ class MutateAliasTestCase(TatorTransactionTest):
     # TODO: write totally different test for geopos mutations (not supported in query string queries)
 
 
-class JobClusterTestCase(TatorTransactionTest):
+class JobClusterTestCase(
+    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+):
     @staticmethod
     def _random_job_cluster_spec():
         uid = str(uuid1())
@@ -6045,6 +6153,7 @@ class JobClusterTestCase(TatorTransactionTest):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6054,60 +6163,33 @@ class JobClusterTestCase(TatorTransactionTest):
         self.list_uri = "JobClusters"
         self.detail_uri = "JobCluster"
         self.create_json = self._random_job_cluster_spec()
+        self.patch_json = self._random_job_cluster_spec()
         self.entity = JobCluster(organization=self.organization, **self.create_json)
+        self.another_one = JobCluster(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_list_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_detail_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
 
-    def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
-
-class HostedTemplateTestCase(TatorTransactionTest):
+class HostedTemplateTestCase(
+    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+):
     @staticmethod
     def _hosted_template_spec():
         uid = str(uuid1())
@@ -6122,6 +6204,7 @@ class HostedTemplateTestCase(TatorTransactionTest):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6131,61 +6214,36 @@ class HostedTemplateTestCase(TatorTransactionTest):
         self.list_uri = "HostedTemplates"
         self.detail_uri = "HostedTemplate"
         self.create_json = self._hosted_template_spec()
+        self.patch_json = {
+            "name": "Updated name",
+            "url": "https://raw.githubusercontent.com/cvisionai/tator/main/doc/examples/workflow_template/echo.yaml",
+        }
         self.entity = HostedTemplate(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one = HostedTemplate(organization=self.organization, **self.create_json)
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
         affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_list_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_detail_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
 
 class UsernameTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         self.list_uri = "Users"
         self.detail_uri = "User"
 
@@ -6228,6 +6286,7 @@ class UsernameTestCase(TatorTransactionTest):
 
 class SectionTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -6409,29 +6468,6 @@ class SectionTestCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
-    def test_adv_error(self):
-        # create a bogus section object and try to filter on it to get an error
-        bad_section = Section.objects.create(project=self.project, name="Test", path="Foo.Test")
-
-        # check media filter reports an error when attempting to use this section
-        url = f"/rest/Medias/{self.project.pk}?section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        url = f"/rest/Medias/{self.project.pk}?multi_section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # check state filter reports an error when attempting to use this section
-        url = f"/rest/States/{self.project.pk}?section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # check localization too
-        url = f"/rest/Localizations/{self.project.pk}?section={bad_section.pk}"
-        response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_adv_sections(self):
         """
         Test case for performing advanced section operations.
@@ -6445,7 +6481,7 @@ class SectionTestCase(TatorTransactionTest):
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "explicit_listing": True,
+            "dtype": "folder",
             "media": [media.pk],
         }
         url = f"/rest/Sections/{self.project.pk}"
@@ -6457,7 +6493,7 @@ class SectionTestCase(TatorTransactionTest):
         def check_it(section, section_spec):
             self.assertEqual(section["name"], section_spec["name"])
             self.assertEqual(section["path"], section_spec["path"])
-            self.assertEqual(section["explicit_listing"], section_spec["explicit_listing"])
+            self.assertEqual(section["dtype"], section_spec["dtype"])
             self.assertEqual(section["media"], section_spec["media"])
             self.assertEqual(section["created_by"], self.user.pk)
 
@@ -6477,7 +6513,7 @@ class SectionTestCase(TatorTransactionTest):
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "explicit_listing": True,
+            "dtype": "folder",
             "media": [],
             "attributes": {"abcdef": False},
         }
@@ -6665,7 +6701,7 @@ class SectionTestCase(TatorTransactionTest):
             section_spec = {
                 "name": f"Test{x}",
                 "path": f"Foo.Test{x}",
-                "explicit_listing": True,
+                "dtype": "playlist",
                 "media": [media.pk],
             }
             url = f"/rest/Sections/{self.project.pk}"
@@ -6721,7 +6757,7 @@ class SectionTestCase(TatorTransactionTest):
             section_spec = {
                 "name": f"Test{r}",
                 "path": f"Foo.Test{r}",
-                "explicit_listing": True,
+                "dtype": "playlist",
                 "media": [lms[r].id],
             }
             url = f"/rest/Sections/{self.project.pk}"
@@ -6749,6 +6785,7 @@ class SectionTestCase(TatorTransactionTest):
 
 class AdvancedPermissionTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         # Add 9 users
         names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"]
@@ -6811,6 +6848,7 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
         self.baseline_version = create_test_version("baseline", "", 0, self.project, None)
         self.readonly_version = create_test_version("readonly", "", 0, self.project, None)
+        self.full_version = create_test_version("full", "", 0, self.project, None)
 
         # create test videos
         self.videos = [
@@ -6822,14 +6860,14 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         self.public_section = Section.objects.create(
             name="Public",
             path="Public",
-            explicit_listing=True,
+            dtype="folder",
             project=self.project,
         )
 
         self.private_section = Section.objects.create(
             name="Private",
             path="Private",
-            explicit_listing=True,
+            dtype="folder",
             project=self.project,
         )
 
@@ -6851,15 +6889,22 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
         # create a bunch of boxes
         for video in self.videos:
-            version = self.baseline_version
             for idx in range(10):
+                version = self.baseline_version
                 # Add every other box in the public section to the read-only version
                 if (
                     video.primary_section
                     and video.primary_section.pk == self.public_section.pk
-                    and idx % 2 == 0
+                    and idx % 3 == 0
                 ):
                     version = self.readonly_version
+                if (
+                    video.primary_section
+                    and video.primary_section.pk == self.public_section.pk
+                    and idx % 3 == 1
+                ):
+                    version = self.full_version
+
                 create_test_box(self.users[0], self.box_type, self.project, video, idx)
 
         # Make some files
@@ -6891,6 +6936,8 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
 
         # Add read/write permissions to the member group to public/private but not whole project
         # They can modify media / localizations but not the sections themselves
+        # Note: The user needs read/write on the version as well to modify localizations
+        # In this case, they have exist permission on `baseline`, `readonly` on readonly, and `full` on full.
         rp = RowProtection.objects.create(
             group=self.groups[1], section=self.public_section, permission=0x0F0F03
         )
@@ -6907,6 +6954,27 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
         rp = RowProtection.objects.create(
             group=self.groups[1], version=self.readonly_version, permission=0x0303
         )
+
+        # Add full permissions to the full version
+        rp = RowProtection.objects.create(
+            group=self.groups[1], version=self.full_version, permission=0x0F0F
+        )
+
+        # At this point we have 3 versions; with boxes in both public and private sections
+        # A user needs permission for both the section and version to modify or read a localization
+        # For the baseline version members have default project permissions due to no RP existing
+        # For read-only they have read only permission
+        # For full they have full permission
+        # Thus, members can modify localizations in public section on full.
+        #
+        #   Member permissions validated in the following code for metadata
+        #   *-----------*----------| -----------| --------|
+        #   |           | Baseline |  Read-only |  Full   |
+        #   | Private   |    X     |      X     |   X     |
+        #   | Public    |    X     |   R/O      | Full    |
+        #   *-----------*----------*------------*---------*
+        #
+        #   Admins have access to all
 
         # Give member group read/write permissions to all files
         for f in self.files:
@@ -7069,19 +7137,24 @@ class AdvancedPermissionTestCase(TatorTransactionTest):
                         if media_primary_section_pk == self.public_section.pk:
                             if localization.version.pk == self.readonly_version.pk:
                                 assert localization.effective_permission == 0x03
-                            else:
+                            elif localization.version.pk == self.full_version.pk:
                                 assert localization.effective_permission == 0x0F
+                            else:
+                                assert (
+                                    localization.effective_permission == 0x01
+                                )  # It's default project permission here
                         elif media_primary_section_pk == self.private_section.pk:
-                            assert localization.effective_permission == 0x0F
+                            assert localization.effective_permission == 0x01
                     else:
                         if media_primary_section_pk == self.public_section.pk:
-                            assert localization.effective_permission == 0x03
+                            assert localization.effective_permission == 0x01
                         else:
                             assert localization.effective_permission == 0x00
 
 
 class GroupTestCase(TatorTransactionTest):
     def setUp(self):
+        super().setUp()
         # Add 9 users
         logging.disable(logging.CRITICAL)
         names = ["Kirk", "Spock", "McCoy", "Scotty", "Uhura", "Sulu", "Chekov", "Picard", "Data"]
@@ -7183,6 +7256,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
     class RowProtectionTestCase(TatorTransactionTest):
         def setUp(self):
+            super().setUp()
             # Add 9 users from our previous
             logging.disable(logging.CRITICAL)
 
@@ -7255,7 +7329,8 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify behavior if you are Captain Kirk
             self.client.force_authenticate(user=self.kirk)
             resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
-            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
 
             # The commandant, who didn't steal the klingon ship and get demoted can see all row permissions
             self.client.force_authenticate(user=self.commandant)
@@ -7289,7 +7364,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Create a section
             resp = self.client.post(
                 f"/rest/Sections/{self.project.pk}",
-                {"name": "Bridge", "path": "Bridge", "explicit_listing": True},
+                {"name": "Bridge", "path": "Bridge", "dtype": "folder"},
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
@@ -7327,7 +7402,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Create a second section
             resp = self.client.post(
                 f"/rest/Sections/{self.project.pk}",
-                {"name": "Engineering", "path": "Engineering", "explicit_listing": True},
+                {"name": "Engineering", "path": "Engineering", "dtype": "folder"},
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
@@ -7347,6 +7422,19 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assertResponse(self, resp, status.HTTP_201_CREATED)
             media_id = resp.data["id"]
 
+            # Add a media to this section
+            resp = self.client.post(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "name": "Warp Core (Alternate)",
+                    "type": self.media_type.pk,
+                    "md5": "1234567",
+                    "section_id": section_id,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            media_id_alt = resp.data["id"]
             # Add red shirt to engineering
             # Post the row protection to the project
             resp = self.client.post(
@@ -7369,17 +7457,19 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Fetch all the media for the project as kirk
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
             assertResponse(self, resp, status.HTTP_200_OK)
-            self.assertEqual(len(resp.data), 2)
+            self.assertEqual(len(resp.data), 3)
 
             # Now switch to the redshift and verify they can only see the engineering section
+            # (Both the warp core and warp core alternate)
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
             assertResponse(self, resp, status.HTTP_200_OK)
-            self.assertEqual(len(resp.data), 1)
+            self.assertEqual(len(resp.data), 2)
 
             # redshirt cannot get row protections for engineering
             resp = self.client.get(f"/rest/RowProtections?section={section_id}")
-            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
 
             # Go back to kirk
             self.client.force_authenticate(user=self.kirk)
@@ -7440,17 +7530,23 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
                 f"/rest/States/{self.project.pk}",
                 {
                     "type": self.state_type.pk,
-                    "media_ids": [media_id],
+                    "media_ids": [media_id, media_id_alt],
                     "version": self.captains_log.pk,
                     "frame": 0,
                 },
                 format="json",
             )
             assertResponse(self, resp, status.HTTP_201_CREATED)
+            state_id = resp.data["id"][0]
             # Assert we get two States from Kirk's permission
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
+
+            # Verify we can fetch the created state
+            resp = self.client.get(f"/rest/State/{state_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(resp.data["id"], state_id)
 
             # Switch back to the red shirt and verify we get 1 localization and 1 state
             self.client.force_authenticate(user=self.red_shirt)
@@ -7491,7 +7587,6 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             rp = RowProtection.objects.get(pk=rp_id)
             self.assertEqual(rp.permission, 0)
 
-     
             # Now switch to the commandant and verify there is no permission
             self.client.force_authenticate(user=self.commandant)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")

@@ -9,7 +9,7 @@ media_type_properties = {
         "default": "",
     },
     "dtype": {
-        "description": "Type of the media, image or video.",
+        "description": "Type of the media.",
         "type": "string",
         "enum": ["image", "video", "multi", "live"],
     },
@@ -67,6 +67,10 @@ media_type_properties = {
         "description": "The elemental ID of the object.",
         "type": "string",
         "nullable": True,
+    },
+    "effective_permission": {
+        "type": "integer",
+        "description": "Effective permission mask for this entity.",
     },
 }
 

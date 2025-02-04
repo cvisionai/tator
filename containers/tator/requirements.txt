@@ -4,7 +4,7 @@ certifi==2024.7.4
 cryptography==43.0.1
 datadog==0.49.1
 ddtrace==2.7.4
-django==4.2.17
+django==4.2.18
 django_admin_json_editor==0.2.3
 django-cognito-jwt==0.0.4
 django-enumfields==2.1.1
@@ -20,7 +20,7 @@ gunicorn==22.0.0
 hiredis==2.3.2
 imageio==2.34.0
 inflection==0.5.1
-jinja2==3.1.4
+jinja2==3.1.5
 jsonschema==4.22.0
 kubernetes==29.0.0
 markdown==3.6
@@ -37,6 +37,7 @@ pyjwt[crypto]==2.5.0
 pytest-django==4.8.0
 pytest-xdist==3.5.0
 python-dateutil==2.8.2
+python-magic==0.4.27
 pyyaml==6.0.1
 rawpy==0.19.1
 redis==5.0.3

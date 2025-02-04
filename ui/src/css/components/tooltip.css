@@ -18,7 +18,7 @@
 }
 
 .tooltip-seek-preview {
-  background-color: var(--color-charcoal--medium);
+  background-color: var(--color-charcoal--medium-dark);
   border-radius: 3px;
   color: var(--color-gray--dark);
   font-size: 12px;
@@ -26,13 +26,10 @@
   padding: var(--spacing-2);
   pointer-events: none;
   position: absolute;
-  top: calc(100% + 16px);
   width: auto;
-  max-width: 400px;
-  z-index: 1;
+  z-index: 3;
 }
 .tooltip-seek-preview img {
-  max-width: 200px;
 }
 
 [tooltip] {

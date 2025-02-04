@@ -1,4 +1,5 @@
 """ TODO: add documentation for this """
+
 import logging
 from urllib import parse as urllib_parse
 
@@ -20,7 +21,6 @@ from ._attribute_query import (
     get_attribute_psql_queryset,
     get_attribute_psql_queryset_from_query_obj,
     supplied_name_to_field,
-    _look_for_section_uuid,
 )
 
 logger = logging.getLogger(__name__)
@@ -184,23 +184,22 @@ def _get_media_psql_queryset(project, filter_ops, params):
         if not section.exists():
             raise Http404
 
-        section_uuid = section[0].tator_user_sections
-
-        if section[0].explicit_listing:
+        if section[0].dtype == "playlist":
             qs = qs.filter(pk__in=section[0].media.all())
-        elif section_uuid:
-            qs = _look_for_section_uuid(qs, section_uuid)
-        elif section[0].object_search:
-            qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+        elif section[0].dtype == "folder":
+            qs = qs.filter(primary_section=section[0].pk)
+        elif section[0].dtype == "saved_search":
+            if section[0].object_search:
+                qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
 
-        elif section[0].related_object_search:
-            qs = _related_search(
-                qs,
-                project,
-                relevant_state_type_ids,
-                relevant_localization_type_ids,
-                section[0].related_object_search,
-            )
+            elif section[0].related_object_search:
+                qs = _related_search(
+                    qs,
+                    project,
+                    relevant_state_type_ids,
+                    relevant_localization_type_ids,
+                    section[0].related_object_search,
+                )
         else:
             raise ValueError(f"Invalid Section value pk={section_id}")
 
@@ -209,12 +208,11 @@ def _get_media_psql_queryset(project, filter_ops, params):
         match_list = []
         for section in sections:
             match_qs = qs.filter(pk=-1)
-            section_uuid = section.tator_user_sections
 
-            if section.explicit_listing:
+            if section.dtype == "playlist":
                 match_qs = qs.filter(pk__in=section.media.all())
-            elif section_uuid:
-                match_qs = _look_for_section_uuid(qs, section_uuid)
+            elif section.dtype == "folder":
+                match_qs = qs.filter(primary_section=section.pk)
 
             elif section.object_search:
                 match_qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)

@@ -5,11 +5,11 @@ export class SeekBar extends TatorElement {
   constructor() {
     super();
     this.bar = document.createElement("div");
-    this.bar.setAttribute("class", "range-div select-pointer");
+    this.bar.setAttribute("class", "annotation-range-div select-pointer");
     this._shadow.appendChild(this.bar);
 
     this.handle = document.createElement("div");
-    this.handle.setAttribute("class", "range-handle");
+    this.handle.setAttribute("class", "annotation-range-handle");
     this.handle.setAttribute("tabindex", "0");
     this.handle.style.cursor = "pointer";
     this.bar.appendChild(this.handle);
@@ -47,6 +47,8 @@ export class SeekBar extends TatorElement {
     this.bar.addEventListener("click", clickHandler);
 
     var mouseOver = (evt) => {
+      this.bar.classList.add("annotation-range-div-active");
+      this.handle.classList.add("annotation-range-handle-active");
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
       if (width == 0) {
@@ -58,36 +60,27 @@ export class SeekBar extends TatorElement {
         percentage * (that._max - that._min) + that._min
       );
 
-      if (proposed_value > 0) {
-        if (this._timeMode == "utc") {
-          let timeStr =
-            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
-          timeStr = timeStr.split("T")[1].split(".")[0];
-
-          this.preview.info = {
+      this.dispatchEvent(
+        new CustomEvent("framePreview", {
+          composed: true,
+          detail: {
             frame: proposed_value,
-            margin: evt.clientX - startX,
-            time: timeStr,
-          };
-        } else {
-          this.preview.info = {
-            frame: proposed_value,
-            margin: evt.clientX - startX,
-            time: frameToTime(proposed_value, this._fps),
-          };
-        }
-      } else {
-        this.preview.hide();
-      }
-
+            clientX: evt.clientX,
+            clientY: evt.clientY,
+          },
+        })
+      );
       evt.stopPropagation();
       return false;
     };
-    this.preview = document.createElement("media-seek-preview");
-    this.bar.appendChild(this.preview);
+
     this.bar.addEventListener("mousemove", mouseOver);
     this.bar.addEventListener("mouseout", () => {
-      this.preview.hide();
+      this.dispatchEvent(new CustomEvent("hidePreview", { composed: true }));
+      if (this._active == false) {
+        this.bar.classList.remove("annotation-range-div-active");
+        this.handle.classList.remove("annotation-range-handle-active");
+      }
     });
 
     var dragHandler = function (evt) {
@@ -114,13 +107,15 @@ export class SeekBar extends TatorElement {
     var releaseMouse = (evt) => {
       this.bar.addEventListener("mousemove", mouseOver);
       that.bar.removeAttribute("wide-tooltip");
+      this.bar.classList.remove("annotation-range-div-active");
+      this.handle.classList.remove("annotation-range-handle-active");
       console.info("RELEASE MOUSE.");
       this._active = false;
       clearInterval(that._periodicCheck);
       document.removeEventListener("mouseup", releaseMouse);
       document.removeEventListener("mousemove", dragHandler);
       that.dispatchEvent(new CustomEvent("change", { composed: true }));
-      that.handle.classList.remove("range-handle-selected");
+      that.handle.classList.remove("annotation-range-handle-selected");
       // Add back in event handler next iteration (time=0)
       setTimeout(() => {
         that.bar.addEventListener("click", clickHandler);
@@ -130,7 +125,9 @@ export class SeekBar extends TatorElement {
       if (this._disabled == true) {
         return;
       }
-      this.preview.hide();
+      this.dispatchEvent(new CustomEvent("hidePreview", { composed: true }));
+      this.bar.classList.add("annotation-range-div-active");
+      this.handle.classList.add("annotation-range-handle-active");
       this.bar.removeEventListener("mousemove", mouseOver);
       this._active = true;
       this._lastValue = this.value;
@@ -155,15 +152,15 @@ export class SeekBar extends TatorElement {
       that.bar.removeEventListener("click", clickHandler);
       document.addEventListener("mouseup", releaseMouse);
       document.addEventListener("mousemove", dragHandler);
-      this.handle.classList.add("range-handle-selected");
+      this.handle.classList.add("annotation-range-handle-selected");
       evt.stopPropagation();
       return false;
     });
 
     this.loadProgress = document.createElement("div");
-    this.loadProgress.setAttribute("class", "range-loaded");
+    this.loadProgress.setAttribute("class", "annotation-range-loaded");
     this.onDemandProgress = document.createElement("div");
-    this.onDemandProgress.setAttribute("class", "range-ondemand");
+    this.onDemandProgress.setAttribute("class", "annotation-range-ondemand");
     this.bar.appendChild(this.loadProgress);
     this.bar.appendChild(this.onDemandProgress);
 
@@ -231,15 +228,6 @@ export class SeekBar extends TatorElement {
     return this._value;
   }
 
-  useUtcTime(timeStore) {
-    this._timeStore = timeStore;
-    this._timeMode = "utc";
-  }
-
-  useRelativeTime() {
-    this._timeMode = "relative";
-  }
-
   setPair(other) {
     // Link up twin sliders
     this._pair = other;
@@ -264,7 +252,7 @@ export class SeekBar extends TatorElement {
     const start = range[0];
     const end = range[1];
     const startPercentage = start / this._max;
-    const endPercentage = end / this._max;
+    const endPercentage = Math.min(1, end / this._max);
     this.onDemandProgress.style.marginLeft = `${startPercentage * 100}%`;
     const widthPx = Math.round(
       (endPercentage - startPercentage) * this.bar.clientWidth

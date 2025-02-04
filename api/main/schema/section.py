@@ -76,7 +76,7 @@ class SectionListSchema(AutoSchema):
             long_desc = ""
         elif method == "POST":
             short_desc = "Create section."
-            long_desc = "Note: In order for a section to be interpreted properly, the tator_user_sections attribute of the SectionSpec cannot be None. The front end assigns a uuid1 string for this attribute, but it is not required to follow this pattern."
+            long_desc = "The `dtype` parameter determines the behavior of the section. If `dtype` is `folder`, membership is determined by the `primary_section` field on media. If `dtype` is `playlist`, membership is determined by the `media` field in the section. If `dtype` is `saved_search`, membership is determined by `object_search`, or `related_object_search` if `object_search` is not set."
         elif method == "PATCH":
             short_desc = "Update section list."
             long_desc = dedent(

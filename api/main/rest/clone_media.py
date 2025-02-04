@@ -40,6 +40,7 @@ class CloneMediaListAPI(BaseListView):
             new_obj.type = MediaType.objects.get(pk=dest_type)
             if section:
                 new_obj.attributes["tator_user_sections"] = section.tator_user_sections
+                new_obj.primary_section = section
             yield new_obj
 
     def _post(self, params):
@@ -70,9 +71,12 @@ class CloneMediaListAPI(BaseListView):
         # Look for destination section, if given.
         section = None
         if params.get("dest_section"):
-            sections = Section.objects.filter(project=dest, name__iexact=params["dest_section"])
+            sections = Section.objects.filter(
+                project=dest, name__iexact=params["dest_section"], dtype="folder"
+            )
             if sections.count() == 0:
                 section = Section.objects.create(
+                    dtype="folder",
                     project=Project.objects.get(pk=dest),
                     name=params["dest_section"],
                     tator_user_sections=str(uuid1()),

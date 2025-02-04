@@ -256,21 +256,25 @@ def _create_media(project, params, user, use_rq=False):
 
     # If section does not exist and is not an empty string, create a section.
     tator_user_sections = ""
+    section_obj = None
     if section_id:
-        section_obj = Section.objects.filter(project=project, pk=section_id)
+        section_obj = Section.objects.filter(project=project, pk=section_id, dtype="folder")
         if not section_obj.exists():
-            raise ValueError(f"Section with ID {section_id} does not exist")
+            raise ValueError(f"Folder with ID {section_id} does not exist")
         section_obj = section_obj[0]
         tator_user_sections = section_obj.tator_user_sections
     elif section:
-        section_obj = Section.objects.filter(project=project, name__iexact=section)
+        section_obj = Section.objects.filter(project=project, name__iexact=section, dtype="folder")
         if section_obj.exists():
             tator_user_sections = section_obj[0].tator_user_sections
             section_obj = section_obj[0]
         else:
             tator_user_sections = str(uuid1())
             section_obj = Section.objects.create(
-                project=project_obj, name=section, tator_user_sections=tator_user_sections
+                project=project_obj,
+                name=section,
+                tator_user_sections=tator_user_sections,
+                dtype="folder",
             )
 
     # Get the media type.
@@ -469,7 +473,7 @@ class MediaListAPI(BaseListView):
                 project, media_spec_list[0], self.request.user, use_rq=True
             )
             qs = Media.objects.filter(id=obj.id)
-            response_data = list(qs.values(*fields))
+            response_data = list(augment_permission(self.request.user, qs).values(*fields))
             response_data = response_data if received_spec_list else response_data[0]
             id_resp = [obj.id] if received_spec_list else obj.id
             response = {"message": msg, "id": id_resp, "object": response_data}
@@ -488,7 +492,7 @@ class MediaListAPI(BaseListView):
                     ids.append(obj.id)
 
             qs = Media.objects.filter(id__in=set(ids))
-            response_data = list(qs.values(*fields))
+            response_data = list(augment_permission(self.request.user, qs).values(*fields))
             response = {
                 "message": f"Started import of {len(ids)} images!",
                 "id": ids,
@@ -922,4 +926,4 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
-        return Media.objects.filter(pk=self.params["id"], deleted=False)
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))
