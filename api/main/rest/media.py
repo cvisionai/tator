@@ -555,13 +555,20 @@ class MediaListAPI(BaseListView):
             # Get the current representation of the object for comparison
             obj = qs.first()
             new_attrs = validate_attributes(params, obj)
-            update_kwargs = None
+            update_kwargs = {}
             if params.get("user_elemental_id", None):
                 computed_author = compute_user(
                     params["project"], self.request.user, params.get("user_elemental_id", None)
                 )
-                update_kwargs = {"created_by": computed_author}
-            if new_attrs is not None or update_kwargs is not None:
+                update_kwargs["created_by"] = computed_author
+            if params.get("primary_section", None):
+                section = Section.objects.filter(
+                    project=params["project"], pk=params["primary_section"]
+                )
+                if not section.exists():
+                    raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
+                update_kwargs["primary_section"] = section[0]
+            if new_attrs is not None or update_kwargs != {}:
                 attr_count = len(ids_to_update)
                 bulk_update_and_log_changes(
                     qs,
@@ -720,6 +727,14 @@ class MediaDetailAPI(BaseDetailView):
 
             if "elemental_id" in params:
                 qs.update(elemental_id=params["elemental_id"])
+
+            if "primary_section" in params:
+                section = Section.objects.filter(
+                    project=media.project, pk=params["primary_section"]
+                )
+                if not section.exists():
+                    raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
+                qs.update(primary_section=section[0])
 
             if "multi" in params:
                 media_files = media.media_files
