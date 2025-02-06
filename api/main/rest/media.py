@@ -589,12 +589,15 @@ class MediaListAPI(BaseListView):
                 )
                 update_kwargs["created_by"] = computed_author
             if params.get("primary_section", None):
-                section = Section.objects.filter(
-                    project=params["project"], pk=params["primary_section"]
-                )
-                if not section.exists():
-                    raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
-                update_kwargs["primary_section"] = section[0]
+                if params["primary_section"] < 0:
+                    update_kwargs["primary_section"] = None
+                else:
+                    section = Section.objects.filter(
+                        project=params["project"], pk=params["primary_section"]
+                    )
+                    if not section.exists():
+                        raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
+                    update_kwargs["primary_section"] = section[0]
             if new_attrs is not None or update_kwargs != {}:
                 attr_count = len(ids_to_update)
                 bulk_update_and_log_changes(
@@ -795,12 +798,15 @@ class MediaDetailAPI(BaseDetailView):
                 qs.update(elemental_id=params["elemental_id"])
 
             if "primary_section" in params:
-                section = Section.objects.filter(
-                    project=media.project, pk=params["primary_section"]
-                )
-                if not section.exists():
-                    raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
-                qs.update(primary_section=section[0])
+                if params["primary_section"] < 0:
+                    qs.update(primary_section=None)
+                else:
+                    section = Section.objects.filter(
+                        project=media.project, pk=params["primary_section"]
+                    )
+                    if not section.exists():
+                        raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
+                    qs.update(primary_section=section[0])
 
             if "multi" in params:
                 media_files = media.media_files
