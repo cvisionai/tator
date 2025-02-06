@@ -792,19 +792,13 @@ export class ProjectDetail extends TatorPage {
 
       var destTatorUserSections = "";
       var section = null;
-      if (evt.detail.destSectionId != null) {
-        section = this._sectionData.getSectionFromID(evt.detail.destSectionId);
-        destTatorUserSections = section.tator_user_sections;
-      }
 
       var response = await fetchCredentials(
         `/rest/Medias/${this._projectId}?media_id=${evt.detail.mediaIds}`,
         {
           method: "PATCH",
           body: JSON.stringify({
-            attributes: {
-              tator_user_sections: destTatorUserSections,
-            },
+            primary_section: evt.detail.destSectionId,
           }),
         }
       );

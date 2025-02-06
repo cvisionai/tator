@@ -1976,8 +1976,8 @@ class MainPage extends TatorPage {
                   media_list.push(mediaData);
                   for (const section of this._utils._sections) {
                     if (
-                      section.tator_user_sections ==
-                      mediaData.attributes["tator_user_sections"]
+                      section.id ==
+                      mediaData.primary_section
                     ) {
                       section_ids.push(section.id);
                       section_names.push(section.name);
@@ -1996,8 +1996,8 @@ class MainPage extends TatorPage {
                 media_list.push(mediaData);
                 for (const section of this._utils._sections) {
                   if (
-                    section.tator_user_sections ==
-                    mediaData.attributes["tator_user_sections"]
+                    section.id ==
+                    mediaData.primary_section
                   ) {
                     section_ids.push(section.id);
                     section_names.push(section.name);
@@ -2011,8 +2011,8 @@ class MainPage extends TatorPage {
         } else {
           for (const section of this._utils._sections) {
             if (
-              section.tator_user_sections ==
-              data.attributes["tator_user_sections"]
+              section.id ==
+              data.primary_section
             ) {
               section_ids.push(section.id);
               section_names.push(section.name);
@@ -2125,8 +2125,8 @@ class MainPage extends TatorPage {
           }
           for (const section of this._utils._sections) {
             if (
-              section.tator_user_sections ==
-              media.attributes["tator_user_sections"]
+              section.id ==
+              media.primary_section
             ) {
               media_section = section;
               break;
