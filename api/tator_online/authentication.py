@@ -4,6 +4,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 import jwt
 from jwt.algorithms import RSAAlgorithm
+import traceback
 import requests
 import json
 
