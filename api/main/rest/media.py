@@ -533,9 +533,10 @@ class MediaListAPI(BaseListView):
             and params.get("user_elemental_id") == None
             and params.get("reset_attributes") is None
             and params.get("null_attributes") is None
+            and params.get("primary_section") is None
         ):
             raise ValueError(
-                "Must specify 'attributes', 'reset_attributes', 'null_attributes', 'user_elemental_id',"
+                "Must specify 'attributes', 'reset_attributes', 'null_attributes', 'user_elemental_id', 'primary_section'"
                 " and/or property to patch, but none found"
             )
         qs = get_media_queryset(params["project"], params)
