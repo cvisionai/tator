@@ -377,7 +377,6 @@ export class SectionListItem extends TatorElement {
 
     this._detailsDiv.innerHTML = `
     <div><span class="text-semibold text-gray col-8">path:</span> ${section.path}</div>
-    <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
     `;
     if (section.object_search != null) {
       this._detailsDiv.innerHTML += `
