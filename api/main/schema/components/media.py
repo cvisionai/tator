@@ -27,7 +27,7 @@ media_properties = {
         "nullable": True,
     },
     "primary_section": {
-        "description": "Unique ID for folder section containing this media, if any.",
+        "description": "Unique ID for folder section containing this media, if any. When patching, use -1 to indicate no section.",
         "type": "integer",
     },
 }
