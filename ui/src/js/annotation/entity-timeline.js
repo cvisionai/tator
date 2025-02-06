@@ -989,7 +989,6 @@ export class EntityTimeline extends BaseTimeline {
       .selectAll("use")
       .join("use")
       .attr("opacity", (d) => (d.name === selectedName ? "0.7" : "0.4"))
-      .attr("stroke", (d) => (d.name === selectedName ? "#fafafa" : d.color))
       .attr("stroke-width", (d) => (d.name === selectedName ? 1.5 : 0.5))
       .style("stroke-dasharray", (d) =>
         d.name === selectedName ? null : "1, 2"
