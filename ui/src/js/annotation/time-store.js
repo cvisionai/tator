@@ -156,9 +156,10 @@ export class TimeStore {
    * Gets the absolute time from the given global frame.
    *
    * @param {integer} globalFrame
+   * @param {string} format (iso or utc)
    * @return {string} Provided frame represented as an isostring in absolute time
    */
-  getAbsoluteTimeFromFrame(globalFrame) {
+  getAbsoluteTimeFromFrame(globalFrame, format="iso") {
     if (!this.utcEnabled()) {
       console.error("getAbsoluteTimeFromFrame(): UTC is not enabled.");
       return;
@@ -175,7 +176,11 @@ export class TimeStore {
     thisDate.setUTCMilliseconds(msFromEpoch);
 
     // Return the isostring
-    return thisDate.toISOString();
+    if (format=="iso") {
+      return thisDate.toISOString();
+    } else if (format=="utc") {
+      return thisDate.toUTCString();
+    }
   }
 
   /**

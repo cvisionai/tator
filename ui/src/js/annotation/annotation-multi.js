@@ -515,10 +515,57 @@ export class AnnotationMulti extends TatorElement {
     frameDiv.appendChild(frameNext);
     this._frameNext = frameNext;
 
+    this._utcBtn = document.createElement("button");
+    this._utcBtn.setAttribute(
+      "class",
+      "btn btn-small-height btn-fit-content btn-clear btn-outline text-gray f3 text-semibold px-2"
+    );
+    this._utcBtn.textContent = "UTC";
+    this._utcBtn.style.marginLeft = "10px";
+    playButtons.appendChild(this._utcBtn);
+
+    this._utcDiv = document.createElement("div");
+    this._utcDiv.setAttribute(
+      "class",
+      "annotation-canvas-overlay-menu d-flex flex-row flex-items-center flex-justify-between rounded-1"
+    );
+    this._utcDiv.style.display = "none";
+    this._shadow.appendChild(this._utcDiv);
+
     this._utcLabel = document.createElement("span");
     this._utcLabel.setAttribute("class", "f2 text-center text-gray px-2");
     this._utcLabel.textContent = "N/A";
-    playButtons.appendChild(this._utcLabel);
+    this._utcDiv.appendChild(this._utcLabel);
+
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
+      "Copy UTC",
+      "copy-utc-btn"
+    );
+    btn._button.classList.remove("px-2");
+    this._utcDiv.appendChild(btn);
+    btn.addEventListener("click", () => {
+      const frame = Number(this._currentFrameText.textContent)
+      const isoTimeStr = this._timeStore.getAbsoluteTimeFromFrame(frame);
+      navigator.clipboard.writeText(isoTimeStr).then(() => {
+        Utilities.showSuccessIcon("Copied ISO format UTC time to clipboard!");
+      });
+    });
+
+    this._utcBtn.addEventListener("click", () => {
+      this._utcBtn.blur();
+      var pos = this._utcBtn.getBoundingClientRect();
+      this._utcDiv.style.top = `${pos.top - 60}px`;
+      this._utcDiv.style.left = `${pos.left - 60}px`;
+      if (this._utcDiv.style.display == "flex") {
+        this._hideCanvasMenus();
+        this._utcDiv.style.display = "none";
+      } else {
+        this._hideCanvasMenus();
+        this._utcDiv.style.display = "flex";
+      }
+    });
 
     this._volume_control = document.createElement("volume-control");
     settingsDiv.appendChild(this._volume_control);
@@ -1303,7 +1350,7 @@ export class AnnotationMulti extends TatorElement {
 
     this._timeStore = new TimeStore(this._mediaInfo, this.mediaType);
     if (!this._timeStore.utcEnabled()) {
-      this._utcLabel.style.display = "none";
+      this._utcBtn.style.display = "none";
       this._timelineUnitsUTC.style.display = "none";
     }
 
@@ -1472,7 +1519,7 @@ export class AnnotationMulti extends TatorElement {
           if (this._timeStore != null) {
             if (this._timeStore.utcEnabled()) {
               this._utcLabel.textContent =
-                this._timeStore.getAbsoluteTimeFromFrame(frame);
+                this._timeStore.getAbsoluteTimeFromFrame(frame, "utc");
             }
           }
         });

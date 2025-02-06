@@ -542,8 +542,10 @@ export class AnnotationPlayer extends TatorElement {
     this._utcDiv.appendChild(btn);
     btn.addEventListener("click", () => {
       btn.blur();
-      navigator.clipboard.writeText(this._utcLabel.textContent).then(() => {
-        Utilities.showSuccessIcon("Copied UTC time to clipboard!");
+      const frame = Number(this._currentFrameText.textContent)
+      const isoTimeStr = this._timeStore.getAbsoluteTimeFromFrame(frame);
+      navigator.clipboard.writeText(isoTimeStr).then(() => {
+        Utilities.showSuccessIcon("Copied ISO format UTC time to clipboard!");
       });
     });
 
@@ -756,7 +758,7 @@ export class AnnotationPlayer extends TatorElement {
       if (this._timeStore != null) {
         if (this._timeStore.utcEnabled()) {
           this._utcLabel.textContent =
-            this._timeStore.getAbsoluteTimeFromFrame(frame);
+            this._timeStore.getAbsoluteTimeFromFrame(frame, "utc");
         }
       }
       this._slider.value = frame;
