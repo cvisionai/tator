@@ -82,7 +82,11 @@ class LeafSuggestionAPI(BaseDetailView):
 
         type_id = root_node[0].type
         queryset = Leaf.objects.filter(
-            project=project, type=type_id, path__istartswith=ancestor, path__depth__gte=min_level, deleted=False
+            project=project,
+            type=type_id,
+            path__istartswith=ancestor,
+            path__depth__gte=min_level,
+            deleted=False,
         ).filter(q_object)
 
         return self.filter_only_viewables(queryset)

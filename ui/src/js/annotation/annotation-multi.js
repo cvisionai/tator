@@ -546,7 +546,7 @@ export class AnnotationMulti extends TatorElement {
     btn._button.classList.remove("px-2");
     this._utcDiv.appendChild(btn);
     btn.addEventListener("click", () => {
-      const frame = Number(this._currentFrameText.textContent)
+      const frame = Number(this._currentFrameText.textContent);
       const isoTimeStr = this._timeStore.getAbsoluteTimeFromFrame(frame);
       navigator.clipboard.writeText(isoTimeStr).then(() => {
         Utilities.showSuccessIcon("Copied ISO format UTC time to clipboard!");
