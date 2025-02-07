@@ -417,10 +417,10 @@ check-clean-db-logs:
 .PHONY: format
 format:
 	black .
-	cd ui && npx prettier --write src
+	cd ui && npx prettier@2.8.8 --write src
 
 .PHONY: check-format
 check-format: api/main/version.py
 	black --check .
-	cd ui && npx prettier --check src
+	cd ui && npx prettier@2.8.8 --check src
 
