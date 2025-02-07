@@ -9,7 +9,7 @@ media_type_properties = {
         "default": "",
     },
     "dtype": {
-        "description": "Type of the media, image or video.",
+        "description": "Type of the media.",
         "type": "string",
         "enum": ["image", "video", "multi", "live"],
     },
