@@ -2,6 +2,7 @@ import os
 
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+import traceback
 import jwt
 from jwt.algorithms import RSAAlgorithm
 import requests
@@ -11,6 +12,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def format_multiline(message):
+    """Formats multi-line message for single log entry"""
+    return str(message).replace("\n", " \\n ").replace("\t", "    ")
 
 class KeycloakAuthenticationMixin:
     def _get_pub_key(self):
