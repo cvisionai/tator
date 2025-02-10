@@ -175,7 +175,10 @@ export class EntityBrowser extends TatorElement {
 
   set annotationData(val) {
     this._data = val;
-    this._jumpFrame.setValue(false);
+
+    const url = new URL(window.location.href);
+    const frameSeek = url.searchParams.get("frame_seek") == "auto";
+    this._jumpFrame.setValue(frameSeek);
 
     this._filterModal.data = this._data;
     this._search.addEventListener("click", (evt) => {
@@ -206,9 +209,13 @@ export class EntityBrowser extends TatorElement {
       this._drawControls();
     });
     this._jumpFrame.addEventListener("change", (evt) => {
+      const value = this._jumpFrame.getValue();
+      const url = new URL(window.location.href);
+      url.searchParams.set("frame_seek", value ? "auto" : "manual");
+      window.history.replaceState({}, "", url);
       for (const group in this._selectors) {
         const selector = this._selectors[group];
-        selector.autoGoToFrame = this._jumpFrame.getValue();
+        selector.autoGoToFrame = value;
       }
     });
   }
@@ -305,6 +312,7 @@ export class EntityBrowser extends TatorElement {
         selector.dataType = this._dataType;
         selector.undoBuffer = this._undo;
         selector.globalDataBuffer = this._data;
+        selector.autoGoToFrame = this._jumpFrame.getValue();
         selector.update(groups[group]);
         li.appendChild(selector);
         this._selectors[group] = selector;

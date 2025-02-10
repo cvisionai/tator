@@ -32,6 +32,7 @@ fields = [
     "default_localization",
     "elemental_id",
     "effective_permission",
+    "extended_info",
 ]
 
 import logging
@@ -191,6 +192,7 @@ class StateTypeDetailAPI(BaseDetailView):
         interpolation = params.get("interpolation", None)
         media_types = params.get("media_types", None)
         elemental_id = params.get("elemental_id", None)
+        extended_info = params.get("extended_info", None)
 
         obj = StateType.objects.get(pk=params["id"])
         if name is not None:
@@ -213,6 +215,8 @@ class StateTypeDetailAPI(BaseDetailView):
                 obj.media.add(media)
         if elemental_id:
             obj.elemental_id = elemental_id
+        if extended_info is not None:
+            obj.extended_info = extended_info
         obj.save()
         return {"message": "State type updated successfully!"}
 
