@@ -55,6 +55,13 @@ state_type_properties = {
         "type": "integer",
         "description": "Effective permission mask for this entity.",
     },
+    "extended_info": {
+        "type": "object",
+        "description": "Extended information about the state type. Useful Keys: "
+        + "drawable: If false, the state will not appear in the annotation view context menu for creation."
+        + "auto_frame_seek: If true, auto frame seek will be enabled by default in the annotation view entity browser.",
+        "additionalProperties": True,
+    },
 }
 
 state_type_spec = {
@@ -93,6 +100,7 @@ state_type_update = {
             "associated with another state. ",
         },
         "elemental_id": state_type_properties["elemental_id"],
+        "extended_info": state_type_properties["extended_info"],
     },
 }
 
