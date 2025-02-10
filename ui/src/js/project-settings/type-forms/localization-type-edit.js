@@ -83,12 +83,14 @@ export class LocalizationEdit extends TypeFormTemplate {
     }
 
     // visible
-    this._visibleBool.setValue(this._data.visible);
-    this._visibleBool.default = this._data.visible;
+    const visible = this._data.visible === false ? false : true;
+    this._visibleBool.setValue(visible);
+    this._visibleBool.default = visible;
 
     // drawable
-    this._drawableBool.setValue(this._data.drawable);
-    this._drawableBool.default = this._data.drawable;
+    const drawable = this._data?.extended_info?.drawable === false ? false : true;
+    this._drawableBool.setValue(drawable);
+    this._drawableBool.default = drawable;
 
     // line_width
     this._lineWidth.setValue(this._data.line_width);
