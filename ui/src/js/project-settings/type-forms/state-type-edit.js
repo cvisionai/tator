@@ -22,7 +22,9 @@ export class StateTypeEdit extends TypeFormTemplate {
       "state-type-edit--data-type"
     );
     this._visibleBool = this._shadow.getElementById("state-type-edit--visible");
-    this._drawableBool = this._shadow.getElementById("state-type-edit--drawable");
+    this._drawableBool = this._shadow.getElementById(
+      "state-type-edit--drawable"
+    );
     this._groupingDefault = this._shadow.getElementById(
       "state-type-edit--grouping-default"
     );
