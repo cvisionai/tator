@@ -75,8 +75,15 @@ export class StateTypeEdit extends TypeFormTemplate {
     this._editDescription.default = this._data.description;
 
     // visible
-    this._visibleBool.setValue(this._data.visible);
-    this._visibleBool.default = this._data.visible;
+    const visible = this._data.visible === false ? false : true;
+    this._visibleBool.setValue(visible);
+    this._visibleBool.default = visible;
+
+    // drawable
+    const drawable =
+      this._data?.extended_info?.drawable === false ? false : true;
+    this._drawableBool.setValue(drawable);
+    this._drawableBool.default = drawable;
 
     // grouping default
     this._groupingDefault.setValue(this._data.grouping_default);
@@ -135,6 +142,10 @@ export class StateTypeEdit extends TypeFormTemplate {
 
     if (this._visibleBool.changed() || isNew) {
       formData.visible = this._visibleBool.getValue();
+    }
+
+    if (this._drawableBool.changed() || isNew) {
+      formData.extended_info = { drawable: this._drawableBool.getValue() };
     }
 
     if (this._groupingDefault.changed() || isNew) {
