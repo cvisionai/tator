@@ -59,7 +59,7 @@ class ImageFileListAPI(BaseListView):
             bucket_id = params.get("bucket_id")
             if bucket_id:
                 bucket = Bucket.objects.filter(pk=bucket_id)
-                check_bucket_permissions(self.request.user, bucket[0])
+                check_bucket_permissions(self.request.user, bucket)
 
             if not media_files:
                 media_files = {}

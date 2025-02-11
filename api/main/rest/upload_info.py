@@ -73,7 +73,7 @@ class UploadInfoAPI(BaseDetailView):
             bucket = Bucket.objects.filter(pk=bucket_id)
             if bucket.exists() is False:
                 raise ValueError(f"Bucket ID {bucket_id} does not exist!")
-            check_bucket_permissions(self.request.user, bucket[0])
+            check_bucket_permissions(self.request.user, bucket)
             tator_store = get_tator_store(bucket.first())
         elif media_id is None and file_id is None:
             # Generate an object name
