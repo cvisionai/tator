@@ -89,6 +89,7 @@ def _sync_section_inputs(params, project):
                 params["primary_section"] = -1
     return params
 
+
 def _get_next_archive_state(desired_archive_state, last_archive_state):
     if desired_archive_state == "to_live":
         if last_archive_state == "archived":
