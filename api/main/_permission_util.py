@@ -638,12 +638,12 @@ class PermissionMask:
 # Utility function for checking bucket permissions against a user
 def check_bucket_permissions(user, bucket):
     """raises an exception if user doesn't have access to work with the bucket"""
-    if os.getenv("TATOR_FINE_GRAIN_PERMISSION"):
+    if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
         bucket_aug = augment_permission(user, bucket)
         if bucket_aug[0].effective_permission < 0x1:
-            raise ValueError(f"User {user.pk} does not have permission to bucket {bucket.pk}!")
+            raise ValueError(f"User {user.pk} does not have permission to bucket {bucket.first().pk}!")
     else:
         org = bucket.first().organization
         affls = user.affiliation_set.filter(organization=org)
         if not affls.exists():
-            raise ValueError(f"User {user.pk} does not have permission to bucket {bucket.pk}!")
+            raise ValueError(f"User {user.pk} does not have permission to bucket {bucket.first().pk}!")
