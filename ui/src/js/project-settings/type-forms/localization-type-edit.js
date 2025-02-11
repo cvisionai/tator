@@ -88,7 +88,8 @@ export class LocalizationEdit extends TypeFormTemplate {
     this._visibleBool.default = visible;
 
     // drawable
-    const drawable = this._data?.extended_info?.drawable === false ? false : true;
+    const drawable =
+      this._data?.extended_info?.drawable === false ? false : true;
     this._drawableBool.setValue(drawable);
     this._drawableBool.default = drawable;
 
