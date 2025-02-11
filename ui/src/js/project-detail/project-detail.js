@@ -798,7 +798,7 @@ export class ProjectDetail extends TatorPage {
         {
           method: "PATCH",
           body: JSON.stringify({
-            primary_section: evt.detail.destSectionId,
+            primary_section: Number(evt.detail.destSectionId),
           }),
         }
       );
