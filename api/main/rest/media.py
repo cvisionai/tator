@@ -59,6 +59,26 @@ logger = logging.getLogger(__name__)
 MEDIA_PROPERTIES = list(media_schema["properties"].keys())
 
 
+def _sync_section_inputs(params, project):
+    if "primary_section" in params:
+        section = Section.objects.filter(project=project, pk=params["primary_section"])
+        if "attributes" not in params:
+            params["attributes"] = {}
+        if section.exists():
+            params["attributes"]["tator_user_sections"] = section[0].tator_user_sections
+        else:
+            params["attributes"]["tator_user_sections"] = ""
+    elif "attributes" in params:
+        if "tator_user_sections" in params["attributes"]:
+            section = Section.objects.filter(
+                project=project, tator_user_sections=params["attributes"]["tator_user_sections"]
+            )
+            if section.exists():
+                params["primary_section"] = section[0].id
+            else:
+                params["primary_section"] = -1
+    return params
+
 def _get_next_archive_state(desired_archive_state, last_archive_state):
     if desired_archive_state == "to_live":
         if last_archive_state == "archived":
@@ -505,6 +525,7 @@ class MediaListAPI(BaseListView):
         recommended to use a GET request first to check what is being updated.
         Only attributes are eligible for bulk patch operations.
         """
+        params = _sync_section_inputs(params, params["project"])
         desired_archive_state = params.pop("archive_state", None)
         if (
             desired_archive_state is None
@@ -654,6 +675,7 @@ class MediaDetailAPI(BaseDetailView):
         with transaction.atomic():
             qs = Media.objects.select_for_update().filter(pk=params["id"], deleted=False)
             media = qs[0]
+            params = _sync_section_inputs(params, media.project.pk)
             model_dict = media.model_dict
             computed_author = compute_user(
                 media.project.pk, self.request.user, params.get("user_elemental_id", None)
