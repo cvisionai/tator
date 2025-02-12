@@ -468,7 +468,7 @@ export class TatorAutoComplete {
     // If config has match_any enabled, prepend a wildcard.
     let query;
     if (config.match_any) {
-      query = `*${text}`;
+      query = `*${text}*`;
     } else {
       query = text;
     }
