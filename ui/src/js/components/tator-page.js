@@ -1,4 +1,5 @@
 import { TatorElement } from "./tator-element.js";
+import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 
 export class TatorPage extends TatorElement {
   constructor() {
@@ -45,6 +46,11 @@ export class TatorPage extends TatorElement {
 
   connectedCallback() {
     this._browserCheck.init(this._shadow);
+
+    // Make requests once a minute to keep access token fresh
+    if (KEYCLOAK_ENABLED) {
+      setInterval(() => {fetchCredentials("/rest/User/GetCurrent")}, 1000 * 60);
+    }
   }
 
   static get observedAttributes() {
