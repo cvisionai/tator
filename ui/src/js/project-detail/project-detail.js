@@ -870,6 +870,7 @@ export class ProjectDetail extends TatorPage {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     this.setAttribute(
       "project-id",
       Number(window.location.pathname.split("/")[1])
