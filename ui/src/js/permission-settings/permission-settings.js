@@ -41,6 +41,7 @@ export class PermissionSettings extends TatorPage {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     store.subscribe((state) => state.user, this._setUser.bind(this));
 
     store.subscribe(

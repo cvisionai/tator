@@ -79,6 +79,7 @@ export class RegisteredDashboard extends TatorPage {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     dashboardStore.getState().init();
   }
 

@@ -39,6 +39,7 @@ export class ProjectSettings extends TatorPage {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     /* Update display for any change in data (#todo Project is different) */
     store.subscribe((state) => state.user, this._setUser.bind(this));
     store.subscribe(
