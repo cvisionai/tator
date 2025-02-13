@@ -49,7 +49,9 @@ export class TatorPage extends TatorElement {
 
     // Make requests once a minute to keep access token fresh
     if (KEYCLOAK_ENABLED) {
-      setInterval(() => {fetchCredentials("/rest/User/GetCurrent")}, 1000 * 60);
+      setInterval(() => {
+        fetchCredentials("/rest/User/GetCurrent");
+      }, 1000 * 60);
     }
   }
 
