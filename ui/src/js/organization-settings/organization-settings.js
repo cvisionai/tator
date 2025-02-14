@@ -39,6 +39,7 @@ export class OrganizationSettings extends TatorPage {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     /* Create store subscriptions */
     store.subscribe((state) => state.user, this._setUser.bind(this));
     store.subscribe(
