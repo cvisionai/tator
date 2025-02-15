@@ -1,8 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { Utilities } from "../util/utilities.js";
-import TatorLoading from "../../images/tator_loading.gif";
-import { store } from "./store.js";
 import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
 import { TimelineSettings } from "./timeline-settings.js";
 import { playerControlManagement } from "./annotation-common.js";
@@ -10,9 +8,13 @@ import { playerControlManagement } from "./annotation-common.js";
 export class AnnotationPage extends TatorPage {
   constructor() {
     super();
+
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", TatorLoading);
+    this._loading.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
@@ -156,15 +158,6 @@ export class AnnotationPage extends TatorPage {
       this._progressDialog.removeAttribute("is-open", "");
     });
 
-    // Create store subscriptions
-    store.subscribe((state) => state.user, this._setUser.bind(this));
-    store.subscribe(
-      (state) => state.announcements,
-      this._setAnnouncements.bind(this)
-    );
-    store.subscribe((state) => state.project, this._updateProject.bind(this));
-    store.subscribe((state) => state.mediaId, this._updateMedia.bind(this));
-
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";
       //window.alert(evt.message);
@@ -195,6 +188,35 @@ export class AnnotationPage extends TatorPage {
     });
   }
 
+  connectedCallback() {
+    this.setAttribute("has-open-modal", "");
+    TatorPage.prototype.connectedCallback.call(this);
+
+    this._projectId = window.location.pathname.split("/")[1];
+    this._mediaId = window.location.pathname.split("/")[3];
+    console.log("Project ID: " + this._projectId);
+    console.log("Media ID: " + this._mediaId);
+
+    // Create store subscriptions
+    const promises = [
+      fetchCredentials(`/rest/Project/${this._projectId}`, {}, true).then(
+        (response) => response.json()
+      ),
+      fetchCredentials("/rest/Announcements", {}, true).then((response) =>
+        response.json()
+      ),
+      fetchCredentials("/rest/User/GetCurrent", {}, true).then((response) =>
+        response.json()
+      ),
+    ];
+    Promise.all(promises).then(([project, announcements, user]) => {
+      this._setUser(user);
+      this._setAnnouncements(announcements);
+      this._updateProject(project);
+      this._updateMedia(this._mediaId);
+    });
+  }
+
   /**
    * Returned promise resolves when job monitoring is done
    */
@@ -209,12 +231,6 @@ export class AnnotationPage extends TatorPage {
     return ["project-name", "project-id", "media-id"].concat(
       TatorPage.observedAttributes
     );
-  }
-
-  connectedCallback() {
-    this.setAttribute("has-open-modal", "");
-    TatorPage.prototype.connectedCallback.call(this);
-    store.getState().init();
   }
 
   _updateProject(project) {
@@ -242,7 +258,7 @@ export class AnnotationPage extends TatorPage {
         break;
       case "project-id":
         this._undo.setAttribute("project-id", newValue);
-        this._updateLastVisitedBookmark();
+        this._updateLastVisitedBookmark(newValue);
         break;
       case "media-id":
         const searchParams = new URLSearchParams(window.location.search);
@@ -1052,6 +1068,7 @@ export class AnnotationPage extends TatorPage {
             for (const version of versions) {
               if (version.id == default_version) {
                 this._version = version;
+                this._canvasAppletHeader.version = this._version;
               }
             }
             this._canvasAppletHeader.version = this._version;
@@ -1120,13 +1137,19 @@ export class AnnotationPage extends TatorPage {
                 )[0];
               }
             }
+            // Only allow non-track state updates if primary video index
+            let allowNonTrackStateUpdates = !block_signals;
+            if (this._player.mediaType.dtype == "multi") {
+              allowNonTrackStateUpdates =
+                this._multiMediaIds[canvas._primaryVideoIndex] == mediaId;
+            }
             this._data.init(
               dataTypes,
               this._version,
               projectId,
               mediaId,
               update,
-              !block_signals,
+              allowNonTrackStateUpdates,
               versions,
               memberships
             );
@@ -2337,25 +2360,18 @@ export class AnnotationPage extends TatorPage {
     this._sidebar.permission = permission;
   }
 
-  _updateLastVisitedBookmark() {
+  _updateLastVisitedBookmark(projectId) {
     const uri = `${window.location.pathname}${window.location.search}`;
     const name = "Last visited";
     // Get the last visited, if it exists.
-    fetchCredentials(
-      `/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`,
-      {},
-      true
-    )
+    fetchCredentials(`/rest/Bookmarks/${projectId}?name=${name}`, {}, true)
       .then((response) => response.json())
       .then((data) => {
         if (data.length == 0) {
-          fetchCredentials(
-            `/rest/Bookmarks/${this.getAttribute("project-id")}`,
-            {
-              method: "POST",
-              body: JSON.stringify({ name: name, uri: uri }),
-            }
-          );
+          fetchCredentials(`/rest/Bookmarks/${projectId}`, {
+            method: "POST",
+            body: JSON.stringify({ name: name, uri: uri }),
+          });
         } else {
           const id = data[0].id;
           fetchCredentials(
@@ -2519,30 +2535,6 @@ export class AnnotationPage extends TatorPage {
 
     // Required resize to reset the elements correctly
     window.dispatchEvent(new Event("resize"));
-  }
-
-  /**
-   * @param {ImageBitmap} imageBitmap
-   *   ImageBitmap to override the canvas with
-   */
-  overrideCanvas(imageBitmap) {
-    this._canvas.overrideCanvas(this._currentFrame, imageBitmap);
-
-    Utilities.showSuccessIcon("Canvas overridden with new image!");
-
-    for (const applet of this._canvasApplets) {
-      this._canvasAppletWrappers[applet.id].forceUpdateFrameOnLoad();
-    }
-  }
-
-  clearOverrideCanvas() {
-    this._canvas.clearOverrideCanvas();
-
-    Utilities.showSuccessIcon("Canvas override cleared!");
-
-    for (const applet of this._canvasApplets) {
-      this._canvasAppletWrappers[applet.id].forceUpdateFrameOnLoad();
-    }
   }
 }
 

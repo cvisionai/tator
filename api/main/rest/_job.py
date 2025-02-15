@@ -5,6 +5,20 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _job_media_ids(job):
+    parameters = job["spec"]["arguments"]["parameters"]
+    for param in parameters:
+        if param["name"] == "media_ids":
+            return [int(media_id) for media_id in param["value"].split(",")]
+
+
+def _job_project(job):
+    parameters = job["spec"]["arguments"]["parameters"]
+    for param in parameters:
+        if param["name"] == "project_id":
+            return int(param["value"])
+
+
 def node_to_job_node(node):
     job_node = {}
     job_node["id"] = node["id"]
@@ -31,6 +45,7 @@ def workflow_to_job(workflow):
     media_ids = [int(x) for x in media_ids_str.split(",")]
     if media_ids:
         job["media_ids"] = media_ids
+    job["alg_id"] = int(workflow["metadata"]["annotations"]["alg_id"])
     if "status" in workflow:
         status = workflow["status"]
         job["status"] = status["phase"]

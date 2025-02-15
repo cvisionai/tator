@@ -1,4 +1,5 @@
 """ TODO: add documentation for this """
+
 from typing import List
 import logging
 
@@ -170,14 +171,14 @@ def convert_attribute(attr_type, attr_val):  # pylint: disable=too-many-branches
 
         except:  # pylint: disable=line-too-long
             raise Exception(
-                f"Invalid lat/lon string {val} for geoposition attribute {attr_type['name']}, should be two values separated by underscore"
+                f"Invalid lat/lon {attr_val} for geoposition attribute {attr_type['name']}, should be two values separated by underscore or a list of two values."
             )
         try:
             lat = float(lat)  # pylint: disable=line-too-long
 
         except:
             raise Exception(
-                f"Invalid latitude string {val} for geoposition attribute {attr_type['name']}, must be convertible to float."
+                f"Invalid latitude {lat} for geoposition attribute {attr_type['name']}, must be convertible to float."
             )  # pylint: disable=line-too-long
 
         try:  # pylint: disable=line-too-long
@@ -185,16 +186,16 @@ def convert_attribute(attr_type, attr_val):  # pylint: disable=too-many-branches
 
         except:  # pylint: disable=line-too-long
             raise Exception(
-                f"Invalid longitude string {val} for geoposition attribute {attr_type['name']}, must be convertible to float."
+                f"Invalid longitude {lon} for geoposition attribute {attr_type['name']}, must be convertible to float."
             )
         if (lat > 90.0) or (lat < -90.0):  # pylint: disable=line-too-long
             raise Exception(
-                f"Invalid latitude string {val} for geoposition attribute {attr_type['name']}, must be in range (-90.0, 90.0)."
+                f"Invalid latitude {lat} for geoposition attribute {attr_type['name']}, must be in range (-90.0, 90.0)."
             )  # pylint: disable=line-too-long
 
         if (lon > 180.0) or (lon < -180.0):
             raise Exception(
-                f"Invalid longitude string {val} for geoposition attribute {attr_type['name']}, must be in range (-180.0, 180.0)."
+                f"Invalid longitude {lon} for geoposition attribute {attr_type['name']}, must be in range (-180.0, 180.0)."
             )  # pylint: disable=line-too-long
 
         val = [lon, lat]  # Lon goes first in postgis

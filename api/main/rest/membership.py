@@ -1,34 +1,45 @@
 from django.db import transaction
+from django.db.models import F, Case, When, Value, CharField
 
 from ..models import Membership
 from ..models import Project
 from ..models import User
 from ..models import Version
-from ..models import database_qs
 from ..schema import MembershipListSchema
 from ..schema import MembershipDetailSchema
+from ..schema.components import membership as membership_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+MEMBERSHIP_FIELDS = list(membership_schema["properties"].keys())
+MEMBERSHIP_FIELDS.remove("permission")
+permission_display = Case(
+    When(permission="r", then=Value("View Only")),
+    When(permission="w", then=Value("Can Edit")),
+    When(permission="t", then=Value("Can Transfer")),
+    When(permission="x", then=Value("Can Execute")),
+    When(permission="a", then=Value("Full Control")),
+    output_field=CharField(),
+)
 
 
 def _serialize_memberships(memberships):
-    membership_data = database_qs(memberships)
-    for idx, membership in enumerate(memberships):
-        membership_data[idx]["permission"] = str(membership.permission)
-        membership_data[idx]["username"] = membership.user.username
-        membership_data[idx]["first_name"] = membership.user.first_name
-        membership_data[idx]["last_name"] = membership.user.last_name
-        membership_data[idx]["email"] = membership.user.email
-        membership_data[idx]["default_version"] = (
-            membership.default_version.pk if membership.default_version else None
-        )
-    membership_data.sort(
-        key=lambda membership: membership["last_name"].lower()
-        if membership["last_name"]
-        else membership["username"].lower()
-    )
+    memberships = memberships.annotate(
+        username=F("user__username"),
+        first_name=F("user__first_name"),
+        last_name=F("user__last_name"),
+        email=F("user__email"),
+    ).order_by("last_name", "username")
+    memberships = memberships.values(*MEMBERSHIP_FIELDS)
+    memberships = memberships.annotate(permission=permission_display)
+    membership_data = list(memberships)
     return membership_data
 
 
@@ -44,8 +55,17 @@ class MembershipListAPI(BaseListView):
     """
 
     schema = MembershipListSchema()
-    permission_classes = [ProjectFullControlPermission]
     http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         members = Membership.objects.filter(project=params["project"])
@@ -87,10 +107,10 @@ class MembershipListAPI(BaseListView):
         membership.save()
         return {"message": f"Membership of {user} to {project} created!", "id": membership.id}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         project_id = self.kwargs["project"]
         members = Membership.objects.filter(project__id=project_id)
-        return members
+        return self.filter_only_viewables(members)
 
 
 class MembershipDetailAPI(BaseDetailView):
@@ -105,9 +125,18 @@ class MembershipDetailAPI(BaseDetailView):
     """
 
     schema = MembershipDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         memberships = Membership.objects.filter(pk=params["id"])
@@ -127,5 +156,5 @@ class MembershipDetailAPI(BaseDetailView):
         Membership.objects.get(pk=params["id"]).delete()
         return {"message": f'Membership {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Membership.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Membership.objects.filter(pk=self.params["id"]))

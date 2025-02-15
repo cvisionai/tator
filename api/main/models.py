@@ -1703,7 +1703,7 @@ class Resource(Model):
 
     @staticmethod
     @transaction.atomic
-    def add_resource(path_or_link, media, generic_file=None):
+    def add_resource(path_or_link, media, generic_file=None, bucket_id=None):
         if urlparse(path_or_link).scheme != "":
             raise ValueError("Can't supply a url to a resource path")
         if os.path.islink(path_or_link):
@@ -1713,12 +1713,18 @@ class Resource(Model):
         obj, created = Resource.objects.get_or_create(path=path)
         if media is None and generic_file is not None:
             if created:
-                obj.bucket = generic_file.project.bucket
+                if bucket_id is not None:
+                    obj.bucket = Bucket.objects.get(pk=bucket_id)
+                else:
+                    obj.bucket = generic_file.project.bucket
                 obj.save()
             obj.generic_files.add(generic_file)
         elif media is not None:
             if created:
-                obj.bucket = media.project.bucket
+                if bucket_id is not None:
+                    obj.bucket = Bucket.objects.get(pk=bucket_id)
+                else:
+                    obj.bucket = media.project.bucket
                 obj.save()
             obj.media.add(media)
 
@@ -2174,6 +2180,8 @@ class Section(Model):
         max_length=16,
         choices=[("folder", "folder"), ("playlist", "playlist"), ("saved_search", "saved_search")],
         default="folder",
+        null=True,
+        blank=True,
     )
     """ What type of section this is.
     """
@@ -2420,65 +2428,6 @@ class GroupMembership(Model):
     """ Descriptive name for the role of this user in the group """
 
 
-class PermissionMask:
-    ## These bits are repeated so the left-byte is for children objects. This allows
-    ## a higher object to store the default permission for children objects by bitshifting by the
-    ## level of abstraction.
-    ## [0:7] Self-level objects (projects, algos, versions, Organization)
-    ## [8:15] Children objects (project -> section* -> media -> metadata) (Organization->Bucket,JobCluster)
-    ## [16:23] Grandchildren objects (project -> section -> media* -> metadata)  (Organization->***->Group)
-    ## [24:31] Great-grandchildren objects (project -> section -> media -> metadata*)
-    ## If a permission points to a child object, that occupies [0:7]
-    ## Permission objects exist against either projects, algos, versions or sections
-
-    EXIST = 0x1  # Allows a row to be seen in a list, or individual GET
-    READ = 0x2  # Allows a references to be accessed, e.g. generate presigned URLs
-    CREATE = 0x4  # Allows a row to be created (e.g. POST)
-    MODIFY = 0x8  # Allows a row to be PATCHED (but not in-place, includes variant delete)
-    DELETE = 0x10  # Allows a row to be deleted (pruned for metadata)
-    EXECUTE = 0x20  # Allows an algorithm to be executed (applies to project-level or algorithm)
-    UPLOAD = 0x40  # Allows media to be uploaded (applies to project-level only)
-    FULL_CONTROL = 0xFF  # All bits and all future bits are set
-    # Convenience wrappers to original tator permission system
-    OLD_READ = (
-        EXIST
-        | READ
-        | EXIST << 8
-        | READ << 8
-        | EXIST << 16
-        | READ << 16
-        | EXIST << 24
-        | READ << 24
-        | EXIST << 32
-        | READ << 32
-    )
-
-    # Old write was a bit more complicated as it let you modify elements but not the project itself
-    OLD_WRITE = (
-        OLD_READ
-        | CREATE << 8
-        | MODIFY << 8
-        | DELETE << 8
-        | CREATE << 16
-        | MODIFY << 16
-        | DELETE << 16
-        | CREATE << 24
-        | MODIFY << 24
-        | DELETE << 24
-        | MODIFY << 32
-        | DELETE << 32
-        | CREATE << 32
-    )
-    OLD_TRANSFER = OLD_WRITE | UPLOAD << 16
-
-    OLD_EXECUTE = OLD_TRANSFER | EXECUTE | EXECUTE << 32
-
-    # Old full control lets one delete and write the project
-    OLD_FULL_CONTROL = OLD_EXECUTE | CREATE | MODIFY | DELETE
-
-    CHILD_SHIFT = 8
-
-
 class RowProtection(Model):
     """
     Row  protection  models cascade in  two dimensions. The first dimension is
@@ -2513,8 +2462,8 @@ class RowProtection(Model):
     # Note: Currently type objects are protected by project membership status
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     media = ForeignKey(Media, on_delete=CASCADE, null=True, blank=True)
-    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)
-    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)
+    localization = ForeignKey(Localization, on_delete=CASCADE, null=True, blank=True)  # not used
+    state = ForeignKey(State, on_delete=CASCADE, null=True, blank=True)  # not used
     file = ForeignKey(File, on_delete=CASCADE, null=True, blank=True)
     section = ForeignKey(Section, on_delete=CASCADE, null=True, blank=True)
     algorithm = ForeignKey(Algorithm, on_delete=CASCADE, null=True, blank=True)
@@ -2561,6 +2510,11 @@ class RowProtection(Model):
                     "localization",
                     "state",
                     "file",
+                    "section",
+                    "algorithm",
+                    "version",
+                    "target_organization",
+                    "target_group",
                     "user",
                     "organization",
                     "group",

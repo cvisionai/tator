@@ -2,7 +2,7 @@ import logging
 
 from django.contrib.contenttypes.models import ContentType
 
-from ..models import ChangeLog
+from ..models import ChangeLog, Project
 from ..schema import ChangeLogListSchema
 
 from ._base_views import BaseListView
@@ -51,3 +51,8 @@ class ChangeLogListAPI(BaseListView):
 
         response_data = list(cl_qs.distinct().values(*CHANGE_LOG_PROPERTIES))
         return response_data
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(
+            ChangeLog.objects.filter(project=self.params.get("project"))
+        )

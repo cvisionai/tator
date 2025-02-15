@@ -1,11 +1,11 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Analytics | Localization Gallery</title>
-{% endblock head %}
-
-{% block body %}
-{% include "includes/components/entity-panel-image.html" %}
-{% include "includes/components/entity-gallery-sort.html" %}
-<analytics-localizations></analytics-localizations>
-{% endblock body %}
+<script type="module">
+  import "{{ static_path }}/ui/src/js/analytics/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("analytics-localizations");
+  document.body.appendChild(page);
+</script>
+{% endblock head %} {% block body %} {% include
+"includes/components/entity-panel-image.html" %} {% include
+"includes/components/entity-gallery-sort.html" %} {% endblock body %}

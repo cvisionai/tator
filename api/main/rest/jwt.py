@@ -3,7 +3,7 @@ from django.contrib.auth import login
 from django.shortcuts import redirect
 from django_cognito_jwt.validator import TokenError, TokenValidator
 
-from rest_framework.views import APIView
+from ._base_views import TatorAPIView
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class JwtGatewayAPI(APIView):
+class JwtGatewayAPI(TatorAPIView):
     """Notional JWT login gateway"""
 
     schema = JwtGatewaySchema()

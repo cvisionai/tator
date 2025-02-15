@@ -25,6 +25,9 @@ class DownloadInfoAPI(BaseListView):
     permission_classes = [ProjectTransferPermission]
     http_method_names = ["post"]
 
+    def get_queryset(self, **kwargs):
+        return Project.objects.filter(pk=self.params.get("project"))
+
     def _post(self, params):
         # Parse parameters.
         keys = params["keys"]

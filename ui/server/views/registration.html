@@ -1,10 +1,9 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Registration</title>
-{% endblock head %}
-
-{% block body %}
-<registration-page>
-</registration-page>
-{% endblock body %}
+<script type="module">
+  import "{{ static_path }}/ui/src/js/registration/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("registration-page");
+  document.body.appendChild(page);
+</script>
+{% endblock head %} {% block body %} {% endblock body %}

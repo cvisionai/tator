@@ -1,6 +1,7 @@
 import { UploadElement } from "../components/upload-element.js";
+import "../components/upload-dialog-init.js";
 import { svgNamespace } from "../components/tator-element.js";
-import { api, store } from "./store.js";
+import { store } from "./store.js";
 
 export class SectionUpload extends UploadElement {
   constructor() {
@@ -29,17 +30,69 @@ export class SectionUpload extends UploadElement {
     );
     svg.appendChild(path);
 
-    const input = document.createElement("input");
-    input.setAttribute("class", "sr-only");
-    input.setAttribute("type", "file");
-    input.setAttribute("multiple", "");
-    label.appendChild(input);
+    this._fileInput = document.createElement("input");
+    this._fileInput.setAttribute("class", "sr-only");
+    this._fileInput.setAttribute("type", "file");
+    this._fileInput.setAttribute("multiple", "");
+    label.after(this._fileInput);
 
-    input.addEventListener("change", this._fileSelectCallback);
+    this._fileInput.addEventListener("change", this._fileSelectCallback);
+
+    this.uploadDialogInit = document.createElement("upload-dialog-init");
+    this._shadow.appendChild(this.uploadDialogInit);
+
+    label.addEventListener("click", () => {
+      this.uploadDialogInit.open();
+    });
+
+    this.uploadDialogInit.addEventListener(
+      "choose-files",
+      this._handleUpdateVars.bind(this)
+    );
   }
 
   connectedCallback() {
-    this.init(api, store);
+    this.init(store);
+  }
+
+  _handleUpdateVars(event) {
+    this._fileInput.click();
+
+    const sectionId = Number(this.uploadDialogInit._parentFolders?.getValue());
+    if (sectionId !== this.uploadDialogInit._noParentName) {
+      this._chosenSection =
+        sectionId && this._sectionData?._sectionIdMap?.[sectionId]?.name
+          ? this._sectionData._sectionIdMap[sectionId].name
+          : null;
+
+      this.section = this._chosenSection;
+    }
+
+    const imageType = this.uploadDialogInit._imageType.getValue();
+    this._chosenImageType = this._mediaTypes.find(
+      (type) => type.id === Number(imageType)
+    );
+    const videoType = this.uploadDialogInit._videoType.getValue();
+    this._chosenVideoType = this._mediaTypes.find(
+      (type) => type.id === Number(videoType)
+    );
+
+    console.log("this._chosenImageType", this._chosenImageType);
+    console.log("this._chosenVideoType", this._chosenVideoType);
+
+    this._imageAttr = event.detail.attrImage;
+    this._videoAttr = event.detail.attrVideo;
+  }
+
+  set sectionData(val) {
+    this._sectionData = val;
+    this.uploadDialogInit._sectionData = val;
+  }
+
+  set mediaTypes(val) {
+    this._mediaTypes = val;
+
+    this.uploadDialogInit.mediaTypes = val;
   }
 
   static get observedAttributes() {

@@ -27,9 +27,9 @@ class MediaPrevAPI(BaseDetailView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def _get(self, params):
+    def _get_prev(self, media_id):
         # Find this object.
-        media_id = params["id"]
+        params = self.params
         media = Media.objects.get(pk=media_id)
 
         qs = get_media_queryset(media.project.id, params).reverse()
@@ -44,9 +44,16 @@ class MediaPrevAPI(BaseDetailView):
                     break
         except StopIteration:
             pass
+        return next_id
 
-        response_data = {"prev": next_id}
+    def _get(self, params):
+        response_data = {"prev": self._get_prev(params["id"])}
         return response_data
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        this_ids = [self.params["id"]]
+        next_id = self._get_prev(self.params["id"])
+        if next_id > 0:
+            this_ids.append(next_id)
+
+        return Media.objects.filter(pk__in=this_ids)

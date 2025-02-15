@@ -1,6 +1,5 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { Utilities } from "../../util/utilities.js";
-import TatorLoading from "../../../images/tator_loading.gif";
 import { dashboardStore } from "./dashboard-store.js";
 
 export class RegisteredDashboard extends TatorPage {
@@ -8,7 +7,10 @@ export class RegisteredDashboard extends TatorPage {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", TatorLoading);
+    this._loading.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     this._shadow.appendChild(this._loading);
 
     // Init params
@@ -77,6 +79,7 @@ export class RegisteredDashboard extends TatorPage {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     dashboardStore.getState().init();
   }
 

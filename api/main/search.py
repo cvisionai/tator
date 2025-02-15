@@ -785,12 +785,20 @@ class TatorSearch:
     def delete_index(self, entity_type, attribute):
         """Delete the index for a given entity type"""
         index_name = _get_unique_index_name(entity_type, attribute)
-        push_job(
-            "db_jobs",
-            delete_psql_index,
-            args=(connection.settings_dict["NAME"], index_name),
-            result_ttl=0,
-        )
+        if attribute["dtype"] == "float_array":
+            index_names = [index_name + "_l2", index_name + "_ip", index_name + "_cosine"]
+        elif attribute["dtype"] == "string":
+            index_names = [index_name, index_name + "_btree", index_name + "_upper_btree"]
+        else:
+            index_names = [index_name]
+
+        for name in index_names:
+            push_job(
+                "db_jobs",
+                delete_psql_index,
+                args=(connection.settings_dict["NAME"], name),
+                result_ttl=0,
+            )
 
     def is_index_present(self, entity_type, attribute):
         """Returns true if the index exists for this attribute"""

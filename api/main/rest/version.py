@@ -1,8 +1,9 @@
 import logging
 from collections import defaultdict
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
+from django.contrib.postgres.aggregates import ArrayAgg
 import datetime
 import uuid
 
@@ -10,16 +11,32 @@ from ..models import Version
 from ..models import Project
 from ..models import State
 from ..models import Localization
-from ..serializers import VersionSerializer
+from ..models import RowProtection
 from ..search import TatorSearch
 from ..schema import VersionListSchema
 from ..schema import VersionDetailSchema
+from ..schema.components import version as version_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
+
+from .._permission_util import PermissionMask
 
 logger = logging.getLogger(__name__)
+
+
+VERSION_FIELDS = list(version_schema["properties"].keys())
+VERSION_FIELDS.remove("bases")
+
+
+def _serialize_versions(versions):
+    versions = versions.values(*VERSION_FIELDS)
+    versions = versions.annotate(
+        bases=ArrayAgg("bases__id", distinct=True, filter=Q(bases__id__isnull=False))
+    ).order_by("number")
+    version_data = list(versions)
+    return version_data
 
 
 class VersionListAPI(BaseListView):
@@ -33,9 +50,20 @@ class VersionListAPI(BaseListView):
     """
 
     schema = VersionListSchema()
-    queryset = Version.objects.all()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Version.objects.filter(project=self.params["project"]))
 
     def _post(self, params):
         name = params["name"]
@@ -54,6 +82,12 @@ class VersionListAPI(BaseListView):
             elemental_id=params.get("elemental_id", uuid.uuid4()),
         )
         obj.save()
+        RowProtection.objects.create(
+            version=obj,
+            user=self.request.user,
+            # Full permission for the Version and any metadata within it.
+            permission=PermissionMask.FULL_CONTROL << 8 | PermissionMask.FULL_CONTROL,
+        )
 
         if "bases" in params:
             qs = Version.objects.filter(pk__in=params["bases"])
@@ -69,12 +103,8 @@ class VersionListAPI(BaseListView):
         media = params.get("media_id", None)
         project = params["project"]
 
-        qs = Version.objects.filter(project=project).order_by("number")
-        return VersionSerializer(
-            qs,
-            context=self.get_renderer_context(),
-            many=True,
-        ).data
+        qs = self.get_queryset().order_by("number")
+        return _serialize_versions(qs)
 
 
 class VersionDetailAPI(BaseDetailView):
@@ -88,17 +118,26 @@ class VersionDetailAPI(BaseDetailView):
     """
 
     schema = VersionDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
     def _get(self, params):
-        version = Version.objects.get(pk=params["id"])
-        return VersionSerializer(version).data
+        version = self.get_queryset()
+        return _serialize_versions(version)[0]
 
     @transaction.atomic
     def _patch(self, params):
-        version = Version.objects.get(pk=params["id"])
+        version = self.get_queryset()[0]
         if "name" in params:
             version.name = params["name"]
         if "description" in params:
@@ -129,8 +168,8 @@ class VersionDetailAPI(BaseDetailView):
                 f"Cannot delete version with annotations! Found "
                 f"{localization_count} localizations, {state_count} states!"
             )
-        Version.objects.get(pk=params["id"]).delete()
+        self.get_queryset()[0].delete()
         return {"message": f'Version {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
-        return Version.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Version.objects.filter(pk=self.params["id"]))

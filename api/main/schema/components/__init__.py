@@ -48,6 +48,7 @@ from .file_type import file_type_spec
 from .file_type import file_type
 from .generic_file import generic_file
 from .generic_file import generic_file_spec
+from .group import group_spec, group_update_spec, group
 from .hosted_template import (
     hosted_template_spec,
     hosted_template,
@@ -166,3 +167,4 @@ from ._common import message_response
 from ._errors import not_found_response
 from ._errors import bad_request_response
 from ._float_array_query import float_array_query
+from .rowprotection import row_protection_spec, row_protection_update_spec, row_protection

@@ -113,10 +113,6 @@ export class AttributeComparisonPanel extends TatorElement {
     // });
   }
 
-  updateTableCount() {
-    this._numFiles.textContent = `Viewing ${this._table._tableCount} records`;
-  }
-
   show(val) {
     this.hidden = !val;
   }

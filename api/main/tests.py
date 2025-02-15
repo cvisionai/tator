@@ -29,7 +29,8 @@ from .backup import TatorBackupManager
 from .models import *
 from .search import TatorSearch, ALLOWED_MUTATIONS
 from .store import get_tator_store, PATH_KEYS
-from .util import update_queryset_archive_state
+from .util import update_queryset_archive_state, memberships_to_rowp, affiliations_to_rowp
+from ._permission_util import PermissionMask, shift_permission
 
 from django.db import transaction
 
@@ -108,9 +109,15 @@ def create_test_user(is_staff=False, username=None):
     )
 
 
-def create_test_organization():
+def create_test_group(name):
+    return Group.objects.create(
+        name=name,
+    )
+
+
+def create_test_organization(name="my_org"):
     return Organization.objects.create(
-        name="my_org",
+        name=name,
     )
 
 
@@ -119,6 +126,14 @@ def create_test_affiliation(user, organization):
         user=user,
         organization=organization,
         permission="Admin",
+    )
+
+
+def create_test_member_affiliation(user, organization):
+    return Affiliation.objects.create(
+        user=user,
+        organization=organization,
+        permission="Member",
     )
 
 
@@ -265,18 +280,20 @@ def create_test_image(user, name, entity_type, project, attributes={}):
     )
 
 
-def create_test_box(user, entity_type, project, media, frame, attributes={}):
+def create_test_box(user, entity_type, project, media, frame, attributes={}, version=None):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
     w = random.uniform(0.0, float(media.width) - x)
     h = random.uniform(0.0, float(media.height) - y)
+    if version is None:
+        version = project.version_set.all()[0]
     return Localization.objects.create(
         user=user,
         created_by=user,
         modified_by=user,
         type=entity_type,
         project=project,
-        version=project.version_set.all()[0],
+        version=version,
         media=media,
         frame=frame,
         x=x,
@@ -474,6 +491,13 @@ affiliation_levels = [
     "Member",
     "Admin",
 ]
+
+
+def check_schema_fields(keys, datum):
+    for key in keys:
+        if not key in datum:
+            print(f"Missing key {key}")
+            assert False, f"Missing key {key}"
 
 
 class AttributeRenameMixin:
@@ -748,111 +772,291 @@ class DefaultCreateTestMixin:
 
 class PermissionCreateTestMixin:
     def test_create_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_201_CREATED
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            if self.list_uri == "Transcodes":
+                model = Media
+                required_permission = PermissionMask.UPLOAD
             else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
-            response = self.client.post(endpoint, self.create_json, format="json")
-            assertResponse(self, response, expected_status)
-            if hasattr(self, "entities"):
-                obj_type = type(self.entities[0])
-            if expected_status == status.HTTP_201_CREATED:
-                if "id" in response.data:
-                    if isinstance(response.data["id"], list):
-                        created_id = response.data["id"][0]
-                    else:
-                        created_id = response.data["id"]
-                    response = self.client.delete(f"/rest/{self.detail_uri}/{created_id}")
-                    assertResponse(self, response, status.HTTP_200_OK)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
+                # iterate over all permission levels and change the underlying row protection object for this project
+                # to a given permission level and verify that the delete endpoint respects this
+                model = type(self.entities[0])
+                required_permission = PermissionMask.MODIFY
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & required_permission == required_permission:
+                    expected_status = status.HTTP_201_CREATED
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.post(endpoint, self.create_json, format="json")
+                assertResponse(self, response, expected_status)
+                if hasattr(self, "entities"):
+                    obj_type = type(self.entities[0])
+                if expected_status == status.HTTP_201_CREATED:
+                    if "id" in response.data:
+                        if isinstance(response.data["id"], list):
+                            created_id = response.data["id"][0]
+                        else:
+                            created_id = response.data["id"]
+                        response = self.client.delete(f"/rest/{self.detail_uri}/{created_id}")
+                        assertResponse(self, response, status.HTTP_200_OK)
+            self.membership.permission = Permission.FULL_CONTROL
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_201_CREATED
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.post(endpoint, self.create_json, format="json")
+                assertResponse(self, response, expected_status)
+                if hasattr(self, "entities"):
+                    obj_type = type(self.entities[0])
+                if expected_status == status.HTTP_201_CREATED:
+                    if "id" in response.data:
+                        if isinstance(response.data["id"], list):
+                            created_id = response.data["id"][0]
+                        else:
+                            created_id = response.data["id"]
+                        response = self.client.delete(f"/rest/{self.detail_uri}/{created_id}")
+                        assertResponse(self, response, status.HTTP_200_OK)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
 
 
 class PermissionListTestMixin:
     def test_list_patch_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                test_val = random.random() > 0.5
+                response = self.client.patch(
+                    f"/rest/{self.list_uri}/{self.project.pk}" f"?type={self.entity_type.pk}",
+                    {"attributes": {"Bool Test": test_val}},
+                    format="json",
+                )
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                test_val = random.random() > 0.5
+                response = self.client.patch(
+                    f"/rest/{self.list_uri}/{self.project.pk}" f"?type={self.entity_type.pk}",
+                    {"attributes": {"Bool Test": test_val}},
+                    format="json",
+                )
+                assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
             self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            test_val = random.random() > 0.5
-            response = self.client.patch(
-                f"/rest/{self.list_uri}/{self.project.pk}" f"?type={self.entity_type.pk}",
-                {"attributes": {"Bool Test": test_val}},
-                format="json",
-            )
-            assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
 
     def test_list_delete_permissions(self):
-        # Wait for ES
-        time.sleep(1)
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                response = self.client.delete(
+                    f"/rest/{self.list_uri}/{self.project.pk}" f"?type={self.entity_type.pk}"
+                )
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.delete(
+                    f"/rest/{self.list_uri}/{self.project.pk}" f"?type={self.entity_type.pk}"
+                )
+                assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
             self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.delete(
-                f"/rest/{self.list_uri}/{self.project.pk}" f"?type={self.entity_type.pk}"
-            )
-            assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
 
 
 class PermissionDetailTestMixin:
     def test_detail_patch_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] = f"foo_{hex(permission)}"
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{index}"
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
             self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            if "name" in self.patch_json:
-                self.patch_json["name"] += f"_{index}"
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
-            )
-            assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
 
     def test_detail_delete_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.DELETE == PermissionMask.DELETE:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                assertResponse(self, response, expected_status)
+                # Delete it from the list if we actually deleted it
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                test_val = random.random() > 0.5
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
+            self.membership.permission = Permission.FULL_CONTROL
             self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            test_val = random.random() > 0.5
-            response = self.client.delete(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
-            )
-            assertResponse(self, response, expected_status)
-            if expected_status == status.HTTP_200_OK:
-                del self.entities[0]
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
 
 
 class PermissionListMembershipTestMixin:
     def test_list_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            rp.delete()
         self.membership.delete()
         url = f"/rest/{self.list_uri}/{self.project.pk}"
         if hasattr(self, "entity_type"):
@@ -860,8 +1064,15 @@ class PermissionListMembershipTestMixin:
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.membership.save()
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_list_is_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            old_perm = rp.permission
+            rp.permission = PermissionMask.OLD_READ
+            rp.save()
+
         self.membership.permission = Permission.VIEW_ONLY
         self.membership.save()
         url = f"/rest/{self.list_uri}/{self.project.pk}"
@@ -871,19 +1082,32 @@ class PermissionListMembershipTestMixin:
         assertResponse(self, response, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.permission = old_perm
+            rp.save()
 
 
 class PermissionDetailMembershipTestMixin:
     def test_detail_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            rp.delete()
         self.membership.delete()
         url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
         if hasattr(self, "entity_type"):
             url += f"?type={self.entity_type.pk}"
         response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
+        assert response.status_code > 400  # either 403 or 404 depending on permission mode
         self.membership.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.save()
 
     def test_detail_is_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(project=self.project)
+            old_perm = rp.permission
+            rp.permission = PermissionMask.OLD_READ
+            rp.save()
         self.membership.permission = Permission.VIEW_ONLY
         self.membership.save()
         url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
@@ -893,10 +1117,18 @@ class PermissionDetailMembershipTestMixin:
         assertResponse(self, response, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.permission = old_perm
+            rp.save()
 
 
 class PermissionListAffiliationTestMixin:
     def test_list_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp = RowProtection.objects.get(
+                target_organization=self.organization, group__name=f"{self.organization.name} Admin"
+            )
+            rp.delete()
         affiliation = self.get_affiliation(self.organization, self.user)
         affiliation.delete()
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
@@ -905,91 +1137,302 @@ class PermissionListAffiliationTestMixin:
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.save()
 
     def test_list_is_a_member_permissions(self):
-        for index, level in enumerate(affiliation_levels):
-            affiliation = self.get_affiliation(self.organization, self.user)
-            affiliation.permission = level
-            affiliation.save()
-            if self.get_requires_admin and not (level == "Admin"):
-                expected_status = status.HTTP_403_FORBIDDEN
-            else:
-                expected_status = status.HTTP_200_OK
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp_admin = RowProtection.objects.get(
+                target_organization=self.organization, group__name=f"{self.organization.name} Admin"
+            )
+
+            rp_elements = []
+            old_perm_map = []
+            # Handle RP-specific to object(s) in question
+            if self.list_uri == "Buckets":
+                rp_elements = RowProtection.objects.filter(bucket__organization=self.organization)
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "JobClusters":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+            elif self.list_uri == "HostedTemplates":
+                rp_elements = RowProtection.objects.filter(
+                    job_cluster__organization=self.organization
+                )
+                for rp in rp_elements:
+                    old_perm_map.append((rp, rp.permission))
+
+            old_admin_perm = rp_admin.permission
+            # Attempt to get the list of entities when there is an admin affiliation
             url = f"/rest/{self.list_uri}/{self.organization.pk}"
             if hasattr(self, "entity_type"):
                 url += f"?type={self.entity_type.pk}"
             response = self.client.get(url)
-            assertResponse(self, response, expected_status)
-        affiliation.permission = "Admin"
-        affiliation.save()
+            assertResponse(self, response, 200)
+
+            rp_admin.permission = 0
+            rp_admin.save()
+            for rp in rp_elements:
+                rp.permission = 0
+                rp.save()
+
+            # Now verify we get 403
+            url = f"/rest/{self.list_uri}/{self.organization.pk}"
+            if hasattr(self, "entity_type"):
+                url += f"?type={self.entity_type.pk}"
+            response = self.client.get(url)
+            assertResponse(self, response, 403)
+
+            rp_admin.permission = old_admin_perm
+            rp_admin.save()
+
+            for rp, perm in old_perm_map:
+                rp.permission = perm
+                rp.save()
+        else:
+            for index, level in enumerate(affiliation_levels):
+                affiliation = self.get_affiliation(self.organization, self.user)
+                affiliation.permission = level
+                affiliation.save()
+                if self.get_requires_admin and not (level == "Admin"):
+                    expected_status = status.HTTP_403_FORBIDDEN
+                else:
+                    expected_status = status.HTTP_200_OK
+                url = f"/rest/{self.list_uri}/{self.organization.pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                assertResponse(self, response, expected_status)
+            affiliation.permission = "Admin"
+            affiliation.save()
 
 
 class PermissionDetailAffiliationTestMixin:
     def test_detail_not_a_member_permissions(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
+            else:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
+            rp.delete()
         affiliation = self.get_affiliation(self.get_organization(), self.user)
         affiliation.delete()
         url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
         if hasattr(self, "entity_type"):
             url += f"?type={self.entity_type.pk}"
         response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
+        assert response.status_code > 400  # either 403 or 404 depending on permission mode
         affiliation.save()
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            rp.save()
 
     def test_detail_is_a_member_permissions(self):
-        for index, level in enumerate(affiliation_levels):
-            affiliation = self.get_affiliation(self.get_organization(), self.user)
-            affiliation.permission = level
-            affiliation.save()
-            if self.get_requires_admin and not (level == "Admin"):
-                expected_status = status.HTTP_403_FORBIDDEN
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
             else:
-                expected_status = status.HTTP_200_OK
-            url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
-            if hasattr(self, "entity_type"):
-                url += f"?type={self.entity_type.pk}"
-            response = self.client.get(url)
-            assertResponse(self, response, expected_status)
-        affiliation.permission = "Admin"
-        affiliation.save()
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_AFFL_ADMIN,
+                PermissionMask.OLD_AFFL_USER,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.READ == PermissionMask.READ:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                if expected_status == status.HTTP_200_OK:
+                    assertResponse(self, response, expected_status)
+                else:
+                    assert response.status_code > 400
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            for index, level in enumerate(affiliation_levels):
+                affiliation = self.get_affiliation(self.get_organization(), self.user)
+                affiliation.permission = level
+                affiliation.save()
+                if self.get_requires_admin and not (level == "Admin"):
+                    expected_status = status.HTTP_403_FORBIDDEN
+                else:
+                    expected_status = status.HTTP_200_OK
+                url = f"/rest/{self.detail_uri}/{self.entities[0].pk}"
+                if hasattr(self, "entity_type"):
+                    url += f"?type={self.entity_type.pk}"
+                response = self.client.get(url)
+                assertResponse(self, response, expected_status)
+            affiliation.permission = "Admin"
+            affiliation.save()
 
     def test_detail_patch_permissions(self):
-        permission_index = affiliation_levels.index(self.edit_permission)
-        for index, level in enumerate(affiliation_levels):
-            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[
-                0
-            ]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
             else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
-            )
-            assertResponse(self, response, expected_status)
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_AFFL_ADMIN,
+                PermissionMask.OLD_AFFL_USER,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                if expected_status == status.HTTP_200_OK:
+                    assertResponse(self, response, expected_status)
+                else:
+                    assert response.status_code > 400
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = affiliation_levels.index(self.edit_permission)
+            for index, level in enumerate(affiliation_levels):
+                obj = Affiliation.objects.filter(
+                    organization=self.get_organization(), user=self.user
+                )[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
 
     def test_detail_delete_permissions(self):
-        permission_index = affiliation_levels.index(self.edit_permission)
-        for index, level in enumerate(affiliation_levels):
-            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[
-                0
-            ]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            if type(self.entities[0]) != Organization:
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].organization,
+                    group__name=f"{self.entities[0].organization.name} Admin",
+                )
             else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            test_val = random.random() > 0.5
-            response = self.client.delete(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
-            )
-            assertResponse(self, response, expected_status)
-            if expected_status == status.HTTP_200_OK:
-                del self.entities[0]
+                rp = RowProtection.objects.get(
+                    target_organization=self.entities[0].pk,
+                    group__name=f"{self.entities[0].name} Admin",
+                )
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_AFFL_ADMIN,
+                PermissionMask.OLD_AFFL_USER,
+            ]:
+                # As we delete orgs, we need to refetch the permission object
+                if type(self.entities[0]) != Organization:
+                    rp = RowProtection.objects.get(
+                        target_organization=self.entities[0].organization,
+                        group__name=f"{self.entities[0].organization.name} Admin",
+                    )
+                else:
+                    rp = RowProtection.objects.get(
+                        target_organization=self.entities[0].pk,
+                        group__name=f"{self.entities[0].name} Admin",
+                    )
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                if expected_status == status.HTTP_200_OK:
+                    assertResponse(self, response, expected_status)
+                    del self.entities[0]
+                else:
+                    assert response.status_code > 400  # handle 404 vs. 403
+            if type(self.entities[0]) != Organization:
+                rp.permission = orig_permission
+                rp.save()
+        else:
+            permission_index = affiliation_levels.index(self.edit_permission)
+            for index, level in enumerate(affiliation_levels):
+                obj = Affiliation.objects.filter(
+                    organization=self.get_organization(), user=self.user
+                )[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                test_val = random.random() > 0.5
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
 
 
 class AttributeMediaTestMixin:
@@ -1152,7 +1595,6 @@ class AttributeTestMixin:
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
-            print(f"Setting Bool Test to {test_val}")
             response = self.client.patch(
                 f"/rest/{self.detail_uri}/{pk}",
                 {"attributes": {"Bool Test": test_val}},
@@ -1995,6 +2437,7 @@ class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin)
             create_test_algorithm(self.user, f"result{idx}", self.project)
             for idx in range(random.randint(6, 10))
         ]
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class AnonymousAccessTestCase(TatorTransactionTest):
@@ -2043,6 +2486,24 @@ class AnonymousAccessTestCase(TatorTransactionTest):
         resource.media.add(self.public_video)
         resource.media.add(self.private_video)
         resource.save()
+
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", 0) == "true":
+            everyone = Group.objects.create(name="everyone")
+            everyone.save()
+            GroupMembership.objects.create(user=self.anonymous_user, group=everyone).save()
+            GroupMembership.objects.create(user=self.user, group=everyone).save()
+            GroupMembership.objects.create(user=self.random_user, group=everyone).save()
+
+            internal = Group.objects.create(name="internal")
+            internal.save()
+            GroupMembership.objects.create(user=self.user, group=internal).save()
+
+            RowProtection.objects.create(
+                project=self.public_project, group=everyone, permission=PermissionMask.OLD_READ
+            ).save()
+            RowProtection.objects.create(
+                project=self.private_project, group=internal, permission=PermissionMask.OLD_READ
+            ).save()
 
     def test_random_user(self):
         """A random user should get access to public project but not the private project"""
@@ -2120,6 +2581,7 @@ class VideoTestCase(
         )
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "video1", "last_edit_start": "2017-07-21T17:32:28Z"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_search(self):
         box_type = LocalizationType.objects.create(
@@ -2344,6 +2806,22 @@ class VideoTestCase(
             self.assertEqual(second_hit.get("incident", None), 1)
             self.assertEqual(second_hit["id"], self.entities[1].pk)
 
+            # Check the same thing with pagination
+            response = self.client.get(
+                f"/rest/Medias/{self.project.pk}?start=0&stop=10&encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
+                format="json",
+            )
+            assertResponse(self, response, status.HTTP_200_OK)
+            matches = len(response.data)
+            self.assertEqual(matches, 2)
+
+            first_hit = response.data[0]
+            second_hit = response.data[1]
+            self.assertEqual(first_hit.get("incident", None), 3)
+            self.assertEqual(first_hit["id"], self.entities[0].pk)
+            self.assertEqual(second_hit.get("incident", None), 1)
+            self.assertEqual(second_hit["id"], self.entities[1].pk)
+
             # reverse it
             response = self.client.get(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=$incident",
@@ -2447,6 +2925,7 @@ class VideoTestCase(
         # Test on Project object
         new_uuid = str(uuid4())
         response = self.client.get(f"/rest/Projects?elemental_id={new_uuid}")
+        assertResponse(self, response, status.HTTP_200_OK)
         assert len(response.data) == 0
         response = self.client.get(f"/rest/Project/{test_video.project.id}")
         assert str(response.data["elemental_id"]) == str(test_video.project.elemental_id)
@@ -2593,6 +3072,7 @@ class ImageTestCase(
         )
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "image1"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_empty_image(self):
         unique_string_attr_val = str(uuid4())
@@ -2695,6 +3175,7 @@ class LocalizationBoxTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "box1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationLineTestCase(
@@ -2779,6 +3260,7 @@ class LocalizationLineTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "line1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationDotTestCase(
@@ -2861,6 +3343,7 @@ class LocalizationDotTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "dot1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationPolyTestCase(
@@ -2942,6 +3425,7 @@ class LocalizationPolyTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "box1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class StateTestCase(
@@ -2961,7 +3445,7 @@ class StateTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
@@ -3024,6 +3508,7 @@ class StateTestCase(
         ]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {"name": "state1", "in_place": 1}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
@@ -3031,12 +3516,12 @@ class StateTestCase(
         project = self.entity_type.project.id
         response = self.client.get(f"/rest/StateTypes/{project}?elemental_id={new_uuid}")
         assert len(response.data) == 0
-        response = self.client.get(f"/rest/StateTypes/{self.entity_type.id}")
         response = self.client.get(f"/rest/StateType/{self.entity_type.id}")
         assert str(response.data["elemental_id"]) == str(self.entity_type.elemental_id)
         response = self.client.patch(
             f"/rest/StateType/{self.entity_type.id}", {"elemental_id": str(new_uuid)}, format="json"
         )
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f"/rest/StateType/{self.entity_type.id}")
         assert str(response.data["elemental_id"]) == new_uuid
         response = self.client.get(f"/rest/StateTypes/{project}?elemental_id={new_uuid}")
@@ -3115,6 +3600,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         self.line_type.save()
         self.dot_type.media.add(self.image_type)
         self.dot_type.save()
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_single_media_delete(self):
         # Tests deleting a localization's associated media (1). The corresponding
@@ -3376,6 +3862,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         )
         wait_for_indices(self.entity_type)
         self.entity_type.media.add(self.image_type)
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_single_media_delete(self):
         # Tests deleting a state's associated media (1). The corresponding
@@ -3613,6 +4100,7 @@ class LeafTestCase(
         ]
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {"name": "leaf1"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         project = self.entity_type.project.id
@@ -3629,6 +4117,58 @@ class LeafTestCase(
         assert str(response.data["elemental_id"]) == new_uuid
         response = self.client.get(f"/rest/LeafTypes/{project}?elemental_id={new_uuid}")
         assert len(response.data) == 1
+
+    def test_suggestion_api(self):
+        resp = self.client.delete(f"/rest/Leaves/{self.project.pk}")
+        assert resp.status_code == status.HTTP_200_OK
+
+        # Add some new leaves
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "Honda"},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+
+        parent = resp.data["id"][0]
+
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "Accord", "parent": parent},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        accord_id = resp.data["id"][0]
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "Civic", "parent": parent},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        civic_id = resp.data["id"][0]
+
+        resp = self.client.get(f"/rest/Leaves/Suggestion/asdf.Honda/{self.project.pk}?query=Accord")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        assert resp.data[0]["value"] == "Accord"
+        assert resp.data[0]["group"] == "Honda"
+        assert len(resp.data) == 1
+
+        # Add a trim-level
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "EX-L", "parent": accord_id},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        resp = self.client.post(
+            f"/rest/Leaves/{self.project.pk}",
+            {"type": self.entity_type.pk, "name": "EX-L", "parent": civic_id},
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_201_CREATED
+        resp = self.client.get(f"/rest/Leaves/Suggestion/asdf.Honda/{self.project.pk}?query=*EX-L*")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        assert len(resp.data) == 2
 
 
 class LeafTypeTestCase(
@@ -3656,6 +4196,7 @@ class LeafTypeTestCase(
         }
         self.patch_json = {"name": "leaf asdf"}
         self.edit_permission = Permission.FULL_CONTROL
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class StateTypeTestCase(
@@ -3703,6 +4244,7 @@ class StateTypeTestCase(
         }
         self.patch_json = {"name": "state asdf"}
         self.edit_permission = Permission.FULL_CONTROL
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class MediaTypeTestCase(
@@ -3746,6 +4288,7 @@ class MediaTypeTestCase(
             "dtype": "video",
             "attribute_types": create_test_attribute_types(),
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class LocalizationTypeTestCase(
@@ -3800,6 +4343,7 @@ class LocalizationTypeTestCase(
         }
         self.patch_json = {"name": "box asdf"}
         self.edit_permission = Permission.FULL_CONTROL
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
@@ -3873,6 +4417,9 @@ class ProjectTestCase(TatorTransactionTest):
         }
         self.edit_permission = Permission.FULL_CONTROL
 
+        for entity in self.entities:
+            memberships_to_rowp(entity.pk, force=False, verbose=False)
+
     def test_create_no_affiliation(self):
         endpoint = f"/rest/{self.list_uri}"
         self.affiliation.delete()
@@ -3893,39 +4440,105 @@ class ProjectTestCase(TatorTransactionTest):
             assertResponse(self, response, expected_status)
 
     def test_detail_patch_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.patch(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
-            )
-            assertResponse(self, response, expected_status)
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.entities[0])
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", self.patch_json, format="json"
+                )
+                assertResponse(self, response, expected_status)
 
     def test_detail_delete_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
-            obj.permission = level
-            obj.save()
-            del obj
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            test_val = random.random() > 0.5
-            response = self.client.delete(
-                f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
-            )
-            assertResponse(self, response, expected_status)
-            if expected_status == status.HTTP_200_OK:
-                del self.entities[0]
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.entities[0])
+            orig_permission = rp.permission
+
+            # iterate over all permission levels and change the underlying row protection object for this project
+            # to a given permission level and verify that the delete endpoint respects this
+            model = type(self.entities[0])
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if "name" in self.patch_json:
+                    self.patch_json["name"] += f"_{hex(permission)}"
+                if (
+                    permission >> shift_permission(model, Project)
+                ) & PermissionMask.MODIFY == PermissionMask.MODIFY:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
+            rp.delete()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                obj = Membership.objects.filter(project=self.entities[0], user=self.user)[0]
+                obj.permission = level
+                obj.save()
+                del obj
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                test_val = random.random() > 0.5
+                print(f"{level} = {expected_status}")
+                response = self.client.delete(
+                    f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
+                )
+                assertResponse(self, response, expected_status)
+                if expected_status == status.HTTP_200_OK:
+                    del self.entities[0]
 
     def test_delete_non_creator(self):
         other_user = User.objects.create(
@@ -3942,7 +4555,8 @@ class ProjectTestCase(TatorTransactionTest):
         response = self.client.delete(
             f"/rest/{self.detail_uri}/{self.entities[0].pk}", format="json"
         )
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
+        assert response.status_code > 400
+        # assertResponse(self, response, status.HTTP_403_FORBIDDEN)
 
 
 class TranscodeTestCase(TatorTransactionTest, PermissionCreateTestMixin):
@@ -3972,6 +4586,7 @@ class TranscodeTestCase(TatorTransactionTest, PermissionCreateTestMixin):
             "size": 1,
         }
         self.edit_permission = Permission.CAN_TRANSFER
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class VersionTestCase(
@@ -4011,6 +4626,7 @@ class VersionTestCase(
             "description": "asdf123",
         }
         self.edit_permission = Permission.CAN_EDIT
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
@@ -4117,6 +4733,7 @@ class FavoriteStateTestCase(
         self.patch_json = {
             "name": "New name",
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class FavoriteLocalizationTestCase(
@@ -4164,6 +4781,7 @@ class FavoriteLocalizationTestCase(
         self.patch_json = {
             "name": "New name",
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class BookmarkTestCase(
@@ -4200,10 +4818,13 @@ class BookmarkTestCase(
             "name": "New name",
         }
         self.edit_permission = Permission.CAN_EDIT
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class AffiliationTestCase(
-    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+    TatorTransactionTest,
+    PermissionListAffiliationTestMixin,
+    PermissionDetailAffiliationTestMixin,
 ):
     def setUp(self):
         super().setUp()
@@ -4229,6 +4850,7 @@ class AffiliationTestCase(
         }
         self.edit_permission = "Admin"
         self.get_requires_admin = False
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
@@ -4256,6 +4878,8 @@ class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTest
         self.patch_json = {"name": "My new org"}
         self.edit_permission = "Admin"
         self.get_requires_admin = False
+        for entity in self.entities:
+            affiliations_to_rowp(entity.pk, force=False, verbose=False)
 
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
@@ -4269,6 +4893,11 @@ class OrganizationTestCase(TatorTransactionTest, PermissionDetailAffiliationTest
         assertResponse(self, response, status.HTTP_201_CREATED)
 
     def test_default_membership(self):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            print(
+                "Warning: skipping test_default_membership because TATOR_FINE_GRAIN PERMISSIONS are enabled"
+            )
+            return
         other_user = create_test_user(is_staff=False)
         other_affiliation = create_test_affiliation(other_user, self.organization)
 
@@ -4332,10 +4961,11 @@ class BucketTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
+        self.another_org = create_test_organization("another")
         self.affiliation = create_test_affiliation(self.user, self.organization)
         self.entities = [create_test_bucket(self.organization) for _ in range(3)]
         self.list_uri = "Buckets"
@@ -4362,6 +4992,7 @@ class BucketTestCase(
         }
         self.edit_permission = "Admin"
         self.get_requires_admin = True
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
 
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
@@ -4370,11 +5001,9 @@ class BucketTestCase(
         return self.organization
 
     def test_create_no_affiliation(self):
-        endpoint = f"/rest/{self.list_uri}/{self.organization.pk}"
-        self.affiliation.delete()
+        endpoint = f"/rest/{self.list_uri}/{self.another_org.pk}"
         response = self.client.post(endpoint, self.create_json, format="json")
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        self.affiliation.save()
 
 
 class ImageFileTestCase(TatorTransactionTest, FileMixin):
@@ -4400,6 +5029,7 @@ class ImageFileTestCase(TatorTransactionTest, FileMixin):
         self.detail_uri = "ImageFile"
         self.create_json = {"path": self._generate_key(), "resolution": [1, 1]}
         self.patch_json = {"path": self._generate_key(), "resolution": [2, 2]}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_image(self):
         self._test_methods("image")
@@ -4444,6 +5074,7 @@ class VideoFileTestCase(TatorTransactionTest, FileMixin):
             "codec": "h264",
             "segment_info": self._generate_key(),
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_streaming(self):
         self._test_methods("streaming")
@@ -4475,6 +5106,7 @@ class AudioFileTestCase(TatorTransactionTest, FileMixin):
         self.detail_uri = "AudioFile"
         self.create_json = {"path": self._generate_key(), "codec": "h264"}
         self.patch_json = {"path": self._generate_key(), "codec": "h264"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_audio(self):
         self._test_methods("audio")
@@ -4503,6 +5135,7 @@ class AuxiliaryFileTestCase(TatorTransactionTest, FileMixin):
         self.detail_uri = "AuxiliaryFile"
         self.create_json = {"path": self._generate_key(), "name": "asdf1"}
         self.patch_json = {"path": self._generate_key(), "name": "asdf"}
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_attachment(self):
         self._test_methods("attachment")
@@ -4546,6 +5179,7 @@ class ResourceTestCase(TatorTransactionTest):
         wait_for_indices(self.file_entity_type)
         self.store = get_tator_store()
         self.backup_bucket = None
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_elemental_id(self):
         # Test on type object
@@ -5115,6 +5749,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
             attribute_types=create_test_attribute_types(),
         )
         wait_for_indices(self.file_entity_type)
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
 
 class AttributeTestCase(TatorTransactionTest):
@@ -5178,57 +5813,157 @@ class AttributeTestCase(TatorTransactionTest):
             "entity_type": "LocalizationType",
             "name": "Int Test",
         }
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
     def test_patch_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.patch(
-                f"/rest/{self.list_uri}/{self.entity_type.pk}", self.patch_json, format="json"
-            )
-            with self.subTest(i=index):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            model = type(self.entities[0])
+            required_permission = PermissionMask.FULL_CONTROL
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (permission) & required_permission == required_permission:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+
+                print(f"permission = {hex(permission)}, expected_status = {expected_status}")
+
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.patch(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.patch_json, format="json"
+                )
                 assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
+            self.membership.permission = Permission.FULL_CONTROL
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.patch(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.patch_json, format="json"
+                )
+                with self.subTest(i=index):
+                    assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
 
     def test_post_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_201_CREATED
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.post(
-                f"/rest/{self.list_uri}/{self.entity_type.pk}", self.post_json, format="json"
-            )
-            with self.subTest(i=index):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            model = type(self.entities[0])
+            required_permission = PermissionMask.FULL_CONTROL
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (permission) & required_permission == required_permission:
+                    expected_status = status.HTTP_201_CREATED
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+
+                print(f"permission = {hex(permission)}, expected_status = {expected_status}")
+
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.post(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.post_json, format="json"
+                )
                 assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
+            self.membership.permission = Permission.FULL_CONTROL
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_201_CREATED
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.post(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.post_json, format="json"
+                )
+                with self.subTest(i=index):
+                    assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
 
     def test_delete_permissions(self):
-        permission_index = permission_levels.index(self.edit_permission)
-        for index, level in enumerate(permission_levels):
-            self.membership.permission = level
-            self.membership.save()
-            if index >= permission_index:
-                expected_status = status.HTTP_200_OK
-            else:
-                expected_status = status.HTTP_403_FORBIDDEN
-            response = self.client.delete(
-                f"/rest/{self.list_uri}/{self.entity_type.pk}", self.delete_json, format="json"
-            )
-            with self.subTest(i=index):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            from main._permission_util import shift_permission
+
+            rp = RowProtection.objects.get(project=self.project)
+            orig_permission = rp.permission
+
+            model = type(self.entities[0])
+            required_permission = PermissionMask.FULL_CONTROL
+            for permission in [
+                PermissionMask.OLD_READ,
+                PermissionMask.OLD_WRITE,
+                PermissionMask.OLD_TRANSFER,
+                PermissionMask.OLD_EXECUTE,
+                PermissionMask.OLD_FULL_CONTROL,
+            ]:
+                rp.permission = permission
+                rp.save()
+                if (permission) & required_permission == required_permission:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+
+                print(f"permission = {hex(permission)}, expected_status = {expected_status}")
+
+                endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+                response = self.client.delete(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.delete_json, format="json"
+                )
                 assertResponse(self, response, expected_status)
-        self.membership.permission = Permission.FULL_CONTROL
-        self.membership.save()
+            self.membership.permission = Permission.FULL_CONTROL
+            rp.permission = orig_permission
+            rp.save()
+        else:
+            permission_index = permission_levels.index(self.edit_permission)
+            for index, level in enumerate(permission_levels):
+                self.membership.permission = level
+                self.membership.save()
+                if index >= permission_index:
+                    expected_status = status.HTTP_200_OK
+                else:
+                    expected_status = status.HTTP_403_FORBIDDEN
+                response = self.client.delete(
+                    f"/rest/{self.list_uri}/{self.entity_type.pk}", self.delete_json, format="json"
+                )
+                with self.subTest(i=index):
+                    assertResponse(self, response, expected_status)
+            self.membership.permission = Permission.FULL_CONTROL
+            self.membership.save()
 
 
 class MutateAliasTestCase(TatorTransactionTest):
@@ -5400,7 +6135,9 @@ class MutateAliasTestCase(TatorTransactionTest):
     # TODO: write totally different test for geopos mutations (not supported in query string queries)
 
 
-class JobClusterTestCase(TatorTransactionTest):
+class JobClusterTestCase(
+    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+):
     @staticmethod
     def _random_job_cluster_spec():
         uid = str(uuid1())
@@ -5426,59 +6163,33 @@ class JobClusterTestCase(TatorTransactionTest):
         self.list_uri = "JobClusters"
         self.detail_uri = "JobCluster"
         self.create_json = self._random_job_cluster_spec()
+        self.patch_json = self._random_job_cluster_spec()
         self.entity = JobCluster(organization=self.organization, **self.create_json)
+        self.another_one = JobCluster(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_list_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_detail_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
 
-    def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
-
-class HostedTemplateTestCase(TatorTransactionTest):
+class HostedTemplateTestCase(
+    TatorTransactionTest, PermissionListAffiliationTestMixin, PermissionDetailAffiliationTestMixin
+):
     @staticmethod
     def _hosted_template_spec():
         uid = str(uuid1())
@@ -5503,56 +6214,31 @@ class HostedTemplateTestCase(TatorTransactionTest):
         self.list_uri = "HostedTemplates"
         self.detail_uri = "HostedTemplate"
         self.create_json = self._hosted_template_spec()
+        self.patch_json = {
+            "name": "Updated name",
+            "url": "https://raw.githubusercontent.com/cvisionai/tator/main/doc/examples/workflow_template/echo.yaml",
+        }
         self.entity = HostedTemplate(organization=self.organization, **self.create_json)
         self.entity.save()
+        self.another_one = HostedTemplate(organization=self.organization, **self.create_json)
+        self.another_one.save()
+        self.entities = [self.entity, self.another_one]
+        self.edit_permission = "Admin"
+        self.get_requires_admin = True
+        affiliations_to_rowp(self.organization.pk, force=False, verbose=False)
+
+    def get_organization(self):
+        return self.organization
 
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
 
-    def test_list_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.list_uri}/{self.organization.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
-
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
         assertResponse(self, response, status.HTTP_200_OK)
-
-    def test_detail_no_affiliation_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.delete()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.save()
-
-    def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        old_permission = affiliation.permission
-        affiliation.permission = "Member"
-        affiliation.save()
-        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
-        response = self.client.get(url)
-        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
-        affiliation.permission = old_permission
-        affiliation.save()
 
 
 class UsernameTestCase(TatorTransactionTest):
@@ -5607,6 +6293,23 @@ class SectionTestCase(TatorTransactionTest):
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        memberships_to_rowp(self.project.pk, force=False, verbose=False)
+
+        self.media_type = MediaType.objects.create(
+            name="video",
+            dtype="video",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        wait_for_indices(self.media_type)
+
+        self.box_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype="box",
+            project=self.project,
+        )
+        self.box_type.media.add(self.media_type)
+        wait_for_indices(self.box_type)
 
     def test_unique_section_name(self):
         section_spec = {
@@ -5772,18 +6475,13 @@ class SectionTestCase(TatorTransactionTest):
         This test creates a media type, a section, and performs various operations on the section.
         It verifies the creation, retrieval, modification, and search functionality of sections.
         """
-        entity_type = MediaType.objects.create(
-            name="video",
-            dtype="video",
-            project=self.project,
-            attribute_types=create_test_attribute_types(),
-        )
-        wait_for_indices(entity_type)
-        media = create_test_video(self.user, "test.mp4", entity_type, self.project)
+
+        media = create_test_video(self.user, "test.mp4", self.media_type, self.project)
+
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "explicit_listing": True,
+            "dtype": "folder",
             "media": [media.pk],
         }
         url = f"/rest/Sections/{self.project.pk}"
@@ -5795,7 +6493,7 @@ class SectionTestCase(TatorTransactionTest):
         def check_it(section, section_spec):
             self.assertEqual(section["name"], section_spec["name"])
             self.assertEqual(section["path"], section_spec["path"])
-            self.assertEqual(section["explicit_listing"], section_spec["explicit_listing"])
+            self.assertEqual(section["dtype"], section_spec["dtype"])
             self.assertEqual(section["media"], section_spec["media"])
             self.assertEqual(section["created_by"], self.user.pk)
 
@@ -5815,7 +6513,7 @@ class SectionTestCase(TatorTransactionTest):
         section_spec = {
             "name": "Test",
             "path": "Foo.Test",
-            "explicit_listing": True,
+            "dtype": "folder",
             "media": [],
             "attributes": {"abcdef": False},
         }
@@ -5995,6 +6693,37 @@ class SectionTestCase(TatorTransactionTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
+    def test_localization_lookup_on_explicit(self):
+        sections = []
+        for x in range(5):
+            media = create_test_video(self.user, f"test_{x}.mp4", self.media_type, self.project)
+
+            section_spec = {
+                "name": f"Test{x}",
+                "path": f"Foo.Test{x}",
+                "dtype": "playlist",
+                "media": [media.pk],
+            }
+            url = f"/rest/Sections/{self.project.pk}"
+            response = self.client.post(url, section_spec, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            section_id = response.data["id"]
+            sections.append(section_id)
+
+            # Create 10 boxes on each video
+            for y in range(10):
+                create_test_box(self.user, self.box_type, self.project, media, y)
+            media_resp = self.client.get(
+                f"/rest/Localizations/{self.project.pk}?media_id={media.pk}"
+            )
+            self.assertEqual(len(media_resp.data), 10)
+
+        assert len(sections) == 5
+        for section in sections:
+            url = f"/rest/Localizations/{self.project.pk}?section={section}"
+            response = self.client.get(url, format="json")
+            self.assertEqual(len(response.data), 10)
+
     def test_multi_section_lookup(self):
         """
         Test case for performing a multi-section lookup.
@@ -6028,7 +6757,7 @@ class SectionTestCase(TatorTransactionTest):
             section_spec = {
                 "name": f"Test{r}",
                 "path": f"Foo.Test{r}",
-                "explicit_listing": True,
+                "dtype": "playlist",
                 "media": [lms[r].id],
             }
             url = f"/rest/Sections/{self.project.pk}"
@@ -6052,3 +6781,823 @@ class SectionTestCase(TatorTransactionTest):
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["attributes"]["Test Blob"], "foo")
+
+
+class AdvancedPermissionTestCase(TatorTransactionTest):
+    def setUp(self):
+        super().setUp()
+        logging.disable(logging.CRITICAL)
+        # Add 9 users
+        names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"]
+        self.users = [create_test_user(is_staff=False, username=name) for name in names]
+
+        self.random_user = create_test_user(is_staff=False, username="Outsider")
+
+        groups = ["Admin", "Member", "Guest"]
+        self.groups = [create_test_group(name) for name in groups]
+
+        self.organization = create_test_organization()
+        print(f"Organization is {self.organization.pk}")
+
+        # Add the users to the organization
+        for user in self.users:
+            Affiliation.objects.create(
+                user=user, organization=self.organization, permission="Member"
+            )
+
+        self.admin_users = [u.pk for u in self.users[:3]]
+        self.member_users = [u.pk for u in self.users[3:6]]
+        self.guest_users = [u.pk for u in self.users[6:]]
+
+        # Add the first 3 users to the Admin group
+        for user in self.admin_users:
+            gm = GroupMembership.objects.create(
+                user=User.objects.get(pk=user), group=self.groups[0]
+            )
+
+        # Add the middle 3 users to the Member group
+        for user in self.member_users:
+            gm = GroupMembership.objects.create(
+                user=User.objects.get(pk=user), group=self.groups[1]
+            )
+
+        # Add the last 3 users to the Guest group
+        for user in self.guest_users:
+            gm = GroupMembership.objects.create(
+                user=User.objects.get(pk=user), group=self.groups[2]
+            )
+
+        self.project = create_test_project(self.users[0])
+
+        # Make a bunch of test data (media + localizations)
+        self.video_type = MediaType.objects.create(
+            name="video", dtype="video", project=self.project
+        )
+
+        self.box_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype="box",
+            project=self.project,
+        )
+
+        self.file_entity_type = FileType.objects.create(
+            name="TestFileType",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+
+        self.baseline_version = create_test_version("baseline", "", 0, self.project, None)
+        self.readonly_version = create_test_version("readonly", "", 0, self.project, None)
+        self.full_version = create_test_version("full", "", 0, self.project, None)
+
+        # create test videos
+        self.videos = [
+            create_test_video(self.users[0], f"test{idx}.mp4", self.video_type, self.project)
+            for idx in range(20)
+        ]
+
+        # create a 2 sections
+        self.public_section = Section.objects.create(
+            name="Public",
+            path="Public",
+            dtype="folder",
+            project=self.project,
+        )
+
+        self.private_section = Section.objects.create(
+            name="Private",
+            path="Private",
+            dtype="folder",
+            project=self.project,
+        )
+
+        self.total_media = [v.pk for v in self.videos]
+        self.public_media = [v.pk for v in self.videos[:3]]
+        self.private_media = [v.pk for v in self.videos[3:6]]
+
+        for media in self.videos[:3]:
+            self.public_section.media.add(media)
+            self.public_section.save()
+            media.primary_section = self.public_section
+            media.save()
+
+        for media in self.videos[3:6]:
+            self.private_section.media.add(media)
+            self.private_section.save()
+            media.primary_section = self.private_section
+            media.save()
+
+        # create a bunch of boxes
+        for video in self.videos:
+            for idx in range(10):
+                version = self.baseline_version
+                # Add every other box in the public section to the read-only version
+                if (
+                    video.primary_section
+                    and video.primary_section.pk == self.public_section.pk
+                    and idx % 3 == 0
+                ):
+                    version = self.readonly_version
+                if (
+                    video.primary_section
+                    and video.primary_section.pk == self.public_section.pk
+                    and idx % 3 == 1
+                ):
+                    version = self.full_version
+
+                create_test_box(self.users[0], self.box_type, self.project, video, idx)
+
+        # Make some files
+        self.files = [
+            create_test_file(f"test_{idx}.txt", self.file_entity_type, self.project, self.users[0])
+            for idx in range(20)
+        ]
+
+        self.public_algo = create_test_algorithm(self.users[0], "public_algo", self.project)
+        self.private_algo = create_test_algorithm(self.users[0], "private_algo", self.project)
+        self.unspecified_algo = create_test_algorithm(
+            self.users[0], "unspecified_algo", self.project
+        )
+
+    def test_permission_augmentation(self):
+        from main._permission_util import augment_permission
+
+        """This test will verify permissions get augmented correctly using the augment routine"""
+
+        # Add exist permission to all members of the organization for the project for project,section+media
+        rp = RowProtection.objects.create(
+            organization=self.organization, project=self.project, permission=0x00010101
+        )
+
+        # Add full permissions to the Admin group (project-wide)
+        rp = RowProtection.objects.create(
+            group=self.groups[0], project=self.project, permission=0xFFFFFFFF
+        )
+
+        # Add read/write permissions to the member group to public/private but not whole project
+        # They can modify media / localizations but not the sections themselves
+        # Note: The user needs read/write on the version as well to modify localizations
+        # In this case, they have exist permission on `baseline`, `readonly` on readonly, and `full` on full.
+        rp = RowProtection.objects.create(
+            group=self.groups[1], section=self.public_section, permission=0x0F0F03
+        )
+        rp = RowProtection.objects.create(
+            group=self.groups[1], section=self.private_section, permission=0x0F0F03
+        )
+
+        # Add read-only permissions to the guest group for the public section
+        rp = RowProtection.objects.create(
+            group=self.groups[2], section=self.public_section, permission=0x030303
+        )
+
+        # Add read-only permissions to members to the read-only version
+        rp = RowProtection.objects.create(
+            group=self.groups[1], version=self.readonly_version, permission=0x0303
+        )
+
+        # Add full permissions to the full version
+        rp = RowProtection.objects.create(
+            group=self.groups[1], version=self.full_version, permission=0x0F0F
+        )
+
+        # At this point we have 3 versions; with boxes in both public and private sections
+        # A user needs permission for both the section and version to modify or read a localization
+        # For the baseline version members have default project permissions due to no RP existing
+        # For read-only they have read only permission
+        # For full they have full permission
+        # Thus, members can modify localizations in public section on full.
+        #
+        #   Member permissions validated in the following code for metadata
+        #   *-----------*----------| -----------| --------|
+        #   |           | Baseline |  Read-only |  Full   |
+        #   | Private   |    X     |      X     |   X     |
+        #   | Public    |    X     |   R/O      | Full    |
+        #   *-----------*----------*------------*---------*
+        #
+        #   Admins have access to all
+
+        # Give member group read/write permissions to all files
+        for f in self.files:
+            rp = RowProtection.objects.create(group=self.groups[1], file=f, permission=0xFF)
+
+        # Add some algo permissions
+        # Allow anyone in the org to see + use the public algo
+        rp = RowProtection.objects.create(
+            algorithm=self.public_algo, organization=self.organization, permission=0xFF
+        )
+        # Allow admin + member users to see + use the private algo
+        rp = RowProtection.objects.create(
+            algorithm=self.private_algo, group=self.groups[1], permission=0xFF
+        )
+        rp = RowProtection.objects.create(
+            algorithm=self.private_algo, group=self.groups[0], permission=0xFF
+        )
+
+        # Check random user has no permissions
+        media_qs = Media.objects.filter(pk__in=[media.pk for media in self.videos])
+        media_qs = augment_permission(self.random_user, media_qs)
+        assert media_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        section_qs = Section.objects.filter(
+            pk__in=[self.public_section.pk, self.private_section.pk]
+        )
+        section_qs = augment_permission(self.random_user, section_qs)
+        assert section_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        localization_qs = Localization.objects.filter(project=self.project)
+        localization_qs = augment_permission(self.random_user, localization_qs)
+        assert localization_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        file_qs = File.objects.filter(pk__in=[file.pk for file in self.files])
+        file_qs = augment_permission(self.random_user, file_qs)
+        assert file_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        algorithm_qs = Algorithm.objects.filter(
+            pk__in=[
+                algo.pk for algo in [self.public_algo, self.private_algo, self.unspecified_algo]
+            ]
+        )
+        algorithm_qs = augment_permission(self.random_user, algorithm_qs)
+        assert algorithm_qs.filter(effective_permission__gte=0x1).exists() == False
+
+        # Verify project permissions are correct
+        project_qs = Project.objects.filter(pk=self.project.pk)
+        project_qs = augment_permission(self.random_user, project_qs)
+        assert project_qs[0].effective_permission == 0x0
+
+        # Augment the permissions for each user, and test each media, section, localization, and version
+        for user in self.users:
+            project_qs = Project.objects.filter(pk=self.project.pk)
+            project_qs = augment_permission(user, project_qs)
+            if user.pk in self.admin_users:
+                assert project_qs[0].effective_permission == 0xFFFFFFFF
+            else:
+                assert project_qs[0].effective_permission == 0x010101
+
+            public_algo_qs = Algorithm.objects.filter(pk=self.public_algo.pk)
+            public_algo_qs = augment_permission(user, public_algo_qs)
+            assert public_algo_qs[0].effective_permission == 0xFF
+
+            private_algo_qs = Algorithm.objects.filter(pk=self.private_algo.pk)
+            private_algo_qs = augment_permission(user, private_algo_qs)
+            if user.pk in self.admin_users:
+                assert private_algo_qs[0].effective_permission == 0xFF
+            elif user.pk in self.member_users:
+                assert private_algo_qs[0].effective_permission == 0xFF
+            else:
+                assert private_algo_qs[0].effective_permission == 0x0101  # project permissions
+
+            unspecified_algo_qs = Algorithm.objects.filter(pk=self.unspecified_algo.pk)
+            unspecified_algo_qs = augment_permission(user, unspecified_algo_qs)
+            if user.pk in self.admin_users:
+                assert unspecified_algo_qs[0].effective_permission == 0xFFFFFF
+            else:
+                assert unspecified_algo_qs[0].effective_permission == 0x0101
+
+            # Check all files have the proper permission (exist only)
+            file_qs = File.objects.filter(pk__in=[file.pk for file in self.files])
+            file_qs = augment_permission(user, file_qs)
+            for f in file_qs:
+                if user.pk in self.admin_users:
+                    assert f.effective_permission == 0xFFFFFF
+                elif user.pk in self.member_users:
+                    assert f.effective_permission == 0xFF
+                else:
+                    assert f.effective_permission == 0x0101
+            # Check version objects for the proper permission
+            version_qs = Version.objects.filter(
+                pk__in=[self.baseline_version.pk, self.readonly_version.pk]
+            )
+            version_qs = augment_permission(user, version_qs)
+
+            for version in version_qs:
+                if user.pk in self.admin_users:
+                    assert version.effective_permission == 0xFFFFFF
+                elif user.pk in self.member_users:
+                    if version.pk == self.readonly_version.pk:
+                        assert version.effective_permission == 0x0303
+                    else:
+                        assert version.effective_permission == 0x0101
+
+            media_qs = Media.objects.filter(pk__in=[media.pk for media in self.videos])
+            media_qs = augment_permission(user, media_qs)
+
+            # Check permission is at least 0x1 for all media because we are in the organization
+            for media in media_qs:
+                assert media.effective_permission >= 0x1
+
+                if user.pk in self.admin_users:
+                    # Admins should have full permissions
+                    assert media.effective_permission == 0xFFFF
+                elif user.pk in self.member_users:
+                    if media.pk in self.public_media:
+                        # Members should have read/write permissions to public media
+                        assert media.effective_permission == 0x0F0F
+                    elif media.pk in self.private_media:
+                        # Members should have read/write permissions to private media
+                        assert media.effective_permission == 0x0F0F
+                    else:
+                        # Members have exist permission from being in the org, but can't see metadata
+                        assert media.effective_permission == 0x0001
+                elif user.pk in self.guest_users:
+                    if media.pk in self.public_media:
+                        # Guests should have read-only permissions to public media
+                        assert media.effective_permission == 0x0303
+                    else:
+                        # Guests should have exist permission because they are in the organization
+                        assert media.effective_permission == 0x01
+
+            section_qs = Section.objects.filter(
+                pk__in=[self.public_section.pk, self.private_section.pk]
+            )
+            section_qs = augment_permission(user, section_qs)
+            for section in section_qs:
+                if user.pk in self.admin_users:
+                    assert section.effective_permission == 0xFFFFFF
+                elif user.pk in self.member_users:
+                    assert section.effective_permission == 0x0F0F03
+                else:
+                    if section.pk == self.public_section.pk:
+                        assert section.effective_permission == 0x030303
+                    else:
+                        assert section.effective_permission == 0x000101
+
+            # Test effective permission for boxes in media match expected result
+            for media in media_qs:
+                localization_qs = Localization.objects.filter(project=self.project, media=media)
+                localization_qs = augment_permission(user, localization_qs)
+                if media.primary_section:
+                    media_primary_section_pk = media.primary_section.pk
+                else:
+                    media_primary_section_pk = None
+                for localization in localization_qs:
+                    if user.pk in self.admin_users:
+                        assert localization.effective_permission == 0xFF
+                    elif user.pk in self.member_users:
+                        if media_primary_section_pk == self.public_section.pk:
+                            if localization.version.pk == self.readonly_version.pk:
+                                assert localization.effective_permission == 0x03
+                            elif localization.version.pk == self.full_version.pk:
+                                assert localization.effective_permission == 0x0F
+                            else:
+                                assert (
+                                    localization.effective_permission == 0x01
+                                )  # It's default project permission here
+                        elif media_primary_section_pk == self.private_section.pk:
+                            assert localization.effective_permission == 0x01
+                    else:
+                        if media_primary_section_pk == self.public_section.pk:
+                            assert localization.effective_permission == 0x01
+                        else:
+                            assert localization.effective_permission == 0x00
+
+
+class GroupTestCase(TatorTransactionTest):
+    def setUp(self):
+        super().setUp()
+        # Add 9 users
+        logging.disable(logging.CRITICAL)
+        names = ["Kirk", "Spock", "McCoy", "Scotty", "Uhura", "Sulu", "Chekov", "Picard", "Data"]
+        self.users = [create_test_user(is_staff=False, username=name) for name in names]
+        self.starfleet = create_test_organization()
+
+        self.regular_user = create_test_user(is_staff=False, username="regular_user")
+        self.affilitation = create_test_member_affiliation(self.regular_user, self.starfleet)
+        self.client.force_authenticate(user=self.regular_user)
+        affiliations_to_rowp(self.starfleet.pk, False, False)
+
+    def test_group_creation_and_manip(self):
+        from main.schema.components.group import group_properties
+
+        resp = self.client.post(
+            f"/rest/Groups/{self.starfleet.pk}",
+            {"name": "NCC-1701", "initial_members": [u.id for u in self.users[:6]]},
+            format="json",
+        )
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") != "true":
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+            return
+
+        assertResponse(self, resp, status.HTTP_201_CREATED)
+        group_id = resp.data["id"]
+
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(resp.data["name"], "NCC-1701")
+        self.assertEqual(len(resp.data["members"]), 6)
+
+        # Check schema
+        check_schema_fields(group_properties.keys(), resp.data)
+
+        # Now add Chekov who joined us in the second season
+        resp = self.client.patch(
+            f"/rest/Group/{group_id}",
+            {"add_members": [self.users[6].id]},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data["members"]), 7)
+
+        # Verify creating an empty group works
+        resp = self.client.post(
+            f"/rest/Groups/{self.starfleet.pk}",
+            {"name": "NCC-1701-D", "initial_members": []},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_201_CREATED)
+        group_id = resp.data["id"]
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(resp.data["name"], "NCC-1701-D")
+        self.assertEqual(len(resp.data["members"]), 0)
+
+        # Verify adding a user to an empty group works
+        resp = self.client.patch(
+            f"/rest/Group/{group_id}",
+            {"add_members": [self.users[8].id, self.users[7].id]},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data["members"]), 2)
+
+        # One-time, they found Scotty in a transporter and he joined the other crew.
+        # Make sure we handle that case too.
+        resp = self.client.patch(
+            f"/rest/Group/{group_id}",
+            {"add_members": [self.users[3].id]},
+            format="json",
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        resp = self.client.get(f"/rest/Group/{group_id}", format="json")
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data["members"]), 3)
+
+        # Verify we get one group when we look up by Spock
+        resp = self.client.get(
+            f"/rest/Groups/{self.starfleet.pk}?user={self.users[1].pk}", format="json"
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+
+        # Verify we get two groups when we look up by Scotty
+        resp = self.client.get(
+            f"/rest/Groups/{self.starfleet.pk}?user={self.users[3].pk}", format="json"
+        )
+        assertResponse(self, resp, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 2)
+
+
+if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+
+    class RowProtectionTestCase(TatorTransactionTest):
+        def setUp(self):
+            super().setUp()
+            # Add 9 users from our previous
+            logging.disable(logging.CRITICAL)
+
+            self.kirk = create_test_user(is_staff=False, username="Kirk")
+            self.red_shirt = create_test_user(is_staff=False, username="redshirt")
+            self.commandant = create_test_user(is_staff=False, username="Commandant")
+            self.starfleet = create_test_organization()
+            self.affilitation = create_test_member_affiliation(self.kirk, self.starfleet)
+            self.commandant_affilitation = create_test_affiliation(self.commandant, self.starfleet)
+
+            self.project = create_test_project(self.commandant, self.starfleet)
+
+            self.media_type = MediaType.objects.create(
+                name="video",
+                dtype="video",
+                project=self.project,
+                attribute_types=create_test_attribute_types(),
+            )
+
+            # Manually make a row protection to project so Kirk can upload media
+            RowProtection.objects.create(
+                project=self.project,
+                user=self.kirk,
+                permission=PermissionMask.CAN_MAKE_MEDIA_AND_SECTIONS,
+            )
+
+            # Make a localization, state type, and version
+            self.box_type = LocalizationType.objects.create(
+                name="boxes",
+                dtype="box",
+                project=self.project,
+            )
+            self.state_type = StateType.objects.create(
+                name="state_type",
+                dtype="state",
+                project=self.project,
+                association="Frame",
+            )
+            self.box_type.media.add(self.media_type)
+            self.box_type.save()
+            self.state_type.media.add(self.media_type)
+            self.state_type.save()
+
+            self.public_version = create_test_version("public", "", 0, self.project, None)
+            self.captains_log = create_test_version("captains_log", "", 0, self.project, None)
+
+            RowProtection.objects.create(
+                version=self.public_version,
+                user=self.kirk,
+                permission=PermissionMask.FULL_CONTROL | PermissionMask.FULL_CONTROL << 8,
+            )
+            RowProtection.objects.create(
+                version=self.captains_log,
+                user=self.kirk,
+                permission=PermissionMask.FULL_CONTROL | PermissionMask.FULL_CONTROL << 8,
+            )
+
+            RowProtection.objects.create(
+                version=self.public_version,
+                user=self.red_shirt,
+                permission=PermissionMask.OLD_READ | PermissionMask.OLD_READ << 8,
+            )
+
+            # Use affiliation logic to make organizational level row protections
+            affiliations_to_rowp(self.starfleet.pk, False, False)
+
+        def test_crud(self):
+            from main.schema.components.rowprotection import row_protection_properties
+
+            # Verify behavior if you are Captain Kirk
+            self.client.force_authenticate(user=self.kirk)
+            resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # The commandant, who didn't steal the klingon ship and get demoted can see all row permissions
+            self.client.force_authenticate(user=self.commandant)
+            resp = self.client.get(f"/rest/RowProtections?target_organization={self.starfleet.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Verify schema of the return RowProtection object
+            assert type(resp.data) == list
+            assert len(resp.data) > 0
+            check_schema_fields(row_protection_properties.keys(), resp.data[0])
+
+            # Verify it on single GET too
+            resp = self.client.get(f"/rest/RowProtection/{resp.data[0]['id']}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            check_schema_fields(row_protection_properties.keys(), resp.data)
+
+            # Switch back to kirk
+            self.client.force_authenticate(user=self.kirk)
+
+            # Before we do anything, verify we get a media count of 0
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 0)
+
+            resp = self.client.delete(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            resp = self.client.get(f"/rest/MediaCount/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(resp.data, 0)
+            # Create a section
+            resp = self.client.post(
+                f"/rest/Sections/{self.project.pk}",
+                {"name": "Bridge", "path": "Bridge", "dtype": "folder"},
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            section_id = resp.data["id"]
+
+            # Create a media in the bridge
+            resp = self.client.post(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "name": "Captain's Chair",
+                    "type": self.media_type.pk,
+                    "md5": "8675309",
+                    "section_id": section_id,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            # Fetch row protections for the media in question (there are 0)
+            media_id = resp.data["id"]
+            resp = self.client.get(f"/rest/RowProtections?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 0)
+
+            # Fetch row protections for the section in question (there is 1)
+            resp = self.client.get(f"/rest/RowProtections?section={section_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            # Verify we only see one media thus far
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            # Create a second section
+            resp = self.client.post(
+                f"/rest/Sections/{self.project.pk}",
+                {"name": "Engineering", "path": "Engineering", "dtype": "folder"},
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            section_id = resp.data["id"]
+
+            # Add a media to this section
+            resp = self.client.post(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "name": "Warp Core",
+                    "type": self.media_type.pk,
+                    "md5": "1234567",
+                    "section_id": section_id,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            media_id = resp.data["id"]
+
+            # Add a media to this section
+            resp = self.client.post(
+                f"/rest/Medias/{self.project.pk}",
+                {
+                    "name": "Warp Core (Alternate)",
+                    "type": self.media_type.pk,
+                    "md5": "1234567",
+                    "section_id": section_id,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            media_id_alt = resp.data["id"]
+            # Add red shirt to engineering
+            # Post the row protection to the project
+            resp = self.client.post(
+                f"/rest/RowProtections",
+                {
+                    "section": section_id,
+                    "permission": PermissionMask.OLD_READ,
+                    "user": self.red_shirt.pk,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            engi_rp_id = resp.data["id"]
+
+            # Get all row protections for engineering
+            resp = self.client.get(f"/rest/RowProtections?section={section_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # Fetch all the media for the project as kirk
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 3)
+
+            # Now switch to the redshift and verify they can only see the engineering section
+            # (Both the warp core and warp core alternate)
+            self.client.force_authenticate(user=self.red_shirt)
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # redshirt cannot get row protections for engineering
+            resp = self.client.get(f"/rest/RowProtections?section={section_id}")
+            assert len(resp.data) == 0
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Go back to kirk
+            self.client.force_authenticate(user=self.kirk)
+
+            # Add localizations to the warp core
+            resp = self.client.post(
+                f"/rest/Localizations/{self.project.pk}",
+                {
+                    "type": self.box_type.pk,
+                    "media_id": media_id,
+                    "version": self.public_version.pk,
+                    "frame": 0,
+                    "x": 0.5,
+                    "y": 0.5,
+                    "width": 0.25,
+                    "height": 0.25,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            # Post another to the captains log
+            resp = self.client.post(
+                f"/rest/Localizations/{self.project.pk}",
+                {
+                    "type": self.box_type.pk,
+                    "media_id": media_id,
+                    "version": self.captains_log.pk,
+                    "frame": 0,
+                    "x": 0.5,
+                    "y": 0.5,
+                    "width": 0.25,
+                    "height": 0.25,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            # Fetch all localizations for the warp core
+            resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # Add some states
+            resp = self.client.post(
+                f"/rest/States/{self.project.pk}",
+                {
+                    "type": self.state_type.pk,
+                    "media_ids": [media_id],
+                    "version": self.public_version.pk,
+                    "frame": 0,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+
+            resp = self.client.post(
+                f"/rest/States/{self.project.pk}",
+                {
+                    "type": self.state_type.pk,
+                    "media_ids": [media_id, media_id_alt],
+                    "version": self.captains_log.pk,
+                    "frame": 0,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            state_id = resp.data["id"][0]
+            # Assert we get two States from Kirk's permission
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 2)
+
+            # Verify we can fetch the created state
+            resp = self.client.get(f"/rest/State/{state_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(resp.data["id"], state_id)
+
+            # Switch back to the red shirt and verify we get 1 localization and 1 state
+            self.client.force_authenticate(user=self.red_shirt)
+            resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+            self.assertEqual(len(resp.data), 1)
+
+            # redshirt cannot delete the row protection of engineering
+            resp = self.client.delete(f"/rest/RowProtection/{engi_rp_id}")
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+
+            self.client.force_authenticate(user=self.kirk)
+            # Add a row protection to allow the commandant to see the warp core
+            resp = self.client.post(
+                f"/rest/RowProtections",
+                {
+                    "section": section_id,
+                    "permission": PermissionMask.OLD_READ,
+                    "user": self.commandant.pk,
+                },
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_201_CREATED)
+            rp_id = resp.data["id"]
+
+            resp = self.client.patch(
+                f"/rest/RowProtection/{rp_id}",
+                {"permission": 0},
+                format="json",
+            )
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Pull the value and make sure it was set to 0
+            rp = RowProtection.objects.get(pk=rp_id)
+            self.assertEqual(rp.permission, 0)
+
+            # Now switch to the commandant and verify there is no permission
+            self.client.force_authenticate(user=self.commandant)
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+
+            # kirk delete the row protection of engineering
+            self.client.force_authenticate(user=self.kirk)
+            resp = self.client.delete(f"/rest/RowProtection/{engi_rp_id}")
+            assertResponse(self, resp, status.HTTP_200_OK)
+
+            # Now switch to the redshirt and verify they can't see the engineering section
+            self.client.force_authenticate(user=self.red_shirt)
+            resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            assertResponse(self, resp, status.HTTP_403_FORBIDDEN)

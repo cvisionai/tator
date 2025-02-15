@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { ImageCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { ImageCanvas } from "../../../../scripts/packages/tator-js/src/annotator/image.js";
 
 if (!customElements.get("image-canvas")) {
   customElements.define("image-canvas", ImageCanvas);
@@ -168,25 +168,6 @@ export class AnnotationImage extends TatorElement {
    */
   goToFrame(frame) {
     return;
-  }
-
-  overrideCanvas(frame, bitmap) {
-    const canvas = document.createElement("canvas");
-    canvas.width = this._image._dims[0];
-    canvas.height = this._image._dims[1];
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(bitmap, 0, 0);
-    this._image._imageElement.onload = () => {
-      this._image._draw.frameBuffer.reset();
-      this._image.refresh();
-    };
-    this._image._imageElement.src = canvas.toDataURL();
-  }
-
-  clearOverrideCanvas() {
-    this._image._draw.frameBuffer.reset();
-    this._image._loadFromMediaFiles();
-    this._image.refresh();
   }
 }
 

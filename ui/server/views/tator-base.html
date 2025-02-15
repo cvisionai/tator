@@ -2,12 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    {% if datadog_enabled %}
-    {% include "datadog.html" %}
-    {% endif %}
+    {% if datadog_enabled %} {% include "datadog.html" %} {% endif %}
     <script>
       var BACKEND = '{{ backend }}';
       var KEYCLOAK_ENABLED = {{ keycloak_enabled }};
+      var STATIC_PATH = '{{ static_path }}';
       window.addEventListener('unload', function () {
           console.info("Prevent BF Cache #1");
       });
@@ -15,15 +14,27 @@
           console.info("Prevent BF Cache #2");
       });
     </script>
-    <script src="/static/require-login.js"></script>
-    <script src="/static/tator-ui.js"></script>
-    <link rel="stylesheet" type="text/css" href="/static/tator-ui.css" />
-    {% block head %}
-    {% endblock head %}
+    <script type="importmap">
+      {
+        "imports": {
+          "uuid": "{{ static_path }}/ui/node_modules/uuid/dist/esm-browser/index.js",
+          "libtess": "{{ static_path }}/ui/node_modules/libtess/libtess.mjs",
+          "hls.js": "{{ static_path }}/ui/node_modules/hls.js/dist/hls.mjs",
+          "earcut": "{{ static_path }}/ui/node_modules/earcut/earcut.mjs",
+          "underwater-image-color-correction": "{{ static_path }}/ui/node_modules/underwater-image-color-correction/underwater-image-color-correction.mjs",
+          "spark-md5": "{{ static_path }}/ui/node_modules/spark-md5/spark-md5.mjs"
+        }
+      }
+    </script>
+    <script src="{{ static_path }}/require-login.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ static_path }}/ui/src/css/styles.css"
+    />
+    {% block head %} {% endblock head %}
   </head>
-<body>
-  {% block body %}
-  {% endblock body %}
-</body>
-
+  <body>
+    {% block body %} {% endblock body %}
+  </body>
 </html>

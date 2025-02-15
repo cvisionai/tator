@@ -2,8 +2,6 @@ import { TatorElement } from "../tator-element.js";
 import { svgNamespace } from "../tator-element.js";
 import { hasPermission } from "../../util/has-permission.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
-import Spinner from "../../../images/spinner-transparent.svg";
-import LiveThumb from "../../../images/live-thumb.png";
 
 export class EntityCard extends TatorElement {
   constructor() {
@@ -14,6 +12,7 @@ export class EntityCard extends TatorElement {
       "id",
       "modified_by",
       "modified_datetime",
+      "created_by",
       "created_datetime",
       "type",
       "elemental_id",
@@ -42,7 +41,10 @@ export class EntityCard extends TatorElement {
 
     // Image, spinner until SRC set
     this._img = document.createElement("img");
-    this._img.setAttribute("src", Spinner);
+    this._img.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/spinner-transparent.svg`
+    );
     this._img.setAttribute("class", "entity-card__image rounded-1");
     this._img.setAttribute("crossorigin", "anonymous");
     this._link.appendChild(this._img);
@@ -74,7 +76,8 @@ export class EntityCard extends TatorElement {
 
     // Text for Title Div
     this._name = document.createElement("a");
-    this._name.setAttribute("class", "text-semibold text-white css-truncate");
+    this._name.setAttribute("class", "text-semibold text-white col-11");
+    this._name.style.overflowWrap = "break-word";
     // this._name.setAttribute("href", "#");
     this.titleDiv.appendChild(this._name);
 
@@ -108,13 +111,6 @@ export class EntityCard extends TatorElement {
     this._bottom = document.createElement("div");
     this._bottom.setAttribute("class", "f3 d-flex flex-justify-between");
     this._styledDiv.appendChild(this._bottom);
-
-    // OPTIONAL Detail text (ie file extension)
-    this._ext = document.createElement("span");
-    this._ext.setAttribute("title", "file extension");
-    this._ext.setAttribute("class", "f3 text-gray");
-    this._ext.hidden = true;
-    this._bottom.appendChild(this._ext);
 
     // OPTIONAL Pagination position
     this._pos_text = document.createElement("span");
@@ -247,13 +243,13 @@ export class EntityCard extends TatorElement {
       input.addEventListener("blur", (evt) => {
         if (evt.target.value !== "") {
           this._name.textContent = evt.target.value;
-          const full = evt.target.value + this._ext.textContent;
+          const full = evt.target.value;
           this._li.setAttribute("title", full);
         }
         fetchCredentials("/rest/Media/" + this.getAttribute("media-id"), {
           method: "PATCH",
           body: JSON.stringify({
-            name: `${this._name.textContent}.${this._ext.textContent}`,
+            name: `${this._name.textContent}`,
           }),
         }).catch((err) => console.error("Failed to change name: " + err));
         this.titleDiv.replaceChild(this._name, evt.target);
@@ -369,10 +365,7 @@ export class EntityCard extends TatorElement {
         }
         break;
       case "name":
-        const dot = Math.max(0, newValue.lastIndexOf(".") || Infinity);
-        const ext = newValue.slice(dot + 1);
-        this._ext.textContent = ext.toUpperCase();
-        this._name.textContent = newValue.slice(0, dot);
+        this._name.textContent = newValue;
         this._li.setAttribute("title", newValue);
         this._more.setAttribute("name", newValue);
         break;
@@ -434,11 +427,11 @@ export class EntityCard extends TatorElement {
       typeof this.cardObj.image !== "undefined" &&
       this.cardObj.image !== null
     ) {
-      //this.setAttribute("thumb", obj.image);
       this.setImageStatic(obj.image);
     } else if (!mediaInit) {
-      //this.setAttribute("thumb", Spinner);
-      this.setImageStatic(Spinner);
+      this.setImageStatic(
+        `${STATIC_PATH}/ui/src/images/spinner-transparent.svg`
+      );
     }
 
     if (obj.posText) {
@@ -447,8 +440,6 @@ export class EntityCard extends TatorElement {
     }
 
     this._membershipMap = new Map();
-    // console.log("memberships");
-    // console.log(memberships);
     if (memberships !== null) {
       for (let member of memberships) {
         this._membershipMap.set(member.user, member.username);
@@ -692,13 +683,27 @@ export class EntityCard extends TatorElement {
       this.setAttribute("name", this._media.name);
     }
 
+    function hasValue(value) {
+      return !(
+        value === null ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0)
+      );
+    }
+
     // Set thumnail
-    if (this._media.media_files && this._media.media_files.thumbnail) {
+    if (
+      this._media.media_files &&
+      hasValue(this._media.media_files.thumbnail)
+    ) {
       this.setAttribute("thumb", this._media.media_files.thumbnail[0].path);
     }
     this.removeAttribute("thumb-gif"); // why is this always done? instead of below on else
 
-    if (this._media.media_files && this._media.media_files.thumbnail_gif) {
+    if (
+      this._media.media_files &&
+      hasValue(this._media.media_files.thumbnail_gif)
+    ) {
       this.setAttribute(
         "thumb-gif",
         this._media.media_files.thumbnail_gif[0].path
@@ -706,7 +711,7 @@ export class EntityCard extends TatorElement {
     }
 
     if (this._media.media_files) {
-      if (this._media.media_files.attachment) {
+      if (hasValue(this._media.media_files.attachment)) {
         this.attachments = this._media.media_files.attachment;
       } else {
         this.attachments = [];
@@ -730,7 +735,10 @@ export class EntityCard extends TatorElement {
       ) {
         // Default to tator thumbnail
         // TODO: Have some visual indication if stream is active.
-        this._img.setAttribute("src", LiveThumb);
+        this._img.setAttribute(
+          "src",
+          `${STATIC_PATH}/ui/src/images/live-thumb.png`
+        );
       }
     }
 
@@ -1262,8 +1270,6 @@ export class EntityCard extends TatorElement {
     // Link reset
     this._name.style.opacity = 0.35;
     this._link.style.opacity = 0.35;
-    // this._name.style.cursor = "not-allowed";
-    // this._link.style.cursor = "not-allowed";
     this._link.setAttribute("href", "#");
     this._name.removeAttribute("href");
 
@@ -1273,19 +1279,11 @@ export class EntityCard extends TatorElement {
     this._archiveEmblem.style.display = "none";
     this._archiveUpEmblem.style.display = "none";
     this._archiveDownEmblem.style.display = "none";
-
-    // TODO - the above are set on media these are note, clear diff time?
-    // this._ext.hidden = true;
-    // this._pos_text.textContent = "";
   }
 
   handleDragStart(e) {
-    // evt.preventDefault();
-    // console.log("Drag start: Trying to drag this file?");
     this.dispatchEvent(new Event("card-moving"));
 
-    //
-    // console.log(this.cardObj);
     const data = this.cardObj;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", JSON.stringify(data));

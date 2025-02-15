@@ -1,6 +1,5 @@
-import * as d3 from "d3";
-import { v1 as uuidv1 } from "uuid";
-import { TatorApi } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import "../../../node_modules/d3/dist/d3.js";
+import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
 import { BaseTimeline } from "../annotation/base-timeline.js";
 
 export class EntityTimeline extends BaseTimeline {
@@ -78,9 +77,14 @@ export class EntityTimeline extends BaseTimeline {
     this._timelineSettings = val;
   }
 
-  timeStoreInitialized() {
+  set timeStore(val) {
+    this._timeStore = val;
     this._timeStoreInitialized = true;
     this.updateData();
+  }
+
+  set parent(val) {
+    this._parent = val;
   }
 
   /**
@@ -968,6 +972,10 @@ export class EntityTimeline extends BaseTimeline {
     const focusStepPad = 4;
     const focusMargin = { top: 20, right: 5, bottom: 3, left: 5 };
 
+    this._focusStep = focusStep;
+    this._focusStepPad = focusStepPad;
+    this._focusMargin = focusMargin;
+
     var focusPointsHeight = focusStep + focusStepPad;
     if (this._pointsData.length == 0) {
       focusPointsHeight = 0;
@@ -982,6 +990,8 @@ export class EntityTimeline extends BaseTimeline {
     const focusWidth = this._mainWidth;
     this._focusSvg.attr("viewBox", `0 0 ${focusWidth} ${focusHeight}`);
 
+    this._focusHeight = focusHeight;
+    this._focusWidth = focusWidth;
     // Define the axes
     var minFrame = Math.round(this._mainX.invert(selection[0]));
     var maxFrame = Math.round(this._mainX.invert(selection[1]));
@@ -991,6 +1001,8 @@ export class EntityTimeline extends BaseTimeline {
       .range([0, focusWidth]);
 
     var focusY = d3.scaleLinear().domain([0, 1.0]).range([0, -focusStep]);
+    this._focusX = focusX;
+    this._focusY = focusY;
 
     const minPixels = 6;
     const pixelsPerFrame = focusWidth / (maxFrame - minFrame);
@@ -1322,6 +1334,7 @@ export class EntityTimeline extends BaseTimeline {
       .attr("dy", "0.5em")
       .style("font-size", "12px")
       .attr("fill", "#fafafa");
+    this._focusStateValues = focusStateValues;
 
     // States are represented as line graphs
     var focusLineDataset = this._numericalData.map((d) =>
@@ -1414,9 +1427,11 @@ export class EntityTimeline extends BaseTimeline {
       .attr("y", focusStep / 2)
       .attr("dy", "0.5em")
       .attr("fill", "#fafafa");
+    this._focusLineValues = focusLineValues;
 
     // Apply the x-axis ticks at the end, after the other graphics have been filled in
     var displayXAxis = selection[0] >= 0;
+    this._displayXAxis = displayXAxis;
     if (displayXAxis) {
       var focusXAxisG = this._focusSvg
         .append("g")
@@ -1427,6 +1442,7 @@ export class EntityTimeline extends BaseTimeline {
         .append("rect")
         .attr("width", focusWidth)
         .attr("height", focusStep);
+      this._focusFrameTextBackground = focusFrameTextBackground;
 
       var focusFrameText = focusXAxisG
         .append("text")
@@ -1435,6 +1451,7 @@ export class EntityTimeline extends BaseTimeline {
         .attr("y", -focusStep / 2)
         .attr("dy", "0.35em")
         .attr("fill", "#fafafa");
+      this._focusFrameText = focusFrameText;
     }
 
     // Create the vertical line hover
@@ -1444,6 +1461,7 @@ export class EntityTimeline extends BaseTimeline {
       .attr("stroke", "#fafafa")
       .attr("stroke-width", 1)
       .attr("opacity", "0");
+    this._mouseLine = mouseLine;
 
     var that = this;
     this._focusSvg.on("click", function (event, d) {
@@ -1464,86 +1482,115 @@ export class EntityTimeline extends BaseTimeline {
       mouseLine.attr("opacity", "0.5");
       that._mainFrameLine.attr("opacity", "0.5");
     });
-    this._focusSvg.on("mouseout", function () {
+    this._focusSvg.on("mouseout", () => {
       d3.select(this).style("cursor", "default");
-      mouseLine.attr("opacity", "0");
-      that._mainFrameLine.attr("opacity", "0");
-      if (displayXAxis) {
-        focusFrameTextBackground.attr("opacity", "0");
-        focusFrameText.attr("opacity", "0");
-        focusLineValues.attr("opacity", "0");
-        focusStateValues.attr("opacity", "0");
-      }
+      this.focusMouseOut();
     });
-    this._focusSvg.on("mousemove", function (event, d) {
-      var currentFrame = parseInt(focusX.invert(d3.pointer(event)[0]));
-
-      mouseLine
-        .attr("opacity", "0.5")
-        .attr("x1", d3.pointer(event)[0])
-        .attr("x2", d3.pointer(event)[0])
-        .attr("y1", -focusStep - focusMargin.bottom)
-        .attr("y2", focusHeight);
-
-      that._mainFrameLine
-        .attr("opacity", "0.5")
-        .attr("x1", that._mainX(currentFrame))
-        .attr("x2", that._mainX(currentFrame))
-        .attr("y1", -that._mainStep - that._mainMargin.bottom)
-        .attr("y2", that._mainHeight);
-
-      if (displayXAxis) {
-        focusFrameText.attr("opacity", "1.0");
-        focusFrameText.attr("x", d3.pointer(event)[0]);
-        if (that.inFrameDisplayMode()) {
-          focusFrameText.text(currentFrame);
-        } else if (that.inRelativeTimeDisplayMode()) {
-          focusFrameText.text(that._createRelativeTimeString(currentFrame));
-        } else if (that.inUTCDisplayMode()) {
-          focusFrameText.text(that._createUTCString(currentFrame));
-        }
-
-        var textBBox = focusFrameText.node().getBBox();
-
-        focusFrameTextBackground.attr("opacity", "1.0");
-        focusFrameTextBackground.attr("x", textBBox.x - textBBox.width / 4);
-        focusFrameTextBackground.attr("y", textBBox.y);
-        focusFrameTextBackground.attr(
-          "width",
-          textBBox.width + textBBox.width / 2
-        );
-        focusFrameTextBackground.attr("height", textBBox.height);
-        focusFrameTextBackground.attr("fill", "#151b28");
-      }
-
-      let idx;
-
-      focusLineValues.attr("opacity", "1.0");
-      focusLineValues.text(function (d) {
-        for (idx = 0; idx < d.graphData.length; idx++) {
-          if (d.graphData[idx].frame > currentFrame) {
-            if (idx > 0) {
-              return d3.format(".2f")(d.graphData[idx - 1].actualValue);
-            }
-          }
-        }
-        return "";
-      });
-
-      focusStateValues.attr("opacity", "1.0");
-      focusStateValues.text(function (d) {
-        for (idx = 0; idx < d.graphData.length; idx++) {
-          if (d.graphData[idx].focusFrame > currentFrame) {
-            if (idx > 0) {
-              return String(d.graphData[idx - 1].focusActualValue);
-            }
-          }
-        }
-        return "";
-      });
-    });
+    this._focusSvg.on("mousemove", this.focusMouseMove.bind(this));
   }
 
+  focusMouseOut() {
+    if (this._mouseLine == undefined) {
+      return;
+    }
+    this._mouseLine.attr("opacity", "0");
+    this._mainFrameLine.attr("opacity", "0");
+    if (this._displayXAxis) {
+      this._focusFrameTextBackground.attr("opacity", "0");
+      this._focusFrameText.attr("opacity", "0");
+      this._focusLineValues.attr("opacity", "0");
+      this._focusStateValues.attr("opacity", "0");
+    }
+  }
+  focusMouseMove(event, d, overrideFrame, external) {
+    if (this._mouseLine == undefined) {
+      return;
+    }
+    var currentFrame = 0;
+    if (overrideFrame) {
+      currentFrame = overrideFrame;
+    } else if (event) {
+      currentFrame = parseInt(this._focusX.invert(d3.pointer(event)[0]));
+    }
+
+    const rect = this.getBoundingClientRect();
+    const x = this._mainX(currentFrame);
+
+    if (external == undefined && this._parent != undefined) {
+      const fakeEvt = {
+        detail: {
+          clientX: x + rect.left,
+          frame: currentFrame,
+          skipTimeline: true,
+        },
+      };
+      this._parent.processPreview(fakeEvt);
+    }
+
+    this._mouseLine
+      .attr("opacity", "0.5")
+      .attr("x1", x)
+      .attr("x2", x)
+      .attr("y1", -this._focusStep - this._focusMargin.bottom)
+      .attr("y2", this._focusHeight);
+
+    this._mainFrameLine
+      .attr("opacity", "0.5")
+      .attr("x1", x)
+      .attr("x2", x)
+      .attr("y1", -this._mainStep - this._mainMargin.bottom)
+      .attr("y2", this._mainHeight);
+
+    if (this._displayXAxis) {
+      this._focusFrameText.attr("opacity", "1.0");
+      this._focusFrameText.attr("x", x);
+      if (this.inFrameDisplayMode()) {
+        this._focusFrameText.text(currentFrame);
+      } else if (this.inRelativeTimeDisplayMode()) {
+        this._focusFrameText.text(this._createRelativeTimeString(currentFrame));
+      } else if (this.inUTCDisplayMode()) {
+        this._focusFrameText.text(this._createUTCString(currentFrame));
+      }
+
+      var textBBox = this._focusFrameText.node().getBBox();
+
+      this._focusFrameTextBackground.attr("opacity", "1.0");
+      this._focusFrameTextBackground.attr("x", textBBox.x - textBBox.width / 4);
+      this._focusFrameTextBackground.attr("y", textBBox.y);
+      this._focusFrameTextBackground.attr(
+        "width",
+        textBBox.width + textBBox.width / 2
+      );
+      this._focusFrameTextBackground.attr("height", textBBox.height);
+      this._focusFrameTextBackground.attr("fill", "#151b28");
+    }
+
+    let idx;
+
+    this._focusLineValues.attr("opacity", "1.0");
+    this._focusLineValues.text(function (d) {
+      for (idx = 0; idx < d.graphData.length; idx++) {
+        if (d.graphData[idx].frame > currentFrame) {
+          if (idx > 0) {
+            return d3.format(".2f")(d.graphData[idx - 1].actualValue);
+          }
+        }
+      }
+      return "";
+    });
+
+    this._focusStateValues.attr("opacity", "1.0");
+    this._focusStateValues.text(function (d) {
+      for (idx = 0; idx < d.graphData.length; idx++) {
+        if (d.graphData[idx].focusFrame > currentFrame) {
+          if (idx > 0) {
+            return String(d.graphData[idx - 1].focusActualValue);
+          }
+        }
+      }
+      return "";
+    });
+  }
   /**
    * Call this to initialize the timeline.
    * This will default the display mode to frames.

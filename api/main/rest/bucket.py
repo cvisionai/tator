@@ -1,5 +1,7 @@
 import logging
 from rest_framework.exceptions import PermissionDenied
+import os
+
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -14,7 +16,7 @@ from ..store import ObjectStore
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import OrganizationAdminPermission
+from ._permissions import OrganizationEditPermission
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,7 @@ def serialize_bucket(bucket):
         "live_sc": bucket.live_sc,
         "store_type": bucket.store_type.value,
         "external_host": bucket.external_host,
+        "effective_permission": bucket.effective_permission,
     }
 
 
@@ -46,19 +49,20 @@ class BucketListAPI(BaseListView):
     """List endpoint for Buckets."""
 
     schema = BucketListSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     http_method_names = ["get", "post"]
 
     def _get(self, params):
         # Make sure user has access to this organization.
-        affiliation = Affiliation.objects.filter(
-            organization=params["organization"], user=self.request.user
-        )
-        if affiliation.count() == 0:
-            raise PermissionDenied
-        if affiliation[0].permission != "Admin":
-            raise PermissionDenied
-        buckets = Bucket.objects.filter(organization=params["organization"])
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
+            affiliation = Affiliation.objects.filter(
+                organization=params["organization"], user=self.request.user
+            )
+            if affiliation.count() == 0:
+                raise PermissionDenied
+            if affiliation[0].permission != "Admin":
+                raise PermissionDenied
+        buckets = self.get_queryset()
         return [serialize_bucket(bucket) for bucket in buckets]
 
     def _post(self, params):
@@ -75,29 +79,35 @@ class BucketListAPI(BaseListView):
         bucket = Bucket.objects.create(**params)
         return {"message": f"Bucket {bucket.name} created!", "id": bucket.id}
 
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(
+            Bucket.objects.filter(organization=self.params["organization"])
+        )
+
 
 class BucketDetailAPI(BaseDetailView):
     """Detail endpoint for Buckets."""
 
     schema = BucketDetailSchema()
-    permission_classes = [OrganizationAdminPermission]
+    permission_classes = [OrganizationEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
     def _get(self, params):
         # Make sure bucket exists.
-        buckets = Bucket.objects.filter(pk=params["id"])
-        if buckets.count() == 0:
+        buckets = self.get_queryset()
+        if buckets.exists() == False:
             raise Http404
 
-        # Make sure user has access to this organization.
-        affiliation = Affiliation.objects.filter(
-            organization=buckets[0].organization, user=self.request.user
-        )
-        if affiliation.count() == 0:
-            raise PermissionDenied
-        if affiliation[0].permission != "Admin":
-            raise PermissionDenied
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "False") != "true":
+            # Make sure user has access to this organization.
+            affiliation = Affiliation.objects.filter(
+                organization=buckets[0].organization, user=self.request.user
+            )
+            if affiliation.count() == 0:
+                raise PermissionDenied
+            if affiliation[0].permission != "Admin":
+                raise PermissionDenied
 
         return serialize_bucket(buckets[0])
 
@@ -136,5 +146,5 @@ class BucketDetailAPI(BaseDetailView):
         bucket.delete()
         return {"message": f'Bucket {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
-        return Bucket.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Bucket.objects.filter(pk=self.params["id"]))

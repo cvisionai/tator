@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.http import Http404
 
+from ..models import Bucket
 from ..models import Media
 from ..models import Resource
 from ..models import safe_delete
@@ -11,14 +12,30 @@ from ..search import TatorSearch
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectTransferPermission
+from ._permissions import ProjectTransferPermission, ProjectViewOnlyPermission
 from ._util import check_resource_prefix
+
+from .._permission_util import check_bucket_permissions
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ImageFileListAPI(BaseListView):
     schema = ImageFileListSchema()
-    permission_classes = [ProjectTransferPermission]
+
     http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         media = Media.objects.get(pk=params["id"])
@@ -39,6 +56,11 @@ class ImageFileListAPI(BaseListView):
             body = params["body"]
             index = params.get("index")
             check_resource_prefix(body["path"], qs[0])
+            bucket_id = params.get("bucket_id")
+            if bucket_id:
+                bucket = Bucket.objects.filter(pk=bucket_id)
+                check_bucket_permissions(self.request.user, bucket)
+
             if not media_files:
                 media_files = {}
             if role not in media_files:
@@ -54,18 +76,27 @@ class ImageFileListAPI(BaseListView):
                 media_files[role].insert(index, body)
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params["id"])
-        Resource.add_resource(body["path"], media)
+        Resource.add_resource(body["path"], media, bucket_id=bucket_id)
         return {"message": f"Media file in media object {media.id} created!"}
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))
 
 
 class ImageFileDetailAPI(BaseDetailView):
     schema = ImageFileDetailSchema()
-    permission_classes = [ProjectTransferPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         media = Media.objects.get(pk=params["id"])
@@ -135,5 +166,5 @@ class ImageFileDetailAPI(BaseDetailView):
         safe_delete(deleted["path"], media.project.id)
         return {"message": f'Media file in media object {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))

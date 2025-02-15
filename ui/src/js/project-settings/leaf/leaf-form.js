@@ -279,7 +279,7 @@ export class LeafForm extends TatorElement {
 
     // Custom attributes
     const attrVals = this._getWidgetValues();
-    if (attrVals !== {}) {
+    if (Object.getOwnPropertyNames(attrVals).length > 0) {
       formData.attributes = attrVals;
     }
 

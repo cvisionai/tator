@@ -1,14 +1,16 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Invitation Accepted</title>
 <meta http-equiv="refresh" content="3;url=/organizations" />
-{% endblock head %}
-
-{% block body %}
+{% endblock head %} {% block body %}
 <main class="layout-max py-4">
-  <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-6">
-    <img class="py-4" src="/static/images/tator-logo.png" width=400>
+  <div
+    class="main__header d-flex flex-column flex-items-center flex-justify-center py-6"
+  >
+    <img
+      class="py-4"
+      src="{{static_path}}/ui/src/images/tator-logo.png"
+      width="400"
+    />
     <h1 class="h1">Invitation accepted!</h1>
     <h3 class="h3 py-3">Redirecting in 3 seconds...</h3>
   </div>

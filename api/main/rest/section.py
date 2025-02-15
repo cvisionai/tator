@@ -9,16 +9,18 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from ..models import Section
 from ..models import Project
 from ..models import database_qs
+from ..models import RowProtection
 from ..schema import SectionListSchema
 from ..schema import SectionDetailSchema
 from ..schema.components import section
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectEditPermission
+from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 from ._util import check_required_fields
 from ._attributes import validate_attributes, patch_attributes
 from ._annotation_query import _do_object_search
+from .._permission_util import PermissionMask
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ def _fill_m2m(response_data):
         for obj in Section.media.through.objects.filter(section__in=section_ids)
         .values("section_id")
         .order_by("section_id")
-        .annotate(media=ArrayAgg("media_id"))
+        .annotate(media=ArrayAgg("media_id", default=[]))
         .iterator()
     }
     # Copy many to many fields into response data.
@@ -46,20 +48,27 @@ class SectionListAPI(BaseListView):
     """Create or retrieve a list of project media sections."""
 
     schema = SectionListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ["get", "post", "patch", "delete"]
 
-    def _get_qs(self, params):
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        params = self.params
         qs = Section.objects.filter(project=params["project"])
         if "name" in params:
             qs = qs.filter(name__iexact=f"{params['name']}")
         elemental_id = params.get("elemental_id", None)
         if elemental_id is not None:
-            # Django 3.X has a bug where UUID fields aren't escaped properly
-            # Use .extra to manually validate the input is UUID
-            # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
-            qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+            qs = qs.filter(elemental_id=safe)
 
         # Just in case something slips by the schema, have a look up table from schema to db operation
         op_table = {"match": "match", "ancestors": "ancestors", "descendants": "descendants"}
@@ -73,10 +82,10 @@ class SectionListAPI(BaseListView):
         qs = qs.annotate(related_search=F("related_object_search"))
 
         qs = qs.order_by("name")
-        return qs
+        return self.filter_only_viewables(qs)
 
     def _get(self, params):
-        qs = self._get_qs(params)
+        qs = self.get_queryset()
         results = list(qs.values(*SECTION_PROPERTIES))
         # values does not convert Ltree.Path to a string consistently
         for idx, r in enumerate(results):
@@ -85,10 +94,13 @@ class SectionListAPI(BaseListView):
         return results
 
     def _delete(self, params):
-        qs = self._get_qs(params)
+        qs = self.get_queryset()
         count = qs.count()
         qs.delete()
         return {"message": f"Successfully deleted {count} sections!"}
+
+    def get_model(self):
+        return Section
 
     def _post(self, params):
         project = params["project"]
@@ -136,10 +148,19 @@ class SectionListAPI(BaseListView):
             for media_id in media_list:
                 section.media.add(media_id)
             section.save()
+        # Automatically create row protection for newly created section based on the creator
+        RowProtection.objects.create(
+            section=section,
+            user=self.request.user,
+            # Full permission for the section and any media with in it.
+            permission=PermissionMask.FULL_CONTROL << 16
+            | PermissionMask.FULL_CONTROL << 8
+            | PermissionMask.FULL_CONTROL,
+        )
         return {"message": f"Section {name} created!", "id": section.id}
 
     def _patch(self, params):
-        qs = self._get_qs(params)
+        qs = self.get_queryset()
         count = 0
         if "path_substitution" in params:
             old_path = params["path_substitution"]["old"]
@@ -154,25 +175,28 @@ class SectionListAPI(BaseListView):
 
         return {"message": f"Successfully patched {count} sections!"}
 
-    def get_queryset(self):
-        project_id = self.kwargs["project"]
-        sections = Section.objects.filter(project__id=project_id)
-        return sections
-
 
 class SectionDetailAPI(BaseDetailView):
     """Interact with an individual section."""
 
     schema = SectionDetailSchema()
-    permission_classes = [ProjectEditPermission]
+
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectEditPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
     def _get(self, params):
         # Make result match schema
-        qs = Section.objects.filter(pk=params["id"]).annotate(
-            related_search=F("related_object_search")
-        )
+        qs = self.get_queryset().annotate(related_search=F("related_object_search"))
         results = list(qs.values(*SECTION_PROPERTIES))
         results = _fill_m2m(results)
         for idx, r in enumerate(results):
@@ -181,7 +205,7 @@ class SectionDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        section = Section.objects.get(pk=params["id"])
+        section = self.get_queryset()[0]
         if "name" in params:
             section.name = params["name"]
         if "path" in params:
@@ -218,8 +242,8 @@ class SectionDetailAPI(BaseDetailView):
         return {"message": f"Section {section.name} updated successfully!"}
 
     def _delete(self, params):
-        Section.objects.get(pk=params["id"]).delete()
+        self.get_queryset().delete()
         return {"message": f'Section {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Section.objects.all()
+    def get_queryset(self, **kwargs):
+        return Section.objects.filter(pk=self.params["id"])

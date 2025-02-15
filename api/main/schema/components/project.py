@@ -38,6 +38,10 @@ project_properties = {
         "type": "string",
         "nullable": True,
     },
+    "effective_permission": {
+        "type": "integer",
+        "description": "Effective permission mask of user making request.",
+    },
 }
 
 project_spec = {

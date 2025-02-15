@@ -6,6 +6,8 @@ export class TextInput extends TatorElement {
   constructor() {
     super();
 
+    this._disabled = false;
+
     this.label = document.createElement("label");
     this.label.setAttribute(
       "class",
@@ -101,7 +103,7 @@ export class TextInput extends TatorElement {
   }
 
   set permission(val) {
-    if (hasPermission(val, "Can Edit")) {
+    if (hasPermission(val, "Can Edit") && !this._disabled) {
       this._input.removeAttribute("readonly");
       this._input.classList.remove("disabled");
     } else {
@@ -118,6 +120,7 @@ export class TextInput extends TatorElement {
    * @param {boolean} val
    */
   set disabled(val) {
+    this._disabled = val;
     if (val) {
       this._input.classList.add("disabled");
     } else {

@@ -183,9 +183,9 @@ export class MediaSearchListItem extends TatorElement {
     this._detailsDiv.innerHTML = `
       <div><span class="text-semibold text-gray">path:</span> ${section.path}</div>
     `;
-    if (section.tator_user_sections != null) {
+    if (section.primary_section != null) {
       this._detailsDiv.innerHTML += `
-        <div><span class="text-semibold text-gray">tator_user_sections:</span> ${section.tator_user_sections}</div>
+        <div><span class="text-semibold text-gray">primary_section:</span> ${section.primary_section}</div>
       `;
     }
     if (section.object_search != null) {

@@ -30,6 +30,8 @@ from .file_type import FileTypeListSchema
 from .file_type import FileTypeDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
+from .group import GroupListSchema
+from .group import GroupDetailSchema
 from .hosted_template import HostedTemplateListSchema
 from .hosted_template import HostedTemplateDetailSchema
 from .image_file import ImageFileListSchema
@@ -73,6 +75,7 @@ from .password_reset import PasswordResetListSchema
 from .permalink import PermalinkSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
+from .rowprotection import RowProtectionListSchema, RowProtectionDetailSchema
 from .save_generic_file import SaveGenericFileSchema
 from .section import SectionListSchema
 from .section import SectionDetailSchema

@@ -5,26 +5,31 @@ from uuid import uuid1
 
 from django.http import Http404
 from rest_framework.authtoken.models import Token
-from django.db.models import Case
-from django.db.models import When
+from django.db.models import Case, F, When, Value
+from django.db.models.fields import BooleanField
+
+from rest_framework.exceptions import PermissionDenied
 
 from ..models import Algorithm
 from ..kube import get_jobs
 from ..kube import cancel_jobs
 from ..schema import JobListSchema
 from ..schema import JobDetailSchema
-from ..cache import TatorCache
 from ..models import Media
 from ..kube import TatorAlgorithm
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._media_query import query_string_to_media_ids
 from ._permissions import ProjectExecutePermission
+from .._permission_util import PermissionMask, augment_permission, ColBitAnd
+
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectTransferPermission
+from ._permissions import ProjectTransferPermission, ProjectViewOnlyPermission
 from ._job import workflow_to_job
+from ._job import _job_media_ids
+from ._job import _job_project
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +43,48 @@ class JobListAPI(BaseListView):
     """Interact with list of background jobs."""
 
     schema = JobListSchema()
-    permission_classes = [ProjectExecutePermission]
     http_method_names = ["post", "get", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE"]:
+            self.permission_classes = [ProjectExecutePermission]
+        elif self.request.method in ["POST"]:
+            self.permission_classes = []  # We handle it in the POST method itself
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        jobs = self._get(self.params)
+        alg_ids = []
+        for j in jobs:
+            if j.get("alg_id", None):
+                alg_ids.append(int(j["alg_id"]))
+        logger.info(f"JOBs ALG_IDS = {alg_ids}")
+        return self.filter_only_viewables(Algorithm.objects.filter(pk__in=alg_ids))
+
+    def check_acl_permission_algo_qs(self, user, algo_qs):
+        algo_qs = augment_permission(user, algo_qs)
+        algo_qs = algo_qs.annotate(
+            bitand=ColBitAnd(
+                F("effective_permission"),
+                (PermissionMask.EXECUTE),
+            )
+        ).annotate(
+            granted=Case(
+                When(bitand__exact=Value(PermissionMask.EXECUTE), then=True),
+                default=False,
+                output_field=BooleanField(),
+            )
+        )
+        logger.info(f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}")
+        if algo_qs.filter(granted=True).exists():
+            return True
+        else:
+            return False
 
     def _post(self, params):
         entityType = None
@@ -59,6 +104,11 @@ class JobListAPI(BaseListView):
         media_ids = params["media_ids"]
         media_ids = [str(a) for a in media_ids]
 
+        # Check permissions on alg object relative to user
+        algo_qs = Algorithm.objects.filter(pk=alg_obj.pk)
+        if self.check_acl_permission_algo_qs(self.request.user, algo_qs) is False:
+            raise PermissionDenied("User does not have permission to execute algorithm")
+
         # Harvest extra parameters to pass into the algorithm if requested
         extra_params = []
         if "extra_params" in params:
@@ -76,11 +126,8 @@ class JobListAPI(BaseListView):
             batch_int = [int(pk) for pk in batch]
             batch_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(batch_int)])
             qs = Media.objects.filter(pk__in=batch_int).order_by(batch_order)
-            sections = qs.values_list("attributes__tator_user_sections", flat=True)
-            sections = ",".join(list(sections))
             alg_response = submitter.start_algorithm(
                 media_ids=batch_str,
-                sections=sections,
                 gid=gid,
                 uid=uid,
                 token=token,
@@ -93,8 +140,7 @@ class JobListAPI(BaseListView):
 
         # Retrieve the jobs so we have a list
         selector = f"project={project_id},gid={gid}"
-        cache = TatorCache().get_jobs_by_gid(gid, first_only=False)
-        jobs = get_jobs(selector, cache)
+        jobs = get_jobs(selector, project_id)
         jobs = [workflow_to_job(job) for job in jobs]
 
         return {
@@ -111,19 +157,9 @@ class JobListAPI(BaseListView):
         selector = f"project={project},job_type=algorithm"
         if gid is not None:
             selector += f",gid={gid}"
-            cache = TatorCache().get_jobs_by_gid(gid)
-            if not cache:
-                cache = []
-            else:
-                assert cache[0]["project"] == project
-        elif media_ids:
-            cache = TatorCache().get_jobs_by_media_id(project, media_ids, "algorithm")
-        else:
-            cache = TatorCache().get_jobs_by_project(project, "algorithm")
-        jobs = []
-        for elem in cache:
-            uid_selector = selector + f",uid={elem['uid']}"
-            jobs.extend(get_jobs(uid_selector, cache))
+        jobs = get_jobs(selector, project)
+        if media_ids is not None:
+            jobs = [job for job in jobs if bool(set(_job_media_ids(job)) & set(media_ids))]
         return [workflow_to_job(job) for job in jobs]
 
     def _delete(self, params):
@@ -134,14 +170,7 @@ class JobListAPI(BaseListView):
         selector = f"project={project},job_type=algorithm"
         if gid is not None:
             selector += f",gid={gid}"
-            cache = TatorCache().get_jobs_by_gid(gid)
-            if not cache:
-                cache = []
-            else:
-                assert cache[0]["project"] == project
-        else:
-            cache = TatorCache().get_jobs_by_project(project, "algorithm")
-        cancelled = cancel_jobs(selector, cache)
+        cancelled = cancel_jobs(selector, project)
         return {"message": f"Deleted {cancelled} jobs for project {project}!"}
 
 
@@ -155,26 +184,38 @@ class JobDetailAPI(BaseDetailView):
     """
 
     schema = JobDetailSchema()
-    permission_classes = [ProjectExecutePermission]
     http_method_names = ["get", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectExecutePermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         uid = params["uid"]
-        cache = TatorCache().get_jobs_by_uid(uid)
-        if cache is None:
-            raise Http404
-        jobs = get_jobs(f"uid={uid}", cache)
+        jobs = get_jobs(f"uid={uid}")
         if len(jobs) != 1:
             raise Http404
         return workflow_to_job(jobs[0])
 
     def _delete(self, params):
         uid = params["uid"]
-        cache = TatorCache().get_jobs_by_uid(uid)
-        if cache is None:
-            raise Http404
-        cancelled = cancel_jobs(f"uid={uid}", cache)
+        cancelled = cancel_jobs(f"uid={uid}")
         if cancelled != 1:
             raise Http404
 
         return {"message": f"Job with UID {uid} deleted!"}
+
+    def get_queryset(self, **kwargs):
+        job = self._get(self.params)
+        jobs = [job]
+        alg_ids = []
+        for j in jobs:
+            if j.get("alg_id", None):
+                alg_ids.append(int(j["alg_id"]))
+        return self.filter_only_viewables(Algorithm.objects.filter(pk__in=alg_ids))

@@ -6,10 +6,26 @@ import tarfile
 import pytest
 import inspect
 import time
+import random
+import string
 
 import tator
 
 from ._common import download_file, create_media, upload_media_file
+
+# Make a temp folder on module init and delete it when the process exits
+# This is to store all the videos downloaded for testing
+random_chars = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+temp_folder = '/tmp/tator_test_videos_' + random_chars
+os.makedirs(temp_folder, exist_ok=False)
+print("Temp folder for videos: ", temp_folder)
+def delete_temp_folder():
+    print("Deleting temp folder for videos: ", temp_folder)
+    shutil.rmtree(temp_folder)
+
+import atexit
+atexit.register(delete_temp_folder)
+
 
 class PageFactory:
     def __init__(self, browser, browser_context_args, storage, base_path):
@@ -57,6 +73,9 @@ def launch_time(request):
 
 @pytest.fixture(scope='session')
 def chrome(browser_type, browser_type_launch_args):
+    args = browser_type_launch_args.get("args", [])
+    args.append("--enable-unsafe-swiftshader")
+    browser_type_launch_args["args"] = args
     yield browser_type.launch(
         **browser_type_launch_args,
         executable_path="/usr/bin/google-chrome",
@@ -73,6 +92,8 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     context = chrome.new_context(
         **browser_context_args,
         record_video_dir=videos,
+        record_video_size={"width": 1920, "height": 1080},
+        viewport={"width": 2560, "height": 1440},
         locale="en-US",
     )
     page = context.new_page()
@@ -88,7 +109,7 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
 @pytest.fixture(scope='session')
 def page_factory(request, launch_time, base_url, chrome, browser_context_args, authenticated):
     base_path = os.path.join(request.config.option.videos, launch_time)
-    storage = authenticated.storage_state(path="/tmp/state.json")
+    storage = authenticated.storage_state(path=f"{temp_folder}/state.json")
     yield PageFactory(chrome, browser_context_args, storage, base_path)
 
 @pytest.fixture(scope='session')
@@ -109,10 +130,14 @@ def token(request, page_factory):
     yield token
 
 @pytest.fixture(scope='session')
-def project(request, page_factory, launch_time, base_url, token):
+def random_chars():
+    random_str = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    yield random_str
+@pytest.fixture(scope='session')
+def project(request, page_factory, launch_time, base_url, token, random_chars):
     """ Project created with setup_project.py script, all options enabled. """
     print("Creating test project with setup_project.py...")
-    name = f"test_front_end_{launch_time}"
+    name = f"test_front_end_{launch_time}_{random_chars}"
     cmd = [
         'python3',
         'scripts/packages/tator-py/examples/setup_project.py',
@@ -225,8 +250,8 @@ def image_section1(request, page_factory, project):
 @pytest.fixture(scope='session')
 def image_set(request):
     print("Getting image files...")
-    out_path = '/tmp/lfw.tgz'
-    extract_path = '/tmp/lfw'
+    out_path = f'{temp_folder}/lfw.tgz'
+    extract_path = f'{temp_folder}/lfw'
 
     # Download Labeled Faces in the Wild dataset.
     if not os.path.exists(out_path):
@@ -247,15 +272,16 @@ def image_set(request):
 @pytest.fixture(scope='session')
 def video_file(request):
     print("Getting video file...")
-    out_path = '/tmp/AudioVideoSyncTest_BallastMedia.mp4'
+    out_path = f'{temp_folder}/AudioVideoSyncTest_BallastMedia.mp4'
     if not os.path.exists(out_path):
         url = 'https://s3.amazonaws.com/tator-ci/AudioVideoSyncTest_BallastMedia.mp4'
         subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
-def video(request, page_factory, project, video_section, video_file):
+def video(request, page_factory, project, video_section, video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -273,19 +299,27 @@ def video(request, page_factory, project, video_section, video_file):
             break
     video = int(cards[0].get_attribute('media-id'))
     page.close()
+    for x in range(30):
+        video_obj = api.get_media(video)
+        if video_obj.media_files is not None:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3 and video_obj.num_frames != None:
+                break
+        time.sleep(1)
+        print("Waiting for transcodes")
     yield video
 
 @pytest.fixture(scope='session')
 def slow_video_file(request, video_file):
     print("Getting video file...")
     in_path = video_file
-    out_path = '/tmp/AudioVideoSyncTest_slow.mp4'
+    out_path = f'{temp_folder}/AudioVideoSyncTest_slow.mp4'
     subprocess.run(["ffmpeg", "-y", "-i", in_path, "-r", "5", out_path])
     yield out_path
 
 @pytest.fixture(scope='session')
-def slow_video(request, page_factory, project, slow_video_section, slow_video_file):
+def slow_video(request, page_factory, project, slow_video_section, slow_video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={slow_video_section}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -303,11 +337,19 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
             break
     video = int(cards[0].get_attribute('media-id'))
     page.close()
+    for x in range(30):
+        video_obj = api.get_media(video)
+        if video_obj.media_files is not None:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3 and video_obj.num_frames != None:
+                break
+        time.sleep(1)
+        print("Waiting for transcodes")
     yield video
 
 @pytest.fixture(scope='session')
-def video2(request, page_factory, project, video_section2, video_file):
+def video2(request, page_factory, project, video_section2, video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section2}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -325,11 +367,19 @@ def video2(request, page_factory, project, video_section2, video_file):
             break
     video = int(cards[0].get_attribute('media-id'))
     page.close()
+    for x in range(30):
+        video_obj = api.get_media(video)
+        if video_obj.media_files is not None:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3 and video_obj.num_frames != None:
+                break
+        time.sleep(1)
+        print("Waiting for transcodes")
     yield video
 
 @pytest.fixture(scope='session')
-def video3(request, page_factory, project, video_section3, video_file):
+def video3(request, page_factory, project, video_section3, video_file, base_url, token):
     print("Uploading a video...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section3}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -347,6 +397,13 @@ def video3(request, page_factory, project, video_section3, video_file):
             break
     video = int(cards[0].get_attribute('media-id'))
     page.close()
+    for x in range(30):
+        video_obj = api.get_media(video)
+        if video_obj.media_files is not None:
+            if len(video_obj.media_files.to_dict().get('streaming', [])) > 3  and video_obj.num_frames != None:
+                break
+        time.sleep(1)
+        print("Waiting for transcodes")
     yield video
 
 @pytest.fixture(scope='session')
@@ -360,15 +417,16 @@ def multi(request, base_url, token, project, video2, video3):
 
 @pytest.fixture(scope='session')
 def image_file(request):
-    out_path = '/tmp/test1.jpg'
+    out_path = f'{temp_folder}/test1.jpg'
     if not os.path.exists(out_path):
         url = 'https://s3.amazonaws.com/tator-ci/landscape.jpg'
         subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
-def image(request, page_factory, project, image_section, image_file):
+def image(request, page_factory, project, image_section, image_file, base_url, token):
     print("Uploading an image...")
+    api = tator.get_api(host=base_url, token=token)
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={image_section}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
@@ -386,6 +444,13 @@ def image(request, page_factory, project, image_section, image_file):
             break
     image = int(cards[0].get_attribute('media-id'))
     page.close()
+    for x in range(30):
+        image_obj = api.get_media(image)
+        if image_obj.media_files is not None:
+            if len(image_obj.media_files.to_dict().get('image', [])) >= 1:
+                break
+        time.sleep(1)
+        print("Waiting for image worker")
     yield image
 
 
@@ -410,9 +475,17 @@ def referenced_image(request, base_url, token, page_factory, project, image_sect
     response = api.create_media_list(project, [media_spec])
     media_resp = api.get_media(response.id[0]).to_dict()
     attempts = 0
-    while (
-        media_resp["media_files"] is None or len(media_resp["media_files"].get("image", [])) < 1
-    ) and attempts < 30:
+    def is_image_ready(media_resp):
+        if media_resp["media_files"] is None:
+            return False
+        if media_resp["media_files"].get("image", []) == None:
+            return False
+        if len(media_resp["media_files"].get("image", [])) < 1:
+            return False
+        else:
+            return True
+
+    while (not is_image_ready(media_resp)) and attempts < 30:
         print(f"Waiting for async image job {attempts+1}/30")
         media_resp = api.get_media(response.id[0]).to_dict()
         time.sleep(1)
@@ -476,7 +549,7 @@ def image1(request, page_factory, project, image_section1, image_file):
 
 @pytest.fixture(scope='session')
 def yaml_file(request):
-    out_path = '/tmp/TEST.yaml'
+    out_path = f'{temp_folder}/TEST.yaml'
     if not os.path.exists(out_path):
         with open(out_path, 'w+') as f:
             f.write("test")
@@ -484,7 +557,7 @@ def yaml_file(request):
 
 @pytest.fixture(scope='session')
 def html_file(request):
-    out_path = '/tmp/applet-test.yaml'
+    out_path = f'{temp_folder}/applet-test.html'
     if not os.path.exists(out_path):
         with open(out_path, 'w+') as f:
             f.write("<html><head></head><body><h1>HTML FILE</h1></body></html>")
@@ -492,12 +565,12 @@ def html_file(request):
 
 @pytest.fixture(scope='session')
 def video_files(request):
-    files = ["https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.mp4",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.json",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.mp4",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.json",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.mp4",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.json",
+    files = ["https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/FF0000.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/FF0000.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/00FF00.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/00FF00.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/0000FF.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.6/samples/0000FF.json",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.mp4",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.json",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.mp4",
@@ -505,17 +578,17 @@ def video_files(request):
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.4/samples/count_1fps.mp4",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.4/samples/count_1fps.json"]
     for fp in files:
-        dst = os.path.join("/tmp",os.path.basename(fp))
+        dst = os.path.join(f"{temp_folder}",os.path.basename(fp))
         download_file(fp, dst)
 
 @pytest.fixture(scope='session')
 def rgb_test(request, base_url, project, token, video_files):
-    red_mp4="/tmp/FF0000.mp4"
-    red_segments="/tmp/FF0000.json"
-    green_mp4="/tmp/00FF00.mp4"
-    green_segments="/tmp/00FF00.json"
-    blue_mp4="/tmp/0000FF.mp4"
-    blue_segments="/tmp/0000FF.json"
+    red_mp4=f"{temp_folder}/FF0000.mp4"
+    red_segments=f"{temp_folder}/FF0000.json"
+    green_mp4=f"{temp_folder}/00FF00.mp4"
+    green_segments=f"{temp_folder}/00FF00.json"
+    blue_mp4=f"{temp_folder}/0000FF.mp4"
+    blue_segments=f"{temp_folder}/0000FF.json"
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
     video_types = [m for m in media_types if m.dtype == "video"]
@@ -531,12 +604,12 @@ def rgb_test(request, base_url, project, token, video_files):
 @pytest.fixture(scope='session')
 def rgb_test_2(request, base_url, project, token, video_files):
     
-    red_mp4="/tmp/FF0000.mp4"
-    red_segments="/tmp/FF0000.json"
-    green_mp4="/tmp/00FF00.mp4"
-    green_segments="/tmp/00FF00.json"
-    blue_mp4="/tmp/0000FF.mp4"
-    blue_segments="/tmp/0000FF.json"
+    red_mp4=f"{temp_folder}/FF0000.mp4"
+    red_segments=f"{temp_folder}/FF0000.json"
+    green_mp4=f"{temp_folder}/00FF00.mp4"
+    green_segments=f"{temp_folder}/00FF00.json"
+    blue_mp4=f"{temp_folder}/0000FF.mp4"
+    blue_segments=f"{temp_folder}/0000FF.json"
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
     video_types = [m for m in media_types if m.dtype == "video"]
@@ -560,8 +633,8 @@ def multi_rgb(request, base_url, token, project, rgb_test, rgb_test_2):
 
 @pytest.fixture(scope='session')
 def small_video(request, base_url, project, token, video_files):
-    blue_mp4="/tmp/0000FF.mp4"
-    blue_segments="/tmp/0000FF.json"
+    blue_mp4=f"{temp_folder}/0000FF.mp4"
+    blue_segments=f"{temp_folder}/0000FF.json"
 
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -577,27 +650,31 @@ def small_video(request, base_url, project, token, video_files):
 
 @pytest.fixture(scope='session')
 def count_test(request, base_url, project, token, video_files):
-    count_mp4="/tmp/count.mp4"
-    count_segments="/tmp/count.json"
-    count_360_mp4="/tmp/count_360.mp4"
-    count_360_segments="/tmp/count_360.json"
+    count_mp4=f"{temp_folder}/count.mp4"
+    count_segments=f"{temp_folder}/count.json"
+    count_360_mp4=f"{temp_folder}/count_360.mp4"
+    count_360_segments=f"{temp_folder}/count_360.json"
 
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
     video_types = [m for m in media_types if m.dtype == "video"]
     video_type_id = video_types[0].id
 
+    # Get the file size of the mp4 file
+    file_size = os.path.getsize(count_mp4)
+
     colors=[count_mp4, count_360_mp4]
     segments=[count_segments, count_360_segments]
     media_id = create_media(api, project, base_url, token, video_type_id, "count_check.mp4", "Counts", count_mp4)
+    # Ensure it uploads in multiple chunks to verify multipart uploads
     for color,segment in zip(colors, segments):
-        upload_media_file(api, project, media_id, color, segment)
+        upload_media_file(api, project, media_id, color, segment, chunk_size=file_size / 10)
     yield media_id
 
 @pytest.fixture(scope='session')
 def count_1fps_test(request, base_url, project, token, video_files):
-    count_mp4="/tmp/count_1fps.mp4"
-    count_segments="/tmp/count_1fps.json"
+    count_mp4=f"{temp_folder}/count_1fps.mp4"
+    count_segments=f"{temp_folder}/count_1fps.json"
 
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -613,10 +690,10 @@ def count_1fps_test(request, base_url, project, token, video_files):
 
 @pytest.fixture(scope='session')
 def count_test_2(request, base_url, project, token, video_files):
-    count_mp4="/tmp/count.mp4"
-    count_segments="/tmp/count.json"
-    count_360_mp4="/tmp/count_360.mp4"
-    count_360_segments="/tmp/count_360.json"
+    count_mp4=f"{temp_folder}/count.mp4"
+    count_segments=f"{temp_folder}/count.json"
+    count_360_mp4=f"{temp_folder}/count_360.mp4"
+    count_360_segments=f"{temp_folder}/count_360.json"
 
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)

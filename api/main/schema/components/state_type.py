@@ -51,6 +51,10 @@ state_type_properties = {
         "type": "string",
         "nullable": True,
     },
+    "effective_permission": {
+        "type": "integer",
+        "description": "Effective permission mask for this entity.",
+    },
 }
 
 state_type_spec = {

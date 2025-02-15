@@ -5,7 +5,8 @@ import uuid
 
 import tator
 from tator.util._upload_file import _upload_file
-from tator.transcode.make_thumbnails import make_thumbnails
+from tator.transcode.determine_transcode import update_media
+from tator.transcode.make_thumbnails import make_thumbnail_image, make_thumbnail_gif
 from tator.transcode.transcode import make_video_definition
 
 def download_file(url, output):
@@ -33,11 +34,15 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
     response = api.create_media_list(project, body=[spec])
     media_id = response.id[0]
 
+    # Needed to update media level info
+    update_media(host, token, type_id, media_id, media_path)
+
     with tempfile.TemporaryDirectory() as td:
         try:
             thumb_path = os.path.join(td,f"{uuid.uuid4()}.jpg")
             thumb_gif_path = os.path.join(td, f"{uuid.uuid4()}.gif")
-            make_thumbnails(host, token, media_id, media_path, thumb_path, thumb_gif_path)
+            make_thumbnail_image(host, token, media_id, media_path, thumb_path)
+            make_thumbnail_gif(host, token, media_id, media_path, thumb_gif_path)
         except Exception as e:
             print(f"Thumbnail error: {e}")
             # Delete stale media
@@ -46,15 +51,30 @@ def create_media(api, project, host, token, type_id, fname, section, media_path)
 
     return media_id
 
-def upload_media_file(api,project, media_id, media_path, segments_path):
+
+def upload_media_file(
+    api, project, media_id, media_path, segments_path, chunk_size=5 * 1024 * 1024
+):
     """ Handles uploading either archival or streaming format """
     path = os.path.basename(media_path)
     filename = os.path.splitext(os.path.basename(path))[0]
-    for _, upload_info in _upload_file(api, project, media_path,
-                                        media_id=media_id, filename=f"{filename}.mp4", chunk_size=0x10000000):
+    for _, upload_info in _upload_file(
+        api,
+        project,
+        media_path,
+        media_id=media_id,
+        filename=f"{filename}.mp4",
+        chunk_size=chunk_size,
+    ):
         pass
-    for _, segment_info in _upload_file(api, project, segments_path,
-                                            media_id=media_id, filename=f"{filename}.json", chunk_size=0x10000000):
+    for _, segment_info in _upload_file(
+        api,
+        project,
+        segments_path,
+        media_id=media_id,
+        filename=f"{filename}.json",
+        chunk_size=chunk_size,
+    ):
         pass
     # Construct create video file spec.
     media_def = {**make_video_definition(media_path),
@@ -63,6 +83,7 @@ def upload_media_file(api,project, media_id, media_path, segments_path):
     response = api.create_video_file(media_id, role='streaming',
                                         video_definition=media_def)
     return response
+
 
 def get_video_path(page):
     """ Gets a page with video name set to the current test.

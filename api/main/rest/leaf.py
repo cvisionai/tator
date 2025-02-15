@@ -30,9 +30,8 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
-    format_multiline,
 )
-from ._permissions import ProjectViewOnlyPermission
+from ._permissions import ProjectViewOnlyPermission, ProjectFullControlPermission
 from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
@@ -50,7 +49,8 @@ class LeafSuggestionAPI(BaseDetailView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def _get(self, params):
+    def get_queryset(self, **kwargs):
+        params = self.params
         project = params.get("project")
         min_level = int(params.get("min_level", 1))
         query = params.get("query", None)
@@ -58,8 +58,10 @@ class LeafSuggestionAPI(BaseDetailView):
 
         # Try to find root node for type
         root_node = Leaf.objects.filter(project=project, path=ancestor)
+        logger.info(f"root_node = {root_node} {ancestor}")
+        logger.info(f"all={Leaf.objects.filter(project=project).values('path')}")
         if root_node.count() == 0:
-            return []
+            return Leaf.objects.filter(pk=-1)
 
         if query.find("*") < 0:
             q_object = Q(name__istartswith=query)
@@ -85,6 +87,11 @@ class LeafSuggestionAPI(BaseDetailView):
             project=project, type=type_id, path__istartswith=ancestor, path__depth__gte=min_level
         ).filter(q_object)
 
+        logger.info(f"*******Query: {queryset.query}")
+        return self.filter_only_viewables(queryset)
+
+    def _get(self, params):
+        queryset = self.get_queryset()
         suggestions = []
         for idx, match in enumerate(queryset):
             group = params["ancestor"]
@@ -120,14 +127,28 @@ class LeafListAPI(BaseListView):
     """
 
     schema = LeafListSchema()
-    permission_classes = [ProjectFullControlPermission]
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = LeafType  # Needed by attribute filter mixin
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         qs = get_leaf_queryset(params["project"], params)
         response_data = list(qs.values(*LEAF_PROPERTIES))
         return response_data
+
+    def get_queryset(self, **kwargs):
+        """Returns a queryset of bookmarks related with the current request's project"""
+        qs = Leaf.objects.filter(project__id=self.params["project"])
+        return self.filter_only_viewables(qs)
 
     @staticmethod
     def _leaf_obj_generator(project, leaf_specs, attr_specs, metas, user):
@@ -246,8 +267,17 @@ class LeafDetailAPI(BaseDetailView):
     """
 
     schema = LeafDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         qs = Leaf.objects.filter(pk=params["id"], deleted=False)
@@ -331,8 +361,8 @@ class LeafDetailAPI(BaseDetailView):
 
         return new_array
 
-    def get_queryset(self):
-        return Leaf.objects.all()
+    def get_queryset(self, **kwargs):
+        return Leaf.objects.filter(pk=self.params["id"], deleted=False)
 
     def _update_children_newparent(self, children, grandparent, newparent):
         if children and len(children) > 0:

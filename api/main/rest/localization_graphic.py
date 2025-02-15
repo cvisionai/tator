@@ -7,6 +7,7 @@ import traceback
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404, response
+from django.utils.http import parse_http_date_safe, http_date
 
 from ..models import Localization, Media
 from ..renderers import PngRenderer
@@ -15,7 +16,7 @@ from ..renderers import GifRenderer
 from ..renderers import Mp4Renderer
 from ..schema import LocalizationGraphicSchema
 from ..schema import parse
-from ._base_views import BaseDetailView
+from ._base_views import TatorAPIView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
 from .temporary_file import TemporaryFileDetailAPI
@@ -23,7 +24,7 @@ from .temporary_file import TemporaryFileDetailAPI
 logger = logging.getLogger(__name__)
 
 
-class LocalizationGraphicAPI(BaseDetailView):
+class LocalizationGraphicAPI(TatorAPIView):
     """Endpoint that retrieves an image of the requested localization"""
 
     schema = LocalizationGraphicSchema()
@@ -32,10 +33,10 @@ class LocalizationGraphicAPI(BaseDetailView):
     http_method_names = ["get"]
     lookup_field = "id"
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         """Overridden method. Please refer to parent's documentation."""
 
-        return Localization.objects.all()
+        return self.filter_only_viewables(Localization.objects.filter(pk=self.params["id"]))
 
     def handle_exception(self, exc):
         """Overridden method. Please refer to parent's documentation."""
@@ -233,17 +234,25 @@ class LocalizationGraphicAPI(BaseDetailView):
 
         return tuple(roi)
 
-    def _get(self, params: dict):
+    def get(self, request, format=None, **kwargs):
         """Overridden method. Please refer to parent's documentation."""
 
         # Get the localization associated with the given ID
-        qs = Localization.objects.filter(pk=params["id"], deleted=False)
+        qs = Localization.objects.filter(pk=self.params["id"], deleted=False)
         if not qs.exists():
             raise Http404
         obj = qs.first()
 
+        # Check if this localization graphic is cached
+        last_modified = int(obj.modified_datetime.timestamp())
+        if_modified_since = request.headers.get("If-Modified-Since")
+        if if_modified_since is not None:
+            since_time = parse_http_date_safe(if_modified_since)
+            if since_time and since_time >= last_modified:
+                return Response(status=status.HTTP_304_NOT_MODIFIED)
+
         # Extract the force image size argument and assert if there's a problem with the provided inputs
-        force_image_size = params.get(self.schema.PARAMS_IMAGE_SIZE, None)
+        force_image_size = self.params.get(self.schema.PARAMS_IMAGE_SIZE, None)
         if force_image_size is not None:
             img_width_height = force_image_size.split("x")
             assert len(img_width_height) == 2
@@ -260,7 +269,7 @@ class LocalizationGraphicAPI(BaseDetailView):
 
             roi = self._getRoi(
                 obj=obj,
-                params=params,
+                params=self.params,
                 media_width=media_util.getWidth(),
                 media_height=media_util.getHeight(),
             )
@@ -287,4 +296,6 @@ class LocalizationGraphicAPI(BaseDetailView):
                     force_scale=force_image_size,
                 )
 
-        return response_data
+        response = Response(response_data, status=status.HTTP_200_OK)
+        response["Last-Modified"] = http_date(last_modified)
+        return response

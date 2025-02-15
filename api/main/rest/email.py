@@ -5,6 +5,7 @@ import re
 import traceback
 
 from django.conf import settings
+from ..models import Project
 from ..models import User
 from ..models import Membership
 from ..schema import EmailSchema
@@ -21,6 +22,9 @@ class EmailAPI(BaseListView):
     schema = EmailSchema()
     permission_classes = [ProjectExecutePermission]
     http_method_names = ["post"]
+
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Project.objects.filter(pk=self.params["project"]))
 
     def _post(self, params):
         """Sends an email message via the configured mail service"""

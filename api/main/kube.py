@@ -20,9 +20,8 @@ from kubernetes.config import load_incluster_config
 from urllib.parse import urljoin, urlsplit
 import yaml
 
-from .cache import TatorCache
 from .models import Algorithm, JobCluster, MediaType, HostedTemplate
-from .rest.hosted_template import get_and_render
+from ._get_and_render import get_and_render
 from .version import Git
 
 logger = logging.getLogger(__name__)
@@ -135,34 +134,17 @@ def _get_api(cluster):
     return api
 
 
-def _get_clusters(cache):
-    """Get unique clusters for the given job cache. Cluster can be specified by
-    None (incluster config), 'remote_transcode' (use cluster specified by
-    remote transcodes), or a JobCluster ID. Uniqueness is determined by
-    hostname of the given cluster.
-    """
-    algs = set([c["algorithm"] for c in cache])
-    clusters_by_host = {}
-    for alg in algs:
-        if alg == -1:
-            host = os.getenv("REMOTE_TRANSCODE_HOST")
-            if host is None:
-                clusters_by_host[None] = None
-            else:
-                clusters_by_host[host] = "remote_transcode"
-        else:
-            alg_obj = Algorithm.objects.filter(pk=alg)
-            if alg_obj.exists():
-                if alg_obj[0].cluster is None:
-                    clusters_by_host[None] = None
-                else:
-                    clusters_by_host[alg_obj[0].cluster.host] = alg_obj[0].cluster.pk
-    return clusters_by_host.values()
+def _get_clusters(project):
+    """Get unique clusters for the given project."""
+    algos = Algorithm.objects.all()
+    if project is not None:
+        algos = algos.filter(project=project)
+    return list(algos.values_list("cluster", flat=True).distinct())
 
 
-def get_jobs(selector, cache):
+def get_jobs(selector, project=None):
     """Retrieves argo workflow by selector."""
-    clusters = _get_clusters(cache)
+    clusters = _get_clusters(project)
     jobs = []
     for cluster in clusters:
         api = _get_api(cluster)
@@ -172,7 +154,7 @@ def get_jobs(selector, cache):
                 version="v1alpha1",
                 namespace="default",
                 plural="workflows",
-                label_selector=f"{selector}",
+                label_selector=selector,
             )
             jobs += response["items"]
         except:
@@ -180,38 +162,36 @@ def get_jobs(selector, cache):
     return jobs
 
 
-def cancel_jobs(selector, cache):
+def cancel_jobs(selector, project=None):
     """Deletes argo workflows by selector."""
-    clusters = _get_clusters(cache)
-    cache_uids = [item["uid"] for item in cache]
+    clusters = _get_clusters(project)
     cancelled = 0
     for cluster in clusters:
         api = _get_api(cluster)
-        # Get the object by selecting on uid label.
-        response = api.list_namespaced_custom_object(
-            group="argoproj.io",
-            version="v1alpha1",
-            namespace="default",
-            plural="workflows",
-            label_selector=f"{selector}",
-        )
-
-        # Patch the workflow with shutdown=Stop.
-        if len(response["items"]) > 0:
-            for job in response["items"]:
-                uid = job["metadata"]["labels"]["uid"]
-                if uid in cache_uids:
-                    name = job["metadata"]["name"]
-                    response = api.delete_namespaced_custom_object(
-                        group="argoproj.io",
-                        version="v1alpha1",
-                        namespace="default",
-                        plural="workflows",
-                        name=name,
-                        body={},
-                    )
-                    if response["status"] == "Success":
-                        cancelled += 1
+        try:
+            response = api.list_namespaced_custom_object(
+                group="argoproj.io",
+                version="v1alpha1",
+                namespace="default",
+                plural="workflows",
+                label_selector=selector,
+            )
+        except:
+            continue
+        items = response["items"]
+        if len(items) == 0:
+            continue
+        else:
+            for item in items:
+                # Get the object by selecting on uid label.
+                response = api.delete_namespaced_custom_object(
+                    group="argoproj.io",
+                    version="v1alpha1",
+                    namespace="default",
+                    plural="workflows",
+                    name=item["metadata"]["name"],
+                )
+                cancelled += 1
     return cancelled
 
 
@@ -295,7 +275,6 @@ class TatorAlgorithm(JobManagerMixin):
     def start_algorithm(
         self,
         media_ids,
-        sections,
         gid,
         uid,
         token,
@@ -319,8 +298,10 @@ class TatorAlgorithm(JobManagerMixin):
                     logger.warning(f"Implicitly sc to pvc of Algo:{self.alg.pk}")
 
         # Add in workflow parameters.
+        existing_params = manifest["spec"].get("arguments", {}).get("parameters", [])
         manifest["spec"]["arguments"] = {
-            "parameters": [
+            "parameters": existing_params
+            + [
                 {
                     "name": "name",
                     "value": self.alg.name,
@@ -328,10 +309,6 @@ class TatorAlgorithm(JobManagerMixin):
                 {
                     "name": "media_ids",
                     "value": media_ids,
-                },
-                {
-                    "name": "sections",
-                    "value": sections,
                 },
                 {
                     "name": "gid",
@@ -384,9 +361,9 @@ class TatorAlgorithm(JobManagerMixin):
         }
         manifest["metadata"]["annotations"] = {
             **manifest["metadata"]["annotations"],
-            "sections": sections,
             "media_ids": media_ids,
             "name": self.alg.name,
+            "alg_id": str(self.alg.pk),
         }
 
         # Set any steps in the templates to disable eviction
@@ -507,19 +484,5 @@ class TatorAlgorithm(JobManagerMixin):
 
         manifest["metadata"]["generateName"] = _algo_name(self.alg.id, project, user, self.alg.name)
         response = self.create_workflow(manifest)
-
-        # Cache the job for cancellation/authentication.
-        TatorCache().set_job(
-            {
-                "uid": uid,
-                "gid": gid,
-                "user": user,
-                "project": project,
-                "algorithm": self.alg.pk,
-                "media_ids": media_ids,
-                "datetime": datetime.datetime.utcnow().isoformat() + "Z",
-            },
-            "algorithm",
-        )
 
         return response

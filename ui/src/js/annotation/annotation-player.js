@@ -1,6 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 import {
   frameToTime,
   handle_video_error,
@@ -456,6 +456,8 @@ export class AnnotationPlayer extends TatorElement {
     this._slider = document.createElement("seek-bar");
     seekDiv.appendChild(this._slider);
     outerDiv.appendChild(seekDiv);
+    this._preview = document.createElement("media-seek-preview");
+    this._slider._shadow.appendChild(this._preview);
 
     var innerDiv = document.createElement("div");
     this._videoTimeline = document.createElement("video-timeline");
@@ -610,6 +612,28 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("bufferLoaded", (evt) => {
       this._slider.onBufferLoaded(evt);
+      if (
+        this._video.bufferDelayRequired() &&
+        this._video.onDemandBufferAvailable() == false
+      ) {
+        this._playInteraction.disable();
+      } else {
+        if (this._video.scrubBufferAvailable() == false) {
+          this._playInteraction.disable();
+        } else {
+          this._playInteraction.enable();
+        }
+      }
+    });
+
+    this._video.addEventListener("playing", () => {
+      this._play.removeAttribute("is-paused");
+      this._videoStatus = "playing";
+    });
+
+    this._video.addEventListener("paused", () => {
+      this._play.setAttribute("is-paused", "");
+      this._videoStatus = "paused";
     });
 
     this._video.addEventListener("onDemandDetail", (evt) => {
@@ -623,7 +647,7 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addEventListener("videoLengthChanged", (evt) => {
       this._slider.setAttribute("max", evt.detail.length);
       this._totalTime.textContent =
-        "/ " + frameToTime(evt.detail.length, this._mediaInfo.fps);
+        "/ " + frameToTime(evt.detail.length - 1, this._mediaInfo.fps);
       this._totalTime.style.width =
         10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     });
@@ -654,6 +678,17 @@ export class AnnotationPlayer extends TatorElement {
       this.handleSliderChange(evt);
     });
 
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._lastPreview = 0;
+
+    this._slider.addEventListener(
+      "framePreview",
+      this.debouncePreview.bind(this)
+    );
+
+    this._slider.addEventListener("hidePreview", this.hidePreview.bind(this));
+
     play.addEventListener("click", () => {
       this._hideCanvasMenus();
       if (this.is_paused()) {
@@ -672,9 +707,7 @@ export class AnnotationPlayer extends TatorElement {
       this._hideCanvasMenus();
       this._video.pause();
       this._video.rateChange(2 * this._rate);
-      if (this._video.play()) {
-        play.removeAttribute("is-paused");
-      }
+      this._video.play();
     });
 
     framePrev.addEventListener("click", () => {
@@ -730,10 +763,17 @@ export class AnnotationPlayer extends TatorElement {
       this.pause();
     });
 
+    this._video.addEventListener("playbackStalled", (evt) => {
+      this.pause();
+    });
+
     this._video.addEventListener("playbackReady", () => {
       if (this.is_paused()) {
         this._playInteraction.enable();
       }
+    });
+    this._video.addEventListener("playbackNotReady", () => {
+      this._playInteraction.disable();
     });
     this._currentFrameInput.addEventListener("focus", () => {
       document.body.classList.add("shortcuts-disabled");
@@ -816,7 +856,13 @@ export class AnnotationPlayer extends TatorElement {
         this._headerFooterPad +
         this._controls.offsetHeight +
         this._timelineDiv.offsetHeight;
-      window.dispatchEvent(new Event("resize"));
+      if (this._lastVideoHeightPadHeight != this._videoHeightPadObject.height) {
+        window.dispatchEvent(new Event("resize"));
+        this._lastVideoHeightPadHeight = this._videoHeightPadObject.height;
+      }
+    });
+    this._entityTimeline.addEventListener("mouseout", (evt) => {
+      this.hidePreview(this);
     });
 
     fullscreen.addEventListener("click", (evt) => {
@@ -933,6 +979,55 @@ export class AnnotationPlayer extends TatorElement {
     }
   }
 
+  async debouncePreview(evt) {
+    // Frame previews can get interrupted if we aren't keeping 30fps
+    // things will look janky but we don't want to make things harder
+    // by blocking the UI on a billion previews as someone zips by
+    if (this._pendingPreview == null) {
+      this.processPreview(evt);
+    } else {
+      const delta = performance.now() - this._lastPreview;
+      if (delta < 33) {
+        // If there is an event to process, process it
+        this._nextPreview = evt;
+      } else {
+        this._nextPreview = null;
+        this.processPreview(evt);
+      }
+    }
+  }
+
+  async processPreview(evt) {
+    this._pendingPreview = evt;
+    // Keep frames moving if we get dropped/interrupted
+    this._lastPreview = performance.now();
+    await this.handleFramePreview(evt);
+    this._pendingPreview = null;
+
+    // If there is a new event to process, process it
+    while (
+      this._nextPreview &&
+      this._nextPreview.detail.frame != evt.detail.frame
+    ) {
+      this._pendingPreview = this._nextPreview;
+      this._nextPreview = null;
+      await this.handleFramePreview(this._pendingPreview);
+    }
+    this._pendingPreview = null;
+  }
+
+  hidePreview(skipTimeline) {
+    this._preview.cancelled = true; // This isn't about cancel culture
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._preview.hide();
+
+    if (skipTimeline != true) {
+      // Emulate a mouse out to hide the line
+      this._entityTimeline.focusMouseOut();
+    }
+  }
+
   _setToPlayMode() {
     this._videoMode = "play";
 
@@ -1035,6 +1130,71 @@ export class AnnotationPlayer extends TatorElement {
     }
   }
 
+  /**
+   * Callback used when a user hovers over the seek bar
+   */
+  async handleFramePreview(evt) {
+    let proposed_value = evt.detail.frame;
+    this._preview.cancelled = false;
+    if (proposed_value >= 0) {
+      if (
+        this._timelineMore.style.display != "none" &&
+        evt.detail.skipTimeline != true
+      ) {
+        // Add mouse over to the timeline detail area
+        this._entityTimeline.focusMouseMove(null, null, proposed_value, true);
+      }
+
+      // Get frame preview image
+      const existing = this._preview.info;
+
+      // If we are already on this frame save some resources and just show the preview as-is
+      if (existing.frame != proposed_value) {
+        const rect = this._slider.getBoundingClientRect();
+        if (this._timeMode == "utc") {
+          let timeStr =
+            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+          timeStr = timeStr.split("T")[1].split(".")[0];
+
+          let bias = 15;
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: rect.top - (this._preview.img_height + 50),
+            time: timeStr,
+            image: true,
+          };
+        } else {
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: rect.top - (this._preview.img_height + 50),
+            time: frameToTime(proposed_value, this._fps),
+            image: true,
+          };
+        }
+
+        let frame = await this._video.getScrubFrame(proposed_value);
+
+        if (this._preview.cancelled) {
+          // We took to long and got cancelled.
+          frame.close();
+          return;
+        }
+        this._preview.image = frame;
+        frame.close();
+
+        // Get annotations for frame
+        if (this._video._framedData.has(proposed_value)) {
+          this._preview.annotations =
+            this._video._framedData.get(proposed_value);
+        }
+      }
+      this._preview.show();
+    } else {
+      this._preview.hide();
+    }
+  }
   /**
    * Callback used when user clicks one of the seek bars
    */
@@ -1172,6 +1332,7 @@ export class AnnotationPlayer extends TatorElement {
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames) - 1);
     this._slider.fps = val.fps;
+    this._preview.mediaInfo = val;
     this._fps = val.fps;
     this._totalTime.textContent =
       "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);
@@ -1211,8 +1372,8 @@ export class AnnotationPlayer extends TatorElement {
         }
         this._videoTimeline.timeStore = this._timeStore;
         this._entityTimeline.timeStore = this._timeStore;
+        this._entityTimeline.parent = this;
         this._videoTimeline.timeStoreInitialized();
-        this._entityTimeline.timeStoreInitialized();
 
         this._setToPlayMode();
 
@@ -1362,9 +1523,9 @@ export class AnnotationPlayer extends TatorElement {
     this._entityTimeline.setDisplayMode(this._displayMode);
 
     if (this._displayMode == "utc") {
-      this._slider.useUtcTime(this._timeStore);
+      this._timeMode = "utc";
     } else {
-      this._slider.useRelativeTime();
+      this._timeMode = "relative";
     }
 
     this.dispatchEvent(
@@ -1402,8 +1563,11 @@ export class AnnotationPlayer extends TatorElement {
     ) {
       this.handleNotReadyEvent();
     } else {
-      // TODO refactor this into a member function
-      this._playInteraction.enable();
+      if (this._video.scrubBufferAvailable() == false) {
+        this._playInteraction.disable();
+      } else {
+        this._playInteraction.enable();
+      }
     }
   }
   handleNotReadyEvent() {
@@ -1567,10 +1731,7 @@ export class AnnotationPlayer extends TatorElement {
     const paused = this.is_paused();
     if (paused) {
       this._video.rateChange(this._rate);
-      if (this._video.play()) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
-      }
+      this._video.play();
     }
   }
 
@@ -1590,10 +1751,7 @@ export class AnnotationPlayer extends TatorElement {
       //  this._rateControl.setValue(1.0, true);
       //  this._video.rateChange(this._rate);
       //}
-      if (this._video.playBackwards()) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
-      }
+      this._video.playBackwards();
     }
   }
 
@@ -1607,7 +1765,6 @@ export class AnnotationPlayer extends TatorElement {
     if (paused == false) {
       this._videoStatus = "paused";
       this._video.pause();
-      this._play.setAttribute("is-paused", "");
     }
     this.checkReady();
   }
@@ -1793,16 +1950,6 @@ export class AnnotationPlayer extends TatorElement {
       dockedFPS: null,
       allowSafeMode: this._allowSafeMode,
     };
-  }
-
-  overrideCanvas(frame, bitmap) {
-    this._video._overrideFrame = { frame: frame, bitmap: bitmap };
-    this._video.refresh();
-  }
-
-  clearOverrideCanvas() {
-    this._video._overrideFrame = {};
-    this._video.refresh();
   }
 }
 

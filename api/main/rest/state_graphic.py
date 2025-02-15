@@ -5,6 +5,7 @@ import traceback
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import response
+from django.utils.http import parse_http_date_safe, http_date
 
 from ..models import State
 from ..renderers import PngRenderer
@@ -13,21 +14,21 @@ from ..renderers import GifRenderer
 from ..renderers import Mp4Renderer
 from ..schema import StateGraphicSchema
 
-from ._base_views import BaseDetailView
+from ._base_views import TatorAPIView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
 
-class StateGraphicAPI(BaseDetailView):
+class StateGraphicAPI(TatorAPIView):
     schema = StateGraphicSchema()
     renderer_classes = (PngRenderer, JpegRenderer, GifRenderer, Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def get_queryset(self):
-        return State.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(State.objects.filter(pk=self.params["id"]))
 
     def handle_exception(self, exc):
         logger.error(f"Exception in request: {traceback.format_exc()}")
@@ -41,22 +42,30 @@ class StateGraphicAPI(BaseDetailView):
             status=status_obj,
         )
 
-    def _get(self, params):
+    def get(self, request, format=None, **kwargs):
         """Get frame(s) of a given localization-associated state.
 
         Use the mode argument to control whether it is an animated gif or a tiled jpg.
         """
         # TODO: Add logic for all state types
         # upon success we can return an image
-        state = State.objects.get(pk=params["id"])
+        state = State.objects.get(pk=self.params["id"])
 
-        mode = params["mode"]
-        fps = params["fps"]
-        length = params["length"]
-        offset = params["offset"]
+        # Check if the frame is cached
+        last_modified = int(state.modified_datetime.timestamp())
+        if_modified_since = request.headers.get("If-Modified-Since")
+        if if_modified_since is not None:
+            since_time = parse_http_date_safe(if_modified_since)
+            if since_time and since_time >= last_modified:
+                return Response(status=status.HTTP_304_NOT_MODIFIED)
+
+        mode = self.params["mode"]
+        fps = self.params["fps"]
+        length = self.params["length"]
+        offset = self.params["offset"]
         force_scale = None
-        if "force_scale" in params:
-            force_scale = params["force_scale"].split("x")
+        if "force_scale" in self.params:
+            force_scale = self.params["force_scale"].split("x")
             assert len(force_scale) == 2
 
         typeObj = state.type
@@ -113,4 +122,7 @@ class StateGraphicAPI(BaseDetailView):
                 )
                 with open(tiled_fp, "rb") as data_file:
                     response_data = data_file.read()
-        return response_data
+
+        response = Response(response_data, status=status.HTTP_200_OK)
+        response["Last-Modified"] = http_date(last_modified)
+        return response

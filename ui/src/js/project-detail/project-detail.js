@@ -4,10 +4,9 @@ import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/util
 import { TatorData } from "../util/tator-data.js";
 import { svgNamespace } from "../components/tator-element.js";
 import { FilterData } from "../components/filter-data.js";
-import { v1 as uuidv1 } from "uuid";
+import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
 import { store } from "./store.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
-import Gear from "../../images/svg/gear.svg";
 import { SectionData } from "../util/section-utilities.js";
 
 /**
@@ -113,7 +112,10 @@ export class ProjectDetail extends TatorPage {
     this._settingsButton.appendChild(settingsSvg);
 
     const settingsPath = document.createElementNS(svgNamespace, "use");
-    settingsPath.setAttribute("href", `${Gear}#path`);
+    settingsPath.setAttribute(
+      "href",
+      `${STATIC_PATH}/ui/src/images/svg/gear.svg#path`
+    );
     settingsSvg.appendChild(settingsPath);
 
     this._projectText = document.createTextNode("");
@@ -790,19 +792,13 @@ export class ProjectDetail extends TatorPage {
 
       var destTatorUserSections = "";
       var section = null;
-      if (evt.detail.destSectionId != null) {
-        section = this._sectionData.getSectionFromID(evt.detail.destSectionId);
-        destTatorUserSections = section.tator_user_sections;
-      }
 
       var response = await fetchCredentials(
         `/rest/Medias/${this._projectId}?media_id=${evt.detail.mediaIds}`,
         {
           method: "PATCH",
           body: JSON.stringify({
-            attributes: {
-              tator_user_sections: destTatorUserSections,
-            },
+            primary_section: Number(evt.detail.destSectionId),
           }),
         }
       );
@@ -874,6 +870,7 @@ export class ProjectDetail extends TatorPage {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     this.setAttribute(
       "project-id",
       Number(window.location.pathname.split("/")[1])
@@ -975,6 +972,8 @@ export class ProjectDetail extends TatorPage {
                 this._memberships = memberships;
                 this._versions = versions;
                 this._applets = applets;
+
+                store.setState({ sections: this._sections });
 
                 const searchParams = new URLSearchParams(
                   window.location.search
@@ -1907,6 +1906,7 @@ export class ProjectDetail extends TatorPage {
       pageSize,
       this._sections
     );
+    store.setState({ selectedSection: this._selectedSection });
   }
 
   /**

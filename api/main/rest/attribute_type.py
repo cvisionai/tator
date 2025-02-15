@@ -27,7 +27,7 @@ from ._attributes import (
     bulk_delete_attributes,
     convert_attribute,
 )
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +45,17 @@ class AttributeTypeListAPI(BaseListView):
     """Interact with attributes on an individual type."""
 
     schema = AttributeTypeListSchema()
-    permission_classes = [ProjectFullControlPermission]
     http_method_names = ["patch", "post", "put", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     @staticmethod
     def _check_attribute_type(attribute_type):
@@ -282,8 +291,8 @@ class AttributeTypeListAPI(BaseListView):
 
         return {"message": f"New attribute type '{new_name}' added"}
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         params = parse(self.request)
         models = self._get_models(params["entity_type"])
-        queryset = models[0].objects.filter(pk=params["id"])
-        return queryset
+        qs = models[0].objects.filter(pk=params["id"])
+        return self.filter_only_viewables(qs)

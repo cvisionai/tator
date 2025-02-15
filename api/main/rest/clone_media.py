@@ -71,7 +71,9 @@ class CloneMediaListAPI(BaseListView):
         # Look for destination section, if given.
         section = None
         if params.get("dest_section"):
-            sections = Section.objects.filter(project=dest, name__iexact=params["dest_section"], dtype="folder")
+            sections = Section.objects.filter(
+                project=dest, name__iexact=params["dest_section"], dtype="folder"
+            )
             if sections.count() == 0:
                 section = Section.objects.create(
                     dtype="folder",
@@ -106,6 +108,9 @@ class CloneMediaListAPI(BaseListView):
         ids = [media.id for media in medias]
         return {"message": f"Successfully cloned {len(ids)} medias!", "id": ids}
 
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(get_media_queryset(self.kwargs["project"], self.params))
+
 
 class GetClonedMediaAPI(BaseDetailView):
     """Clone a list of media without copying underlying files."""
@@ -121,5 +126,5 @@ class GetClonedMediaAPI(BaseDetailView):
         ids = [clone_info["original"]["media"].id] + list(clone_info["clones"])
         return {"message": f"Found {len(ids)} clones", "ids": ids}
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))

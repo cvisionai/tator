@@ -2,9 +2,9 @@ import os
 
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-import traceback
 import jwt
 from jwt.algorithms import RSAAlgorithm
+import traceback
 import requests
 import json
 
@@ -12,9 +12,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def format_multiline(message):
-    """Formats multi-line message for single log entry"""
-    return str(message).replace("\n", " \\n ").replace("\t", "    ")
 
 class KeycloakAuthenticationMixin:
     def _get_pub_key(self):
@@ -62,19 +59,19 @@ class KeycloakAuthenticationMixin:
                 user = User.objects.get(pk=user_id)
                 out = (user, None)
             except jwt.ExpiredSignatureError:
-                logger.error(format_multiline(traceback.format_exc()))
+                logger.error(traceback.format_exc())
                 raise AuthenticationFailed(f"Access token has expired!")
             except jwt.InvalidAudienceError:
-                logger.error(format_multiline(traceback.format_exc()))
+                logger.error(traceback.format_exc())
                 raise AuthenticationFailed(f"Access token decode failed: Invalid audience!")
             except jwt.InvalidIssuerError:
-                logger.error(format_multiline(traceback.format_exc()))
+                logger.error(traceback.format_exc())
                 raise AuthenticationFailed(f"Access token decode failed: Invalid issuer!")
             except jwt.DecodeError:
-                logger.error(format_multiline(traceback.format_exc()))
+                logger.error(traceback.format_exc())
                 raise AuthenticationFailed(f"Access token decode failed: Invalid signature!")
             except Exception:
-                logger.error(format_multiline(traceback.format_exc()))
+                logger.error(traceback.format_exc())
                 raise AuthenticationFailed(f"Access token decode failed: Unknown error!")
         return out
 

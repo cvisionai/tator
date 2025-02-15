@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, connection
 from django.db.models import Case, When
 from django.http import Http404
+from django.core.exceptions import PermissionDenied
 from PIL import Image
 
 from ..models import (
@@ -26,7 +27,10 @@ from ..models import (
     Bucket,
     database_qs,
     database_query_ids,
+    Version,
 )
+from .._permission_util import PermissionMask
+
 from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..download import download_file
@@ -52,11 +56,17 @@ from ._util import (
 from ._base_views import BaseListView, BaseDetailView
 from ._media_query import get_media_queryset
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
-from ._permissions import ProjectEditPermission, ProjectTransferPermission
+from ._permissions import (
+    ProjectEditPermission,
+    ProjectTransferPermission,
+    ProjectViewOnlyPermission,
+)
 
 logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema["properties"].keys())
+
+from .._permission_util import augment_permission, shift_permission
 
 
 def _sync_section_inputs(params, project):
@@ -78,6 +88,7 @@ def _sync_section_inputs(params, project):
             else:
                 params["primary_section"] = -1
     return params
+
 
 def _get_next_archive_state(desired_archive_state, last_archive_state):
     if desired_archive_state == "to_live":
@@ -281,7 +292,10 @@ def _create_media(project, params, user, use_rq=False):
         else:
             tator_user_sections = str(uuid1())
             section_obj = Section.objects.create(
-                project=project_obj, name=section, tator_user_sections=tator_user_sections, dtype="folder",
+                project=project_obj,
+                name=section,
+                tator_user_sections=tator_user_sections,
+                dtype="folder",
             )
 
     # Get the media type.
@@ -322,6 +336,8 @@ def _create_media(project, params, user, use_rq=False):
             elemental_id=elemental_id,
         )
         media_obj.media_files = {}
+        media_obj.primary_section = section_obj
+        media_obj.save()
 
         # Set up S3 client.
         tator_store = get_tator_store(project_obj.bucket)
@@ -354,6 +370,8 @@ def _create_media(project, params, user, use_rq=False):
             source_url=url,
             elemental_id=elemental_id,
         )
+        media_obj.primary_section = section_obj
+        media_obj.save()
 
         # Add optional parameters.
         for opt_key in ["fps", "num_frames", "codec", "width", "height", "summary_level"]:
@@ -405,11 +423,38 @@ class MediaListAPI(BaseListView):
 
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
-        if self.request.method == "POST":
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE"]:
+            self.permission_classes = [ProjectEditPermission]
+        elif self.request.method == "POST":
             self.permission_classes = [ProjectTransferPermission]
         else:
-            self.permission_classes = [ProjectEditPermission]
+            raise ValueError(f"Unsupported method {self.request.method}")
         return super().get_permissions()
+
+    def get_queryset(self, **kwargs):
+        params = {**self.params}
+
+        # POST takes section as a name not an ID
+        # Return the media queryset only if we have permissions to make a section if it doesn't exist
+        if self.request.method == "POST":
+            section_name = params.pop("section", None)
+            if section_name:
+                section = Section.objects.filter(project=params["project"], name=section_name)
+                if section.exists():
+                    params["section"] = section[0].id
+                else:
+                    proj = Project.objects.filter(pk=params["project"])
+                    proj = augment_permission(self.request.user, proj)
+                    can_create = (
+                        (proj[0].effective_permission >> shift_permission(Section, Project))
+                        & PermissionMask.CREATE
+                    ) == PermissionMask.CREATE
+                    if not can_create:
+                        raise PermissionDenied
+
+        return self.filter_only_viewables(get_media_queryset(self.params["project"], params))
 
     def _get(self, params):
         """Retrieve list of media.
@@ -417,7 +462,7 @@ class MediaListAPI(BaseListView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
-        qs = get_media_queryset(self.kwargs["project"], params)
+        qs = self.get_queryset()
         fields = [*MEDIA_PROPERTIES]
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
@@ -427,6 +472,9 @@ class MediaListAPI(BaseListView):
             no_cache = params.get("no_cache", False)
             _presign(self.request.user.pk, presigned, response_data, no_cache=no_cache)
         return response_data
+
+    def get_model(self):
+        return Media
 
     def _post(self, params):
         project = params["project"]
@@ -446,7 +494,7 @@ class MediaListAPI(BaseListView):
                 project, media_spec_list[0], self.request.user, use_rq=True
             )
             qs = Media.objects.filter(id=obj.id)
-            response_data = list(qs.values(*fields))
+            response_data = list(augment_permission(self.request.user, qs).values(*fields))
             response_data = response_data if received_spec_list else response_data[0]
             id_resp = [obj.id] if received_spec_list else obj.id
             response = {"message": msg, "id": id_resp, "object": response_data}
@@ -465,7 +513,7 @@ class MediaListAPI(BaseListView):
                     ids.append(obj.id)
 
             qs = Media.objects.filter(id__in=set(ids))
-            response_data = list(qs.values(*fields))
+            response_data = list(augment_permission(self.request.user, qs).values(*fields))
             response = {
                 "message": f"Started import of {len(ids)} images!",
                 "id": ids,
@@ -485,7 +533,7 @@ class MediaListAPI(BaseListView):
         recommended to use a GET request first to check what is being deleted.
         """
         project = params["project"]
-        qs = get_media_queryset(project, params)
+        qs = self.get_queryset()
         media_ids = list(qs.values_list("pk", flat=True).distinct())
         count = qs.count()
         expected_count = params.get("count")
@@ -539,7 +587,7 @@ class MediaListAPI(BaseListView):
                 "Must specify 'attributes', 'reset_attributes', 'null_attributes', 'user_elemental_id', 'primary_section'"
                 " and/or property to patch, but none found"
             )
-        qs = get_media_queryset(params["project"], params)
+        qs = self.get_queryset()
 
         count = qs.count()
         expected_count = params.get("count")
@@ -570,7 +618,9 @@ class MediaListAPI(BaseListView):
                         project=params["project"], pk=params["primary_section"]
                     )
                     if not section.exists():
-                        raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
+                        raise ValueError(
+                            f"Folder with ID {params['primary_section']} does not exist"
+                        )
                     update_kwargs["primary_section"] = section[0]
             if new_attrs is not None or update_kwargs != {}:
                 attr_count = len(ids_to_update)
@@ -646,6 +696,35 @@ class MediaListAPI(BaseListView):
         """Retrieve list of media by ID."""
         return self._get(params)
 
+    def get_parent_objects(self):
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"]:
+            return super().get_parent_objects()
+        elif self.request.method in ["POST"]:
+            # For POST Media we need to see what versions/sections are being impacted
+            specs = self.params["body"]
+            if not isinstance(specs, list):
+                specs = [specs]
+
+            sections = []
+            section_names = [s["section"] for s in specs if s.get("section", None)]
+            section_ids = [s["section_id"] for s in specs if s.get("section_id", None)]
+            sections_by_name = Section.objects.filter(
+                project=self.params["project"], name__in=section_names
+            )
+            sections_by_id = Section.objects.filter(pk__in=section_ids)
+            for section in sections_by_name:
+                sections.append(section)
+            for section in sections_by_id:
+                sections.append(section)
+
+            return {
+                "project": Project.objects.filter(pk=self.params["project"]),
+                "version": Version.objects.filter(pk=-1),  # Media don't have versions
+                "section": sections,
+            }
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+
 
 class MediaDetailAPI(BaseDetailView):
     """Interact with individual media.
@@ -655,9 +734,20 @@ class MediaDetailAPI(BaseDetailView):
     """
 
     schema = MediaDetailSchema()
-    permission_classes = [ProjectEditPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE"]:
+            self.permission_classes = [ProjectEditPermission]
+        elif self.request.method == "POST":
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
 
     def _get(self, params):
         """Retrieve individual media.
@@ -665,7 +755,7 @@ class MediaDetailAPI(BaseDetailView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
-        qs = Media.objects.filter(pk=params["id"], deleted=False)
+        qs = self.get_queryset()
         if not qs.exists():
             raise Http404
         fields = [*MEDIA_PROPERTIES]
@@ -684,7 +774,7 @@ class MediaDetailAPI(BaseDetailView):
         meaning they can be described by user defined attributes.
         """
         with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(pk=params["id"], deleted=False)
+            qs = self.get_queryset()
             media = qs[0]
             params = _sync_section_inputs(params, media.project.pk)
             model_dict = media.model_dict
@@ -740,7 +830,9 @@ class MediaDetailAPI(BaseDetailView):
                         project=media.project, pk=params["primary_section"]
                     )
                     if not section.exists():
-                        raise ValueError(f"Folder with ID {params['primary_section']} does not exist")
+                        raise ValueError(
+                            f"Folder with ID {params['primary_section']} does not exist"
+                        )
                     qs.update(primary_section=section[0])
 
             if "multi" in params:
@@ -860,7 +952,7 @@ class MediaDetailAPI(BaseDetailView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
-        media = Media.objects.get(pk=params["id"], deleted=False)
+        media = self.get_queryset()[0]
         project = media.project
         delete_and_log_changes(media, project, self.request.user)
 
@@ -882,5 +974,5 @@ class MediaDetailAPI(BaseDetailView):
 
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))

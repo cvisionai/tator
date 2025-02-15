@@ -1,7 +1,6 @@
 import { TatorElement } from "./tator-element.js";
-import { v1 as uuidv1 } from "uuid";
-import { uploadMedia } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
-import TatorLoading from "../../images/tator_loading.gif";
+import { v1 as uuidv1 } from "../../../node_modules/uuid/dist/esm-browser/index.js";
+import { uploadMedia } from "../../../../scripts/packages/tator-js/src/utils/upload-media.js";
 
 export class UploadElement extends TatorElement {
   constructor() {
@@ -10,10 +9,14 @@ export class UploadElement extends TatorElement {
     this._haveNewSection = false;
     this._abortController = new AbortController();
     this._cancel = false;
+    this._chosenSection = null;
+    this._chosenImageType = null;
+    this._chosenVideoType = null;
+    this._videoAttr = {};
+    this._imageAttr = {};
   }
 
-  init(api, store) {
-    this._api = api;
+  init(store) {
     this._store = store;
     store.subscribe(
       (state) => state.uploadCancelled,
@@ -42,42 +45,79 @@ export class UploadElement extends TatorElement {
       /(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd|ts)$/i
     );
     const isArchive = ext.match(/^(zip|tar)/i);
+
+    let mediaType = null,
+      fileOk = false,
+      attributes = null;
+
+    if (
+      isImage &&
+      this._chosenImageType !== null &&
+      this._chosenImageType?.file_format === null
+    ) {
+      mediaType = this._chosenImageType;
+      fileOk = true;
+      attributes = this._imageAttr;
+    } else if (
+      isVideo &&
+      this._chosenVideoType !== null &&
+      this._chosenVideoType?.file_format === null
+    ) {
+      mediaType = this._chosenVideoType;
+      fileOk = true;
+      attributes = this._videoAttr;
+    }
+
     const mediaTypes = this._store.getState().mediaTypes;
-    for (let idx = 0; idx < mediaTypes.length; idx++) {
-      // TODO: It is possible for users to define two media types with
-      // the same extension, in which case we might be uploading to the
-      // wrong media type.
-      const mediaType = this._store.getState().mediaTypes[idx];
-      let fileOk = false;
-      if (mediaType.file_format === null) {
-        if (mediaType.dtype == "image" && isImage) {
-          fileOk = true;
-        } else if (mediaType.dtype == "video" && isVideo) {
-          fileOk = true;
+    for (let currentType of mediaTypes) {
+      if (mediaType === null) {
+        if (currentType.file_format === null) {
+          if (currentType.dtype == "image" && isImage) {
+            fileOk = true;
+            mediaType = currentType;
+            attributes = this._imageAttr;
+          } else if (currentType.dtype == "video" && isVideo) {
+            fileOk = true;
+            mediaType = currentType;
+            attributes = this._videoAttr;
+          }
+        } else {
+          fileOk = ext.toLowerCase() === currentType.file_format.toLowerCase();
+          mediaType = currentType;
+
+          if (isArchive) {
+            fileOk = true;
+          }
         }
       } else {
-        fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
-        if (isArchive) {
-          fileOk = true;
+        if (Number(mediaType) === currentType.id) {
+          mediaType = currentType;
         }
-      }
-
-      if (fileOk) {
-        function progressCallback(progress) {
-          this._store.setState({ uploadChunkProgress: progress });
-        }
-        return {
-          file: file,
-          gid: gid,
-          mediaType: isArchive ? -1 : mediaType,
-          section: this._section,
-          isImage: isImage,
-          isArchive: isArchive,
-          progressCallback: progressCallback.bind(this),
-          abortController: this._abortController,
-        };
       }
     }
+
+    if (fileOk) {
+      function progressCallback(progress) {
+        this._store.setState({ uploadChunkProgress: progress });
+      }
+      const fileInfo = {
+        file: file,
+        gid: gid,
+        mediaType: isArchive ? -1 : mediaType,
+        section:
+          this._section && !this._chosenSection
+            ? this._section
+            : this._chosenSection,
+        isImage: isImage,
+        isArchive: isArchive,
+        progressCallback: progressCallback.bind(this),
+        abortController: this._abortController,
+        attributes: attributes ? attributes : {},
+      };
+      console.log("File is OK", fileInfo);
+      return fileInfo;
+    }
+
     this._store.setState({
       uploadError: `${file.name} is not a valid file type for this project!`,
     });
@@ -89,8 +129,6 @@ export class UploadElement extends TatorElement {
   async _fileSelectCallback(ev) {
     // Prevent browser default behavior.
     ev.preventDefault();
-
-    console.log(ev.target.files);
 
     // Send immediate notification of adding files.
     this.dispatchEvent(new Event("addingfiles", { composed: true }));
@@ -107,7 +145,10 @@ export class UploadElement extends TatorElement {
     // Show loading gif.
     const loading = document.createElement("img");
     loading.setAttribute("class", "loading");
-    loading.setAttribute("src", TatorLoading);
+    loading.setAttribute(
+      "src",
+      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    );
     page._projects.appendChild(loading);
     page.setAttribute("has-open-modal", "");
 
@@ -205,7 +246,7 @@ export class UploadElement extends TatorElement {
               uploadChunkProgress: 0,
               uploadFilename: msg.file.name,
             });
-            return uploadMedia(this._api, msg.mediaType, msg.file, msg);
+            return uploadMedia(msg.mediaType, msg.file, msg);
           })
           .then(() => {
             this._store.setState({
@@ -260,6 +301,6 @@ async function readEntriesPromise(directoryReader) {
       directoryReader.readEntries(resolve, reject);
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
   }
 }

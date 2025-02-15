@@ -1,0 +1,98 @@
+{% extends "tator-base.html" %} {% block head %}
+<title>Tator | Permission Settings</title>
+<script type="module">
+  import "{{ static_path }}/ui/src/js/permission-settings/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("permission-settings");
+  document.body.appendChild(page);
+</script>
+{% endblock head %} {% block body %} {% include
+"includes/permission-settings/table-view.html" %} {% include
+"includes/permission-settings/single-view.html" %}
+<template id="permission-settings">
+  <main id="permission-settings--main" class="position-relative">
+    <div id="settings-nav--div" class="py-6 clearfix position-relative px-md-6">
+      <!-- Side nav -->
+      <settings-nav id="settings-nav--nav"></settings-nav>
+
+      <!-- Main page container -->
+      <div
+        id="settings-nav--item-container"
+        class="NavItem float-left col-md-9 col-xl-10 col-xs-12"
+      >
+        <permission-settings-table-view
+          id="group-tabel-view"
+          type="Group"
+          hidden
+        ></permission-settings-table-view>
+        <permission-settings-table-view
+          id="policy-tabel-view"
+          type="Policy"
+          hidden
+        ></permission-settings-table-view>
+        <group-single-view id="group-single-view" hidden></group-single-view>
+        <policy-calculator-view
+          id="policy-calculator-view"
+          hidden
+        ></policy-calculator-view>
+        <policy-single-view id="policy-single-view" hidden></policy-single-view>
+      </div>
+    </div>
+  </main>
+  <modal-dialog id="permission-settings--modal"></modal-dialog>
+</template>
+
+{% include "includes/components/side-nav-link.html" %}
+<template id="settings-nav-template">
+  <div
+    id="settings-nav--nav"
+    class="SideNav rounded-2 float-left col-xl-2 col-md-3 col-xs-12"
+  >
+    <!-- Permissions sidebar item -->
+    <permission-settings-nav-link type="Group">
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="1em"
+        height="1em"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      <span slot="label">Groups</span>
+    </permission-settings-nav-link>
+
+    <!-- Sidebar item -->
+    <permission-settings-nav-link type="Policy">
+      <svg
+        slot="icon"
+        class="SideNav-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="1em"
+        height="1em"
+        viewBox="0 0 384 512"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M256 0v128h128L256 0zM224 128L224 0H48C21.49 0 0 21.49 0 48v416C0 490.5 21.49 512 48 512h288c26.51 0 48-21.49 48-48V160h-127.1C238.3 160 224 145.7 224 128zM64 72C64 67.63 67.63 64 72 64h80C156.4 64 160 67.63 160 72v16C160 92.38 156.4 96 152 96h-80C67.63 96 64 92.38 64 88V72zM64 136C64 131.6 67.63 128 72 128h80C156.4 128 160 131.6 160 136v16C160 156.4 156.4 160 152 160h-80C67.63 160 64 156.4 64 152V136zM304 384c8.875 0 16 7.125 16 16S312.9 416 304 416h-47.25c-16.38 0-31.25-9.125-38.63-23.88c-2.875-5.875-8-6.5-10.12-6.5s-7.25 .625-10 6.125l-7.75 15.38C187.6 412.6 181.1 416 176 416H174.9c-6.5-.5-12-4.75-14-11L144 354.6L133.4 386.5C127.5 404.1 111 416 92.38 416H80C71.13 416 64 408.9 64 400S71.13 384 80 384h12.38c4.875 0 9.125-3.125 10.62-7.625l18.25-54.63C124.5 311.9 133.6 305.3 144 305.3s19.5 6.625 22.75 16.5l13.88 41.63c19.75-16.25 54.13-9.75 66 14.12c2 4 6 6.5 10.12 6.5H304z"
+        />
+      </svg>
+      <span slot="label">Policies</span>
+    </permission-settings-nav-link>
+  </div>
+</template>
+
+{% endblock body %}

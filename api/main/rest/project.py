@@ -4,6 +4,7 @@ import io
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.db.models import F
 
 import uuid
 
@@ -15,31 +16,54 @@ from ..models import Affiliation
 from ..models import Permission
 from ..models import Media
 from ..models import Bucket
-from ..models import database_qs
 from ..models import safe_delete
+from ..models import RowProtection
+
+from .._permission_util import PermissionMask
+from ..models import User
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
 from ..store import get_tator_store
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectFullControlPermission, ProjectViewOnlyPermission
+from .._permission_util import (
+    augment_permission,
+    ColBitAnd,
+    mask_to_old_permission_string,
+    PermissionMask,
+)
+
+from ..schema.components.project import project as project_schema
+
+import os
 
 logger = logging.getLogger(__name__)
+
+PROJECT_PROPERTIES = list(project_schema["properties"].keys())
+PROJECT_PROPERTIES.remove("permission")  # this is calculated and inserted in python-logic
 
 
 def _serialize_projects(projects, user_id):
     cache = TatorCache()
     ttl = 28800
-    project_data = database_qs(projects)
+    project_data = list(projects.values(*PROJECT_PROPERTIES))
     stores = {None: get_tator_store(None, connect_timeout=1, read_timeout=1, max_attempts=1)}
+
     for idx, project in enumerate(projects):
-        if project.creator.pk == user_id:
-            project_data[idx]["permission"] = "Creator"
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
+            project_bitmask = project.effective_permission & 0xFF
+            old_permission = mask_to_old_permission_string(project_bitmask)
+            project_data[idx]["permission"] = old_permission
         else:
-            project_data[idx]["permission"] = str(project.user_permission(user_id))
-        del project_data[idx]["attribute_type_uuids"]
+            if project.creator.pk == user_id:
+                project_data[idx]["permission"] = "Creator"
+            else:
+                project_data[idx]["permission"] = str(project.user_permission(user_id))
+        # del project_data[idx]["attribute_type_uuids"]
         thumb = ""  # TODO put default value here
+        # logger.info(f"{project_data}")
         thumb_path = project_data[idx]["thumb"]
         if thumb_path:
             url = cache.get_presigned(user_id, thumb_path)
@@ -78,6 +102,26 @@ def _serialize_projects(projects, user_id):
     return project_data
 
 
+def get_projects_for_user(user):
+    if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) == "true":
+        all_projects = Project.objects.all()
+        if all_projects.exists():
+            all_projects = augment_permission(user, all_projects)
+            all_projects = all_projects.alias(
+                granted=ColBitAnd(
+                    F("effective_permission"), PermissionMask.EXIST | PermissionMask.READ
+                ),
+            )
+            projects = all_projects.filter(
+                granted__exact=(PermissionMask.EXIST | PermissionMask.READ)
+            )
+        else:
+            projects = Project.objects.filter(pk=-1)
+    else:
+        projects = Project.objects.filter(membership__user=user)
+    return projects
+
+
 class ProjectListAPI(BaseListView):
     """Interact with a list of projects.
 
@@ -99,11 +143,8 @@ class ProjectListAPI(BaseListView):
         elemental_id = params.get("elemental_id", None)
         logger.info(f"{elemental_id} = {type(elemental_id)}")
         if elemental_id is not None:
-            # Django 3.X has a bug where UUID fields aren't escaped properly
-            # Use .extra to manually validate the input is UUID
-            # Then construct where clause manually.
             safe = uuid.UUID(elemental_id)
-            projects = projects.extra(where=[f"elemental_id='{str(safe)}'"])
+            projects = projects.filter(elemental_id=safe)
         logger.info(projects.query)
         return _serialize_projects(projects, self.request.user.pk)
 
@@ -118,11 +159,8 @@ class ProjectListAPI(BaseListView):
         else:
             raise PermissionDenied
 
-        if (
-            Project.objects.filter(membership__user=self.request.user)
-            .filter(name__iexact=params["name"])
-            .exists()
-        ):
+        projects_for_user = get_projects_for_user(self.request.user)
+        if projects_for_user.filter(name__iexact=params["name"]).exists():
             raise Exception("Project with this name already exists!")
 
         # Make sure bucket can be set by this user.
@@ -154,6 +192,16 @@ class ProjectListAPI(BaseListView):
             num_files=0,
         )
         project.save()
+        RowProtection.objects.create(
+            project=project,
+            user=self.request.user,
+            # Full permission for the project and all entities within it.
+            permission=PermissionMask.FULL_CONTROL << 32
+            | PermissionMask.FULL_CONTROL << 24
+            | PermissionMask.FULL_CONTROL << 16
+            | PermissionMask.FULL_CONTROL << 8
+            | PermissionMask.FULL_CONTROL,
+        )
 
         member_qs = Membership.objects.filter(project=project, user=self.request.user)
         if member_qs.count() > 1:
@@ -172,15 +220,17 @@ class ProjectListAPI(BaseListView):
             )
         member.save()
 
-        projects = Project.objects.filter(pk=project.id)
+        projects = self.get_queryset().filter(pk=project.pk)
         return {
             "message": f"Project {params['name']} created!",
             "id": project.id,
             "object": _serialize_projects(projects, self.request.user.pk)[0],
         }
 
-    def get_queryset(self):
-        projects = Project.objects.filter(membership__user=self.request.user).order_by("id")
+    def get_queryset(self, **kwargs):
+        projects = self.filter_only_viewables(
+            get_projects_for_user(self.request.user).order_by("id")
+        )
         return projects
 
 
@@ -195,12 +245,21 @@ class ProjectDetailAPI(BaseDetailView):
     """
 
     schema = ProjectDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
 
+    def get_permissions(self):
+        """Require transfer permissions for POST, edit otherwise."""
+        if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
+            self.permission_classes = [ProjectViewOnlyPermission]
+        elif self.request.method in ["PATCH", "DELETE", "POST"]:
+            self.permission_classes = [ProjectFullControlPermission]
+        else:
+            raise ValueError(f"Unsupported method {self.request.method}")
+        return super().get_permissions()
+
     def _get(self, params):
-        projects = Project.objects.filter(pk=params["id"])
+        projects = self.get_queryset()
         return _serialize_projects(projects, self.request.user.pk)[0]
 
     @transaction.atomic
@@ -285,7 +344,7 @@ class ProjectDetailAPI(BaseDetailView):
         else:
             raise ValueError(f"No recognized keys in request!")
 
-        projects = Project.objects.filter(pk=project.id)
+        projects = self.get_queryset()
         return {
             "message": f"Project {params['id']} updated successfully!",
             "object": _serialize_projects(projects, self.request.user.pk)[0],
@@ -303,5 +362,5 @@ class ProjectDetailAPI(BaseDetailView):
         project.delete()
         return {"message": f'Project {params["id"]} deleted successfully!'}
 
-    def get_queryset(self):
-        return Project.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Project.objects.filter(pk=self.params["id"]))

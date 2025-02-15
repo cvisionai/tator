@@ -1,7 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { MultiRenderer } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
-import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { MultiRenderer } from "../../../../scripts/packages/tator-js/src/annotator/multi-renderer.js";
+import { RATE_CUTOFF_FOR_ON_DEMAND } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 import {
   handle_video_error,
   handle_decoder_error,
@@ -11,7 +11,9 @@ import {
 import { fetchCredentials } from "../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { TimeStore } from "./time-store.js";
 
-import { VideoCanvas } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
+import { VideoCanvas } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
+
+import { AnnotationMultiResizer } from "./annotation-multi-resizer.js";
 
 if (!customElements.get("video-canvas")) {
   customElements.define("video-canvas", VideoCanvas);
@@ -62,6 +64,8 @@ export class AnnotationMulti extends TatorElement {
     this._fastForward = fastForward;
 
     this._playInteraction = new PlayInteraction(this);
+
+    this._focusIds = [];
 
     const settingsDiv = document.createElement("div");
     settingsDiv.setAttribute("class", "d-flex flex-items-center");
@@ -457,6 +461,8 @@ export class AnnotationMulti extends TatorElement {
     this._domParents = []; //handle defered loading of video element
     seekDiv.appendChild(this._slider);
     outerDiv.appendChild(seekDiv);
+    this._preview = document.createElement("media-seek-preview");
+    this._slider._shadow.appendChild(this._preview);
 
     var innerDiv = document.createElement("div");
     this._videoTimeline = document.createElement("video-timeline");
@@ -553,10 +559,12 @@ export class AnnotationMulti extends TatorElement {
         this._displayTimelineLabels,
         this._videos[this._primaryVideoIndex].currentFrame()
       );
-      this._videoHeightPadObject.height =
+      this._videoHeightPadObject.height = Math.max(
         this._headerFooterPad +
-        this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight;
+          this._controls.offsetHeight +
+          this._timelineDiv.offsetHeight,
+        this._videoHeightPadObject.height
+      );
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -567,6 +575,17 @@ export class AnnotationMulti extends TatorElement {
     this._slider.addEventListener("change", (evt) => {
       this.handleSliderChange(evt);
     });
+
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._lastPreview = 0;
+
+    this._slider.addEventListener(
+      "framePreview",
+      this.debouncePreview.bind(this)
+    );
+
+    this._slider.addEventListener("hidePreview", this.hidePreview.bind(this));
 
     play.addEventListener("click", () => {
       this._hideCanvasMenus();
@@ -723,11 +742,20 @@ export class AnnotationMulti extends TatorElement {
       } else {
         this._timelineMore.style.display = "none";
       }
-      this._videoHeightPadObject.height =
+      this._videoHeightPadObject.height = Math.max(
         this._headerFooterPad +
-        this._controls.offsetHeight +
-        this._timelineDiv.offsetHeight;
-      window.dispatchEvent(new Event("resize"));
+          this._controls.offsetHeight +
+          this._timelineDiv.offsetHeight,
+        this._videoHeightPadObject.height
+      );
+      if (this._lastVideoHeightPadHeight != this._videoHeightPadObject.height) {
+        window.dispatchEvent(new Event("resize"));
+        this._lastVideoHeightPadHeight = this._videoHeightPadObject.height;
+      }
+    });
+
+    this._entityTimeline.addEventListener("mouseout", (evt) => {
+      this.hidePreview(true);
     });
 
     fullscreen.addEventListener("click", (evt) => {
@@ -840,11 +868,18 @@ export class AnnotationMulti extends TatorElement {
     this._resizeWindow();
   }
 
-  _resizeWindow() {
+  _resizeWindow(inhibit, extra) {
+    if (extra == undefined) {
+      extra = 0;
+    }
     this._videoHeightPadObject.height =
       this._headerFooterPad +
       this._controls.offsetHeight +
-      this._timelineDiv.offsetHeight;
+      this._timelineDiv.offsetHeight +
+      extra;
+    if (inhibit) {
+      return;
+    }
     window.dispatchEvent(new Event("resize"));
   }
 
@@ -884,6 +919,175 @@ export class AnnotationMulti extends TatorElement {
   }
   disableRateChange() {
     this._rateControl.setAttribute("disabled", "");
+  }
+
+  async debouncePreview(evt) {
+    // Frame previews can get interrupted if we aren't keeping 30fps
+    // things will look janky but we don't want to make things harder
+    // by blocking the UI on a billion previews as someone zips by
+    if (this._pendingPreview == null) {
+      this.processPreview(evt);
+    } else {
+      const delta = performance.now() - this._lastPreview;
+      if (delta < 33) {
+        // If there is an event to process, process it
+        this._nextPreview = evt;
+      } else {
+        this._nextPreview = null;
+        this.processPreview(evt);
+      }
+    }
+  }
+
+  async processPreview(evt) {
+    this._pendingPreview = evt;
+    // Keep frames moving if we get dropped/interrupted
+    this._lastPreview = performance.now();
+    await this.handleFramePreview(evt);
+    this._pendingPreview = null;
+
+    // If there is a new event to process, process it
+    while (
+      this._nextPreview &&
+      this._nextPreview.detail.frame != evt.detail.frame
+    ) {
+      this._pendingPreview = this._nextPreview;
+      this._nextPreview = null;
+      await this.handleFramePreview(this._pendingPreview);
+    }
+    this._pendingPreview = null;
+  }
+
+  hidePreview(skipTimeline) {
+    this._preview.cancelled = true; // This isn't about cancel culture
+    this._pendingPreview = null;
+    this._nextPreview = null;
+    this._preview.hide();
+
+    if (skipTimeline != true) {
+      // Emulate a mouse out to hide the line
+      this._entityTimeline.focusMouseOut();
+    }
+  }
+  /**
+   * Callback used when a user hovers over the seek bar
+   */
+  async handleFramePreview(evt) {
+    let proposed_value = evt.detail.frame;
+    this._preview.cancelled = false;
+    if (proposed_value >= 0) {
+      if (
+        this._timelineMore.style.display != "none" &&
+        evt.detail.skipTimeline != true
+      ) {
+        // Add mouse over to the timeline detail area
+        this._entityTimeline.focusMouseMove(null, null, proposed_value, true);
+      }
+      // Get frame preview image
+      const existing = this._preview.info;
+      let video = null;
+      let multiImage = false;
+      let bias = 50;
+      if (this._focusIds.length > 0) {
+        video = [];
+        for (let focusId of this._focusIds) {
+          video.push(this._videoDivs[focusId].children[0]);
+        }
+        // limit to 4
+        if (video.length > 4) {
+          video = video.slice(0, 4);
+        }
+
+        multiImage = true;
+        bias += this._preview.img_height;
+      } else if (this._videos.length <= 4) {
+        multiImage = true;
+        video = this._videos;
+        bias += this._preview.img_height;
+      }
+
+      // If we are already on this frame save some resources and just show the preview as-is
+      if (existing.frame != proposed_value) {
+        if (multiImage) {
+          // Here we do both images of a multi video
+          let fake_info = {};
+          if (video.length < 4) {
+            fake_info = {
+              height: video[0]._mediaInfo.height,
+              width: video[0]._mediaInfo.width * video.length,
+            };
+          } else if (video.length == 4) {
+            fake_info = {
+              height: video[0]._mediaInfo.height * 2,
+              width: video[0]._mediaInfo.width * 2,
+            };
+          }
+
+          this._preview.mediaInfo = fake_info;
+          let promises = [];
+          for (let idx = 0; idx < video.length; idx++) {
+            let frame_promise = video[idx].getScrubFrame(proposed_value);
+            promises.push(frame_promise);
+          }
+          try {
+            let frames = await Promise.all(promises);
+            if (this._preview.cancelled) {
+              // We took to long and got cancelled.
+              for (let frame of frames) {
+                frame.close();
+              }
+              return;
+            }
+
+            this._preview.image = frames;
+            for (let frame of frames) {
+              frame.close();
+            }
+          } catch (e) {
+            console.error(`Failed to get frame ${proposed_value} ${e}`);
+          }
+
+          // Set the annotations for the multi
+          let annotations = [];
+          for (let idx = 0; idx < video.length; idx++) {
+            if (video[idx]._framedData.has(proposed_value)) {
+              annotations.push(video[idx]._framedData.get(proposed_value));
+            } else {
+              annotations.push([]);
+            }
+          }
+          this._preview.annotations = annotations;
+        }
+
+        // Get the Y position from the seek bar to prevent the preview dancing up and down
+        const rect = this._slider.getBoundingClientRect();
+
+        if (this._timeMode == "utc") {
+          let timeStr =
+            this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
+          timeStr = timeStr.split("T")[1].split(".")[0];
+
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: rect.top - bias, // Add 15 due to page layout
+            time: timeStr,
+            image: multiImage,
+          };
+        } else {
+          this._preview.info = {
+            frame: proposed_value,
+            x: evt.detail.clientX,
+            y: rect.top - bias, // Add 15 due to page layout
+            time: frameToTime(proposed_value, this._fps[this._longest_idx]),
+            image: multiImage,
+          };
+        }
+      }
+      this._preview.show();
+    } else {
+      this._preview.hide();
+    }
   }
 
   /**
@@ -1156,6 +1360,28 @@ export class AnnotationMulti extends TatorElement {
         }
       }
     };
+
+    let global_status = new Array(video_count).fill(0);
+    let global_playing = (vid_idx) => {
+      global_status[vid_idx] = 1;
+      for (let idx = 0; idx < global_status.length; idx++) {
+        if (global_status[idx] == 0) {
+          this._videoStatus = "paused";
+          this._play.setAttribute("is-paused", "");
+          this._playInteraction.enable();
+          return false;
+        }
+      }
+      this._videoStatus = "playing";
+      this._play.removeAttribute("is-paused");
+      return true;
+    };
+    let global_paused = (vid_idx) => {
+      global_status[vid_idx] = 0;
+      this._videoStatus = "paused";
+      this._play.setAttribute("is-paused", "");
+    };
+
     // Functor to normalize the progress bar
     let global_progress = new Array(video_count).fill(0);
     let global_on_demand_progress = new Array(video_count).fill([0, 0]);
@@ -1172,6 +1398,24 @@ export class AnnotationMulti extends TatorElement {
         },
       };
       this._slider.onBufferLoaded(fakeEvt);
+
+      let notReady = false;
+      for (let video of this._videos) {
+        if (video.bufferDelayRequired()) {
+          notReady |= video.onDemandBufferAvailable() == false;
+        } else {
+          notReady |= video.scrubBufferAvailable() == false;
+        }
+      }
+
+      // Update playability as on-demand comes in
+      if (notReady) {
+        this._playInteraction.disable();
+        this._playbackDisabled = true;
+      } else {
+        this._playInteraction.enable();
+        this._playbackDisabled = false;
+      }
 
       let frame = Math.round(
         fakeEvt.detail.percent_complete * this._maxFrameNumber
@@ -1222,8 +1466,8 @@ export class AnnotationMulti extends TatorElement {
 
         this._videoTimeline.timeStore = this._timeStore;
         this._entityTimeline.timeStore = this._timeStore;
+        this._entityTimeline.parent = this;
         this._videoTimeline.timeStoreInitialized();
-        this._entityTimeline.timeStoreInitialized();
 
         this._setToPlayMode();
 
@@ -1261,9 +1505,19 @@ export class AnnotationMulti extends TatorElement {
         this._timeStore.addChannelMedia(video_info, idx);
       }
 
-      this._videos[idx].addEventListener("playbackEnded", () => {
-        this.pause();
-      });
+      let playbackAnomalyCb = () => {
+        const direction = this._videos[idx]._direction;
+        this.pause(() => {
+          if (direction == 1) {
+            // Go to the last frame
+            this.goToFrame(this._maxFrameNumber - 1);
+          } else if (direction == -1) {
+            this.goToFrame(0);
+          }
+        });
+      };
+      this._videos[idx].addEventListener("playbackEnded", playbackAnomalyCb);
+      this._videos[idx].addEventListener("playbackStalled", playbackAnomalyCb);
       this._videos[idx].addEventListener("canvasResized", () => {
         this._videoTimeline.redraw();
         this._entityTimeline.redraw();
@@ -1281,6 +1535,12 @@ export class AnnotationMulti extends TatorElement {
       });
       this._videos[idx].addEventListener("frameChange", (evt) => {
         global_frame_change(idx, evt);
+      });
+      this._videos[idx].addEventListener("playing", () => {
+        global_playing(idx);
+      });
+      this._videos[idx].addEventListener("paused", () => {
+        global_paused(idx);
       });
       const smallTextStyle = {
         fontSize: "16pt",
@@ -1361,6 +1621,16 @@ export class AnnotationMulti extends TatorElement {
     this._focusDiv.setAttribute("class", "d-flex flex-justify-right");
     this._focusTopDiv.appendChild(this._focusDiv);
 
+    this._dockResizer = document.createElement("div");
+    this._dockResizer.setAttribute("class", "annotation__multi-resizer");
+    //this._dockResizer.style.display = "none"; // Hide except in horizontal mode
+    this._focusTopDiv.appendChild(this._dockResizer);
+
+    this._resizeController = new AnnotationMultiResizer(
+      this,
+      this._dockResizer
+    );
+
     this._focusTopDockDiv = document.createElement("div");
     this._focusTopDockDiv.setAttribute("class", "d-flex flex-wrap");
     this._focusTopDiv.appendChild(this._focusTopDockDiv);
@@ -1435,6 +1705,9 @@ export class AnnotationMulti extends TatorElement {
           }
         }
       });
+      roi_vid.addEventListener("playbackNotReady", () => {
+        this._playInteraction.disable();
+      });
 
       // Setup addons for multi-menu and initialize the gridview
       this.assignToGrid(false);
@@ -1493,30 +1766,45 @@ export class AnnotationMulti extends TatorElement {
           }
           this._fps_of_max = fps_of_max;
           this._totalTime.textContent =
-            "/ " + frameToTime(max_frames, fps_of_max);
+            "/ " + frameToTime(max_frames - 1, fps_of_max);
           this._totalTime.style.width =
             10 * (this._totalTime.textContent.length - 1) + 5 + "px";
           this._slider.setAttribute("max", max_frames - 1);
           this._slider.fps = this._fps[this._primaryVideoIndex];
           this._maxFrameNumber = max_frames - 1;
 
-          let multiview = null;
           const searchParams = new URLSearchParams(window.location.search);
           if (searchParams.has("multiview")) {
-            multiview = searchParams.get("multiview");
-            let focusNumber = parseInt(multiview);
-            if (multiview == "hGrid") {
-              this.setHorizontal();
-            } else if (!isNaN(focusNumber)) {
-              this._selectedDock = this._focusTopDockDiv;
+            let multiviewList = searchParams.get("multiview").split(",");
+            let focusCount = 0;
+            for (let multiview of multiviewList) {
+              let focusNumber = parseInt(multiview);
+              if (multiview == "hGrid") {
+                this.setHorizontal();
+              } else if (!isNaN(focusNumber)) {
+                this._selectedDock = this._focusTopDockDiv;
 
-              let currentIndex = 0;
-              for (let videoId in this._videoDivs) {
-                if (currentIndex == focusNumber) {
-                  this.setFocus(videoId);
-                  break;
+                this._focusMode = searchParams.get("focusMode");
+                if (searchParams.has("dock")) {
+                  this._resizeController._mode = searchParams.get("dock");
                 }
-                currentIndex++;
+                this._resizeController.setMenuBasedOnMode();
+
+                // Set the focus based on converting video position to
+                // video id
+                let currentIndex = 0;
+                for (let videoId in this._videoDivs) {
+                  if (currentIndex == focusNumber) {
+                    if (focusCount == 0) {
+                      this.setFocus(videoId);
+                    } else {
+                      this.addFocus(videoId);
+                    }
+                    focusCount++;
+                    break;
+                  }
+                  currentIndex++;
+                }
               }
             }
           }
@@ -1600,7 +1888,11 @@ export class AnnotationMulti extends TatorElement {
     if (multiviewType == "horizontal") {
       var multiview = "hGrid";
     } else {
-      var multiview = get_pos(vid_id);
+      let posList = [];
+      for (let id of this._focusIds) {
+        posList.push(this.videoIdToPosition(id));
+      }
+      var multiview = posList.join(",");
     }
     var search_params = new URLSearchParams(window.location.search);
     search_params.set("multiview", multiview);
@@ -1616,23 +1908,129 @@ export class AnnotationMulti extends TatorElement {
   }
 
   setFocus(vid_id) {
+    vid_id = Number(vid_id);
     this._multiLayoutState = "focus";
+    this._focusIds = [vid_id];
     for (let videoId in this._videoDivs) {
       let video = this._videoDivs[videoId].children[0];
       video.contextMenuNone.hideMenu();
       if (videoId != vid_id) {
         this.assignToSecondary(Number(videoId), this._quality);
       } else {
-        this.setMultiviewUrl("focus", Number(videoId));
+        this.setMultiviewUrl("focus", null);
         this.assignToPrimary(Number(videoId), this._quality * 2);
       }
     }
+    this.conditionallyAddRemoveFocusMenuItem();
+
+    this._dockResizer.style.display = "flex";
+    if (this._focusMode == "horizontal") {
+      this._dockResizer.classList.remove("annotation__multi-resizer-column");
+      this._dockResizer.classList.add("annotation__multi-resizer-row");
+    } else {
+      this._dockResizer.classList.remove("annotation__multi-resizer-row");
+      this._dockResizer.classList.add("annotation__multi-resizer-column");
+    }
+
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+    const tempHandler = () => {
+      this.setMultiProportions();
+      window.removeEventListener("resize", tempHandler);
+    };
+    window.addEventListener("resize", tempHandler);
   }
 
   setFocusVertical(vid_id) {
     this._selectedDock = this._focusTopDockDiv;
+    this._focusMode = "vertical";
+    this.setFocusURL();
     this.setFocus(vid_id);
+  }
+
+  setFocusHorizontal(vid_id) {
+    this._selectedDock = this._focusTopDockDiv;
+    this._focusMode = "horizontal";
+    this.setFocusURL();
+    this.setFocus(vid_id);
+  }
+
+  setFocusURL() {
+    var search_params = new URLSearchParams(window.location.search);
+    search_params.set("focusMode", this._focusMode);
+    const path = document.location.pathname;
+    search_params.set("dock", this._resizeController._mode);
+    const searchArgs = search_params.toString();
+    var newUrl = path + "?" + searchArgs;
+    if (this.pushed_state) {
+      window.history.replaceState(this.multview_state_obj, "Multiview", newUrl);
+    } else {
+      window.history.pushState(this.multview_state_obj, "Multiview", newUrl);
+      this.pushed_state = true;
+    }
+  }
+
+  videoIdToPosition(vid_id) {
+    let pos = 0;
+    for (let videoId in this._videoDivs) {
+      if (videoId == vid_id) {
+        return pos;
+      }
+      pos++;
+    }
+    return -1;
+  }
+
+  addFocus(vid_id) {
+    if (this._multiLayoutState != "focus") {
+      console.warn("Can't add focus if not in focus mode");
+      return;
+    } else {
+      this._focusIds.push(Number(vid_id));
+      this.assignToPrimary(Number(vid_id), this._quality * 2);
+      this.setMultiviewUrl("focus", null);
+
+      this.conditionallyAddRemoveFocusMenuItem();
+    }
+  }
+
+  removeFocus(vid_id) {
+    vid_id = Number(vid_id);
+    let idx = this._focusIds.indexOf(vid_id);
+    if (idx > -1) {
+      this._focusIds.splice(idx, 1);
+
+      // Clear secondary children
+      // This maintains the order of the videos vs. just appending it to the end
+      while (this._selectedDock.firstChild) {
+        this._selectedDock.removeChild(this._selectedDock.firstChild);
+      }
+      for (let videoId in this._videoDivs) {
+        if (this._focusIds.indexOf(Number(videoId)) == -1) {
+          this.assignToSecondary(Number(videoId), this._quality);
+        }
+      }
+    }
+    this.conditionallyAddRemoveFocusMenuItem();
+  }
+
+  conditionallyAddRemoveFocusMenuItem() {
+    if (this._multiLayoutState != "focus") return;
+
+    if (this._focusIds.length <= 1) {
+      for (let videoId in this._videoDivs) {
+        let video = this._videoDivs[videoId].children[0];
+        video.contextMenuNone.displayEntry("Remove from Focus", false);
+      }
+    } else {
+      for (let videoId in this._videoDivs) {
+        let video = this._videoDivs[videoId].children[0];
+        if (this._focusIds.indexOf(Number(videoId)) > -1) {
+          video.contextMenuNone.displayEntry("Remove from Focus", true);
+        } else {
+          video.contextMenuNone.displayEntry("Remove from Focus", false);
+        }
+      }
+    }
   }
 
   setHorizontal() {
@@ -1643,10 +2041,14 @@ export class AnnotationMulti extends TatorElement {
       let video = this._videoDivs[videoId].children[0];
       video.contextMenuNone.hideMenu();
       this.assignToSecondary(Number(videoId), this._quality);
-      video.contextMenuNone.displayEntry("Focus Video", true);
+      video.contextMenuNone.displayEntry("Focus Video (Vertical)", true);
+      video.contextMenuNone.displayEntry("Focus Video (Horizontal)", true);
+      video.contextMenuNone.displayEntry("Add to Focus", false);
       video.contextMenuNone.displayEntry("Horizontal Multiview", false);
       video.contextMenuNone.displayEntry("Reset Multiview", true);
+      video.contextMenuNone.displayEntry("Remove from Focus", false);
     }
+    this.conditionallyAddRemoveFocusMenuItem();
   }
 
   setupMultiMenu(vid_id) {
@@ -1659,6 +2061,8 @@ export class AnnotationMulti extends TatorElement {
       var search_params = new URLSearchParams(window.location.search);
       if (search_params.has("multiview")) {
         search_params.delete("multiview");
+        search_params.delete("focusMode");
+        search_params.delete("dock");
         const path = document.location.pathname;
         const searchArgs = search_params.toString();
         var newUrl = path + "?" + searchArgs;
@@ -1687,19 +2091,56 @@ export class AnnotationMulti extends TatorElement {
       }
       this.assignToGrid();
       reset_url();
+      this._focusIds = [];
     };
 
-    let focusVertical = () => {
-      this.setFocusVertical(vid_id);
+    let goToChannelVideo = () => {
+      // Creates url for channel videos, extracts version
+      let outStr = `/${this._annotationData._projectId}/annotation/${vid_id}?`;
+      let version = this._annotationData._version;
+
+      // Ensures version not null
+      if (version != null) {
+        outStr += `version=${version.id}`;
+      }
+
+      // Opens video in new tab
+      window.open(outStr, "_blank");
     };
 
     video_element.contextMenuAvailable.then(() => {
-      video_element.contextMenuNone.addMenuEntry("Focus Video", focusVertical);
+      video_element.contextMenuNone.addMenuEntry(
+        "Focus Video (Vertical)",
+        () => {
+          this.setFocusVertical(vid_id);
+        }
+      );
+      video_element.contextMenuNone.addMenuEntry(
+        "Focus Video (Horizontal)",
+        () => {
+          this.setFocusHorizontal(vid_id);
+        }
+      );
+      video_element.contextMenuNone.addMenuEntry("Add to Focus", () => {
+        this.addFocus(vid_id);
+      });
+      video_element.contextMenuNone.addMenuEntry("Remove from Focus", () => {
+        this.removeFocus(vid_id);
+      });
       video_element.contextMenuNone.addMenuEntry(
         "Horizontal Multiview",
         this.setHorizontal.bind(this)
       );
       video_element.contextMenuNone.addMenuEntry("Reset Multiview", reset);
+      video_element.contextMenuNone.addMenuEntry(
+        "Open Video in New Player Instance",
+        goToChannelVideo
+      );
+
+      // Hide the three optional ones by default
+      video_element.contextMenuNone.displayEntry("Reset Multiview", false);
+      video_element.contextMenuNone.displayEntry("Add to Focus", false);
+      video_element.contextMenuNone.displayEntry("Remove from Focus", false);
     });
   }
 
@@ -1770,9 +2211,12 @@ export class AnnotationMulti extends TatorElement {
       video.setQuality(this._quality);
 
       if (setContextMenu) {
-        video.contextMenuNone.displayEntry("Focus Video", true);
+        video.contextMenuNone.displayEntry("Focus Video (Vertical)", true);
+        video.contextMenuNone.displayEntry("Focus Video (Horizontal)", true);
+        video.contextMenuNone.displayEntry("Add to Focus", false);
         video.contextMenuNone.displayEntry("Horizontal Multiview", true);
         video.contextMenuNone.displayEntry("Reset Multiview", false);
+        video.contextMenuNone.displayEntry("Remove from Focus", false);
       }
       video.gridRows = this._multi_layout[0];
 
@@ -1784,6 +2228,7 @@ export class AnnotationMulti extends TatorElement {
 
     this._gridDiv.style.display = "grid";
     this._focusDiv.style.display = "none";
+    this._dockResizer.style.display = "none";
     this._focusBottomDockDiv.style.display = "none";
     this._focusTopDockDiv.style.display = "none";
 
@@ -1798,34 +2243,80 @@ export class AnnotationMulti extends TatorElement {
   setMultiProportions() {
     var horizontalDock = this._selectedDock == this._focusBottomDockDiv;
 
+    let hiddenDock = this._resizeController._mode == "hidden";
+    this._resizeWindow(true);
     if (horizontalDock) {
       this._focusDiv.style.display = "none";
       this._selectedDock.style.display = "flex";
       this._selectedDock.style.width = "100%";
     } else {
-      this._focusDiv.style.display = "flex";
-      this._selectedDock.style.display = "block";
-      this._focusDiv.style.width = "70%";
-      this._selectedDock.style.width = "30%";
+      if (this._focusMode == "vertical") {
+        this._resizeController.clearPreview();
+        this._focusDiv.style.display = "flex";
+        this._focusDiv.style.flexDirection = "column";
+        this._focusDiv.style.justifyContent = "center";
+        this._focusDiv.style.maxHeight = "80vh";
+        this._selectedDock.style.display = hiddenDock ? "none" : "flex";
+        this._selectedDock.style.flexWrap = "nowrap";
+        this._selectedDock.style.flexFlow = "column";
+        if (hiddenDock) {
+          this._focusDiv.style.width = null;
+        } else {
+          this._focusDiv.style.width = "70%";
+        }
+        this._selectedDock.style.width = "30%";
+        this._focusTopDiv.style.flexDirection = "row";
+      } else if (this._focusMode == "horizontal") {
+        this._resizeController.clearPreview();
+        this._resizeWindow(true, !hiddenDock ? 175 : 0); // Add room for film strip
+        this._focusDiv.style.display = "flex";
+        this._focusDiv.style.flexDirection = "row";
+        this._focusDiv.style.justifyContent = "center";
+        this._selectedDock.style.display = hiddenDock ? "none" : "flex";
+        this._focusTopDiv.style.flexDirection = "column";
+        this._selectedDock.style.flexFlow = "row";
+        this._selectedDock.style.flexWrap = "nowrap";
+        this._focusDiv.style.width = "100%";
+        this._selectedDock.style.width = "100%";
+      } else {
+        console.warn(`Unknown focus mode ${this._focusMode}`);
+      }
     }
     this._gridDiv.style.display = "none";
 
     for (let primary of this._focusDiv.children) {
       primary.children[0].stretch = true;
-      primary.children[0].contextMenuNone.displayEntry("Focus Video", false);
+      primary.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Vertical)",
+        false
+      );
+      primary.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Horizontal)",
+        false
+      );
+      primary.children[0].contextMenuNone.displayEntry("Add to Focus", false);
       primary.children[0].contextMenuNone.displayEntry(
         "Horizontal Multiview",
         true
       );
       primary.children[0].contextMenuNone.displayEntry("Reset Multiview", true);
-      primary.children[0].gridRows = 1;
+      primary.children[0].gridRows =
+        this._focusMode == "vertical" ? this._focusIds.length : 1;
       primary.children[0].style.gridColumn = null;
       primary.children[0].style.gridRow = null;
     }
 
     for (let docked of this._selectedDock.children) {
       docked.children[0].stretch = true;
-      docked.children[0].contextMenuNone.displayEntry("Focus Video", true);
+      docked.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Vertical)",
+        true
+      );
+      docked.children[0].contextMenuNone.displayEntry(
+        "Focus Video (Horizontal)",
+        true
+      );
+      docked.children[0].contextMenuNone.displayEntry("Add to Focus", true);
       docked.children[0].contextMenuNone.displayEntry(
         "Horizontal Multiview",
         true
@@ -1934,9 +2425,9 @@ export class AnnotationMulti extends TatorElement {
     this._entityTimeline.setDisplayMode(this._displayMode);
 
     if (this._displayMode == "utc") {
-      this._slider.useUtcTime(this._timeStore);
+      this._timeMode = "utc";
     } else {
-      this._slider.useRelativeTime();
+      this._timeMode = "relative";
     }
 
     this.dispatchEvent(
@@ -1970,10 +2461,13 @@ export class AnnotationMulti extends TatorElement {
   }
 
   checkReady() {
-    let notReady;
+    let notReady = false;
     for (let video of this._videos) {
-      notReady |=
-        video.bufferDelayRequired() && video.onDemandBufferAvailable() == false;
+      if (video.bufferDelayRequired()) {
+        notReady |= video.onDemandBufferAvailable() == false;
+      } else {
+        notReady |= video.scrubBufferAvailable() == false;
+      }
     }
     if (notReady) {
       this.handleAllNotReadyEvents();
@@ -2153,10 +2647,14 @@ export class AnnotationMulti extends TatorElement {
           const buffer_required = this._videos[vidIdx].bufferDelayRequired();
           const on_demand_available =
             this._videos[vidIdx].onDemandBufferAvailable();
+          const scrub_available = this._videos[vidIdx].scrubBufferAvailable();
           console.info(
             `${vidIdx}: ${buffer_required} and ${on_demand_available}`
           );
           if (buffer_required == true && on_demand_available == false) {
+            allVideosReady = false;
+          }
+          if (buffer_required == false && scrub_available == false) {
             allVideosReady = false;
           }
         }
@@ -2208,10 +2706,9 @@ export class AnnotationMulti extends TatorElement {
         video.rateChange(this._rate * (prime_fps / video._videoObject.fps));
         playing |= video.play();
       }
+      this._playInteraction.disable();
 
       if (playing) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
         this._syncThread = setTimeout(() => {
           this.syncCheck();
         }, 500);
@@ -2244,16 +2741,13 @@ export class AnnotationMulti extends TatorElement {
         video.rateChange(this._rate * (prime_fps / video._videoObject.fps));
         playing |= video.play();
       }
-      if (playing) {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
-      }
       this.syncCheck();
     }
   }
 
   playBackwards() {
     let playing = false;
+    this._playInteraction.disable();
     // Check to see if the video player can play at this rate
     // at the current frame. If not, inform the user.
     for (let video of this._videos) {
@@ -2274,8 +2768,6 @@ export class AnnotationMulti extends TatorElement {
       let video = this._videos[idx];
       playing |= video.playBackwards();
     }
-    this._videoStatus = "playing";
-    this._play.removeAttribute("is-paused");
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
   }
@@ -2294,7 +2786,7 @@ export class AnnotationMulti extends TatorElement {
     return prime;
   }
 
-  pause() {
+  pause(afterPause) {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", { composed: true }));
     this.enableRateChange();
@@ -2305,8 +2797,17 @@ export class AnnotationMulti extends TatorElement {
     var pausePromises = [];
     let failSafeFunction = () => {
       clearTimeout(this._failSafeTimer);
+      if (this._videoStatus != "paused") {
+        // Timer didn't get cancelled by playing, so the fail safe
+        // will be bad to execute
+        return;
+      }
       this._videoStatus = "paused";
-      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+      if (afterPause) {
+        afterPause();
+      } else {
+        this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+      }
     };
     clearTimeout(this._failSafeTimer);
     if (paused == false) {
@@ -2314,7 +2815,7 @@ export class AnnotationMulti extends TatorElement {
       for (let video of this._videos) {
         pausePromises.push(video.pause());
       }
-      this._play.setAttribute("is-paused", "");
+      this._playInteraction.disable();
       this._rateControl.setValue(this._videos[this._primaryVideoIndex].rate);
       this._failSafeTimer = setTimeout(failSafeFunction, 1500);
     }
@@ -2635,20 +3136,6 @@ export class AnnotationMulti extends TatorElement {
       mediaList.push(video._videoObject);
     }
     return mediaList;
-  }
-
-  overrideCanvas(frame, bitmap) {
-    for (const video of this._videos) {
-      video._overrideFrame = { frame: frame, bitmap: bitmap };
-      video.refresh();
-    }
-  }
-
-  clearOverrideCanvas() {
-    for (const video of this._videos) {
-      video._overrideFrame = {};
-      video.refresh();
-    }
   }
 }
 

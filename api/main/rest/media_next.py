@@ -26,9 +26,8 @@ class MediaNextAPI(BaseDetailView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def _get(self, params):
-        # Find this object.
-        media_id = params["id"]
+    def _get_next(self, media_id):
+        params = self.params
         media = Media.objects.get(pk=media_id)
 
         qs = get_media_queryset(media.project.id, params)
@@ -44,8 +43,18 @@ class MediaNextAPI(BaseDetailView):
         except StopIteration:
             pass
 
-        response_data = {"next": next_id}
+        return next_id
+
+    def _get(self, params):
+        # Find this object.
+
+        response_data = {"next": self._get_next(params["id"])}
         return response_data
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        this_ids = [self.params["id"]]
+        next_id = self._get_next(self.params["id"])
+        if next_id > 0:
+            this_ids.append(next_id)
+
+        return Media.objects.filter(pk__in=this_ids)

@@ -30,6 +30,12 @@ export class NavMain extends TatorElement {
     organizations.textContent = "Organizations";
     this._primary.appendChild(organizations);
 
+    const permissions = document.createElement("a");
+    permissions.setAttribute("class", "nav__link");
+    permissions.setAttribute("href", "/permission-settings/");
+    permissions.textContent = "Permissions";
+    this._primary.appendChild(permissions);
+
     this._changePassword = document.createElement("a");
     this._changePassword.setAttribute("class", "nav__link");
     this._changePassword.setAttribute("href", "/password-reset-request");

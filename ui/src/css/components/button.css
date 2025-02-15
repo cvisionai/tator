@@ -1,0 +1,226 @@
+.btn {
+  align-items: center;
+  background-color: var(--color-purple);
+  border-radius: 3px;
+  color: var(--color-white);
+  cursor: pointer;
+  display: flex;
+  height: 46px;
+  justify-content: center;
+  width: 148px;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  text-align: center;
+}
+.btn:focus {
+  outline: none;
+}
+.btn:hover,
+.btn:focus {
+  background-color: var(--color-white);
+  color: var(--color-purple);
+}
+.btn:disabled,
+.btn [disabled] {
+  background-color: var(--color-charcoal--light);
+  color: var(--color-gray--dark);
+  cursor: not-allowed;
+}
+.btn:disabled:hover,
+.btn:disabled:focus,
+.btn [disabled]:hover,
+.btn [disabled]:focus {
+  background-color: var(--color-charcoal--light);
+  color: var(--color-gray--dark);
+}
+
+.btn.text-gray {
+  color: var(--color-gray--light);
+}
+
+.btn-warning {
+  background-color: var(--color-brown);
+}
+.btn-warning:hover,
+.btn-warning:focus {
+  color: var(--color-brown);
+}
+.btn-warning:disabled,
+.btn-warning [disabled] {
+  background-color: var(--color-charcoal--brown);
+  color: var(--color-gray--dark);
+}
+
+.btn-purple50 {
+  background-color: var(--color-purple50);
+  color: var(--color-white);
+}
+.btn-purple50:hover,
+.btn-purple50:focus {
+  background-color: var(--color-charcoal--light);
+  color: var(--color-white);
+}
+
+.btn-purple {
+  background-color: var(--color-purple);
+  color: var(--color-white);
+}
+.btn-purple:hover,
+.btn-purple:focus {
+  background-color: var(--color-charcoal--light);
+  color: var(--color-white);
+}
+
+.btn-red {
+  background-color: var(--color-red);
+}
+.btn-red:hover,
+.btn-red:focus {
+  color: var(--color-red);
+}
+.btn-red:disabled,
+.btn-red [disabled] {
+  background-color: var(--color-charcoal--red);
+  color: var(--color-gray--dark);
+}
+
+.btn-charcoal {
+  background-color: var(--color-charcoal--light);
+}
+.btn-charcoal:hover,
+.btn-charcoal:focus {
+  color: var(--color-charcoal--light);
+}
+
+.btn-charcoal-medium {
+  background-color: var(--color-charcoal--medium);
+}
+.btn-charcoal-medium:hover,
+.btn-charcoal-medium:focus {
+  color: var(--color-charcoal--light);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--color-charcoal--light);
+  color: var(--color-gray--dark);
+}
+.btn-outline:hover,
+.btn-outline:focus {
+  border-color: transparent;
+  color: var(--color-charcoal--light);
+}
+.btn-outline:hover .text-white,
+.btn-outline:focus .text-white {
+  color: var(--color-charcoal--light);
+}
+.btn-outline:disabled,
+.btn-outline [disabled] {
+  background-color: transparent;
+  color: var(--color-gray--dark) !important;
+  border: 1px solid var(--color-gray--dark50) !important;
+}
+.btn-outline:disabled:hover,
+.btn-outline:disabled:focus,
+.btn-outline [disabled]:hover,
+.btn-outline [disabled]:focus {
+  background-color: transparent;
+  color: var(--color-gray--dark) !important;
+  border: 1px solid var(--color-gray--dark50) !important;
+}
+
+.btn-border {
+  border: 1px solid var(--color-gray--dark50);
+  color: var(--color-gray--dark);
+}
+
+.btn-small {
+  height: 32px;
+  width: 85px;
+}
+
+.btn-small-height {
+  height: 22px;
+}
+
+.btn-width {
+  width: initial;
+}
+
+.btn-fit-content {
+  width: fit-content;
+}
+
+.btn-edit-overlay {
+  position: absolute;
+  bottom: 10px;
+}
+
+.border-green {
+  border: 1px solid var(--color-green);
+}
+
+.border-red {
+  border: 1px solid var(--color-red);
+}
+
+.border-orange {
+  border: 1px solid var(--color-orange);
+}
+
+.border-purple {
+  border: 1px solid var(--color-purple);
+}
+
+.btn-auto-width {
+  width: auto;
+}
+
+.btn.background-green,
+.background-green {
+  background-color: var(--color-rainforest-green);
+}
+.btn.background-green:hover,
+.btn.background-green:focus,
+.background-green:hover,
+.background-green:focus {
+  background-color: var(--color-white);
+  color: var(--color-rainforest-green);
+}
+.btn.background-green:disabled,
+.btn.background-green [disabled],
+.background-green:disabled,
+.background-green [disabled] {
+  background-color: transparent;
+  color: var(--color-gray--dark) !important;
+  border: 1px solid var(--color-gray--dark50) !important;
+}
+.btn.background-green:disabled:hover,
+.btn.background-green:disabled:focus,
+.btn.background-green [disabled]:hover,
+.btn.background-green [disabled]:focus,
+.background-green:disabled:hover,
+.background-green:disabled:focus,
+.background-green [disabled]:hover,
+.background-green [disabled]:focus {
+  background-color: transparent;
+  color: var(--color-gray--dark) !important;
+  border: 1px solid var(--color-gray--dark50) !important;
+}
+
+.background-red {
+  background-color: var(--color-red) !important;
+}
+
+.background-orange {
+  background-color: var(--color-orange) !important;
+}
+
+.background-purple {
+  background-color: var(--color-purple) !important;
+}
+
+.btn.selected {
+  color: var(--color-white);
+  background-color: var(--color-purple);
+}

@@ -1,10 +1,10 @@
-{% extends "tator-base.html" %}
-
-{% block head %}
+{% extends "tator-base.html" %} {% block head %}
 <title>Tator | Project Detail</title>
-{% endblock head %}
-
-{% block body %}
-{% include "includes/components/entity-gallery-sort.html" %}
-<project-detail></project-detail>
-{% endblock body %}
+<script type="module">
+  import "{{ static_path }}/ui/src/js/project-detail/index.js";
+  import "{{ static_path }}/ui/src/js/components/index.js";
+  const page = document.createElement("project-detail");
+  document.body.appendChild(page);
+</script>
+{% endblock head %} {% block body %} {% include
+"includes/components/entity-gallery-sort.html" %} {% endblock body %}

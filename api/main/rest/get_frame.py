@@ -5,6 +5,7 @@ import traceback
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import response
+from django.utils.http import parse_http_date_safe, http_date
 
 from ..models import Media
 from ..renderers import PngRenderer
@@ -13,14 +14,14 @@ from ..renderers import GifRenderer
 from ..renderers import Mp4Renderer
 from ..schema import GetFrameSchema
 from ..schema import parse
-from ._base_views import BaseDetailView
+from ._base_views import TatorAPIView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
 
-class GetFrameAPI(BaseDetailView):
+class GetFrameAPI(TatorAPIView):
     """Get frame(s) from a video.
 
     Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
@@ -32,8 +33,8 @@ class GetFrameAPI(BaseDetailView):
     permission_classes = [ProjectViewOnlyPermission]
     http_method_names = ["get"]
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def get_queryset(self, **kwargs):
+        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"]))
 
     def handle_exception(self, exc):
         logger.error(f"Exception in request: {traceback.format_exc()}")
@@ -47,17 +48,26 @@ class GetFrameAPI(BaseDetailView):
             status=status_obj,
         )
 
-    def _get(self, params):
+    def get(self, request, format=None, **kwargs):
         # upon success we can return an image
-        video = Media.objects.get(pk=params["id"])
-        frames = params.get("frames", "0")
-        tile = params.get("tile", None)
-        animate = params.get("animate", None)
-        roi = params.get("roi", None)
-        quality = params.get("quality", None)
+        video = self.get_queryset().first()
+
+        # Check if the frame is cached
+        last_modified = int(video.modified_datetime.timestamp())
+        if_modified_since = request.headers.get("If-Modified-Since")
+        if if_modified_since is not None:
+            since_time = parse_http_date_safe(if_modified_since)
+            if since_time and since_time >= last_modified:
+                return Response(status=status.HTTP_304_NOT_MODIFIED)
+
+        frames = self.params.get("frames", "0")
+        tile = self.params.get("tile", None)
+        animate = self.params.get("animate", None)
+        roi = self.params.get("roi", None)
+        quality = self.params.get("quality", None)
 
         # Extract the force image size argument and assert if there's a problem with the provided inputs
-        force_image_size = params.get("force_scale", None)
+        force_image_size = self.params.get("force_scale", None)
         if force_image_size is not None:
             img_width_height = force_image_size.split("x")
             assert len(img_width_height) == 2
@@ -151,4 +161,7 @@ class GetFrameAPI(BaseDetailView):
                     )
                 with open(image_fp, "rb") as data_file:
                     response_data = data_file.read()
-        return response_data
+
+        response = Response(response_data, status=status.HTTP_200_OK)
+        response["Last-Modified"] = http_date(last_modified)
+        return response

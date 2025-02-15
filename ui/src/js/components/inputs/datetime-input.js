@@ -12,6 +12,7 @@ export class DateTimeInput extends TatorElement {
       "d-flex flex-justify-between flex-items-center py-1"
     );
     this._shadow.appendChild(this.label);
+    this._disabled = false;
 
     const labelInner = document.createElement("span");
     labelInner.setAttribute("class", "col-4");
@@ -105,7 +106,7 @@ export class DateTimeInput extends TatorElement {
 
   // Permission for datetime only
   set permission(val) {
-    if (hasPermission(val, "Can Edit")) {
+    if (hasPermission(val, "Can Edit") && !this._disabled) {
       this._input.removeAttribute("readonly");
       this._textInput.removeAttribute("readonly");
       this._input.classList.remove("disabled");
@@ -121,6 +122,21 @@ export class DateTimeInput extends TatorElement {
   set default(val) {
     // Value should be the deafult ISO string
     this._default = val;
+  }
+
+  set disabled(val) {
+    this._disabled = val;
+    if (!val) {
+      this._input.removeAttribute("readonly");
+      this._textInput.removeAttribute("readonly");
+      this._input.classList.remove("disabled");
+      this._textInput.classList.remove("disabled");
+    } else {
+      this._input.setAttribute("readonly", "");
+      this._textInput.setAttribute("readonly", "");
+      this._input.classList.add("disabled");
+      this._textInput.classList.add("disabled");
+    }
   }
 
   /**

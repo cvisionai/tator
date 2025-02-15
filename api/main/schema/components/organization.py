@@ -23,6 +23,10 @@ organization_properties = {
         "type": "string",
         "description": "S3 key of thumbnail used to represent the organization.",
     },
+    "effective_permission": {
+        "type": "integer",
+        "description": "The effective permission for the user making the request",
+    },
 }
 
 organization_spec = {

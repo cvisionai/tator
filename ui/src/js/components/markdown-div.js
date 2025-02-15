@@ -1,4 +1,4 @@
-import { marked } from "marked";
+import { marked } from "../../../node_modules/marked/lib/marked.esm.js";
 
 // An unstyled div for displaying parsed markdown.
 export class MarkdownDiv extends HTMLElement {

@@ -1,4 +1,5 @@
 """ TODO: add documentation for this """
+
 import logging
 from urllib import parse as urllib_parse
 
@@ -20,9 +21,7 @@ from ._attribute_query import (
     get_attribute_psql_queryset,
     get_attribute_psql_queryset_from_query_obj,
     supplied_name_to_field,
-    _look_for_section_uuid,
 )
-from ._util import format_multiline
 
 logger = logging.getLogger(__name__)
 
@@ -86,11 +85,8 @@ def _get_media_psql_queryset(project, filter_ops, params):
         qs = qs.filter(name__iexact=name)
 
     if elemental_id is not None:
-        # Django 3.X has a bug where UUID fields aren't escaped properly
-        # Use .extra to manually validate the input is UUID
-        # Then construct where clause manually.
         safe = uuid.UUID(elemental_id)
-        qs = qs.extra(where=[f"elemental_id='{str(safe)}'"])
+        qs = qs.filter(elemental_id=safe)
 
     if dtype is not None:
         qs = qs.filter(type__dtype=dtype)
@@ -144,7 +140,6 @@ def _get_media_psql_queryset(project, filter_ops, params):
             qs = sub_qs
 
     # Do a related query
-    logger.info(params)
     if any([x in params for x in related_keys if x.startswith("related_")]):
         related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
         related_localization_types = LocalizationType.objects.filter(
@@ -189,38 +184,40 @@ def _get_media_psql_queryset(project, filter_ops, params):
         if not section.exists():
             raise Http404
 
-        section_uuid = section[0].tator_user_sections
-        if section_uuid:
-            qs = _look_for_section_uuid(qs, section_uuid)
-
-        if section[0].object_search:
-            qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
-
-        if section[0].related_object_search:
-            qs = _related_search(
-                qs,
-                project,
-                relevant_state_type_ids,
-                relevant_localization_type_ids,
-                section[0].related_object_search,
-            )
-
-        if section[0].explicit_listing:
+        if section[0].dtype == "playlist":
             qs = qs.filter(pk__in=section[0].media.all())
+        elif section[0].dtype == "folder":
+            qs = qs.filter(primary_section=section[0].pk)
+        elif section[0].dtype == "saved_search":
+            if section[0].object_search:
+                qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+
+            elif section[0].related_object_search:
+                qs = _related_search(
+                    qs,
+                    project,
+                    relevant_state_type_ids,
+                    relevant_localization_type_ids,
+                    section[0].related_object_search,
+                )
+        else:
+            raise ValueError(f"Invalid Section value pk={section_id}")
 
     if multiple_section:
         sections = Section.objects.filter(pk__in=multiple_section)
         match_list = []
         for section in sections:
             match_qs = qs.filter(pk=-1)
-            section_uuid = section.tator_user_sections
-            if section_uuid:
-                match_qs = _look_for_section_uuid(qs, section_uuid)
 
-            if section.object_search:
+            if section.dtype == "playlist":
+                match_qs = qs.filter(pk__in=section.media.all())
+            elif section.dtype == "folder":
+                match_qs = qs.filter(primary_section=section.pk)
+
+            elif section.object_search:
                 match_qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
 
-            if section.related_object_search:
+            elif section.related_object_search:
                 match_qs = _related_search(
                     match_qs,
                     project,
@@ -228,9 +225,8 @@ def _get_media_psql_queryset(project, filter_ops, params):
                     relevant_localization_type_ids,
                     section.related_object_search,
                 )
-
-            if section.explicit_listing:
-                match_qs = qs.filter(pk__in=section.media.all())
+            else:
+                raise ValueError(f"Invalid Section value pk={section.pk}")
 
             if match_qs.exists():
                 match_list.append(match_qs)
@@ -267,8 +263,6 @@ def _get_media_psql_queryset(project, filter_ops, params):
         qs = qs[:stop]
     if start is not None:
         qs = qs[start:]
-
-    logger.info(format_multiline(qs.query))
 
     return qs
 

@@ -76,18 +76,3 @@ class UserSerializerBasic(serializers.ModelSerializer):
             "elemental_id",
             "profile",
         ]
-
-
-class VersionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Version
-        fields = [
-            "id",
-            "name",
-            "description",
-            "number",
-            "project",
-            "show_empty",
-            "bases",
-            "elemental_id",
-        ]

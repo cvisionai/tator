@@ -727,6 +727,7 @@ export class AttributesForm extends TatorElement {
       "string",
       "datetime",
       "geopos",
+      "blob",
     ];
     return this.attributeDTypes;
   }
@@ -776,6 +777,12 @@ export class AttributesForm extends TatorElement {
         irreversible: ["enum", "string"],
       },
       float_array: {
+        allowed: [],
+        "fully-reversible": [],
+        "reversible-with-warning": [],
+        irreversible: [],
+      },
+      blob: {
         allowed: [],
         "fully-reversible": [],
         "reversible-with-warning": [],
@@ -927,7 +934,12 @@ export class AttributesForm extends TatorElement {
 
         if (defaultVal !== null && defaultVal !== "null") {
           // backend does this but not when value is ""
-          if (dtype == "int" || dtype == "float") {
+          if (
+            dtype == "int" ||
+            dtype == "float" ||
+            dtype == "blob" ||
+            dtype == "string"
+          ) {
             if (String(defaultVal).trim() === "") {
               delete formData["default"];
             } else {
