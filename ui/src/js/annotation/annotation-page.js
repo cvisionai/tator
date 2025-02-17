@@ -2283,6 +2283,7 @@ export class AnnotationPage extends TatorPage {
     save.requestObj = requestObj;
     save.metaMode = metaMode;
     save.classList.add("is-open");
+    save.dispatchEvent(new Event("open"));
     this.setAttribute("has-open-modal", "");
     document.body.classList.add("shortcuts-disabled");
 
