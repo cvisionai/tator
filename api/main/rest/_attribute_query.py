@@ -114,7 +114,7 @@ def _related_search(
     related_matches = []
     for entity_type in related_state_types:
         state_qs = State.objects.filter(
-            project=project, type=entity_type, deleted=False, variant_deleted=False
+            project=project, type=entity_type, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
         state_qs = get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
         # TODO: Add parameter for this, but this is a more sensible default
@@ -123,7 +123,7 @@ def _related_search(
             related_matches.append(state_qs)
     for entity_type in related_localization_types:
         local_qs = Localization.objects.filter(
-            project=project, type=entity_type, deleted=False, variant_deleted=False
+            project=project, type=entity_type, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
         local_qs = get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
         local_qs = local_qs.filter(mark=F('latest_mark'))
