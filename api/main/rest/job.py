@@ -16,6 +16,7 @@ from ..kube import cancel_jobs
 from ..schema import JobListSchema
 from ..schema import JobDetailSchema
 from ..models import Media
+from ..models import Permission
 from ..kube import TatorAlgorithm
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -67,24 +68,33 @@ class JobListAPI(BaseListView):
         return self.filter_only_viewables(Algorithm.objects.filter(pk__in=alg_ids))
 
     def check_acl_permission_algo_qs(self, user, algo_qs):
-        algo_qs = augment_permission(user, algo_qs)
-        algo_qs = algo_qs.annotate(
-            bitand=ColBitAnd(
-                F("effective_permission"),
-                (PermissionMask.EXECUTE),
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
+            algo_qs = augment_permission(user, algo_qs)
+            algo_qs = algo_qs.annotate(
+                bitand=ColBitAnd(
+                    F("effective_permission"),
+                    (PermissionMask.EXECUTE),
+                )
+            ).annotate(
+                granted=Case(
+                    When(bitand__exact=Value(PermissionMask.EXECUTE), then=True),
+                    default=False,
+                    output_field=BooleanField(),
+                )
             )
-        ).annotate(
-            granted=Case(
-                When(bitand__exact=Value(PermissionMask.EXECUTE), then=True),
-                default=False,
-                output_field=BooleanField(),
-            )
-        )
-        logger.info(f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}")
-        if algo_qs.filter(granted=True).exists():
-            return True
+            logger.info(f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}")
+            if algo_qs.filter(granted=True).exists():
+                return True
+            else:
+                return False
         else:
-            return False
+            # Get membership of the user for this project and verify they have permission to execute
+            project = algo_qs.first().project
+            membership = user.membership_set.filter(project=project)
+            if membership.exists():
+                return membership[0].permission in [Permission.CAN_EXECUTE, Permission.FULL_CONTROL]
+            else:
+                return False
 
     def _post(self, params):
         entityType = None
