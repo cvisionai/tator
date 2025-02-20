@@ -103,6 +103,37 @@ def supplied_name_to_field(supplied_name):
         db_lookup = "-" + db_lookup
     return db_lookup
 
+def _calculate_names_and_types(search_obj):
+    # Recursively calculate names and types
+    # Returns a tuple of (names, types, built_in)
+    names = []
+    types = []
+    built_in = False
+    if type(search_obj) is list:
+        for x in search_obj:
+            this_names, this_types, this_built_in = _calculate_names_and_types(x)
+            names.extend(this_names)
+            types.extend(this_types)
+            built_in = built_in or this_built_in
+    else:
+        attribute = search_obj.get("attribute", "")
+        if attribute == "$type":
+            value = search_obj["value"]
+            if type(value) is list:
+                types.extend(value)
+            else:
+                types.append(value)
+        elif attribute.startswith("$"):
+            built_in = True
+        elif attribute:
+            names.append(search_obj["attribute"])
+        method = search_obj.get("method", "")
+        if method:
+            this_names, this_types, this_built_in = _calculate_names_and_types(search_obj["operations"])
+            names.extend(this_names)
+            types.extend(this_types)
+            built_in = built_in or this_built_in
+    return names, types, built_in
 
 def _related_search(
     qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj
@@ -112,7 +143,26 @@ def _related_search(
         pk__in=relevant_localization_type_ids
     )
     related_matches = []
+
+    # Calculate names and types
+    names, types, built_in = _calculate_names_and_types(search_obj)
     for entity_type in related_state_types:
+
+        # If the search contains no built-ins
+        # if the search types list intersections with this types pk
+        # if the search names list intersections with this attribute names
+        # then we have a match to search over
+        do_we_scan = built_in
+        if entity_type.pk in types:
+            do_we_scan |= True
+        if do_we_scan == False:
+            for attr_type in entity_type.attribute_types:
+                if attr_type["name"] in names:
+                    do_we_scan |= True
+                    break
+        if do_we_scan == False:
+            continue
+
         state_qs = State.objects.filter(
             project=project, type=entity_type, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
@@ -122,6 +172,16 @@ def _related_search(
         if state_qs.exists():
             related_matches.append(state_qs)
     for entity_type in related_localization_types:
+        do_we_scan = built_in
+        if entity_type.pk in types:
+            do_we_scan |= True
+        for attr_type in entity_type.attribute_types:
+            if attr_type["name"] in names:
+                do_we_scan |= True
+                break
+        if do_we_scan == False:
+            continue
+
         local_qs = Localization.objects.filter(
             project=project, type=entity_type, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
