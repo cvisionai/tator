@@ -1,6 +1,7 @@
 import os
 
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 
 from ..cache import TatorCache
@@ -56,7 +57,8 @@ class OrganizationListAPI(BaseListView):
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
         if self.request.method in ["GET", "PUT", "HEAD", "OPTIONS"]:
-            self.permission_classes = [OrganizationMemberPermission]
+            # We check for permissions in the list endpoint itself
+            self.permission_classes = [IsAuthenticated]
         elif self.request.method in ["PATCH", "DELETE", "POST"]:
             self.permission_classes = [OrganizationAdminPermission]
         else:
