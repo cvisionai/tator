@@ -168,7 +168,7 @@ def _related_search(
         state_qs = State.objects.filter(
             project=project, type__in=state_types_to_scan, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
-        state_qs = get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
+        state_qs = get_attribute_psql_queryset_from_query_obj(project, state_qs, search_obj)
         # TODO: Add parameter for this, but this is a more sensible default
         state_qs = state_qs.filter(mark=F('latest_mark'))
         if state_qs.exists():
@@ -190,6 +190,7 @@ def _related_search(
         local_qs = Localization.objects.filter(
             project=project, type__in=local_types_to_scan, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
+        local_qs = get_attribute_psql_queryset_from_query_obj(project, local_qs, search_obj)
         local_qs = local_qs.filter(mark=F('latest_mark'))
         if local_qs.exists():
             related_matches.append(local_qs)
@@ -378,6 +379,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             elif section[0].dtype == "saved_search":
                 if section[0].object_search:
                     media_qs = get_attribute_psql_queryset_from_query_obj(
+                        project,
                         media_qs, section[0].object_search
                     )
 
@@ -404,7 +406,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 raise ValueError(f"'{attr_name}' not valid on media!")
             #  Find matching states  from the
             proj_states = State.objects.filter(project=project)
-            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+            proj_states = get_attribute_psql_queryset_from_query_obj(project, proj_states, value)
 
             # Have to annotate to get it accessible to query object
             proj_states = proj_states.annotate(
@@ -421,7 +423,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
             if is_media is True:
                 raise ValueError(f"'{attr_name}' not valid on media!")
             proj_locals = Localization.objects.filter(project=project)
-            proj_locals = get_attribute_psql_queryset_from_query_obj(proj_locals, value)
+            proj_locals = get_attribute_psql_queryset_from_query_obj(project, proj_locals, value)
 
             # Have to annotate to get it accessible to query object
             proj_locals = proj_locals.annotate(
@@ -439,7 +441,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                 raise ValueError(f"'{attr_name}' not valid on media!")
             #  Find matching states  from the
             proj_states = State.objects.filter(project=project)
-            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+            proj_states = get_attribute_psql_queryset_from_query_obj(project, proj_states, value)
 
             query = Q(pk__in=proj_states.values("localizations"))
         elif attr_name == "$related_localizations":
@@ -450,7 +452,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                     f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
                 )
             proj_locals = Localization.objects.filter(project=project)
-            proj_locals = get_attribute_psql_queryset_from_query_obj(proj_locals, value)
+            proj_locals = get_attribute_psql_queryset_from_query_obj(project, proj_locals, value)
             query = Q(pk__in=proj_locals.values("media").distinct())
         elif attr_name == "$related_states":
             if is_media is False:
@@ -460,7 +462,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                     f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
                 )
             proj_states = State.objects.filter(project=project)
-            proj_states = get_attribute_psql_queryset_from_query_obj(proj_states, value)
+            proj_states = get_attribute_psql_queryset_from_query_obj(project, proj_states, value)
             query = Q(pk__in=proj_states.values("media").distinct())
         elif attr_name == "$related_media":
             if is_media is True:
@@ -470,7 +472,7 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
                     f"Operation '{operation}' not allowed for attribute '{attr_name}'!"
                 )
             proj_media = Media.objects.filter(project=project)
-            proj_media = get_attribute_psql_queryset_from_query_obj(proj_media, value)
+            proj_media = get_attribute_psql_queryset_from_query_obj(project, proj_media, value)
             query = Q(media__in=proj_media.values("id").distinct())
         else:
             if attr_name.startswith("$"):
@@ -528,12 +530,10 @@ def build_query_recursively(query_object, castLookup, is_media, project, all_cas
     return query, all_casts
 
 
-def get_attribute_psql_queryset_from_query_obj(qs, query_object):
-    if qs.exists() == False:
-        return qs.filter(pk=-1)
-
+def get_attribute_psql_queryset_from_query_obj(project, qs, query_object):
     is_media = False
-    if type(qs[0]) == Media:
+    model_type = qs.model
+    if model_type == Media:
         is_media = True
 
     typeLookup = {
@@ -560,13 +560,12 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     attributeCast = {}
     annotateField = {}
     # For Section the attribute types are stored in the project itself
-    if type(qs[0]) == Section:
-        typeObjects = [qs[0].project]
+    if model_type == Section:
+        typeObjects = Project.objects.filter(pk=project)
     else:
-        typeModel = typeLookup[type(qs[0])]
-        typeObjects = typeModel.objects.filter(project=qs[0].project)
-    for typeObject in typeObjects:
-        for attributeType in typeObject.attribute_types:
+        typeModel = typeLookup[model_type]
+        typeObjects = typeModel.objects.filter(project=project)
+
     res=typeObjects.values("attribute_types")
     for typeObject in res:
         for attributeType in typeObject['attribute_types']:
@@ -603,7 +602,7 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         attributeCast[key] = str
 
     q_object, required_annotations = build_query_recursively(
-        query_object, attributeCast, is_media, qs[0].project, set()
+        query_object, attributeCast, is_media, project, set()
     )
 
     logger.info(f"Q_Object = {q_object} Model = {qs.model}")

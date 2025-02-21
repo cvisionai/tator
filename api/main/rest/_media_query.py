@@ -187,10 +187,10 @@ def _get_media_psql_queryset(project, filter_ops, params):
         if section[0].dtype == "playlist":
             qs = qs.filter(pk__in=section[0].media.all())
         elif section[0].dtype == "folder":
-            qs = qs.filter(primary_section=section[0].pk)
+            qs = qs.filter(primary_section=section_id)
         elif section[0].dtype == "saved_search":
             if section[0].object_search:
-                qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+                qs = get_attribute_psql_queryset_from_query_obj(project, qs, section[0].object_search)
 
             elif section[0].related_object_search:
                 qs = _related_search(
@@ -215,7 +215,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
                 match_qs = qs.filter(primary_section=section.pk)
 
             elif section.object_search:
-                match_qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+                match_qs = get_attribute_psql_queryset_from_query_obj(project, qs, section[0].object_search)
 
             elif section.related_object_search:
                 match_qs = _related_search(
@@ -248,10 +248,10 @@ def _get_media_psql_queryset(project, filter_ops, params):
     # Used by GET queries
     if params.get("encoded_search"):
         search_obj = json.loads(base64.b64decode(params.get("encoded_search")).decode())
-        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+        qs = get_attribute_psql_queryset_from_query_obj(project, qs, search_obj)
 
     if params.get("object_search"):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
+        qs = get_attribute_psql_queryset_from_query_obj(project, qs, params.get("object_search"))
 
     if params.get("sort_by", None):
         sortables = [supplied_name_to_field(x) for x in params.get("sort_by")]
