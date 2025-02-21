@@ -205,10 +205,10 @@ def _related_search(
         orig_list = [*related_matches]
         related_match = related_matches.pop()
         # Pop and process the list
-        media_vals = related_match.values("media")
+        media_vals = list(related_match.values_list("media", flat=True))
         for related_match in related_matches:
-            this_vals = related_match.values("media")
-            media_vals = media_vals.union(this_vals)
+            this_vals = list(related_match.values_list("media",flat=True))
+            media_vals.extend(this_vals)
 
         # We now have all the matching media, but lost the score information
         # going back to the original set, make a bunch of subqueries to calculate the
