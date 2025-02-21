@@ -988,23 +988,39 @@ export class AnnotationMulti extends TatorElement {
       let video = null;
       let multiImage = false;
       let bias = 50;
+      let playingOutOfScrub = 0;
       if (this._focusIds.length > 0) {
         video = [];
         for (let focusId of this._focusIds) {
-          video.push(this._videoDivs[focusId].children[0]);
+          let this_video = this._videoDivs[focusId].children[0];
+          video.push(this_video);
         }
         // limit to 4
         if (video.length > 4) {
           video = video.slice(0, 4);
         }
-
         multiImage = true;
-        bias += this._preview.img_height;
       } else if (this._videos.length <= 4) {
         multiImage = true;
         video = this._videos;
+      }
+
+      for (let idx = 0; idx < video.length; idx++) {
+        if (playingOutOfScrub |= (video[idx]._scrub_idx == video[idx]._play_idx)) {
+          playingOutOfScrub++;
+        }
+      }
+
+      // Disable the preview if we are playing out of scrub
+      if (this._videoStatus == "playing" && playingOutOfScrub) {
+        multiImage = false;
+      }
+
+      if (multiImage)
+      {
         bias += this._preview.img_height;
       }
+
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
