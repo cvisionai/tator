@@ -214,16 +214,16 @@ def _related_search(
         # going back to the original set, make a bunch of subqueries to calculate the
         # greatest score for a particular media, if there were duplicates
         # list comp didn't play nice here, but this is easier to read anyway
-        score = []
-        for x in orig_list:
-            annotated_x = x.values("media").annotate(count=Count("media"))
-            filtered_x = annotated_x.filter(media=OuterRef("id"))
-            values_x = filtered_x.values("count").order_by("-count")[:1]
-            score.append(Subquery(values_x))
-        if len(score) > 1:
-            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=Greatest(*score))
-        else:
-            qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=score[0])
+        #score = []
+        #for x in orig_list:
+        #    annotated_x = x.values("media").annotate(count=Count("media"))
+        #    filtered_x = annotated_x.filter(media=OuterRef("id"))
+        #    values_x = filtered_x.values("count").order_by("-count")[:1]
+        #    score.append(Subquery(values_x))
+        #if len(score) > 1:
+        #    qs = qs.filter(pk__in=media_vals.values("media")).annotate(incident=Greatest(*score))
+        #else:
+        qs = qs.filter(pk__in=media_vals).annotate(incident=Value(0))
     else:
         qs = qs.filter(pk=-1).annotate(incident=Value(0))
     return qs
