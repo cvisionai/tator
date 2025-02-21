@@ -1028,7 +1028,9 @@ export class AnnotationMulti extends TatorElement {
       }
 
       for (let idx = 0; idx < video.length; idx++) {
-        if (playingOutOfScrub |= (video[idx]._scrub_idx == video[idx]._play_idx)) {
+        if (
+          (playingOutOfScrub |= video[idx]._scrub_idx == video[idx]._play_idx)
+        ) {
           playingOutOfScrub++;
         }
       }
@@ -1038,11 +1040,9 @@ export class AnnotationMulti extends TatorElement {
         multiImage = false;
       }
 
-      if (multiImage)
-      {
+      if (multiImage) {
         bias += this._preview.img_height;
       }
-
 
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
