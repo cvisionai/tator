@@ -173,7 +173,6 @@ def _related_search(
         state_qs = state_qs.filter(mark=F('latest_mark'))
         if state_qs.exists():
             related_matches.append(state_qs)
-    logger.info(f"RELATED STATE SCAN={state_types_to_scan} {time.time()-begin}")
     res = related_localization_types.values('id', 'attribute_types')
     local_types_to_scan=[]
     for entity_type in res:
