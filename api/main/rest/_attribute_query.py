@@ -146,46 +146,50 @@ def _related_search(
 
     # Calculate names and types
     names, types, built_in = _calculate_names_and_types(search_obj)
-    for entity_type in related_state_types:
-
+    res = related_state_types.values('id', 'attribute_types')
+    state_types_to_scan=[]
+    for entity_type in res:
         # If the search contains no built-ins
         # if the search types list intersections with this types pk
         # if the search names list intersections with this attribute names
         # then we have a match to search over
         do_we_scan = built_in
-        if entity_type.pk in types:
+        if entity_type['id'] in types:
             do_we_scan |= True
         if do_we_scan == False:
-            for attr_type in entity_type.attribute_types:
+            for attr_type in entity_type['attribute_types']:
                 if attr_type["name"] in names:
                     do_we_scan |= True
                     break
-        if do_we_scan == False:
-            continue
+        if do_we_scan:
+            state_types_to_scan.append(entity_type['id'])
 
+    if state_types_to_scan:
         state_qs = State.objects.filter(
-            project=project, type=entity_type, deleted=False, variant_deleted=False, media__in=qs.values('pk')
+            project=project, type__in=state_types_to_scan, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
         state_qs = get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
         # TODO: Add parameter for this, but this is a more sensible default
         state_qs = state_qs.filter(mark=F('latest_mark'))
         if state_qs.exists():
             related_matches.append(state_qs)
-    for entity_type in related_localization_types:
+    logger.info(f"RELATED STATE SCAN={state_types_to_scan} {time.time()-begin}")
+    res = related_localization_types.values('id', 'attribute_types')
+    local_types_to_scan=[]
+    for entity_type in res:
         do_we_scan = built_in
-        if entity_type.pk in types:
+        if entity_type['id'] in types:
             do_we_scan |= True
-        for attr_type in entity_type.attribute_types:
+        for attr_type in entity_type['attribute_types']:
             if attr_type["name"] in names:
                 do_we_scan |= True
                 break
-        if do_we_scan == False:
-            continue
-
+        if do_we_scan:
+            local_types_to_scan.append(entity_type['id'])
+    if local_types_to_scan:
         local_qs = Localization.objects.filter(
-            project=project, type=entity_type, deleted=False, variant_deleted=False, media__in=qs.values('pk')
+            project=project, type__in=local_types_to_scan, deleted=False, variant_deleted=False, media__in=qs.values('pk')
         )
-        local_qs = get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
         local_qs = local_qs.filter(mark=F('latest_mark'))
         if local_qs.exists():
             related_matches.append(local_qs)
@@ -261,7 +265,7 @@ def _get_info_for_attribute(entity_type, key):
     elif key == "tator_user_sections":
         retval = {"name": "tator_user_sections", "dtype": "string"}
     else:
-        for attribute_info in entity_type.attribute_types:
+        for attribute_info in entity_type['attribute_types']:
             if attribute_info["name"] == key:
                 retval = attribute_info
                 break
@@ -563,6 +567,9 @@ def get_attribute_psql_queryset_from_query_obj(qs, query_object):
         typeObjects = typeModel.objects.filter(project=qs[0].project)
     for typeObject in typeObjects:
         for attributeType in typeObject.attribute_types:
+    res=typeObjects.values("attribute_types")
+    for typeObject in res:
+        for attributeType in typeObject['attribute_types']:
             attributeCast[attributeType["name"]] = castLookup[attributeType["dtype"]]
             annotateField[attributeType["name"]], _ = _get_field_for_attribute(
                 typeObject, attributeType["name"]
