@@ -33,7 +33,9 @@ ANNOTATION_TYPE_LOOKUP = {"localization": LocalizationType, "state": StateType}
 
 def _do_object_search(qs, params):
     if params.get("object_search"):
-        qs = get_attribute_psql_queryset_from_query_obj(params["project"], qs, params.get("object_search"))
+        qs = get_attribute_psql_queryset_from_query_obj(
+            params["project"], qs, params.get("object_search")
+        )
 
     # Used by GET queries
     if params.get("encoded_search"):
@@ -183,7 +185,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 media_qs = media_qs.filter(pk__in=section.media.values("id"))
             elif section.dtype == "saved_search":
                 if object_search:
-                    media_qs = get_attribute_psql_queryset_from_query_obj(project, media_qs, object_search)
+                    media_qs = get_attribute_psql_queryset_from_query_obj(
+                        project, media_qs, object_search
+                    )
                 elif related_object_search:
                     media_state_types = StateType.objects.filter(project=project)
                     media_localization_types = Localization.objects.filter(project=project)

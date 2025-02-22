@@ -190,7 +190,9 @@ def _get_media_psql_queryset(project, filter_ops, params):
             qs = qs.filter(primary_section=section_id)
         elif section[0].dtype == "saved_search":
             if section[0].object_search:
-                qs = get_attribute_psql_queryset_from_query_obj(project, qs, section[0].object_search)
+                qs = get_attribute_psql_queryset_from_query_obj(
+                    project, qs, section[0].object_search
+                )
 
             elif section[0].related_object_search:
                 qs = _related_search(
@@ -215,7 +217,9 @@ def _get_media_psql_queryset(project, filter_ops, params):
                 match_qs = qs.filter(primary_section=section.pk)
 
             elif section.object_search:
-                match_qs = get_attribute_psql_queryset_from_query_obj(project, qs, section[0].object_search)
+                match_qs = get_attribute_psql_queryset_from_query_obj(
+                    project, qs, section[0].object_search
+                )
 
             elif section.related_object_search:
                 match_qs = _related_search(

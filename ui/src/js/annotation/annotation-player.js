@@ -1153,8 +1153,10 @@ export class AnnotationPlayer extends TatorElement {
         const rect = this._slider.getBoundingClientRect();
         let useImage = true;
         let imageHeight = this._preview.img_height;
-        if (this._videoStatus == "playing" && this._video._scrub_idx == this._video._play_idx)
-        {
+        if (
+          this._videoStatus == "playing" &&
+          this._video._scrub_idx == this._video._play_idx
+        ) {
           // Don't use image preview if we are playing out of the scrub buffer
           useImage = false;
           imageHeight = 0;
@@ -1181,8 +1183,7 @@ export class AnnotationPlayer extends TatorElement {
           };
         }
 
-        if (useImage)
-        {
+        if (useImage) {
           let frame = await this._video.getScrubFrame(proposed_value);
 
           if (this._preview.cancelled) {
