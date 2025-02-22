@@ -1144,43 +1144,54 @@ export class AnnotationPlayer extends TatorElement {
       // If we are already on this frame save some resources and just show the preview as-is
       if (existing.frame != proposed_value) {
         const rect = this._slider.getBoundingClientRect();
+        let useImage = true;
+        let imageHeight = this._preview.img_height;
+        if (
+          this._videoStatus == "playing" &&
+          this._video._scrub_idx == this._video._play_idx
+        ) {
+          // Don't use image preview if we are playing out of the scrub buffer
+          useImage = false;
+          imageHeight = 0;
+        }
+
         if (this._timeMode == "utc") {
           let timeStr =
             this._timeStore.getAbsoluteTimeFromFrame(proposed_value);
           timeStr = timeStr.split("T")[1].split(".")[0];
-
-          let bias = 15;
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: rect.top - (this._preview.img_height + 50),
+            y: rect.top - (imageHeight + 50),
             time: timeStr,
-            image: true,
+            image: useImage,
           };
         } else {
           this._preview.info = {
             frame: proposed_value,
             x: evt.detail.clientX,
-            y: rect.top - (this._preview.img_height + 50),
+            y: rect.top - (imageHeight + 50),
             time: frameToTime(proposed_value, this._fps),
-            image: true,
+            image: useImage,
           };
         }
 
-        let frame = await this._video.getScrubFrame(proposed_value);
+        if (useImage) {
+          let frame = await this._video.getScrubFrame(proposed_value);
 
-        if (this._preview.cancelled) {
-          // We took to long and got cancelled.
+          if (this._preview.cancelled) {
+            // We took to long and got cancelled.
+            frame.close();
+            return;
+          }
+          this._preview.image = frame;
           frame.close();
-          return;
-        }
-        this._preview.image = frame;
-        frame.close();
 
-        // Get annotations for frame
-        if (this._video._framedData.has(proposed_value)) {
-          this._preview.annotations =
-            this._video._framedData.get(proposed_value);
+          // Get annotations for frame
+          if (this._video._framedData.has(proposed_value)) {
+            this._preview.annotations =
+              this._video._framedData.get(proposed_value);
+          }
         }
       }
       this._preview.show();
