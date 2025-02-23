@@ -33,12 +33,14 @@ ANNOTATION_TYPE_LOOKUP = {"localization": LocalizationType, "state": StateType}
 
 def _do_object_search(qs, params):
     if params.get("object_search"):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
+        qs = get_attribute_psql_queryset_from_query_obj(
+            params["project"], qs, params.get("object_search")
+        )
 
     # Used by GET queries
     if params.get("encoded_search"):
         search_obj = json.loads(base64.b64decode(params.get("encoded_search").encode()).decode())
-        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+        qs = get_attribute_psql_queryset_from_query_obj(params["project"], qs, search_obj)
 
     return qs
 
@@ -141,7 +143,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     )
     if filter_type is not None:
         qs = get_attribute_psql_queryset(
-            ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type),
+            ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values("pk", "attribute_types").first(),
             qs,
             params,
             filter_ops,
@@ -155,10 +157,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         )
     elif filter_ops or params.get("float_array", None):
         queries = []
-        for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
+        for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values('pk', 'attribute_types'):
             sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if type(sub_qs) != type(None):
-                queries.append(sub_qs.filter(type=entity_type))
+                queries.append(sub_qs.filter(type=entity_type['pk']))
         logger.info(f"Joining {len(queries)} queries together.")
         sub_qs = queries.pop()
         if queries:
@@ -183,7 +185,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
                 media_qs = media_qs.filter(pk__in=section.media.values("id"))
             elif section.dtype == "saved_search":
                 if object_search:
-                    media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, object_search)
+                    media_qs = get_attribute_psql_queryset_from_query_obj(
+                        project, media_qs, object_search
+                    )
                 elif related_object_search:
                     media_state_types = StateType.objects.filter(project=project)
                     media_localization_types = Localization.objects.filter(project=project)
@@ -210,7 +214,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         faux_params = {key.replace("related_", ""): params[key] for key in matches}
         logger.info(faux_params)
         related_matches = []
-        for entity_type in related_media_types:
+        for entity_type in related_media_types.values('pk', 'attribute_types'):
             faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(
@@ -236,7 +240,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         related_matches = []
         for entity_type in related_media_types:
             media_qs = Media.objects.filter(project=project, type=entity_type)
-            media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
+            media_qs = get_attribute_psql_queryset_from_query_obj(project, media_qs, search_obj)
             if media_qs.exists():
                 related_matches.append(media_qs)
         if related_matches:
@@ -294,7 +298,7 @@ def get_annotation_queryset(project, params, annotation_type):
         types = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type)
     else:
         types = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project)
-    for entity_type in types:
+    for entity_type in types.values("pk", "attribute_types"):
         filter_ops.extend(get_attribute_filter_ops(params, entity_type))
     qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
     return qs
