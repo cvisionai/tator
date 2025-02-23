@@ -150,7 +150,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
         faux_params = {key.replace("related_", ""): params[key] for key in matches}
         logger.info(faux_params)
         related_matches = []
-        for entity_type in related_state_types:
+        for entity_type in related_state_types.values('pk', 'attribute_types'):
             faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(
@@ -161,7 +161,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
                         faux_filter_ops,
                     )
                 )
-        for entity_type in related_localization_types:
+        for entity_type in related_localization_types.values('pk', 'attribute_types'):
             faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(

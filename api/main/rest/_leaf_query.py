@@ -105,7 +105,7 @@ def get_leaf_queryset(project, params):
         types = LeafType.objects.filter(pk=filter_type)
     else:
         types = LeafType.objects.filter(project=project)
-    for entity_type in types:
+    for entity_type in types.values('pk', 'attribute_types'):
         filter_ops.extend(get_attribute_filter_ops(params, entity_type))
 
     # If using PSQL, construct the queryset.
