@@ -3110,7 +3110,7 @@ class LocalizationBoxTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
@@ -3445,7 +3445,7 @@ class StateTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         BurstableThrottle.apply_monkey_patching_for_test()
         self.user = create_test_user()
         self.user_two = create_test_user()
