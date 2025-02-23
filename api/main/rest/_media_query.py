@@ -117,7 +117,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
             media__in=[filter_type]
         )
         qs = get_attribute_psql_queryset(
-            MediaType.objects.get(pk=filter_type), qs, params, filter_ops
+            MediaType.objects.filter(pk=filter_type).values('id','attribute_types').first(), qs, params, filter_ops
         )
         qs = qs.filter(type=filter_type)
     elif filter_ops or params.get("float_array", None):
@@ -275,10 +275,10 @@ def _get_section_and_params(project, params):
     filter_type = params.get("type")
     filter_ops = []
     if filter_type:
-        types = MediaType.objects.filter(pk=filter_type)
+        types = MediaType.objects.filter(pk=filter_type).values('pk', 'attribute_types')
     else:
         types = MediaType.objects.filter(project=project)
-    for entity_type in types:
+    for entity_type in types.values('pk', 'attribute_types'):
         filter_ops.extend(get_attribute_filter_ops(params, entity_type))
 
     return filter_ops
