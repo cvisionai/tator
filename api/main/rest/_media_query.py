@@ -122,10 +122,10 @@ def _get_media_psql_queryset(project, filter_ops, params):
         qs = qs.filter(type=filter_type)
     elif filter_ops or params.get("float_array", None):
         queries = []
-        for entity_type in MediaType.objects.filter(project=project):
+        for entity_type in MediaType.objects.filter(project=project).values('pk', 'attribute_types'):
             sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if sub_qs:
-                queries.append(sub_qs.filter(type=entity_type))
+                queries.append(sub_qs.filter(type=entity_type['pk']))
             else:
                 queries.append(qs.filter(pk=-1))  # no matches
         logger.info(f"Joining {len(queries)} queries together.")

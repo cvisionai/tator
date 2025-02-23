@@ -45,6 +45,7 @@ from ..models import (
     LocalizationType,
     Media,
     MediaType,
+    Project,
     Section,
     State,
     StateType,
