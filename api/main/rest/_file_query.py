@@ -51,7 +51,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
         qs = qs.filter(type=filter_type)
     else:
         queries = []
-        for entity_type in FileType.objects.filter(project=project):
+        for entity_type in FileType.objects.filter(project=project).values('pk', 'attribute_types'):
             sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if sub_qs:
                 queries.append(sub_qs.filter(type=entity_type))

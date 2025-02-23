@@ -143,7 +143,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     )
     if filter_type is not None:
         qs = get_attribute_psql_queryset(
-            ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type),
+            ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values("pk", "attribute_types").first(),
             qs,
             params,
             filter_ops,
