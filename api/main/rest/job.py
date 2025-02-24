@@ -82,7 +82,9 @@ class JobListAPI(BaseListView):
                     output_field=BooleanField(),
                 )
             )
-            logger.info(f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}")
+            logger.info(
+                f"Query = {algo_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+            )
             if algo_qs.filter(granted=True).exists():
                 return True
             else:
