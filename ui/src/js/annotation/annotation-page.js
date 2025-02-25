@@ -574,7 +574,7 @@ export class AnnotationPage extends TatorPage {
                 }
               })
               .catch((err) =>
-                console.log("Failed to fetch adjacent media! " + err)
+                console.error("Failed to fetch adjacent media! " + err)
               );
             fetchCredentials("/rest/Project/" + data.project, {}, true)
               .then((response) => response.json())
