@@ -85,20 +85,14 @@ export class AnnotationData extends HTMLElement {
 
   // Returns a promise when done
   updateAll(dataTypes, version, viewables) {
-    const trackTypeIds = [];
-    const localTypeIds = [];
+    // This fetches ALL types for localizations and states in 2 requests
+    const stateTypeIds = {};
+    const localTypeIds = {};
 
     // Clear the track database
     this._trackDb = new Map();
-    for (const [idx, dataType] of dataTypes.entries()) {
-      if (dataType.isTrack) {
-        trackTypeIds.push(idx);
-      } else {
-        localTypeIds.push(idx);
-      }
-    }
 
-    // Define function for getting data url.
+    // Construct the individual update URLs
     const getDataUrl = (dataType) => {
       const dataEndpoint =
         dataType.dtype == "state" ? "States" : "Localizations";
@@ -124,53 +118,101 @@ export class AnnotationData extends HTMLElement {
       return dataUrl;
     };
 
-    // Update tracks first
-    const tracksDone = new Promise((resolve) => {
-      if (trackTypeIds.length == 0) {
-        resolve();
+    for (const [idx, dataType] of dataTypes.entries()) {
+      const numericId = Number(dataType.id.split('_')[1]);
+      if (dataType.dtype == "state") {
+        stateTypeIds[numericId] = dataType.id;
+      } else {
+        localTypeIds[numericId] = dataType.id;
+      }
+    }
+
+    let states_url = new URL(
+      `/rest/States/${this._projectId}?media_id=${this._stateMediaIds.join(",")}&merge=1`,
+      window.BACKEND ? window.BACKEND : window.location.origin
+    );
+    let localizations_url = new URL(
+      `/rest/Localizations/${this._projectId}?media_id=${this._localizationMediaIds.join(",")}&merge=1`,
+      window.BACKEND ? window.BACKEND : window.location.origin
+    );
+
+    let state_search = new URLSearchParams(states_url.search.slice(1));
+    let local_search = new URLSearchParams(localizations_url.search.slice(1));
+
+    let requested_versions = [...this._version.bases, this._version.id];
+    if (this._viewables) {
+      requested_versions = [
+        ...new Set(requested_versions.concat(this._viewables)),
+      ];
+    }
+    state_search.set("version", requested_versions);
+    states_url.search = state_search;
+
+    local_search.set("version", requested_versions);
+    localizations_url.search = local_search;
+
+    console.info("Fetching states from " + states_url);
+    console.info("Fetching localizations from " + localizations_url);
+
+    let initDone = new Promise(async (resolve, reject) => {
+
+      let stateResponse = await fetchCredentials(states_url, {}, true);
+      let localResponse = await fetchCredentials(localizations_url, {}, true);
+      let stateData = await stateResponse.json();
+      let localData = await localResponse.json();
+
+      // initialize the dataByType for each dataType
+      for (const dataType of dataTypes) {
+        this._dataByType.set(dataType.id, []);
       }
 
-      // Only trigger the promise after all tracks are processed
-      let count = trackTypeIds.length;
-      const semaphore = function () {
-        count = count - 1;
-        if (count == 0) {
-          resolve();
+      // Do states first which may be tracks
+      // Because we fetch ALL types and filter locally we have to exclude ones
+      // which don't matter for this media
+      // TODO support a list of types for localization searches
+      for (const state of stateData) {
+        state.type = stateTypeIds[state.type];
+        if (state.type)
+        {
+          this._dataByType.get(state.type).push(state);
         }
-      };
+      }
 
-      trackTypeIds.forEach((typeIdx) => {
-        this._updateUrls.set(
-          dataTypes[typeIdx].id,
-          getDataUrl(dataTypes[typeIdx])
+      // Now do localizations
+      for (const local of localData) {
+        local.type = localTypeIds[local.type];
+        if (local.type)
+        {
+          this._dataByType.get(local.type).push(local);
+        }
+      }
+
+
+      // Send out notifications
+      for (const [key, value] of this._dataByType) {
+        this._dataByType.set(key, value);
+        const typeObj = this._dataTypes[key];
+        this._updateUrls.set(typeObj.id, getDataUrl(typeObj));
+        this.dispatchEvent(
+          new CustomEvent("freshData", {
+            detail: {
+              typeObj: typeObj,
+              data: value,
+            },
+          })
         );
-        this.updateType(dataTypes[typeIdx], semaphore);
-      });
-    });
-
-    const initDone = new Promise((resolve) => {
-      let count = localTypeIds.length;
-      if (count == 0) {
-        resolve();
       }
-      const semaphore = function () {
-        count = count - 1;
-        if (count == 0) {
-          resolve();
-        }
-      };
 
-      //Update localizations after
-      tracksDone.then(() => {
-        localTypeIds.forEach((typeIdx) => {
-          this._updateUrls.set(
-            dataTypes[typeIdx].id,
-            getDataUrl(dataTypes[typeIdx])
-          );
-          this.updateType(dataTypes[typeIdx], semaphore);
-        });
-      });
+      // Finally resolve
+      resolve();
     });
+
+
+    // Make a request URL for the states
+
+    // Make a request URL for the localizations
+
+
 
     return initDone;
   }
