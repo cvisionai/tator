@@ -485,13 +485,15 @@ export class AnnotationPage extends TatorPage {
                 {
                   prevData = {prev: listData[this_idx - 1].id};
                 }
-                if (this_idx > 0 && this_idx < listData.length - 1)
+                if (this_idx >= 0 && this_idx < listData.length - 1)
                 {
                   nextData = {next: listData[this_idx + 1].id};
                 }
 
                 this.nextData = nextData;
                 this.prevData = prevData;
+                const count = listData.length;
+                this._breadcrumbs.setPosition(this_idx + 1, count);
 
                 // Turn disable selected_type.
                 searchParams.delete("selected_type");
@@ -584,24 +586,6 @@ export class AnnotationPage extends TatorPage {
                   this._settings._lock.viewOnly();
                 this.enableEditing(true);
               });
-            const countUrl = `/rest/MediaCount/${
-              data.project
-            }?${searchParams.toString()}`;
-            searchParams.set("after_name", data.name);
-            const afterUrl = `/rest/MediaCount/${
-              data.project
-            }?${searchParams.toString()}`;
-            const countPromise = fetchCredentials(countUrl, {}, true);
-            const afterPromise = fetchCredentials(afterUrl, {}, true);
-            Promise.all([countPromise, afterPromise]).then(
-              ([countResponse, afterResponse]) => {
-                const countData = countResponse.json();
-                const afterData = afterResponse.json();
-                Promise.all([countData, afterData]).then(([count, after]) => {
-                  this._breadcrumbs.setPosition(count - after, count);
-                });
-              }
-            );
           });
         break;
     }
