@@ -214,6 +214,12 @@ export class AnnotationPage extends TatorPage {
       this._setAnnouncements(announcements);
       this._updateProject(project);
       this._updateMedia(this._mediaId);
+
+      // Set permission based on project
+      this._permission = project.permission;
+      if (this._permission === "View Only")
+        this._settings._lock.viewOnly();
+      this.enableEditing(true);
     });
   }
 
@@ -578,14 +584,6 @@ export class AnnotationPage extends TatorPage {
               .catch((err) =>
                 console.error("Failed to fetch adjacent media! " + err)
               );
-            fetchCredentials("/rest/Project/" + data.project, {}, true)
-              .then((response) => response.json())
-              .then((data) => {
-                this._permission = data.permission;
-                if (this._permission === "View Only")
-                  this._settings._lock.viewOnly();
-                this.enableEditing(true);
-              });
           });
         break;
     }
