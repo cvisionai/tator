@@ -53,6 +53,8 @@ export class AnnotationCardData extends HTMLElement {
       sortState
     );
 
+    this._bulkCache = null;
+
     return true;
   }
 
@@ -63,13 +65,18 @@ export class AnnotationCardData extends HTMLElement {
    * @returns True if reload() needs to be called
    */
   _needReload(filterConditions, sortState) {
-    return (
-      JSON.stringify(filterConditions) !=
-      JSON.stringify(
-        this.filterConditions ||
-          JSON.stringify(sortState) != JSON.stringify(this.sortState)
-      )
-    );
+    var filterConditionsMatch =
+      JSON.stringify(filterConditions) == JSON.stringify(this.filterConditions);
+    if (!filterConditionsMatch) {
+      return true;
+    }
+
+    var sortStateMatch =
+      JSON.stringify(sortState) == JSON.stringify(this.sortState);
+    if (!sortStateMatch) {
+      return true;
+    }
+    return false;
   }
 
   /**
