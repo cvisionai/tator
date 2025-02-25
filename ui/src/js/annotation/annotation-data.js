@@ -119,7 +119,7 @@ export class AnnotationData extends HTMLElement {
     };
 
     for (const [idx, dataType] of dataTypes.entries()) {
-      const numericId = Number(dataType.id.split('_')[1]);
+      const numericId = Number(dataType.id.split("_")[1]);
       if (dataType.dtype == "state") {
         stateTypeIds[numericId] = dataType.id;
       } else {
@@ -128,11 +128,15 @@ export class AnnotationData extends HTMLElement {
     }
 
     let states_url = new URL(
-      `/rest/States/${this._projectId}?media_id=${this._stateMediaIds.join(",")}&merge=1`,
+      `/rest/States/${this._projectId}?media_id=${this._stateMediaIds.join(
+        ","
+      )}&merge=1`,
       window.BACKEND ? window.BACKEND : window.location.origin
     );
     let localizations_url = new URL(
-      `/rest/Localizations/${this._projectId}?media_id=${this._localizationMediaIds.join(",")}&merge=1`,
+      `/rest/Localizations/${
+        this._projectId
+      }?media_id=${this._localizationMediaIds.join(",")}&merge=1`,
       window.BACKEND ? window.BACKEND : window.location.origin
     );
 
@@ -155,7 +159,6 @@ export class AnnotationData extends HTMLElement {
     console.info("Fetching localizations from " + localizations_url);
 
     let initDone = new Promise(async (resolve, reject) => {
-
       let stateResponse = await fetchCredentials(states_url, {}, true);
       let localResponse = await fetchCredentials(localizations_url, {}, true);
       let stateData = await stateResponse.json();
@@ -172,8 +175,7 @@ export class AnnotationData extends HTMLElement {
       // TODO support a list of types for localization searches
       for (const state of stateData) {
         state.type = stateTypeIds[state.type];
-        if (state.type)
-        {
+        if (state.type) {
           this._dataByType.get(state.type).push(state);
         }
       }
@@ -181,12 +183,10 @@ export class AnnotationData extends HTMLElement {
       // Now do localizations
       for (const local of localData) {
         local.type = localTypeIds[local.type];
-        if (local.type)
-        {
+        if (local.type) {
           this._dataByType.get(local.type).push(local);
         }
       }
-
 
       // Send out notifications
       for (const [key, value] of this._dataByType) {
@@ -207,12 +207,9 @@ export class AnnotationData extends HTMLElement {
       resolve();
     });
 
-
     // Make a request URL for the states
 
     // Make a request URL for the localizations
-
-
 
     return initDone;
   }

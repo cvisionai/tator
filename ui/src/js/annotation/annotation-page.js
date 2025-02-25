@@ -217,8 +217,7 @@ export class AnnotationPage extends TatorPage {
 
       // Set permission based on project
       this._permission = project.permission;
-      if (this._permission === "View Only")
-        this._settings._lock.viewOnly();
+      if (this._permission === "View Only") this._settings._lock.viewOnly();
       this.enableEditing(true);
     });
   }
@@ -472,28 +471,26 @@ export class AnnotationPage extends TatorPage {
                 Promise.all(responses.map((resp) => resp.json()))
               )
               .then(([listData]) => {
-
                 const baseUrl = `/${data.project}/annotation/`;
                 const searchParams = this._settings._queryParams();
                 const media_id = parseInt(newValue);
 
                 let this_idx = -1;
                 for (let idx = 0; idx < listData.length; idx++) {
-                  console.info(listData[idx])
+                  console.info(listData[idx]);
                   if (listData[idx].id == media_id) {
                     this_idx = idx;
                   }
                 }
 
-                let prevData={'prev':-1},nextData={'next':-1};
+                let prevData = { prev: -1 },
+                  nextData = { next: -1 };
 
-                if (this_idx >= 1)
-                {
-                  prevData = {prev: listData[this_idx - 1].id};
+                if (this_idx >= 1) {
+                  prevData = { prev: listData[this_idx - 1].id };
                 }
-                if (this_idx >= 0 && this_idx < listData.length - 1)
-                {
-                  nextData = {next: listData[this_idx + 1].id};
+                if (this_idx >= 0 && this_idx < listData.length - 1) {
+                  nextData = { next: listData[this_idx + 1].id };
                 }
 
                 this.nextData = nextData;
