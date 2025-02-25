@@ -459,11 +459,18 @@ export class AnnotationPage extends TatorPage {
               {},
               true
             );
+
+            // Start with the buttons disabled
+            this._prev.disabled = true;
+            this._next.disabled = true;
+            this._next._shadow.children[0].cursor = "progress";
+            this._prev._shadow.children[0].cursor = "progress";
             Promise.all([nextPromise, prevPromise])
               .then((responses) =>
                 Promise.all(responses.map((resp) => resp.json()))
               )
               .then(([nextData, prevData]) => {
+
                 const baseUrl = `/${data.project}/annotation/`;
                 const searchParams = this._settings._queryParams();
                 const media_id = parseInt(newValue);
@@ -478,6 +485,8 @@ export class AnnotationPage extends TatorPage {
                 if (prevData.prev == -1) {
                   this._prev.disabled = true;
                 } else {
+                  this._prev.disabled = false;
+                  this._prev._shadow.children[0].cursor = null;
                   this._prev.addEventListener("click", (evt) => {
                     let url = baseUrl + prevData.prev;
                     var searchParams = this._settings._queryParams();
@@ -514,6 +523,8 @@ export class AnnotationPage extends TatorPage {
                 if (nextData.next == -1) {
                   this._next.disabled = true;
                 } else {
+                  this._next.disabled = false;
+                  this._next._shadow.children[0].cursor = null;
                   this._next.addEventListener("click", (evt) => {
                     let url = baseUrl + nextData.next;
                     var searchParams = this._settings._queryParams();
