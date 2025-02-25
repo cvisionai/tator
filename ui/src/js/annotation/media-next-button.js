@@ -35,8 +35,13 @@ export class MediaNextButton extends TatorElement {
   }
 
   set disabled(val) {
-    this._button.setAttribute("disabled", "");
-    this.setAttribute("disabled", "");
+    if (val) {
+      this._button.setAttribute("disabled", "");
+      this.setAttribute("disabled", "");
+    } else {
+      this._button.removeAttribute("disabled");
+      this.removeAttribute("disabled");
+    }
   }
 
   get disabled() {
