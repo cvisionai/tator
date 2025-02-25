@@ -449,13 +449,9 @@ export class AnnotationPage extends TatorPage {
                   playerControlManagement(player, false);
                 });
               });
-            const nextPromise = fetchCredentials(
-              `/rest/MediaNext/${newValue}${window.location.search}`,
-              {},
-              true
-            );
-            const prevPromise = fetchCredentials(
-              `/rest/MediaPrev/${newValue}${window.location.search}`,
+            const project = this._mediaInfo.project;
+            const mediaListPromise = fetchCredentials(
+              `/rest/Medias/${project}${window.location.search}`,
               {},
               true
             );
@@ -465,15 +461,34 @@ export class AnnotationPage extends TatorPage {
             this._next.disabled = true;
             this._next._shadow.children[0].cursor = "progress";
             this._prev._shadow.children[0].cursor = "progress";
-            Promise.all([nextPromise, prevPromise])
+            Promise.all([mediaListPromise])
               .then((responses) =>
                 Promise.all(responses.map((resp) => resp.json()))
               )
-              .then(([nextData, prevData]) => {
+              .then(([listData]) => {
 
                 const baseUrl = `/${data.project}/annotation/`;
                 const searchParams = this._settings._queryParams();
                 const media_id = parseInt(newValue);
+
+                let this_idx = -1;
+                for (let idx = 0; idx < listData.length; idx++) {
+                  console.info(listData[idx])
+                  if (listData[idx].id == media_id) {
+                    this_idx = idx;
+                  }
+                }
+
+                let prevData={'prev':-1},nextData={'next':-1};
+
+                if (this_idx >= 1)
+                {
+                  prevData = {prev: listData[this_idx - 1].id};
+                }
+                if (this_idx > 0 && this_idx < listData.length - 1)
+                {
+                  nextData = {next: listData[this_idx + 1].id};
+                }
 
                 this.nextData = nextData;
                 this.prevData = prevData;
