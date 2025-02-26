@@ -104,6 +104,11 @@ summary::marker {
   opacity: 100;
   pointer-events: initial;
 }
+.background-dimmer.has-layout-shift {
+  background-color: var(--color-charcoal--dark);
+  opacity: 100;
+  pointer-events: initial;
+}
 
 .clickable {
   cursor: pointer;

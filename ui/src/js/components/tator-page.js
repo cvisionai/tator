@@ -56,7 +56,7 @@ export class TatorPage extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["has-open-modal"];
+    return ["has-open-modal", "has-layout-shift"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -68,6 +68,13 @@ export class TatorPage extends TatorElement {
           this._dimmer.classList.add("has-open-modal");
         }
         break;
+        case "has-layout-shift":
+          if (newValue === null) {
+            this._dimmer.classList.remove("has-layout-shift");
+          } else {
+            this._dimmer.classList.add("has-layout-shift");
+          }
+          break;
     }
   }
 

@@ -5,16 +5,84 @@ import { AnnotationBrowserSettings } from "./annotation-browser-settings.js";
 import { TimelineSettings } from "./timeline-settings.js";
 import { playerControlManagement } from "./annotation-common.js";
 
+class LoadingAnimation {
+  constructor(canvas, img)
+  {
+    this._canvas = canvas;
+    this._context = canvas.getContext("2d", { alpha: true });
+
+    // Download image and draw it to the canvas
+    this._image = new Image();
+    this._image.src = img;
+    this._image.onload = () => {
+      this._context.drawImage(this._image, 0, 0);
+      this._ready = true;
+    };
+    this.start();
+  }
+
+  start()
+  {
+    // Fire off _animate on each cycle
+    this._animating = true;
+    requestAnimationFrame(this._animate.bind(this));
+    this._animationIdx = 0;
+    this._startTime = performance.now();
+  }
+
+  stop()
+  {
+    this._animating = false;
+    this._animationIdx = 0;
+    this._startTime = 0;
+    this._animate();
+  }
+
+  _animate()
+  {
+    if (!this._ready) 
+    {
+      requestAnimationFrame(this._animate.bind(this));
+      return;   
+    }
+
+    if (this._canvas.style.display=="none")
+    {
+      this._animating = false;
+      return;
+    }
+
+    // Clear canvas
+    this._context.clearRect(0, 0, 461, 500);
+
+    // Strobe the image in brightness osscilate between 0.5 and 1
+    this._animationIdx = (this._animationIdx + 1);
+    this._context.globalAlpha = 0.5 + (0.5 * Math.abs(Math.sin((this._animationIdx*2) * Math.PI / 180)));
+    console.info(`${this._context.globalAlpha}`)
+    this._context.drawImage(this._image, 0, 0, 461, 475);
+    this._context.globalAlpha = 1;
+
+    // Draw a bar at the bottom of the image that fills up in 'expected time'
+    const expected = 5000;
+    this._context.fillStyle = "#a2afcd";
+    const now = performance.now();
+    const elapsed = now - this._startTime;
+    const percent = Math.min(1, elapsed / expected);
+    this._context.fillRect(0, 475, 461 * percent, 25);
+
+    // Request next animation frame
+    if (this._animating) requestAnimationFrame(this._animate.bind(this));
+  }
+}
 export class AnnotationPage extends TatorPage {
   constructor() {
     super();
 
-    this._loading = document.createElement("img");
+    this._loading = document.createElement("canvas");
+    this._loading.setAttribute("width", "461");
+    this._loading.setAttribute("height", "500");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute(
-      "src",
-      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
-    );
+    this._loadingAnimation = new LoadingAnimation(this._loading, `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.webp`);
     this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
@@ -189,7 +257,7 @@ export class AnnotationPage extends TatorPage {
   }
 
   connectedCallback() {
-    this.setAttribute("has-open-modal", "");
+    this.setAttribute("has-layout-shift", "");
     TatorPage.prototype.connectedCallback.call(this);
 
     this._projectId = window.location.pathname.split("/")[1];
@@ -702,11 +770,35 @@ export class AnnotationPage extends TatorPage {
       }
     };
 
-    const _removeLoading = (force) => {
+    const _removeLoading = async (force) => {
       if ((this._dataInitialized && this._canvasInitialized) || force) {
         try {
+
+          // Fade out the background over 500ms
+          const animation_time = 500;
+          this._loadingAnimation.stop();
+          
+
+          const start_time = performance.now();
+          let p = new Promise((resolve, reject) => {
+            let animate = () => {
+              let now = performance.now();
+              let elapsed = now - start_time;
+              if (elapsed >= animation_time) {
+                resolve();
+                return;
+              }
+              this._dimmer.style.opacity = 1 - (elapsed / animation_time);
+              this._loading.style.opacity = Math.max(0,1 - elapsed / (animation_time*0.33));
+              requestAnimationFrame(animate);
+            }
+            animate();
+          });
+          await p;
+
           this._loading.style.display = "none";
-          this.removeAttribute("has-open-modal");
+          this._dimmer.style.opacity = null;
+          this.removeAttribute("has-layout-shift");
           window.dispatchEvent(new Event("resize"));
 
           if (this._archive_state == "to_archive") {
@@ -717,7 +809,7 @@ export class AnnotationPage extends TatorPage {
             );
           }
         } catch (exception) {
-          //pass
+          console.error(exception);
         }
       }
     };
