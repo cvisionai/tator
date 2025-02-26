@@ -263,6 +263,9 @@ export class VersionDialog extends ModalDialog {
     );
   }
   _handleSelect(evt, opts) {
+    if (opts == null) {
+      opts = {};
+    }
     const id = evt.detail.version.id;
     let selected_idx = null;
     for (let idx = 0; idx < this._buttons.length; idx++) {
