@@ -207,6 +207,11 @@ export class PlayInteraction {
     this._parent._play.removeAttribute("tooltip");
   }
   disable() {
+    if (this._parent._videoStatus == "playing")
+    {
+      console.warn("Defensively ignoring request to disable pause button");
+      return;
+    }
     // Disable buttons when actively seeking
     this._parent._play._button.setAttribute("disabled", "");
     // Use some spaces because the tooltip z-index is wrong
