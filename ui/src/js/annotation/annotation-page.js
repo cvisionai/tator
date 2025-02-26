@@ -2544,6 +2544,30 @@ export class AnnotationPage extends TatorPage {
     // Required resize to reset the elements correctly
     window.dispatchEvent(new Event("resize"));
   }
+
+  /**
+   * @param {ImageBitmap} imageBitmap
+   *   ImageBitmap to override the canvas with
+   */
+  overrideCanvas(imageBitmap) {
+    this._canvas.overrideCanvas(this._currentFrame, imageBitmap);
+
+    Utilities.showSuccessIcon("Canvas overridden with new image!");
+
+    for (const applet of this._canvasApplets) {
+      this._canvasAppletWrappers[applet.id].forceUpdateFrameOnLoad();
+    }
+  }
+
+  clearOverrideCanvas() {
+    this._canvas.clearOverrideCanvas();
+
+    Utilities.showSuccessIcon("Canvas override cleared!");
+
+    for (const applet of this._canvasApplets) {
+      this._canvasAppletWrappers[applet.id].forceUpdateFrameOnLoad();
+    }
+  }
 }
 
 customElements.define("annotation-page", AnnotationPage);
