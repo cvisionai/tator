@@ -664,7 +664,7 @@ export class AnnotationPage extends TatorPage {
         if (haveVersion) {
           let version_id = searchParams.get("version");
           let evt = { detail: { version: this._versionLookup[version_id] } };
-          this._versionDialog._handleSelect(evt);
+          this._versionDialog._handleSelect(evt, {muteEvent:true});
         }
         if (haveLock) {
           const lock = Number(searchParams.get("lock"));
