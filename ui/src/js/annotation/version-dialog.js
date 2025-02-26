@@ -285,8 +285,7 @@ export class VersionDialog extends ModalDialog {
     }
     this._updatedDependentLayers(selected_idx);
     this._selected_idx = selected_idx;
-    if (opts.muteEvent != true)
-    {
+    if (opts.muteEvent != true) {
       this.dispatchEvent(
         new CustomEvent("versionSelect", {
           detail: {

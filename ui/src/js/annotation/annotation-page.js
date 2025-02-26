@@ -6,8 +6,7 @@ import { TimelineSettings } from "./timeline-settings.js";
 import { playerControlManagement } from "./annotation-common.js";
 
 class LoadingAnimation {
-  constructor(canvas, img)
-  {
+  constructor(canvas, img) {
     this._canvas = canvas;
     this._context = canvas.getContext("2d", { alpha: true });
 
@@ -21,8 +20,7 @@ class LoadingAnimation {
     this.start();
   }
 
-  start()
-  {
+  start() {
     // Fire off _animate on each cycle
     this._animating = true;
     requestAnimationFrame(this._animate.bind(this));
@@ -30,24 +28,20 @@ class LoadingAnimation {
     this._startTime = performance.now();
   }
 
-  stop()
-  {
+  stop() {
     this._animating = false;
     this._animationIdx = 0;
     this._startTime = 0;
     this._animate();
   }
 
-  _animate()
-  {
-    if (!this._ready) 
-    {
+  _animate() {
+    if (!this._ready) {
       requestAnimationFrame(this._animate.bind(this));
-      return;   
+      return;
     }
 
-    if (this._canvas.style.display=="none")
-    {
+    if (this._canvas.style.display == "none") {
       this._animating = false;
       return;
     }
@@ -56,9 +50,10 @@ class LoadingAnimation {
     this._context.clearRect(0, 0, 461, 500);
 
     // Strobe the image in brightness osscilate between 0.5 and 1
-    this._animationIdx = (this._animationIdx + 1);
-    this._context.globalAlpha = 0.5 + (0.5 * Math.abs(Math.sin((this._animationIdx*2) * Math.PI / 180)));
-    console.info(`${this._context.globalAlpha}`)
+    this._animationIdx = this._animationIdx + 1;
+    this._context.globalAlpha =
+      0.5 + 0.5 * Math.abs(Math.sin((this._animationIdx * 2 * Math.PI) / 180));
+    console.info(`${this._context.globalAlpha}`);
     this._context.drawImage(this._image, 0, 0, 461, 475);
     this._context.globalAlpha = 1;
 
@@ -82,7 +77,10 @@ export class AnnotationPage extends TatorPage {
     this._loading.setAttribute("width", "461");
     this._loading.setAttribute("height", "500");
     this._loading.setAttribute("class", "loading");
-    this._loadingAnimation = new LoadingAnimation(this._loading, `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.webp`);
+    this._loadingAnimation = new LoadingAnimation(
+      this._loading,
+      `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.webp`
+    );
     this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
@@ -732,7 +730,7 @@ export class AnnotationPage extends TatorPage {
         if (haveVersion) {
           let version_id = searchParams.get("version");
           let evt = { detail: { version: this._versionLookup[version_id] } };
-          this._versionDialog._handleSelect(evt, {muteEvent:true});
+          this._versionDialog._handleSelect(evt, { muteEvent: true });
         }
         if (haveLock) {
           const lock = Number(searchParams.get("lock"));
@@ -773,11 +771,9 @@ export class AnnotationPage extends TatorPage {
     const _removeLoading = async (force) => {
       if ((this._dataInitialized && this._canvasInitialized) || force) {
         try {
-
           // Fade out the background over 500ms
           const animation_time = 500;
           this._loadingAnimation.stop();
-          
 
           const start_time = performance.now();
           let p = new Promise((resolve, reject) => {
@@ -788,10 +784,13 @@ export class AnnotationPage extends TatorPage {
                 resolve();
                 return;
               }
-              this._dimmer.style.opacity = 1 - (elapsed / animation_time);
-              this._loading.style.opacity = Math.max(0,1 - elapsed / (animation_time*0.33));
+              this._dimmer.style.opacity = 1 - elapsed / animation_time;
+              this._loading.style.opacity = Math.max(
+                0,
+                1 - elapsed / (animation_time * 0.33)
+              );
               requestAnimationFrame(animate);
-            }
+            };
             animate();
           });
           await p;
