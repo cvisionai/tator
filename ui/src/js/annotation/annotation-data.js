@@ -159,10 +159,16 @@ export class AnnotationData extends HTMLElement {
     console.info("Fetching localizations from " + localizations_url);
 
     let initDone = new Promise(async (resolve, reject) => {
-      let stateResponse = await fetchCredentials(states_url, {}, true);
-      let localResponse = await fetchCredentials(localizations_url, {}, true);
-      let stateData = await stateResponse.json();
-      let localData = await localResponse.json();
+      let stateData = [];
+      let localData = [];
+      if (this._stateMediaIds.length > 0) {
+        let stateResponse = await fetchCredentials(states_url, {}, true);
+        stateData = await stateResponse.json();
+      }
+      if (this._localizationMediaIds.length > 0) {
+        let localResponse = await fetchCredentials(localizations_url, {}, true);
+        localData = await localResponse.json();
+      }
 
       // initialize the dataByType for each dataType
       for (const dataType of dataTypes) {
