@@ -1,7 +1,10 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { MultiRenderer } from "../../../../scripts/packages/tator-js/src/annotator/multi-renderer.js";
-import { RATE_CUTOFF_FOR_ON_DEMAND, Direction } from "../../../../scripts/packages/tator-js/src/annotator/video.js";
+import {
+  RATE_CUTOFF_FOR_ON_DEMAND,
+  Direction,
+} from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 import {
   handle_video_error,
   handle_decoder_error,
@@ -1012,15 +1015,18 @@ export class AnnotationMulti extends TatorElement {
         ) {
           playingOutOfScrub++;
         }
-        if (playingBackwards |=
-          video[idx]._direction == Direction.BACKWARDS
+        if (
+          (playingBackwards |= video[idx]._direction == Direction.BACKWARDS)
         ) {
           playingBackwards++;
         }
       }
 
       // Disable the preview if we are playing out of scrub
-      if (this._videoStatus == "playing" && (playingOutOfScrub || playingBackwards)) {
+      if (
+        this._videoStatus == "playing" &&
+        (playingOutOfScrub || playingBackwards)
+      ) {
         multiImage = false;
       }
 

@@ -1,6 +1,9 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
-import { RATE_CUTOFF_FOR_ON_DEMAND, Direction} from "../../../../scripts/packages/tator-js/src/annotator/video.js";
+import {
+  RATE_CUTOFF_FOR_ON_DEMAND,
+  Direction,
+} from "../../../../scripts/packages/tator-js/src/annotator/video.js";
 import {
   frameToTime,
   handle_video_error,
@@ -1155,7 +1158,8 @@ export class AnnotationPlayer extends TatorElement {
         let imageHeight = this._preview.img_height;
         if (
           this._videoStatus == "playing" &&
-          (this._video._scrub_idx == this._video._play_idx || this._video._direction == Direction.BACKWARDS)
+          (this._video._scrub_idx == this._video._play_idx ||
+            this._video._direction == Direction.BACKWARDS)
         ) {
           // Don't use image preview if we are playing out of the scrub buffer
           useImage = false;
