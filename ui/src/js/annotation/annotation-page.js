@@ -53,7 +53,6 @@ class LoadingAnimation {
     this._animationIdx = this._animationIdx + 1;
     this._context.globalAlpha =
       0.5 + 0.5 * Math.abs(Math.sin((this._animationIdx * 2 * Math.PI) / 180));
-    console.info(`${this._context.globalAlpha}`);
     this._context.drawImage(this._image, 0, 0, 461, 475);
     this._context.globalAlpha = 1;
 
