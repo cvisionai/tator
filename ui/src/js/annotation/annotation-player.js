@@ -1962,6 +1962,16 @@ export class AnnotationPlayer extends TatorElement {
       allowSafeMode: this._allowSafeMode,
     };
   }
+
+  overrideCanvas(frame, bitmap) {
+    this._video._overrideFrame = { frame: frame, bitmap: bitmap };
+    this._video.refresh();
+  }
+
+  clearOverrideCanvas() {
+    this._video._overrideFrame = {};
+    this._video.refresh();
+  }
 }
 
 customElements.define("annotation-player", AnnotationPlayer);

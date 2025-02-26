@@ -3153,6 +3153,20 @@ export class AnnotationMulti extends TatorElement {
     }
     return mediaList;
   }
+
+  overrideCanvas(frame, bitmap) {
+    for (const video of this._videos) {
+      video._overrideFrame = { frame: frame, bitmap: bitmap };
+      video.refresh();
+    }
+  }
+
+  clearOverrideCanvas() {
+    for (const video of this._videos) {
+      video._overrideFrame = {};
+      video.refresh();
+    }
+  }
 }
 
 customElements.define("annotation-multi", AnnotationMulti);
