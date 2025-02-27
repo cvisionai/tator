@@ -782,7 +782,13 @@ export class AnnotationPage extends TatorPage {
 
           // Dispatch a resize event so it happens during the fade out
           window.dispatchEvent(new Event("resize"));
+          window.commandedResizePromise = new Promise((resolve) => {
+            window.commandedResize = resolve;
+          });
 
+          await window.commandedResizePromise;
+
+          // Don't start fading out til after the resize is done
           const start_time = performance.now();
           let p = new Promise((resolve, reject) => {
             let animate = () => {
@@ -802,6 +808,8 @@ export class AnnotationPage extends TatorPage {
             animate();
           });
           await p;
+          window.commandedResize = null;
+          window.commandedResizePromise = null;
 
           this._loading.style.display = "none";
           this._dimmer.style.opacity = null;
