@@ -145,6 +145,7 @@ export class VideoSettingsDialog extends ModalDialog {
     this._stretchOption.setAttribute("name", "");
     this._stretchOption.setAttribute("off-text", "Off");
     this._stretchOption.setAttribute("on-text", "On");
+    this._stretchOption.default = true;
     this._stretchOption.reset();
     otherGridDiv.appendChild(this._stretchOption);
 
