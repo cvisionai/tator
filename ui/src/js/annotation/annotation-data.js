@@ -92,6 +92,20 @@ export class AnnotationData extends HTMLElement {
     // Clear the track database
     this._trackDb = new Map();
 
+    let versionsToFetch = new Set();
+    versionsToFetch.add(this._version.id);
+    if (viewables) {
+      for (const viewable of viewables) {
+        versionsToFetch.add(viewable);
+      }
+    }
+    if (this._version.bases) {
+      // Add the base versions
+      for (const base of this._version.bases) {
+        versionsToFetch.add(base);
+      }
+    }
+
     // Construct the individual update URLs
     const getDataUrl = (dataType) => {
       const dataEndpoint =
@@ -127,16 +141,15 @@ export class AnnotationData extends HTMLElement {
       }
     }
 
-    let states_url = new URL(
-      `/rest/States/${this._projectId}?media_id=${this._stateMediaIds.join(
-        ","
-      )}&merge=1`,
+    //
+    const uniqueStateMediaIds = new Set(this._stateMediaIds);
+    const uniqueLocalizationMediaIds = new Set(this._localizationMediaIds);
+    // prettier-ignore
+    let states_url = new URL(`/rest/States/${this._projectId}?media_id=${Array.from(uniqueStateMediaIds).join(",")}&version=${Array.from(versionsToFetch).join(",")}&merge=1`,
       window.BACKEND ? window.BACKEND : window.location.origin
     );
-    let localizations_url = new URL(
-      `/rest/Localizations/${
-        this._projectId
-      }?media_id=${this._localizationMediaIds.join(",")}&merge=1`,
+    // prettier-ignore
+    let localizations_url = new URL(`/rest/Localizations/${this._projectId}?media_id=${Array.from(uniqueLocalizationMediaIds).join(",")}&version=${Array.from(versionsToFetch).join(",")}&merge=1`,
       window.BACKEND ? window.BACKEND : window.location.origin
     );
 

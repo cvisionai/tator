@@ -703,6 +703,9 @@ export class AnnotationPage extends TatorPage {
     });
 
     const _handleQueryParams = () => {
+      // TODO: This is bad and should be moved.
+      // Its structured to happen after the canvas is initialized, but
+      // some of the parameters impact how to initialize the canvas.
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
         const haveEntity = searchParams.has("selected_entity");
@@ -1164,11 +1167,17 @@ export class AnnotationPage extends TatorPage {
               }
             }
 
+            // Lastly if we have a version param in the URL, we need to set it now to
+            // get the right stuff loaded on initialization.
             // Find the index of the default version.
+            let selected_version = default_version;
+            const searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.has("version")) {
+              selected_version = searchParams.get("version");
+            }
             for (const version of versions) {
-              if (version.id == default_version) {
+              if (version.id == selected_version) {
                 this._version = version;
-                this._canvasAppletHeader.version = this._version;
               }
             }
             this._canvasAppletHeader.version = this._version;
