@@ -2,9 +2,9 @@ import time
 import os
 import logging
 import requests
-
 from django.utils.deprecation import MiddlewareMixin
-from django.http import QueryDict
+from django.http import JsonResponse
+from rest_framework.exceptions import AuthenticationFailed
 from .authentication import KeycloakAuthenticationMixin
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,18 @@ class KeycloakMiddleware(KeycloakAuthenticationMixin):
         self.get_response = get_response
 
     def __call__(self, request):
-        request.user, _ = self.authenticate(request)
+        try:
+            request.user, _ = self.authenticate(request)
+        except AuthenticationFailed as e:
+            # Log the failure and return a 401 response
+            logger.warning(f"Authentication failed: {str(e)}")
+            return JsonResponse(
+                {
+                    "error": "Authentication failed",
+                    "detail": str(e) if str(e) else "Please provide or refresh your token."
+                },
+                status=401
+            )
         return self.get_response(request)
 
 
