@@ -255,6 +255,11 @@ export class TimelineCanvas extends TatorElement {
           this._updateCanvas(typeId);
         }
       }
+
+      if (evt.detail.finalized)
+      {
+        evt.detail.finalized();
+      }
     });
     this._data.addEventListener("initialized", (evt) => {
       this._initialized = true;

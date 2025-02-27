@@ -76,6 +76,10 @@ export class EntityButton extends TatorElement {
           this.style.display = null;
         }
       }
+      if (evt.detail.finalized)
+      {
+        evt.detail.finalized();
+      }
     });
   }
 

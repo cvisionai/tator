@@ -207,22 +207,27 @@ export class AnnotationData extends HTMLElement {
         }
       }
 
+      let promises = [];
       // Send out notifications
       for (const [key, value] of this._dataByType) {
         this._dataByType.set(key, value);
         const typeObj = this._dataTypes[key];
         this._updateUrls.set(typeObj.id, getDataUrl(typeObj));
-        this.dispatchEvent(
-          new CustomEvent("freshData", {
-            detail: {
-              typeObj: typeObj,
-              data: value,
-            },
-          })
-        );
+        let newP = new Promise(typeDone => {
+          this.dispatchEvent(
+            new CustomEvent("freshData", {
+              detail: {
+                typeObj: typeObj,
+                data: value,
+                finalized: typeDone,
+              },
+            })
+          );
+        });
+        promises.push(newP);
       }
-
       // Finally resolve
+      await Promise.all(promises);
       resolve();
     });
 

@@ -1302,6 +1302,10 @@ export class AnnotationPage extends TatorPage {
                   }
                 }
               }
+              if (evt.detail.finalized)
+              {
+                evt.detail.finalized();
+              }
             });
             this._mediaDataCount += 1;
 
