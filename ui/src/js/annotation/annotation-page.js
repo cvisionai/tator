@@ -9,6 +9,38 @@ class LoadingAnimation {
   constructor(canvas, img) {
     this._canvas = canvas;
     this._context = canvas.getContext("2d", { alpha: true });
+    this._statusTextArray = [
+      "Preparing your media...",
+      "Loading metadata...",
+      "Analyzing structures...",
+      "Refining details...",
+      "Articulating states...",
+      "Finalizing components...",
+      "Establishing connections...",
+      "Loading applets...",
+      "Compiling resources...",
+      "Resolving dependencies...",
+      "Reticulating splines...",
+      "Synchronizing data...",
+      "Translating fields...",
+      "Verifying integrity...",
+      "Loading assets...",
+      "Adjusting inertial dampeners...",
+      "Calibrating sensor data...",
+      "Powering up systems...",
+      "Realigning main deflector...",
+      "Calibrating for data harmonics...",
+      "Running Level 3 diagnostics...",
+      "Initializing systems...",
+      "Negotiating handshakes...",
+      "Engaging heuristics...",
+      "Propagating latest updates...",
+      "Partitioning workloads...",
+      "Unlocking constraints...",
+      "Recalculating transients...",
+      "Compensating for drift...",
+      "Enhancing visuals...",
+    ];
 
     // Download image and draw it to the canvas
     this._image = new Image();
@@ -26,6 +58,14 @@ class LoadingAnimation {
     requestAnimationFrame(this._animate.bind(this));
     this._animationIdx = 0;
     this._startTime = performance.now();
+
+    this._shownAlready = new Set();
+    this._chosenTextIdx = Math.floor(
+      Math.random() * this._statusTextArray.length
+    );
+    this._shownAlready.add(this._chosenTextIdx);
+    this._lastTextTime = performance.now();
+    this._textChangeInterval = 1250;
   }
 
   stop() {
@@ -47,7 +87,7 @@ class LoadingAnimation {
     }
 
     // Clear canvas
-    this._context.clearRect(0, 0, 461, 500);
+    this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
 
     // Strobe the image in brightness osscilate between 0.5 and 1
     this._animationIdx = this._animationIdx + 1;
@@ -65,7 +105,31 @@ class LoadingAnimation {
     const now = performance.now();
     const elapsed = now - this._startTime;
     const percent = Math.min(1, elapsed / expected);
-    this._context.fillRect(0, 475, 461 * percent, 25);
+    this._context.fillRect(0, 490, 461 * percent, 40);
+
+    if (now - this._lastTextTime > this._textChangeInterval) {
+      for (let i = 0; i < 5; i++) {
+        this._chosenTextIdx = Math.floor(
+          Math.random() * this._statusTextArray.length
+        );
+        if (!this._shownAlready.has(this._chosenTextIdx)) break;
+      }
+      this._shownAlready.add(this._chosenTextIdx);
+      this._lastTextTime = performance.now();
+    }
+    this._context.font = "bold 20px Helvetica, Arial, sans-serif";
+    // Calculate where to put text in loading bar to vertically center it
+    const textY = 490 + 40 / 2 + 6;
+
+    // Draw the status text
+    this._context.fillStyle = "#ffffff"; // from variables.scss
+
+    this._context.textAlign = "center";
+    this._context.fillText(
+      this._statusTextArray[this._chosenTextIdx],
+      this._canvas.width / 2,
+      textY
+    );
 
     // Request next animation frame
     if (this._animating) requestAnimationFrame(this._animate.bind(this));
@@ -77,7 +141,7 @@ export class AnnotationPage extends TatorPage {
 
     this._loading = document.createElement("canvas");
     this._loading.setAttribute("width", "461");
-    this._loading.setAttribute("height", "500");
+    this._loading.setAttribute("height", "525");
     this._loading.setAttribute("class", "loading");
     this._loadingAnimation = new LoadingAnimation(
       this._loading,
