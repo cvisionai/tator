@@ -58,7 +58,10 @@ class LoadingAnimation {
 
     // Draw a bar at the bottom of the image that fills up in 'expected time'
     const expected = 5000;
-    this._context.fillStyle = "#a2afcd";
+    const gradiant = this._context.createLinearGradient(0, 475, 461, 475);
+    gradiant.addColorStop(0, "#151b28"); // from variables.scss
+    gradiant.addColorStop(1, "#262e3d"); // from variables.scss
+    this._context.fillStyle = gradiant;
     const now = performance.now();
     const elapsed = now - this._startTime;
     const percent = Math.min(1, elapsed / expected);
@@ -774,6 +777,9 @@ export class AnnotationPage extends TatorPage {
           const animation_time = 500;
           this._loadingAnimation.stop();
 
+          // Dispatch a resize event so it happens during the fade out
+          window.dispatchEvent(new Event("resize"));
+
           const start_time = performance.now();
           let p = new Promise((resolve, reject) => {
             let animate = () => {
@@ -797,7 +803,6 @@ export class AnnotationPage extends TatorPage {
           this._loading.style.display = "none";
           this._dimmer.style.opacity = null;
           this.removeAttribute("has-layout-shift");
-          window.dispatchEvent(new Event("resize"));
 
           if (this._archive_state == "to_archive") {
             Utilities.warningAlert(
