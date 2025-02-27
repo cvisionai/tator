@@ -1302,8 +1302,7 @@ export class AnnotationPage extends TatorPage {
                   }
                 }
               }
-              if (evt.detail.finalized)
-              {
+              if (evt.detail.finalized) {
                 evt.detail.finalized();
               }
             });

@@ -62,8 +62,7 @@ export class EntityTimeline extends BaseTimeline {
       if (this._selectedData) {
         this.selectEntity(this._selectedData);
       }
-      if (evt.detail.finalized)
-      {
+      if (evt.detail.finalized) {
         evt.detail.finalized();
       }
     });

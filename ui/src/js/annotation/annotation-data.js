@@ -213,7 +213,7 @@ export class AnnotationData extends HTMLElement {
         this._dataByType.set(key, value);
         const typeObj = this._dataTypes[key];
         this._updateUrls.set(typeObj.id, getDataUrl(typeObj));
-        let newP = new Promise(typeDone => {
+        let newP = new Promise((typeDone) => {
           this.dispatchEvent(
             new CustomEvent("freshData", {
               detail: {

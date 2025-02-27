@@ -256,8 +256,7 @@ export class TimelineCanvas extends TatorElement {
         }
       }
 
-      if (evt.detail.finalized)
-      {
+      if (evt.detail.finalized) {
         evt.detail.finalized();
       }
     });

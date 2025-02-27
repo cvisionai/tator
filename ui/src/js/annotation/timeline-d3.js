@@ -59,8 +59,7 @@ export class TimelineD3 extends TatorElement {
     this._data.addEventListener("freshData", (evt) => {
       this._setupAttrStyleRangeTypes();
       this._updateData();
-      if (evt.detail.finalized)
-      {
+      if (evt.detail.finalized) {
         evt.detail.finalized();
       }
     });
