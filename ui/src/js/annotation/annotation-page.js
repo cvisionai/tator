@@ -40,7 +40,7 @@ class LoadingAnimation {
       "Recalculating transients...",
       "Compensating for drift...",
       "Enhancing visuals...",
-      "Identifying anomalies..."
+      "Identifying anomalies...",
     ];
 
     // Download image and draw it to the canvas
