@@ -225,10 +225,10 @@ export class AnnotationBrowser extends TatorElement {
     }
   }
 
-  selectEntityOnUpdate(entityId, entityTypeId) {
+  selectEntityOnUpdate(entityId, entityTypeId, immediate = false) {
     for (const typeId in this._entityPanels) {
       if (typeId == entityTypeId) {
-        this._entityPanels[typeId].selectEntityOnUpdate(entityId);
+        this._entityPanels[typeId].selectEntityOnUpdate(entityId, immediate);
       }
     }
   }

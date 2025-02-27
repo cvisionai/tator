@@ -506,8 +506,14 @@ export class EntityBrowser extends TatorElement {
     }
   }
 
-  selectEntityOnUpdate(entityId) {
+  selectEntityOnUpdate(entityId, immediate = false) {
     this._selectEntityId = entityId;
+    if (immediate == true) {
+      for (let group in this._selectors) {
+        this._selectors[group].selectEntityWithId(this._selectEntityId, true);
+      }
+      this._selectEntityId = null;
+    }
   }
 
   selectEntity(obj) {

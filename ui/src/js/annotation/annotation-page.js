@@ -40,6 +40,7 @@ class LoadingAnimation {
       "Recalculating transients...",
       "Compensating for drift...",
       "Enhancing visuals...",
+      "Identifying anomalies..."
     ];
 
     // Download image and draw it to the canvas
@@ -785,7 +786,8 @@ export class AnnotationPage extends TatorPage {
           const entityId = searchParams.get("selected_entity");
           this._settings.setAttribute("type-id", typeId);
           this._settings.setAttribute("entity-id", entityId);
-          this._browser.selectEntityOnUpdate(entityId, typeId);
+          // We are initialized now so go ahead and select it
+          this._browser.selectEntityOnUpdate(entityId, typeId, true);
         } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
