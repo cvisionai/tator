@@ -773,8 +773,8 @@ export class AnnotationPage extends TatorPage {
     const _removeLoading = async (force) => {
       if ((this._dataInitialized && this._canvasInitialized) || force) {
         try {
-          // Fade out the background over 500ms
-          const animation_time = 500;
+          // Fade out the background over 300ms
+          const animation_time = 300;
           this._loadingAnimation.stop();
 
           // Dispatch a resize event so it happens during the fade out
