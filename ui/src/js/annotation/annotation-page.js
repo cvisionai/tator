@@ -847,12 +847,16 @@ export class AnnotationPage extends TatorPage {
           this._loadingAnimation.stop();
 
           // Dispatch a resize event so it happens during the fade out
-          window.dispatchEvent(new Event("resize"));
           window.commandedResizePromise = new Promise((resolve) => {
             window.commandedResize = resolve;
           });
+          window.dispatchEvent(new Event("resize"));
 
-          await window.commandedResizePromise;
+          // wait for 5 seconds maximum to do the resize
+          let fallback = new Promise((resolve) => {
+            setTimeout(resolve, 5000);
+          });
+          await Promise.any([window.commandedResizePromise, fallback]);
 
           // Don't start fading out til after the resize is done
           const start_time = performance.now();
