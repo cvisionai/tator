@@ -853,7 +853,9 @@ export class AnnotationPage extends TatorPage {
           window.dispatchEvent(new Event("resize"));
 
           // wait for 5 seconds maximum to do the resize
-          let fallback = new Promise((resolve) => {setTimeout(resolve, 5000);});
+          let fallback = new Promise((resolve) => {
+            setTimeout(resolve, 5000);
+          });
           await Promise.any([window.commandedResizePromise, fallback]);
 
           // Don't start fading out til after the resize is done
