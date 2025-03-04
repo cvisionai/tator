@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.http import Http404
 
+from ..models import Bucket
 from ..models import Media
 from ..models import Resource
 from ..models import safe_delete
