@@ -32,7 +32,7 @@ class UploadCompletionAPI(BaseListView):
         if bucket_id:
             bucket = Bucket.objects.filter(pk=bucket_id)
             check_bucket_permissions(self.request.user, bucket)
-            tator_store = get_tator_store(bucket)
+            tator_store = get_tator_store(bucket.first())
         else:
             upload = key.startswith("_uploads")
             bucket = project_obj.get_bucket(upload=upload)
