@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 class MediaNextAPI(BaseDetailView):
     """Retrieve ID of next media in a media list.
 
+    DEPRECATED
+
     This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
     but only returns the next media ID from the media passed as a path parameter. This allows
     iteration through a media list without serializing the entire list, which may be large.

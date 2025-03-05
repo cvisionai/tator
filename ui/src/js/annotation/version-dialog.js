@@ -262,7 +262,10 @@ export class VersionDialog extends ModalDialog {
       })
     );
   }
-  _handleSelect(evt) {
+  _handleSelect(evt, opts) {
+    if (opts == null) {
+      opts = {};
+    }
     const id = evt.detail.version.id;
     let selected_idx = null;
     for (let idx = 0; idx < this._buttons.length; idx++) {
@@ -285,13 +288,15 @@ export class VersionDialog extends ModalDialog {
     }
     this._updatedDependentLayers(selected_idx);
     this._selected_idx = selected_idx;
-    this.dispatchEvent(
-      new CustomEvent("versionSelect", {
-        detail: {
-          version: evt.detail.version,
-        },
-      })
-    );
+    if (opts.muteEvent != true) {
+      this.dispatchEvent(
+        new CustomEvent("versionSelect", {
+          detail: {
+            version: evt.detail.version,
+          },
+        })
+      );
+    }
     this.removeAttribute("is-open");
   }
 }

@@ -117,15 +117,15 @@ def _get_media_psql_queryset(project, filter_ops, params):
             media__in=[filter_type]
         )
         qs = get_attribute_psql_queryset(
-            MediaType.objects.get(pk=filter_type), qs, params, filter_ops
+            MediaType.objects.filter(pk=filter_type).values('id','attribute_types').first(), qs, params, filter_ops
         )
         qs = qs.filter(type=filter_type)
     elif filter_ops or params.get("float_array", None):
         queries = []
-        for entity_type in MediaType.objects.filter(project=project):
+        for entity_type in MediaType.objects.filter(project=project).values('pk', 'attribute_types'):
             sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if sub_qs:
-                queries.append(sub_qs.filter(type=entity_type))
+                queries.append(sub_qs.filter(type=entity_type['pk']))
             else:
                 queries.append(qs.filter(pk=-1))  # no matches
         logger.info(f"Joining {len(queries)} queries together.")
@@ -150,7 +150,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
         faux_params = {key.replace("related_", ""): params[key] for key in matches}
         logger.info(faux_params)
         related_matches = []
-        for entity_type in related_state_types:
+        for entity_type in related_state_types.values('pk', 'attribute_types'):
             faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(
@@ -161,7 +161,7 @@ def _get_media_psql_queryset(project, filter_ops, params):
                         faux_filter_ops,
                     )
                 )
-        for entity_type in related_localization_types:
+        for entity_type in related_localization_types.values('pk', 'attribute_types'):
             faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(
@@ -187,10 +187,12 @@ def _get_media_psql_queryset(project, filter_ops, params):
         if section[0].dtype == "playlist":
             qs = qs.filter(pk__in=section[0].media.all())
         elif section[0].dtype == "folder":
-            qs = qs.filter(primary_section=section[0].pk)
+            qs = qs.filter(primary_section=section_id)
         elif section[0].dtype == "saved_search":
             if section[0].object_search:
-                qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+                qs = get_attribute_psql_queryset_from_query_obj(
+                    project, qs, section[0].object_search
+                )
 
             elif section[0].related_object_search:
                 qs = _related_search(
@@ -215,7 +217,9 @@ def _get_media_psql_queryset(project, filter_ops, params):
                 match_qs = qs.filter(primary_section=section.pk)
 
             elif section.object_search:
-                match_qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
+                match_qs = get_attribute_psql_queryset_from_query_obj(
+                    project, qs, section[0].object_search
+                )
 
             elif section.related_object_search:
                 match_qs = _related_search(
@@ -248,10 +252,10 @@ def _get_media_psql_queryset(project, filter_ops, params):
     # Used by GET queries
     if params.get("encoded_search"):
         search_obj = json.loads(base64.b64decode(params.get("encoded_search")).decode())
-        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+        qs = get_attribute_psql_queryset_from_query_obj(project, qs, search_obj)
 
     if params.get("object_search"):
-        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get("object_search"))
+        qs = get_attribute_psql_queryset_from_query_obj(project, qs, params.get("object_search"))
 
     if params.get("sort_by", None):
         sortables = [supplied_name_to_field(x) for x in params.get("sort_by")]
@@ -271,10 +275,10 @@ def _get_section_and_params(project, params):
     filter_type = params.get("type")
     filter_ops = []
     if filter_type:
-        types = MediaType.objects.filter(pk=filter_type)
+        types = MediaType.objects.filter(pk=filter_type).values('pk', 'attribute_types')
     else:
         types = MediaType.objects.filter(project=project)
-    for entity_type in types:
+    for entity_type in types.values('pk', 'attribute_types'):
         filter_ops.extend(get_attribute_filter_ops(params, entity_type))
 
     return filter_ops

@@ -1355,12 +1355,21 @@ export class AttributePanel extends TatorElement {
 
     this._combinedIdWidget.innerHTML = "";
     if (values.elemental_id) {
+      let display_version = values.version;
+      let display_mark = values.mark;
       var shortElementalId = values.elemental_id.slice(-6);
+      let display_combo = `${shortElementalId}@${display_version}/${display_mark}`;
+      if (display_version == null) {
+        display_combo = `${shortElementalId}/None@${display_mark}`;
+      }
+      if (display_mark == -1) {
+        display_combo = `${shortElementalId}/Read Only`;
+      }
       this._combinedIdWidget.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" class="no-fill mr-1" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z" /><path d="M15 9h.01" />
       </svg>
-      <span>${shortElementalId}@${values.version}/${values.mark}</span>`;
+      <span>${display_combo}</span>`;
     }
 
     // Check if the slider needs to be updated if there's different track data now.

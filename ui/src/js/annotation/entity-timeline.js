@@ -63,11 +63,14 @@ export class EntityTimeline extends BaseTimeline {
   set annotationData(val) {
     this._data = val;
 
-    this._data.addEventListener("freshData", () => {
+    this._data.addEventListener("freshData", (evt) => {
       this.updateData();
 
       if (this._selectedData) {
         this.selectEntity(this._selectedData);
+      }
+      if (evt.detail.finalized) {
+        evt.detail.finalized();
       }
     });
 
