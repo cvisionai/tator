@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.http import Http404
 
+from ..models import Bucket
 from ..models import Media
 from ..models import Resource
 from ..models import safe_delete
@@ -13,6 +14,8 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission, ProjectViewOnlyPermission
 from ._util import check_resource_prefix
+
+from .._permission_util import check_bucket_permissions
 
 import logging
 
@@ -50,6 +53,12 @@ class AuxiliaryFileListAPI(BaseListView):
             body = params["body"]
             index = params.get("index")
             check_resource_prefix(body["path"], qs[0])
+
+            bucket_id = params.get("bucket_id")
+            if bucket_id:
+                bucket = Bucket.objects.filter(pk=bucket_id)
+                check_bucket_permissions(self.request.user, bucket)
+
             if not media_files:
                 media_files = {}
             if "attachment" not in media_files:
@@ -65,7 +74,7 @@ class AuxiliaryFileListAPI(BaseListView):
                 media_files["attachment"].insert(index, body)
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params["id"])
-        Resource.add_resource(body["path"], media)
+        Resource.add_resource(body["path"], media, bucket_id=bucket_id)
         return {"message": f"Media file in media object {media.id} created!"}
 
     def get_queryset(self, **kwargs):

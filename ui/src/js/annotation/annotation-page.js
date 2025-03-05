@@ -6,15 +6,148 @@ import { TimelineSettings } from "./timeline-settings.js";
 import { playerControlManagement } from "./annotation-common.js";
 import { LayoutModeController } from "./layout-mode-controller.js";
 
+class LoadingAnimation {
+  constructor(canvas, img) {
+    this._canvas = canvas;
+    this._context = canvas.getContext("2d", { alpha: true });
+    this._statusTextArray = [
+      "Preparing your media...",
+      "Loading metadata...",
+      "Analyzing structures...",
+      "Refining details...",
+      "Articulating states...",
+      "Finalizing components...",
+      "Establishing connections...",
+      "Loading applets...",
+      "Compiling resources...",
+      "Resolving dependencies...",
+      "Reticulating splines...",
+      "Synchronizing data...",
+      "Translating fields...",
+      "Verifying integrity...",
+      "Loading assets...",
+      "Adjusting inertial dampeners...",
+      "Calibrating sensor data...",
+      "Powering up systems...",
+      "Realigning main deflector...",
+      "Calibrating for data harmonics...",
+      "Running Level 3 diagnostics...",
+      "Initializing systems...",
+      "Negotiating handshakes...",
+      "Engaging heuristics...",
+      "Propagating latest updates...",
+      "Partitioning workloads...",
+      "Unlocking constraints...",
+      "Recalculating transients...",
+      "Compensating for drift...",
+      "Enhancing visuals...",
+      "Identifying anomalies...",
+    ];
+
+    // Download image and draw it to the canvas
+    this._image = new Image();
+    this._image.src = img;
+    this._image.onload = () => {
+      this._context.drawImage(this._image, 0, 0);
+      this._ready = true;
+    };
+    this.start();
+  }
+
+  start() {
+    // Fire off _animate on each cycle
+    this._animating = true;
+    requestAnimationFrame(this._animate.bind(this));
+    this._animationIdx = 0;
+    this._startTime = performance.now();
+
+    this._shownAlready = new Set();
+    this._chosenTextIdx = Math.floor(
+      Math.random() * this._statusTextArray.length
+    );
+    this._shownAlready.add(this._chosenTextIdx);
+    this._lastTextTime = performance.now();
+    this._textChangeInterval = 1250;
+  }
+
+  stop() {
+    this._animating = false;
+    this._animationIdx = 0;
+    this._startTime = 0;
+    this._animate();
+  }
+
+  _animate() {
+    if (!this._ready) {
+      requestAnimationFrame(this._animate.bind(this));
+      return;
+    }
+
+    if (this._canvas.style.display == "none") {
+      this._animating = false;
+      return;
+    }
+
+    // Clear canvas
+    this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+
+    // Strobe the image in brightness osscilate between 0.5 and 1
+    this._animationIdx = this._animationIdx + 1;
+    this._context.globalAlpha =
+      0.5 + 0.5 * Math.abs(Math.sin((this._animationIdx * 2 * Math.PI) / 180));
+    this._context.drawImage(this._image, 0, 0, 461, 475);
+    this._context.globalAlpha = 1;
+
+    // Draw a bar at the bottom of the image that fills up in 'expected time'
+    const expected = 5000;
+    const gradiant = this._context.createLinearGradient(0, 475, 461, 475);
+    gradiant.addColorStop(0, "#151b28"); // from variables.scss
+    gradiant.addColorStop(1, "#262e3d"); // from variables.scss
+    this._context.fillStyle = gradiant;
+    const now = performance.now();
+    const elapsed = now - this._startTime;
+    const percent = Math.min(1, elapsed / expected);
+    this._context.fillRect(0, 490, 461 * percent, 40);
+
+    if (now - this._lastTextTime > this._textChangeInterval) {
+      for (let i = 0; i < 5; i++) {
+        this._chosenTextIdx = Math.floor(
+          Math.random() * this._statusTextArray.length
+        );
+        if (!this._shownAlready.has(this._chosenTextIdx)) break;
+      }
+      this._shownAlready.add(this._chosenTextIdx);
+      this._lastTextTime = performance.now();
+    }
+    this._context.font = "bold 20px Helvetica, Arial, sans-serif";
+    // Calculate where to put text in loading bar to vertically center it
+    const textY = 490 + 40 / 2 + 6;
+
+    // Draw the status text
+    this._context.fillStyle = "#ffffff"; // from variables.scss
+
+    this._context.textAlign = "center";
+    this._context.fillText(
+      this._statusTextArray[this._chosenTextIdx],
+      this._canvas.width / 2,
+      textY
+    );
+
+    // Request next animation frame
+    if (this._animating) requestAnimationFrame(this._animate.bind(this));
+  }
+}
 export class AnnotationPage extends TatorPage {
   constructor() {
     super();
 
-    this._loading = document.createElement("img");
+    this._loading = document.createElement("canvas");
+    this._loading.setAttribute("width", "461");
+    this._loading.setAttribute("height", "525");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute(
-      "src",
-      `${STATIC_PATH}/ui/src/images/tator_loading.gif`
+    this._loadingAnimation = new LoadingAnimation(
+      this._loading,
+      `${STATIC_PATH}/ui/src/images/tator-logo-symbol-only.webp`
     );
     this._loading.style.zIndex = 102;
     this._shadow.appendChild(this._loading);
@@ -190,7 +323,7 @@ export class AnnotationPage extends TatorPage {
   }
 
   connectedCallback() {
-    this.setAttribute("has-open-modal", "");
+    this.setAttribute("has-layout-shift", "");
     TatorPage.prototype.connectedCallback.call(this);
 
     this._projectId = window.location.pathname.split("/")[1];
@@ -215,6 +348,11 @@ export class AnnotationPage extends TatorPage {
       this._setAnnouncements(announcements);
       this._updateProject(project);
       this._updateMedia(this._mediaId);
+
+      // Set permission based on project
+      this._permission = project.permission;
+      if (this._permission === "View Only") this._settings._lock.viewOnly();
+      this.enableEditing(true);
     });
   }
 
@@ -456,27 +594,49 @@ export class AnnotationPage extends TatorPage {
                   this._header
                 );
               });
-            const nextPromise = fetchCredentials(
-              `/rest/MediaNext/${newValue}${window.location.search}`,
+            const project = this._mediaInfo.project;
+            const mediaListPromise = fetchCredentials(
+              `/rest/Medias/${project}${window.location.search}`,
               {},
               true
             );
-            const prevPromise = fetchCredentials(
-              `/rest/MediaPrev/${newValue}${window.location.search}`,
-              {},
-              true
-            );
-            Promise.all([nextPromise, prevPromise])
+
+            // Start with the buttons disabled
+            this._prev.disabled = true;
+            this._next.disabled = true;
+            this._next._shadow.children[0].cursor = "progress";
+            this._prev._shadow.children[0].cursor = "progress";
+            Promise.all([mediaListPromise])
               .then((responses) =>
                 Promise.all(responses.map((resp) => resp.json()))
               )
-              .then(([nextData, prevData]) => {
+              .then(([listData]) => {
                 const baseUrl = `/${data.project}/annotation/`;
                 const searchParams = this._settings._queryParams();
                 const media_id = parseInt(newValue);
 
+                let this_idx = -1;
+                for (let idx = 0; idx < listData.length; idx++) {
+                  console.info(listData[idx]);
+                  if (listData[idx].id == media_id) {
+                    this_idx = idx;
+                  }
+                }
+
+                let prevData = { prev: -1 },
+                  nextData = { next: -1 };
+
+                if (this_idx >= 1) {
+                  prevData = { prev: listData[this_idx - 1].id };
+                }
+                if (this_idx >= 0 && this_idx < listData.length - 1) {
+                  nextData = { next: listData[this_idx + 1].id };
+                }
+
                 this.nextData = nextData;
                 this.prevData = prevData;
+                const count = listData.length;
+                this._breadcrumbs.setPosition(this_idx + 1, count);
 
                 // Turn disable selected_type.
                 searchParams.delete("selected_type");
@@ -485,6 +645,8 @@ export class AnnotationPage extends TatorPage {
                 if (prevData.prev == -1) {
                   this._prev.disabled = true;
                 } else {
+                  this._prev.disabled = false;
+                  this._prev._shadow.children[0].cursor = null;
                   this._prev.addEventListener("click", (evt) => {
                     let url = baseUrl + prevData.prev;
                     var searchParams = this._settings._queryParams();
@@ -521,6 +683,8 @@ export class AnnotationPage extends TatorPage {
                 if (nextData.next == -1) {
                   this._next.disabled = true;
                 } else {
+                  this._next.disabled = false;
+                  this._next._shadow.children[0].cursor = null;
                   this._next.addEventListener("click", (evt) => {
                     let url = baseUrl + nextData.next;
                     var searchParams = this._settings._queryParams();
@@ -555,34 +719,8 @@ export class AnnotationPage extends TatorPage {
                 }
               })
               .catch((err) =>
-                console.log("Failed to fetch adjacent media! " + err)
+                console.error("Failed to fetch adjacent media! " + err)
               );
-            fetchCredentials("/rest/Project/" + data.project, {}, true)
-              .then((response) => response.json())
-              .then((data) => {
-                this._permission = data.permission;
-                if (this._permission === "View Only")
-                  this._settings._lock.viewOnly();
-                this.enableEditing(true);
-              });
-            const countUrl = `/rest/MediaCount/${
-              data.project
-            }?${searchParams.toString()}`;
-            searchParams.set("after_name", data.name);
-            const afterUrl = `/rest/MediaCount/${
-              data.project
-            }?${searchParams.toString()}`;
-            const countPromise = fetchCredentials(countUrl, {}, true);
-            const afterPromise = fetchCredentials(afterUrl, {}, true);
-            Promise.all([countPromise, afterPromise]).then(
-              ([countResponse, afterResponse]) => {
-                const countData = countResponse.json();
-                const afterData = afterResponse.json();
-                Promise.all([countData, afterData]).then(([count, after]) => {
-                  this._breadcrumbs.setPosition(count - after, count);
-                });
-              }
-            );
           });
         break;
     }
@@ -637,6 +775,9 @@ export class AnnotationPage extends TatorPage {
     });
 
     const _handleQueryParams = () => {
+      // TODO: This is bad and should be moved.
+      // Its structured to happen after the canvas is initialized, but
+      // some of the parameters impact how to initialize the canvas.
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
         const haveEntity = searchParams.has("selected_entity");
@@ -652,7 +793,8 @@ export class AnnotationPage extends TatorPage {
           const entityId = searchParams.get("selected_entity");
           this._settings.setAttribute("type-id", typeId);
           this._settings.setAttribute("entity-id", entityId);
-          this._browser.selectEntityOnUpdate(entityId, typeId);
+          // We are initialized now so go ahead and select it
+          this._browser.selectEntityOnUpdate(entityId, typeId, true);
         } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
@@ -666,7 +808,7 @@ export class AnnotationPage extends TatorPage {
         if (haveVersion) {
           let version_id = searchParams.get("version");
           let evt = { detail: { version: this._versionLookup[version_id] } };
-          this._versionDialog._handleSelect(evt);
+          this._versionDialog._handleSelect(evt, { muteEvent: true });
         }
         if (haveLock) {
           const lock = Number(searchParams.get("lock"));
@@ -704,12 +846,51 @@ export class AnnotationPage extends TatorPage {
       }
     };
 
-    const _removeLoading = (force) => {
+    const _removeLoading = async (force) => {
       if ((this._dataInitialized && this._canvasInitialized) || force) {
         try {
-          this._loading.style.display = "none";
-          this.removeAttribute("has-open-modal");
+          // Fade out the background over 300ms
+          const animation_time = 300;
+          this._loadingAnimation.stop();
+
+          // Dispatch a resize event so it happens during the fade out
+          window.commandedResizePromise = new Promise((resolve) => {
+            window.commandedResize = resolve;
+          });
           window.dispatchEvent(new Event("resize"));
+
+          // wait for 5 seconds maximum to do the resize
+          let fallback = new Promise((resolve) => {
+            setTimeout(resolve, 5000);
+          });
+          await Promise.any([window.commandedResizePromise, fallback]);
+
+          // Don't start fading out til after the resize is done
+          const start_time = performance.now();
+          let p = new Promise((resolve, reject) => {
+            let animate = () => {
+              let now = performance.now();
+              let elapsed = now - start_time;
+              if (elapsed >= animation_time) {
+                resolve();
+                return;
+              }
+              this._dimmer.style.opacity = 1 - elapsed / animation_time;
+              this._loading.style.opacity = Math.max(
+                0,
+                1 - elapsed / (animation_time * 0.33)
+              );
+              requestAnimationFrame(animate);
+            };
+            animate();
+          });
+          await p;
+          window.commandedResize = null;
+          window.commandedResizePromise = null;
+
+          this._loading.style.display = "none";
+          this._dimmer.style.opacity = null;
+          this.removeAttribute("has-layout-shift");
 
           if (this._archive_state == "to_archive") {
             Utilities.warningAlert(
@@ -719,7 +900,7 @@ export class AnnotationPage extends TatorPage {
             );
           }
         } catch (exception) {
-          //pass
+          console.error(exception);
         }
       }
     };
@@ -1071,11 +1252,17 @@ export class AnnotationPage extends TatorPage {
               }
             }
 
+            // Lastly if we have a version param in the URL, we need to set it now to
+            // get the right stuff loaded on initialization.
             // Find the index of the default version.
+            let selected_version = default_version;
+            const searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.has("version")) {
+              selected_version = searchParams.get("version");
+            }
             for (const version of versions) {
-              if (version.id == default_version) {
+              if (version.id == selected_version) {
                 this._version = version;
-                this._canvasAppletHeader.version = this._version;
               }
             }
             this._canvasAppletHeader.version = this._version;
@@ -1191,6 +1378,9 @@ export class AnnotationPage extends TatorPage {
                     break;
                   }
                 }
+              }
+              if (evt.detail.finalized) {
+                evt.detail.finalized();
               }
             });
             this._mediaDataCount += 1;

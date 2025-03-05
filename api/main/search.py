@@ -833,63 +833,10 @@ class TatorSearch:
 
     def create_psql_index(self, entity_type, attribute, flush=False, concurrent=True):
         """Create a psql index for the given attribute"""
-
-        # Handle btrees too
-        if attribute["dtype"] == "string":
-            temp_attr = {**attribute}
-            temp_attr["dtype"] = "string_btree"
-            self.create_psql_index(entity_type, temp_attr, flush, concurrent)
-
-        if attribute["dtype"] == "native_string":
-            temp_attr = {**attribute}
-            temp_attr["dtype"] = "native_string_btree"
-            self.create_psql_index(entity_type, temp_attr, flush, concurrent)
-
-        if attribute["dtype"] == "upper_string":
-            temp_attr = {**attribute}
-            temp_attr["dtype"] = "upper_string_btree"
-            self.create_psql_index(entity_type, temp_attr, flush, concurrent)
-
-        index_name = _get_unique_index_name(entity_type, attribute)
-        if self.is_index_present(entity_type, attribute) and flush == False:
-            logger.info(f"Index '{index_name}' already exists.")
-            return False
-
-        index_func = self.index_map.get(attribute["dtype"], None)
-        if index_func is None:
-            logger.info(
-                f"Index '{index_name}' can't be created with unknown dtype {attribute['dtype']}"
-            )
-            return False
-
-        table_name = entity_type._meta.db_table.replace("type", "")
-        index_name = _get_unique_index_name(entity_type, attribute)
-        push_job(
-            "db_jobs",
-            index_func,
-            args=(
-                connection.settings_dict["NAME"],
-                entity_type.project.id,
-                entity_type.id,
-                table_name,
-                index_name,
-                attribute,
-                flush,
-                concurrent,
-            ),
-            result_ttl=0,
-        )
+        pass
 
     def create_mapping(self, entity_type, flush=False, concurrent=True):
-        from .models import BUILT_IN_INDICES
-
-        # Add project specific indices based on the type being indexed
-        built_ins = BUILT_IN_INDICES.get(type(entity_type), [])
-        for built_in in built_ins:
-            self.create_psql_index(entity_type, built_in, flush=flush, concurrent=concurrent)
-
-        for attribute in entity_type.attribute_types:
-            self.create_psql_index(entity_type, attribute, flush=flush, concurrent=concurrent)
+        pass
 
     def create_section_index(self, project, flush=False, concurrent=True):
         btree_index_name = f"tator_proj_{project.pk}_internalv2_path_btree"
