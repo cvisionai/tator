@@ -615,6 +615,7 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("bufferLoaded", (evt) => {
       this._slider.onBufferLoaded(evt);
+      // prettier-ignore
       if (this._video.bufferDelayRequired()) {
         if (this._video.onDemandBufferAvailable() == false)
         {
@@ -624,10 +625,15 @@ export class AnnotationPlayer extends TatorElement {
         {
           this._playInteraction.enable();
         }
-      } else {
-        if (this._video.scrubBufferAvailable() == false) {
+      }
+      else
+      {
+        if (this._video.scrubBufferAvailable() == false)
+        {
           this._playInteraction.disable();
-        } else {
+        }
+        else
+        {
           this._playInteraction.enable();
         }
       }
