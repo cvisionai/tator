@@ -992,7 +992,6 @@ export class AnnotationMulti extends TatorElement {
       let multiImage = false;
       let bias = 50;
       let playingOutOfScrub = 0;
-      let playingBackwards = 0;
       if (this._focusIds.length > 0) {
         video = [];
         for (let focusId of this._focusIds) {
@@ -1011,22 +1010,17 @@ export class AnnotationMulti extends TatorElement {
 
       for (let idx = 0; idx < video.length; idx++) {
         if (
-          (playingOutOfScrub |= video[idx]._scrub_idx == video[idx]._play_idx)
+          (playingOutOfScrub |=
+            video[idx]._scrub_idx == video[idx]._play_idx ||
+            this._video._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND ||
+            video[idx]._direction == Direction.BACKWARDS)
         ) {
           playingOutOfScrub++;
-        }
-        if (
-          (playingBackwards |= video[idx]._direction == Direction.BACKWARDS)
-        ) {
-          playingBackwards++;
         }
       }
 
       // Disable the preview if we are playing out of scrub
-      if (
-        this._videoStatus == "playing" &&
-        (playingOutOfScrub || playingBackwards)
-      ) {
+      if (this._videoStatus == "playing" && playingOutOfScrub) {
         multiImage = false;
       }
 

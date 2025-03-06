@@ -615,15 +615,25 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("bufferLoaded", (evt) => {
       this._slider.onBufferLoaded(evt);
-      if (
-        this._video.bufferDelayRequired() &&
-        this._video.onDemandBufferAvailable() == false
-      ) {
-        this._playInteraction.disable();
-      } else {
-        if (this._video.scrubBufferAvailable() == false) {
+      // prettier-ignore
+      if (this._video.bufferDelayRequired()) {
+        if (this._video.onDemandBufferAvailable() == false)
+        {
           this._playInteraction.disable();
-        } else {
+        }
+        else
+        {
+          this._playInteraction.enable();
+        }
+      }
+      else
+      {
+        if (this._video.scrubBufferAvailable() == false)
+        {
+          this._playInteraction.disable();
+        }
+        else
+        {
           this._playInteraction.enable();
         }
       }
@@ -1159,7 +1169,8 @@ export class AnnotationPlayer extends TatorElement {
         if (
           this._videoStatus == "playing" &&
           (this._video._scrub_idx == this._video._play_idx ||
-            this._video._direction == Direction.BACKWARDS)
+            this._video._direction == Direction.BACKWARDS ||
+            this._video._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND)
         ) {
           // Don't use image preview if we are playing out of the scrub buffer
           useImage = false;
