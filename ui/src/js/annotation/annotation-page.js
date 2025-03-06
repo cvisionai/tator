@@ -1685,6 +1685,7 @@ export class AnnotationPage extends TatorPage {
                 this._settings.setAttribute("version", this._version.id);
                 this._outerMain.appendChild(save);
                 this._saves[dataType] = save;
+                save.style.display = "none";
 
                 save.addEventListener("cancel", () => {
                   this._closeModal(save);
@@ -1711,6 +1712,7 @@ export class AnnotationPage extends TatorPage {
               this._settings.setAttribute("version", this._version.id);
               this._outerMain.appendChild(save);
               this._saves[dataType.id] = save;
+              save.style.display = "none";
 
               // For states specifically, if we are using the multi-view, we will
               // create the state across all media
@@ -2454,6 +2456,7 @@ export class AnnotationPage extends TatorPage {
 
   _closeModal(save) {
     if (save.classList.contains("is-open")) {
+      save.style.display = "none";
       save.classList.remove("is-open");
       this.removeAttribute("has-open-modal");
       document.body.classList.remove("shortcuts-disabled");
@@ -2474,6 +2477,7 @@ export class AnnotationPage extends TatorPage {
     save.metaMode = metaMode;
     save.classList.add("is-open");
     save.dispatchEvent(new Event("open"));
+    save.style.display = "block";
     this.setAttribute("has-open-modal", "");
     document.body.classList.add("shortcuts-disabled");
 
