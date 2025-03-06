@@ -1169,7 +1169,7 @@ export class AnnotationPlayer extends TatorElement {
         if (
           this._videoStatus == "playing" &&
           (this._video._scrub_idx == this._video._play_idx ||
-            this._video._direction == Direction.BACKWARDS  ||
+            this._video._direction == Direction.BACKWARDS ||
             this._video._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND)
         ) {
           // Don't use image preview if we are playing out of the scrub buffer
