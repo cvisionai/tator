@@ -120,6 +120,7 @@ def token(request, page_factory):
     password = request.config.option.password
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto('/token', wait_until='networkidle')
+    page.wait_for_selector('input[type="text"]')
     page.fill('input[type="text"]', username)
     page.fill('input[type="password"]', password)
     page.click('input[type="submit"]')
