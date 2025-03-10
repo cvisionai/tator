@@ -120,6 +120,7 @@ def token(request, page_factory):
     password = request.config.option.password
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto('/token', wait_until='networkidle')
+    page.wait_for_selector('input[type="text"]')
     page.fill('input[type="text"]', username)
     page.fill('input[type="password"]', password)
     page.click('input[type="submit"]')
@@ -297,6 +298,7 @@ def video(request, page_factory, project, video_section, video_file, base_url, t
         if 'annotation' in href:
             print(f"Card href is {href}, media is ready...")
             break
+        time.sleep(1)
     video = int(cards[0].get_attribute('media-id'))
     page.close()
     for x in range(30):
@@ -335,6 +337,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
         if 'annotation' in href:
             print(f"Card href is {href}, media is ready...")
             break
+        time.sleep(1)
     video = int(cards[0].get_attribute('media-id'))
     page.close()
     for x in range(30):
@@ -365,6 +368,7 @@ def video2(request, page_factory, project, video_section2, video_file, base_url,
         if 'annotation' in href:
             print(f"Card href is {href}, media is ready...")
             break
+        time.sleep(1)
     video = int(cards[0].get_attribute('media-id'))
     page.close()
     for x in range(30):
@@ -395,6 +399,7 @@ def video3(request, page_factory, project, video_section3, video_file, base_url,
         if 'annotation' in href:
             print(f"Card href is {href}, media is ready...")
             break
+        time.sleep(1)
     video = int(cards[0].get_attribute('media-id'))
     page.close()
     for x in range(30):
@@ -442,6 +447,7 @@ def image(request, page_factory, project, image_section, image_file, base_url, t
         if 'annotation' in href:
             print(f"Card href is {href}, media is ready...")
             break
+        time.sleep(1)
     image = int(cards[0].get_attribute('media-id'))
     page.close()
     for x in range(30):
@@ -543,6 +549,7 @@ def image1(request, page_factory, project, image_section1, image_file):
         if 'annotation' in href:
             print(f"Card href is {href}, media is ready...")
             break
+        time.sleep(1)
     image = int(cards[0].get_attribute('media-id'))
     page.close()
     yield image
