@@ -16,6 +16,7 @@ export class TatorData {
     this._versions = [];
     this._sections = [];
     this._algorithms = [];
+    this._applets = [];
     this._stateTypes = [];
     this._stateTypeNames = [];
     this._stateTypeAssociations = { media: [], frame: [], localization: [] };
@@ -83,6 +84,7 @@ export class TatorData {
     p.push(this.getAllMediaTypes());
     p.push(this.getAllVersions());
     p.push(this.getAllSections());
+    p.push(this.getAllApplets());
     p.push(this.getAllAlgorithms());
     p.push(this.getAllStateTypes());
     p.push(this.getAllUsers());
@@ -257,6 +259,23 @@ export class TatorData {
         const resultsJson = resultsPromise.json();
         Promise.all([resultsJson]).then(([algorithms]) => {
           this._algorithms = [...algorithms];
+          resolve();
+        });
+      });
+    });
+
+    await donePromise;
+  }
+
+  async getAllApplets() {
+    var donePromise = new Promise((resolve) => {
+      const restUrl = "/rest/Applets/" + this._project;
+      const resultsPromise = fetchCredentials(restUrl, {}, true);
+
+      Promise.all([resultsPromise]).then(([resultsPromise]) => {
+        const resultsJson = resultsPromise.json();
+        Promise.all([resultsJson]).then(([applets]) => {
+          this._applets = [...applets];
           resolve();
         });
       });
