@@ -136,7 +136,7 @@ export class AttributePanel extends TatorElement {
     this._builtInAttrLabel = document.createElement("div");
     this._builtInAttrLabel.setAttribute(
       "class",
-      "f2 text-gray clickable pt-3 pb-1"
+      "f2 text-white clickable pt-3 pb-1"
     );
     this._builtInAttrLabel.textContent = "Built-in Attributes";
     this._standardWidgetsExpandedDiv.appendChild(this._builtInAttrLabel);
@@ -703,7 +703,10 @@ export class AttributePanel extends TatorElement {
     }
 
     // Built-in attributes
-    if (val.dtype == "box") {
+    if (val.dtype == "state")
+    {
+      this._addCommonBuiltInAttributes();
+    } else if (val.dtype == "box") {
       this._addCommonBuiltInAttributes();
 
       let widget = document.createElement("text-input");
