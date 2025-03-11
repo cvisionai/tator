@@ -148,6 +148,47 @@ export class AnalyticsGallery extends EntityCardGallery {
     this._bulkEdit.addEventListener("multi-disabled", () => {
       this._bulkEdit._selectionPanel.hidden = true;
     });
+
+    // Load menu items for launching localization-analytics applets
+    for (let applet of this.modelData._applets) {
+      this.configureApplet(applet);
+    }
+  }
+
+  configureApplet(applet)
+  {
+    if (applet.categories.includes("localization-gallery") == false)
+    {
+      return;
+    }
+
+    // Dynamically import the module supplied by the applet
+    /**
+     *  Sample implementation:
+     * 
+     *  export default class Applet {
+          constructor() {
+            this.name = "Sample Applet";
+          }
+
+          init(pageHandle, modelData) {
+            this.pageHandle = pageHandle;
+            this.modelData = modelData;
+            console.log("Applet initialized with model data:", modelData);
+          }
+
+          launch() {
+            console.log("Launching applet:", this.name);
+            alert("Applet " + this.name + " launched!");
+          }
+        }
+     */
+    import(applet.html_file).then((module) => {
+      // Create a new instance of the applet
+      var appletInstance = new module.default();
+      appletInstance.init(this, this.modelData);
+      this._moreMenu.addMenuItem(appletInstance.name, appletInstance.launch);
+    });
   }
 
   /* Init function to show and populate gallery w/ pagination */
