@@ -169,7 +169,7 @@ export class AnalyticsGallery extends EntityCardGallery {
             this.name = "Sample Applet";
           }
 
-          init(pageHandle, modelData) {
+          async init(pageHandle, modelData) {
             this.pageHandle = pageHandle;
             this.modelData = modelData;
             console.log("Applet initialized with model data:", modelData);
