@@ -59,7 +59,7 @@ export class EntityGalleryMoreMenu extends TatorElement {
     menuItem.appendChild(icon);
     menuItem.setAttribute(
       "class",
-       "menu-link-button btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
+      "menu-link-button btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center"
     );
     menuItem.addEventListener("click", callback);
     menuItem.appendChild(document.createTextNode(text));

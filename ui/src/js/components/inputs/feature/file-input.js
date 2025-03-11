@@ -114,8 +114,7 @@ export class FileInput extends TatorElement {
         // looking at type vs. extension would be better
         // actually parsing may be a bridge too far
         this._validExtensions = [];
-        for (let supplied of newValue.split("|"))
-        {
+        for (let supplied of newValue.split("|")) {
           this._validExtensions.push(supplied.toLowerCase());
         }
         this._validate = this.extensionValidate;
@@ -124,8 +123,7 @@ export class FileInput extends TatorElement {
           // Add alias for yaml
           this._validExtensions.push("yml");
           this._isImage = null;
-        }
-        else if (newValue != "image") {
+        } else if (newValue != "image") {
           this._isImage = null;
         }
     }
@@ -257,13 +255,13 @@ export class FileInput extends TatorElement {
 
   extensionValidate(file) {
     // Find the file extension
-    var extension = file.name.split('.').pop().toLowerCase();
+    var extension = file.name.split(".").pop().toLowerCase();
 
     if (!this._validExtensions.includes(extension)) {
-      return `File extension must be one of [${this._validExtensions.join(", ")}]`;
-    }
-    else
-    {
+      return `File extension must be one of [${this._validExtensions.join(
+        ", "
+      )}]`;
+    } else {
       return false;
     }
   }

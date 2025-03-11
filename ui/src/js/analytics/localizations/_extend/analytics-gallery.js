@@ -155,10 +155,8 @@ export class AnalyticsGallery extends EntityCardGallery {
     }
   }
 
-  configureApplet(applet)
-  {
-    if (applet.categories.includes("localization-gallery") == false)
-    {
+  configureApplet(applet) {
+    if (applet.categories.includes("localization-gallery") == false) {
       return;
     }
 
