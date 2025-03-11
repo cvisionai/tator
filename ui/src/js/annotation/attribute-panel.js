@@ -703,8 +703,7 @@ export class AttributePanel extends TatorElement {
     }
 
     // Built-in attributes
-    if (val.dtype == "state")
-    {
+    if (val.dtype == "state") {
       this._addCommonBuiltInAttributes();
     } else if (val.dtype == "box") {
       this._addCommonBuiltInAttributes();
