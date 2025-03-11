@@ -78,13 +78,15 @@ export class TatorData {
    *       amount of sections.
    */
   async init() {
-    await this.getAllLocalizationTypes();
-    await this.getAllMediaTypes();
-    await this.getAllVersions();
-    await this.getAllSections();
-    await this.getAllAlgorithms();
-    await this.getAllStateTypes();
-    await this.getAllUsers();
+    let p = [];
+    p.push(this.getAllLocalizationTypes());
+    p.push(this.getAllMediaTypes());
+    p.push(this.getAllVersions());
+    p.push(this.getAllSections());
+    p.push(this.getAllAlgorithms());
+    p.push(this.getAllStateTypes());
+    p.push(this.getAllUsers());
+    await Promise.all(p);
   }
 
   /**
