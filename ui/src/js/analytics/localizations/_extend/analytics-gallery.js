@@ -181,10 +181,10 @@ export class AnalyticsGallery extends EntityCardGallery {
           }
         }
      */
-    import(applet.html_file).then((module) => {
+    import(applet.html_file).then(async (module) => {
       // Create a new instance of the applet
       var appletInstance = new module.default();
-      appletInstance.init(this, this.modelData);
+      await appletInstance.init(this, this.modelData);
       this._moreMenu.addMenuItem(appletInstance.name, appletInstance.launch.bind(appletInstance));
     });
   }
