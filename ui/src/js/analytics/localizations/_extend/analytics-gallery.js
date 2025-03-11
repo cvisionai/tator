@@ -185,7 +185,7 @@ export class AnalyticsGallery extends EntityCardGallery {
       // Create a new instance of the applet
       var appletInstance = new module.default();
       appletInstance.init(this, this.modelData);
-      this._moreMenu.addMenuItem(appletInstance.name, appletInstance.launch);
+      this._moreMenu.addMenuItem(appletInstance.name, appletInstance.launch.bind(appletInstance));
     });
   }
 
