@@ -23,6 +23,7 @@ export class TatorData {
     this._memberships = [];
 
     this._maxFetchCount = 100000;
+    this._cache = {};
   }
 
   getMaxFetchCount() {
@@ -771,6 +772,18 @@ export class TatorData {
       null,
       sortState
     );
+
+    // Cache the call to the above function (all arguments) for future use
+    if (outputType == "count") {
+      this._cache["Localizations"] = {
+        localizationFilters: localizationFilters,
+        mediaFilters: mediaFilters,
+        coincidentStateFilters: coincidentStateFilters,
+        coincidentLocalizationFilters: coincidentLocalizationFilters,
+        trackMembershipFilters: trackMembershipFilters,
+        mediaIds: mediaIds,
+      };
+    }
 
     return outData;
   }
