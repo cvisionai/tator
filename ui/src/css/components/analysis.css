@@ -35,6 +35,10 @@ body.analysis-annotations-body {
   border-bottom: 1px solid var(--color-gray--dark50);
 }
 
+.analysis__more_nav {
+  z-index: 1;
+}
+
 .analysis__nav a.is-active {
   color: var(--color-white);
 }
