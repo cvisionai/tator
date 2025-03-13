@@ -1291,31 +1291,24 @@ export class AnnotationPlayer extends TatorElement {
     this._videoStatus = "paused";
 
     var timeTokens = this._currentTimeInput.value.split(":");
-    if (timeTokens.length != 2) {
-      console.log(
-        "Provided invalid time (minutes:seconds) expected: " +
-          this._currentTimeInput.value
-      );
-      this._currentTimeInput.classList.add("has-border");
-      this._currentTimeInput.classList.add("is-invalid");
-      return;
+    var [hours, minutes, seconds] = [0, 0, 0];
+    if (timeTokens.length == 3) {
+      hours = parseInt(timeTokens[0]);
+      minutes = parseInt(timeTokens[1]);
+      seconds = parseInt(timeTokens[2]);
+    } else if (timeTokens.length == 2) {
+      minutes = parseInt(timeTokens[0]);
+      seconds = parseInt(timeTokens[1]);
+    } else if (timeTokens.length == 1) {
+      seconds = parseInt(timeTokens[0]);
     }
 
-    var minutes = parseInt(timeTokens[0]);
-    if (isNaN(minutes)) {
-      console.log(
-        "Provided invalid time (minutes:seconds) expected: " +
-          this._currentTimeInput.value
-      );
-      this._currentTimeInput.classList.add("has-border");
-      this._currentTimeInput.classList.add("is-invalid");
-      return;
-    }
+    // Functions below use minutes + seconds
+    minutes += 60 * hours;
 
-    var seconds = parseInt(timeTokens[1]);
-    if (isNaN(seconds)) {
+    if (isNaN(minutes) || isNaN(seconds) || isNaN(hours)) {
       console.log(
-        "Provided invalid time (minutes:seconds) expected: " +
+        "Provided invalid time (hours:minutes:seconds) expected: " +
           this._currentTimeInput.value
       );
       this._currentTimeInput.classList.add("has-border");

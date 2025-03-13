@@ -110,11 +110,20 @@ export class FileInput extends TatorElement {
         // this._previewImg.title = `Previewing image for ${newValue}`;
         break;
       case "type":
-        if (newValue === "yaml") {
-          this._validate = this.yamlValidate;
+        // TODO: This is weak because its only extension based
+        // looking at type vs. extension would be better
+        // actually parsing may be a bridge too far
+        this._validExtensions = [];
+        for (let supplied of newValue.split("|")) {
+          this._validExtensions.push(supplied.toLowerCase());
         }
-        if (newValue === "html") {
-          this._validate = this.htmlValidate;
+        this._validate = this.extensionValidate;
+
+        if (newValue === "yaml") {
+          // Add alias for yaml
+          this._validExtensions.push("yml");
+          this._isImage = null;
+        } else if (newValue != "image") {
           this._isImage = null;
         }
     }
@@ -244,23 +253,14 @@ export class FileInput extends TatorElement {
     return this._nameInput.getValue();
   }
 
-  htmlValidate(file) {
-    var extension = String(file.name).substr(-4, 4);
-    // console.log(extension);
+  extensionValidate(file) {
+    // Find the file extension
+    var extension = file.name.split(".").pop().toLowerCase();
 
-    if (!(extension === "html")) {
-      return "HTML file format required.";
-    } else {
-      return false;
-    }
-  }
-
-  yamlValidate(file) {
-    var extension = String(file.name).substr(-4, 4);
-    // console.log(extension);
-
-    if (!(extension === "yaml" || extension === ".yml")) {
-      return "YAML file format required.";
+    if (!this._validExtensions.includes(extension)) {
+      return `File extension must be one of [${this._validExtensions.join(
+        ", "
+      )}]`;
     } else {
       return false;
     }

@@ -260,10 +260,10 @@ def augment_permission(user, qs):
             calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("target_group")])
         )
         group_perm_dict = {
-            entry["group"]: entry["calc_perm"] for entry in group_rp.values("group", "calc_perm")
+            entry["target_group"]: entry["calc_perm"] for entry in group_rp.values("target_group", "calc_perm")
         }
         group_cases = [
-            When(target_group=group, then=Value(perm)) for group, perm in group_perm_dict.items()
+            When(pk=group, then=Value(perm)) for group, perm in group_perm_dict.items()
         ]
         qs = qs.annotate(
             effective_permission=Case(
