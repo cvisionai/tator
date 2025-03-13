@@ -1012,7 +1012,7 @@ export class AnnotationMulti extends TatorElement {
         if (
           (playingOutOfScrub |=
             video[idx]._scrub_idx == video[idx]._play_idx ||
-            this._video._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND ||
+            video[idx]._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND ||
             video[idx]._direction == Direction.BACKWARDS)
         ) {
           playingOutOfScrub++;
