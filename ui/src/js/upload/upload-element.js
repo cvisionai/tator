@@ -63,7 +63,7 @@ export class UploadElement extends TatorElement {
 		this._destinationPicker = document.createElement("enum-input");
 		this._destinationPicker.setAttribute(
 			"class",
-			"d-block f1 col-lg-4 col-sm-8 pr-3"
+			"d-block f1 col-lg-4 col-sm-8 pr-3 pl-6"
 		);
 		this._destinationPicker.label.setAttribute("class", "py-1");
 		this._destinationPicker.setAttribute("name", "Destination");
@@ -76,7 +76,7 @@ export class UploadElement extends TatorElement {
 		);
 
 		const destBottom = document.createElement("div");
-		destBottom.setAttribute("class", "col-lg-4 col-sm-12");
+		destBottom.setAttribute("class", "col-6");
 		this._destination.appendChild(destBottom);
 
 		this._idemPotencyCheck = document.createElement("checkbox-input");
@@ -84,7 +84,7 @@ export class UploadElement extends TatorElement {
 			"class",
 			"d-flex flex-items-center pb-3"
 		);
-		this._idemPotencyCheck.setAttribute("class", "d-block f2 pb-2");
+		this._idemPotencyCheck.setAttribute("class", "d-block f2 my-1 ml-6");
 		this._idemPotencyCheck._checked = true;
 		this._idemPotencyCheck.setAttribute(
 			"name",
@@ -99,7 +99,7 @@ export class UploadElement extends TatorElement {
 		this._folderCheck = document.createElement("checkbox-input");
 		this._folderCheck.label.setAttribute(
 			"class",
-			"d-flex flex-items-center py-1"
+			"d-flex flex-items-center my-1 ml-6"
 		);
 		this._folderCheck._checked = true;
 		this._folderCheck.setAttribute("class", "d-block f2");
@@ -111,7 +111,7 @@ export class UploadElement extends TatorElement {
 
 		// Properties of media types
 		this.mediaTypeSettings = document.createElement("media-type-settings");
-		this.mediaTypeSettings.setAttribute("class", "pl-6 col-md-12 col-lg-3");
+		this.mediaTypeSettings.setAttribute("class", "col-12 mt-3");
 		this._destination.appendChild(this.mediaTypeSettings);
 
 		// File summary and upload CTAs
@@ -131,13 +131,13 @@ export class UploadElement extends TatorElement {
 		main.appendChild(this._summary);
 
 		this._summaryTitle = document.createElement("div");
-		this._summaryTitle.innerHTML = `<span class="h3 mr-3">Summary</span>`;
+		// this._summaryTitle.innerHTML = `<span class="h3 mr-3">Summary</span>`;
 		this._summaryTitle.setAttribute("class", "col-8");
 		this._summary.appendChild(this._summaryTitle);
 
 		this._summaryText = document.createElement("div");
 		this._summaryText.textContent = "No files, or folders added.";
-		this._summaryText.setAttribute("class", "py-2 text-gray f2");
+		this._summaryText.setAttribute("class", "py-2 text-gray f1");
 		this._summaryTitle.appendChild(this._summaryText);
 
 		this._invalidInfo = document.createElement("div");

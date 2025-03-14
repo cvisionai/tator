@@ -66,7 +66,10 @@ export class UploadPage extends TatorPage {
 
 		// Wrapper to allow r.side bar to slide into left
 		this.mainWrapper = document.createElement("div");
-		this.mainWrapper.setAttribute("class", "analysis--main--wrapper d-flex");
+		this.mainWrapper.setAttribute(
+			"class",
+			"analysis--main--wrapper d-flex offset-xl-1 col-xl-10"
+		);
 		this.mainWrapper.style.minHeight = "calc(100vh + 300px)";
 		this._shadow.appendChild(this.mainWrapper);
 
@@ -121,10 +124,10 @@ export class UploadPage extends TatorPage {
 		this._bottomSection = document.createElement("div");
 		this._bottomSection.setAttribute(
 			"class",
-			"d-flex flex-justify-center px-3 py-3 position-fixed bg-charcoal"
+			"d-flex flex-justify-center px-3 py-3 position-fixed bg-charcoal mt-3"
 		);
-		this._bottomSection.style = "bottom: 0; position: fixed; width: 100%;";
-		this._shadow.appendChild(this._bottomSection);
+		// this._bottomSection.style = "bottom: 0; position: fixed; width: 100%;";
+		this._mainSection.appendChild(this._bottomSection);
 
 		this._maximizeUpload = document.createElement("a");
 		this._maximizeUpload.setAttribute(
@@ -132,6 +135,7 @@ export class UploadPage extends TatorPage {
 			"py-3 f2 px-3 text-gray clickable mr-3"
 		);
 		this._maximizeUpload.textContent = "View Upload Window";
+		this._maximizeUpload.hidden = true;
 		// this._maximizeUpload.addEventListener(
 		// 	"click",
 		// 	this._upload._resetUpload.bind(this._upload)

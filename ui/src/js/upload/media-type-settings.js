@@ -18,14 +18,14 @@ export class MediaTypeSettings extends TatorElement {
 		this._summary = document.createElement("div");
 		this._summary.setAttribute(
 			"class",
-			"d-flex flex-justify-between flex-items-center"
+			"d-flex flex-justify-between flex-items-center pb-2"
 		);
 		this._div.appendChild(this._summary);
 
-		// this._summaryTitle = document.createElement("div");
-		// this._summaryTitle.innerHTML = `<span class="h3 mr-3">Properties</span>`;
-		// this._summaryTitle.setAttribute("class", "col-10");
-		// this._summary.appendChild(this._summaryTitle);
+		this._summaryTitle = document.createElement("div");
+		this._summaryTitle.innerHTML = `<p class="ml-6 py-2">Data type settings</p>`;
+		this._summaryTitle.setAttribute("class", "col-10");
+		this._summary.appendChild(this._summaryTitle);
 
 		// this._summaryText = document.createElement("div");
 		// this._summaryText.textContent =
@@ -45,7 +45,7 @@ export class MediaTypeSettings extends TatorElement {
 		window.addEventListener("reset-to-default", this._render.bind(this));
 
 		this._optionsDiv = document.createElement("div");
-		// this._optionsDiv.setAttribute("class", "offset-lg-2 d-flex flex-wrap");
+		this._optionsDiv.setAttribute("class", "d-flex flex-wrap");
 		this._div.appendChild(this._optionsDiv);
 	}
 
@@ -107,7 +107,7 @@ export class MediaTypeSettings extends TatorElement {
 
 	_createSection(dataType, list) {
 		const div = document.createElement("div");
-		div.setAttribute("class", "mb-3");
+		div.setAttribute("class", "mb-3 col-4 ml-6");
 		this._optionsDiv.appendChild(div);
 
 		const inner = document.createElement("div");
@@ -122,8 +122,8 @@ export class MediaTypeSettings extends TatorElement {
 			dataType.charAt(0).toUpperCase() + dataType.slice(1);
 
 		const input = document.createElement("checkbox-input");
-		input.classList.add("col-10", "text-light-gray");
-		input.setAttribute("name", `${dataTypeDisplay}s`);
+		input.classList.add("col-8", "text-light-gray");
+		input.setAttribute("name", `${dataTypeDisplay}s: Enabled`);
 		input.setAttribute(
 			"tooltip",
 			`Disable to ignore ${dataTypeDisplay}s chosen from your local file system.`
@@ -139,7 +139,7 @@ export class MediaTypeSettings extends TatorElement {
 		innerTop.appendChild(input);
 
 		const topSmall = document.createElement("div");
-		topSmall.setAttribute("class", "text-center col-2 pb-1");
+		topSmall.setAttribute("class", "text-right col-4 pb-1 px-2");
 		innerTop.appendChild(topSmall);
 
 		const drawer = document.createElement("div");
@@ -189,7 +189,7 @@ export class MediaTypeSettings extends TatorElement {
 
 		const showMore = document.createElement("span");
 		showMore.setAttribute("class", "clickable f3");
-		showMore.textContent = "More +";
+		showMore.textContent = "Advanced +";
 		// showMore.style.display = "none";
 		showMore.setAttribute(
 			"tooltip",
@@ -210,9 +210,11 @@ export class MediaTypeSettings extends TatorElement {
 			this.getValue();
 			if (input.getChecked()) {
 				this._openDrawer(drawer, showMore, showLess);
+				input.setAttribute("name", `${dataTypeDisplay}s: Enabled`);
 				input.classList.add("text-light-gray");
 			} else {
 				this._closeDrawer(drawer, showMore, showLess);
+				input.setAttribute("name", `${dataTypeDisplay}s: Disabled`);
 				showMore.style.display = "none";
 				input.classList.remove("text-light-gray");
 				input.setAttribute(

@@ -68,11 +68,10 @@ export class UploadDialog extends ModalDialog {
 		this._errors.setAttribute("class", "modal__errors d-flex flex-column");
 		this._main.appendChild(this._errors);
 
-		this._close.innerHTML = "Minimize";
 
 		this._cancelButton = document.createElement("button");
 		this._cancelButton.setAttribute("class", "btn btn-clear");
-		this._cancelButton.textContent = "Minimize";
+		this._cancelButton.textContent = "Abort and Clear All";
 		this._footer.appendChild(this._cancelButton);
 
 		this._close = document.createElement("button");
@@ -97,9 +96,10 @@ export class UploadDialog extends ModalDialog {
 		});
 
 		this._close.addEventListener("click", () => {
-			window.location.href = `/${this._projectId}/project-detail`;
 			this.removeAttribute("is-open");
 			this.dispatchEvent(new Event("close"));
+			window.location.href = `/${this._projectId}/project-detail`;
+
 			setTimeout(this._reset.bind(this), 1000);
 		});
 
