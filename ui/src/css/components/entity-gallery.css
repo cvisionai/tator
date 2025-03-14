@@ -12,6 +12,9 @@
   display: grid;
   grid-gap: 20px;
   grid-template-columns: repeat(auto-fill, minmax(272px, 272px));
+  &.multi-select-mode {
+    padding-bottom: 400px;
+  }
 }
 
 .entity-resize .entity-resize__label {
