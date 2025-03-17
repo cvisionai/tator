@@ -2,7 +2,7 @@
 
 For the localization gallery, an attempt to use javascript-module style plugins was attempted. 
 
-Each plug-in is loaded on page load and initialized. They also get a page load 
+Each plug-in is loaded on page load and initialized. They get a callback on page load and when the menu item is activated.
 
 
 ## A living example
