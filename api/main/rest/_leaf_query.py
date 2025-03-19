@@ -55,15 +55,18 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
 
     if filter_type is not None:
         qs = get_attribute_psql_queryset(
-            LeafType.objects.filter(pk=filter_type).values('pk', 'attribute_types').first(), qs, params, filter_ops
+            LeafType.objects.filter(pk=filter_type).values("pk", "attribute_types").first(),
+            qs,
+            params,
+            filter_ops,
         )
         qs = qs.filter(type=filter_type)
     if filter_ops:
         queries = []
-        for entity_type in LeafType.objects.filter(project=project).values('pk', 'attribute_types'):
+        for entity_type in LeafType.objects.filter(project=project).values("pk", "attribute_types"):
             sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if sub_qs:
-                queries.append(sub_qs.filter(type=entity_type['pk']))
+                queries.append(sub_qs.filter(type=entity_type["pk"]))
         logger.info(f"Joining {len(queries)} queries together.")
         if queries:
             query = Q(pk__in=sub_qs)
@@ -105,7 +108,7 @@ def get_leaf_queryset(project, params):
         types = LeafType.objects.filter(pk=filter_type)
     else:
         types = LeafType.objects.filter(project=project)
-    for entity_type in types.values('pk', 'attribute_types'):
+    for entity_type in types.values("pk", "attribute_types"):
         filter_ops.extend(get_attribute_filter_ops(params, entity_type))
 
     # If using PSQL, construct the queryset.

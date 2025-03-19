@@ -143,7 +143,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     )
     if filter_type is not None:
         qs = get_attribute_psql_queryset(
-            ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values("pk", "attribute_types").first(),
+            ANNOTATION_TYPE_LOOKUP[annotation_type]
+            .objects.filter(pk=filter_type)
+            .values("pk", "attribute_types")
+            .first(),
             qs,
             params,
             filter_ops,
@@ -157,10 +160,14 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         )
     elif filter_ops or params.get("float_array", None):
         queries = []
-        for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values('pk', 'attribute_types'):
+        for entity_type in (
+            ANNOTATION_TYPE_LOOKUP[annotation_type]
+            .objects.filter(project=project)
+            .values("pk", "attribute_types")
+        ):
             sub_qs = get_attribute_psql_queryset(entity_type, qs, params, filter_ops)
             if type(sub_qs) != type(None):
-                queries.append(sub_qs.filter(type=entity_type['pk']))
+                queries.append(sub_qs.filter(type=entity_type["pk"]))
         logger.info(f"Joining {len(queries)} queries together.")
         sub_qs = queries.pop()
         if queries:
@@ -214,7 +221,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         faux_params = {key.replace("related_", ""): params[key] for key in matches}
         logger.info(faux_params)
         related_matches = []
-        for entity_type in related_media_types.values('pk', 'attribute_types'):
+        for entity_type in related_media_types.values("pk", "attribute_types"):
             faux_filter_ops = get_attribute_filter_ops(faux_params, entity_type)
             if faux_filter_ops:
                 related_matches.append(
