@@ -209,7 +209,6 @@ export class AnalyticsPage extends TatorPage {
       conditions: this._filterConditions,
       pagination: this._paginationState,
       sort: this._sortState,
-      cache: false,
     });
 
     // Filter interface
@@ -352,34 +351,19 @@ export class AnalyticsPage extends TatorPage {
     return TatorPage.observedAttributes;
   }
 
-  _cardGallery({ conditions, pagination, sort, cache }) {
+  _cardGallery({ conditions, pagination, sort }) {
     this.showDimmer();
     this.loading.showSpinner();
 
-    /**
-     * Always use a cached list when fetching cards for any pagination state
-     */
-    if (cache) {
-      // Initial view-modal "Cardlist" from fetched localizations
-      return this.cardData
-        .makeCardListFromBulk(conditions, pagination, sort)
-        .then((cardList) => {
-          // CardList inits Gallery component with cards & pagination on page
-          this._filterResults.show(cardList);
-          this.loading.hideSpinner();
-          this.hideDimmer();
-        });
-    } else {
-      // Initial view-modal "Cardlist" from fetched localizations
-      this.cardData
-        .makeCardList(conditions, pagination, sort)
-        .then((cardList) => {
-          // CardList inits Gallery component with cards & pagination on page
-          this._filterResults.show(cardList);
-          this.loading.hideSpinner();
-          this.hideDimmer();
-        });
-    }
+    // Initial view-modal "Cardlist" from fetched localizations
+    this.cardData
+      .makeCardList(conditions, pagination, sort)
+      .then((cardList) => {
+        // CardList inits Gallery component with cards & pagination on page
+        this._filterResults.show(cardList);
+        this.loading.hideSpinner();
+        this.hideDimmer();
+      });
   }
 
   // Reset the pagination back to page 0
@@ -409,7 +393,6 @@ export class AnalyticsPage extends TatorPage {
       conditions: this._filterConditions,
       pagination: this._paginationState,
       sort: this._sortState,
-      cache: false,
     });
 
     this._settings.setAttribute("sort", this._sortState);
@@ -435,7 +418,6 @@ export class AnalyticsPage extends TatorPage {
       conditions: this._filterConditions,
       pagination: this._paginationState,
       sort: this._sortState,
-      cache: true,
     });
 
     // make sure view lined up top and bottom
@@ -485,7 +467,6 @@ export class AnalyticsPage extends TatorPage {
       conditions: this._filterConditions,
       pagination: this._paginationState,
       sort: this._sortState,
-      cache: false,
     });
 
     let msg2 = `Delete success! Gallery updated`;
@@ -504,7 +485,6 @@ export class AnalyticsPage extends TatorPage {
       conditions: this._filterConditions,
       pagination: this._paginationState,
       sort: this._sortState,
-      cache: false,
     });
 
     let msg2 = `Gallery updated!`;

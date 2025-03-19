@@ -752,9 +752,7 @@ export class GalleryBulkEdit extends TatorElement {
         }
         // console.log(newCardData);
         this._gallery.updateCardData(newCardData);
-        if (this._page.cardData) {
-          this._page.cardData.updateBulkCache(newCardData);
-        } else if (this._page._mediaSection) {
+        if (this._page._mediaSection) {
           this._page._mediaSection.reload();
         }
       } else {
@@ -802,12 +800,5 @@ export class GalleryBulkEdit extends TatorElement {
     this._editPanel.updateWarningList(this.resultsFilter);
   }
 
-  async _prefetch() {
-    await this._page.cardData._bulkCaching(this._page._filterConditions);
-
-    this._page.hideDimmer();
-    this._selectionPanel.show(true);
-    if (!this._editMode) this.startEditMode();
-  }
 }
 customElements.define("entity-gallery-bulk-edit", GalleryBulkEdit);
