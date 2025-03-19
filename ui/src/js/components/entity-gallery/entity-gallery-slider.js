@@ -54,55 +54,55 @@ export class EntityGallerySlider extends TatorElement {
      * Placeholder for tools
      */
     this._tools = document.createElement("div");
-    this._tools.setAttribute("class", "enitity-gallery__tools");
-    this.main.appendChild(this._tools);
+    this._tools.setAttribute("class", "entity-gallery__tools");
+		this.main.appendChild(this._tools);
 
-    // Card label display #todo
-    this._cardLabelOptions = [];
+		// Card label display #todo
+		this._cardLabelOptions = [];
 
-    // Tools container
-    this.sliderContainer = document.createElement("div");
-    this._tools.appendChild(this.sliderContainer);
+		// Tools container
+		this.sliderContainer = document.createElement("div");
+		this._tools.appendChild(this.sliderContainer);
 
-    // Loading text
-    this.loadAllTeaser = document.createElement("span");
-    this.loadAllTeaser.setAttribute(
-      "class",
-      "entity-gallery-slider--load-more text-gray py-2"
-    ); //
-    this.loadAllTeaser.appendChild(document.createTextNode("..."));
-    this.sliderContainer.appendChild(this.loadAllTeaser);
+		// Loading text
+		this.loadAllTeaser = document.createElement("span");
+		this.loadAllTeaser.setAttribute(
+			"class",
+			"entity-gallery-slider--load-more text-gray py-2"
+		); //
+		this.loadAllTeaser.appendChild(document.createTextNode("..."));
+		this.sliderContainer.appendChild(this.loadAllTeaser);
 
-    // Property IDs are the entity IDs (which are expected to be unique)
-    // Each property (ID) points to the index of the card information stored in _cardElements
-    this._currentCardIndexes = {};
+		// Property IDs are the entity IDs (which are expected to be unique)
+		// Each property (ID) points to the index of the card information stored in _cardElements
+		this._currentCardIndexes = {};
 
-    // Entity cards aren't deleted. They are reused and hidden if not used.
-    this._cardElements = [];
+		// Entity cards aren't deleted. They are reused and hidden if not used.
+		this._cardElements = [];
 
-    this._topNav = document.createElement("div");
-    this._topNav.setAttribute(
-      "class",
-      "entity-gallery-slider__nav py-2 d-flex flex-justify-center"
-    );
-    this.main.appendChild(this._topNav);
+		this._topNav = document.createElement("div");
+		this._topNav.setAttribute(
+			"class",
+			"entity-gallery-slider__nav py-2 d-flex flex-justify-center"
+		);
+		this.main.appendChild(this._topNav);
 
-    // Div to contain slider cards styling
-    this.styleDiv = document.createElement("div");
-    this.styleDiv.setAttribute("class", "entity-gallery-slider__ul-container");
-    this.main.appendChild(this.styleDiv);
+		// Div to contain slider cards styling
+		this.styleDiv = document.createElement("div");
+		this.styleDiv.setAttribute("class", "entity-gallery-slider__ul-container");
+		this.main.appendChild(this.styleDiv);
 
-    this._bottomNav = document.createElement("div");
-    this._bottomNav.setAttribute(
-      "class",
-      "entity-gallery-slider__nav py-2 d-flex flex-justify-center"
-    );
-    this.main.appendChild(this._bottomNav);
+		this._bottomNav = document.createElement("div");
+		this._bottomNav.setAttribute(
+			"class",
+			"entity-gallery-slider__nav py-2 d-flex flex-justify-center"
+		);
+		this.main.appendChild(this._bottomNav);
 
-    // card columns inside slider #todo finish styling
-    this.colSize = 272;
-    this._ul = document.createElement("ul");
-    this._ul.setAttribute("class", "enitity-gallery-slider__ul py-1");
+		// card columns inside slider #todo finish styling
+		this.colSize = 272;
+		this._ul = document.createElement("ul");
+		this._ul.setAttribute("class", "entity-gallery-slider__ul py-1");
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`;
     this.styleDiv.appendChild(this._ul);
 

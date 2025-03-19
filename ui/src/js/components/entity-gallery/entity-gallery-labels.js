@@ -28,9 +28,9 @@ export class EntityGalleryLabels extends TatorElement {
     // Label div container for lists
     this.div = document.createElement("div");
     this.div.setAttribute(
-      "class",
-      "enitity-gallery__labels-div rounded-1 my-2 py-2 px-2 hidden"
-    );
+			"class",
+			"entity-gallery__labels-div rounded-1 my-2 py-2 px-2 hidden"
+		);
     this._shadow.appendChild(this.div);
 
     let titleDiv = document.createElement("div");

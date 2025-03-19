@@ -4,11 +4,31 @@
   right: 0;
   bottom: 0;
   background: var(--color-charcoal--dark);
-  border-top: 5px solid var(--color-gray--light);
+  /* border-top: 5px solid var(--color-gray--light); */
   box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
   resize: horizontal;
   transition: height 500ms ease-out;
+  margin-top: var(--spacing-3);
 }
+
+.bulk-edit-bar-drag-handle {
+  top: -5px;
+  position: absolute;
+  z-index: 100;
+  height: 8px;
+  right: 0;
+  left: 0;
+  cursor: row-resize;
+  background: #a2afcd;
+}
+
+.bulk-edit-bar-drag-handle:hover {
+  background: var(--color-purple);
+}
+.bulk-edit-bar-drag-handle:active {
+  background: var(--color-purple--dark);
+}
+
 .bulk-edit-bar.minimized {
   height: 30px;
 }
