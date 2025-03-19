@@ -981,8 +981,8 @@ export class ProjectDetail extends TatorPage {
 
                 // Hide all media if specified by project extension
                 if (project?.extended_info?.hideAllMedia) {
-									this._allMediaButton.style.display = "none";
-								}
+                  this._allMediaButton.style.display = "none";
+                }
 
                 // Load page applet navigation elements
                 for (const applet of applets) {
