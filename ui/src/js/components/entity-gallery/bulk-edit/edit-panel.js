@@ -750,6 +750,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       if (this._movingPanel) {
         this._bulkEditBar.style.height =
           window.innerHeight - e.clientY + 0.02 * window.innerHeight + "px";
+        this.div.style.maxHeight = this._bulkEditBar.style.height;
       }
     };
 
