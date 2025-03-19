@@ -799,6 +799,5 @@ export class GalleryBulkEdit extends TatorElement {
     this.resultsFilter.filterObj = filterObj;
     this._editPanel.updateWarningList(this.resultsFilter);
   }
-
 }
 customElements.define("entity-gallery-bulk-edit", GalleryBulkEdit);
