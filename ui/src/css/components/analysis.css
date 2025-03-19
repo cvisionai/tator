@@ -109,8 +109,7 @@ body.analysis-annotations-body {
   object-fit: cover;
   margin: 5px auto;
   width: 100%;
-  background-image:
-    linear-gradient(
+  background-image: linear-gradient(
       to right,
       var(--color-charcoal--light) 1px,
       transparent 1px

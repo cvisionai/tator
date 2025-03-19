@@ -43,8 +43,7 @@ entity-gallery-aspect-ratio .radio-slide-wrap div {
   background-color: var(--color-charcoal--medium);
   height: 130px;
   width: 100%;
-  background-image:
-    linear-gradient(
+  background-image: linear-gradient(
       to right,
       var(--color-charcoal--light) 1px,
       transparent 1px
@@ -203,8 +202,7 @@ entity-gallery-aspect-ratio .radio-slide-wrap div {
   max-height: 350px;
   object-fit: contain;
   padding: 15px;
-  background-image:
-    linear-gradient(
+  background-image: linear-gradient(
       to right,
       var(--color-charcoal--light) 1px,
       transparent 1px
