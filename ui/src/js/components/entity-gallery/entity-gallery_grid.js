@@ -7,27 +7,27 @@ export class EntityCardGallery extends TatorElement {
     // Gallery Container
     this._main = document.createElement("div");
     this._main.setAttribute(
-			"class",
-			"entity-gallery--main ml-1 mt-6 mr-6 px-5 rounded-1"
-		);
+      "class",
+      "entity-gallery--main ml-1 mt-6 mr-6 px-5 rounded-1"
+    );
     this._shadow.appendChild(this._main);
 
     // Gallery Container
     this._mainTop = document.createElement("div");
     this._mainTop.setAttribute("class", "entity-gallery--main-top rounded-1");
-		this._main.appendChild(this._mainTop);
+    this._main.appendChild(this._mainTop);
 
-		// Gallery Top Tools and info
-		this._tools = document.createElement("div");
-		this._tools.setAttribute(
-			"class",
-			"entity-gallery__tools d-flex flex-items-center flex-justify-between"
-		);
-		this._mainTop.appendChild(this._tools);
+    // Gallery Top Tools and info
+    this._tools = document.createElement("div");
+    this._tools.setAttribute(
+      "class",
+      "entity-gallery__tools d-flex flex-items-center flex-justify-between"
+    );
+    this._mainTop.appendChild(this._tools);
 
-		// Gallery Heading
-		this._h3 = document.createElement("div");
-		this._h3.setAttribute("class", "entity-gallery__heading h3 mr-3");
+    // Gallery Heading
+    this._h3 = document.createElement("div");
+    this._h3.setAttribute("class", "entity-gallery__heading h3 mr-3");
     this._tools.appendChild(this._h3);
 
     // Gallery count / info
@@ -57,9 +57,9 @@ export class EntityCardGallery extends TatorElement {
     // Gallery List
     this._ul = document.createElement("ul");
     this._ul.setAttribute(
-			"class",
-			"entity-gallery entity-gallery__ul py-2 px-2 mb-2 rounded-1"
-		);
+      "class",
+      "entity-gallery entity-gallery__ul py-2 px-2 mb-2 rounded-1"
+    );
     this._main.appendChild(this._ul);
 
     // Gallery Pagination Bottom

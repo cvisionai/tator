@@ -59,11 +59,11 @@ export class AnalyticsPage extends TatorPage {
     //TODO
     this.mainWrapper.style.paddingBottom = "200px";
 
-		//
-		// Define the main section of the page
-		//
-		this.main = document.createElement("main");
-		this.main.setAttribute("class", "entity-gallery--main col-12");
+    //
+    // Define the main section of the page
+    //
+    this.main = document.createElement("main");
+    this.main.setAttribute("class", "entity-gallery--main col-12");
     this.mainWrapper.appendChild(this.main);
 
     //

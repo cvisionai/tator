@@ -15,14 +15,14 @@ export class MultiAttributeEditPanel extends TatorElement {
 
     this._bulkEditBar = document.createElement("div");
     this._bulkEditBar.setAttribute(
-			"class",
-			" d-flex flex-wrap position-relative pt-3"
-		); //px-3
-		// this._bulkEditModal._main.appendChild(this._bulkEditBar);
-		this._shadow.appendChild(this._bulkEditBar);
+      "class",
+      " d-flex flex-wrap position-relative pt-3"
+    ); //px-3
+    // this._bulkEditModal._main.appendChild(this._bulkEditBar);
+    this._shadow.appendChild(this._bulkEditBar);
 
-		this._resizer = document.createElement("div");
-		this._resizer.className = "bulk-edit-bar-drag-handle ";
+    this._resizer = document.createElement("div");
+    this._resizer.className = "bulk-edit-bar-drag-handle ";
     this._bulkEditBar.appendChild(this._resizer);
     this.setUpResize();
 
@@ -757,12 +757,12 @@ export class MultiAttributeEditPanel extends TatorElement {
       window.removeEventListener("mousemove", resizePanel, false);
       window.removeEventListener("mouseup", stopResizePanel, false);
 
-        this._bulkEditBar.style.height = `${this._bulkEditBar.offsetTop + 40} px`;
+      this._bulkEditBar.style.height = `${this._bulkEditBar.offsetTop + 40} px`;
 
       this._movingPanel = false;
     };
 
-    this._resizer.addEventListener("mousedown", initResizePanel, false);    
+    this._resizer.addEventListener("mousedown", initResizePanel, false);
   }
 }
 
