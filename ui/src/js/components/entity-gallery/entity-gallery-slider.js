@@ -54,7 +54,7 @@ export class EntityGallerySlider extends TatorElement {
      * Placeholder for tools
      */
     this._tools = document.createElement("div");
-    this._tools.setAttribute("class", "enitity-gallery__tools");
+    this._tools.setAttribute("class", "entity-gallery__tools");
     this.main.appendChild(this._tools);
 
     // Card label display #todo
@@ -102,7 +102,7 @@ export class EntityGallerySlider extends TatorElement {
     // card columns inside slider #todo finish styling
     this.colSize = 272;
     this._ul = document.createElement("ul");
-    this._ul.setAttribute("class", "enitity-gallery-slider__ul py-1");
+    this._ul.setAttribute("class", "entity-gallery-slider__ul py-1");
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`;
     this.styleDiv.appendChild(this._ul);
 

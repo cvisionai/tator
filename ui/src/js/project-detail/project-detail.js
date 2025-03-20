@@ -980,7 +980,7 @@ export class ProjectDetail extends TatorPage {
                 );
 
                 // Hide all media if specified by project extension
-                if (project.extended_info.hideAllMedia) {
+                if (project?.extended_info?.hideAllMedia) {
                   this._allMediaButton.style.display = "none";
                 }
 

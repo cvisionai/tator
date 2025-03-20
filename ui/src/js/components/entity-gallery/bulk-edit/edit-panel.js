@@ -5,14 +5,26 @@ export class MultiAttributeEditPanel extends TatorElement {
   constructor() {
     super();
 
+    // resize vars
+    this.open = false;
+    this._movingPanel = false;
+
     // TODO deprecate _bulkEditModal
     this._bulkEditModal = document.createElement("modal-dialog");
     this._bulkEditModal._titleDiv.innerHTML = "Select Attribute(s)";
 
     this._bulkEditBar = document.createElement("div");
-    this._bulkEditBar.setAttribute("class", " d-flex flex-wrap"); //px-3
+    this._bulkEditBar.setAttribute(
+      "class",
+      " d-flex flex-wrap position-relative pt-3"
+    ); //px-3
     // this._bulkEditModal._main.appendChild(this._bulkEditBar);
     this._shadow.appendChild(this._bulkEditBar);
+
+    this._resizer = document.createElement("div");
+    this._resizer.className = "bulk-edit-bar-drag-handle ";
+    this._bulkEditBar.appendChild(this._resizer);
+    this.setUpResize();
 
     let barLeftTop = document.createElement("div");
     barLeftTop.setAttribute("class", "bulk-edit-bar--left col-4");
@@ -720,6 +732,38 @@ export class MultiAttributeEditPanel extends TatorElement {
         if (widget.tagName !== "LABEL") widget.reset();
       }
     }
+  }
+
+  setUpResize() {
+    const initResizePanel = (e) => {
+      if (!this._movingPanel) {
+        this._movingPanel = true;
+        window.addEventListener("mousemove", resizePanel, false);
+        window.addEventListener("mouseup", stopResizePanel, false);
+      }
+    };
+    const resizePanel = (e) => {
+      // if (!this.open) {
+      //   // #todo take what you need from toggleOpen so this doesn't end up in the negative side
+      //   this._bulkEditBar.style.height = "300px";
+      // }
+      if (this._movingPanel) {
+        this._bulkEditBar.style.height =
+          window.innerHeight - e.clientY + 0.02 * window.innerHeight + "px";
+        this.div.style.maxHeight = this._bulkEditBar.style.height;
+      }
+    };
+
+    const stopResizePanel = (e) => {
+      window.removeEventListener("mousemove", resizePanel, false);
+      window.removeEventListener("mouseup", stopResizePanel, false);
+
+      this._bulkEditBar.style.height = `${this._bulkEditBar.offsetTop + 40} px`;
+
+      this._movingPanel = false;
+    };
+
+    this._resizer.addEventListener("mousedown", initResizePanel, false);
   }
 }
 

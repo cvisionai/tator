@@ -103,7 +103,7 @@ def test_basic(request, page_factory, project, image1, video): #image
    page.wait_for_timeout(5000)
 
    # # confirm count
-   cards = page.query_selector_all('.enitity-gallery entity-card[style="display: block;"]')
+   cards = page.query_selector_all('.entity-gallery entity-card[style="display: block;"]')
    print(f"Got to localization gallery, showing {len(cards)} cards")
 
    # # Show Test Enum
@@ -119,7 +119,7 @@ def test_basic(request, page_factory, project, image1, video): #image
       f'.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="{attribute_selected_name}"]'
    )
    checkboxes[0].dispatch_event("click")
-   page.query_selector(".enitity-gallery__labels-div nav-close").click()
+   page.query_selector(".entity-gallery__labels-div nav-close").click()
    page.wait_for_timeout(5000)
 
    # Count results by attr value -- should be 1,2,5
