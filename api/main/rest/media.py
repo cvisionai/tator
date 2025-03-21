@@ -436,7 +436,6 @@ class MediaListAPI(BaseListView):
 
     def get_queryset(self, **kwargs):
         if self._viewables:
-            logger.info("Using viewables cache!")
             return self._viewables
         params = {**self.params}
         # POST takes section as a name not an ID
