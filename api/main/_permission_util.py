@@ -136,10 +136,15 @@ def shift_permission(model, source_model):
         assert False, f"Unhandled model {model}"
 
 
-def augment_permission(user, qs):
+def augment_permission(user, qs, exists=None):
     # Add effective_permission to the queryset
-    if qs.exists():
+    if type(exists) == type(None):
+        exists = qs.exists()
+    if exists:
         model = qs.model
+
+        if 'effective_permission' in qs.query.annotations:
+            return qs
         # handle shift due to underlying model
         # children are shifted by 8 bits, grandchildren by 16, etc.
         bit_shift = shift_permission(model, Project)
