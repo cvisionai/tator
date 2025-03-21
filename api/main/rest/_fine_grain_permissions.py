@@ -119,9 +119,6 @@ class ProjectPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
-                logger.info(
-                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                )
 
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
@@ -493,9 +490,6 @@ class OrganizationPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
-                logger.info(
-                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                )
 
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
@@ -524,10 +518,6 @@ class OrganizationPermissionBase(BasePermission):
                     )
                 )
 
-                logger.info(
-                    f"Org Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                )
-
                 if perm_qs.filter(granted=True).exists():
                     granted = True
         elif request.method in ["POST"]:
@@ -553,10 +543,6 @@ class OrganizationPermissionBase(BasePermission):
                     default=False,
                     output_field=BooleanField(),
                 )
-            )
-
-            logger.info(
-                f"Org Query = required_mask={self.required_mask} model={model} shift={shift_permission(model,Organization)} {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
             )
 
             if perm_qs.filter(granted=True).exists():
