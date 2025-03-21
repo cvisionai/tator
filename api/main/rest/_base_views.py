@@ -110,7 +110,7 @@ class TatorAPIView(APIView):
                     user = anonymous_qs[0]
                 else:
                     return qs.none()
-            exists = qs.order_by().only("pk")[:1].exists()
+            exists = qs.only("pk").exists()
             qs = augment_permission(user, qs, exists=exists)
             if exists:
                 qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
