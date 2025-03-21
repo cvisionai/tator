@@ -110,8 +110,9 @@ class TatorAPIView(APIView):
                     user = anonymous_qs[0]
                 else:
                     return qs.none()
-            qs = augment_permission(user, qs)
-            if qs.exists():
+            exists = qs.order_by().only("pk")[:1].exists()
+            qs = augment_permission(user, qs, exists=exists)
+            if exists:
                 qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
                 qs = qs.filter(is_viewable__exact=required_mask)
                 if self.params.get("float_array", None) == None and self.request.method in [
