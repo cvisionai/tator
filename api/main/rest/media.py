@@ -420,6 +420,7 @@ class MediaListAPI(BaseListView):
     schema = MediaListSchema()
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = MediaType  # Needed by attribute filter mixin
+    _viewables = None
 
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
@@ -434,8 +435,10 @@ class MediaListAPI(BaseListView):
         return super().get_permissions()
 
     def get_queryset(self, **kwargs):
+        if self._viewables:
+            logger.info("Using viewables cache!")
+            return self._viewables
         params = {**self.params}
-
         # POST takes section as a name not an ID
         # Return the media queryset only if we have permissions to make a section if it doesn't exist
         if self.request.method == "POST":
@@ -454,7 +457,10 @@ class MediaListAPI(BaseListView):
                     if not can_create:
                         raise PermissionDenied
 
-        return self.filter_only_viewables(get_media_queryset(self.params["project"], params))
+        media_qs = get_media_queryset(self.params["project"], params)
+        viewables = self.filter_only_viewables(media_qs)
+        self._viewables = viewables
+        return self._viewables
 
     def _get(self, params):
         """Retrieve list of media.
