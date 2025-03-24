@@ -16,6 +16,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libgdal-dev \
     libmagic-dev \
     wget \
+    curl \
     xdot \
     xmlsec1 \
     postgresql-client \
@@ -29,6 +30,10 @@ COPY containers/tator/requirements.txt requirements.txt
 RUN . tator/bin/activate && pip --no-cache-dir --timeout=1000 install --upgrade pip && pip --no-cache-dir --timeout=1000 install -r requirements.txt
 RUN rm requirements.txt
 ENV PATH="/tator/bin:$PATH"
+
+# Install kubectl for certificate renewal
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
