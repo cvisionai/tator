@@ -1,11 +1,11 @@
 azure-storage-blob==12.23.1
+azure-communication-email==1.0.0
 boto3==1.34.66
 certifi==2024.7.4
 cryptography==44.0.1
 datadog==0.49.1
 ddtrace==2.7.4
 django==4.2.20
-django_admin_json_editor==0.2.3
 django-cognito-jwt==0.0.4
 django-enumfields==2.1.1
 django-extensions==3.2.3

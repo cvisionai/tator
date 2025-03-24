@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "django_extensions",
-    "django_admin_json_editor",
     "django_ltree",
     "pgtrigger",
 ]
@@ -295,6 +294,7 @@ else:
     TATOR_EMAIL_ENABLED = False
 
 if TATOR_EMAIL_ENABLED:
+    TATOR_EMAIL_CONNECTION_STRING = os.getenv("TATOR_EMAIL_CONNECTION_STRING")
     TATOR_EMAIL_SENDER = os.getenv("TATOR_EMAIL_SENDER")
     TATOR_EMAIL_HOST = os.getenv("TATOR_EMAIL_HOST")
     TATOR_EMAIL_PORT = os.getenv("TATOR_EMAIL_PORT")

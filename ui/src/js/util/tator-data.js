@@ -16,12 +16,14 @@ export class TatorData {
     this._versions = [];
     this._sections = [];
     this._algorithms = [];
+    this._applets = [];
     this._stateTypes = [];
     this._stateTypeNames = [];
     this._stateTypeAssociations = { media: [], frame: [], localization: [] };
     this._memberships = [];
 
     this._maxFetchCount = 100000;
+    this._cache = {};
   }
 
   getMaxFetchCount() {
@@ -78,13 +80,16 @@ export class TatorData {
    *       amount of sections.
    */
   async init() {
-    await this.getAllLocalizationTypes();
-    await this.getAllMediaTypes();
-    await this.getAllVersions();
-    await this.getAllSections();
-    await this.getAllAlgorithms();
-    await this.getAllStateTypes();
-    await this.getAllUsers();
+    let p = [];
+    p.push(this.getAllLocalizationTypes());
+    p.push(this.getAllMediaTypes());
+    p.push(this.getAllVersions());
+    p.push(this.getAllSections());
+    p.push(this.getAllApplets());
+    p.push(this.getAllAlgorithms());
+    p.push(this.getAllStateTypes());
+    p.push(this.getAllUsers());
+    await Promise.all(p);
   }
 
   /**
@@ -255,6 +260,23 @@ export class TatorData {
         const resultsJson = resultsPromise.json();
         Promise.all([resultsJson]).then(([algorithms]) => {
           this._algorithms = [...algorithms];
+          resolve();
+        });
+      });
+    });
+
+    await donePromise;
+  }
+
+  async getAllApplets() {
+    var donePromise = new Promise((resolve) => {
+      const restUrl = "/rest/Applets/" + this._project;
+      const resultsPromise = fetchCredentials(restUrl, {}, true);
+
+      Promise.all([resultsPromise]).then(([resultsPromise]) => {
+        const resultsJson = resultsPromise.json();
+        Promise.all([resultsJson]).then(([applets]) => {
+          this._applets = [...applets];
           resolve();
         });
       });
@@ -750,6 +772,18 @@ export class TatorData {
       null,
       sortState
     );
+
+    // Cache the call to the above function (all arguments) for future use
+    if (outputType == "count") {
+      this._cache["Localizations"] = {
+        localizationFilters: localizationFilters,
+        mediaFilters: mediaFilters,
+        coincidentStateFilters: coincidentStateFilters,
+        coincidentLocalizationFilters: coincidentLocalizationFilters,
+        trackMembershipFilters: trackMembershipFilters,
+        mediaIds: mediaIds,
+      };
+    }
 
     return outData;
   }
