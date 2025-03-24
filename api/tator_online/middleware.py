@@ -24,7 +24,7 @@ class KeycloakMiddleware(KeycloakAuthenticationMixin):
             return JsonResponse(
                 {
                     "error": "Authentication failed",
-                    "detail": str(e) if str(e) else "Please provide or refresh your token.",
+                    "detail": "Please provide or refresh your token."
                 },
                 status=401,
             )
