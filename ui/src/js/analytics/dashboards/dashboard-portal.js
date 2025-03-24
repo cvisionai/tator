@@ -1,6 +1,7 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
 import { store } from "./store.js";
+import "../analytics-breadcrumbs.js";
 
 export class DashboardPortal extends TatorPage {
   constructor() {
@@ -96,6 +97,11 @@ export class DashboardPortal extends TatorPage {
     fetchCredentials("/rest/Applets/" + this._projectId)
       .then((response) => response.json())
       .then((dashboards) => {
+        if (!dashboards || dashboards.length === 0) {
+          this._loading.style.display = "none";
+          this._dashboards.innerHTML = `<div class="d-flex flex-items-center px-2 py-2 f2 text-gray">No dashboards found.</div>`;
+          return;
+        }
         for (let dashboard of dashboards) {
           if (
             dashboard.categories == null ||

@@ -26,7 +26,7 @@ class KeycloakMiddleware(KeycloakAuthenticationMixin):
                     "error": "Authentication failed",
                     "detail": "Please provide or refresh your token."
                 },
-                status=401
+                status=401,
             )
         return self.get_response(request)
 

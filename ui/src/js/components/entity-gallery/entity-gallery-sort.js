@@ -29,7 +29,7 @@ export class EntityGallerySort extends TatorElement {
     this.div = document.createElement("div");
     this.div.setAttribute(
       "class",
-      "enitity-gallery__labels-div rounded-1 my-2 py-2 px-2 hidden"
+      "entity-gallery__labels-div rounded-1 my-2 py-2 px-2 hidden"
     );
     this._shadow.appendChild(this.div);
 

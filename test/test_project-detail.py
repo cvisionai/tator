@@ -204,7 +204,7 @@ def test_basic(request, page_factory, project): #video
     test_string[0].click()  # for images
     test_string[2].click()  # for video
 
-    page.query_selector(".enitity-gallery__labels-div nav-close").click()
+    page.query_selector(".entity-gallery__labels-div nav-close").click()
 
     page.query_selector("section-more #icon-more-horizontal").click()
     page.wait_for_selector('text="Bulk edit/move/delete"')

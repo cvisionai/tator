@@ -18,15 +18,15 @@ export class AnalyticsBreadcrumbs extends TatorElement {
     this._projectText.setAttribute("class", "text-gray");
     div.appendChild(this._projectText);
 
-    const chevron1 = document.createElement("chevron-right");
-    chevron1.setAttribute("class", "px-2");
-    div.appendChild(chevron1);
+    //const chevron1 = document.createElement("chevron-right");
+    //chevron1.setAttribute("class", "px-2");
+    //div.appendChild(chevron1);
 
-    this.analyticsText = document.createElement("a");
-    this.analyticsText.setAttribute("class", "text-gray");
-    this.analyticsText.setAttribute("href", `/${this.projectId}/analytics/`);
-    this.analyticsText.textContent = "Analytics";
-    div.appendChild(this.analyticsText);
+    //this.analyticsText = document.createElement("a");
+    //this.analyticsText.setAttribute("class", "text-gray");
+    //this.analyticsText.setAttribute("href", `/${this.projectId}/analytics/`);
+    //this.analyticsText.textContent = "Analytics";
+    //div.appendChild(this.analyticsText);
 
     this.chevron2 = document.createElement("chevron-right");
     this.chevron2.setAttribute("class", "px-2");
