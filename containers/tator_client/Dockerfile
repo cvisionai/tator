@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         python3-setuptools \
         fastjar libsm6 libxext6 libxrender1 libx265-199 libx264-164 \
-        libpng16-16 libfreetype6 python3-opencv \
+        libpng16-16 libfreetype6 python3-opencv curl \
         && rm -rf /var/lib/apt/lists
 
 ENV PATH="/opt/cvision/bin/:$PATH"
