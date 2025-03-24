@@ -168,9 +168,9 @@ class TatorACSMail:
 
     def __init__(self):
         """Initialize the ACS Email Client with the connection string from settings."""
-        connection_string = getattr(settings, "TATOR_ACS_CONNECTION_STRING", None)
+        connection_string = getattr(settings, "TATOR_EMAIL_CONNECTION_STRING", None)
         if not connection_string:
-            raise ValueError("TATOR_ACS_CONNECTION_STRING is not set in settings")
+            raise ValueError("TATOR_EMAIL_CONNECTION_STRING is not set in settings")
         self.client = EmailClient.from_connection_string(connection_string)
 
     def email_staff(
@@ -293,8 +293,8 @@ class TatorACSMail:
                 encoded_content = base64.b64encode(content).decode('utf-8')
                 attachments_list.append({
                     "name": attachment["name"],
-                    "contentBytesBase64": encoded_content,
-                    "attachmentType": "application/octet-stream"
+                    "contentInBase64": encoded_content,
+                    "contentType": "application/octet-stream"
                 })
             message["attachments"] = attachments_list
 
@@ -302,7 +302,7 @@ class TatorACSMail:
         try:
             poller = self.client.begin_send(message)
             result = poller.result()
-            if result.status == "Succeeded":
+            if result["status"] == "Succeeded":
                 return True
             else:
                 logger.error(f"Email send failed: {result.error}")
@@ -317,7 +317,7 @@ class TatorACSMail:
 
 def get_email_service():
     if settings.TATOR_EMAIL_ENABLED:
-        if settings.TATOR_ACS_CONNECTION_STRING:
+        if settings.TATOR_EMAIL_CONNECTION_STRING:
             return TatorACSMail()
         else:
             return TatorMail()
