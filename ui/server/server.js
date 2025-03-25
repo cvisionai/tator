@@ -251,6 +251,7 @@ app.get("/accept", (req, res) => {
 });
 
 app.get("/password-reset-request", (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.render("password-reset-request", params);
 });
 
