@@ -1,0 +1,6 @@
+.login__form {
+  background-color: var(--color-charcoal--medium);
+  margin-left: auto;
+  margin-right: auto;
+  width: 400px;
+}
