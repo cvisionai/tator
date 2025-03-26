@@ -253,7 +253,7 @@ app.get("/accept", (req, res) => {
 app.get("/password-reset-request", (req, res) => {
   res.set('Cache-Control', 'no-cache, must-revalidate');
   res.set('X-Content-Type-Options', 'nosniff');
-  res.set('Content-Security-Policy', "default-src 'self'; frame-ancestors 'none'; form-action 'self';");
+  res.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'sha256-h4CBuDnak1r7K+3W/YLwcXImSVTTnEV28/0Q5r6Al84=' 'sha256-YYmVRNAv+vv6rPtf4ymH+BesbqEUCLwYBpI2VHA+8tI=' 'sha256-os6mlgzDuzU3SheKgQkxvWGjuxKQmuLFXqSl/E4tUB0='; style-src 'self' 'sha256-aUHH6pvqHJWYXrcTNFFmqcpcUX6Y4orEeNt9+OxE4aU='; frame-ancestors 'none'; form-action 'self';");
   res.render("password-reset-request", params);
 });
 
