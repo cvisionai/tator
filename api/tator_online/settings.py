@@ -15,6 +15,7 @@ from django.contrib.messages import constants as messages
 import yaml
 import sys
 from datetime import datetime
+from main.version import Git
 
 import logging
 
@@ -186,7 +187,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = f"/static/{Git.sha}/"
 STATIC_ROOT = "/static"
 
 MEDIA_URL = "/media/"
