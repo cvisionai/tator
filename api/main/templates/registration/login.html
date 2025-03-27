@@ -4,7 +4,6 @@
 
 {% block head %}
 <title>Tator | Login</title>
-<script src={% static "registration.js" %}></script>
 {% endblock head %}
 
 {% block body %}
@@ -13,7 +12,7 @@
     <img class="py-4" src="{% static 'images/tator-logo.png' %}" width=400>
     <h1 class="h1">Log in to continue to Tator</h1>
   </div>
-  <form class="new-project__form rounded-2" style="width:400px" method="post">
+  <form class="login__form rounded-2" method="post">
     <div class="py-3 px-6">
       {% csrf_token %}
       <label class="d-flex flex-column py-2 text-semibold">
