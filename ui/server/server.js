@@ -2,6 +2,7 @@
 
 const tracer = require("dd-trace").init();
 const express = require("express");
+const crypto = require("crypto");
 const nunjucks = require("nunjucks");
 const favicon = require("serve-favicon");
 const proxy = require("express-http-proxy");
@@ -112,6 +113,13 @@ app.use(
     maxAge: 0,
   })
 );
+
+// Middleware to generate a nonce for use in CSP.
+app.use((req, res, next) => {
+  const nonce = crypto.randomBytes(16).toString('base64');
+  params['csp_nonce'] = nonce;
+  next();
+});
 
 const maxAgeMilliseconds = argv.max_age * 1000;
 const staticMap = {
@@ -253,7 +261,7 @@ app.get("/accept", (req, res) => {
 app.get("/password-reset-request", (req, res) => {
   res.set('Cache-Control', 'no-cache, must-revalidate');
   res.set('X-Content-Type-Options', 'nosniff');
-  res.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'sha256-h4CBuDnak1r7K+3W/YLwcXImSVTTnEV28/0Q5r6Al84=' 'sha256-YYmVRNAv+vv6rPtf4ymH+BesbqEUCLwYBpI2VHA+8tI=' 'sha256-os6mlgzDuzU3SheKgQkxvWGjuxKQmuLFXqSl/E4tUB0='; style-src 'self' 'sha256-aUHH6pvqHJWYXrcTNFFmqcpcUX6Y4orEeNt9+OxE4aU='; frame-ancestors 'none'; form-action 'self';");
+  res.set('Content-Security-Policy', `default-src 'self'; script-src 'self' 'nonce-${params.csp_nonce}'; frame-ancestors 'none'; form-action 'self';`);
   res.render("password-reset-request", params);
 });
 

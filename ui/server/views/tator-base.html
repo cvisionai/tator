@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     {% if datadog_enabled %} {% include "datadog.html" %} {% endif %}
-    <script>
+    <script nonce="{{ csp_nonce }}">
       var BACKEND = '{{ backend }}';
       var KEYCLOAK_ENABLED = {{ keycloak_enabled }};
       var STATIC_PATH = '{{ static_path }}';
@@ -14,7 +14,7 @@
           console.info("Prevent BF Cache #2");
       });
     </script>
-    <script type="importmap">
+    <script nonce="{{ csp_nonce }}" type="importmap">
       {
         "imports": {
           "uuid": "{{ static_path }}/ui/node_modules/uuid/dist/esm-browser/index.js",
