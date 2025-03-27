@@ -30,8 +30,7 @@ export class PasswordResetRequestPage extends TatorElement {
     h1.appendChild(h1Text);
 
     const form = document.createElement("form");
-    form.setAttribute("class", "new-project__form rounded-2 py-3 px-6");
-    form.setAttribute("style", "width:500px");
+    form.setAttribute("class", "password-reset__form rounded-2 py-3 px-6");
     main.appendChild(form);
 
     this._email = document.createElement("text-input");
