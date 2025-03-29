@@ -97,8 +97,7 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
         locale="en-US",
     )
     page = context.new_page()
-    page.goto('/', wait_until='networkidle')
-    page.wait_for_url('/accounts/login/*')
+    page.goto('/accounts/login', wait_until='networkidle')
     page.fill('input[name="username"]', username)
     page.fill('input[name="password"]', password)
     page.click('input[type="submit"]')
