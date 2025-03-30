@@ -261,7 +261,11 @@ app.get("/accept", (req, res) => {
 app.get("/password-reset-request", (req, res) => {
   res.set('Cache-Control', 'no-cache, must-revalidate');
   res.set('X-Content-Type-Options', 'nosniff');
-  res.set('Content-Security-Policy', `default-src 'self'; script-src 'self' 'nonce-${params.csp_nonce}'; frame-ancestors 'none'; form-action 'self';`);
+  let backend = "'self'"
+  if (params.backend) {
+     backend = `'self' ${params.backend}`;
+  }  
+  res.set('Content-Security-Policy', `default-src ${backend}; script-src ${backend} 'nonce-${params.csp_nonce}'; frame-ancestors 'none'; form-action ${backend};`);
   res.render("password-reset-request", params);
 });
 
