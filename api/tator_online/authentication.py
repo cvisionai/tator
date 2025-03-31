@@ -2,6 +2,7 @@ import os
 
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import PermissionDenied
 import jwt
 from jwt.algorithms import RSAAlgorithm
 import traceback
@@ -57,6 +58,8 @@ class KeycloakAuthenticationMixin:
                 keycloak_user_id = decoded["sub"]
                 user_id = int(keycloak_user_id.split(":")[-1])
                 user = User.objects.get(pk=user_id)
+                if not user.is_active:
+                    raise PermissionDenied(f"User has been disabled!")
                 out = (user, None)
             except jwt.ExpiredSignatureError:
                 logger.error(traceback.format_exc())
@@ -73,8 +76,6 @@ class KeycloakAuthenticationMixin:
             except Exception:
                 logger.error(traceback.format_exc())
                 raise AuthenticationFailed(f"Access token decode failed: Unknown error!")
-            if not user.is_active:
-                raise AuthenticationFailed(f"User has been disabled!")
         return out
 
 
