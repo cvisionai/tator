@@ -1431,6 +1431,8 @@ def destroy_tator_indices():
 
 def cluster_tables():
     from django.db import connection
+    import time
+    print(f"{time.time()}: Clustering tables...")
     with connection.cursor() as cursor:
         print("VACUUM main_section...")
         cursor.execute("VACUUM main_section;")
@@ -1460,6 +1462,26 @@ def cluster_tables():
         print("ANALYZE AND VACUUM main_section...")
         cursor.execute("VACUUM main_section;")
         cursor.execute("ANALYZE main_section;")
+    print(f"{time.time()}: Finished")
+
+def prewarm_simple_indices():
+    from django.db import connection
+    with connection.cursor() as cursor:
+        total_size = 0
+        cursor.execute("""SELECT 
+                            relname AS index_name, 
+                            pg_relation_size(oid) AS size
+                            FROM pg_class 
+                            WHERE relkind = 'i'  -- 'i' stands for indexes
+                            AND relname LIKE 'simple_%'
+                            ORDER BY pg_relation_size(oid) DESC;""")
+        indices_to_prewarm = cursor.fetchall()
+        for index in indices_to_prewarm:
+            name, size = index
+            print(f"Prewarming {name} ({size/1024/1024} MB)")
+            cursor.execute(f"SELECT pg_prewarm('{name}');")
+            total_size += size
+        print(f"Prewarmed {len(indices_to_prewarm)} indices with a total size of {total_size/1024/1024} MB")
 
 def make_simple_indices():
     from django.db import connection
