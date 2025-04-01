@@ -1429,6 +1429,38 @@ def destroy_tator_indices():
         print(f"Dropped {total_count} indices")
 
 
+def cluster_tables():
+    from django.db import connection
+    with connection.cursor() as cursor:
+        print("VACUUM main_section...")
+        cursor.execute("VACUUM main_section;")
+        print("VACUUM main_localization...")
+        cursor.execute("VACUUM main_localization;")
+        print("VACUUM main_state...")
+        cursor.execute("VACUUM main_state;")
+        print("VACUUM main_media...")
+        cursor.execute("VACUUM main_media;")
+        print("Clustering main_media...")
+        cursor.execute("CLUSTER main_media USING simple_media_project_primary_section;")
+        print("Clustering main_localization...")
+        cursor.execute("CLUSTER main_localization USING simple_localization_project_media_version;")
+        print("Clustering main_state...")
+        cursor.execute("CLUSTER main_state USING simple_state_project_version;")
+        print("Clustering main_section...")
+        cursor.execute("CLUSTER main_section USING simple_section_project_path;")
+        print("Finished clustering!")
+        print("ANALYZE AND VACUUM main_media...")
+        cursor.execute("VACUUM main_media;")
+        cursor.execute("ANALYZE main_media;")
+        print("ANALYZE AND VACUUM main_localization...")
+        cursor.execute("VACUUM main_localization;")
+        cursor.execute("ANALYZE main_localization;")
+        print("ANALYZE AND VACUUM main_state...")
+        cursor.execute("VACUUM main_state;")
+        print("ANALYZE AND VACUUM main_section...")
+        cursor.execute("VACUUM main_section;")
+        cursor.execute("ANALYZE main_section;")
+
 def make_simple_indices():
     from django.db import connection
 
