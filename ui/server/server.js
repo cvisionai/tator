@@ -266,6 +266,7 @@ app.get("/password-reset-request", (req, res) => {
      backend = `'self' ${params.backend}`;
   }  
   res.set('Content-Security-Policy', `default-src ${backend}; script-src ${backend} 'nonce-${params.csp_nonce}'; frame-ancestors 'none'; form-action ${backend};`);
+  res.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), fullscreen=(self), payment=(), autoplay=(), accelerometer=(), gyroscope=(), magnetometer=(), midi=(), usb=(), xr-spatial-tracking=(), picture-in-picture=(), interest-cohort=(), sync-xhr=(), clipboard-read=(), clipboard-write=(), gamepad=(), display-capture=()');
   res.render("password-reset-request", params);
 });
 
