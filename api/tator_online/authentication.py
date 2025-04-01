@@ -73,6 +73,8 @@ class KeycloakAuthenticationMixin:
             except Exception:
                 logger.error(traceback.format_exc())
                 raise AuthenticationFailed(f"Access token decode failed: Unknown error!")
+            if not user.is_active:
+                raise AuthenticationFailed(f"User has been disabled!")
         return out
 
 

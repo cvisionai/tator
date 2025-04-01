@@ -21,13 +21,22 @@ class KeycloakMiddleware(KeycloakAuthenticationMixin):
         except AuthenticationFailed as e:
             # Log the failure and return a 401 response
             logger.warning(f"Authentication failed: {str(e)}")
-            return JsonResponse(
-                {
-                    "error": "Authentication failed",
-                    "detail": "Please provide or refresh your token."
-                },
-                status=401,
-            )
+            if str(e) == "User has been disabled!":
+                return JsonResponse(
+                    {
+                        "error": "User disabled",
+                        "detail": "User has been disabled by an administrator."
+                    },
+                    status=401,
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "error": "Authentication failed",
+                        "detail": "Please provide or refresh your token."
+                    },
+                    status=401,
+                )
         return self.get_response(request)
 
 
