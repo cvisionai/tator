@@ -35,6 +35,7 @@ from ._util import (
     construct_elemental_id_from_spec,
     construct_parent_from_spec,
     compute_user,
+    optimize_qs
 )
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
@@ -85,7 +86,8 @@ class LocalizationListAPI(BaseListView):
     def _get(self, params):
         logger.info("PARAMS=%s", params)
         qs = self.get_queryset()
-        response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
+        qs = optimize_qs(Localization, qs, *LOCALIZATION_PROPERTIES)
+        response_data = list(qs)
 
         # Adjust fields for csv output.
         if self.request.accepted_renderer.format == "csv":

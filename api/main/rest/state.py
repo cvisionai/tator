@@ -45,6 +45,7 @@ from ._util import (
     construct_elemental_id_from_spec,
     construct_parent_from_spec,
     compute_user,
+    optimize_qs,
 )
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 import os
@@ -123,7 +124,8 @@ class StateListAPI(BaseListView):
     def _get(self, params):
         t0 = datetime.datetime.now()
         qs = self.get_queryset()
-        response_data = list(qs.values(*STATE_PROPERTIES))
+        qs = optimize_qs(State, qs, *STATE_PROPERTIES)
+        response_data = list(qs)
 
         t1 = datetime.datetime.now()
         response_data = _fill_m2m(response_data)
