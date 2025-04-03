@@ -92,7 +92,8 @@ class TatorCache:
         # multi-set with expiration
         with self.rds.pipeline() as pipe:
             for key, url in zip(keys, urls):
-                pipe.set(f"{user}__{key}", url, ex=ttl)
+                if ttl > 0:
+                    pipe.set(f"{user}__{key}", url, ex=ttl)
             pipe.execute()
 
     def invalidate_all(self):
