@@ -40,7 +40,6 @@ def optimize_qs(model, qs, fields):
             if field_type in [DateTimeField, JSONField]:
                 new_fields.remove(field)
                 annotations[field] = Cast(field, TextField())
-                logger.info(f"Optimizing field {field} to {annotations[field]}")
         except FieldDoesNotExist:
             pass
 
