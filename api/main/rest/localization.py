@@ -86,7 +86,7 @@ class LocalizationListAPI(BaseListView):
     def _get(self, params):
         logger.info("PARAMS=%s", params)
         qs = self.get_queryset()
-        qs = optimize_qs(Localization, qs, *LOCALIZATION_PROPERTIES)
+        qs = optimize_qs(Localization, qs, LOCALIZATION_PROPERTIES)
         response_data = list(qs)
 
         # Adjust fields for csv output.
