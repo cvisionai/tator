@@ -993,14 +993,15 @@ def get_tator_store(
 
 def get_storage_lookup(resources):
     """Returns a mapping between resource keys and TatorStorage objects."""
-    buckets = resources.values_list("bucket", flat=True).distinct()
+    resource_buckets = list(resources.values("bucket").distinct())
+    resource_objs = list(resources.values("path", "bucket"))
     # This is to avoid a circular import
     Bucket = resources.model._meta.get_field("bucket").related_model
     bucket_lookup = {
-        bucket: get_tator_store(Bucket.objects.get(pk=bucket)) if bucket else get_tator_store()
-        for bucket in buckets
+        resource['bucket']: get_tator_store(Bucket.objects.get(pk=resource['bucket'])) if resource['bucket'] else get_tator_store()
+        for resource in resource_buckets
     }
     return {
-        resource.path: bucket_lookup[resource.bucket.pk] if resource.bucket else bucket_lookup[None]
-        for resource in list(resources)
+        resource['path']: bucket_lookup[resource['bucket']] if resource['bucket'] else bucket_lookup[None]
+        for resource in resource_objs
     }
