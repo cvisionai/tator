@@ -448,6 +448,7 @@ class MediaListAPI(BaseListView):
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = MediaType  # Needed by attribute filter mixin
     _viewables = None
+    _range = [0, None]
 
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
@@ -463,6 +464,8 @@ class MediaListAPI(BaseListView):
 
     def get_queryset(self, **kwargs):
         if type(self._viewables) != type(None):
+            # Reapply slices as required
+            self._viewables.query.set_limits(self._range[0], self._range[1])
             return self._viewables
         params = {**self.params}
         # POST takes section as a name not an ID
@@ -486,6 +489,7 @@ class MediaListAPI(BaseListView):
         media_qs = get_media_queryset(self.params["project"], params)
         viewables = self.filter_only_viewables(media_qs)
         self._viewables = viewables
+        self._range = [self._viewables.query.low_mark, self._viewables.query.high_mark]
         return self._viewables
 
     def _get(self, params):
@@ -507,7 +511,7 @@ class MediaListAPI(BaseListView):
 
         # Add media_files and attributes back in parsed with ujson
         e=time.time()
-        logger.info(f"Time to generate record: {e-s}")
+        #logger.info(f"Benchmark for pre-signed Time to generate record: {e-s} {qs.count()}")
         if presigned is not None:
             for record in response_data:
                 if record["media_files"] is not None:
