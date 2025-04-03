@@ -119,6 +119,7 @@ class TatorAPIView(APIView):
                 # Clear the slice from the query so that we can augment the permissions
                 qs.query.low_mark = 0
                 qs.query.high_mark = None
+
             qs = augment_permission(user, qs, exists=exists)
             if exists:
                 qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
@@ -136,6 +137,10 @@ class TatorAPIView(APIView):
                         qs = qs.order_by("id")
                 if low_mark is not None and high_mark is not None:
                     qs = qs[low_mark:high_mark]
+                elif low_mark is not None:
+                    qs = qs[low_mark:]
+                elif high_mark is not None:
+                    qs = qs[:high_mark]
         else:
             qs = qs.annotate(effective_permission=Value(0))
         return qs
