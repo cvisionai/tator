@@ -80,6 +80,21 @@ class TatorCache:
             url = url.decode()
         return url
 
+    def get_presigned_multi(self, user, keys):
+        matches = self.rds.mget([f"{user}__{key}" for key in keys])
+        return {key: (match.decode() if match else None) for key, match in zip(keys, matches)}
+
+    def set_presigned_multi(self, user, keys, urls, ttl=3600):
+        """Stores presigned urls."""
+        assert len(keys) == len(urls)
+
+        # Need to use a pipeline here because redis-py does not support
+        # multi-set with expiration
+        with self.rds.pipeline() as pipe:
+            for key, url in zip(keys, urls):
+                pipe.set(f"{user}__{key}", url, ex=ttl)
+            pipe.execute()
+
     def invalidate_all(self):
         """Invalidates all caches."""
         for prefix in ["creds_"]:
