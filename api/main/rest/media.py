@@ -435,7 +435,7 @@ class MediaListAPI(BaseListView):
         return super().get_permissions()
 
     def get_queryset(self, **kwargs):
-        if self._viewables:
+        if type(self._viewables) != type(None):
             return self._viewables
         params = {**self.params}
         # POST takes section as a name not an ID
