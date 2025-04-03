@@ -215,27 +215,6 @@ def augment_permission(user, qs, exists=None):
         # If an object doesn't exist, we can't annotate it
         return qs.annotate(effective_permission=Value(0))
 
-    if qs.query.low_mark != 0 or qs.query.high_mark is not None:
-        # This is a slice, we need to get the full queryset to annotate + filter
-        new_qs = model.objects.filter(pk__in=qs.values("pk"))
-        new_qs = new_qs.alias(
-            project_permission=Value(project_permission >> bit_shift),
-        )
-        if qs.exists():
-            if hasattr(qs[0], "incident"):
-                incident_cases_dict = {
-                    entry["pk"]: entry["incident"] for entry in qs.values("pk", "incident")
-                }
-                incident_cases = [
-                    When(pk=pk, then=Value(incident))
-                    for pk, incident in incident_cases_dict.items()
-                ]
-                new_qs = new_qs.annotate(
-                    incident=Case(*incident_cases, default=Value(None), output_field=IntegerField())
-                )
-
-        qs = new_qs
-
     if model in [Announcement]:
         # Everyone can read announcements
         qs = qs.annotate(effective_permission=Value(0x3))

@@ -102,6 +102,9 @@ class ProjectPermissionBase(BasePermission):
         if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
             perm_qs = view.get_queryset(override_params={"show_all_marks": 1})
+            # Remove limits as they don't apply to existance checks
+            perm_qs.query.low_mark = 0
+            perm_qs.query.high_mark = None
             model = perm_qs.model
             exists = perm_qs.only("pk").exists()
             perm_qs = augment_permission(request.user, perm_qs, exists)
