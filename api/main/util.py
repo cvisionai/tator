@@ -1510,6 +1510,18 @@ def make_simple_indices():
         )
         print("Created index simple_media_project_name on main_media (project, name)")
 
+        cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name;")
+        cursor.execute(
+            "CREATE INDEX CONCURRENTLY simple_media_project_section_name ON main_media (project, primary_section_id, name);"
+        )
+        print("Created index simple_media_project_section_name on main_media (project, section, name)")
+
+        cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name_id;")
+        cursor.execute(
+            "CREATE INDEX CONCURRENTLY simple_media_project_section_name_id ON main_media (project, primary_section_id, name, id);"
+        )
+        print("Created index simple_media_project_section_name on main_media (project, section, name, id)")
+
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_name_gin;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_media_project_name_gin ON main_media USING gin (name gin_trgm_ops);"
