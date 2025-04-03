@@ -9,6 +9,10 @@ import socket
 from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
+from django.db.models import TextField, F, DateTimeField, JSONField
+from django.db.models.functions import Cast
+from django.core.exceptions import PermissionDenied, FieldDoesNotExist
+
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
 from rest_framework.exceptions import PermissionDenied
@@ -26,6 +30,21 @@ class Array(Subquery):
 
     template = "ARRAY(%(subquery)s)"
 
+
+def optimize_qs(model, qs, fields):
+    new_fields=[*fields]
+    annotations = {}
+    for field in fields:
+        try:
+            field_type = type(model._meta.get_field(field))
+            if field_type in [DateTimeField, JSONField]:
+                new_fields.remove(field)
+                annotations[field] = Cast(field, TextField())
+                logger.info(f"Optimizing field {field} to {annotations[field]}")
+        except FieldDoesNotExist:
+            pass
+
+    return qs.values(*new_fields).annotate(**annotations)
 
 def compute_user(project, user, user_elemental_id):
     """Given a project and a user, if a user_elemental_id is supplied return the appropriate user to specify as the author of an object."""
