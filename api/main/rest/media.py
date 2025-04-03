@@ -11,11 +11,9 @@ from urllib.parse import urlparse
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, connection
-from django.db.models import Case, When, TextField, F, DateTimeField, JSONField
 
-from django.db.models.functions import Cast
 from django.http import Http404
-from django.core.exceptions import PermissionDenied, FieldDoesNotExist
+from django.core.exceptions import PermissionDenied
 from PIL import Image
 import ujson
 import time
@@ -55,6 +53,7 @@ from ._util import (
     computeRequiredFields,
     check_required_fields,
     url_to_key,
+    optimize_qs,
 )
 
 from ._base_views import BaseListView, BaseDetailView
@@ -71,21 +70,6 @@ logger = logging.getLogger(__name__)
 MEDIA_PROPERTIES = list(media_schema["properties"].keys())
 
 from .._permission_util import augment_permission, shift_permission
-
-def optimize_qs(qs, fields):
-    new_fields=[*fields]
-    annotations = {}
-    for field in fields:
-        try:
-            field_type = type(Media._meta.get_field(field))
-            if field_type in [DateTimeField, JSONField]:
-                new_fields.remove(field)
-                annotations[field] = Cast(field, TextField())
-                logger.info(f"Optimizing field {field} to {annotations[field]}")
-        except FieldDoesNotExist:
-            pass
-
-    return qs.values(*new_fields).annotate(**annotations)
 
 def _sync_section_inputs(params, project):
     if "primary_section" in params:
@@ -492,7 +476,7 @@ class MediaListAPI(BaseListView):
         presigned = params.get("presigned")
 
         # Handle JSON fields specially
-        qs = optimize_qs(qs, fields)
+        qs = optimize_qs(Media, qs, fields)
         s=time.time()
         response_data = list(qs)
 
