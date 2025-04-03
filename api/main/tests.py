@@ -13,6 +13,7 @@ import requests
 import io
 import base64
 import unittest
+import ujson
 
 from main.models import *
 
@@ -484,6 +485,8 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        for i in range(len(resp.data)):
+            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
         values = [x["attributes"].get("Float Test") for x in resp.data]
 
         # Rename float test to something else the back again
@@ -500,6 +503,8 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        for i in range(len(resp.data)):
+            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
         new_values = [x["attributes"].get("Float Test Renamed") for x in resp.data]
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
@@ -522,6 +527,8 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        for i in range(len(resp.data)):
+            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
@@ -545,6 +552,8 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        for i in range(len(resp.data)):
+            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
 
         # Check 2; attribute has no default set but it is registered
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
@@ -568,7 +577,8 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-
+        for i in range(len(resp.data)):
+            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
         # Check 3; attributes are not effected by renaming a non-existant attribute
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
@@ -590,7 +600,8 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-
+        for i in range(len(resp.data)):
+            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
         # Check 3; attributes are not effected by renaming a non-existant attribute
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
@@ -1503,6 +1514,8 @@ class AttributeTestMixin:
             f"&sort_by=Float Test"
         )
 
+        for i,_ in enumerate(response.data):
+            response.data[i]['attributes'] = ujson.loads(response.data[i]['attributes'])
         last_val = response.data[0]["attributes"]["Float Test"]
         for r in response.data[1:]:
             assert r["attributes"]["Float Test"] >= last_val
@@ -1515,6 +1528,9 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}"
             f"&sort_by=-Float Test"
         )
+
+        for i,_ in enumerate(response.data):
+            response.data[i]['attributes'] = ujson.loads(response.data[i]['attributes'])
         last_val = response.data[0]["attributes"]["Float Test"]
         for r in response.data[1:]:
             assert r["attributes"]["Float Test"] <= last_val
@@ -2738,6 +2754,8 @@ class VideoTestCase(
         response = self.client.put(
             f"/rest/Localizations/{self.project.pk}", {"frame_state_ids": [state.id]}, format="json"
         )
+        for i in range(len(response.data)):
+            response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2753,6 +2771,8 @@ class VideoTestCase(
             },
             format="json",
         )
+        for i in range(len(response.data)):
+            response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2789,6 +2809,8 @@ class VideoTestCase(
             response = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?attribute={key}::{value}", format=json
             )
+            for i in range(len(response.data)):
+                response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
             self.assertEqual(len(response.data), 4)
             encoded_search = base64.b64encode(
                 json.dumps({"attribute": key, "operation": "eq", "value": value}).encode()
@@ -2797,6 +2819,8 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
+            for i in range(len(response.data)):
+                response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
             matches = len(response.data)
             self.assertEqual(matches, 2)
 
@@ -2814,6 +2838,8 @@ class VideoTestCase(
                 format="json",
             )
             assertResponse(self, response, status.HTTP_200_OK)
+            for i in range(len(response.data)):
+                response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
             matches = len(response.data)
             self.assertEqual(matches, 2)
 
@@ -4059,7 +4085,7 @@ class LeafTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        #logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
