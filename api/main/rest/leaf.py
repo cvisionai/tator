@@ -30,6 +30,7 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
+    optimize_qs,
 )
 from ._permissions import ProjectViewOnlyPermission, ProjectFullControlPermission
 from ._permissions import ProjectFullControlPermission
@@ -142,7 +143,8 @@ class LeafListAPI(BaseListView):
 
     def _get(self, params):
         qs = get_leaf_queryset(params["project"], params)
-        response_data = list(qs.values(*LEAF_PROPERTIES))
+        qs = optimize_qs(Leaf, qs, LEAF_PROPERTIES)
+        response_data = list(qs)
         return response_data
 
     def get_queryset(self, **kwargs):

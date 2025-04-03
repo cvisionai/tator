@@ -124,7 +124,7 @@ class StateListAPI(BaseListView):
     def _get(self, params):
         t0 = datetime.datetime.now()
         qs = self.get_queryset()
-        qs = optimize_qs(State, qs, *STATE_PROPERTIES)
+        qs = optimize_qs(State, qs, STATE_PROPERTIES)
         response_data = list(qs)
 
         t1 = datetime.datetime.now()
