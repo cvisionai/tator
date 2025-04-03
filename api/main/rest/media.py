@@ -134,7 +134,37 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
     cache = TatorCache()
     ttl = expiration - 3600
 
+    media_path_set = set()
     # Get replace all keys with presigned urls.
+    if no_cache == False:
+        for media in medias:
+            if media.get("media_files") is None:
+                continue
+
+            for field in fields:
+                if field not in media["media_files"]:
+                    continue
+
+                for media_def in media["media_files"][field]:
+                    # Get path url
+                    # If the path is a bona fide URL, don't attempt to presign it
+                    if urlparse(media_def["path"]).scheme != "":
+                        continue
+                    media_path_set.add(media_def["path"])
+                    if field == "streaming":
+                        if "segment_info" in media_def:
+                            media_path_set.add(media_def["segment_info"])
+                        else:
+                            logger.warning(
+                                f"No segment file in media {media['id']} for file {media_def['path']}!"
+                            )
+        # Attempt to fetch these all from REDIS(tm)
+        presigned = cache.get_presigned_multi(user_id, list(media_path_set))
+
+    # Loop through again and fill in from cache where we can else presign
+
+    to_cache_paths = []
+    to_cache_urls = []
     for media in medias:
         if media.get("media_files") is None:
             continue
@@ -148,30 +178,25 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
                 # If the path is a bona fide URL, don't attempt to presign it
                 if urlparse(media_def["path"]).scheme != "":
                     continue
-                url = cache.get_presigned(user_id, media_def["path"])
-                if no_cache or (url is None):
-                    tator_store = store_lookup[media_def["path"]]
-                    url = tator_store.get_download_url(media_def["path"], expiration)
-                    if ttl > 0 and not no_cache:
-                        cache.set_presigned(user_id, media_def["path"], url, ttl)
-                media_def["path"] = url
-                # Get segment url
+                if presigned.get(media_def['path'], None):
+                    media_def["path"] = presigned[media_def["path"]]
+                else:
+                    # Presign the path.
+                    to_cache_paths.append(media_def["path"])
+                    media_def["path"] = store_lookup[media_def["path"]].get_download_url(media_def["path"], expiration=expiration)
+                    to_cache_urls.append(media_def["path"])
+
                 if field == "streaming":
                     if "segment_info" in media_def:
-                        url = cache.get_presigned(user_id, media_def["segment_info"])
-                        if no_cache or (url is None):
-                            tator_store = store_lookup[media_def["segment_info"]]
-                            url = tator_store.get_download_url(
-                                media_def["segment_info"], expiration
-                            )
-                            if ttl > 0 and not no_cache:
-                                cache.set_presigned(user_id, media_def["segment_info"], url, ttl)
-                        media_def["segment_info"] = url
-                    else:
-                        logger.warning(
-                            f"No segment file in media {media['id']} for file {media_def['path']}!"
-                        )
-
+                        if presigned.get(media_def["segment_info"], None):
+                            media_def["segment_info"] = presigned[media_def["segment_info"]]
+                        else:
+                            to_cache_paths.append(media_def["segment_info"])
+                            media_def["segment_info"] = store_lookup[media_def["segment_info"]].get_download_url(media_def["segment_info"], expiration=expiration)
+                            to_cache_urls.append(media_def["segment_info"])
+    # Only cache if we are using it
+    if no_cache == False:
+        cache.set_presigned_multi(user_id, to_cache_paths, to_cache_urls, ttl)
 
 def _save_image(url, media_obj, project_obj, role):
     """
