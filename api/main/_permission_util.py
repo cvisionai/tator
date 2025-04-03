@@ -475,9 +475,7 @@ def augment_permission(user, qs, exists=None):
     elif model in [Media]:
         # For these models, we can use the section+project to determine permissions
         #
-        effected_sections = qs.values("primary_section__pk")
-
-        section_qs = Section.objects.filter(pk__in=effected_sections)
+        section_qs = Section.objects.filter(primary_section__in=qs.values('pk'))
         section_qs = augment_permission(user, section_qs)
 
         section_perm_dict = {
