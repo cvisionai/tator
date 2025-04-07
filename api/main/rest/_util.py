@@ -9,7 +9,7 @@ import socket
 from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
-from django.db.models import TextField, F, DateTimeField, JSONField
+from django.db.models import TextField, F, DateTimeField, JSONField, UUIDField
 from django.db.models.functions import Cast
 from django.core.exceptions import PermissionDenied, FieldDoesNotExist
 
@@ -37,7 +37,7 @@ def optimize_qs(model, qs, fields):
     for field in fields:
         try:
             field_type = type(model._meta.get_field(field))
-            if field_type in [DateTimeField, JSONField]:
+            if field_type in [DateTimeField, JSONField, UUIDField]:
                 new_fields.remove(field)
                 annotations[field] = Cast(field, TextField())
         except FieldDoesNotExist:
