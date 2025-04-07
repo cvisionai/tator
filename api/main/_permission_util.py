@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 CHILD_SHIFT = 8
 
+from collections import defaultdict
+
 
 class ColBitAnd(Func):
     function = ""
@@ -461,9 +463,16 @@ def augment_permission(user, qs, exists=None):
             entry["pk"]: (entry["effective_permission"] >> CHILD_SHIFT)
             for entry in section_qs.values("pk", "effective_permission")
         }
+
+        # Create a dictionary by permission to associate so we can use an in
+        # statement to annotate the queryset
+        perm_map = defaultdict(list)
+        for section, perm in section_perm_dict.items():
+            perm_map[perm].append(section)
+
         section_cases = [
-            When(primary_section=section, then=Value(perm))
-            for section, perm in section_perm_dict.items()
+            When(primary_section__in=sections, then=Value(perm))
+            for perm, sections in perm_map.items()
         ]
         qs = qs.annotate(
             effective_permission=Case(
