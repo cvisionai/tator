@@ -4,6 +4,7 @@ import traceback
 import sys
 import logging
 
+from django.http import StreamingHttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
@@ -157,6 +158,20 @@ class GetMixin:
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
+class StreamingGetMixIn:
+    def get(self, request, format=None, **kwargs):
+        resp = StreamingHttpResponse(
+            self._get(self.params), content_type="application/json")
+        resp["Content-Type"] = "application/json"
+        return resp
+
+
+class StreamingPutMixIn:
+    def put(self, request, format=None, **kwargs):
+        resp = StreamingHttpResponse(
+            self._put(self.params), content_type="application/json")
+        resp["Content-Type"] = "application/json"
+        return resp
 
 class PostMixin:
     # pylint: disable=redefined-builtin,unused-argument
@@ -200,6 +215,14 @@ class PutMixin:
 
 
 class BaseListView(TatorAPIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
+    """Base class for list views."""
+
+    http_method_names = ["get", "post", "patch", "delete", "put"]
+
+    def handle_exception(self, exc):
+        return process_exception(exc)
+
+class StreamingListView(TatorAPIView, StreamingGetMixIn, PostMixin, PatchMixin, DeleteMixin, StreamingPutMixIn):
     """Base class for list views."""
 
     http_method_names = ["get", "post", "patch", "delete", "put"]

@@ -56,7 +56,7 @@ from ._util import (
     optimize_qs,
 )
 
-from ._base_views import BaseListView, BaseDetailView
+from ._base_views import StreamingListView, BaseDetailView
 from ._media_query import get_media_queryset
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
 from ._permissions import (
@@ -434,7 +434,7 @@ def _create_media(project, params, user, use_rq=False):
     return media_obj, msg, section_obj
 
 
-class MediaListAPI(BaseListView):
+class MediaListAPI(StreamingListView):
     """Interact with list of media.
 
     A media may be an image or a video. Media are a type of entity in Tator,
@@ -507,18 +507,20 @@ class MediaListAPI(BaseListView):
         # Handle JSON fields specially
         qs = optimize_qs(Media, qs, fields)
         s=time.time()
-        response_data = list(qs)
 
-        # Add media_files and attributes back in parsed with ujson
-        e=time.time()
-        #logger.info(f"Benchmark for pre-signed Time to generate record: {e-s} {qs.count()}")
-        if presigned is not None:
-            for record in response_data:
-                if record["media_files"] is not None:
-                    record["media_files"] = ujson.loads(record["media_files"])
-            no_cache = params.get("no_cache", False)
-            _presign(self.request.user.pk, presigned, response_data, no_cache=no_cache)
-        return response_data
+        for record in qs.iterator():
+            response_data = record
+            # Add media_files and attributes back in parsed with ujson
+            e=time.time()
+            #logger.info(f"Benchmark for pre-signed Time to generate record: {e-s} {qs.count()}")
+            if presigned is not None:
+                for record in response_data:
+                    logger.info(record)
+                    if record["media_files"] is not None:
+                        record["media_files"] = ujson.loads(record["media_files"])
+                no_cache = params.get("no_cache", False)
+                _presign(self.request.user.pk, presigned, response_data, no_cache=no_cache)
+            yield response_data
 
     def get_model(self):
         return Media
