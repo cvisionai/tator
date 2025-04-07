@@ -183,8 +183,6 @@ def augment_permission(user, qs, exists=None):
             qs = qs.alias(
                 project_permission=Value(project_permission >> bit_shift),
             )
-
-            project_has_read = (project_permission >> bit_shift & PermissionMask.READ) > 0
         elif model in [Group, JobCluster, Bucket, HostedTemplate, Affiliation, Invitation]:
             # This calculates the default permission for an object based on what organization it is in
             org_qs = qs.values("organization")
@@ -205,29 +203,9 @@ def augment_permission(user, qs, exists=None):
                 When(organization=target_org, then=Value(perm))
                 for target_org, perm in org_perm_dict.items()
             ]
-            has_read_cases = [
-                When(organization=target_org, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-                for target_org, perm in org_perm_dict.items()
-            ]
-
             qs = qs.annotate(
                 org_permission=Case(*org_cases, default=Value(0), output_field=BigIntegerField())
             )
-            qs = qs.annotate(
-                org_has_read=Case(*has_read_cases, default=Value(False), output_field=BooleanField())
-            )
-
-            all_perms = qs.values_list("org_permission", flat=True)
-            # iterate and verify all effected organizations grant read
-            # permissions
-            org_permission = 0
-            org_has_read = True
-            for org_perm in all_perms:
-                org_permission = org_perm
-                if not (org_perm & PermissionMask.READ):
-                    org_has_read = False
-                    break
-
         elif model in [Project, Organization]:
             pass  # Project/ Organization permissions are handled below (for self)
         else:
@@ -235,11 +213,11 @@ def augment_permission(user, qs, exists=None):
             assert False, f"Unhandled model {model} (no permission logic for org/project)"
     else:
         # If an object doesn't exist, we can't annotate it
-        return qs.annotate(effective_permission=Value(0), has_read=Value(False))
+        return qs.annotate(effective_permission=Value(0))
 
     if model in [Announcement]:
         # Everyone can read announcements
-        qs = qs.annotate(effective_permission=Value(0x3), has_read=Value(True))
+        qs = qs.annotate(effective_permission=Value(0x3))
     elif model in [
         Favorite,
         Bookmark,
@@ -253,11 +231,10 @@ def augment_permission(user, qs, exists=None):
         ChangeLog,
         Leaf,
     ]:
-        qs = qs.annotate(effective_permission=F("project_permission"), has_read=Value(project_has_read))
+        qs = qs.annotate(effective_permission=F("project_permission"))
     elif model in [Membership]:
         qs = qs.annotate(
-            effective_permission=F("project_permission"),
-            has_read=Value(project_has_read),
+            effective_permission=F("project_permission")
         )  # match project-level permissions (for now)
     elif model in [Group]:
         group_rp = RowProtection.objects.filter(target_group__in=qs.values("pk")).filter(
@@ -271,25 +248,16 @@ def augment_permission(user, qs, exists=None):
             for entry in group_rp.values("target_group", "calc_perm")
         }
         group_cases = [When(pk=group, then=Value(perm)) for group, perm in group_perm_dict.items()]
-        has_read_cases = [
-            When(pk=group, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for group, perm in group_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *group_cases,
                 default=F("org_permission"),
                 output_field=BigIntegerField(),
             ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(org_has_read),
-                output_field=BooleanField(),
-            ),
         )
     elif model in [Affiliation, Invitation]:
         # Affiliations don't have per-row control, they are all scoped to the organization permission shifted
-        qs = qs.annotate(effective_permission=F("org_permission"), has_read=Value(org_has_read))
+        qs = qs.annotate(effective_permission=F("org_permission"))
     elif model in [Project]:
         # These models are only protected by project-level permissions
         raw_rp = RowProtection.objects.filter(project__in=qs.values("pk"))
@@ -307,19 +275,11 @@ def augment_permission(user, qs, exists=None):
         project_cases = [
             When(pk=project, then=Value(perm)) for project, perm in project_perm_dict.items()
         ]
-        has_read_cases = [
-            When(pk=project, then=Value(perm & PermissionMask.READ == PermissionMask.READ)) for project, perm in project_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *project_cases,
                 default=Value(0),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(False),
-                output_field=BooleanField(),
             ),
         )
     elif model in [Organization]:
@@ -339,20 +299,11 @@ def augment_permission(user, qs, exists=None):
         org_cases = [
             When(pk=target_org, then=Value(perm)) for target_org, perm in org_perm_dict.items()
         ]
-        has_read_cases = [
-            When(pk=target_org, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for target_org, perm in org_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *org_cases,
                 default=Value(0),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(False),
-                output_field=BooleanField(),
             ),
         )
     elif model in [File]:
@@ -367,20 +318,11 @@ def augment_permission(user, qs, exists=None):
             entry["file"]: entry["calc_perm"] for entry in file_rp.values("file", "calc_perm")
         }
         file_cases = [When(pk=fp, then=Value(perm)) for fp, perm in file_perm_dict.items()]
-        has_read_cases = [
-            When(pk=fp, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for fp, perm in file_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *file_cases,
                 default=F("project_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(project_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [Bucket]:
@@ -396,20 +338,11 @@ def augment_permission(user, qs, exists=None):
         bucket_cases = [
             When(bucket=bucket, then=Value(perm)) for bucket, perm in bucket_perm_dict.items()
         ]
-        has_read_cases = [
-            When(bucket=bucket, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for bucket, perm in bucket_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *bucket_cases,  # not to be confused with basket_cases
                 default=F("org_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(org_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [JobCluster]:
@@ -424,21 +357,11 @@ def augment_permission(user, qs, exists=None):
             for entry in jc_rp.values("job_cluster", "calc_perm")
         }
         jc_cases = [When(job_cluster=jc, then=Value(perm)) for jc, perm in jc_perm_dict.items()]
-        
-        has_read_cases = [
-            When(job_cluster=jc, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for jc, perm in jc_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *jc_cases,
                 default=F("org_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(org_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [HostedTemplate]:
@@ -453,20 +376,11 @@ def augment_permission(user, qs, exists=None):
             for entry in ht_rp.values("hosted_template", "calc_perm")
         }
         ht_cases = [When(job_cluster=jc, then=Value(perm)) for ht, perm in ht_perm_dict.items()]
-        has_read_cases = [
-            When(job_cluster=jc, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for jc, perm in ht_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *ht_cases,
                 default=F("org_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(org_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [Algorithm]:
@@ -481,20 +395,11 @@ def augment_permission(user, qs, exists=None):
             for entry in algo_rp.values("algorithm", "calc_perm")
         }
         algo_cases = [When(pk=algo, then=Value(perm)) for algo, perm in algo_perm_dict.items()]
-        has_read_cases = [
-            When(pk=algo, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for algo, perm in algo_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *algo_cases,
                 default=F("project_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(project_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [Version]:
@@ -512,21 +417,11 @@ def augment_permission(user, qs, exists=None):
         version_cases = [
             When(pk=version, then=Value(perm)) for version, perm in version_perm_dict.items()
         ]
-        has_read_cases = [
-            When(pk=version, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for version, perm in version_perm_dict.items()
-        ]
-
         qs = qs.annotate(
             effective_permission=Case(
                 *version_cases,
                 default=F("project_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(project_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [Section]:
@@ -549,20 +444,11 @@ def augment_permission(user, qs, exists=None):
         section_cases = [
             When(pk=section, then=Value(perm)) for section, perm in section_perm_dict.items()
         ]
-        has_read_cases = [
-            When(pk=section, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for section, perm in section_perm_dict.items()
-        ]
         qs = qs.annotate(
             effective_permission=Case(
                 *section_cases,
                 default=F("project_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(project_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [Media]:
@@ -579,21 +465,11 @@ def augment_permission(user, qs, exists=None):
             When(primary_section=section, then=Value(perm))
             for section, perm in section_perm_dict.items()
         ]
-        has_read_cases = [
-            When(primary_section=section, then=Value(perm & PermissionMask.READ == PermissionMask.READ))
-            for section, perm in section_perm_dict.items()
-        ]
-
         qs = qs.annotate(
             effective_permission=Case(
                 *section_cases,
                 default=F("project_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *has_read_cases,
-                default=Value(project_has_read),
-                output_field=BooleanField(),
             ),
         )
     elif model in [Localization, State]:
@@ -637,7 +513,6 @@ def augment_permission(user, qs, exists=None):
         # Based on the sections and versions create a case match for each permutation
         # in this resultset
         combo_cases = []
-        combo_has_read_cases = []
         for section, section_perm in section_perm_dict.items():
             for version, version_perm in version_perm_dict.items():
                 combined_perm = section_perm & version_perm
@@ -648,13 +523,6 @@ def augment_permission(user, qs, exists=None):
                         then=Value(combined_perm),
                     )
                 )
-                combo_has_read_cases.append(
-                    When(
-                        section=section,
-                        version=version,
-                        then=Value(combined_perm & PermissionMask.READ == PermissionMask.READ),
-                    )
-                )
 
         # Annotate on the final permission for each row
         qs = qs.annotate(
@@ -662,11 +530,6 @@ def augment_permission(user, qs, exists=None):
                 *combo_cases,  # Match intersections first
                 default=F("project_permission"),
                 output_field=BigIntegerField(),
-            ),
-            has_read=Case(
-                *combo_has_read_cases,
-                default=Value(project_has_read),
-                output_field=BooleanField(),
             ),
         )
     else:
