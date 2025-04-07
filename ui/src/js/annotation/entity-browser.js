@@ -242,17 +242,22 @@ export class EntityBrowser extends TatorElement {
 
   _drawControls() {
     const evt = this._evt;
-    let groups;
-    if (this._identifier && this._group.getValue() != "Off") {
+    let groups = {};
+    if (this._group.getValue() != "Off") {
       const key = this._group.getValue();
-      groups = evt.detail.data.reduce((sec, obj) => {
-        (sec[obj["attributes"][key]] = sec[obj["attributes"][key]] || []).push(
-          obj
-        );
-        return sec;
-      }, {});
+      for (let i = 0; i < evt.detail.data.length; i++) {
+        const obj = evt.detail.data[i];
+        if (typeof obj.attributes === "string") {
+          obj.attributes = JSON.parse(obj.attributes);
+        }
+        const val = obj.attributes[key];
+        if (groups[val] != null) {
+          groups[val].push(obj);
+        } else {
+          groups[val] = [obj];
+        }
+      }
     } else {
-      groups = {};
       if (evt.detail.data.length > 0) {
         const key = "All " + this._title.textContent;
         groups[key] = evt.detail.data;
@@ -526,12 +531,8 @@ export class EntityBrowser extends TatorElement {
 
   selectEntity(obj) {
     let group;
-    if (
-      this._identifier &&
-      this._group.getValue() &&
-      this._group.getValue() !== "Off"
-    ) {
-      group = obj.attributes[this._identifier.name];
+    if (this._group.getValue() !== "Off") {
+      group = obj.attributes[this._group.getValue()];
     } else {
       group = "All " + this._title.textContent;
     }
