@@ -130,7 +130,17 @@ export class EntityBrowser extends TatorElement {
       (a, b) => a.order - b.order
     );
     for (let choice of sorted) {
-      if (choice.dtype == "string" || choice.dtype == "enum") {
+      if (choice.visible == false) {
+        continue;
+      }
+      if (choice.style?.includes("not-groupable")) {
+        continue;
+      }
+      if (
+        choice.dtype == "string" ||
+        choice.dtype == "enum" ||
+        choice.dtype == "bool"
+      ) {
         choices.push({ value: choice.name });
       }
     }
@@ -306,7 +316,13 @@ export class EntityBrowser extends TatorElement {
         selector.noFrames = this._noFrames;
         selector.canvas = this._canvas;
         selector.permission = this._permission;
-        selector.setAttribute("name", group);
+        var selectorName = group;
+        if (selectorName == null) {
+          selectorName = "null";
+        } else if (selectorName == "") {
+          selectorName = "(empty string)";
+        }
+        selector.setAttribute("name", selectorName);
         selector.dataType = this._dataType;
         selector.undoBuffer = this._undo;
         selector.globalDataBuffer = this._data;
