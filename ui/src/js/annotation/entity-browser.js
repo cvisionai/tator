@@ -260,7 +260,7 @@ export class EntityBrowser extends TatorElement {
         if (typeof obj.attributes === "string") {
           obj.attributes = JSON.parse(obj.attributes);
         }
-        const val = obj.attributes[key];
+        const val = this.getGroupNameFromAttribute(obj);
         if (groups[val] != null) {
           groups[val].push(obj);
         } else {
@@ -323,13 +323,7 @@ export class EntityBrowser extends TatorElement {
         selector.noFrames = this._noFrames;
         selector.canvas = this._canvas;
         selector.permission = this._permission;
-        var selectorName = group;
-        if (selectorName == null) {
-          selectorName = "null";
-        } else if (selectorName == "") {
-          selectorName = "(empty string)";
-        }
-        selector.setAttribute("name", selectorName);
+        selector.setAttribute("name", group);
         selector.dataType = this._dataType;
         selector.undoBuffer = this._undo;
         selector.globalDataBuffer = this._data;
@@ -545,13 +539,28 @@ export class EntityBrowser extends TatorElement {
     }
   }
 
-  selectEntity(obj) {
+  getGroupNameFromAttribute(obj) {
+    let group = obj.attributes[this._group.getValue()];
+    if (group == null) {
+      group = "(null)";
+    } else if (group == "") {
+      group = "(empty string)";
+    }
+    return group;
+  }
+
+  getGroupName(obj) {
     let group;
     if (this._group.getValue() !== "Off") {
-      group = obj.attributes[this._group.getValue()];
+      group = this.getGroupNameFromAttribute(obj);
     } else {
       group = "All " + this._title.textContent;
     }
+    return group;
+  }
+
+  selectEntity(obj) {
+    const group = this.getGroupName(obj);
     const selector = this._selectors[group];
     if (selector) {
       // Selector may not exist if element was deleted.
