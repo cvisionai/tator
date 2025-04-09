@@ -7,7 +7,8 @@ import pytz
 import re
 import uuid
 
-from django.db.models.functions import Cast, Greatest, KeyTextTransform, MakePoint, SetSRID
+from django.db.models.functions import Cast, Greatest
+from django.db.models.fields.json import KeyTextTransform
 from django.db.models import (
     Func,
     F,
@@ -641,31 +642,24 @@ def get_attribute_psql_queryset_from_query_obj(project, qs, query_object):
             qs = qs.alias(**{f"media_frame": MediaFieldExpression.get_wrapper()})
         elif annotateField[annotation] == PointField:
             sanitized_annotation = _sanitize(annotation)
-            json_field_accessor = f"attributes__{annotation}" # Access the specific JSON key
-            # 1. Extract Longitude and Latitude as text using KeyTextTransform (maps to ->> operator)
-            #    JSON array indices are 0-based. Assumes [lon, lat] order.
-            lon_text = KeyTextTransform('0', json_field_accessor)
-            lat_text = KeyTextTransform('1', json_field_accessor)
-
-            # 2. Cast the extracted text values to FloatField
-            lon_float = Cast(lon_text, output_field=FloatField())
-            lat_float = Cast(lat_text, output_field=FloatField())
-
-            # 3. Use MakePoint(longitude, latitude) to create a point geometry
-            #    IMPORTANT: MakePoint expects longitude first, then latitude.
-            #    If your JSON stores [lat, lon], swap lon_float and lat_float here.
-            point_geom = MakePoint(lon_float, lat_float)
-
-            # 4. Use SetSRID to assign the correct Spatial Reference ID (e.g., 4326)
-            #    MakePoint creates geometry with an unknown SRID, so setting it is crucial.
-            point_with_srid = SetSRID(point_geom, 4326) # Use integer 4326 for WGS 84
-
-            # 5. Alias the final expression
-            #    The output field of SetSRID will implicitly be a GeometryField (likely PointField)
             qs = qs.alias(
-                **{
-                    f"casted_{sanitized_annotation}": point_with_srid
-                }
+                # Alias for the first element cast to float
+                **{f"casted_{sanitized_annotation}_0_float": Cast(f"attributes__{sanitized_annotation}__0", FloatField())},
+                # Alias for the second element cast to float
+                **{f"casted_{sanitized_annotation}_1_float": Cast(f"attributes__{sanitized_annotation}__1", FloatField())}
+            )
+
+            qs = qs.alias(
+               **{
+                   f"casted_{sanitized_annotation}": Cast(
+                       Func(
+                           F(f"casted_{sanitized_annotation}_0_float"),
+                           F(f"casted_{sanitized_annotation}_1_float"),
+                           function="ST_MakePoint",
+                       ),
+                       PointField(srid=4326),
+                   )
+               }
             )
         else:
             qs = qs.alias(
