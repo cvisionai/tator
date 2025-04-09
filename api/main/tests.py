@@ -2168,8 +2168,12 @@ class AttributeTestMixin:
                     "object_search": {
                         "method": "and",
                         "operations": [
-                        {"attribute" : "Geoposition Test", "operation" : "distance_lte", "value" : [dist,test_lat,test_lon]}
-                        ]
+                            {
+                                "attribute": "Geoposition Test",
+                                "operation": "distance_lte",
+                                "value": [dist, test_lat, test_lon],
+                            }
+                        ],
                     }
                 },
                 format="json",

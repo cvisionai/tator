@@ -1,4 +1,4 @@
-""" Algorithm REST endpoints """
+"""Algorithm REST endpoints"""
 
 # pylint: disable=too-many-ancestors
 

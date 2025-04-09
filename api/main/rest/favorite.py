@@ -1,4 +1,4 @@
-""" Favorite REST endpoints """
+"""Favorite REST endpoints"""
 
 # pylint: disable=too-many-ancestors
 
