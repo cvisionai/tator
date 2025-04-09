@@ -8,6 +8,7 @@ import re
 import uuid
 
 from django.db.models.functions import Cast, Greatest
+from django.db.models.fields.json import KeyTextTransform
 from django.db.models import (
     Func,
     F,
@@ -639,6 +640,27 @@ def get_attribute_psql_queryset_from_query_obj(project, qs, query_object):
             )
         elif annotateField[annotation] == MediaFieldExpression:
             qs = qs.alias(**{f"media_frame": MediaFieldExpression.get_wrapper()})
+        elif annotateField[annotation] == PointField:
+            sanitized_annotation = _sanitize(annotation)
+            qs = qs.alias(
+                # Alias for the first element cast to float
+                **{f"casted_{sanitized_annotation}_0_float": Cast(f"attributes__{annotation}__0", FloatField())},
+                # Alias for the second element cast to float
+                **{f"casted_{sanitized_annotation}_1_float": Cast(f"attributes__{annotation}__1", FloatField())}
+            )
+
+            qs = qs.alias(
+               **{
+                   f"casted_{sanitized_annotation}": Cast(
+                       Func(
+                           F(f"casted_{sanitized_annotation}_0_float"),
+                           F(f"casted_{sanitized_annotation}_1_float"),
+                           function="ST_MakePoint",
+                       ),
+                       PointField(srid=4326),
+                   )
+               }
+            )
         else:
             qs = qs.alias(
                 **{

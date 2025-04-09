@@ -13,6 +13,7 @@ from ..models import Leaf, LeafType
 from ._attribute_query import (
     get_attribute_filter_ops,
     get_attribute_psql_queryset,
+    get_attribute_psql_queryset_from_query_obj,
     supplied_name_to_field,
 )
 
