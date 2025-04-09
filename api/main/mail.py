@@ -20,6 +20,7 @@ import main.models
 
 logger = logging.getLogger(__name__)
 
+
 class TatorMail:
     """Class for sending emails from Tator using a standard SMTP server (e.g., AWS SES)"""
 
@@ -163,6 +164,7 @@ class TatorMail:
 
         return False
 
+
 class TatorACSMail:
     """Class for sending emails from Tator using Azure Communication Services"""
 
@@ -258,12 +260,10 @@ class TatorACSMail:
         # Construct the ACS email message
         message = {
             "senderAddress": sender,
-            "recipients": {
-                "to": [{"address": recipient} for recipient in recipients]
-            },
+            "recipients": {"to": [{"address": recipient} for recipient in recipients]},
             "content": {
                 "subject": title,
-            }
+            },
         }
 
         # Add text and/or HTML content
@@ -290,12 +290,14 @@ class TatorACSMail:
                 tator_store.download_fileobj(key, f_p)
                 f_p.seek(0)
                 content = f_p.read()
-                encoded_content = base64.b64encode(content).decode('utf-8')
-                attachments_list.append({
-                    "name": attachment["name"],
-                    "contentInBase64": encoded_content,
-                    "contentType": "application/octet-stream"
-                })
+                encoded_content = base64.b64encode(content).decode("utf-8")
+                attachments_list.append(
+                    {
+                        "name": attachment["name"],
+                        "contentInBase64": encoded_content,
+                        "contentType": "application/octet-stream",
+                    }
+                )
             message["attachments"] = attachments_list
 
         # Send the email and handle the response
@@ -314,6 +316,7 @@ class TatorACSMail:
             if raise_on_failure:
                 raise ValueError(raise_on_failure)
             return False
+
 
 def get_email_service():
     if settings.TATOR_EMAIL_ENABLED:

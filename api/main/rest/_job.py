@@ -1,4 +1,4 @@
-""" Utilities for job endpoints. """
+"""Utilities for job endpoints."""
 
 import logging
 

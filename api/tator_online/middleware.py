@@ -25,7 +25,7 @@ class KeycloakMiddleware(KeycloakAuthenticationMixin):
                 return JsonResponse(
                     {
                         "error": "User disabled",
-                        "detail": "User has been disabled by an administrator."
+                        "detail": "User has been disabled by an administrator.",
                     },
                     status=401,
                 )
@@ -33,7 +33,7 @@ class KeycloakMiddleware(KeycloakAuthenticationMixin):
                 return JsonResponse(
                     {
                         "error": "Authentication failed",
-                        "detail": "Please provide or refresh your token."
+                        "detail": "Please provide or refresh your token.",
                     },
                     status=401,
                 )

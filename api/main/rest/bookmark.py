@@ -1,4 +1,4 @@
-""" Bookmark REST endpoints """
+"""Bookmark REST endpoints"""
 
 # pylint: disable=too-many-ancestors
 
