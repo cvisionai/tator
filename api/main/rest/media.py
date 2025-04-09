@@ -517,8 +517,8 @@ class MediaListAPI(StreamingListView):
                     response_data["media_files"] = ujson.loads(response_data["media_files"])
                 no_cache = params.get("no_cache", False)
                 _presign(self.request.user.pk, presigned, [response_data], no_cache=no_cache)
-            yield response_data
 
+            yield ujson.dumps(response_data)
     def get_model(self):
         return Media
 
