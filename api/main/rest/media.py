@@ -512,14 +512,11 @@ class MediaListAPI(StreamingListView):
             response_data = record
             # Add media_files and attributes back in parsed with ujson
             e=time.time()
-            #logger.info(f"Benchmark for pre-signed Time to generate record: {e-s} {qs.count()}")
             if presigned is not None:
-                for record in response_data:
-                    logger.info(record)
-                    if record["media_files"] is not None:
-                        record["media_files"] = ujson.loads(record["media_files"])
+                if response_data["media_files"] is not None:
+                    response_data["media_files"] = ujson.loads(response_data["media_files"])
                 no_cache = params.get("no_cache", False)
-                _presign(self.request.user.pk, presigned, response_data, no_cache=no_cache)
+                _presign(self.request.user.pk, presigned, [response_data], no_cache=no_cache)
             yield response_data
 
     def get_model(self):
