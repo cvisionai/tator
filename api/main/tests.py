@@ -2175,7 +2175,7 @@ class AttributeTestMixin:
                 },
                 format="json",
             )
-            print(f"Response is: {response}")
+            print(f"Response is: {response.data}")
             assertResponse(self, response, status.HTTP_200_OK)
             got = response.data
             '''
