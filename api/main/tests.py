@@ -2155,7 +2155,6 @@ class AttributeTestMixin:
             )
             assertResponse(self, response, status.HTTP_200_OK)
             got = response.data
-            print(f"old way response is: {got}")
             self.assertEqual(
                 len(response.data),
                 sum(
@@ -2175,7 +2174,6 @@ class AttributeTestMixin:
                 },
                 format="json",
             )
-            print(f"Response is: {response.data}")
             assertResponse(self, response, status.HTTP_200_OK)
             got = response.data
             self.assertEqual(
