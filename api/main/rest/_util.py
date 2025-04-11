@@ -31,7 +31,7 @@ class Array(Subquery):
     template = "ARRAY(%(subquery)s)"
 
 import json
-def custom_serialize(obj, force_object_keys=None):
+def custom_serialize(obj, force_object_keys=None, is_first=False):
     if force_object_keys is None:
         force_object_keys = set()
 
@@ -40,7 +40,8 @@ def custom_serialize(obj, force_object_keys=None):
             items = []
             for k, v in value.items():
                 items.append(f'"{k}":{serialize(v, k)}')
-            return "{" + ",".join(items) + "}"
+            start_token = "{" if is_first else ",{"
+            return start_token + ",".join(items) + "}"
         elif isinstance(value, list):
             items = [serialize(v) for v in value]
             return "[" + ",".join(items) + "]"
