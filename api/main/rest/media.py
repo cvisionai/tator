@@ -507,7 +507,8 @@ class MediaListAPI(StreamingListView):
         # Handle JSON fields specially
         qs = optimize_qs(Media, qs, fields)
         s=time.time()
-
+        first_one=True
+        yield "["
         for record in qs.iterator():
             response_data = record
             if response_data["media_files"]:
@@ -520,7 +521,12 @@ class MediaListAPI(StreamingListView):
                 no_cache = params.get("no_cache", False)
                 _presign(self.request.user.pk, presigned, [response_data], no_cache=no_cache)
 
-            yield ujson.dumps(response_data)
+            if first_one:
+                first_one=False
+                yield ujson.dumps(response_data)
+            else:
+                yield "," + ujson.dumps(response_data)
+        yield "]"
     def get_model(self):
         return Media
 
