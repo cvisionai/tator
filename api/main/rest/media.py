@@ -54,6 +54,7 @@ from ._util import (
     check_required_fields,
     url_to_key,
     optimize_qs,
+    custom_serialize
 )
 
 from ._base_views import StreamingListView, BaseDetailView
@@ -518,7 +519,7 @@ class MediaListAPI(StreamingListView):
                 no_cache = params.get("no_cache", False)
                 _presign(self.request.user.pk, presigned, [response_data], no_cache=no_cache)
 
-            yield ujson.dumps(response_data)
+            yield custom_serialize(response_data,["media_files", "attributes"])
     def get_model(self):
         return Media
 
