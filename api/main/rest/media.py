@@ -509,6 +509,8 @@ class MediaListAPI(StreamingListView):
         qs = optimize_qs(Media, qs, fields)
         s=time.time()
 
+        is_first=True
+        yield '['
         for record in qs.iterator():
             response_data = record
             # Add media_files and attributes back in parsed with ujson
@@ -519,7 +521,9 @@ class MediaListAPI(StreamingListView):
                 no_cache = params.get("no_cache", False)
                 _presign(self.request.user.pk, presigned, [response_data], no_cache=no_cache)
 
-            yield custom_serialize(response_data,["media_files", "attributes"])
+            yield custom_serialize(response_data,force_object_keys=["media_files", "attributes"],is_first=is_first)
+            is_first=False
+        yield ']'
     def get_model(self):
         return Media
 
