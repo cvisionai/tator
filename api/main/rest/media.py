@@ -53,8 +53,7 @@ from ._util import (
     computeRequiredFields,
     check_required_fields,
     url_to_key,
-    optimize_qs,
-    custom_serialize
+    optimize_qs
 )
 
 from ._base_views import StreamingListView, BaseDetailView
@@ -509,21 +508,19 @@ class MediaListAPI(StreamingListView):
         qs = optimize_qs(Media, qs, fields)
         s=time.time()
 
-        is_first=True
-        yield '['
         for record in qs.iterator():
             response_data = record
+            if response_data["media_files"]:
+                response_data["media_files"] = ujson.loads(response_data["media_files"])
+            if response_data["attributes"]:
+                response_data["attributes"] = ujson.loads(response_data["attributes"])
             # Add media_files and attributes back in parsed with ujson
             e=time.time()
             if presigned is not None:
-                if response_data["media_files"] is not None:
-                    response_data["media_files"] = ujson.loads(response_data["media_files"])
                 no_cache = params.get("no_cache", False)
                 _presign(self.request.user.pk, presigned, [response_data], no_cache=no_cache)
 
-            yield custom_serialize(response_data,force_object_keys=["media_files", "attributes"],is_first=is_first)
-            is_first=False
-        yield ']'
+            yield ujson.dumps(response_data)
     def get_model(self):
         return Media
 
