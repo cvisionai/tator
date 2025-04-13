@@ -373,9 +373,28 @@ export class MediaSection extends TatorElement {
 
     console.log(`Load media... sectionQuery: ${sectionQuery}`);
     var response = await fetchCredentials(
-      `/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`
+      `/rest/Medias/${this._project}?${sectionQuery.toString()}`
     );
     var mediaList = await response.json();
+    const thumbnailPaths = mediaList.map((media) => media?.media_files?.thumbnail?.[0]?.path);
+    const thumbnailGifPaths = mediaList.map((media) => media?.media_files?.thumbnail_gif?.[0]?.path);
+    response = await fetchCredentials(`/rest/DownloadInfo/${this._project}`, {
+      method: "POST",
+      body: JSON.stringify({keys: thumbnailPaths.concat(thumbnailGifPaths)}),
+    });
+    const signedThumbnails = await response.json();
+    const signedLookup = signedThumbnails.reduce((acc, {key, url}) => {
+      acc[key] = url;
+      return acc;
+    }, {});
+    for (let media of mediaList) {
+      if (media?.media_files?.thumbnail?.[0]?.path) {
+        media.media_files.thumbnail[0].path = signedLookup[media.media_files.thumbnail[0].path];
+      }
+      if (media?.media_files?.thumbnail_gif?.[0]?.path) {
+        media.media_files.thumbnail_gif[0].path = signedLookup[media.media_files.thumbnail_gif[0].path];
+      }
+    }
 
     this._files.numMedia = this._paginator_top._numFiles;
     this._files.startMediaIndex = this._start;
