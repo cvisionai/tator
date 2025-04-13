@@ -376,8 +376,8 @@ export class MediaSection extends TatorElement {
       `/rest/Medias/${this._project}?${sectionQuery.toString()}`
     );
     var mediaList = await response.json();
-    const thumbnailPaths = mediaList.map((media) => media?.media_files?.thumbnail?.[0]?.path);
-    const thumbnailGifPaths = mediaList.map((media) => media?.media_files?.thumbnail_gif?.[0]?.path);
+    const thumbnailPaths = mediaList.map((media) => media?.media_files?.thumbnail?.[0]?.path).filter(item => item != null);
+    const thumbnailGifPaths = mediaList.map((media) => media?.media_files?.thumbnail_gif?.[0]?.path).filter(item => item != null);
     response = await fetchCredentials(`/rest/DownloadInfo/${this._project}`, {
       method: "POST",
       body: JSON.stringify({keys: thumbnailPaths.concat(thumbnailGifPaths)}),
