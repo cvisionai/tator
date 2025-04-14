@@ -113,9 +113,30 @@ class MediaListSchema(AutoSchema):
                     "description": "If `True`, and `presigned` is specified, a new presigned url will be generated.",
                     "schema": {"type": "boolean"},
                 },
+                {
+                    "name": "presign_only",
+                    "in": "query",
+                    "required": False,
+                    "description": "List of file roles to presign. If not given, all file roles will be presigned.",
+                    "schema": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "thumbnail",
+                                "thumbnail_gif",
+                                "streaming",
+                                "archival",
+                                "audio",
+                                "image",
+                                "attachment",
+                            ],
+                        },
+                    },
+                    "style": "form",
+                    "explode": False,
+                },
             ]
-        if method in ["PATCH", "DELETE"]:
-            params += safety_parameter_schema
         return params
 
     def get_request_body(self, path, method):
