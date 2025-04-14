@@ -519,7 +519,8 @@ class MediaListAPI(StreamingListView):
             e=time.time()
             if presigned is not None:
                 no_cache = params.get("no_cache", False)
-                _presign(self.request.user.pk, presigned, [response_data], no_cache=no_cache)
+                presign_only = params.get("presign_only", None)
+                _presign(self.request.user.pk, presigned, [response_data], fields=presign_only, no_cache=no_cache)
 
             if first_one:
                 first_one=False
