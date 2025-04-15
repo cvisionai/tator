@@ -34,6 +34,8 @@ from .util import update_queryset_archive_state, memberships_to_rowp, affiliatio
 from ._permission_util import PermissionMask, shift_permission
 
 from django.db import transaction
+from django.http import StreamingHttpResponse
+import gzip
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,45 @@ TEST_IMAGE = (
     "https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png"
 )
 
+def decompress_gzip(compressed_data):
+    """
+    Decompress gzipped data.
+    Args:
+        compressed_data (bytes): The gzipped data.
+    Returns:
+        bytes: The decompressed data.
+    """
+    with gzip.GzipFile(fileobj=io.BytesIO(compressed_data), mode='rb') as f:
+        return f.read()
+
+def collect_streaming_content(response: StreamingHttpResponse, decode_json=True):
+    """
+    Utility function to collect content from a StreamingHttpResponse.
+
+    Args:
+        response (StreamingHttpResponse): The streaming response to collect data from.
+        decode_json (bool): Whether to decode the content as JSON. Defaults to False.
+
+    Returns:
+        str or dict: The collected content, either as a string or a parsed JSON object.
+    """
+    if not isinstance(response, StreamingHttpResponse):
+        raise ValueError("The response must be a StreamingHttpResponse.")
+
+    content_encoding = response.get('Content-Encoding', '').lower()
+
+    # Collect all chunks of the streamed content
+    response_data = b""
+    for chunk in response.streaming_content:
+        response_data += chunk
+
+    if content_encoding == 'gzip':
+        # If the content is gzipped, decompress it
+        response_data = decompress_gzip(response_data)
+    # If it's JSON and we need to decode it, parse the JSON
+    response.data = json.loads(response_data.decode())
+
+    return response
 
 class TatorTransactionTest(APITransactionTestCase):
     """Handle cases when test runner flushes DB and indices are still being made."""
@@ -1810,11 +1851,13 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::true&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), sum(test_vals))
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(test_vals) - sum(test_vals))
         response = self.client.get(
