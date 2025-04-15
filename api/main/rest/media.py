@@ -511,10 +511,6 @@ class MediaListAPI(StreamingListView):
         yield "["
         for record in qs.iterator():
             response_data = record
-            if response_data["media_files"]:
-                response_data["media_files"] = ujson.loads(response_data["media_files"])
-            if response_data["attributes"]:
-                response_data["attributes"] = ujson.loads(response_data["attributes"])
             # Add media_files and attributes back in parsed with ujson
             e=time.time()
             if presigned is not None:

@@ -36,7 +36,7 @@ def optimize_qs(model, qs, fields):
     for field in fields:
         try:
             field_type = type(model._meta.get_field(field))
-            if field_type in [DateTimeField, JSONField, UUIDField]:
+            if field_type in [DateTimeField, UUIDField]:
                 new_fields.remove(field)
                 annotations[field] = Cast(field, TextField())
         except FieldDoesNotExist:
