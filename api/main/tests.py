@@ -66,7 +66,8 @@ def collect_streaming_content(response: StreamingHttpResponse, decode_json=True)
         str or dict: The collected content, either as a string or a parsed JSON object.
     """
     if not isinstance(response, StreamingHttpResponse):
-        raise ValueError("The response must be a StreamingHttpResponse.")
+        # Do nothing for non-streaming responses
+        return response
 
     content_encoding = response.get('Content-Encoding', '').lower()
 
