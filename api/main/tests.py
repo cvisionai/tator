@@ -77,11 +77,15 @@ def collect_streaming_content(response: StreamingHttpResponse, decode_json=True)
     for chunk in response.streaming_content:
         response_data += chunk
 
-    if content_encoding == "gzip":
-        # If the content is gzipped, decompress it
-        response_data = decompress_gzip(response_data)
-    # If it's JSON and we need to decode it, parse the JSON
-    response.data = json.loads(response_data.decode())
+    try:
+        if content_encoding == "gzip":
+            # If the content is gzipped, decompress it
+            response_data = decompress_gzip(response_data)
+        # If it's JSON and we need to decode it, parse the JSON
+        response.data = json.loads(response_data.decode())
+    except json.JSONDecodeError:
+        print("Failed to decode JSON from response data.")
+        print(f"SAMPLE={response_data[:100]}...")  # Print first 100 bytes for debugging
 
     return response
 
