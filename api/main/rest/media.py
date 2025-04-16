@@ -516,35 +516,53 @@ class MediaListAPI(StreamingListView):
         s = time.time()
         first_one = True
 
-        requested_format = self.request.GET.get("format", "json")
+        requested_format = self.request.accepted_renderer.format
+        if requested_format in ["json", "jsonl"]:
+            if requested_format == "json":
+                yield "["
+            for record in qs.iterator():
+                response_data = record
+                # Add media_files and attributes back in parsed with ujson
+                e = time.time()
+                if presigned is not None:
+                    no_cache = params.get("no_cache", False)
+                    presign_only = params.get("presign_only", None)
+                    _presign(
+                        self.request.user.pk,
+                        presigned,
+                        [response_data],
+                        fields=presign_only,
+                        no_cache=no_cache,
+                    )
 
-        if requested_format == "json":
-            yield "["
-        for record in qs.iterator():
-            response_data = record
-            # Add media_files and attributes back in parsed with ujson
-            e = time.time()
-            if presigned is not None:
-                no_cache = params.get("no_cache", False)
-                presign_only = params.get("presign_only", None)
-                _presign(
-                    self.request.user.pk,
-                    presigned,
-                    [response_data],
-                    fields=presign_only,
-                    no_cache=no_cache,
-                )
+                if requested_format == "jsonl":
+                    yield ujson.dumps(response_data) + '\n'
+                elif first_one:
+                    first_one = False
+                    yield ujson.dumps(response_data)
+                else:
+                    yield "," + ujson.dumps(response_data)
 
-            if requested_format == "jsonl":
-                yield ujson.dumps(response_data) + '\n'
-            elif first_one:
-                first_one = False
-                yield ujson.dumps(response_data)
-            else:
-                yield "," + ujson.dumps(response_data)
+            if requested_format == "json":
+                yield "]"
+        elif requested_format == 'csv':
+            attr_types = qs.values("type__attribute_types")
+            attr_name_set = set()
+            for x in attr_types:
+                type_defs = x['type__attribute_types']
+                if type_defs:
+                    attr_name_set.update([attr['name'] for attr in type_defs])
+            first_one = True
+            for element in qs.iterator():
+                for k in attr_name_set:
+                    element[k] = str(element['attributes'].get(k,""))
+                del element["attributes"]
+                if first_one:
+                    first_one = False
+                    yield ",".join(element.keys()) + "\n"
 
-        if requested_format == "json":
-            yield "]"
+                yield ",".join([str(v) for v in element.values()]) + "\n"
+
 
     def get_model(self):
         return Media
