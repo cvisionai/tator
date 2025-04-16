@@ -484,22 +484,23 @@ def augment_permission(user, qs, exists=None):
     elif model in [Localization, State]:
         # For these models, we can use the section+version+project to determine permissions
         #
+        # Calculate a dictionary for permissions by section and version in this set
+
+        effected_versions = qs.values("version__pk")
+
         if model == Localization:
             qs = qs.annotate(section=F("media__primary_section__pk"))
+            effected_sections = qs.values("media__primary_section__pk").distinct()
         elif model == State:
             sb = Subquery(
                 Media.objects.filter(state__pk=OuterRef("pk")).values("primary_section__pk")[:1]
             )
             qs = qs.annotate(section=sb)
-
-        # Calculate a dictionary for permissions by section and version in this set
-        effected_media = qs.values("media__pk")
-        effected_sections = (
+            effected_sections = (
             Section.objects.filter(project=project, pk__in=qs.values("section"))
             .values("pk")
             .distinct()
         )
-        effected_versions = qs.values("version__pk")
 
         # Calculate augmented permission which accounts for usage of default
         # permission at either the section or version level (e.g. no RP)
