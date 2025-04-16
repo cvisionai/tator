@@ -13,7 +13,6 @@ import requests
 import io
 import base64
 import unittest
-import ujson
 
 from main.models import *
 
@@ -527,8 +526,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-        for i in range(len(resp.data)):
-            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
+        resp = collect_streaming_content(resp)
         values = [x["attributes"].get("Float Test") for x in resp.data]
 
         # Rename float test to something else the back again
@@ -545,8 +543,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-        for i in range(len(resp.data)):
-            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
+        resp = collect_streaming_content(resp)
         new_values = [x["attributes"].get("Float Test Renamed") for x in resp.data]
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
@@ -569,8 +566,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-        for i in range(len(resp.data)):
-            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
+        resp = collect_streaming_content(resp)
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
@@ -594,8 +590,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-        for i in range(len(resp.data)):
-            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
+        resp = collect_streaming_content(resp)
 
         # Check 2; attribute has no default set but it is registered
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
@@ -619,8 +614,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-        for i in range(len(resp.data)):
-            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
+        resp = collect_streaming_content(resp)
         # Check 3; attributes are not effected by renaming a non-existant attribute
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
@@ -642,8 +636,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-        for i in range(len(resp.data)):
-            resp.data[i]["attributes"] = ujson.loads(resp.data[i]["attributes"])
+        resp = collect_streaming_content(resp)
         # Check 3; attributes are not effected by renaming a non-existant attribute
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
@@ -690,10 +683,12 @@ class ElementalIDChangeMixin:
         response = self.client.get(
             list_endpoint, {"elemental_id": elemental_id, "show_all_marks": 1}, format="json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(self.entities))
 
         response = self.client.get(list_endpoint, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         existing_count = len(response.data)
         new_elemental_id = uuid4()
@@ -705,11 +700,12 @@ class ElementalIDChangeMixin:
         response = self.client.get(
             list_endpoint, {"elemental_id": new_elemental_id, "show_all_marks": 1}, format="json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), existing_count)
 
         for obj in response.data:
-            self.assertEqual(obj["elemental_id"], new_elemental_id)
+            self.assertEqual(obj["elemental_id"], str(new_elemental_id))
 
 
 class EntityAuthorChangeMixin:
@@ -1478,6 +1474,7 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
         this_ids = [e.pk for e in self.entities]
         rest_ids = [e["id"] for e in response.data]
@@ -1510,6 +1507,7 @@ class AttributeTestMixin:
             f"&start=0"
             f"&stop=2"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), max(0, min(sum(test_vals), 2)))
         response1 = self.client.get(
@@ -1520,6 +1518,7 @@ class AttributeTestMixin:
             f"&start=1"
             f"&stop=4"
         )
+        response1 = collect_streaming_content(response1)
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response1.data), max(0, min(sum(test_vals) - 1, 3)))
         if len(response.data) >= 2 and len(response1.data) >= 1:
@@ -1531,6 +1530,7 @@ class AttributeTestMixin:
             f"?format=json"
             f"&type={self.entity_type.pk}"
         )
+        response = collect_streaming_content(response)
         last_id = response.data[0]["id"]
         for r in response.data[1:]:
             assert r["id"] > last_id
@@ -1543,6 +1543,7 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}"
             f"&sort_by=-$id"
         )
+        response = collect_streaming_content(response)
         last_id = response.data[0]["id"]
         for r in response.data[1:]:
             assert r["id"] < last_id
@@ -1555,9 +1556,8 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}"
             f"&sort_by=Float Test"
         )
+        response = collect_streaming_content(response)
 
-        for i,_ in enumerate(response.data):
-            response.data[i]['attributes'] = ujson.loads(response.data[i]['attributes'])
         last_val = response.data[0]["attributes"]["Float Test"]
         for r in response.data[1:]:
             assert r["attributes"]["Float Test"] >= last_val
@@ -1570,9 +1570,7 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}"
             f"&sort_by=-Float Test"
         )
-
-        for i,_ in enumerate(response.data):
-            response.data[i]['attributes'] = ujson.loads(response.data[i]['attributes'])
+        response = collect_streaming_content(response)
         last_val = response.data[0]["attributes"]["Float Test"]
         for r in response.data[1:]:
             assert r["attributes"]["Float Test"] <= last_val
@@ -2704,6 +2702,7 @@ class VideoTestCase(
         wait_for_indices(box_type)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
+        response = collect_streaming_content(response)
         assert response.data[0].get("incident", None) == None
 
         # Make a whole bunch of boxes to make sure indices get utilized
@@ -2836,8 +2835,6 @@ class VideoTestCase(
         response = self.client.put(
             f"/rest/Localizations/{self.project.pk}", {"frame_state_ids": [state.id]}, format="json"
         )
-        for i in range(len(response.data)):
-            response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2853,8 +2850,6 @@ class VideoTestCase(
             },
             format="json",
         )
-        for i in range(len(response.data)):
-            response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2891,8 +2886,6 @@ class VideoTestCase(
             response = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?attribute={key}::{value}", format=json
             )
-            for i in range(len(response.data)):
-                response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
             self.assertEqual(len(response.data), 4)
             encoded_search = base64.b64encode(
                 json.dumps({"attribute": key, "operation": "eq", "value": value}).encode()
@@ -2901,8 +2894,7 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
-            for i in range(len(response.data)):
-                response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
+            response = collect_streaming_content(response)
             matches = len(response.data)
             self.assertEqual(matches, 2)
 
@@ -2919,9 +2911,8 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?start=0&stop=10&encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
-            for i in range(len(response.data)):
-                response.data[i]["attributes"] = ujson.loads(response.data[i]["attributes"])
             matches = len(response.data)
             self.assertEqual(matches, 2)
 
@@ -4105,6 +4096,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         self.assertEqual(len(response.data["id"]), 2)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.get(
@@ -4127,6 +4119,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Medias/{self.project.pk}?attribute={attr_search}", format="json"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         not_deleted_medias = Media.objects.filter(
@@ -6808,6 +6801,7 @@ class SectionTestCase(TatorTransactionTest):
             sect_ids_str = ",".join(sect_id_strs[x:])
             url = f"/rest/Medias/{self.project.pk}?multi_section={sect_ids_str}"
             response = self.client.get(url, format="json")
+            response = collect_streaming_content(response)
             self.assertEqual(len(response.data), 5 - x)
 
         # Test a blob attribute
@@ -7390,6 +7384,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Before we do anything, verify we get a media count of 0
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 0)
 
@@ -7434,6 +7429,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Verify we only see one media thus far
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
 
@@ -7494,6 +7490,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Fetch all the media for the project as kirk
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 3)
 
@@ -7501,6 +7498,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # (Both the warp core and warp core alternate)
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
 
@@ -7628,6 +7626,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Now switch to the commandant and verify there is no permission
             self.client.force_authenticate(user=self.commandant)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
 
             # kirk delete the row protection of engineering
@@ -7638,4 +7637,5 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Now switch to the redshirt and verify they can't see the engineering section
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
