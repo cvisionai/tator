@@ -2173,13 +2173,11 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Datetime Test::asdf&"
             f"type={self.entity_type.pk}&format=json"
         )
-        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Datetime Test::asdf&"
             f"type={self.entity_type.pk}&format=json"
         )
-        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Datetime Test", None)
@@ -2278,6 +2276,7 @@ class AttributeTestMixin:
                 format="json",
             )
             assertResponse(self, response, status.HTTP_200_OK)
+            response = collect_streaming_content(response)
             got = response.data
             self.assertEqual(
                 len(response.data),
