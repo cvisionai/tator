@@ -1641,12 +1641,14 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_null=Bool Test::true"
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         # Nullify all the Bool Tests
@@ -1673,6 +1675,7 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
 
         response = self.client.get(
@@ -1680,12 +1683,14 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_null=asdf::false"
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
     def generic_attr_helper(self, idx, name, test_val):
@@ -1915,12 +1920,14 @@ class AttributeTestMixin:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute=Int Test::{test_val}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([t == test_val for t in test_vals]))
         for lbound, ubound in [(-1000, 1000), (-500, 500), (-500, 0), (0, 500)]:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Int Test::{lbound}&attribute_lt=Int Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals])
@@ -1928,6 +1935,7 @@ class AttributeTestMixin:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Int Test::{lbound}&attribute_lte=Int Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals])
@@ -1935,10 +1943,12 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Int Test::1&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Int Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Int Test", 42)
@@ -1974,11 +1984,13 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Float Test::{test_val}&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         for lbound, ubound in [(-1000.0, 1000.0), (-500.0, 500.0), (-500.0, 0.0), (0.0, 500.0)]:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Float Test::{lbound}&attribute_lt=Float Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals])
@@ -1986,6 +1998,7 @@ class AttributeTestMixin:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Float Test::{lbound}&attribute_lte=Float Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals])
@@ -1994,10 +2007,12 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Float Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Float Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Float Test", 42.0)
@@ -2020,24 +2035,29 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lt=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lte=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for _ in range(10):
             subs = "".join(random.choices(string.ascii_lowercase, k=2))
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Enum Test::{subs}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([subs.lower() in t.lower() for t in test_vals])
@@ -2045,6 +2065,7 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Enum Test", "enum_val1")
@@ -2060,24 +2081,29 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lt=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lte=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for _ in range(10):
             subs = "".join(random.choices(string.ascii_lowercase, k=2))
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=String Test::{subs}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([subs.lower() in t.lower() for t in test_vals])
@@ -2085,6 +2111,7 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("String Test", "asdf_default")
@@ -2110,6 +2137,7 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Datetime Test::{to_string(test_val)}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         delta_dt = datetime.timedelta(days=365)
         for lbound, ubound in [
@@ -2125,6 +2153,7 @@ class AttributeTestMixin:
                 f"attribute_lt=Datetime Test::{ubound_iso}&type={self.entity_type.pk}&"
                 f"format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals])
@@ -2134,6 +2163,7 @@ class AttributeTestMixin:
                 f"attribute_lte=Datetime Test::{ubound_iso}&type={self.entity_type.pk}&"
                 f"format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals])
@@ -2142,11 +2172,13 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Datetime Test::asdf&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Datetime Test::asdf&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Datetime Test", None)
@@ -2180,6 +2212,7 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lt=Geoposition Test::10::{lat}::{lon}&"
@@ -2190,21 +2223,25 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lte=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         test_lat, test_lon = (30.26759, -97.74299)  # Austin, TX
         for dist in [1.0, 100.0, 1000.0, 5000.0, 10000.0, 43000.0]:
@@ -2213,6 +2250,7 @@ class AttributeTestMixin:
                 f"{dist}::{test_lat}::{test_lon}&"
                 f"type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             got = response.data
             self.assertEqual(
