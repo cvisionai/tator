@@ -6754,12 +6754,14 @@ class SectionTestCase(TatorTransactionTest):
             media_resp = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?media_id={media.pk}"
             )
+            media_resp = collect_streaming_content(media_resp)
             self.assertEqual(len(media_resp.data), 10)
 
         assert len(sections) == 5
         for section in sections:
             url = f"/rest/Localizations/{self.project.pk}?section={section}"
             response = self.client.get(url, format="json")
+            response = collect_streaming_content(response)
             self.assertEqual(len(response.data), 10)
 
     def test_multi_section_lookup(self):
