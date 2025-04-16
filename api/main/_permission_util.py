@@ -145,7 +145,7 @@ def augment_permission(user, qs, exists=None):
     if exists:
         model = qs.model
 
-        if 'effective_permission' in qs.query.annotations:
+        if "effective_permission" in qs.query.annotations:
             return qs
         # handle shift due to underlying model
         # children are shifted by 8 bits, grandchildren by 16, etc.
@@ -456,7 +456,7 @@ def augment_permission(user, qs, exists=None):
     elif model in [Media]:
         # For these models, we can use the section+project to determine permissions
         #
-        section_qs = Section.objects.filter(pk__in=qs.values('primary_section'))
+        section_qs = Section.objects.filter(pk__in=qs.values("primary_section"))
         section_qs = augment_permission(user, section_qs)
 
         section_perm_dict = {

@@ -30,8 +30,9 @@ class Array(Subquery):
 
     template = "ARRAY(%(subquery)s)"
 
+
 def optimize_qs(model, qs, fields):
-    new_fields=[*fields]
+    new_fields = [*fields]
     annotations = {}
     for field in fields:
         try:
@@ -43,6 +44,7 @@ def optimize_qs(model, qs, fields):
             pass
 
     return qs.values(*new_fields).annotate(**annotations)
+
 
 def compute_user(project, user, user_elemental_id):
     """Given a project and a user, if a user_elemental_id is supplied return the appropriate user to specify as the author of an object."""

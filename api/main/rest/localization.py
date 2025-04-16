@@ -35,7 +35,7 @@ from ._util import (
     construct_elemental_id_from_spec,
     construct_parent_from_spec,
     compute_user,
-    optimize_qs
+    optimize_qs,
 )
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 

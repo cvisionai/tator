@@ -32,6 +32,7 @@ import subprocess
 import select
 import time
 
+
 def process_exception(exc):
     """TODO: add documentation for this"""
     logger.error(f"Handling Exception! \n {type(exc)}\nTrace:\n{traceback.format_exc()}")
@@ -158,6 +159,7 @@ class GetMixin:
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
+
 class StreamingGetMixIn:
     def get(self, request, format=None, **kwargs):
         media_list_generator = self._get(self.params)
@@ -170,13 +172,21 @@ class StreamingGetMixIn:
         def stream():
             # Create the pigz subprocess
             pigz = subprocess.Popen(
-                ['pigz', '-c', '-p', '4', '-b', '512', '-f'],  # Added -f to force compression output immediately
+                [
+                    "pigz",
+                    "-c",
+                    "-p",
+                    "4",
+                    "-b",
+                    "512",
+                    "-f",
+                ],  # Added -f to force compression output immediately
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,  # Capture stderr for debugging
-                bufsize=0  # unbuffered
+                bufsize=0,  # unbuffered
             )
-            start=time.time()
+            start = time.time()
 
             try:
                 # Use a buffer to accumulate data and send it to pigz's stdin
@@ -184,7 +194,7 @@ class StreamingGetMixIn:
 
                 # Write data to pigz's stdin and read from stdout
                 for line in json_generator:
-                    encoded = line.encode('utf-8')
+                    encoded = line.encode("utf-8")
                     buffer.extend(encoded)
 
                     if len(buffer) >= batch_size:
@@ -214,7 +224,6 @@ class StreamingGetMixIn:
 
                 # Close stdin and finalize reading output
 
-
                 # Only read the final output if it's available
                 while True:
                     # Use select to add a timeout on reading from stdout
@@ -226,14 +235,18 @@ class StreamingGetMixIn:
                         else:
                             break
                     else:
-                        logger.info(f"Timeout after {read_timeout} seconds waiting for data.")  # Debug log
+                        logger.info(
+                            f"Timeout after {read_timeout} seconds waiting for data."
+                        )  # Debug log
                         break
 
                 # Ensure the process terminates and check for any errors
                 pigz.wait()
                 if pigz.returncode != 0:
-                    err_msg = pigz.stderr.read().decode('utf-8')
-                    logger.error(f"Error from pigz: Return Code = {pigz.returncode} {err_msg}")  # Debug log
+                    err_msg = pigz.stderr.read().decode("utf-8")
+                    logger.error(
+                        f"Error from pigz: Return Code = {pigz.returncode} {err_msg}"
+                    )  # Debug log
 
             except Exception as e:
                 logger.error(f"Error in pigz streaming: {str(e)}")
@@ -241,14 +254,16 @@ class StreamingGetMixIn:
             finally:
                 pigz.terminate()
             logger.info(f"PIGZ time = {time.time()-start}")
+
         return stream()
+
 
 class StreamingPutMixIn:
     def put(self, request, format=None, **kwargs):
-        resp = StreamingHttpResponse(
-            self._put(self.params), content_type="application/json")
+        resp = StreamingHttpResponse(self._put(self.params), content_type="application/json")
         resp["Content-Type"] = "application/json"
         return resp
+
 
 class PostMixin:
     # pylint: disable=redefined-builtin,unused-argument
@@ -299,7 +314,10 @@ class BaseListView(TatorAPIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, P
     def handle_exception(self, exc):
         return process_exception(exc)
 
-class StreamingListView(TatorAPIView, StreamingGetMixIn, PostMixin, PatchMixin, DeleteMixin, StreamingPutMixIn):
+
+class StreamingListView(
+    TatorAPIView, StreamingGetMixIn, PostMixin, PatchMixin, DeleteMixin, StreamingPutMixIn
+):
     """Base class for list views."""
 
     http_method_names = ["get", "post", "patch", "delete", "put"]

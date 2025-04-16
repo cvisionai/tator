@@ -53,7 +53,7 @@ from ._util import (
     computeRequiredFields,
     check_required_fields,
     url_to_key,
-    optimize_qs
+    optimize_qs,
 )
 
 from ._base_views import StreamingListView, BaseDetailView
@@ -70,6 +70,7 @@ logger = logging.getLogger(__name__)
 MEDIA_PROPERTIES = list(media_schema["properties"].keys())
 
 from .._permission_util import augment_permission, shift_permission
+
 
 def _sync_section_inputs(params, project):
     if "primary_section" in params:
@@ -178,12 +179,14 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
                 # If the path is a bona fide URL, don't attempt to presign it
                 if urlparse(media_def["path"]).scheme != "":
                     continue
-                if presigned.get(media_def['path'], None):
+                if presigned.get(media_def["path"], None):
                     media_def["path"] = presigned[media_def["path"]]
                 else:
                     # Presign the path.
                     to_cache_paths.append(media_def["path"])
-                    media_def["path"] = store_lookup[media_def["path"]].get_download_url(media_def["path"], expiration=expiration)
+                    media_def["path"] = store_lookup[media_def["path"]].get_download_url(
+                        media_def["path"], expiration=expiration
+                    )
                     to_cache_urls.append(media_def["path"])
 
                 if field == "streaming":
@@ -192,11 +195,14 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
                             media_def["segment_info"] = presigned[media_def["segment_info"]]
                         else:
                             to_cache_paths.append(media_def["segment_info"])
-                            media_def["segment_info"] = store_lookup[media_def["segment_info"]].get_download_url(media_def["segment_info"], expiration=expiration)
+                            media_def["segment_info"] = store_lookup[
+                                media_def["segment_info"]
+                            ].get_download_url(media_def["segment_info"], expiration=expiration)
                             to_cache_urls.append(media_def["segment_info"])
     # Only cache if we are using it
     if no_cache == False:
         cache.set_presigned_multi(user_id, to_cache_paths, to_cache_urls, ttl)
+
 
 def _save_image(url, media_obj, project_obj, role):
     """
@@ -506,24 +512,31 @@ class MediaListAPI(StreamingListView):
 
         # Handle JSON fields specially
         qs = optimize_qs(Media, qs, fields)
-        s=time.time()
-        first_one=True
+        s = time.time()
+        first_one = True
         yield "["
         for record in qs.iterator():
             response_data = record
             # Add media_files and attributes back in parsed with ujson
-            e=time.time()
+            e = time.time()
             if presigned is not None:
                 no_cache = params.get("no_cache", False)
                 presign_only = params.get("presign_only", None)
-                _presign(self.request.user.pk, presigned, [response_data], fields=presign_only, no_cache=no_cache)
+                _presign(
+                    self.request.user.pk,
+                    presigned,
+                    [response_data],
+                    fields=presign_only,
+                    no_cache=no_cache,
+                )
 
             if first_one:
-                first_one=False
+                first_one = False
                 yield ujson.dumps(response_data)
             else:
                 yield "," + ujson.dumps(response_data)
         yield "]"
+
     def get_model(self):
         return Media
 

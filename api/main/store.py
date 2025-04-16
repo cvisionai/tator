@@ -998,10 +998,14 @@ def get_storage_lookup(resources):
     # This is to avoid a circular import
     Bucket = resources.model._meta.get_field("bucket").related_model
     bucket_lookup = {
-        resource['bucket']: get_tator_store(Bucket.objects.get(pk=resource['bucket'])) if resource['bucket'] else get_tator_store()
+        resource["bucket"]: get_tator_store(Bucket.objects.get(pk=resource["bucket"]))
+        if resource["bucket"]
+        else get_tator_store()
         for resource in resource_buckets
     }
     return {
-        resource['path']: bucket_lookup[resource['bucket']] if resource['bucket'] else bucket_lookup[None]
+        resource["path"]: bucket_lookup[resource["bucket"]]
+        if resource["bucket"]
+        else bucket_lookup[None]
         for resource in resource_objs
     }

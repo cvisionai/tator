@@ -42,6 +42,7 @@ TEST_IMAGE = (
     "https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png"
 )
 
+
 def decompress_gzip(compressed_data):
     """
     Decompress gzipped data.
@@ -50,8 +51,9 @@ def decompress_gzip(compressed_data):
     Returns:
         bytes: The decompressed data.
     """
-    with gzip.GzipFile(fileobj=io.BytesIO(compressed_data), mode='rb') as f:
+    with gzip.GzipFile(fileobj=io.BytesIO(compressed_data), mode="rb") as f:
         return f.read()
+
 
 def collect_streaming_content(response: StreamingHttpResponse, decode_json=True):
     """
@@ -68,20 +70,21 @@ def collect_streaming_content(response: StreamingHttpResponse, decode_json=True)
         # Do nothing for non-streaming responses
         return response
 
-    content_encoding = response.get('Content-Encoding', '').lower()
+    content_encoding = response.get("Content-Encoding", "").lower()
 
     # Collect all chunks of the streamed content
     response_data = b""
     for chunk in response.streaming_content:
         response_data += chunk
 
-    if content_encoding == 'gzip':
+    if content_encoding == "gzip":
         # If the content is gzipped, decompress it
         response_data = decompress_gzip(response_data)
     # If it's JSON and we need to decode it, parse the JSON
     response.data = json.loads(response_data.decode())
 
     return response
+
 
 class TatorTransactionTest(APITransactionTestCase):
     """Handle cases when test runner flushes DB and indices are still being made."""
@@ -4160,7 +4163,7 @@ class LeafTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        #logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
