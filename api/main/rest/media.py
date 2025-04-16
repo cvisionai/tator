@@ -504,6 +504,7 @@ class MediaListAPI(StreamingListView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
+        import time
         qs = self.get_queryset()
         fields = [*MEDIA_PROPERTIES]
         if params.get("encoded_related_search") == None:
@@ -514,7 +515,11 @@ class MediaListAPI(StreamingListView):
         qs = optimize_qs(Media, qs, fields)
         s = time.time()
         first_one = True
-        yield "["
+
+        requested_format = self.request.GET.get("format", "json")
+
+        if requested_format == "json":
+            yield "["
         for record in qs.iterator():
             response_data = record
             # Add media_files and attributes back in parsed with ujson
@@ -530,12 +535,16 @@ class MediaListAPI(StreamingListView):
                     no_cache=no_cache,
                 )
 
-            if first_one:
+            if requested_format == "jsonl":
+                yield ujson.dumps(response_data) + '\n'
+            elif first_one:
                 first_one = False
                 yield ujson.dumps(response_data)
             else:
                 yield "," + ujson.dumps(response_data)
-        yield "]"
+
+        if requested_format == "json":
+            yield "]"
 
     def get_model(self):
         return Media
