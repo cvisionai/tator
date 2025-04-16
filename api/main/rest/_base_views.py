@@ -163,6 +163,9 @@ class GetMixin:
 
 class StreamingGetMixIn:
     def get(self, request, format=None, **kwargs):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+            # if we are not fine-grain we have to do a simple count here to verify parameters
+            throwaway = self.get_queryset().count()
         media_list_generator = self._get(self.params)
         gzip_stream = self._gzip_json_stream(media_list_generator)
         response = StreamingHttpResponse(gzip_stream, content_type="application/json")
