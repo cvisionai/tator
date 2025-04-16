@@ -115,7 +115,8 @@ def wait_for_indices(entity_type):
 
 def assertResponse(self, response, expected_code):
     if response.status_code != expected_code:
-        print(response.data)
+        if hasattr(response, "data"):
+            print(response.data)
     self.assertEqual(response.status_code, expected_code)
 
 
