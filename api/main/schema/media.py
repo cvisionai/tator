@@ -137,6 +137,8 @@ class MediaListSchema(AutoSchema):
                     "explode": False,
                 },
             ]
+        if method in ["PATCH", "DELETE"]:
+            params += safety_parameter_schema
         return params
 
     def get_request_body(self, path, method):
