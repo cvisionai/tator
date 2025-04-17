@@ -496,6 +496,9 @@ class MediaListAPI(StreamingListView):
         viewables = self.filter_only_viewables(media_qs)
         self._viewables = viewables
         self._range = [self._viewables.query.low_mark, self._viewables.query.high_mark]
+        # clear range for cache
+        self._viewables.query.low_mark = 0
+        self._viewables.query.high_mark = None
         return self._viewables
 
     def _get(self, params):

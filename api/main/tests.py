@@ -1497,7 +1497,7 @@ class AttributeTestMixin:
         assertResponse(self, response, status.HTTP_200_OK)
 
     def test_pagination(self):
-        test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
+        test_vals = [i % 2 == 0 for i in range(len(self.entities))]
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             response = self.client.patch(
@@ -1507,6 +1507,21 @@ class AttributeTestMixin:
             )
             assertResponse(self, response, status.HTTP_200_OK)
 
+        # Fetch all of them
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&attribute=Bool Test::true"
+            f"&type={self.entity_type.pk}"
+        )
+        response = collect_streaming_content(response)
+        assertResponse(self, response, status.HTTP_200_OK)
+        max_length = len(response.data)
+        for idx, test_val in enumerate(response.data):
+            self.assertEqual(response.data[idx]["attributes"]["Bool Test"], True)
+
+        all_ids = [entity["id"] for entity in response.data]
+        print(f"ALL_IDS={all_ids}")
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}"
             f"?format=json"
@@ -1517,7 +1532,7 @@ class AttributeTestMixin:
         )
         response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), max(0, min(sum(test_vals), 2)))
+        self.assertEqual(len(response.data), min(2, max_length))
         response1 = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}"
             f"?format=json"
@@ -1527,10 +1542,14 @@ class AttributeTestMixin:
             f"&stop=4"
         )
         response1 = collect_streaming_content(response1)
+        ids = [e["id"] for e in response.data]
+        ids1 = [e["id"] for e in response1.data]
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response1.data), max(0, min(sum(test_vals) - 1, 3)))
-        if len(response.data) >= 2 and len(response1.data) >= 1:
-            self.assertEqual(response.data[1], response1.data[0])
+        self.assertEqual(len(response1.data), min(3,max_length))
+        
+        self.assertEqual(response1.data[0]["id"], all_ids[1])
+        self.assertEqual(response1.data[1]["id"], all_ids[2])
+        self.assertEqual(response1.data[2]["id"], all_ids[3])
 
     def test_sorting(self):
         response = self.client.get(
@@ -2653,7 +2672,7 @@ class VideoTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        #logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2675,7 +2694,7 @@ class VideoTestCase(
                 self.project,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.media_entities = self.entities
         self.list_uri = "Medias"
