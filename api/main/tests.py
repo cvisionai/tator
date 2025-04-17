@@ -2672,7 +2672,7 @@ class VideoTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        #logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.user_two = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2861,6 +2861,7 @@ class VideoTestCase(
         response = self.client.put(
             f"/rest/Localizations/{self.project.pk}", {"frame_state_ids": [state.id]}, format="json"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2876,6 +2877,7 @@ class VideoTestCase(
             },
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2885,6 +2887,7 @@ class VideoTestCase(
             {"frame_state_ids": [state_2.id]},
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.put(
@@ -2898,6 +2901,7 @@ class VideoTestCase(
             },
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         # Do attribute searches on localization data
@@ -2912,6 +2916,7 @@ class VideoTestCase(
             response = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?attribute={key}::{value}", format=json
             )
+            response = collect_streaming_content(response)
             self.assertEqual(len(response.data), 4)
             encoded_search = base64.b64encode(
                 json.dumps({"attribute": key, "operation": "eq", "value": value}).encode()
