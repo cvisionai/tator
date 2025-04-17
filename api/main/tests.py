@@ -3930,11 +3930,13 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val1}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(
@@ -3946,11 +3948,13 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val1}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(
@@ -3962,9 +3966,11 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
 
