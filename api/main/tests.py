@@ -2500,11 +2500,11 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         )
         self.videos = [
             create_test_video(self.user, f"asdf{idx}", self.video_type, self.project)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.boxes = [
             create_test_box(self.user, self.box_type, self.project, random.choice(self.videos), 0)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.states = [
             State.objects.create(
@@ -2512,7 +2512,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
                 project=self.project,
                 version=self.project.version_set.all()[0],
             )
-            for _ in range(random.randint(6, 10))
+            for _ in range(10)
         ]
         for state in self.states:
             for media in random.choices(self.videos):
@@ -2558,7 +2558,7 @@ class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin)
         self.list_uri = "Algorithms"
         self.entities = [
             create_test_algorithm(self.user, f"result{idx}", self.project)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
@@ -3072,7 +3072,7 @@ class VideoTestCase(
     def test_annotation_delete(self):
         medias = [
             create_test_video(self.user, f"asdf{idx}", self.entity_type, self.project)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         state_type = StateType.objects.create(
             project=self.project, name="track_type", association="Localization", attribute_types=[]
@@ -3194,7 +3194,7 @@ class ImageTestCase(
                 self.project,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.media_entities = self.entities
         self.list_uri = "Medias"
@@ -3276,7 +3276,7 @@ class LocalizationBoxTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3361,7 +3361,7 @@ class LocalizationLineTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3446,7 +3446,7 @@ class LocalizationDotTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3529,7 +3529,7 @@ class LocalizationPolyTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3604,7 +3604,7 @@ class StateTestCase(
             for idx in range(random.randint(3, 10))
         ]
         self.entities = []
-        for _ in range(random.randint(6, 10)):
+        for _ in range(10):
             state = State.objects.create(
                 created_by=self.user,
                 modified_by=self.user,
@@ -4214,7 +4214,7 @@ class LeafTestCase(
                 self.project,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Leaves"
         self.detail_uri = "Leaf"
@@ -4327,7 +4327,7 @@ class LeafTypeTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.entities = [
-            LeafType.objects.create(project=self.project) for _ in range(random.randint(6, 10))
+            LeafType.objects.create(project=self.project) for _ in range()
         ]
         self.list_uri = "LeafTypes"
         self.detail_uri = "LeafType"
@@ -4543,7 +4543,7 @@ class ProjectTestCase(TatorTransactionTest):
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
-        self.entities = [create_test_project(self.user) for _ in range(random.randint(6, 10))]
+        self.entities = [create_test_project(self.user) for _ in range(10)]
         memberships = [create_test_membership(self.user, entity) for entity in self.entities]
         self.detail_uri = "Project"
         self.list_uri = "Projects"
@@ -4752,7 +4752,7 @@ class VersionTestCase(
         self.media = create_test_video(self.user, f"asdf", self.entity_type, self.project)
         self.entities = [
             create_test_version(f"asdf{idx}", f"desc{idx}", idx, self.project, self.media)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Versions"
         self.detail_uri = "Version"
@@ -4861,7 +4861,7 @@ class FavoriteStateTestCase(
             create_test_favorite(
                 f"Favorite {idx}", self.project, self.user, self.state_type, "State"
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.create_json = {
             "name": "My fave",
@@ -4909,7 +4909,7 @@ class FavoriteLocalizationTestCase(
             create_test_favorite(
                 f"Favorite {idx}", self.project, self.user, self.box_type, "Localization"
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.create_json = {
             "name": "My fave",
@@ -4946,7 +4946,7 @@ class BookmarkTestCase(
         )
         self.entities = [
             create_test_bookmark(f"Bookmark {idx}", self.project, self.user)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Bookmarks"
         self.detail_uri = "Bookmark"
@@ -5927,7 +5927,7 @@ class AttributeTestCase(TatorTransactionTest):
                 0,
                 {"Int Test": random.randint(-100, 100)},
             )
-            for _ in range(random.randint(6, 10))
+            for _ in range(10)
         ]
         self.list_uri = "AttributeType"
         self.edit_permission = Permission.FULL_CONTROL
