@@ -136,6 +136,7 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
     ttl = expiration - 3600
 
     media_path_set = set()
+    presigned = {} # initialize to blank
     # Get replace all keys with presigned urls.
     if no_cache == False:
         for media in medias:
