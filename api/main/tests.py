@@ -3816,24 +3816,28 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 4)
 
         response = self.client.delete(f"/rest/Media/{media_id2}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(f"/rest/Media/{media_id3}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 2)
 
         response = self.client.delete(f"/rest/Media/{media_id4}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
     def test_multiple_media_delete(self):
@@ -4327,7 +4331,7 @@ class LeafTypeTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.entities = [
-            LeafType.objects.create(project=self.project) for _ in range()
+            LeafType.objects.create(project=self.project) for _ in range(10)
         ]
         self.list_uri = "LeafTypes"
         self.detail_uri = "LeafType"
