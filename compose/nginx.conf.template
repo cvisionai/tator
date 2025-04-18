@@ -98,7 +98,7 @@ server {
   }
 
   # This handles streaming endpoints
-  location ~ ^/rest/(Localizations|Media|States) {
+  location ~ ^/rest/(Localizations|Medias|States) {
     # Allow for big REST responses.
     proxy_connect_timeout 1200;
     proxy_send_timeout 1200;
