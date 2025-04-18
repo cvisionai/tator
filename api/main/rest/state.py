@@ -4,6 +4,7 @@ import itertools
 
 from django.db import transaction
 from django.db.models import Max
+from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.http import Http404
@@ -106,8 +107,8 @@ class StateListAPI(StreamingListView):
         # Remove these fields because we need to annotate them later
         qs = optimize_qs(State, qs, STATE_PROPERTIES)
         qs = qs.values(*fields)
-        qs = qs.annotate(localizations=ArrayAgg("localizations__pk", default=[], distinct=True))
-        qs = qs.alias(media_id=ArrayAgg("media__pk", default=[], distinct=True))
+        qs = qs.annotate(localizations=ArrayAgg("localizations__pk", default=[], distinct=True, filter=Q(localizations__pk__isnull=False)))
+        qs = qs.alias(media_id=ArrayAgg("media__pk", default=[], distinct=True,filter=Q(media__pk__isnull=False)))
 
         if self.request.accepted_renderer.format == "json":
             qs = qs.annotate(media=F('media_id'))
