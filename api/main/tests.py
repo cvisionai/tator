@@ -7589,6 +7589,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Fetch all localizations for the warp core
             resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
 
@@ -7630,6 +7631,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Switch back to the red shirt and verify we get 1 localization and 1 state
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
 
