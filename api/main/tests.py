@@ -3098,6 +3098,7 @@ class VideoTestCase(
                 }
             )
         response = self.client.post(f"/rest/States/{self.project.pk}", state_specs, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         # Test detail delete
         response = self.client.get(
@@ -3139,6 +3140,7 @@ class VideoTestCase(
                 }
             )
         response = self.client.post(f"/rest/States/{self.project.pk}", state_specs, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         # Test list delete
         response = self.client.get(
@@ -4043,16 +4045,19 @@ class StateMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 1)
 
         response = self.client.delete(f"/rest/Media/{media_id}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
     def test_multiple_media_delete(self):
@@ -4133,6 +4138,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
             },
         ]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 2)
 
@@ -4143,6 +4149,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/States/{self.project.pk}?related_attribute={attr_search}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 2)
 
         not_deleted = State.objects.filter(
@@ -4177,14 +4184,17 @@ class StateMediaDeleteCase(TatorTransactionTest):
         )
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(
             f"/rest/States/{self.project.pk}?related_attribute={attr_search}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
 
@@ -7620,6 +7630,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             state_id = resp.data["id"][0]
             # Assert we get two States from Kirk's permission
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
 
@@ -7636,6 +7647,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             self.assertEqual(len(resp.data), 1)
 
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
 
