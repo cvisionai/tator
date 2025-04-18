@@ -102,10 +102,13 @@ class ProjectPermissionBase(BasePermission):
         if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
             perm_qs = view.get_queryset(override_params={"show_all_marks": 1})
-            perm_qs = augment_permission(request.user, perm_qs)
-            model = view.get_queryset().model
-
-            if perm_qs.exists():
+            # Remove limits as they don't apply to existance checks
+            perm_qs.query.low_mark = 0
+            perm_qs.query.high_mark = None
+            model = perm_qs.model
+            exists = perm_qs.only("pk").exists()
+            perm_qs = augment_permission(request.user, perm_qs, exists)
+            if exists:
                 # See if any objects in the requested set DON'T have the required permission
                 perm_qs = perm_qs.annotate(
                     bitand=ColBitAnd(
@@ -119,9 +122,6 @@ class ProjectPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
-                logger.info(
-                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                )
 
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
@@ -134,7 +134,7 @@ class ProjectPermissionBase(BasePermission):
                         f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                     )
 
-            if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT", "DELETE"]:
+            if not exists and request.method in ["GET", "HEAD", "PUT", "DELETE"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
                 ## If we are permissive (reading) we can see if the user has read permissions on the project itself
                 ## to avoid a 403, even if the set is empty
@@ -493,9 +493,6 @@ class OrganizationPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
-                logger.info(
-                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                )
 
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
@@ -524,10 +521,6 @@ class OrganizationPermissionBase(BasePermission):
                     )
                 )
 
-                logger.info(
-                    f"Org Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
-                )
-
                 if perm_qs.filter(granted=True).exists():
                     granted = True
         elif request.method in ["POST"]:
@@ -553,10 +546,6 @@ class OrganizationPermissionBase(BasePermission):
                     default=False,
                     output_field=BooleanField(),
                 )
-            )
-
-            logger.info(
-                f"Org Query = required_mask={self.required_mask} model={model} shift={shift_permission(model,Organization)} {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
             )
 
             if perm_qs.filter(granted=True).exists():

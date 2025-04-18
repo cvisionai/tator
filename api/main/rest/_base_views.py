@@ -4,6 +4,7 @@ import traceback
 import sys
 import logging
 
+from django.http import StreamingHttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
@@ -27,8 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 import os
-
-""" TODO: add documentation for this """
+import subprocess
+import select
+import time
+import zlib
 
 
 def process_exception(exc):
@@ -110,8 +113,18 @@ class TatorAPIView(APIView):
                     user = anonymous_qs[0]
                 else:
                     return qs.none()
-            qs = augment_permission(user, qs)
-            if qs.exists():
+            exists = qs.only("pk").exists()
+            low_mark = None
+            high_mark = None
+            if qs.query.low_mark != 0 or qs.query.high_mark is not None:
+                low_mark = qs.query.low_mark
+                high_mark = qs.query.high_mark
+                # Clear the slice from the query so that we can augment the permissions
+                qs.query.low_mark = 0
+                qs.query.high_mark = None
+
+            qs = augment_permission(user, qs, exists=exists)
+            if exists:
                 qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
                 qs = qs.filter(is_viewable__exact=required_mask)
                 if self.params.get("float_array", None) == None and self.request.method in [
@@ -125,6 +138,12 @@ class TatorAPIView(APIView):
                         qs = qs.order_by("name", "id")
                     else:
                         qs = qs.order_by("id")
+                if low_mark is not None and high_mark is not None:
+                    qs = qs[low_mark:high_mark]
+                elif low_mark is not None:
+                    qs = qs[low_mark:]
+                elif high_mark is not None:
+                    qs = qs[:high_mark]
         else:
             qs = qs.annotate(effective_permission=Value(0))
         return qs
@@ -139,6 +158,36 @@ class GetMixin:
         resp = Response({})
         response_data = self._get(self.params)
         resp = Response(response_data, status=status.HTTP_200_OK)
+        return resp
+
+
+class StreamingGetMixIn:
+    def get(self, request, format=None, **kwargs):
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
+            # if we are not fine-grain we have to do a simple count here to verify parameters
+            throwaway = self.get_queryset().count()
+        media_list_generator = self._get(self.params)
+        gzip_stream = self._gzip_json_stream(media_list_generator)
+        response = StreamingHttpResponse(gzip_stream, content_type="application/json")
+        response["Content-Encoding"] = "gzip"
+        return response
+
+    def _gzip_json_stream(self, json_generator, batch_size=65536, read_timeout=5):
+        def stream():
+            start = time.time()
+            compressor = zlib.compressobj(wbits=zlib.MAX_WBITS | 16)  # Gzip mode
+            for chunk in json_generator:
+                yield compressor.compress(chunk.encode('utf-8'))
+            yield compressor.flush()
+            logger.info(f"Total compression time = {time.time()-start}")
+
+        return stream()
+
+
+class StreamingPutMixIn:
+    def put(self, request, format=None, **kwargs):
+        resp = StreamingHttpResponse(self._put(self.params), content_type="application/json")
+        resp["Content-Type"] = "application/json"
         return resp
 
 
@@ -184,6 +233,17 @@ class PutMixin:
 
 
 class BaseListView(TatorAPIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
+    """Base class for list views."""
+
+    http_method_names = ["get", "post", "patch", "delete", "put"]
+
+    def handle_exception(self, exc):
+        return process_exception(exc)
+
+
+class StreamingListView(
+    TatorAPIView, StreamingGetMixIn, PostMixin, PatchMixin, DeleteMixin, StreamingPutMixIn
+):
     """Base class for list views."""
 
     http_method_names = ["get", "post", "patch", "delete", "put"]
