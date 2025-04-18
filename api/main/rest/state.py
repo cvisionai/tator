@@ -27,7 +27,7 @@ from ..schema import TrimStateEndSchema
 from ..schema.components import state as state_schema
 
 from .._permission_util import augment_permission
-from ._base_views import BaseListView
+from ._base_views import StreamingListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
 from ._attributes import patch_attributes
@@ -47,8 +47,12 @@ from ._util import (
     compute_user,
     optimize_qs,
 )
+
+from django.contrib.postgres.aggregates import ArrayAgg
+
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 import os
+import ujson
 
 logger = logging.getLogger(__name__)
 
@@ -56,34 +60,7 @@ STATE_PROPERTIES = list(state_schema["properties"].keys())
 STATE_PROPERTIES.pop(STATE_PROPERTIES.index("media"))
 STATE_PROPERTIES.pop(STATE_PROPERTIES.index("localizations"))
 
-
-def _fill_m2m(response_data):
-    # Get many to many fields.
-    state_ids = set([state["id"] for state in response_data])
-    localizations = {
-        obj["state_id"]: obj["localizations"]
-        for obj in State.localizations.through.objects.filter(state__in=state_ids)
-        .values("state_id")
-        .order_by("state_id")
-        .annotate(localizations=ArrayAgg("localization_id", default=[]))
-        .iterator()
-    }
-    media = {
-        obj["state_id"]: obj["media"]
-        for obj in State.media.through.objects.filter(state__in=state_ids)
-        .values("state_id")
-        .order_by("state_id")
-        .annotate(media=ArrayAgg("media_id", default=[]))
-        .iterator()
-    }
-    # Copy many to many fields into response data.
-    for state in response_data:
-        state["localizations"] = localizations.get(state["id"], [])
-        state["media"] = media.get(state["id"], [])
-    return response_data
-
-
-class StateListAPI(BaseListView):
+class StateListAPI(StreamingListView):
     """Interact with list of states.
 
     A state is a description of a collection of other objects. The objects a state describes
@@ -124,60 +101,53 @@ class StateListAPI(BaseListView):
     def _get(self, params):
         t0 = datetime.datetime.now()
         qs = self.get_queryset()
+        fields = [*STATE_PROPERTIES]
+        # Remove these fields because we need to annotate them later
         qs = optimize_qs(State, qs, STATE_PROPERTIES)
-        response_data = list(qs)
+        qs = qs.values(*fields)
+        qs = qs.annotate(localizations=ArrayAgg("localizations__pk", default=[], distinct=True))
+        qs = qs.annotate(media=ArrayAgg("media__pk", default=[], distinct=True))
+        qs = qs.values(*[*fields, "localizations", "media"])
 
-        t1 = datetime.datetime.now()
-        response_data = _fill_m2m(response_data)
-        if self.request.accepted_renderer.format == "csv":
+        if self.request.accepted_renderer.format == "json":
+            yield '['
+            first_one=True
+            for element in qs.iterator():
+                if first_one == False:
+                    yield ',' + ujson.dumps(element)
+                else:
+                    first_one = False
+                    yield ujson.dumps(element)
+            yield ']'
+
+        elif self.request.accepted_renderer.format == "jsonl":
+            for element in qs.values().iterator():
+                yield ujson.dumps(element) + '\n'
+        # Adjust fields for csv output.
+        elif self.request.accepted_renderer.format == "csv":
             # CSV creation requires a bit more
-            user_ids = set([d["modified_by"] for d in response_data])
-            users = list(User.objects.filter(id__in=user_ids).values("id", "email"))
-            email_dict = {}
-            for user in users:
-                email_dict[user["id"]] = user["email"]
-
-            media_ids = set(media for d in response_data for media in d["media"])
-            medias = list(Media.objects.filter(id__in=media_ids).values("id", "name"))
-            filename_dict = {media["id"]: media["name"] for media in medias}
-
-            for element in response_data:
-                del element["type"]
-
-                oldAttributes = element["attributes"]
+            # work to get the right fields
+            new_props = [*STATE_PROPERTIES, "localizations", "media"]
+            new_props.remove("user")
+            new_props.remove("media")
+            qs = qs.values(*new_props)
+            qs = qs.annotate(user=F('user__email'), media=F('media__name'))
+            attr_types = qs.values("type__attribute_types")
+            attr_name_set = set()
+            for x in attr_types:
+                type_defs = x['type__attribute_types']
+                if type_defs:
+                    attr_name_set.update([attr['name'] for attr in type_defs])
+            first_one = True
+            for element in qs.iterator():
+                for k in attr_name_set:
+                    element[k] = str(element['attributes'].get(k,""))
                 del element["attributes"]
-                element.update(oldAttributes)
+                if first_one:
+                    first_one = False
+                    yield ",".join(element.keys()) + "\n"
 
-                user_id = element["modified_by"]
-                media_ids = element["media"]
-
-                element["user"] = email_dict[user_id]
-                element["media"] = [filename_dict[media_id] for media_id in media_ids]
-
-            if "type" in params:
-                type_object = StateType.objects.get(pk=params["type"])
-                if (
-                    type_object.association == "Frame"
-                    and type_object.interpolation == InterpolationMethods.LATEST
-                ):
-                    for idx, el in enumerate(response_data):
-                        mediaEl = Media.objects.get(pk=el["media"])
-                        endFrame = 0
-                        if idx + 1 < len(response_data):
-                            next_element = response_data[idx + 1]
-                            endFrame = next_element["frame"]
-                        else:
-                            endFrame = mediaEl.num_frames
-                        el["media"] = mediaEl.name
-
-                        el["endFrame"] = endFrame
-                        el["startSeconds"] = int(el["frame"]) * mediaEl.fps
-                        el["endSeconds"] = int(el["endFrame"]) * mediaEl.fps
-        t2 = datetime.datetime.now()
-        logger.info(f"Number of states: {len(response_data)}")
-        logger.info(f"Time to get states: {t1-t0}")
-        logger.info(f"Time to get states many to many fields: {t2-t1}")
-        return response_data
+                yield ",".join([str(v) for v in element.values()]) + "\n"
 
     def _post(self, params):
         # Check that we are getting a state list.
