@@ -49,6 +49,7 @@ from ._util import (
 )
 
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import F
 
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 import os
@@ -106,10 +107,11 @@ class StateListAPI(StreamingListView):
         qs = optimize_qs(State, qs, STATE_PROPERTIES)
         qs = qs.values(*fields)
         qs = qs.annotate(localizations=ArrayAgg("localizations__pk", default=[], distinct=True))
-        qs = qs.annotate(media=ArrayAgg("media__pk", default=[], distinct=True))
-        qs = qs.values(*[*fields, "localizations", "media"])
+        qs = qs.alias(media_id=ArrayAgg("media__pk", default=[], distinct=True))
 
         if self.request.accepted_renderer.format == "json":
+            qs = qs.annotate(media=F('media_id'))
+            qs = qs.values(*[*fields, "localizations","media"])
             yield '['
             first_one=True
             for element in qs.iterator():
@@ -121,17 +123,19 @@ class StateListAPI(StreamingListView):
             yield ']'
 
         elif self.request.accepted_renderer.format == "jsonl":
+            qs = qs.annotate(media=F('media_id'))
+            qs = qs.values(*[*fields, "localizations","media"])
             for element in qs.values().iterator():
                 yield ujson.dumps(element) + '\n'
         # Adjust fields for csv output.
         elif self.request.accepted_renderer.format == "csv":
             # CSV creation requires a bit more
             # work to get the right fields
-            new_props = [*STATE_PROPERTIES, "localizations", "media"]
-            new_props.remove("user")
-            new_props.remove("media")
+            new_props = [*STATE_PROPERTIES, "localizations"]
             qs = qs.values(*new_props)
-            qs = qs.annotate(user=F('user__email'), media=F('media__name'))
+            qs = qs.annotate(user=F('created_by__email'))
+            qs = qs.alias(media_name=ArrayAgg("media__name", default=[], distinct=True))
+            qs = qs.annotate(media=F('media_name'))
             attr_types = qs.values("type__attribute_types")
             attr_name_set = set()
             for x in attr_types:
