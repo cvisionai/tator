@@ -504,7 +504,7 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
             .values("pk").distinct())
         # Calculate augmented permission which accounts for usage of default
         # permission at either the section or version level (e.g. no RP)
-        section_qs = Section.objects.filter(pk__in=effected_sections.values('media__primary_section__pk'), project=project)
+        section_qs = Section.objects.filter(pk__in=effected_sections, project=project)
         section_qs = augment_permission(user, section_qs, exists=True, project=project, groups=groups, organizations=organizations)
         version_qs = Version.objects.filter(pk__in=effected_versions, project=project)
         version_qs = augment_permission(user, version_qs, exists=True, project=project, groups=groups, organizations=organizations)
