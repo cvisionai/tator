@@ -31,7 +31,6 @@ import os
 import subprocess
 import select
 import time
-import zlib
 
 
 def process_exception(exc):
@@ -122,8 +121,9 @@ class TatorAPIView(APIView):
                 # Clear the slice from the query so that we can augment the permissions
                 qs.query.low_mark = 0
                 qs.query.high_mark = None
-
+            logger.info("aug start")
             qs = augment_permission(user, qs, exists=exists)
+            logger.info("aug end")
             if exists:
                 qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
                 qs = qs.filter(is_viewable__exact=required_mask)
@@ -163,23 +163,99 @@ class GetMixin:
 
 class StreamingGetMixIn:
     def get(self, request, format=None, **kwargs):
-        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", None) != "true":
-            # if we are not fine-grain we have to do a simple count here to verify parameters
-            throwaway = self.get_queryset().count()
         media_list_generator = self._get(self.params)
-        gzip_stream = self._gzip_json_stream(media_list_generator)
-        response = StreamingHttpResponse(gzip_stream, content_type="application/json")
+        stream = self._gzip_json_stream(media_list_generator)
+        response = StreamingHttpResponse(stream, content_type="application/json")
         response["Content-Encoding"] = "gzip"
         return response
 
     def _gzip_json_stream(self, json_generator, batch_size=65536, read_timeout=5):
         def stream():
+            # Create the pigz subprocess
+            pigz = subprocess.Popen(
+                [
+                    "pigz",
+                    "-c",
+                    "-p",
+                    "2",
+                    "-b",
+                    "64",
+                    "-f",
+                    "-6",
+                ],  # Added -f to force compression output immediately
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,  # Capture stderr for debugging
+                bufsize=0,  # unbuffered
+            )
             start = time.time()
-            compressor = zlib.compressobj(wbits=zlib.MAX_WBITS | 16)  # Gzip mode
-            for chunk in json_generator:
-                yield compressor.compress(chunk.encode('utf-8'))
-            yield compressor.flush()
-            logger.info(f"Total compression time = {time.time()-start}")
+
+            try:
+                # Use a buffer to accumulate data and send it to pigz's stdin
+                buffer = bytearray()
+
+                # Write data to pigz's stdin and read from stdout
+                for line in json_generator:
+                    encoded = line.encode("utf-8")
+                    buffer.extend(encoded)
+
+                    if len(buffer) >= batch_size:
+                        pigz.stdin.write(buffer)
+                        pigz.stdin.flush()  # Ensure pigz gets the data immediately
+                        buffer.clear()
+
+                        # Capture output immediately after writing
+                        rlist, _, _ = select.select([pigz.stdout], [], [], 0)
+                        if rlist:
+                            chunk = pigz.stdout.read(16384)
+                            if chunk:
+                                yield chunk
+
+                # Write remaining data if any
+                if buffer:
+                    pigz.stdin.write(buffer)
+                    pigz.stdin.flush()
+                    buffer.clear()
+                    pigz.stdin.close()
+
+                    # Capture final output from pigz
+                    chunk = pigz.stdout.read(16384)
+                    if chunk:
+                        logger.info(f"Read {len(chunk)} bytes from pigz")
+                        yield chunk
+
+                # Close stdin and finalize reading output
+
+                # Only read the final output if it's available
+                while True:
+                    # Use select to add a timeout on reading from stdout
+                    rlist, _, _ = select.select([pigz.stdout], [], [], read_timeout)
+                    if rlist:
+                        chunk = pigz.stdout.read(16384)
+                        if chunk:
+                            yield chunk
+                        else:
+                            break
+                    else:
+                        logger.info(
+                            f"Timeout after {read_timeout} seconds waiting for data."
+                        )  # Debug log
+                        break
+
+                # Ensure the process terminates and check for any errors
+                pigz.wait()
+                if pigz.returncode != 0:
+                    err_msg = pigz.stderr.read().decode("utf-8")
+                    logger.error(
+                        f"Error from pigz: Return Code = {pigz.returncode} {err_msg}"
+                    )  # Debug log
+
+            except Exception as e:
+                logger.error(f"Error in pigz streaming: {str(e)}")
+                logger.error(traceback.format_exc())
+            finally:
+                pigz.terminate()
+            logger.info(f"PIGZ time = {time.time()-start}")
 
         return stream()
 

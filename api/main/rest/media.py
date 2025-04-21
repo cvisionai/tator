@@ -519,7 +519,7 @@ class MediaListAPI(StreamingListView):
         qs = optimize_qs(Media, qs, fields)
         s = time.time()
         first_one = True
-
+        logger.info("Start iteration")
         requested_format = self.request.accepted_renderer.format
         if requested_format in ["json", "jsonl"]:
             if requested_format == "json":
@@ -566,7 +566,7 @@ class MediaListAPI(StreamingListView):
                     yield ",".join(element.keys()) + "\n"
 
                 yield ",".join([str(v) for v in element.values()]) + "\n"
-
+        logger.info("End iteration")
 
     def get_model(self):
         return Media
