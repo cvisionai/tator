@@ -86,12 +86,9 @@ class LocalizationListAPI(StreamingListView):
         return Localization
 
     def _get(self, params):
-        logger.info("PARAMS=%s", params)
         qs = self.get_queryset()
         qs = optimize_qs(Localization, qs, LOCALIZATION_PROPERTIES)
 
-        #logger.info(f"QUERY={qs.explain(analyze=True)}")
-        logger.info("Starting iteration.")
         if self.request.accepted_renderer.format == "json":
             yield '['
             first_one=True

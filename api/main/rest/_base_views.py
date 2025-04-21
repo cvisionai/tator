@@ -89,7 +89,6 @@ class TatorAPIView(APIView):
         # Default to project as parents as that is usually the case
         project_id = self.params.get("project", None)
         model = self.get_queryset().model
-        logger.info(f"Model: {model}")
         if model == Project:
             projects = self.get_queryset()
         elif not project_id:
@@ -121,9 +120,7 @@ class TatorAPIView(APIView):
                 # Clear the slice from the query so that we can augment the permissions
                 qs.query.low_mark = 0
                 qs.query.high_mark = None
-            logger.info("aug start")
             qs = augment_permission(user, qs, exists=exists)
-            logger.info("aug end")
             if exists:
                 qs = qs.annotate(is_viewable=ColBitAnd(F("effective_permission"), required_mask))
                 qs = qs.filter(is_viewable__exact=required_mask)
@@ -221,7 +218,6 @@ class StreamingGetMixIn:
                     # Capture final output from pigz
                     chunk = pigz.stdout.read(16384)
                     if chunk:
-                        logger.info(f"Read {len(chunk)} bytes from pigz")
                         yield chunk
 
                 # Close stdin and finalize reading output
@@ -237,7 +233,7 @@ class StreamingGetMixIn:
                         else:
                             break
                     else:
-                        logger.info(
+                        logger.error(
                             f"Timeout after {read_timeout} seconds waiting for data."
                         )  # Debug log
                         break
@@ -255,7 +251,7 @@ class StreamingGetMixIn:
                 logger.error(traceback.format_exc())
             finally:
                 pigz.terminate()
-            logger.info(f"PIGZ time = {time.time()-start}")
+            #logger.info(f"PIGZ time = {time.time()-start}")
 
         return stream()
 

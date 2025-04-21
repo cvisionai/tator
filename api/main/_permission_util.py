@@ -169,10 +169,8 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
         ]:
             # This assumes all checks are scoped to the same project (expensive to check in runtime)
             if project is None:
-                logger.info("Calculating project...")
                 simple_qs = qs.order_by().values("project")[:1]
                 project = simple_qs[0]['project']
-                logger.info("Calculated project")
 
             # Filter for all relevant permissions the user has and OR them together
             # If someone is in a group with a permission, you can't remove it via a user-level
@@ -438,7 +436,6 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
         # Make the appropriate subquery for individual protection, then coalesce with
         # project-level permissions
 
-        logger.info(f"foo - sect")
         # First get all sections including parents (this includes self)
         section_rp = RowProtection.objects.filter(section__project=project, section__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
@@ -453,9 +450,6 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
 
         for entry in section_rp.values("section", "permission").iterator():
              section_perm_dict[entry["section"]] |= entry["permission"]
-        logger.info("foo end - sect")
-        #logger.info(f"sect_rp_q={section_rp.query}")
-        #logger.info(f'sect_rp={section_rp.values("section").explain(analyze=True)}')
         section_cases = [
             When(pk=section, then=Value(perm)) for section, perm in section_perm_dict.items()
         ]
@@ -498,9 +492,7 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
         # For these models, we can use the section+version+project to determine permissions
         #
         # Calculate a dictionary for permissions by section and version in this set
-        logger.info("foo")
         effected_versions = qs.values_list("version__pk").distinct()
-        logger.info("blah")
         if model == Localization:
             qs = qs.annotate(section=F("media__primary_section__pk"))
             effected_sections = qs.values("media__primary_section__pk").distinct()
@@ -512,26 +504,18 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
             effected_sections = (
             Section.objects.filter(project=project, pk__in=qs.values("section"))
             .values("pk").distinct())
-        logger.info("Making sub-qs objects. ")
         # Calculate augmented permission which accounts for usage of default
         # permission at either the section or version level (e.g. no RP)
         section_qs = Section.objects.filter(pk__in=effected_sections.values('media__primary_section__pk'), project=project)
         section_qs = augment_permission(user, section_qs, exists=True, project=project, groups=groups, organizations=organizations)
-        #logger.info(f"Made section_QS {section_qs.count()} ef={effected_sections.count()}")
         version_qs = Version.objects.filter(pk__in=effected_versions, project=project)
         version_qs = augment_permission(user, version_qs, exists=True, project=project, groups=groups, organizations=organizations)
-        logger.info("Made version_QS")
-        #logger.info(f"{effected_sections.count()} - {section_qs.count()}")
-        #logger.info(f"{effected_versions.count()} - {version_qs.count()}")
-
         # Make dicts and account for child shift of each type
         # Versions direct child is metadata, but for sections is 2 shifts
-        #logger.info(f"qs={section_qs.query}\n{section_qs.explain(analyze=True)}")
         section_perm_dict = {
             entry["pk"]: (entry["effective_permission"] >> (CHILD_SHIFT * 2))
             for entry in section_qs.values("pk", "effective_permission").iterator()
         }
-        #logger.info(f"qs2={version_qs.query}\n{version_qs.explain(analyze=True)}")
         version_perm_dict = {
             entry["pk"]: (entry["effective_permission"] >> CHILD_SHIFT)
             for entry in version_qs.values("pk", "effective_permission").iterator()
@@ -551,7 +535,6 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
                     )
                 )
 
-        logger.info("built dict")
         # Annotate on the final permission for each row
         qs = qs.annotate(
             effective_permission=Case(

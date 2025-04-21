@@ -435,7 +435,6 @@ def _create_media(project, params, user, use_rq=False):
         f"Media object {media_obj.id} created for {media_type.dtype} {name} "
         f"on project {media_type.project.name}"
     )
-    logger.info(msg)
     log_creation(media_obj, media_obj.project, user)
 
     return media_obj, msg, section_obj
@@ -519,7 +518,6 @@ class MediaListAPI(StreamingListView):
         qs = optimize_qs(Media, qs, fields)
         s = time.time()
         first_one = True
-        logger.info("Start iteration")
         requested_format = self.request.accepted_renderer.format
         if requested_format in ["json", "jsonl"]:
             if requested_format == "json":
@@ -566,7 +564,6 @@ class MediaListAPI(StreamingListView):
                     yield ",".join(element.keys()) + "\n"
 
                 yield ",".join([str(v) for v in element.values()]) + "\n"
-        logger.info("End iteration")
 
     def get_model(self):
         return Media
@@ -884,7 +881,6 @@ class MediaDetailAPI(BaseDetailView):
                 or "reset_attributes" in params
             ):
                 new_attrs = validate_attributes(params, media)
-                logger.info(f"new_attrs={new_attrs}")
                 bulk_patch_attributes(new_attrs, qs)
 
             if "name" in params:
