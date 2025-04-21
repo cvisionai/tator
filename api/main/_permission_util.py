@@ -440,16 +440,14 @@ def augment_permission(user, qs, exists=None, project=None, groups=None, organiz
         section_rp = RowProtection.objects.filter(section__project=project, section__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
-        #section_rp = section_rp.annotate(
-        #    calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
-        #)
+        section_rp = section_rp.annotate(
+            calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("section")])
+        )
         section_perm_dict = {
-            entry["section"]: 0
-            for entry in section_rp.values("section").iterator()
+            entry["section"]: entry["calc_perm"]
+            for entry in section_rp.values("section", "calc_perm")
         }
 
-        for entry in section_rp.values("section", "permission").iterator():
-             section_perm_dict[entry["section"]] |= entry["permission"]
         section_cases = [
             When(pk=section, then=Value(perm)) for section, perm in section_perm_dict.items()
         ]
