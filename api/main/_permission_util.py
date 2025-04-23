@@ -352,7 +352,7 @@ def augment_permission(user, qs):
             entry["bucket"]: entry["calc_perm"] for entry in bucket_rp.values("bucket", "calc_perm")
         }
         bucket_cases = [
-            When(bucket=bucket, then=Value(perm)) for bucket, perm in bucket_perm_dict.items()
+            When(pk=bucket, then=Value(perm)) for bucket, perm in bucket_perm_dict.items()
         ]
         qs = qs.annotate(
             effective_permission=Case(
@@ -372,7 +372,7 @@ def augment_permission(user, qs):
             entry["job_cluster"]: entry["calc_perm"]
             for entry in jc_rp.values("job_cluster", "calc_perm")
         }
-        jc_cases = [When(job_cluster=jc, then=Value(perm)) for jc, perm in jc_perm_dict.items()]
+        jc_cases = [When(pk=jc, then=Value(perm)) for jc, perm in jc_perm_dict.items()]
         qs = qs.annotate(
             effective_permission=Case(
                 *jc_cases,
@@ -388,10 +388,10 @@ def augment_permission(user, qs):
             calc_perm=Window(expression=BitOr(F("permission")), partition_by=[F("hosted_template")])
         )
         ht_perm_dict = {
-            entry["jc"]: entry["calc_perm"]
+            entry["hosted_template"]: entry["calc_perm"]
             for entry in ht_rp.values("hosted_template", "calc_perm")
         }
-        ht_cases = [When(job_cluster=jc, then=Value(perm)) for ht, perm in ht_perm_dict.items()]
+        ht_cases = [When(pk=ht, then=Value(perm)) for ht, perm in ht_perm_dict.items()]
         qs = qs.annotate(
             effective_permission=Case(
                 *ht_cases,
