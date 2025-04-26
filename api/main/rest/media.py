@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, connection
-from django.db.models import Case, When
+from django.db.models import Case, When, Func, Value, JSONField
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
 from PIL import Image
@@ -406,6 +406,14 @@ def _create_media(project, params, user, use_rq=False):
 
     return media_obj, msg, section_obj
 
+class JSONObjectGet(Func):
+    function = 'jsonb_extract_path'
+    output_field = JSONField()
+
+class JSONObjectBuild(Func):
+    function = 'jsonb_build_object'
+    arity = None
+    output_field = JSONField()
 
 class MediaListAPI(BaseListView):
     """Interact with list of media.
@@ -466,6 +474,50 @@ class MediaListAPI(BaseListView):
         fields = [*MEDIA_PROPERTIES]
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
+        if params.get("fields") is not None:
+            fields = []
+            fields_param = params.get('fields', '').split(',')
+            attributes_to_select = set()
+            
+            for field in fields_param:
+                if field.startswith('attributes.'):
+                    attributes_to_select.add(field.split('.')[1])
+                else:
+                    fields.append(field)
+            if attributes_to_select:
+                fields.append('partial_attributes')
+                build_args = []
+                for key in attributes_to_select:
+                    build_args.extend([Value(key), JSONObjectGet('attributes', Value(key))])
+
+                if build_args:
+                    qs = qs.annotate(
+                        partial_attributes=JSONObjectBuild(*build_args)
+                    )
+                else:
+                    qs = qs.annotate(partial_attributes=Value('{}', output_field=JSONField())) # Empty object if no attributes requested
+            else:
+                qs = qs.annotate(partial_attributes='attributes') # Use the full attributes if none requested
+
+            for field in fields_param:
+                if field.startswith('attributes.'):
+                    annotate_partial = True
+                    attributes_to_select.add(field.split('.')[1])
+                else:
+                    fields.append(field)
+                    annotate_partial = False
+
+            if annotate_partial:
+                build_args = []
+                for key in attributes_to_select:
+                    build_args.extend([Value(key), JSONObjectGet('attributes', Value(key))])
+                if build_args:
+                    qs = qs.annotate(
+                        attributes=JSONObjectBuild(*build_args)  # Rename here!
+                    )
+                else:
+                    qs = qs.annotate(attributes=Value('{}', output_field=JSONField()))
+
         response_data = list(qs.values(*fields))
         presigned = params.get("presigned")
         if presigned is not None:
