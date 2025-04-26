@@ -478,27 +478,7 @@ class MediaListAPI(BaseListView):
             fields = []
             fields_param = params.get('fields', '').split(',')
             attributes_to_select = set()
-            '''
-            for field in fields_param:
-                if field.startswith('attributes.'):
-                    attributes_to_select.add(field.split('.')[1])
-                else:
-                    fields.append(field)
-            if attributes_to_select:
-                fields.append('partial_attributes')
-                build_args = []
-                for key in attributes_to_select:
-                    build_args.extend([Value(key), JSONObjectGet('attributes', Value(key))])
-
-                if build_args:
-                    qs = qs.annotate(
-                        partial_attributes=JSONObjectBuild(*build_args)
-                    )
-                else:
-                    qs = qs.annotate(partial_attributes=Value('{}', output_field=JSONField())) # Empty object if no attributes requested
-            else:
-                qs = qs.annotate(partial_attributes='attributes') # Use the full attributes if none requested
-            '''
+            
             for field in fields_param:
                 if field.startswith('attributes.'):
                     annotate_partial = True
