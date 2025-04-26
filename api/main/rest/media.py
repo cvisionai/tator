@@ -509,11 +509,12 @@ class MediaListAPI(BaseListView):
 
             if annotate_partial:
                 build_args = []
+                fields.append('partial_attributes')
                 for key in attributes_to_select:
                     build_args.extend([Value(key), JSONObjectGet('attributes', Value(key))])
                 if build_args:
                     qs = qs.annotate(
-                        attributes=JSONObjectBuild(*build_args)  # Rename here!
+                        partial_attributes=JSONObjectBuild(*build_args)  # Rename here!
                     )
                 else:
                     qs = qs.annotate(attributes=Value('{}', output_field=JSONField()))
