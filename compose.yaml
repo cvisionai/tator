@@ -215,6 +215,7 @@ services:
       psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS postgis';
       psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS vector';
       psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
+      psql -U ${POSTGRES_USER} -h postgis -d tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_prewarm';
       exit 0;
       "
 

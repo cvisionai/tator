@@ -1429,6 +1429,68 @@ def destroy_tator_indices():
         print(f"Dropped {total_count} indices")
 
 
+def cluster_tables():
+    from django.db import connection
+    import time
+
+    print(f"{time.time()}: Clustering tables...")
+    with connection.cursor() as cursor:
+        print("VACUUM main_section...")
+        cursor.execute("VACUUM main_section;")
+        print("VACUUM main_localization...")
+        cursor.execute("VACUUM main_localization;")
+        print("VACUUM main_state...")
+        cursor.execute("VACUUM main_state;")
+        print("VACUUM main_media...")
+        cursor.execute("VACUUM main_media;")
+        print("Clustering main_media...")
+        cursor.execute("CLUSTER main_media USING simple_media_project_primary_section;")
+        print("Clustering main_localization...")
+        cursor.execute("CLUSTER main_localization USING simple_localization_project_media_version;")
+        print("Clustering main_state...")
+        cursor.execute("CLUSTER main_state USING simple_state_project_version;")
+        print("Clustering main_section...")
+        cursor.execute("CLUSTER main_section USING simple_section_project_path;")
+        print("Finished clustering!")
+        print("ANALYZE AND VACUUM main_media...")
+        cursor.execute("VACUUM main_media;")
+        cursor.execute("ANALYZE main_media;")
+        print("ANALYZE AND VACUUM main_localization...")
+        cursor.execute("VACUUM main_localization;")
+        cursor.execute("ANALYZE main_localization;")
+        print("ANALYZE AND VACUUM main_state...")
+        cursor.execute("VACUUM main_state;")
+        print("ANALYZE AND VACUUM main_section...")
+        cursor.execute("VACUUM main_section;")
+        cursor.execute("ANALYZE main_section;")
+    print(f"{time.time()}: Finished")
+
+
+def prewarm_simple_indices():
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        total_size = 0
+        cursor.execute(
+            """SELECT 
+                            relname AS index_name, 
+                            pg_relation_size(oid) AS size
+                            FROM pg_class 
+                            WHERE relkind = 'i'  -- 'i' stands for indexes
+                            AND relname LIKE 'simple_%'
+                            ORDER BY pg_relation_size(oid) DESC;"""
+        )
+        indices_to_prewarm = cursor.fetchall()
+        for index in indices_to_prewarm:
+            name, size = index
+            print(f"Prewarming {name} ({size/1024/1024} MB)")
+            cursor.execute(f"SELECT pg_prewarm('{name}');")
+            total_size += size
+        print(
+            f"Prewarmed {len(indices_to_prewarm)} indices with a total size of {total_size/1024/1024} MB"
+        )
+
+
 def make_simple_indices():
     from django.db import connection
 
@@ -1455,6 +1517,22 @@ def make_simple_indices():
             "CREATE INDEX CONCURRENTLY simple_media_project_name ON main_media (project, name);"
         )
         print("Created index simple_media_project_name on main_media (project, name)")
+
+        cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name;")
+        cursor.execute(
+            "CREATE INDEX CONCURRENTLY simple_media_project_section_name ON main_media (project, primary_section_id, name);"
+        )
+        print(
+            "Created index simple_media_project_section_name on main_media (project, section, name)"
+        )
+
+        cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name_id;")
+        cursor.execute(
+            "CREATE INDEX CONCURRENTLY simple_media_project_section_name_id ON main_media (project, primary_section_id, name, id);"
+        )
+        print(
+            "Created index simple_media_project_section_name on main_media (project, primary_section, name, id)"
+        )
 
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_name_gin;")
         cursor.execute(
