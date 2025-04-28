@@ -160,6 +160,12 @@ class GetMixin:
 
 class StreamingGetMixIn:
     def get(self, request, format=None, **kwargs):
+        # If fine-grain is turned off, we have to do a count here to get the right error code response
+        if os.getenv("TATOR_FINE_GRAIN_PERMISSION", "false") == "false":
+            # This operation should be cheap enough and cause an exception if there was something wrong
+            # before the streaming response has sent a 200 OK response.
+            qs = self.get_queryset()
+            count = qs.count()
         media_list_generator = self._get(self.params)
         stream = self._gzip_json_stream(media_list_generator)
         response = StreamingHttpResponse(stream, content_type="application/json")
