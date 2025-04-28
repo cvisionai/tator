@@ -1498,40 +1498,48 @@ def make_simple_indices():
         # create an index for media on a project by primary section
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_primary_section;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_media_project_primary_section ON main_media (project, primary_section_id);"
+            "CREATE INDEX CONCURRENTLY simple_media_project_primary_section ON main_media (project, primary_section_id, deleted);"
         )
         print(
-            "Created index simple_media_project_primary_section on main_media (project, primary_section_id)"
+            "Created index simple_media_project_primary_section on main_media (project, primary_section_id, deleted)"
+        )
+
+        cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_deleted;")
+        cursor.execute(
+            "CREATE INDEX CONCURRENTLY simple_media_project_primary_section ON main_media (project, deleted);"
+        )
+        print(
+            "Created index simple_media_project_primary_section on main_media (project, deleted)"
         )
 
         # create an index on project and media id
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_id_id;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_media_project_id_id ON main_media (project, id);"
+            "CREATE INDEX CONCURRENTLY simple_media_project_id_id ON main_media (project, id, deleted);"
         )
-        print("Created index simple_media_project_id_id on main_media (project, id)")
+        print("Created index simple_media_project_id_id on main_media (project, id, deleted)")
 
         # Create an index for project and media name (both GIN and btree)
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_name;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_media_project_name ON main_media (project, name);"
+            "CREATE INDEX CONCURRENTLY simple_media_project_name ON main_media (project, name, deleted);"
         )
-        print("Created index simple_media_project_name on main_media (project, name)")
+        print("Created index simple_media_project_name on main_media (project, name, deleted)")
 
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_media_project_section_name ON main_media (project, primary_section_id, name);"
+            "CREATE INDEX CONCURRENTLY simple_media_project_section_name ON main_media (project, primary_section_id, name, deleted);"
         )
         print(
-            "Created index simple_media_project_section_name on main_media (project, section, name)"
+            "Created index simple_media_project_section_name on main_media (project, section, name, deleted)"
         )
 
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name_id;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_media_project_section_name_id ON main_media (project, primary_section_id, name, id);"
+            "CREATE INDEX CONCURRENTLY simple_media_project_section_name_id ON main_media (project, primary_section_id, name, id, deleted);"
         )
         print(
-            "Created index simple_media_project_section_name on main_media (project, primary_section, name, id)"
+            "Created index simple_media_project_section_name on main_media (project, primary_section, name, id, deleted)"
         )
 
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_name_gin;")
@@ -1636,26 +1644,26 @@ def make_simple_indices():
             "DROP INDEX CONCURRENTLY IF EXISTS simple_localization_project_media_version;"
         )
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_localization_project_media_version ON main_localization (project, media, version);"
+            "CREATE INDEX CONCURRENTLY simple_localization_project_media_version ON main_localization (project, media, version, deleted, ((mark=latest_mark)));"
         )
         print(
-            "Created index simple_localization_project_media_version on main_localization (project, media, version)"
+            "Created index simple_localization_project_media_version on main_localization (project, media, version, deleted, ((mark=latest_mark)))"
         )
 
         # create an index for localization on a project by project and type
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_localization_project_type;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_localization_project_type ON main_localization (project, meta);"
+            "CREATE INDEX CONCURRENTLY simple_localization_project_type ON main_localization (project, meta, deleted, ((mark=latest_mark)));"
         )
-        print("Created index simple_localization_project_type on main_localization (project, meta)")
+        print("Created index simple_localization_project_type on main_localization (project, meta, deleted, ((mark=latest_mark)))")
 
         # Create an index for localizations being the latest mark
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_localization_latest_mark;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_localization_latest_mark ON main_localization (project, ((mark=latest_mark)));"
+            "CREATE INDEX CONCURRENTLY simple_localization_latest_mark ON main_localization (project, deleted,((mark=latest_mark)));"
         )
         print(
-            "Created index simple_localization_latest_mark on main_localization (project, ((mark=latest_mark)))"
+            "Created index simple_localization_latest_mark on main_localization (project, deleted,((mark=latest_mark)))"
         )
 
         # create a GIN-index for elemental_id
@@ -1679,24 +1687,24 @@ def make_simple_indices():
         # create an index for state on a project by version
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_project_version;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_state_project_version ON main_state (project, version);"
+            "CREATE INDEX CONCURRENTLY simple_state_project_version ON main_state (project, version, deleted, ((mark=latest_mark)));"
         )
-        print("Created index simple_state_project_version on main_state (project, version)")
+        print("Created index simple_state_project_version on main_state (project, version, deleted,((mark=latest_mark)))")
 
         # create an index for state on a project by project and type
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_project_type;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_state_project_type ON main_state (project, meta);"
+            "CREATE INDEX CONCURRENTLY simple_state_project_type ON main_state (project, meta, deleted,((mark=latest_mark)));"
         )
-        print("Created index simple_state_project_type on main_state (project, meta)")
+        print("Created index simple_state_project_type on main_state (project, meta, deleted,((mark=latest_mark)))")
 
         # Create an index for states being the latest mark
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_latest_mark;")
         cursor.execute(
-            "CREATE INDEX CONCURRENTLY simple_state_latest_mark ON main_state (project, ((mark=latest_mark)));"
+            "CREATE INDEX CONCURRENTLY simple_state_latest_mark ON main_state (project, deleted,((mark=latest_mark)));"
         )
         print(
-            "Created index simple_state_latest_mark on main_state (project, ((mark=latest_mark)))"
+            "Created index simple_state_latest_mark on main_state (project, deleted,((mark=latest_mark)))"
         )
 
         # Create an index for elemental_id
