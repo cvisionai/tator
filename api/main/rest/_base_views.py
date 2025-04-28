@@ -172,7 +172,7 @@ class StreamingGetMixIn:
         response["Content-Encoding"] = "gzip"
         return response
 
-    def _gzip_json_stream(self, json_generator, batch_size=65536, read_timeout=5):
+    def _gzip_json_stream(self, json_generator, batch_size=8192, read_timeout=5):
         def stream():
             # Create the pigz subprocess
             pigz = subprocess.Popen(
@@ -198,9 +198,12 @@ class StreamingGetMixIn:
                 buffer = bytearray()
 
                 # Write data to pigz's stdin and read from stdout
+                line_count=0
                 for line in json_generator:
+                    line_count += 1
                     encoded = line.encode("utf-8")
                     buffer.extend(encoded)
+                    #logger.info(f"Processing line #{line_count} buffer size: {len(buffer)}")  # Debug log
 
                     if len(buffer) >= batch_size:
                         pigz.stdin.write(buffer)
@@ -220,11 +223,6 @@ class StreamingGetMixIn:
                     pigz.stdin.flush()
                     buffer.clear()
                     pigz.stdin.close()
-
-                    # Capture final output from pigz
-                    chunk = pigz.stdout.read(16384)
-                    if chunk:
-                        yield chunk
 
                 # Close stdin and finalize reading output
 
@@ -257,7 +255,7 @@ class StreamingGetMixIn:
                 logger.error(traceback.format_exc())
             finally:
                 pigz.terminate()
-            #logger.info(f"PIGZ time = {time.time()-start}")
+            # logger.info(f"PIGZ time = {time.time()-start}")
 
         return stream()
 
