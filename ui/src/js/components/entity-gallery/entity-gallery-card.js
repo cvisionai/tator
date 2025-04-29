@@ -2,6 +2,7 @@ import { TatorElement } from "../tator-element.js";
 import { svgNamespace } from "../tator-element.js";
 import { hasPermission } from "../../util/has-permission.js";
 import { fetchCredentials } from "../../../../../scripts/packages/tator-js/src/utils/fetch-credentials.js";
+import { getDeepActiveElement } from "../../util/utilities.js";
 
 export class EntityCard extends TatorElement {
   constructor() {
@@ -235,6 +236,12 @@ export class EntityCard extends TatorElement {
         evt.target.select();
       });
       input.addEventListener("keydown", (evt) => {
+        let activeElement = getDeepActiveElement(evt.target);
+        if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+          // Ignore keypresses in input fields
+          return;
+        }
+
         if (evt.keyCode == 13) {
           evt.preventDefault();
           input.blur();
@@ -1165,7 +1172,7 @@ export class EntityCard extends TatorElement {
       const path = document.createElementNS(svgNamespace, "path");
       path.setAttribute(
         "d",
-        "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+        "M19 21l-7-5-7 5V5a2 2 0 0 1-2-2h10a2 2 0 0 1 2 2z"
       );
       svg.appendChild(path);
       this._link.setAttribute("href", section.uri);
@@ -1211,6 +1218,12 @@ export class EntityCard extends TatorElement {
       });
 
       input.addEventListener("keydown", (evt) => {
+        let activeElement = getDeepActiveElement(evt.target);
+        if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+          // Ignore keypresses in input fields
+          return;
+        }
+
         if (evt.keyCode == 13) {
           evt.preventDefault();
           input.blur();

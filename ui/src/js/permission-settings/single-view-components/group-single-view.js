@@ -1,6 +1,7 @@
 import { TatorElement } from "../../components/tator-element.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { store } from "../store.js";
+import { getDeepActiveElement } from "../../util/utilities.js";
 
 export class GroupSingleView extends TatorElement {
   constructor() {
@@ -601,7 +602,28 @@ export class GroupSingleView extends TatorElement {
     this._addGroupInput.setAttribute("placeholder", "Hit Enter to add an ID");
     this._addGroupInput.value = null;
 
-    this._addGroupInput.addEventListener("keydown", this._addGroup.bind(this));
+    // Updated keydown handler
+    this._addGroupInput.addEventListener("keydown", (evt) => {
+      let activeElement = getDeepActiveElement(evt.target);
+      if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+        // Ignore keypresses in input fields
+        return;
+      }
+
+      if (evt.key === "Enter") {
+        evt.preventDefault();
+        const id = +this._addGroupInput.value;
+        const { map } = store.getState().Group;
+        const group = map.get(id);
+        if (!group) {
+          this._groupInputShowWarning(`Can't find group by ID ${id}.`);
+        } else {
+          this._processToBeAddedGroup(id, group);
+          this._addGroupInput.value = null;
+          this._addGroupInput.focus();
+        }
+      }
+    });
   }
 
   _addGroup(evt) {
