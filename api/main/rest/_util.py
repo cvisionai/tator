@@ -9,7 +9,7 @@ import socket
 from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
-from django.db.models import TextField, F, DateTimeField, JSONField, UUIDField
+from django.db.models import TextField, F, DateTimeField, JSONField, UUIDField, Func, Value, JSONField
 from django.db.models.functions import Cast
 from django.core.exceptions import PermissionDenied, FieldDoesNotExist
 
@@ -41,7 +41,16 @@ class CastToJson(Func):
     template = """to_char(%(expressions)s::timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')"""
     output_field = TextField()
 
-def optimize_qs(model, qs, fields):
+class JSONObjectGet(Func):
+    function = 'jsonb_extract_path'
+    output_field = JSONField()
+
+class JSONObjectBuild(Func):
+    function = 'jsonb_build_object'
+    arity = None
+    output_field = JSONField()
+
+def optimize_qs(model, qs, fields, partial_fields=None):
     new_fields = [*fields]
     annotations = {}
     for field in fields:
@@ -55,6 +64,13 @@ def optimize_qs(model, qs, fields):
                 annotations[field] = CastToJson(field)
         except FieldDoesNotExist:
             pass
+
+    if partial_fields:
+        build_args = []
+        for key in partial_fields:
+            build_args.extend([Value(key), JSONObjectGet('attributes', Value(key))])
+        if build_args:
+            annotations["attributes"] = JSONObjectBuild(*build_args)
     return qs.values(*new_fields).annotate(**annotations)
 
 
