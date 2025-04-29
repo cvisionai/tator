@@ -1508,7 +1508,6 @@ def prewarm_simple_indices():
 
 def make_simple_indices():
     from django.db import connection
-
     with connection.cursor() as cursor:
         # create an index for media on a project by primary section
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_primary_section;")
@@ -1518,7 +1517,6 @@ def make_simple_indices():
         print(
             "Created index simple_media_project_primary_section on main_media (project, primary_section_id, deleted)"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_deleted;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_media_project_deleted ON main_media (project, deleted);"
@@ -1526,21 +1524,18 @@ def make_simple_indices():
         print(
             "Created index simple_media_project_deleted on main_media (project, deleted)"
         )
-
         # create an index on project and media id
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_id_id;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_media_project_id_id ON main_media (project, id, deleted);"
         )
         print("Created index simple_media_project_id_id on main_media (project, id, deleted)")
-
         # Create an index for project and media name (both GIN and btree)
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_name;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_media_project_name ON main_media (project, name, deleted);"
         )
         print("Created index simple_media_project_name on main_media (project, name, deleted)")
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_media_project_section_name ON main_media (project, primary_section_id, name, deleted);"
@@ -1548,7 +1543,6 @@ def make_simple_indices():
         print(
             "Created index simple_media_project_section_name on main_media (project, section, name, deleted)"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_section_name_id;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_media_project_section_name_id ON main_media (project, primary_section_id, name, id, deleted);"
@@ -1556,13 +1550,11 @@ def make_simple_indices():
         print(
             "Created index simple_media_project_section_name on main_media (project, primary_section, name, id, deleted)"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_name_gin;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_media_project_name_gin ON main_media USING gin (name gin_trgm_ops);"
         )
         print("Created index simple_media_project_name_gin on main_media (name gin_trgm_ops)")
-
         # Create one for UPPER as well
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_media_project_name_upper;")
         cursor.execute(
@@ -1576,20 +1568,17 @@ def make_simple_indices():
         print(
             "Created index simple_media_project_name_upper_gin on main_media (upper(name) gin_trgm_ops)"
         )
-
         # For sections and leaves make indices on name + path
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_section_project_name;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_section_project_name ON main_section (project, name);"
         )
         print("Created index simple_section_project_name on main_section (project, name)")
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_section_project_name_gin;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_section_project_name_gin ON main_section USING gin (name gin_trgm_ops);"
         )
         print("Created index simple_section_project_name_gin on main_section (name gin_trgm_ops)")
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_section_project_name_upper;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_section_project_name_upper ON main_section (project, upper(name));"
@@ -1597,7 +1586,6 @@ def make_simple_indices():
         print(
             "Created index simple_section_project_name_upper on main_section (project, upper(name))"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_section_project_name_upper_gin;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_section_project_name_upper_gin ON main_section USING gin (upper(name) gin_trgm_ops);"
@@ -1605,7 +1593,6 @@ def make_simple_indices():
         print(
             "Created index simple_section_project_name_upper_gin on main_section (upper(name) gin_trgm_ops)"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_section_project_path;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_section_project_path ON main_section USING gist (path gist_ltree_ops(siglen=16));"
@@ -1617,19 +1604,16 @@ def make_simple_indices():
             "CREATE INDEX CONCURRENTLY simple_leaf_project_name ON main_leaf (project, name);"
         )
         print("Created index simple_leaf_project_name on main_leaf (project, name)")
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_leaf_project_name_gin;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_leaf_project_name_gin ON main_leaf USING gin (name gin_trgm_ops);"
         )
         print("Created index simple_leaf_project_name_gin on main_leaf (name gin_trgm_ops)")
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_leaf_project_name_upper;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_leaf_project_name_upper ON main_leaf (project, upper(name));"
         )
         print("Created index simple_leaf_project_name_upper on main_leaf (project, upper(name))")
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_leaf_project_name_upper_gin;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_leaf_project_name_upper_gin ON main_leaf USING gin (upper(name) gin_trgm_ops);"
@@ -1637,13 +1621,11 @@ def make_simple_indices():
         print(
             "Created index simple_leaf_project_name_upper_gin on main_leaf (upper(name) gin_trgm_ops)"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_leaf_project_path;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_leaf_project_path ON main_leaf USING gist (path gist_ltree_ops(siglen=16));"
         )
         print("Created index simple_leaf_project_path on main_leaf USING gin (path gist)")
-
         # For localizations
         # create an index for localization on a project by media
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_localization_project_media;")
@@ -1653,7 +1635,6 @@ def make_simple_indices():
         print(
             "Created index simple_localization_project_media on main_localization (project, media)"
         )
-
         # create an index for localization on a project by media and version
         cursor.execute(
             "DROP INDEX CONCURRENTLY IF EXISTS simple_localization_project_media_version;"
@@ -1664,14 +1645,12 @@ def make_simple_indices():
         print(
             "Created index simple_localization_project_media_version on main_localization (project, media, version, deleted, ((mark=latest_mark)))"
         )
-
         # create an index for localization on a project by project and type
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_localization_project_type;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_localization_project_type ON main_localization (project, meta, deleted, ((mark=latest_mark)));"
         )
         print("Created index simple_localization_project_type on main_localization (project, meta, deleted, ((mark=latest_mark)))")
-
         # Create an index for localizations being the latest mark
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_localization_latest_mark;")
         cursor.execute(
@@ -1680,7 +1659,6 @@ def make_simple_indices():
         print(
             "Created index simple_localization_latest_mark on main_localization (project, deleted,((mark=latest_mark)))"
         )
-
         # create a GIN-index for elemental_id
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_localization_elemental_id_gin;")
         cursor.execute(
@@ -1689,7 +1667,6 @@ def make_simple_indices():
         print(
             "Created index simple_localization_elemental_id on main_localization (elemental_id::text gin_trgm_ops)"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_localization_elemental_id;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_localization_elemental_id ON main_localization USING btree ((elemental_id::text));"
@@ -1697,7 +1674,6 @@ def make_simple_indices():
         print(
             "Created index simple_localization_elemental_id on main_localization (elemental_id::text)"
         )
-
         # For States do the same, except they don't have a media column
         # create an index for state on a project by version
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_project_version;")
@@ -1705,14 +1681,12 @@ def make_simple_indices():
             "CREATE INDEX CONCURRENTLY simple_state_project_version ON main_state (project, version, deleted, ((mark=latest_mark)));"
         )
         print("Created index simple_state_project_version on main_state (project, version, deleted,((mark=latest_mark)))")
-
         # create an index for state on a project by project and type
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_project_type;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_state_project_type ON main_state (project, meta, deleted,((mark=latest_mark)));"
         )
         print("Created index simple_state_project_type on main_state (project, meta, deleted,((mark=latest_mark)))")
-
         # Create an index for states being the latest mark
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_latest_mark;")
         cursor.execute(
@@ -1721,7 +1695,6 @@ def make_simple_indices():
         print(
             "Created index simple_state_latest_mark on main_state (project, deleted,((mark=latest_mark)))"
         )
-
         # Create an index for elemental_id
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_elemental_id_gin;")
         cursor.execute(
@@ -1730,7 +1703,6 @@ def make_simple_indices():
         print(
             "Created index simple_state_elemental_id_gin ON main_state USING gin (elemental_id::text gin_trgm_ops);"
         )
-
         cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS simple_state_elemental_id;")
         cursor.execute(
             "CREATE INDEX CONCURRENTLY simple_state_elemental_id ON main_state USING btree ((elemental_id::text));"
