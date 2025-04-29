@@ -1426,6 +1426,23 @@ def destroy_tator_indices():
                 print(f"Dropped {count}/{len(indices)} indices on {table}")
         print(f"Dropped {total_count} indices")
 
+def destroy_simple_indices():
+    # This will destroy all indices on all tables that start with "simple_"
+    from django.db import connection
+    with connection.cursor() as cursor:
+        total_count = 0
+        count = 0
+        cursor.execute(
+            f"SELECT indexname FROM pg_indexes WHERE indexname LIKE 'simple_%'"
+        )
+        indices = cursor.fetchall()
+        for index in indices:
+            count += 1
+            total_count += 1
+            cursor.execute(f"DROP INDEX CONCURRENTLY {index[0]}")
+            if count % 100 == 0:
+                print(f"Dropped {count}/{len(indices)} indices on {table}")
+        print(f"Dropped {total_count} indices")
 
 def cluster_tables():
     from django.db import connection
