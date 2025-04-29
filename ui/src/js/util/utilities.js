@@ -137,3 +137,15 @@ export class Utilities {
     }
   }
 }
+
+// Utility function to get the active element, including shadow DOMs
+export function getDeepActiveElement(el) {
+  let activeElement = (el._shadow ? el._shadow.activeElement : el.activeElement);
+  while (activeElement && activeElement._shadow && activeElement._shadow.activeElement) {
+    activeElement = activeElement._shadow.activeElement;
+  }
+  if (activeElement && activeElement.activeElement) {
+    activeElement = activeElement.activeElement;
+  }
+  return activeElement;
+}
