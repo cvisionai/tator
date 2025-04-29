@@ -513,9 +513,20 @@ class MediaListAPI(StreamingListView):
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
         presigned = params.get("presigned")
+        attributes_to_select = None
+        if params.get("fields") is not None:
+            fields = []
+            fields_param = params.get('fields', '').split(',')
+            attributes_to_select = set()
+            
+            for field in fields_param:
+                if field.startswith('attributes.'):
+                    attributes_to_select.add(field.split('.')[1])
+                else:
+                    fields.append(field)
 
         # Handle JSON fields specially
-        qs = optimize_qs(Media, qs, fields)
+        qs = optimize_qs(Media, qs, fields, partial_fields = attributes_to_select)
         s = time.time()
         first_one = True
         requested_format = self.request.accepted_renderer.format
