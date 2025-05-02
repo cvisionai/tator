@@ -66,11 +66,12 @@ def optimize_qs(model, qs, fields, partial_fields=None):
             pass
 
     if partial_fields:
-        build_args = []
-        for key in partial_fields:
-            build_args.extend([Value(key), JSONObjectGet('attributes', Value(key))])
-        if build_args:
-            annotations["attributes"] = JSONObjectBuild(*build_args)
+        for field_name,value in partial_fields.items():
+            build_args = []
+            for partial_key in value:
+                build_args.extend([Value(partial_key), JSONObjectGet(field_name, Value(partial_key))])
+            if build_args:
+                annotations[field_name] = JSONObjectBuild(*build_args)
     return qs.values(*new_fields).annotate(**annotations)
 
 
