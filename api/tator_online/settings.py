@@ -216,7 +216,9 @@ class TatorLogFormatter(logging.Formatter):
             dt.strftime("%Y-%m-%d %H:%M:%S") + "," + f"{dt.microsecond // 1000:03}"
         )
         if os.getenv("DD_LOGS_INJECTION"):
-            dd_log_inject = f"[dd.service={getattr(record,'dd.service', None)} dd.env={getattr(record,'dd.env', None)} dd.version={getattr(record,'dd.version', None)} dd.trace_id={getattr(record,'dd.trace_id', None)} dd.span_id={getattr(record,'dd.span_id', None)}]"
+            dd = getattr(record, 'dd', None)
+            if dd:
+                dd_log_inject = f"[dd.service={getattr(dd,'service', None)} dd.env={getattr(dd,'env', None)} dd.version={getattr(dd,'version', None)} dd.trace_id={getattr(dd,'trace_id', None)} dd.span_id={getattr(dd,'span_id', None)}]"
         message = f"{time_str} {record.levelname} [{record.name}] [{record.filename}:{record.lineno}] {dd_log_inject} - {self.format_multiline(record.getMessage())}"
         if record.exc_info:
             message += "| " + self.format_multiline(record.exc_info)
