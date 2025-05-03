@@ -1,6 +1,7 @@
 import logging
 import datetime
 import itertools
+from collections import defaultdict
 
 from django.db import transaction
 from django.db.models import Max
@@ -104,15 +105,31 @@ class StateListAPI(StreamingListView):
         t0 = datetime.datetime.now()
         qs = self.get_queryset()
         fields = [*STATE_PROPERTIES]
+        partial_fields_selected = None
+        if params.get("fields") is not None:
+            fields = []
+            fields_param = params.get('fields', '').split(',')
+            
+            for field in fields_param:
+                if len(field.split('.')) > 1:
+                    if partial_fields_selected is None:
+                        partial_fields_selected = defaultdict(set)
+                    partial_fields_selected[field.split('.')[0]].add(field.split('.')[1])
+                else:
+                    fields.append(field)
+
         # Remove these fields because we need to annotate them later
-        qs = optimize_qs(State, qs, STATE_PROPERTIES)
-        qs = qs.values(*fields)
+        qs,new_fields,new_annotations = optimize_qs(State, qs, fields, partial_fields=partial_fields_selected)
+        #qs = qs.values(*fields)
         qs = qs.annotate(localizations=ArrayAgg("localizations__pk", default=[], distinct=True, filter=Q(localizations__pk__isnull=False)))
         qs = qs.alias(media_id=ArrayAgg("media__pk", default=[], distinct=True,filter=Q(media__pk__isnull=False)))
+        new_annotations = [*new_annotations,'localizations','media_id']
 
         if self.request.accepted_renderer.format == "json":
             qs = qs.annotate(media=F('media_id'))
-            qs = qs.values(*[*fields, "localizations","media"])
+            new_annotations = [*new_annotations,'media']
+            new_annotations.remove('media_id')
+            qs = qs.values(*[*new_fields, *new_annotations])
             yield '['
             first_one=True
             for element in qs.iterator():
@@ -125,14 +142,17 @@ class StateListAPI(StreamingListView):
 
         elif self.request.accepted_renderer.format == "jsonl":
             qs = qs.annotate(media=F('media_id'))
-            qs = qs.values(*[*fields, "localizations","media"])
+            new_annotations = [*new_annotations,'media']
+            new_annotations.remove('media_id')
+            qs = qs.values(*[*fields, *new_annotations])
             for element in qs.values().iterator():
                 yield ujson.dumps(element) + '\n'
         # Adjust fields for csv output.
         elif self.request.accepted_renderer.format == "csv":
             # CSV creation requires a bit more
             # work to get the right fields
-            new_props = [*STATE_PROPERTIES, "localizations"]
+            new_annotations.remove('media_id')
+            new_props = [*new_fields, *new_annotations]
             qs = qs.values(*new_props)
             qs = qs.annotate(user=F('created_by__email'))
             qs = qs.alias(media_name=ArrayAgg("media__name", default=[], distinct=True))

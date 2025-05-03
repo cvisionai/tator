@@ -144,7 +144,7 @@ class LeafListAPI(BaseListView):
 
     def _get(self, params):
         qs = get_leaf_queryset(params["project"], params)
-        qs = optimize_qs(Leaf, qs, LEAF_PROPERTIES)
+        qs,_,_ = optimize_qs(Leaf, qs, LEAF_PROPERTIES)
         response_data = list(qs)
         return response_data
 

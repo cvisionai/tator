@@ -101,7 +101,7 @@ class LocalizationListAPI(StreamingListView):
                     partial_fields_selected[field.split('.')[0]].add(field.split('.')[1])
                 else:
                     fields.append(field)
-        qs = optimize_qs(Localization, qs, fields, partial_fields = partial_fields_selected)
+        qs,new_fields,new_annotations = optimize_qs(Localization, qs, fields, partial_fields = partial_fields_selected)
 
         if self.request.accepted_renderer.format == "json":
             yield '['
@@ -121,10 +121,9 @@ class LocalizationListAPI(StreamingListView):
         elif self.request.accepted_renderer.format == "csv":
             # CSV creation requires a bit more
             # work to get the right fields
-            new_props = [*fields]
-            new_props.remove("user")
-            new_props.remove("media")
-            qs = optimize_qs(Localization, qs, new_props, partial_fields=partial_fields_selected)
+            new_fields.remove("user")
+            new_fields.remove("media")
+            qs = qs.values([*new_fields,*new_annotations])
             qs = qs.annotate(user=F('user__email'), media=F('media__name'))
             attr_types = qs.values("type__attribute_types")
             attr_name_set = set()
