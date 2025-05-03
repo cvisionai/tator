@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from django.db.models import Max
 from django.db import transaction
 from django.http import Http404
@@ -87,7 +88,20 @@ class LocalizationListAPI(StreamingListView):
 
     def _get(self, params):
         qs = self.get_queryset()
-        qs = optimize_qs(Localization, qs, LOCALIZATION_PROPERTIES)
+        partial_fields_selected = None
+        fields = LOCALIZATION_PROPERTIES
+        if params.get("fields") is not None:
+            fields = []
+            fields_param = params.get('fields', '').split(',')
+            
+            for field in fields_param:
+                if len(field.split('.')) > 1:
+                    if partial_fields_selected is None:
+                        partial_fields_selected = defaultdict(set)
+                    partial_fields_selected[field.split('.')[0]].add(field.split('.')[1])
+                else:
+                    fields.append(field)
+        qs = optimize_qs(Localization, qs, fields, partial_fields = partial_fields_selected)
 
         if self.request.accepted_renderer.format == "json":
             yield '['
@@ -107,10 +121,10 @@ class LocalizationListAPI(StreamingListView):
         elif self.request.accepted_renderer.format == "csv":
             # CSV creation requires a bit more
             # work to get the right fields
-            new_props = [*LOCALIZATION_PROPERTIES]
+            new_props = [*fields]
             new_props.remove("user")
             new_props.remove("media")
-            qs = qs.values(*new_props)
+            qs = optimize_qs(Localization, qs, new_props, partial_fields=partial_fields_selected)
             qs = qs.annotate(user=F('user__email'), media=F('media__name'))
             attr_types = qs.values("type__attribute_types")
             attr_name_set = set()
