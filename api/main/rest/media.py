@@ -528,7 +528,7 @@ class MediaListAPI(StreamingListView):
                     fields.append(field)
 
         # Handle JSON fields specially
-        qs = optimize_qs(Media, qs, fields, partial_fields = partial_fields_selected)
+        qs,_,_ = optimize_qs(Media, qs, fields, partial_fields = partial_fields_selected)
         s = time.time()
         first_one = True
         requested_format = self.request.accepted_renderer.format

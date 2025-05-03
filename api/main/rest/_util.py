@@ -72,7 +72,8 @@ def optimize_qs(model, qs, fields, partial_fields=None):
                 build_args.extend([Value(partial_key), JSONObjectGet(field_name, Value(partial_key))])
             if build_args:
                 annotations[field_name] = JSONObjectBuild(*build_args)
-    return qs.values(*new_fields).annotate(**annotations)
+    annotation_fields = [key for key in annotations.keys()]
+    return qs.values(*new_fields).annotate(**annotations),new_fields,annotation_fields
 
 
 def compute_user(project, user, user_elemental_id):
