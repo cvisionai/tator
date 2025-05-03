@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
-    "main",
+    "main.apps.MainConfig",
     "django_saml2_auth",
     "rest_framework",
     "rest_framework.authtoken",
@@ -199,25 +199,6 @@ RAW_ROOT = "/data/raw"
 
 ASGI_APPLICATION = "tator_online.routing.application"
 
-def format_multiline_log_message(message):
-    allow_multiline = os.getenv("TATOR_LOG_MULTI_LINE", "false").lower() == "true"
-    if allow_multiline:
-        return message
-    else:
-        return str(message).replace("\n", " \\n ").replace("\t", "    ")
-
-class MultilineLogFilter(logging.Filter):
-    def filter(self, record):
-        original_message = record.getMessage()
-        record.message = format_multiline_log_message(original_message)
-        record.msg = record.message
-        record.args = [] # Clear args as they are now incorporated
-
-        if record.exc_info:
-            record.message += "| " + format_multiline_log_message(record.exc_info)
-
-        return True
-
 if os.getenv("DD_LOGS_INJECTION"):
     FORMAT = (
         "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] "
@@ -232,11 +213,6 @@ else:
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "filters": {
-        "multiline": {
-            "()": MultilineLogFilter,
-        }
-    },
     "formatters": {
         "custom": {
             "format": FORMAT,
@@ -246,7 +222,6 @@ LOGGING = {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "custom",
-            "filters": ["multiline"],
         },
     },
     "loggers": {
