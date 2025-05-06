@@ -1,9 +1,9 @@
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 MAINTAINER CVision AI <info@cvisionai.com>
 
 ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
 ENV APT_REPO_HOST=${APT_REPO_HOST}
-RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list.d/ubuntu.sources
+RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
 
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -16,6 +16,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libgdal-dev \
     libmagic-dev \
     wget \
+    curl \
     xdot \
     xmlsec1 \
     postgresql-client \
@@ -24,11 +25,14 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
  && rm -rf /var/lib/apt/lists/*
 
 # Install pip packages
-RUN python3 -m venv tator
+RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
 COPY containers/tator/requirements.txt requirements.txt
-RUN . tator/bin/activate && pip --no-cache-dir --timeout=1000 install --upgrade pip && pip --no-cache-dir --timeout=1000 install -r requirements.txt
+RUN pip3 --no-cache-dir --timeout=1000 install -r requirements.txt
 RUN rm requirements.txt
-ENV PATH="/tator/bin:$PATH"
+
+# Install kubectl for certificate renewal
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /

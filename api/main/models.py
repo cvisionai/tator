@@ -1301,6 +1301,10 @@ class StateType(Model):
     )
     """ Unique ID for a to facilitate cross-cluster sync operations """
 
+    extended_info = JSONField(default=dict, null=True, blank=True)
+    """ Extended information about the state type, useful for configuration of Tator® extensions.
+    """
+
     def __str__(self):
         return f"{self.name} | {self.project}"
 
