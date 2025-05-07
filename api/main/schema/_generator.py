@@ -65,6 +65,7 @@ class CustomGenerator(SchemaGenerator):
                 "BucketOCIConfig": oci_config,
                 "BucketOCINativeConfig": oci_native_config,
                 "BucketS3Config": s3_config,
+                "BucketAzureConfig": azure_config,
                 "ConcatDefinition": concat_definition,
                 "ChangeLog": change_log,
                 "CloneMediaSpec": clone_media_spec,

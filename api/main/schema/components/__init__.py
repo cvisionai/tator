@@ -28,6 +28,7 @@ from .bucket import (
     oci_config,
     oci_native_config,
     s3_config,
+    azure_config,
 )
 from .change_log import change_log
 from .clone_media import clone_media_spec, get_cloned_media_response
