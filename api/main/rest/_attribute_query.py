@@ -90,7 +90,6 @@ def _sanitize(name):
 
 
 def supplied_name_to_field(supplied_name):
-    logger.info(f"SNAME={supplied_name}")
     if supplied_name.startswith("-"):
         desc = True
         supplied_name = supplied_name[1:]
@@ -123,9 +122,10 @@ def _calculate_names_and_types(search_obj):
         if attribute == "$type":
             value = search_obj["value"]
             if type(value) is list:
-                types.extend(value)
+                for v in value:
+                    types.append(int(value))
             else:
-                types.append(value)
+                types.append(int(value))
         elif attribute.startswith("$"):
             built_in = True
         elif attribute:
