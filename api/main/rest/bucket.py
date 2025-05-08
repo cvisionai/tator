@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 def _get_endpoint_url(bucket):
-    if bucket.store_type == ObjectStore.GCP:
+    if bucket.store_type in [ObjectStore.GCP, ObjectStore.AZURE]:
         return None
     if bucket.store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
         return bucket.config.get("endpoint_url", None)
     if bucket.store_type == ObjectStore.OCI:
         return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
-    raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
+    raise ValueError(f"Received unhandled store type '{bucket.store_type}'")
 
 
 def serialize_bucket(bucket):
