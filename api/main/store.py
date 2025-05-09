@@ -66,7 +66,7 @@ VALID_STORAGE_CLASSES = {
         ObjectStore.GCP: ["STANDARD", "COLDLINE"],
         ObjectStore.OCI: ["STANDARD"],
         ObjectStore.VAST: ["STANDARD"],
-        ObjectStore.AZURE: ["Cold", "Archive"],
+        ObjectStore.AZURE: ["STANDARD"],
     },
     "live_sc": {
         ObjectStore.AWS: ["STANDARD"],
@@ -74,7 +74,7 @@ VALID_STORAGE_CLASSES = {
         ObjectStore.GCP: ["STANDARD"],
         ObjectStore.OCI: ["STANDARD"],
         ObjectStore.VAST: ["STANDARD"],
-        ObjectStore.AZURE: ["Hot"],
+        ObjectStore.AZURE: ["STANDARD"],
     },
 }
 
@@ -86,7 +86,7 @@ DEFAULT_STORAGE_CLASSES = {
         ObjectStore.GCP: "COLDLINE",
         ObjectStore.OCI: "STANDARD",
         ObjectStore.VAST: "STANDARD",
-        ObjectStore.AZURE: "Archive",
+        ObjectStore.AZURE: "STANDARD",
     },
     "live_sc": {
         ObjectStore.AWS: "STANDARD",
@@ -94,7 +94,7 @@ DEFAULT_STORAGE_CLASSES = {
         ObjectStore.GCP: "STANDARD",
         ObjectStore.OCI: "STANDARD",
         ObjectStore.VAST: "STANDARD",
-        ObjectStore.AZURE: "Hot",
+        ObjectStore.AZURE: "STANDARD",
     },
 }
 
