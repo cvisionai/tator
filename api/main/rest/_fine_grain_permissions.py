@@ -119,7 +119,7 @@ class ProjectPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
-                logger.info(
+                logger.debug(
                     f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                 )
 
@@ -476,7 +476,7 @@ class OrganizationPermissionBase(BasePermission):
             perm_qs = augment_permission(request.user, perm_qs)
             model = view.get_queryset().model
 
-            logger.info(
+            logger.debug(
                 f"OrganizationPermissionBase: {model} {organization.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
             if perm_qs.exists():
@@ -493,7 +493,7 @@ class OrganizationPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
-                logger.info(
+                logger.debug(
                     f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                 )
 
@@ -524,7 +524,7 @@ class OrganizationPermissionBase(BasePermission):
                     )
                 )
 
-                logger.info(
+                logger.debug(
                     f"Org Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                 )
 
@@ -555,7 +555,7 @@ class OrganizationPermissionBase(BasePermission):
                 )
             )
 
-            logger.info(
+            logger.debug(
                 f"Org Query = required_mask={self.required_mask} model={model} shift={shift_permission(model,Organization)} {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
             )
 

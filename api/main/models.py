@@ -128,7 +128,7 @@ RETURN NEW;
 def on_connection_created(sender, connection, **kwargs):
     http_method = get_http_method()
     if http_method in ["PATCH", "POST", "DELETE"]:
-        logger.info(
+        logger.debug(
             f"{http_method} detected, creating prepared statements."
         )  # useful for testing purposes
         # These prepared statements get reused for each row in a bulk insert, greatly improving performance
@@ -2392,8 +2392,8 @@ def database_query(query):
         aq = datetime.datetime.now()
         l = [make_dict(cursor.description, x) for x in cursor]
         af = datetime.datetime.now()
-        logger.info(f"Query = {aq-bq}")
-        logger.info(f"List = {af-aq}")
+        logger.debug(f"Query = {aq-bq}")
+        logger.debug(f"List = {af-aq}")
     return l
 
 
