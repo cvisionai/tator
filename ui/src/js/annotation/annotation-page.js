@@ -617,7 +617,6 @@ export class AnnotationPage extends TatorPage {
 
                 let this_idx = -1;
                 for (let idx = 0; idx < listData.length; idx++) {
-                  console.info(listData[idx]);
                   if (listData[idx].id == media_id) {
                     this_idx = idx;
                   }
