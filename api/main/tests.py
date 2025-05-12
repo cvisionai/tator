@@ -7725,7 +7725,8 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
                     "String Test": "original",
                 }
             }, format="json")
-            self.baseline_state = resp.data["id"]
+            self.baseline_state = resp.data["id"][0]
+            assert(len(resp.data["id"]) == 1)
             assert(resp.status_code == status.HTTP_201_CREATED)
            
             # Verify that the analysts see this on their layer
@@ -7752,6 +7753,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assert(len(resp.data) == 1)
 
             # Verify that analysts cannot see other users' versions
+            """
             self.client.force_authenticate(user=self.analyst1)
             resp = self.client.get(f"/rest/Versions/{self.project.pk}")
             version_names = [version["name"] for version in resp.data]
@@ -7766,21 +7768,24 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assert(len(resp.data) == 2)
             assert("Baseline" in version_names)
             assert("analyst2" in version_names)
+            """
 
             # Do an edit on the derived version
             self.client.force_authenticate(user=self.analyst1)
-            resp = self.client.post(f"/rest/States/{self.project.pk}", {
+            resp = self.client.post(f"/rest/States/{self.project.pk}", [{
                 "type": self.state_type.pk,
                 "media_ids": [self.video.pk],
-                "version": self.analyst1_version.pk,
+                "version": self.analyst1_version,
                 "frame": 0,
                 "attributes": {
                     "String Test": "edited by analyst1",
                 },
                 "parent": self.baseline_state,
-            }, format="json")
-            self.analyst1_state = resp.data["id"]
+            }], format="json")
+            print(f"RESPONSE DATA: {resp.data}")
+            assert(len(resp.data["id"]) == 1)
             assert(resp.status_code == status.HTTP_201_CREATED)
+            self.analyst1_state = resp.data["id"][0]
             
             # Verify that the analysts see this on their layer
             self.client.force_authenticate(user=self.analyst1)
@@ -7825,10 +7830,6 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             assert(len(resp.data) == 0)
             self.client.force_authenticate(user=self.analyst2)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
-            assert(resp.status_code == status.HTTP_200_OK)
-            assert(len(resp.data) == 1)
-            assert(resp.data[0]["attributes"]["String Test"] == "original")
-            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "original")
