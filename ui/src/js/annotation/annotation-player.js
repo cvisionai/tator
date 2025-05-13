@@ -628,7 +628,7 @@ export class AnnotationPlayer extends TatorElement {
         }
         else
         {
-          this._playInteraction.enable();
+          this._playInteraction.enable(this.is_paused());
         }
       }
       else
@@ -639,7 +639,7 @@ export class AnnotationPlayer extends TatorElement {
         }
         else
         {
-          this._playInteraction.enable();
+          this._playInteraction.enable(this.is_paused());
         }
       }
     });
@@ -789,7 +789,7 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("playbackReady", () => {
       if (this.is_paused()) {
-        this._playInteraction.enable();
+        this._playInteraction.enable(this.is_paused());
       }
     });
     this._video.addEventListener("playbackNotReady", () => {
@@ -1576,7 +1576,7 @@ export class AnnotationPlayer extends TatorElement {
       if (this._video.scrubBufferAvailable() == false) {
         this._playInteraction.disable();
       } else {
-        this._playInteraction.enable();
+        this._playInteraction.enable(this.is_paused());
       }
     }
   }
@@ -1688,14 +1688,14 @@ export class AnnotationPlayer extends TatorElement {
             console.log(
               `Video playback check - Ready [Now: ${new Date().toISOString()}]`
             );
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
           })
           .catch((e) => {
             console.log(e);
             console.log(
               `Video playback check - Ready [Now: ${new Date().toISOString()}] (not hq pause)`
             );
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
           });
       }
     };
