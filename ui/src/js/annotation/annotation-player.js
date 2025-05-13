@@ -651,6 +651,7 @@ export class AnnotationPlayer extends TatorElement {
       {
         this._rateControl.enableAllSpeeds();
       }
+      this._playInteraction.enable(this.is_paused());
     });
 
     this._video.addEventListener("paused", () => {
