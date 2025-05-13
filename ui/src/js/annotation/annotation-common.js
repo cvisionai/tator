@@ -200,10 +200,18 @@ export class PlayInteraction {
   constructor(parent) {
     this._parent = parent;
   }
-  enable() {
+  enable(is_paused) {
     this._parent._play._button.removeAttribute("disabled");
-    this._parent._rewind.removeAttribute("disabled");
-    this._parent._fastForward.removeAttribute("disabled");
+    if (is_paused) {
+      this._parent._rewind.removeAttribute("disabled");
+      this._parent._fastForward.removeAttribute("disabled");
+    }
+    else
+    {
+      this._parent._rewind.setAttribute("disabled", "");
+      this._parent._fastForward.setAttribute("disabled", "");
+    }
+
     this._parent._play.removeAttribute("tooltip");
   }
   disable() {

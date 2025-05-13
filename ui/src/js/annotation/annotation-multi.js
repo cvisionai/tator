@@ -1385,7 +1385,7 @@ export class AnnotationMulti extends TatorElement {
         if (global_status[idx] == 0) {
           this._videoStatus = "paused";
           this._play.setAttribute("is-paused", "");
-          this._playInteraction.enable();
+          this._playInteraction.enable(this.is_paused());
           return false;
         }
       }
@@ -1442,7 +1442,7 @@ export class AnnotationMulti extends TatorElement {
         this._playInteraction.disable();
         this._playbackDisabled = true;
       } else {
-        this._playInteraction.enable();
+        this._playInteraction.enable(this.is_paused());
         this._playbackDisabled = false;
       }
 
@@ -1728,7 +1728,7 @@ export class AnnotationMulti extends TatorElement {
         if (allVideosReady) {
           console.log("allVideosReady");
           if (this.is_paused()) {
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
             this._playbackDisabled = false;
             //this._rateControl.setValue(this._rate);
           }
@@ -2512,7 +2512,7 @@ export class AnnotationMulti extends TatorElement {
     if (notReady) {
       this.handleAllNotReadyEvents();
     } else {
-      this._playInteraction.enable();
+      this._playInteraction.enable(this.is_paused());
       this._playbackDisabled = false;
     }
   }
@@ -2702,14 +2702,14 @@ export class AnnotationMulti extends TatorElement {
         if (allVideosReady) {
           console.log("allVideosReady");
           try {
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
             this._playbackDisabled = false;
             return;
           } catch (exc) {
             console.warn("allVideosReady() seekFrame promises error caught");
             console.warn(exc);
 
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
             this._playbackDisabled = false;
             //this._rateControl.setValue(this._rate);
           }
