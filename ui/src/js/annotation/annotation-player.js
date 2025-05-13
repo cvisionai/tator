@@ -647,6 +647,7 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addEventListener("playing", () => {
       this._play.removeAttribute("is-paused");
       this._videoStatus = "playing";
+      this._playInteraction.enable(this.is_paused());
     });
 
     this._video.addEventListener("paused", () => {
