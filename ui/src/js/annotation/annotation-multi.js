@@ -1004,13 +1004,13 @@ export class AnnotationMulti extends TatorElement {
           video.push(this_video);
         }
         // limit to 4
-        if (video.length > 4) {
-          video = video.slice(0, 4);
-        }
         multiImage = true;
-      } else if (this._videos.length <= 4) {
+      } else {
         multiImage = true;
-        video = this._videos;
+        video = [...this._videos];
+      }
+      if (video.length > 4) {
+        video = video.slice(0, 4);
       }
 
       for (let idx = 0; idx < video.length; idx++) {
