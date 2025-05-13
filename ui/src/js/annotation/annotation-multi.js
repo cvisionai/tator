@@ -605,6 +605,11 @@ export class AnnotationMulti extends TatorElement {
     });
 
     fastForward.addEventListener("click", () => {
+      const paused = this.is_paused()
+      if (paused == false)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++) {
@@ -2781,6 +2786,11 @@ export class AnnotationMulti extends TatorElement {
   }
 
   playBackwards() {
+    const paused = this.is_paused()
+    if (paused == false)
+    {
+      return;
+    }
     let playing = false;
     this._playInteraction.disable();
     // Check to see if the video player can play at this rate
