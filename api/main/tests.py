@@ -7578,6 +7578,13 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             self.project = Project.objects.get(pk=resp.data["id"])
             assert(resp.status_code == status.HTTP_201_CREATED)
 
+            # Version gets auto-created via:
+            # https://github.com/cvisionai/tator/blob/9a831cffe7c1cfdfea5f375ecb728135f42404bc/api/main/models.py#L907
+            resp = self.client.get(f"/rest/Versions/{self.project.pk}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+
+
             # Create group for managers and analysts
             self.client.force_authenticate(user=self.admin)
             resp = self.client.post(f"/rest/Groups/{self.government}", {
@@ -7630,14 +7637,11 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             }, format="json")
             assert(resp.status_code == status.HTTP_201_CREATED)
             
-            # Create baseline version and one version per user
-            resp = self.client.post(f"/rest/Versions/{self.project.pk}", {
-                "name": "Baseline",
-                "description": "baseline version",
-                "version_number": 0,
-            }, format="json")
-            self.baseline_version = resp.data["id"]
-            assert(resp.status_code == status.HTTP_201_CREATED)
+            # Recall that baseline is auto-created when the project is made
+            resp = self.client.get(f"/rest/Versions/{self.project.pk}")
+            version = resp.data[0]
+            self.baseline_version = version["id"]
+            assert(resp.status_code == status.HTTP_200_OK)
             resp = self.client.post(f"/rest/Versions/{self.project.pk}", {
                 "name": "analyst1",
                 "description": "analyst1 version",
