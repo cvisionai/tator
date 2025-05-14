@@ -7606,13 +7606,13 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             resp = self.client.post(f"/rest/RowProtections", {
                 'group': self.managers_group,
                 'project': self.project.pk,
-                'permission': 1099511627775,
+                'permission': 0xFFFFFFFFFF,
             }, format="json")
             assert(resp.status_code == status.HTTP_201_CREATED)
             resp = self.client.post(f"/rest/RowProtections", {
                 'group': self.analysts_group,
                 'project': self.project.pk,
-                'permission': 1099511627775,
+                'permission': 0xFFFFFFFFFF,
             }, format="json")
             assert(resp.status_code == status.HTTP_201_CREATED)
 
@@ -7659,13 +7659,13 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             resp = self.client.post(f"/rest/RowProtections", {
                 'group': self.analysts_group,
                 'version': self.analyst1_version,
-                'permission': 0,
+                'permission': 0x0,
             }, format="json")
             assert(resp.status_code == status.HTTP_201_CREATED)
             resp = self.client.post(f"/rest/RowProtections", {
                 'group': self.analysts_group,
                 'version': self.analyst2_version,
-                'permission': 0,
+                'permission': 0x0,
             }, format="json")
             assert(resp.status_code == status.HTTP_201_CREATED)
 
@@ -7673,7 +7673,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             resp = self.client.post(f"/rest/RowProtections", {
                 'group': self.analysts_group,
                 'version': self.baseline_version,
-                'permission': 771,
+                'permission': 0x0303,
             }, format="json")
             assert(resp.status_code == status.HTTP_201_CREATED)
 
@@ -7681,13 +7681,13 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             resp = self.client.post(f"/rest/RowProtections", {
                 'user': self.analyst1.pk,
                 'version': self.analyst1_version,
-                'permission': 65535,
+                'permission': 0xFFFF,
             }, format="json")
             assert(resp.status_code == status.HTTP_201_CREATED)
             resp = self.client.post(f"/rest/RowProtections", {
                 'user': self.analyst2.pk,
                 'version': self.analyst2_version,
-                'permission': 65535,
+                'permission': 0xFFFF,
             }, format="json")
 
             # Create media, state, and localization types
