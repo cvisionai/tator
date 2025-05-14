@@ -3,10 +3,41 @@
     <title>Tator</title>
     <script src="{{ static_path }}/oidc.js"></script>
     <script>
-      exchangeAuthToken();
+      // Use a timeout to ensure page and local storage is loaded
+      window.addEventListener('load', function() {
+        let postLoginPath = localStorage.getItem("postLoginPath") || "/projects";
+        const expiresAtString = localStorage.getItem("postLoginPathExpiresAt");
+        const expiresAt = new Date(expiresAtString);
+        const currentDate = new Date();
+        if (expiresAt < currentDate) {
+          console.log("Post login path is expired, ignoring.");
+          postLoginPath = "/projects";
+        }
+        let link = document.getElementById('link');
+        link.href = postLoginPath;
+        link.classList.remove('hidden');
+        setTimeout(exchangeAuthToken,5);
+      });
     </script>
+    <style>
+      .hidden {
+        display: none;
+      }
+      body {
+        background: black;
+        color: white;
+        font-family: sans-serif;
+      }
+      a {
+        color: #999999;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
-    Authenticating, please wait...
+    Authenticating, please wait...<a id='link' href ="" class="hidden">Click here if you are not redirected.</a>
   </body>
 </html>

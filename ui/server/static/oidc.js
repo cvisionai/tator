@@ -38,8 +38,6 @@ function exchangeAuthToken() {
       console.log(
         `Login successful, going to post login path ${postLoginPath}`
       );
-      localStorage.removeItem("postLoginPath");
-      localStorage.removeItem("postLoginPathExpiresAt");
       window.location.href = postLoginPath;
     })
     .catch((error) => {

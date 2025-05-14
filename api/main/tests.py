@@ -7531,3 +7531,306 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
             assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
+
+
+    class SiloedVersionsTestCase(TatorTransactionTest):
+        def setUp(self):
+            super().setUp()
+            # Add 9 users from our previous
+            logging.disable(logging.CRITICAL)
+
+            self.admin = create_test_user(is_staff=True, username="admin")
+            self.manager = create_test_user(is_staff=False, username="manager")
+            self.analyst1 = create_test_user(is_staff=False, username="analyst1")
+            self.analyst2 = create_test_user(is_staff=False, username="analyst2")
+
+            # Create the organization
+            self.client.force_authenticate(user=self.admin)
+            resp = self.client.post(f"/rest/Organizations", {
+                'name': 'Big Government',
+            }, format="json")
+            self.government = resp.data["id"]
+
+            # Create affiliations for the users
+            self.client.force_authenticate(user=self.admin)
+            resp = self.client.post(f"/rest/Affiliations/{self.government}", {
+                'user': self.manager.pk,
+                'permission': "Member",
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/Affiliations/{self.government}", {
+                'user': self.analyst1.pk,
+                'permission': "Member",
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/Affiliations/{self.government}", {
+                'user': self.analyst2.pk,
+                'permission': "Member",
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+
+            # Create the project
+            self.client.force_authenticate(user=self.admin)
+            resp = self.client.post(f"/rest/Projects", {
+                "name": "Project X",
+                "organization": self.government,
+            }, format="json")
+            self.project = Project.objects.get(pk=resp.data["id"])
+            assert(resp.status_code == status.HTTP_201_CREATED)
+
+            # Version gets auto-created via:
+            # https://github.com/cvisionai/tator/blob/9a831cffe7c1cfdfea5f375ecb728135f42404bc/api/main/models.py#L907
+            resp = self.client.get(f"/rest/Versions/{self.project.pk}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+
+
+            # Create group for managers and analysts
+            self.client.force_authenticate(user=self.admin)
+            resp = self.client.post(f"/rest/Groups/{self.government}", {
+                "name": "managers"
+            }, format="json")
+            self.managers_group = resp.data["id"]
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/Groups/{self.government}", {
+                "name": "analysts"
+            }, format="json")
+            self.analysts_group = resp.data["id"]
+            assert(resp.status_code == status.HTTP_201_CREATED)
+
+            # Add users to groups
+            self.client.force_authenticate(user=self.admin)
+            resp = self.client.patch(f"/rest/Group/{self.managers_group}", {
+                "add_members": [self.manager.pk]
+            }, format="json")
+            assert(resp.status_code == status.HTTP_200_OK)
+            resp = self.client.patch(f"/rest/Group/{self.analysts_group}", {
+                "add_members": [self.analyst1.pk, self.analyst2.pk]
+            }, format="json")
+            assert(resp.status_code == status.HTTP_200_OK)
+
+            # Create row protections for project access by managers and analysts
+            resp = self.client.post(f"/rest/RowProtections", {
+                'group': self.managers_group,
+                'project': self.project.pk,
+                'permission': 0xFFFFFFFFFF,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/RowProtections", {
+                'group': self.analysts_group,
+                'project': self.project.pk,
+                'permission': 0xFFFFFFFFFF,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+
+            # Grant read permission on groups to analysts and managers
+            resp = self.client.post(f"/rest/RowProtections", {
+                'organization': self.project.organization.pk,
+                'target_group': self.managers_group,
+                'permission': 3,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/RowProtections", {
+                'organization': self.project.organization.pk,
+                'target_group': self.analysts_group,
+                'permission': 3,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            
+            # Recall that baseline is auto-created when the project is made
+            resp = self.client.get(f"/rest/Versions/{self.project.pk}")
+            version = resp.data[0]
+            self.baseline_version = version["id"]
+            assert(resp.status_code == status.HTTP_200_OK)
+            resp = self.client.post(f"/rest/Versions/{self.project.pk}", {
+                "name": "analyst1",
+                "description": "analyst1 version",
+                "version_number": 1,
+                "bases": [self.baseline_version],
+            }, format="json")
+            self.analyst1_version = resp.data["id"]
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/Versions/{self.project.pk}", {
+                "name": "analyst2",
+                "description": "analyst2 version",
+                "version_number": 2,
+                "bases": [self.baseline_version],
+            }, format="json")
+            self.analyst2_version = resp.data["id"]
+            assert(resp.status_code == status.HTTP_201_CREATED)
+                        
+            # Disable access to user versions for analysts group
+            resp = self.client.post(f"/rest/RowProtections", {
+                'group': self.analysts_group,
+                'version': self.analyst1_version,
+                'permission': 0x0,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/RowProtections", {
+                'group': self.analysts_group,
+                'version': self.analyst2_version,
+                'permission': 0x0,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+
+            # Grant read-only access to baseline version and children for analysts group
+            resp = self.client.post(f"/rest/RowProtections", {
+                'group': self.analysts_group,
+                'version': self.baseline_version,
+                'permission': 0x0303,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+
+            # Grant full access to each analyst to their own version and children
+            resp = self.client.post(f"/rest/RowProtections", {
+                'user': self.analyst1.pk,
+                'version': self.analyst1_version,
+                'permission': 0xFFFF,
+            }, format="json")
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            resp = self.client.post(f"/rest/RowProtections", {
+                'user': self.analyst2.pk,
+                'version': self.analyst2_version,
+                'permission': 0xFFFF,
+            }, format="json")
+
+            # Create media, state, and localization types
+            self.media_type = MediaType.objects.create(
+                name="video",
+                dtype="video",
+                project=self.project,
+                attribute_types=create_test_attribute_types(),
+            )
+            self.box_type = LocalizationType.objects.create(
+                name="boxes",
+                dtype="box",
+                project=self.project,
+                attribute_types=create_test_attribute_types(),
+            )
+            self.state_type = StateType.objects.create(
+                name="state_type",
+                dtype="state",
+                project=self.project,
+                association="Frame",
+                attribute_types=create_test_attribute_types(),
+            )
+
+            # Create a video
+            self.video = create_test_video(self.admin, f"test.mp4", self.media_type, self.project)
+
+        def test_annotation_access(self):
+            # Create a state on the baseline layer as an admin
+            self.client.force_authenticate(user=self.admin)
+            resp = self.client.post(f"/rest/States/{self.project.pk}", {
+                "type": self.state_type.pk,
+                "media_ids": [self.video.pk],
+                "version": self.baseline_version,
+                "frame": 0,
+                "attributes": {
+                    "String Test": "original",
+                }
+            }, format="json")
+            self.baseline_state = resp.data["id"][0]
+            assert(len(resp.data["id"]) == 1)
+            assert(resp.status_code == status.HTTP_201_CREATED)
+           
+            # Verify that the analysts see this on their layer
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            assert(resp.data[0]["attributes"]["String Test"] == "original")
+            self.client.force_authenticate(user=self.analyst2)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            assert(resp.data[0]["attributes"]["String Test"] == "original")
+
+            # Verify that analysts can see baseline states even if they select another layer
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            self.client.force_authenticate(user=self.analyst2)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+
+            # Verify that analysts cannot see other users' versions
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.get(f"/rest/Versions/{self.project.pk}")
+            version_names = [version["name"] for version in resp.data]
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 2)
+            assert("Baseline" in version_names)
+            assert("analyst1" in version_names)
+            self.client.force_authenticate(user=self.analyst2)
+            resp = self.client.get(f"/rest/Versions/{self.project.pk}")
+            version_names = [version["name"] for version in resp.data]
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 2)
+            assert("Baseline" in version_names)
+            assert("analyst2" in version_names)
+
+            # Do an edit on the derived version
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.post(f"/rest/States/{self.project.pk}", [{
+                "type": self.state_type.pk,
+                "media_ids": [self.video.pk],
+                "version": self.analyst1_version,
+                "frame": 0,
+                "attributes": {
+                    "String Test": "edited by analyst1",
+                },
+                "parent": self.baseline_state,
+            }], format="json")
+            assert(len(resp.data["id"]) == 1)
+            assert(resp.status_code == status.HTTP_201_CREATED)
+            self.analyst1_state = resp.data["id"][0]
+            
+            # Verify that the analysts see this on their layer
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            assert(resp.data[0]["attributes"]["String Test"] == "edited by analyst1")
+            self.client.force_authenticate(user=self.analyst2)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            assert(resp.data[0]["attributes"]["String Test"] == "original")
+            
+            # Try a patch on the existing version
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.patch(f"/rest/State/{self.analyst1_state}", {
+                "attributes": {
+                    "String Test": "edited again by analyst1",
+                },
+            }, format="json")
+            
+            # Verify that the analysts see this on their layer
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            assert(resp.data[0]["attributes"]["String Test"] == "edited again by analyst1")
+            self.client.force_authenticate(user=self.analyst2)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            assert(resp.data[0]["attributes"]["String Test"] == "original")
+
+            # Delete the state
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.delete(f"/rest/State/{self.analyst1_state}")
+
+            # Verify that the analysts see this on their layer
+            self.client.force_authenticate(user=self.analyst1)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 0)
+            self.client.force_authenticate(user=self.analyst2)
+            resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            assert(resp.status_code == status.HTTP_200_OK)
+            assert(len(resp.data) == 1)
+            assert(resp.data[0]["attributes"]["String Test"] == "original")
