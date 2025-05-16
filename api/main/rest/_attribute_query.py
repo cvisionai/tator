@@ -90,6 +90,7 @@ def _sanitize(name):
 
 
 def supplied_name_to_field(supplied_name):
+    logger.debug(f"SNAME={supplied_name}")
     if supplied_name.startswith("-"):
         desc = True
         supplied_name = supplied_name[1:]

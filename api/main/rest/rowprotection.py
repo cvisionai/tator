@@ -69,7 +69,7 @@ def check_acl_permission_target(user, target_object_qs):
             output_field=BooleanField(),
         )
     )
-    logger.info(
+    logger.debug(
         f"Query = {target_object_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
     )
     if target_object_qs.filter(granted=True).exists():
@@ -102,7 +102,7 @@ class RowProtectionListAPI(BaseListView):
         filters = [x["name"] for x in search_filters]
         for key in self.params.keys():
             if key in filters and self.params.get(key, None):
-                logger.info(f"Filtering on {key} with {self.params[key]}")
+                logger.debug(f"Filtering on {key} with {self.params[key]}")
                 qs = qs.filter(**{key: self.params[key]})
 
         ids_user_can_see = []
@@ -167,7 +167,7 @@ class RowProtectionListAPI(BaseListView):
             ),
         }
 
-        logger.info(f"Creation dict = {creation_dict}")
+        logger.debug(f"Creation dict = {creation_dict}")
         rp = RowProtection.objects.create(**creation_dict)
 
         return {"message": "RowProtection created successfully!", "id": rp.id}

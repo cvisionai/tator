@@ -122,6 +122,9 @@ class ProjectPermissionBase(BasePermission):
                         output_field=BooleanField(),
                     )
                 )
+                logger.debug(
+                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                )
 
                 # If nothing is found we don't have permission for in this set, we have permission
                 if not perm_qs.filter(granted=False).exists():
@@ -476,7 +479,7 @@ class OrganizationPermissionBase(BasePermission):
             perm_qs = augment_permission(request.user, perm_qs)
             model = view.get_queryset().model
 
-            logger.info(
+            logger.debug(
                 f"OrganizationPermissionBase: {model} {organization.pk} {request.method} {hex(self.required_mask)} {perm_qs.count()}"
             )
             if perm_qs.exists():
@@ -492,6 +495,9 @@ class OrganizationPermissionBase(BasePermission):
                         default=False,
                         output_field=BooleanField(),
                     )
+                )
+                logger.debug(
+                    f"Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                 )
 
                 # If nothing is found we don't have permission for in this set, we have permission
@@ -521,6 +527,10 @@ class OrganizationPermissionBase(BasePermission):
                     )
                 )
 
+                logger.debug(
+                    f"Org Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
+                )
+
                 if perm_qs.filter(granted=True).exists():
                     granted = True
         elif request.method in ["POST"]:
@@ -546,6 +556,10 @@ class OrganizationPermissionBase(BasePermission):
                     default=False,
                     output_field=BooleanField(),
                 )
+            )
+
+            logger.debug(
+                f"Org Query = required_mask={self.required_mask} model={model} shift={shift_permission(model,Organization)} {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
             )
 
             if perm_qs.filter(granted=True).exists():

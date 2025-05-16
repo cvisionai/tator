@@ -655,6 +655,11 @@ export class AnnotationMulti extends TatorElement {
     });
 
     fastForward.addEventListener("click", () => {
+      const paused = this.is_paused()
+      if (paused == false)
+      {
+        return;
+      }
       this._hideCanvasMenus();
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++) {
@@ -1021,13 +1026,13 @@ export class AnnotationMulti extends TatorElement {
           video.push(this_video);
         }
         // limit to 4
-        if (video.length > 4) {
-          video = video.slice(0, 4);
-        }
         multiImage = true;
-      } else if (this._videos.length <= 4) {
+      } else {
         multiImage = true;
-        video = this._videos;
+        video = [...this._videos];
+      }
+      if (video.length > 4) {
+        video = video.slice(0, 4);
       }
 
       for (let idx = 0; idx < video.length; idx++) {
@@ -1402,7 +1407,7 @@ export class AnnotationMulti extends TatorElement {
         if (global_status[idx] == 0) {
           this._videoStatus = "paused";
           this._play.setAttribute("is-paused", "");
-          this._playInteraction.enable();
+          this._playInteraction.enable(this.is_paused());
           return false;
         }
       }
@@ -1447,7 +1452,7 @@ export class AnnotationMulti extends TatorElement {
         this._playInteraction.disable();
         this._playbackDisabled = true;
       } else {
-        this._playInteraction.enable();
+        this._playInteraction.enable(this.is_paused());
         this._playbackDisabled = false;
       }
 
@@ -1733,7 +1738,7 @@ export class AnnotationMulti extends TatorElement {
         if (allVideosReady) {
           console.log("allVideosReady");
           if (this.is_paused()) {
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
             this._playbackDisabled = false;
             //this._rateControl.setValue(this._rate);
           }
@@ -2511,7 +2516,7 @@ export class AnnotationMulti extends TatorElement {
     if (notReady) {
       this.handleAllNotReadyEvents();
     } else {
-      this._playInteraction.enable();
+      this._playInteraction.enable(this.is_paused());
       this._playbackDisabled = false;
     }
   }
@@ -2701,14 +2706,14 @@ export class AnnotationMulti extends TatorElement {
         if (allVideosReady) {
           console.log("allVideosReady");
           try {
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
             this._playbackDisabled = false;
             return;
           } catch (exc) {
             console.warn("allVideosReady() seekFrame promises error caught");
             console.warn(exc);
 
-            this._playInteraction.enable();
+            this._playInteraction.enable(this.is_paused());
             this._playbackDisabled = false;
             //this._rateControl.setValue(this._rate);
           }
@@ -2785,6 +2790,11 @@ export class AnnotationMulti extends TatorElement {
   }
 
   playBackwards() {
+    const paused = this.is_paused()
+    if (paused == false)
+    {
+      return;
+    }
     let playing = false;
     this._playInteraction.disable();
     // Check to see if the video player can play at this rate

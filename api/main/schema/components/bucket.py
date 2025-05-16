@@ -48,6 +48,18 @@ oci_config_properties = {
 oci_required = list(oci_config_properties.keys())
 oci_config = {"type": "object", "required": oci_required, "properties": oci_config_properties}
 
+# Azure schema
+azure_config = {
+    "type": "object",
+    "required": ["connection_string"],
+    "properties": {
+        "connection_string": {
+            "description": "Connection string for storage account.",
+            "type": "string",
+        },
+    }
+}
+
 bucket_properties = {
     "name": {"description": "Bucket name.", "type": "string"},
     "archive_sc": {
@@ -63,7 +75,7 @@ bucket_properties = {
     "store_type": {
         "description": "Type of object store on which the bucket is hosted.",
         "type": "string",
-        "enum": ["AWS", "MINIO", "GCP", "OCI", "VAST"],
+        "enum": ["AWS", "MINIO", "GCP", "OCI", "VAST", "AZURE"],
     },
     "external_host": {"description": "The proxy host for presigned urls.", "type": "string"},
     "effective_permission": {
@@ -79,6 +91,7 @@ all_bucket_properties = {
             {"$ref": "#/components/schemas/BucketGCPConfig"},
             {"$ref": "#/components/schemas/BucketOCIConfig"},
             {"$ref": "#/components/schemas/BucketS3Config"},
+            {"$ref": "#/components/schemas/BucketAzureConfig"},
         ],
     },
     **bucket_properties,
