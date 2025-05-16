@@ -41,6 +41,8 @@ class FileListAPI(BaseListView):
     schema = FileListSchema()
     http_method_names = ["get", "post"]
     entity_type = FileType
+    _viewables = None
+    _range = [0, None]
 
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
@@ -125,7 +127,13 @@ class FileListAPI(BaseListView):
         return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
     def get_queryset(self, **kwargs):
-        return self.filter_only_viewables(get_file_queryset(self.params["project"], self.params))
+        if type(self._viewables) != type(None):
+            # Reapply slices as required
+            self._viewables.query.set_limits(self._range[0], self._range[1])
+            return self._viewables
+        self._viewables = self.filter_only_viewables(get_file_queryset(self.params["project"], self.params))
+        self._range = [self._viewables.query.low_mark, self._viewables.query.high_mark]
+        return self._viewables
 
 
 class FileDetailAPI(BaseDetailView):

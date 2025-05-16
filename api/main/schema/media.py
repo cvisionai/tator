@@ -97,6 +97,13 @@ class MediaListSchema(AutoSchema):
         if method in ["GET", "PUT"]:
             params += [
                 {
+                    "name": "fields",
+                    "in": "query",
+                    "required": False,
+                    "description": "A comma-separated list of fields to include in the response. Example: id,name,attributes.color",
+                    "schema": {"type": "string"},
+                },
+                {
                     "name": "presigned",
                     "in": "query",
                     "required": False,
