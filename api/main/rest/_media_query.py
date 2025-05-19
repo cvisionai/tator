@@ -268,9 +268,11 @@ def _get_media_psql_queryset(project, filter_ops, params):
     else:
         qs = qs.order_by("name", "id")
 
-    if stop is not None:
+    if start is not None and stop is not None:
+        qs = qs[start:stop]
+    elif stop is not None:
         qs = qs[:stop]
-    if start is not None:
+    elif start is not None:
         qs = qs[start:]
 
     return qs

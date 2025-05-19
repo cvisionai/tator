@@ -1434,8 +1434,9 @@ class Media(Model, ModelDiffMixin):
         blank=True,
         db_column="project",
         related_name="media_project",
+        db_index=False,
     )
-    type = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column="meta")
+    type = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column="meta", db_index=False)
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
@@ -1912,8 +1913,8 @@ class Localization(Model, ModelDiffMixin):
             ),
         ]
 
-    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
-    type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column="meta")
+    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project", db_index=False)
+    type = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column="meta", db_index=False)
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
@@ -2023,8 +2024,8 @@ class State(Model, ModelDiffMixin):
             ),
         ]
 
-    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project")
-    type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column="meta")
+    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column="project", db_index=False)
+    type = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column="meta", db_index=False)
     """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`

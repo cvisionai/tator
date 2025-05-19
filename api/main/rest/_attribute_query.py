@@ -123,9 +123,10 @@ def _calculate_names_and_types(search_obj):
         if attribute == "$type":
             value = search_obj["value"]
             if type(value) is list:
-                types.extend(value)
+                for v in value:
+                    types.append(int(value))
             else:
-                types.append(value)
+                types.append(int(value))
         elif attribute.startswith("$"):
             built_in = True
         elif attribute:

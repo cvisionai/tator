@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from django.db.models import Max
 from django.db import transaction
 from django.http import Http404
@@ -18,11 +19,12 @@ from ..schema.components import localization as localization_schema
 
 from .._permission_util import augment_permission
 
-from ._base_views import BaseListView
+from ._base_views import StreamingListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
+from django.db.models import F
 from ._util import (
     bulk_create_from_generator,
     bulk_delete_and_log_changes,
@@ -35,10 +37,12 @@ from ._util import (
     construct_elemental_id_from_spec,
     construct_parent_from_spec,
     compute_user,
+    optimize_qs,
 )
 from ._permissions import ProjectEditPermission, ProjectViewOnlyPermission
 
 import uuid
+import ujson
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +51,7 @@ LOCALIZATION_PROPERTIES = list(localization_schema["properties"].keys())
 import os
 
 
-class LocalizationListAPI(BaseListView):
+class LocalizationListAPI(StreamingListView):
     """Interact with list of localizations.
 
     Localizations are shape annotations drawn on a video or image. They are currently of type
@@ -83,38 +87,60 @@ class LocalizationListAPI(BaseListView):
         return Localization
 
     def _get(self, params):
-        logger.info("PARAMS=%s", params)
         qs = self.get_queryset()
-        response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
+        partial_fields_selected = None
+        fields = LOCALIZATION_PROPERTIES
+        if params.get("fields") is not None:
+            fields = []
+            fields_param = params.get('fields', '').split(',')
+            
+            for field in fields_param:
+                if len(field.split('.')) > 1:
+                    if partial_fields_selected is None:
+                        partial_fields_selected = defaultdict(set)
+                    partial_fields_selected[field.split('.')[0]].add(field.split('.')[1])
+                else:
+                    fields.append(field)
+        qs,new_fields,new_annotations = optimize_qs(Localization, qs, fields, partial_fields = partial_fields_selected)
 
+        if self.request.accepted_renderer.format == "json":
+            yield '['
+            first_one=True
+            for element in qs.iterator():
+                if first_one == False:
+                    yield ',' + ujson.dumps(element)
+                else:
+                    first_one = False
+                    yield ujson.dumps(element)
+            yield ']'
+
+        elif self.request.accepted_renderer.format == "jsonl":
+            for element in qs.values().iterator():
+                yield ujson.dumps(element) + '\n'
         # Adjust fields for csv output.
-        if self.request.accepted_renderer.format == "csv":
+        elif self.request.accepted_renderer.format == "csv":
             # CSV creation requires a bit more
-            user_ids = set([d["user"] for d in response_data])
-            users = list(User.objects.filter(id__in=user_ids).values("id", "email"))
-            email_dict = {}
-            for user in users:
-                email_dict[user["id"]] = user["email"]
-
-            media_ids = set([d["media"] for d in response_data])
-            medias = list(Media.objects.filter(id__in=media_ids).values("id", "name"))
-            filename_dict = {}
-            for media in medias:
-                filename_dict[media["id"]] = media["name"]
-
-            for element in response_data:
-                del element["type"]
-
-                oldAttributes = element["attributes"]
+            # work to get the right fields
+            new_fields.remove("user")
+            new_fields.remove("media")
+            qs = qs.values([*new_fields,*new_annotations])
+            qs = qs.annotate(user=F('user__email'), media=F('media__name'))
+            attr_types = qs.values("type__attribute_types")
+            attr_name_set = set()
+            for x in attr_types:
+                type_defs = x['type__attribute_types']
+                if type_defs:
+                    attr_name_set.update([attr['name'] for attr in type_defs])
+            first_one = True
+            for element in qs.iterator():
+                for k in attr_name_set:
+                    element[k] = str(element['attributes'].get(k,""))
                 del element["attributes"]
-                element.update(oldAttributes)
+                if first_one:
+                    first_one = False
+                    yield ",".join(element.keys()) + "\n"
 
-                user_id = element["user"]
-                media_id = element["media"]
-
-                element["user"] = email_dict[user_id]
-                element["media"] = filename_dict[media_id]
-        return response_data
+                yield ",".join([str(v) for v in element.values()]) + "\n"
 
     def _post(self, params):
         # Check that we are getting a localization list.
