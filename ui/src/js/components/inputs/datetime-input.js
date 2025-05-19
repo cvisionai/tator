@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { svgNamespace } from "../tator-element.js";
 import { hasPermission } from "../../util/has-permission.js";
 
 export class DateTimeInput extends TatorElement {
@@ -170,6 +171,44 @@ export class DateTimeInput extends TatorElement {
       } else if (token.includes("css-rem-")) {
         var classRem = token.split("css-rem-")[1];
         this.label.classList.add(classRem);
+      } else if (["start_utc", "end_utc"].includes(token)) {
+        this._setCurrentButton = document.createElement("button");
+        this._setCurrentButton.setAttribute("class", "btn btn-sm");
+        this._setCurrentButton.setAttribute("type", "button");
+        this._setCurrentButton.title = "Set to current time in video";
+        this._setCurrentButton.setAttribute(
+          "class",
+          "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
+        );
+        this._clockSvg = document.createElementNS(svgNamespace, "svg");
+        this._clockSvg.setAttribute("viewBox", "0 0 24 24");
+        this._clockSvg.setAttribute("height", "1em");
+        this._clockSvg.setAttribute("width", "1em");
+        this._clockSvg.setAttribute("stroke", "currentColor");
+        this._clockSvg.setAttribute("stroke-width", "2");
+        this._clockSvg.setAttribute("stroke-linecap", "round");
+        this._clockSvg.setAttribute("stroke-linejoin", "round");
+        this._clockSvg.style.fill = "none";
+        const circle = document.createElementNS(svgNamespace, "circle");
+        circle.setAttribute("cx", "12");
+        circle.setAttribute("cy", "12");
+        circle.setAttribute("r", "10");
+        this._clockSvg.appendChild(circle);
+        const line = document.createElementNS(svgNamespace, "polyline");
+        line.setAttribute("points", "12 6 12 12 16 14");
+        this._clockSvg.appendChild(line);
+        this._setCurrentButton.appendChild(this._clockSvg);
+
+        this.label.appendChild(this._setCurrentButton);
+        this._setCurrentButton.addEventListener("click", () => {
+          const page = document.getElementsByTagName("annotation-page");
+          if (page.length > 0) {
+            const player = page[0]._player;
+            const videoTime = new Date(player._utcLabel.textContent);
+            this.setValue(videoTime.toISOString());
+            this.dispatchEvent(new Event("change"));
+          }
+        });
       }
     }
   }

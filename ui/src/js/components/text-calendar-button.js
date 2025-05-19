@@ -6,6 +6,7 @@ export class TextCalendarButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
+    button.title = "Toggle calendar/text view";
     button.setAttribute(
       "class",
       "btn-clear d-flex px-2 py-2 rounded-1 f2 text-gray hover-text-white annotation__setting"
