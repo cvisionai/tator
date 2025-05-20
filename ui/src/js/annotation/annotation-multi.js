@@ -1546,7 +1546,6 @@ export class AnnotationMulti extends TatorElement {
         });
       };
       this._videos[idx].addEventListener("playbackEnded", playbackAnomalyCb);
-      this._videos[idx].addEventListener("playbackStalled", playbackAnomalyCb);
       this._videos[idx].addEventListener("canvasResized", () => {
         this._videoTimeline.redraw();
         this._entityTimeline.redraw();
