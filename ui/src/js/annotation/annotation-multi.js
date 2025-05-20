@@ -2727,6 +2727,8 @@ export class AnnotationMulti extends TatorElement {
   play() {
     this._ratesAvailable = this.computeRatesAvailable();
     clearTimeout(this._failSafeTimer);
+    this._rateControl.disableSpeedsAbove(0);
+
     if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND) {
       let playing = false;
       // Check to see if the video player can play at this rate
@@ -2835,6 +2837,7 @@ export class AnnotationMulti extends TatorElement {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", { composed: true }));
     this.enableRateChange();
+    this._rateControl.enableAllSpeeds();
     //this._rateControl.setValue(this._rate);
     this.checkReady(); // Verify ready state, this will gray out elements if buffering is required.
 
