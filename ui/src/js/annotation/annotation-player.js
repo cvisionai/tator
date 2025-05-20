@@ -1424,6 +1424,18 @@ export class AnnotationPlayer extends TatorElement {
           })
         );
 
+        // Set qualities now that video is loaded
+        if (val.media_files && "streaming" in val.media_files) {
+          let quality_list = [];
+          for (let media_file of val.media_files["streaming"]) {
+            quality_list.push(media_file.resolution[0]);
+          }
+          this._qualityControl.resolutions = quality_list;
+          this._qualityControl.show();
+        } else {
+          this._qualityControl.hide();
+        }
+
         this.dispatchEvent(
           new Event("canvasReady", {
             composed: true,
@@ -1446,16 +1458,6 @@ export class AnnotationPlayer extends TatorElement {
       this._volume_control.style.display = "none";
     }
     this._volume_control.volume = this.mediaType["default_volume"];
-    if (val.media_files && "streaming" in val.media_files) {
-      let quality_list = [];
-      for (let media_file of val.media_files["streaming"]) {
-        quality_list.push(media_file.resolution[0]);
-      }
-      this._qualityControl.resolutions = quality_list;
-      this._qualityControl.show();
-    } else {
-      this._qualityControl.hide();
-    }
   }
 
   set annotationData(val) {
