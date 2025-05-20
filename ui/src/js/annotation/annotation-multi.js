@@ -605,9 +605,8 @@ export class AnnotationMulti extends TatorElement {
     });
 
     fastForward.addEventListener("click", () => {
-      const paused = this.is_paused()
-      if (paused == false)
-      {
+      const paused = this.is_paused();
+      if (paused == false) {
         return;
       }
       this._hideCanvasMenus();
@@ -1391,13 +1390,13 @@ export class AnnotationMulti extends TatorElement {
       }
       let differentBuffer = 0;
       for (let idx = 0; idx < this._videos.length; idx++) {
-        differentBuffer |= (this._videos[idx]._scrub_idx != this._videos[idx]._play_idx) && (this._videos[idx]._scrub_idx != this._videos[idx]._active_idx)
+        differentBuffer |=
+          this._videos[idx]._scrub_idx != this._videos[idx]._play_idx &&
+          this._videos[idx]._scrub_idx != this._videos[idx]._active_idx;
       }
       if (differentBuffer) {
         this._rateControl.disableSpeedsAbove(RATE_CUTOFF_FOR_ON_DEMAND);
-      }
-      else
-      {
+      } else {
         this._rateControl.enableAllSpeeds();
       }
       this._videoStatus = "playing";
@@ -1895,7 +1894,7 @@ export class AnnotationMulti extends TatorElement {
     var newUrl = path;
     newUrl += "?" + searchArgs;
 
-    window.history.replaceState('quality', "playQuality", newUrl);
+    window.history.replaceState("quality", "playQuality", newUrl);
 
     this.dispatchEvent(
       new CustomEvent("defaultVideoSettings", {
@@ -2790,9 +2789,8 @@ export class AnnotationMulti extends TatorElement {
   }
 
   playBackwards() {
-    const paused = this.is_paused()
-    if (paused == false)
-    {
+    const paused = this.is_paused();
+    if (paused == false) {
       return;
     }
     let playing = false;

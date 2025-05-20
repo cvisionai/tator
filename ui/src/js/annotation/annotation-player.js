@@ -643,12 +643,12 @@ export class AnnotationPlayer extends TatorElement {
       this._play.removeAttribute("is-paused");
       this._videoStatus = "playing";
 
-      if (this._video._play_idx != this._video._scrubIdx && this._video._scrub_idx  != this._video._active_idx)
-      {
+      if (
+        this._video._play_idx != this._video._scrubIdx &&
+        this._video._scrub_idx != this._video._active_idx
+      ) {
         this._rateControl.disableSpeedsAbove(RATE_CUTOFF_FOR_ON_DEMAND);
-      }
-      else
-      {
+      } else {
         this._rateControl.enableAllSpeeds();
       }
       this._playInteraction.enable(this.is_paused());
@@ -1416,7 +1416,7 @@ export class AnnotationPlayer extends TatorElement {
         var newUrl = path;
         newUrl += "?" + searchArgs;
 
-        window.history.replaceState('quality', "playQuality", newUrl);
+        window.history.replaceState("quality", "playQuality", newUrl);
 
         this.dispatchEvent(
           new CustomEvent("defaultVideoSettings", {
