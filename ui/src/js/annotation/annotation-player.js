@@ -1744,6 +1744,8 @@ export class AnnotationPlayer extends TatorElement {
         return;
       }
     }
+    this._rateControl.disableSpeedsAbove(0);
+
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
     if (
@@ -1794,6 +1796,7 @@ export class AnnotationPlayer extends TatorElement {
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
     this.enableRateChange();
+    this._rateControl.enableAllSpeeds();
 
     const paused = this.is_paused();
     if (paused == false) {
