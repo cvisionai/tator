@@ -1530,6 +1530,9 @@ export class AnnotationMulti extends TatorElement {
         });
         prime.addEventListener("frameChange", (evt) => {
           const frame = evt.detail.frame;
+          if (frame == undefined || frame == null) {
+            return;
+          }
           this._slider.value = frame;
           const time = frameToTime(frame, this._fps[this._longest_idx]);
           this._currentTimeText.textContent = time;

@@ -772,7 +772,9 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("frameChange", (evt) => {
       const frame = evt.detail.frame;
-
+      if (frame == undefined || frame == null) {
+        return;
+      }
       const time = frameToTime(frame, this._mediaInfo.fps);
       this._currentTimeText.textContent = time;
       this._currentFrameText.textContent = frame;
