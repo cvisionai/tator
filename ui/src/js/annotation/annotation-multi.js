@@ -1391,7 +1391,7 @@ export class AnnotationMulti extends TatorElement {
       }
       let differentBuffer = 0;
       for (let idx = 0; idx < this._videos.length; idx++) {
-        differentBuffer |= (this._videos[idx]._scrub_idx != this._videos[idx]._play_idx) && (this._videos[idx]._play_idx == this._videos[idx]._active_idx)
+        differentBuffer |= (this._videos[idx]._scrub_idx != this._videos[idx]._play_idx) && (this._videos[idx]._scrub_idx != this._videos[idx]._active_idx)
       }
       if (differentBuffer) {
         this._rateControl.disableSpeedsAbove(RATE_CUTOFF_FOR_ON_DEMAND);
