@@ -91,7 +91,17 @@ export class AnnotationBreadcrumbs extends TatorElement {
     if (params.has("breadcrumb")) {
       this._sectionText.textContent = params.get("breadcrumb");
       if (params.has("breadcrumb_url")) {
-        this._sectionText.setAttribute("href", decodeURIComponent(params.get("breadcrumb_url")));
+        const rawUrl = decodeURIComponent(params.get("breadcrumb_url"));
+        try {
+          const sanitizedUrl = new URL(rawUrl, window.location.origin);
+          if (sanitizedUrl.origin === window.location.origin) {
+            this._sectionText.setAttribute("href", sanitizedUrl.href);
+          } else {
+            console.warn("Invalid breadcrumb_url origin, skipping href assignment.");
+          }
+        } catch (e) {
+          console.error("Invalid breadcrumb_url format, skipping href assignment.", e);
+        }
       }
     } else {
       if (params.has("section")) {
