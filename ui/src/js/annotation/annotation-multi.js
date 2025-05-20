@@ -1894,6 +1894,17 @@ export class AnnotationMulti extends TatorElement {
     const scrubInfo = this._videos[idx].getQuality("scrub");
     const playInfo = this._videos[idx].nearestQuality(this._quality);
 
+    let params = new URLSearchParams(document.location.search.substring(1));
+    params.set("playQuality", playInfo.quality);
+    params.set("scrubQuality", scrubInfo.quality);
+    params.set("seekQuality", seekInfo.quality);
+    const path = document.location.pathname;
+    const searchArgs = params.toString();
+    var newUrl = path;
+    newUrl += "?" + searchArgs;
+
+    window.history.replaceState('quality', "playQuality", newUrl);
+
     this.dispatchEvent(
       new CustomEvent("defaultVideoSettings", {
         composed: true,
