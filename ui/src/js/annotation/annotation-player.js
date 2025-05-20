@@ -642,11 +642,21 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addEventListener("playing", () => {
       this._play.removeAttribute("is-paused");
       this._videoStatus = "playing";
+
+      if (this._video._play_idx != this._video._scrubIdx)
+      {
+        this._rateControl.disableSpeedsAbove(RATE_CUTOFF_FOR_ON_DEMAND);
+      }
+      else
+      {
+        this._rateControl.enableAllSpeeds();
+      }
     });
 
     this._video.addEventListener("paused", () => {
       this._play.setAttribute("is-paused", "");
       this._videoStatus = "paused";
+      this._rateControl.enableAllSpeeds();
     });
 
     this._video.addEventListener("onDemandDetail", (evt) => {
