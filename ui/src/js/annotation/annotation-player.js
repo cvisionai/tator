@@ -643,7 +643,7 @@ export class AnnotationPlayer extends TatorElement {
       this._play.removeAttribute("is-paused");
       this._videoStatus = "playing";
 
-      if (this._video._play_idx != this._video._scrubIdx)
+      if (this._video._play_idx != this._video._scrubIdx && this._video._play_idx  == this._video._active_idx)
       {
         this._rateControl.disableSpeedsAbove(RATE_CUTOFF_FOR_ON_DEMAND);
       }
