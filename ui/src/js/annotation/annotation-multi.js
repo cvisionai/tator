@@ -1411,6 +1411,17 @@ export class AnnotationMulti extends TatorElement {
           return false;
         }
       }
+      let differentBuffer = 0;
+      for (let idx = 0; idx < this._videos.length; idx++) {
+        differentBuffer |= (this._videos[idx]._scrub_idx != this._videos[idx]._play_idx)
+      }
+      if (differentBuffer) {
+        this._rateControl.disableSpeedsAbove(RATE_CUTOFF_FOR_ON_DEMAND);
+      }
+      else
+      {
+        this._rateControl.enableAllSpeeds();
+      }
       this._videoStatus = "playing";
       this._play.removeAttribute("is-paused");
       return true;
@@ -1419,6 +1430,7 @@ export class AnnotationMulti extends TatorElement {
       global_status[vid_idx] = 0;
       this._videoStatus = "paused";
       this._play.setAttribute("is-paused", "");
+      this._rateControl.enableAllSpeeds();
     };
 
     // Functor to normalize the progress bar
