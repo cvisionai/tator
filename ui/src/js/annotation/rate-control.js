@@ -124,6 +124,30 @@ export class RateControl extends TatorElement {
     this._select.selectedIndex = oldIdx;
   }
 
+  disableSpeedsAbove(max) {
+    for (let idx = 0; idx < this._select.options.length; idx++) {
+      const rate = this._select.options[idx].value;
+      if (rate > max) {
+        this._select.options[idx].setAttribute("disabled", "");
+        // Set a tool-tip
+        this._select.options[idx].setAttribute(
+          "title",
+          `Dynamically changing to ${rate}x is disabled during network playback.`
+        );
+      } else {
+        this._select.options[idx].removeAttribute("disabled");
+        this._select.options[idx].removeAttribute("title");
+      }
+    }
+  }
+
+  enableAllSpeeds() {
+    for (let idx = 0; idx < this._select.options.length; idx++) {
+      this._select.options[idx].removeAttribute("disabled");
+      this._select.options[idx].removeAttribute("title");
+    }
+  }
+
   getIdx() {
     return this._select.selectedIndex;
   }
