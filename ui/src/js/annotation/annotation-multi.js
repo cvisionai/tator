@@ -1565,7 +1565,8 @@ export class AnnotationMulti extends TatorElement {
         this.pause(() => {
           if (direction == 1) {
             // Go to the last frame
-            this.goToFrame(this._maxFrameNumber - 1);
+            const lastDisplayFrame = this._maxFrameNumber - this._videos[this._primaryVideoIndex].getRealFrameIncrement();
+            this.goToFrame(lastDisplayFrame);
           } else if (direction == -1) {
             this.goToFrame(0);
           }
