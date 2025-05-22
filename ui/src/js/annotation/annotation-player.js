@@ -786,7 +786,18 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._video.addEventListener("playbackEnded", (evt) => {
-      this.pause();
+      const lastFrame = this._mediaInfo.num_frames - 1;
+      const lastDisp = lastFrame - this._video.getRealFrameIncrement();
+      const thisFrame = this._video.currentFrame();
+      if (thisFrame < lastDisp) {
+        this._video.pause().then(() => {
+          this.goToFrame(lastDisp);
+        });
+      }
+      else
+      {
+        this.pause();
+      }
     });
 
     this._video.addEventListener("playbackStalled", (evt) => {
