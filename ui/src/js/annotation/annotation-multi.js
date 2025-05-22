@@ -1534,6 +1534,8 @@ export class AnnotationMulti extends TatorElement {
           }
           this._slider.value = frame;
           const time = frameToTime(frame, this._fps[this._longest_idx]);
+          window._primeTime = time;
+          window._primeFrame = frame;
           this._currentTimeText.textContent = time;
           this._currentFrameText.textContent = frame;
           this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
