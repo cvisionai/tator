@@ -1,20 +1,46 @@
 export const svgNamespace = "http://www.w3.org/2000/svg";
 
-const styles = window.top.document.styleSheets;
-const sheets = [];
-for (const ruleImport of styles[0].cssRules) {
-  // TODO: we could selectively adopt stylesheets based on the current view by adding a conditional continue here.
-  for (const rule of ruleImport.styleSheet.cssRules) {
-    const sheet = new CSSStyleSheet();
-    sheet.replace(rule.cssText);
-    sheets.push(sheet);
+let cachedSheets = null;
+
+function getStyleSheets() {
+  if (cachedSheets) return cachedSheets;
+
+  const sheets = [];
+  const styles = window.top.document.styleSheets;
+
+  try {
+    for (const styleSheet of styles) {
+      if (!styleSheet.cssRules) continue;
+      const cssText = Array.from(styleSheet.cssRules)
+        .map(rule => {
+          if (rule.type === CSSRule.IMPORT_RULE && rule.styleSheet) {
+            // Handle @import rules
+            return Array.from(rule.styleSheet.cssRules)
+              .map(importedRule => importedRule.cssText)
+              .join('\n');
+          }
+          return rule.cssText;
+        })
+        .join('\n');
+
+      if (cssText) {
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(cssText);
+        sheets.push(sheet);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to access stylesheets:', e);
   }
+
+  cachedSheets = sheets;
+  return sheets;
 }
 
 export class TatorElement extends HTMLElement {
   constructor() {
     super();
-    this._shadow = this.attachShadow({ mode: "open" });
-    this._shadow.adoptedStyleSheets = sheets;
+    this._shadow = this.attachShadow({ mode: 'open' });
+    this._shadow.adoptedStyleSheets = getStyleSheets();
   }
 }
