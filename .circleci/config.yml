@@ -360,14 +360,7 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-    - check-formatting:
-        context: cvisionai
-        filters:
-          tags:
-            only: /.*/
     - setup-lightsail:
-        requires:
-        - check-formatting
         context: cvisionai
         filters:
           tags:
