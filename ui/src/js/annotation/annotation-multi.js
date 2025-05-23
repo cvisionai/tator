@@ -1382,7 +1382,9 @@ export class AnnotationMulti extends TatorElement {
     let global_frame = new Array(video_count).fill(0);
     // Functor to monitor any frame drift
     let global_frame_change = (vid_idx, evt) => {
-      global_frame[vid_idx] = evt.detail.frame;
+      for (let idx = 0; idx < this._videos.length; idx++) {
+        global_frame[idx] = this._videos[idx].currentFrame();
+      }
       if (evt.detail.frame % 60 == 0 && vid_idx == 0) {
         let max_diff = 0;
         for (let j = 0; j < global_frame.length; j++) {
@@ -1534,6 +1536,8 @@ export class AnnotationMulti extends TatorElement {
           }
           this._slider.value = frame;
           const time = frameToTime(frame, this._fps[this._longest_idx]);
+          window._primeTime = time;
+          window._primeFrame = frame;
           this._currentTimeText.textContent = time;
           this._currentFrameText.textContent = frame;
           this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
@@ -1563,7 +1567,8 @@ export class AnnotationMulti extends TatorElement {
         this.pause(() => {
           if (direction == 1) {
             // Go to the last frame
-            this.goToFrame(this._maxFrameNumber - 1);
+            const lastDisplayFrame = this._maxFrameNumber - this._videos[this._primaryVideoIndex].getRealFrameIncrement();
+            this.goToFrame(lastDisplayFrame);
           } else if (direction == -1) {
             this.goToFrame(0);
           }
@@ -1585,9 +1590,15 @@ export class AnnotationMulti extends TatorElement {
         Utilities.warningAlert("Video playback stalled.");
         this.pause();
       });
-      this._videos[idx].addEventListener("frameChange", (evt) => {
-        global_frame_change(idx, evt);
-      });
+      if (idx == 0)
+      {
+        // This BIT test needs to only run on one video
+        this._videos[idx].addEventListener("frameChange", (evt) => {
+          setTimeout(() => {
+            global_frame_change(idx, evt);
+          }, 5);
+        });
+      }
       this._videos[idx].addEventListener("playing", () => {
         global_playing(idx);
       });
