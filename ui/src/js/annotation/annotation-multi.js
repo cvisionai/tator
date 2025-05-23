@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { Utilities } from "../util/utilities.js";
+import { Utilities, getDeepActiveElement } from "../util/utilities.js";
 import { MultiRenderer } from "../../../../scripts/packages/tator-js/src/annotator/multi-renderer.js";
 import {
   RATE_CUTOFF_FOR_ON_DEMAND,
@@ -813,6 +813,12 @@ export class AnnotationMulti extends TatorElement {
     });
 
     document.addEventListener("keydown", (evt) => {
+      const activeElement = getDeepActiveElement(document);
+      if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+        // Ignore keypresses in input fields or textareas
+        return;
+      }
+
       if (document.body.classList.contains("shortcuts-disabled")) {
         return;
       }

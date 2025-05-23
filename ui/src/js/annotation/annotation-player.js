@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { Utilities } from "../util/utilities.js";
+import { Utilities, getDeepActiveElement } from "../util/utilities.js";
 import {
   RATE_CUTOFF_FOR_ON_DEMAND,
   Direction,
@@ -920,6 +920,12 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     document.addEventListener("keydown", (evt) => {
+      const activeElement = getDeepActiveElement(document);
+      if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+        // Ignore keypresses in input fields or textareas
+        return;
+      }
+
       if (this._shortcutsDisabled) {
         return;
       }
