@@ -38,9 +38,26 @@ function getStyleSheets() {
 }
 
 export class TatorElement extends HTMLElement {
+
   constructor() {
     super();
-    this._shadow = this.attachShadow({ mode: 'open' });
-    this._shadow.adoptedStyleSheets = getStyleSheets();
+    if (document.NO_SHADOW_DOM) {
+      this._shadow = document.createElement('div');
+    } else {
+      this._shadow = this.attachShadow({ mode: 'open' });
+      this._shadow.adoptedStyleSheets = getStyleSheets();
+    }
+  }
+
+  connectedCallback() {
+    if (document.NO_SHADOW_DOM) {
+      this.appendChild(this._shadow);
+    }
+
+    // Use this in derived classes
+    this._onConnected();
+  }
+
+  _onConnected() {
   }
 }
