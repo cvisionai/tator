@@ -1,5 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
-import { Utilities } from "../util/utilities.js";
+import { Utilities, getDeepActiveElement } from "../util/utilities.js";
 import {
   RATE_CUTOFF_FOR_ON_DEMAND,
   Direction,
@@ -647,12 +647,21 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addEventListener("playing", () => {
       this._play.removeAttribute("is-paused");
       this._videoStatus = "playing";
+      if (
+        this._video._play_idx != this._video._scrubIdx &&
+        this._video._scrub_idx != this._video._active_idx
+      ) {
+        this._rateControl.disableSpeedsAbove(RATE_CUTOFF_FOR_ON_DEMAND);
+      } else {
+        this._rateControl.enableAllSpeeds();
+      }
       this._playInteraction.enable(this.is_paused());
     });
 
     this._video.addEventListener("paused", () => {
       this._play.setAttribute("is-paused", "");
       this._videoStatus = "paused";
+      this._rateControl.enableAllSpeeds();
     });
 
     this._video.addEventListener("onDemandDetail", (evt) => {
@@ -762,7 +771,9 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("frameChange", (evt) => {
       const frame = evt.detail.frame;
-
+      if (frame == undefined || frame == null) {
+        return;
+      }
       const time = frameToTime(frame, this._mediaInfo.fps);
       this._currentTimeText.textContent = time;
       this._currentFrameText.textContent = frame;
@@ -781,7 +792,18 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._video.addEventListener("playbackEnded", (evt) => {
-      this.pause();
+      const lastFrame = this._mediaInfo.num_frames - 1;
+      const lastDisp = lastFrame - this._video.getRealFrameIncrement();
+      const thisFrame = this._video.currentFrame();
+      if (thisFrame < lastDisp) {
+        this._video.pause().then(() => {
+          this.goToFrame(lastDisp);
+        });
+      }
+      else
+      {
+        this.pause();
+      }
     });
 
     this._video.addEventListener("playbackStalled", (evt) => {
@@ -898,6 +920,12 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     document.addEventListener("keydown", (evt) => {
+      const activeElement = getDeepActiveElement(document);
+      if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+        // Ignore keypresses in input fields or textareas
+        return;
+      }
+
       if (this._shortcutsDisabled) {
         return;
       }
@@ -1388,6 +1416,17 @@ export class AnnotationPlayer extends TatorElement {
 
         this._setToPlayMode();
 
+        let params = new URLSearchParams(document.location.search.substring(1));
+        params.set("playQuality", playInfo.quality);
+        params.set("scrubQuality", scrubInfo.quality);
+        params.set("seekQuality", seekInfo.quality);
+        const path = document.location.pathname;
+        const searchArgs = params.toString();
+        var newUrl = path;
+        newUrl += "?" + searchArgs;
+
+        window.history.replaceState("quality", "playQuality", newUrl);
+
         this.dispatchEvent(
           new CustomEvent("defaultVideoSettings", {
             composed: true,
@@ -1406,6 +1445,18 @@ export class AnnotationPlayer extends TatorElement {
             },
           })
         );
+
+        // Set qualities now that video is loaded
+        if (val.media_files && "streaming" in val.media_files) {
+          let quality_list = [];
+          for (let media_file of val.media_files["streaming"]) {
+            quality_list.push(media_file.resolution[0]);
+          }
+          this._qualityControl.resolutions = quality_list;
+          this._qualityControl.show();
+        } else {
+          this._qualityControl.hide();
+        }
 
         this.dispatchEvent(
           new Event("canvasReady", {
@@ -1429,16 +1480,6 @@ export class AnnotationPlayer extends TatorElement {
       this._volume_control.style.display = "none";
     }
     this._volume_control.volume = this.mediaType["default_volume"];
-    if (val.media_files && "streaming" in val.media_files) {
-      let quality_list = [];
-      for (let media_file of val.media_files["streaming"]) {
-        quality_list.push(media_file.resolution[0]);
-      }
-      this._qualityControl.resolutions = quality_list;
-      this._qualityControl.show();
-    } else {
-      this._qualityControl.hide();
-    }
   }
 
   set annotationData(val) {
@@ -1721,6 +1762,8 @@ export class AnnotationPlayer extends TatorElement {
         return;
       }
     }
+    this._rateControl.disableSpeedsAbove(0);
+
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
     if (
@@ -1771,6 +1814,7 @@ export class AnnotationPlayer extends TatorElement {
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
     this.enableRateChange();
+    this._rateControl.enableAllSpeeds();
 
     const paused = this.is_paused();
     if (paused == false) {

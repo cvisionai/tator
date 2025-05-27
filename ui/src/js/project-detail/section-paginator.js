@@ -1,5 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { getDeepActiveElement } from "../util/utilities.js";
 
 export class SectionPaginator extends TatorElement {
   constructor() {
@@ -127,6 +128,12 @@ export class SectionPaginator extends TatorElement {
     });
 
     goToPage.addEventListener("keydown", (evt) => {
+      let activeElement = getDeepActiveElement(evt.target);
+      if (activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")) {
+        // Ignore keypresses in input fields
+        return;
+      }
+
       if (evt.keyCode == 13) {
         evt.preventDefault();
         const page = Number(evt.target.value);

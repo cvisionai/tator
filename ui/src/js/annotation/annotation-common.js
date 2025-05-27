@@ -205,9 +205,7 @@ export class PlayInteraction {
     if (is_paused) {
       this._parent._rewind.removeAttribute("disabled");
       this._parent._fastForward.removeAttribute("disabled");
-    }
-    else
-    {
+    } else {
       this._parent._rewind.setAttribute("disabled", "");
       this._parent._fastForward.setAttribute("disabled", "");
     }
