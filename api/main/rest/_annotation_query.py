@@ -214,6 +214,41 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             query = query | Q(media__in=m)
         qs = qs.filter(query)
 
+    if "multi_section" in params:
+        section_ids = params.get("multi_section")
+        sections = Section.objects.filter(pk__in=section_ids)
+        folder_ids = sections.filter(dtype="folder").values_list("id", flat=True)
+        playlist_ids = sections.filter(dtype="playlist").values_list("id", flat=True)
+        saved_search_ids = sections.filter(dtype="saved_search").values_list("id", flat=True)
+
+        query = Q()
+        if folder_ids:
+            query |= Q(media__primary_section__in=folder_ids)
+        if playlist_ids:
+            media_ids_in_all_playlists = sections.filter(
+            dtype="playlist").values('media')
+            query |= Q(media__in=Media.objects.filter(pk__in=media_ids_in_all_playlists))
+        if saved_search_ids:
+            for section in sections.filter(dtype="saved_search"):
+                if section.object_search:
+                    media_qs = get_attribute_psql_queryset_from_query_obj(
+                        project, Media.objects.filter(type__in=relevant_media_type_ids), section.object_search
+                    )
+                elif section.related_object_search:
+                    media_state_types = StateType.objects.filter(project=project)
+                    media_localization_types = Localization.objects.filter(project=project)
+                    media_qs = _related_search(
+                        Media.objects.filter(type__in=relevant_media_type_ids),
+                        project,
+                        media_state_types,
+                        media_localization_types,
+                        section.related_object_search,
+                    )
+                else:
+                    continue
+                query |= Q(media__in=media_qs)
+
+
     # Do a related query
     if any([x in params for x in related_keys if x.startswith("related_")]):
         related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
