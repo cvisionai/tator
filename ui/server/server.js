@@ -142,7 +142,7 @@ const staticMap = {
 for (const [dir, path] of Object.entries(staticMap)) {
   app.use(
     path,
-    express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds })
+    express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds, immutable: true })
   );
   if (dir === "./server/static" && path != "/static") {
     // This lets djangi admin panel see static files at static as it doesn't get templated with GIT_REVISION
@@ -151,6 +151,7 @@ for (const [dir, path] of Object.entries(staticMap)) {
       express.static(dir, {
         setHeaders: addHeaders,
         maxAge: maxAgeMilliseconds,
+        immutable: true,
       })
     );
   }
