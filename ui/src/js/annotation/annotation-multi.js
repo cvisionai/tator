@@ -2983,6 +2983,10 @@ export class AnnotationMulti extends TatorElement {
       for (let media_file of val.media_files["streaming"]) {
         quality_list.push(media_file.resolution[0]);
       }
+      if (this._mediaInfo.media_files.quality)
+      {
+        this._qualityControl._quality = this._mediaInfo.media_files.quality;
+      }
       this._qualityControl.resolutions = quality_list;
       this._qualityControl.show();
     } else {
